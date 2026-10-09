@@ -156,6 +156,16 @@ struct ResizePanelState {
         untouched.contains(.limit) ? ResizePanelValidation.displayText(for: max(originalSize.width, originalSize.height)) : limitText
     }
 
+    /// What submission reads. A field still holding the untouched source size submits exactly what it displays (whole
+    /// pixels), so the panel never rejects a value it showed. Typed text is passed through unchanged and still goes
+    /// through `dimension(from:)`, so a typed `12.5` or `abc` keeps failing.
+    /// Proportional lock: the partner of an edited field is recomputed from the exact original ratio (`originalRatio`,
+    /// which only exists for a whole-pixel source), so an untouched partner never feeds that math. A fractional source
+    /// has no ratio, the lock stays off, and an untouched partner submits its displayed (rounded) value.
+    private var submittedWidthText: String { displayWidthText }
+    private var submittedHeightText: String { displayHeightText }
+    private var submittedLimitText: String { displayLimitText }
+
     mutating func setMode(_ mode: ResizePanelMode) {
         guard self.mode != mode else { return }
         self.mode = mode
@@ -188,12 +198,12 @@ struct ResizePanelState {
     }
 
     func preset(id: String = UUID().uuidString, name: String, format: Int = 0) throws -> ResizePreset {
-        let dimensions = try ResizePanelValidation.size(width: widthText, height: heightText)
+        let dimensions = try ResizePanelValidation.size(width: submittedWidthText, height: submittedHeightText)
         let resizeMode: PresetResizeMode
         switch mode { case .resize: resizeMode = .scale; case .crop: resizeMode = .crop; case .limit: resizeMode = .limit }
         let preset = ResizePreset(id: id, name: name, width: Int(dimensions.width), height: Int(dimensions.height),
             mode: resizeMode, format: format, anchor: anchor.rawValue, proportions: preserveRatio,
-            limitSize: Int(try ResizePanelValidation.dimension(from: limitText)),
+            limitSize: Int(try ResizePanelValidation.dimension(from: submittedLimitText)),
             limitMode: ResizeLimitMode(rawValue: limitMode.rawValue) ?? .greatest)
         try preset.validate()
         return preset
@@ -201,7 +211,7 @@ struct ResizePanelState {
 
     func submission() throws -> ResizePanelSubmission {
         if mode == .limit {
-            let limit = try ResizePanelValidation.dimension(from: limitText)
+            let limit = try ResizePanelValidation.dimension(from: submittedLimitText)
             let reference: CGFloat
             switch limitMode { case .greatest: reference = max(originalSize.width, originalSize.height)
             case .width: reference = originalSize.width; case .height: reference = originalSize.height }
@@ -210,7 +220,7 @@ struct ResizePanelState {
             let size = CGSize(width: max(1, (originalSize.width * factor).rounded()), height: max(1, (originalSize.height * factor).rounded()))
             return ResizePanelSubmission(size: try ResizePanelValidation.validate(size), isCrop: false, anchor: anchor.point)
         }
-        return ResizePanelSubmission(size: try ResizePanelValidation.size(width: widthText, height: heightText),
+        return ResizePanelSubmission(size: try ResizePanelValidation.size(width: submittedWidthText, height: submittedHeightText),
                               isCrop: mode == .crop, anchor: anchor.point, constrainProportions: preserveRatio)
     }
 
