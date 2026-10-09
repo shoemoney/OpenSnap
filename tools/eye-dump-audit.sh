@@ -42,6 +42,29 @@ case "$ICONS" in sf) ICON_MODES="sf" ;; fa) ICON_MODES="fa" ;; both) ICON_MODES=
 if [ -n "$SIZES" ] && [ "$GROUPS_GIVEN" = yes ]; then
     case ",$GROUPS_WANTED," in *,sizes,*) ;; *) GROUPS_WANTED="$GROUPS_WANTED,sizes" ;; esac
 fi
+# Identity of the throwaway defaults domain, validated BEFORE any trap or cleanup exists: a cleanup that runs on a bad id
+# is exactly how a real defaults domain gets deleted. `defaults` is injectable so tests never reach the real preferences.
+REAL_ID="com.shoemoney.opensnap"
+THROWAWAY_ID="$REAL_ID.eyedump-$$"
+DEFAULTS=${EYE_DUMP_AUDIT_DEFAULTS:-/usr/bin/defaults}
+
+# Only <real id>.eyedump-<digits> passes, so neither real defaults domain (the current id or the retired one) can ever match.
+valid_throwaway_id() {
+    case "$1" in
+        "$REAL_ID") return 1 ;;
+        com.shoemoney.opensnap.eyedump-*[!0-9]*|com.shoemoney.opensnap.eyedump-) return 1 ;;
+        com.shoemoney.opensnap.eyedump-[0-9]*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+drop_throwaway_defaults() {
+    valid_throwaway_id "$THROWAWAY_ID" || { echo "refusing to drop defaults for unexpected id: $THROWAWAY_ID" >&2; return 1; } # protection:drop
+    "$DEFAULTS" delete "$THROWAWAY_ID" >/dev/null 2>&1 || true
+    plist="$HOME/Library/Preferences/$THROWAWAY_ID.plist"
+    base=$(basename "$plist"); stem=${base%.plist}
+    if [ "$stem.plist" = "$base" ] && valid_throwaway_id "$stem"; then rm -f "$plist"; fi # protection:rm
+}
+valid_throwaway_id "$THROWAWAY_ID" || { echo "refusing: throwaway id '$THROWAWAY_ID' is not com.shoemoney.opensnap.eyedump-<pid>" >&2; exit 2; } # protection:top
 mkdir -p "$OUT"
 OUT=$(CDPATH= cd -- "$OUT" && pwd)
 
@@ -57,9 +80,15 @@ if [ -z "$SOURCE_SHA" ]; then
     [ -z "$(git -C "$ROOT" status --porcelain -- Sources 2>/dev/null)" ] || SOURCE_SHA="$SOURCE_SHA-dirty"
 fi
 
-REAL_ID="com.shoemoney.opensnap"
-THROWAWAY_ID="$REAL_ID.eyedump-$$"
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/eye-dump-audit.XXXXXX")
+# EXIT safety net only: removes $TMP and re-runs the validated drop (a no-op after the explicit drop below). The explicit drop
+# runs BEFORE the final guard compare, so any damage cleanup could do to a real store is visible to the compare, never after it.
+DROPPED=no
+cleanup() {
+    [ "$DROPPED" = yes ] || drop_throwaway_defaults || true
+    rm -rf "$TMP"
+}
+trap cleanup EXIT
 APP_NAME=$(basename "$APP_SRC")
 APP="$TMP/$APP_NAME"
 EXE=$(/usr/libexec/PlistBuddy -c "Print :CFBundleExecutable" "$APP_SRC/Contents/Info.plist")
@@ -67,17 +96,6 @@ GUARD="python3 -I $ROOT/tools/real_store_guard.py"
 [ -z "$GUARD_HOME" ] || GUARD="$GUARD --home $GUARD_HOME"
 REAL_HOME=${GUARD_HOME:-$HOME}
 
-drop_throwaway_defaults() {
-    defaults delete "$THROWAWAY_ID" >/dev/null 2>&1 || true
-    rm -f "$HOME/Library/Preferences/$THROWAWAY_ID.plist"
-}
-cleanup() {
-    drop_throwaway_defaults
-    rm -rf "$TMP"
-}
-trap cleanup EXIT
-
-if [ "$THROWAWAY_ID" = "$REAL_ID" ]; then echo "refusing: throwaway id equals the real id" >&2; exit 2; fi
 $GUARD snapshot "$TMP/guard-before.json" > "$TMP/guard-before.txt"
 {
     echo "sourceSha        $SOURCE_SHA"
@@ -130,8 +148,8 @@ wait_for_other_gui() {
     [ "$WAIT_GUI" = yes ] || return 0
     waited=0
     while other_gui_busy; do
-        if [ "$waited" -ge 900 ]; then echo "other GUI tests still running after 15 minutes; giving up" >&2; return 1; fi
-        echo "waiting for another agent's GUI tests ($waited s)" >&2
+        if [ "$waited" -ge 900 ]; then echo "giving up: another agent's GUI test run (test.py / app-safety / native-startup) is still going after 15 minutes; rerun this later, or pass --no-wait-gui to run alongside it" >&2; return 1; fi
+        echo "waiting for another agent's GUI test run (test.py / app-safety / native-startup) to finish before launching the app ($waited s so far, gives up at 900 s)" >&2
         sleep 45; waited=$((waited + 45))
     done
 }
@@ -199,9 +217,12 @@ for mode in $ICON_MODES; do
     done
 done
 
-drop_throwaway_defaults
 python3 -I "$ROOT/tools/eye-dump-audit-manifest.py" "$OUT" --sha "$SOURCE_SHA" --bundle-id "$THROWAWAY_ID" >/dev/null || echo "manifest could not be written" >&2
 
+# All defaults cleanup is finished here, before the compare, so the compare observes whatever cleanup did.
+drop_throwaway_defaults
+DROPPED=yes
+echo "cleanup          throwaway defaults ($THROWAWAY_ID) dropped BEFORE the final compare; the compare below would show any damage cleanup did" | tee -a "$OUT/safety.txt"
 status=0
 $GUARD compare "$TMP/guard-before.json" > "$TMP/guard-after.txt" || status=1
 {
