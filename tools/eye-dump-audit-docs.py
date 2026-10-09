@@ -21,7 +21,7 @@ def grep_line(needle: str, files=None):
 
 
 STATIC_GAPS = [
-    ("Liquid Glass backdrop of alerts", "NSAlert panels use a translucent glass material that CGWindowList does not capture: the alert PNGs came out transparent behind the text (dark-mode text is white and invisible on a white viewer). The assembler flattens those PNGs onto a neutral backdrop (#ECECEC light, #2C2A29 dark; manifest field flattenedOnBackdrop); it is not the exact material a user sees."),
+    ("Liquid Glass backdrop of alerts and the status-bar button", "NSAlert panels use a translucent glass material that CGWindowList does not capture: the alert PNGs came out transparent behind the text (dark-mode text is white and invisible on a white viewer). The assembler flattens those PNGs onto a neutral backdrop (#ECECEC light, #2C2A29 dark; manifest field flattenedOnBackdrop); it is not the exact material a user sees. The S24 status-button renders (a bare template image) are flattened the same way."),
     ("Reduce Transparency", "Cannot be toggled without changing system settings (forbidden). Current value recorded in environment.json (false); the chrome's reduced-transparency path (opaque glass, no canvas bleed) was NOT rendered."),
     ("Increase Contrast", "Same: forbidden to toggle. Current value false; the 1-pt contrast ring on selected glass surfaces (GlassChrome.swift showsContrastRing) was NOT rendered."),
     ("Reduce Motion", "Same: forbidden to toggle. Current value false; window-zoom/drag-thumbnail animations ran in their animated form only."),

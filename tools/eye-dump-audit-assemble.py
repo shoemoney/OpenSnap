@@ -71,7 +71,7 @@ def main():
     for m in manifest:
         png = out / m["file"]
         im = Image.open(png)
-        if im.mode == "RGBA" and m["id"] in ("S16", "S26", "S21") and "alert" in (m["state"] + m["surface"]).lower() or (im.mode == "RGBA" and m["id"] in ("S16", "S26") ):
+        if im.mode == "RGBA" and m["id"] in ("S16", "S26", "S21") and "alert" in (m["state"] + m["surface"]).lower() or (im.mode == "RGBA" and m["id"] in ("S16", "S26", "S24")):
             alpha = im.getchannel("A")
             opaque = sum(1 for v in alpha.get_flattened_data() if v > 250) / (im.width * im.height) if hasattr(alpha, "get_flattened_data") else sum(1 for v in alpha.getdata() if v > 250) / (im.width * im.height)
             if opaque < 0.6:
