@@ -491,6 +491,8 @@ extension AuditRun {
     }
 
     func s07() {
+        loadSynthetic(size: CGSize(width: 360, height: 240), name: "Small image")
+        shoot("S07", "small-centred", surface: "canvas viewport", state: "360x240 image centred in a large viewport (shot first, before any Actual Size state) (CenteringClipView)", refs: ["ModernEditorChrome.swift|final class CenteringClipView"])
         loadSynthetic(size: CGSize(width: 2400, height: 1500), name: "Large capture")
         _ = addAllAnnotationKinds(scale: 2)
         shoot("S07", "large-fit", surface: "canvas viewport", state: "2400x1500 image fitted into the window", refs: ["AppViewport.swift|func adoptRasterViewport"])
@@ -507,8 +509,6 @@ extension AuditRun {
                   windows: [window] + (app.navigatorWindow.map { [$0] } ?? []), refs: ["AppViewport.swift|@objc func toggleActualSize", "AppViewport.swift|func showActualNavigator"])
             app.leaveActualSize()
         } else { gap("S07", "Actual Size toggle", "canToggleActualSize was false for the synthetic image in this window") }
-        loadSynthetic(size: CGSize(width: 360, height: 240), name: "Small image")
-        shoot("S07", "small-centred", surface: "canvas viewport", state: "360x240 image centred in a large viewport (CenteringClipView)", refs: ["ModernEditorChrome.swift|final class CenteringClipView"])
     }
 
     func s08() {
