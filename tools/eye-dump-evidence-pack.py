@@ -101,7 +101,7 @@ def main():
          "| Capture | Appearance | Window pt | What it shows | Layout JSON | BEFORE (pre-rail-removal) |", "|---|---|---|---|---|---|"]
     for e in packed:
         win = "×".join(str(int(v)) for v in e["windowSize"]) if e.get("windowSize") else "—"
-        L.append(f"| `{e['file']}` | {e['appearance']} | {win} | {e['state']} | `{e['layout'] or '—'}` | {('`' + e['before'] + '`') if e['before'] else '—'} |")
+        L.append(f"| `{e['file']}` | {e['appearance']} | {win} | {e['state'].replace('|', '/')} | `{e['layout'] or '—'}` | {('`' + e['before'] + '`') if e['before'] else '—'} |")
     L.append("")
     if args.notes:
         L.append(pathlib.Path(args.notes).read_text())
