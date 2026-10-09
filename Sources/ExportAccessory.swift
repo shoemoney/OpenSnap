@@ -144,6 +144,10 @@ final class ExportAccessory: NSObject {
         set { optionsChanged(options.setJPEGQuality(newValue)) }
     }
 
+    /// When set (Modern), JPEG always encodes at this quality and the slider is shown locked at it.
+    var fixedJPEGQuality: Double? { didSet { render() } }
+    var effectiveJPEGQuality: Double { fixedJPEGQuality ?? options.jpegQuality }
+
     func updateByteCount(_ count: Int?, size: CGSize) {
         preview = ExportAccessoryPreview(byteCount: count, size: size)
         render()
@@ -249,10 +253,12 @@ final class ExportAccessory: NSObject {
         if let index = ExportAccessoryFormat.allCases.firstIndex(of: options.selectedFormat) {
             formatPopup?.selectItem(at: index)
         }
-        qualitySlider?.doubleValue = options.jpegQuality
-        qualitySlider?.isEnabled = options.jpegControlsEnabled
+        // A fixed quality sits between the 10% ticks, so let the knob rest exactly on it.
+        qualitySlider?.allowsTickMarkValuesOnly = fixedJPEGQuality == nil
+        qualitySlider?.doubleValue = effectiveJPEGQuality
+        qualitySlider?.isEnabled = options.jpegControlsEnabled && fixedJPEGQuality == nil
         qualityLabel?.isEnabled = options.jpegControlsEnabled
-        qualityLabel?.stringValue = options.qualityLabel
+        qualityLabel?.stringValue = fixedJPEGQuality.map { "JPEG quality: \(Int(($0 * 100).rounded()))%" } ?? options.qualityLabel
         originalSizeCheckbox?.state = options.originalSize ? .on : .off
         dimensionsLabel?.stringValue = preview.dimensionsLabel
         byteCountLabel?.stringValue = preview.byteCountLabel
