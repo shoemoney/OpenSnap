@@ -781,14 +781,31 @@ extension AuditRun {
         }
     }
 
+    /// Renders one view (no window capture) at 2x. Used for the status-bar button, whose host window cannot be imaged by number.
+    func shootView(_ id: String, _ slug: String, surface: String, state: String, view: NSView, refs: [String], extra: [String: Any] = [:]) {
+        let stem = "\(id)-\(slug)-\(appearance)" + (ProcessInfo.processInfo.environment["AUDIT_STEM_SUFFIX"] ?? "")
+        guard view.bounds.width > 1, view.bounds.height > 1, let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) else {
+            gap(id, surface + " / " + state, "the view has no drawable bounds"); return
+        }
+        view.cacheDisplay(in: view.bounds, to: rep)
+        guard let png = rep.representation(using: .png, properties: [:]) else { gap(id, surface + " / " + state, "PNG encoding failed"); return }
+        try? png.write(to: dir.appendingPathComponent(stem + ".png"))
+        var meta: [String: Any] = ["id": id, "slug": slug, "surface": surface, "state": state, "appearance": appearance, "file": stem + ".png",
+            "pixelSize": [rep.pixelsWide, rep.pixelsHigh], "pointSize": [Double(view.bounds.width), Double(view.bounds.height)],
+            "scale": Double(rep.pixelsWide) / Double(view.bounds.width), "method": "NSView.cacheDisplay (view only, not a window capture)", "sourceRefs": refs,
+            "sourceSha": ProcessInfo.processInfo.environment["AUDIT_SOURCE_SHA"] ?? "unknown", "appActive": NSApp.isActive]
+        for (key, item) in extra { meta[key] = item }
+        write(meta, to: "meta/\(stem).json")
+    }
+
     func s24() {
-        guard let item = app.statusItem, let button = item.button, let host = button.window else {
+        guard let item = app.statusItem, let button = item.button else {
             gap("S24", "Status-bar item", "no NSStatusItem exists in this process (statusMenu preference or app policy)"); return
         }
         button.highlight(false)
-        shoot("S24", "statusitem-normal", surface: "status-bar item", state: "menu-bar icon, normal", windows: [host], refs: ["App.swift|func installMenuPresence()"], extra: ["toolTip": button.toolTip ?? ""])
+        shootView("S24", "statusitem-normal", surface: "status-bar item", state: "menu-bar icon, normal (the button view only; the real bar is not captured)", view: button, refs: ["App.swift|func installMenuPresence()"], extra: ["toolTip": button.toolTip ?? "", "buttonSize": [Double(button.bounds.width), Double(button.bounds.height)]])
         button.highlight(true)
-        shoot("S24", "statusitem-highlighted", surface: "status-bar item", state: "menu-bar icon, highlighted", windows: [host], refs: ["App.swift|button.alternateImage"])
+        shootView("S24", "statusitem-highlighted", surface: "status-bar item", state: "menu-bar icon, highlighted", view: button, refs: ["App.swift|button.alternateImage"])
         button.highlight(false)
     }
 
