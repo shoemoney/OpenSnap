@@ -1,7 +1,7 @@
 // Offscreen controls, glass views and a never-ordered window only; no desktop windows and no input.
 // Set OPENSKITCH_FA_FONT_DIR (or keep build/fonts) to also run the layout with the Font Awesome glyph branch.
-// xcrun swiftc -swift-version 5 -warnings-as-errors -strict-concurrency=complete -target arm64-apple-macosx13.0 -D GLASS_CHROME_TESTS \
-//   Sources/Appearance.swift Sources/OriginalActionButton.swift Sources/ToolButton.swift Sources/FontAwesomeIcons.swift Sources/ChromeIcons.swift \
+// xcrun swiftc -swift-version 5 -warnings-as-errors -strict-concurrency=complete -target arm64-apple-macosx26.0 -D GLASS_CHROME_TESTS \
+//   Sources/OriginalActionButton.swift Sources/FontAwesomeIcons.swift Sources/ChromeIcons.swift \
 //   Sources/BezelDrawingControls.swift Sources/LegacySkitch.swift Sources/DocumentModel.swift Sources/GlassChrome.swift Sources/ModernEditorChrome.swift \
 //   tests/GlassChromeTests.swift -o build/glass-chrome-tests
 // build/glass-chrome-tests
@@ -83,7 +83,7 @@ private enum GlassChromeTests {
         FontAwesomeFont.resetForTesting()
         buttonTests()
         sliderTests()
-        if #available(macOS 26, *) {
+        do {
             surfaceTests()
             let fonts = fontDirectory()
             chromeTests(glyphs: false)
@@ -97,8 +97,6 @@ private enum GlassChromeTests {
             } else {
                 notes.append("glyph branch (no OPENSKITCH_FA_FONT_DIR or build/fonts)")
             }
-        } else {
-            print("SKIP glass surface and chrome checks: macOS < 26")
         }
         let note = notes.isEmpty ? "" : "; SKIPPED: " + notes.joined(separator: ", ")
         print("GlassChromeTests: \(checks) checks passed (offscreen; no desktop input)\(note)")
@@ -191,7 +189,7 @@ private enum GlassChromeTests {
         expect(blank.iconSource == .none && blank.image == nil && blank.imagePosition == .noImage, "Without an icon the title stands alone")
 
         // contentTintColor per state.
-        let accentContrast = ToolButton.textColor(on: .controlAccentColor)
+        let accentContrast = GlassChromeButton.textColor(on: .controlAccentColor)
         let tinted = GlassChromeButton(title: "Snap", target: nil, action: nil)
         tinted.setButtonType(.toggle)
         tinted.icon = .crosshairs
@@ -331,7 +329,6 @@ private enum GlassChromeTests {
         window.appearance = NSAppearance(named: .aqua)
         content.addSubview(slider)
         slider.frame = NSRect(x: 10, y: 9, width: 40, height: 82)
-        expect(slider.style == .classic, "The slider is classic unless the chrome asks otherwise")
 
         func raster() -> NSBitmapImageRep {
             let rep = slider.bitmapImageRepForCachingDisplay(in: slider.bounds)!
@@ -355,13 +352,6 @@ private enum GlassChromeTests {
         let accent = swatchRep.colorAt(x: swatchRep.pixelsWide / 2, y: swatchRep.pixelsHigh / 2)?.usingColorSpace(.deviceRGB) ?? .black
         swatch.removeFromSuperview()
 
-        // The classic branch paints only the recovered PNGs, which a bare test binary does not carry.
-        expect(opaquePixels(raster()) == 0, "Classic drawing is the PNG path only: nothing is painted without the artwork")
-        slider.doubleValue = 12
-        expect(opaquePixels(raster()) == 0, "Classic stays PNG-only at every value")
-        slider.doubleValue = OriginalDrawingControls.initialSize
-
-        slider.style = .modern
         let modern = raster()
         expect(opaquePixels(modern) > 200, "Modern paints a vector track, ticks and knob")
         let knob = slider.pointForValue(slider.doubleValue)
@@ -383,10 +373,8 @@ private enum GlassChromeTests {
         let old = pixel(moved, at: NSPoint(x: knob.x + 7, y: knob.y + 7))
         expect(!sameColor(old, accent, tolerance: 0.1), "The knob left its previous position")
 
-        // Style never changes the value mapping, the points or what a gesture does.
-        for style in [BezelSizeSlider.Style.classic, .modern] {
-            slider.style = style
-            expect(slider.pointForValue(12).y == 0 && abs(slider.pointForValue(1.5).y - 64) < 0.0001 && slider.pointForValue(6.75).x == 13, "Geometry is identical in \(style)")
+        do {
+            expect(slider.pointForValue(12).y == 0 && abs(slider.pointForValue(1.5).y - 64) < 0.0001 && slider.pointForValue(6.75).x == 13, "Slider geometry is fixed")
             slider.doubleValue = 6.75
             var changes = 0
             slider.target = nil
@@ -394,19 +382,17 @@ private enum GlassChromeTests {
             changes += slider.doubleValue == 12 ? 1 : 0
             slider.performValueChange(1.5, continuous: false)
             changes += slider.doubleValue == 1.5 ? 1 : 0
-            expect(changes == 2, "Value changes behave the same in \(style)")
+            expect(changes == 2, "Value changes behave")
             slider.doubleValue = 6.75
         }
     }
 
     // MARK: GlassSurfaceView
 
-    @available(macOS 26, *)
     private static func surface(_ accessibility: ChromeAccessibility = plain, shape: GlassShape = .capsule, interactive: Bool = true, content: NSView = NSView()) -> GlassSurfaceView {
         GlassSurfaceView(content: content, shape: shape, interactive: interactive, accessibility: accessibility)
     }
 
-    @available(macOS 26, *)
     private static func expectTint(_ surface: GlassSurfaceView, _ base: NSColor?, _ alpha: CGFloat, _ message: String) {
         guard let base else {
             expect(surface.currentTint == nil && surface.tintColor == nil, message + " (untinted)")
@@ -416,7 +402,6 @@ private enum GlassChromeTests {
         expect(surface.tintColor.map { sameColor($0, base) && abs($0.alphaComponent - alpha) < 0.001 } == true, message + " (applied)")
     }
 
-    @available(macOS 26, *)
     private static func surfaceTests() {
         for increased in [false, true] {
             let acc = increased ? contrast : plain
@@ -571,13 +556,11 @@ private enum GlassChromeTests {
 
     // MARK: ModernEditorChrome
 
-    @available(macOS 26, *)
     private struct Rig {
         let window: NSWindow, content: NSView, chrome: ModernEditorChrome, controls: ModernEditorChrome.SharedControls
         let target: ActionTarget, box: AccessibilityBox, size: NSSize
     }
 
-    @available(macOS 26, *)
     private static func makeRig(_ size: NSSize) -> Rig {
         let target = ActionTarget(), box = AccessibilityBox()
         let (window, content) = window(size)
@@ -626,7 +609,6 @@ private enum GlassChromeTests {
         return Rig(window: window, content: content, chrome: chrome, controls: controls, target: target, box: box, size: size)
     }
 
-    @available(macOS 26, *)
     private static func visibleControls(_ rig: Rig) -> [NSControl] {
         var found: [NSControl] = []
         func walk(_ view: NSView) {
@@ -638,7 +620,6 @@ private enum GlassChromeTests {
         return found
     }
 
-    @available(macOS 26, *)
     private static func containers(_ rig: Rig) -> [NSGlassEffectContainerView] {
         var found: [NSGlassEffectContainerView] = []
         func walk(_ view: NSView) {
@@ -651,13 +632,11 @@ private enum GlassChromeTests {
         return found
     }
 
-    @available(macOS 26, *)
     private static func allButtons(in view: NSView) -> [NSButton] {
         let own: [NSButton] = (view as? NSButton).map { [$0] } ?? []
         return own + view.subviews.flatMap { allButtons(in: $0) }
     }
 
-    @available(macOS 26, *)
     private static func surfaces(_ rig: Rig) -> [GlassSurfaceView] {
         var found: [GlassSurfaceView] = []
         func walk(_ view: NSView) {
@@ -669,14 +648,12 @@ private enum GlassChromeTests {
         return found
     }
 
-    @available(macOS 26, *)
     private static func rect(_ view: NSView, in rig: Rig) -> NSRect { view.convert(view.bounds, to: rig.content) }
 
     private static func describe(_ view: NSView) -> String {
         (view.identifier?.rawValue).map { "#" + $0 } ?? (view as? NSButton).map { "'" + $0.title + "'" } ?? String(describing: type(of: view))
     }
 
-    @available(macOS 26, *)
     private static func verifyLayout(_ rig: Rig, _ label: String) {
         rig.content.layoutSubtreeIfNeeded()
         expect(rig.content.bounds.size == rig.size, "\(label): the chrome fits without growing the window (\(rig.content.bounds.size) vs \(rig.size))")
@@ -760,7 +737,6 @@ private enum GlassChromeTests {
         expect(chrome.scrollView.documentView === rig.controls.canvas && !chrome.scrollView.drawsBackground && !chrome.scrollView.contentView.drawsBackground, "\(label): the scroll view hosts the canvas without a background")
     }
 
-    @available(macOS 26, *)
     private static func chromeTests(glyphs: Bool) {
         let tag = glyphs ? "glyphs" : "symbols"
         let minimum = NSWindow.contentRect(forFrameRect: NSRect(x: 0, y: 0, width: ModernEditorChrome.minimumWindowWidth, height: 640), styleMask: [.titled, .closable, .miniaturizable, .resizable]).size
@@ -784,7 +760,6 @@ private enum GlassChromeTests {
     }
 
     /// The owner redesign: every tool in the top bar, no left rail, Undo/Wipe under the slider, one footer row, no name field.
-    @available(macOS 26, *)
     private static func redesignChecks(_ rig: Rig, _ label: String) {
         let chrome = rig.chrome
         func ancestors(_ view: NSView) -> [NSView] { view.superview.map { [$0] + ancestors($0) } ?? [] }
@@ -820,7 +795,6 @@ private enum GlassChromeTests {
     }
 
     /// Glass shapes fuse into a "neck" when their container's spacing reaches the gap between them.
-    @available(macOS 26, *)
     private static func glassNeckChecks(_ rig: Rig, _ label: String) {
         func containers(in view: NSView) -> [NSGlassEffectContainerView] {
             (view as? NSGlassEffectContainerView).map { [$0] + (($0.contentView).map(containers) ?? []) } ?? view.subviews.flatMap(containers)
@@ -838,7 +812,6 @@ private enum GlassChromeTests {
         }
     }
 
-    @available(macOS 26, *)
     private static func semantics(_ rig: Rig, _ label: String) {
         let chrome = rig.chrome
         expect(chrome.header.identifier?.rawValue == "OpenSkitchHeader", "\(label): header identifier")
@@ -896,7 +869,6 @@ private enum GlassChromeTests {
         }
         expect(shared.toolbox.imagePosition == .imageOnly && shared.toolbox.itemArray.first?.image != nil, "\(label): Toolbox shows its icon")
         expect(shared.sizeLabel.superview == nil && chrome.surface(for: shared.widthControl)?.shape == .rounded(12), "\(label): the slider has a rounded surface and the Size text is not shown")
-        expect((shared.widthControl as? BezelSizeSlider)?.style == .modern, "\(label): the slider uses the vector style")
         expect(abs(rect(shared.widthControl, in: rig).width - 36) < 0.5 && abs(rect(shared.widthControl, in: rig).height - 96) < 0.5, "\(label): the slider is Apple's 36 pt wide Extra Large slider, 96 pt tall")
         expect(chrome.surface(for: shared.dragExportView)?.shape == .capsule, "\(label): Drag Me is a compact capsule surface")
         expect(chrome.surface(for: shared.dragFormatControl)?.shape == .capsule, "\(label): the format toggle sits in a glass capsule")
@@ -925,7 +897,7 @@ private enum GlassChromeTests {
         let selected = chrome.surface(for: chrome.toolButtons["brush"]!)
         expect(selected?.isSelected == true && selected?.currentTint != nil, "\(label): the selected tool's surface is tinted")
         expect(chrome.toolButtons["brush"]?.activeFamily == .solid, "\(label): the selected tool uses the solid family")
-        expect(sameColor(chrome.toolButtons["brush"]?.contentTintColor, ToolButton.textColor(on: .controlAccentColor)), "\(label): the selected glyph contrasts with the accent")
+        expect(sameColor(chrome.toolButtons["brush"]?.contentTintColor, GlassChromeButton.textColor(on: .controlAccentColor)), "\(label): the selected glyph contrasts with the accent")
         expect(toolOrder.filter { $0 != "brush" }.allSatisfy { chrome.surface(for: chrome.toolButtons[$0]!)?.isSelected == false }, "\(label): other tools stay untinted")
         chrome.toolButtons["brush"]?.state = .off
         expect(selected?.isSelected == false && selected?.currentTint == nil, "\(label): deselecting clears the tint")
@@ -939,7 +911,6 @@ private enum GlassChromeTests {
     }
 
     /// Every Modern command is icon-only, with a tooltip (name plus real shortcut) and the old title as its VoiceOver label.
-    @available(macOS 26, *)
     private static func iconOnlyChecks(_ rig: Rig, _ label: String) {
         let chrome = rig.chrome
         let expected: [(NSButton, String, String)] = [
@@ -965,7 +936,6 @@ private enum GlassChromeTests {
         chrome.wipeButton.title = "Wipe"
     }
 
-    @available(macOS 26, *)
     private static func frameModeChecks(_ rig: Rig, _ label: String) {
         let chrome = rig.chrome
         expect(chrome.snapButton.title == "Snap Frame" && chrome.snapButton.icon == .frameViewfinder, "\(label): Snap becomes Snap Frame with the viewfinder")
@@ -980,7 +950,6 @@ private enum GlassChromeTests {
         expect(rig.controls.canvas.window === rig.window && chrome.scrollView.frame.size != .zero, "\(label): the canvas stays in place in Frame mode")
     }
 
-    @available(macOS 26, *)
     private static func bleedChecks(_ rig: Rig, _ label: String) {
         let chrome = rig.chrome
         expect(!GlassChrome.usesCanvasBleed, "\(label): bleed defaults off")
@@ -1013,7 +982,6 @@ private enum GlassChromeTests {
         chrome.updateCanvasBleed(nil)
     }
 
-    @available(macOS 26, *)
     private static func accessibilityChecks(_ rig: Rig, _ label: String) {
         let chrome = rig.chrome
         let thumbnail = NSImage(size: NSSize(width: 8, height: 8), flipped: false) { rect in NSColor.systemPink.setFill(); rect.fill(); return true }

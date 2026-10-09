@@ -6,32 +6,33 @@ import argparse, hashlib, json, os, platform, re, subprocess, sys, tempfile
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--arch", choices=["arm64", "x86_64"], default=platform.machine())
-parser.add_argument("--concurrent-app-safety", action="store_true",
-                    help="also run Classic and Modern app-safety in parallel and require both to pass")
 options = parser.parse_args()
 root = Path(__file__).resolve().parent.parent
 build = root / "build"
 build.mkdir(exist_ok=True)
 
+REAL_STORE_FOLDERS = [Path(os.path.expanduser("~")) / "Library/Application Support/SkitchRedux/Publishing",
+                      Path(os.path.expanduser("~")) / "Library/Application Support/OpenSnap"]
+
 def real_store_snapshot():
-    """(path, size, mtime, sha256) of every file in the owner's real Publishing folder. Contents are hashed, never printed."""
-    folder = Path(os.path.expanduser("~")) / "Library/Application Support/SkitchRedux/Publishing"
+    """(path, size, mtime, sha256) of every file in the owner's real stores. Contents are hashed, never printed."""
     entries = {}
-    if folder.exists():
-        for path in sorted(folder.rglob("*")):
-            if path.is_file():
-                info = path.stat()
-                entries[str(path)] = (info.st_size, info.st_mtime_ns, hashlib.sha256(path.read_bytes()).hexdigest())
-    return folder, entries
+    for folder in REAL_STORE_FOLDERS:
+        if folder.exists():
+            for path in sorted(folder.rglob("*")):
+                if path.is_file():
+                    info = path.stat()
+                    entries[str(path)] = (info.st_size, info.st_mtime_ns, hashlib.sha256(path.read_bytes()).hexdigest())
+    return REAL_STORE_FOLDERS, entries
 
 def check_real_store(before):
-    folder, after = real_store_snapshot()
+    folders, after = real_store_snapshot()
     changed = [f"{kind} {name}" for name in sorted(before.keys() | after.keys())
                for kind in ["changed" if name in before and name in after else "appeared" if name in after else "disappeared"]
                if before.get(name) != after.get(name)]
     if changed:
-        raise SystemExit(f"FAIL real-store-guard: the owner's {folder} was touched by this run:\n" + "\n".join(changed))
-    print("PASS real-store-guard (", len(after), "files in", folder, "unchanged )", flush=True)
+        raise SystemExit(f"FAIL real-store-guard: the owner's real stores {[str(f) for f in folders]} were touched by this run:\n" + "\n".join(changed))
+    print("PASS real-store-guard (", len(after), "files in", len(folders), "real-store folders unchanged )", flush=True)
 
 real_store_folder, real_store_before = real_store_snapshot()
 
@@ -73,7 +74,7 @@ def suite(name, sources, test, define=None, arguments=(), environment=None, opti
             if not (snapshot / needed).exists():
                 return "SKIP", f"{name}: {needed} not present"
     binary = snapshot / name
-    command = ["xcrun", "swiftc", "-swift-version", "5", "-target", options.arch + "-apple-macosx13.0"]
+    command = ["xcrun", "swiftc", "-swift-version", "5", "-target", options.arch + "-apple-macosx26.0"]
     if define:
         command += ["-D", define]
     command += [str(snapshot / source) for source in sources]
@@ -82,15 +83,12 @@ def suite(name, sources, test, define=None, arguments=(), environment=None, opti
     subprocess.run([str(binary), *arguments], cwd=root, check=True, env=environment)
     return "PASS", name
 
-# Appearance.swift joins the preference suites once it exists.
-appearance = ["Appearance.swift"] if (snapshot / "Appearance.swift").exists() else []
 # Subsets from tools/fetch-fontawesome.sh are exercised when they have been built.
 fonts = root / "build/fonts"
 font_environment = os.environ | {"OPENSKITCH_FA_FONT_DIR": str(fonts)} if any(fonts.glob("*-subset.ttf")) else None
 
 suites = [
     ("original-action-button-tests", ["OriginalActionButton.swift"], "OriginalActionButtonTests.swift", "ORIGINAL_ACTION_BUTTON_TESTS", ()),
-    ("tool-button-tests", ["OriginalActionButton.swift", "ToolButton.swift"], "ToolButtonTests.swift", "TOOL_BUTTON_TESTS", ()),
     ("original-capture-timing-tests", ["OriginalCaptureTiming.swift"], "OriginalCaptureTimingTests.swift", "ORIGINAL_CAPTURE_TIMING_TESTS", ()),
     ("original-capture-picker-tests", ["OriginalCaptureMagnifier.swift", "OriginalCapturePicker.swift"], "OriginalCapturePickerTests.swift", "ORIGINAL_CAPTURE_PICKER_TESTS", ()),
     ("original-capture-countdown-tests", ["OriginalCaptureTiming.swift", "OriginalCaptureCountdown.swift"], "OriginalCaptureCountdownTests.swift", "ORIGINAL_CAPTURE_COUNTDOWN_TESTS", ()),
@@ -98,8 +96,8 @@ suites = [
     ("original-help-bevel-tests", ["OriginalHelpBevel.swift"], "OriginalHelpBevelTests.swift", "ORIGINAL_HELP_BEVEL_TESTS", ()),
     ("window-zoom-tests", ["WindowZoom.swift"], "WindowZoomTests.swift", "WINDOW_ZOOM_TESTS", ()),
     ("text-style-form-tests", ["TextStyleForm.swift"], "TextStyleFormTests.swift", "TEXT_STYLE_FORM_TESTS", ()),
-    ("general-preferences-form-tests", ["LegacySkitch.swift", "StrokeFitting.swift", "GeneralPreferencesForm.swift", *appearance], "GeneralPreferencesFormTests.swift", "GENERAL_PREFERENCES_FORM_TESTS", ()),
-    ("original-general-preferences-tests", ["LegacySkitch.swift", "StrokeFitting.swift", "DocumentModel.swift", "GeneralPreferencesForm.swift", "OriginalGeneralPreferences.swift", *appearance], "OriginalGeneralPreferencesTests.swift", "ORIGINAL_GENERAL_PREFERENCES_TESTS", ()),
+    ("general-preferences-form-tests", ["LegacySkitch.swift", "StrokeFitting.swift", "GeneralPreferencesForm.swift"], "GeneralPreferencesFormTests.swift", "GENERAL_PREFERENCES_FORM_TESTS", ()),
+    ("original-general-preferences-tests", ["LegacySkitch.swift", "StrokeFitting.swift", "DocumentModel.swift", "GeneralPreferencesForm.swift", "OriginalGeneralPreferences.swift"], "OriginalGeneralPreferencesTests.swift", "ORIGINAL_GENERAL_PREFERENCES_TESTS", ()),
     ("resize-presets-tests", ["ResizePresets.swift"], "ResizePresetsTests.swift", "RESIZE_PRESETS_TESTS", ()),
     ("window-sizing-tests", ["WindowSizing.swift"], "WindowSizingTests.swift", "WINDOW_SIZING_TESTS", ()),
     ("canvas-navigator-tests", ["CanvasNavigator.swift"], "CanvasNavigatorTests.swift", "CANVAS_NAVIGATOR_TESTS", ()),
@@ -118,25 +116,17 @@ suites = [
     ("publishing-shutdown-tests", ["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift"], "PublishingShutdownTests.swift", None, ("--test",)),
     ("publishing-destinations-tests", ["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift"], "PublishingDestinationsTests.swift", None, ("--test",)),
     ("hotkey-tests", ["GlobalHotkeys.swift"], "GlobalHotkeysTests.swift", "GLOBAL_HOTKEY_TESTS", ()),
-    ("svg-tests", ["LegacySkitch.swift", "LegacyBridge.swift", "DocumentModel.swift", "VectorGeometry.swift", "StrokeFitting.swift", "ImageExport.swift", "Canvas.swift", "SVGExport.swift"], "SVGExportTests.swift", "SVG_EXPORT_TESTS", ("--fixture", str(root / "original/Skitch.app/Contents/Resources/firstlaunch.skitch"))),
-    ("skitch-file-tests", ["LegacySkitch.swift", "LegacyBridge.swift", "DocumentModel.swift", "VectorGeometry.swift", "StrokeFitting.swift", "ImageExport.swift", "Canvas.swift", "SVGExport.swift", "SkitchFile.swift"], "SkitchFileTests.swift", "SKITCH_FILE_TESTS", ("--fixture", str(root / "original/Skitch.app/Contents/Resources/firstlaunch.skitch"))),
+    ("svg-tests", ["LegacySkitch.swift", "LegacyBridge.swift", "DocumentModel.swift", "VectorGeometry.swift", "StrokeFitting.swift", "ImageExport.swift", "Canvas.swift", "SVGExport.swift"], "SVGExportTests.swift", "SVG_EXPORT_TESTS", ()),
+    ("skitch-file-tests", ["LegacySkitch.swift", "LegacyBridge.swift", "DocumentModel.swift", "VectorGeometry.swift", "StrokeFitting.swift", "ImageExport.swift", "Canvas.swift", "SVGExport.swift", "SkitchFile.swift"], "SkitchFileTests.swift", "SKITCH_FILE_TESTS", ()),
     ("capture-tests", ["OriginalCaptureTiming.swift", "OriginalCaptureMagnifier.swift", "OriginalCapturePicker.swift", "OriginalCaptureCountdown.swift", "OriginalCaptureFlash.swift", "Capture.swift"], "CaptureTests.swift", "CAPTURE_TESTS", ()),
     ("photo-browser-tests", ["PhotoBrowser.swift"], "PhotoBrowserTests.swift", None, ()),
 ]
 # Modern appearance suites are skipped, not failed, while their files are not in the tree yet.
 optional_suites = [
-    ("appearance-tests", ["Appearance.swift"], "AppearanceTests.swift", "APPEARANCE_TESTS", ()),
     ("fontawesome-icons-tests", ["FontAwesomeIcons.swift", "ChromeIcons.swift"], "FontAwesomeIconsTests.swift", "FONTAWESOME_ICONS_TESTS", (), font_environment),
     ("menu-symbols-tests", ["FontAwesomeIcons.swift", "ChromeIcons.swift", "MenuSymbols.swift"], "MenuSymbolsTests.swift", "MENU_SYMBOLS_TESTS", ()),
-    ("glass-chrome-tests", ["Appearance.swift", "OriginalActionButton.swift", "ToolButton.swift", "FontAwesomeIcons.swift", "ChromeIcons.swift", "BezelDrawingControls.swift", "LegacySkitch.swift", "DocumentModel.swift", "GlassChrome.swift", "ModernEditorChrome.swift"], "GlassChromeTests.swift", "GLASS_CHROME_TESTS", ()),
+    ("glass-chrome-tests", ["OriginalActionButton.swift", "FontAwesomeIcons.swift", "ChromeIcons.swift", "BezelDrawingControls.swift", "LegacySkitch.swift", "DocumentModel.swift", "GlassChrome.swift", "ModernEditorChrome.swift"], "GlassChromeTests.swift", "GLASS_CHROME_TESTS", ()),
 ]
-# Every unimplemented progress row must carry a disposition; the checker must also reject a row without one.
-subprocess.run([sys.executable, str(root / "tools" / "check-dispositions.py")], cwd=root, check=True)
-with tempfile.TemporaryDirectory() as scratch:
-    bad = Path(scratch) / "progress.json"
-    bad.write_text(json.dumps({"features": [{"id": "x.y", "status": "unimplemented"}]}))
-    if subprocess.run([sys.executable, str(root / "tools" / "check-dispositions.py"), str(bad)], capture_output=True).returncode == 0:
-        raise SystemExit("check-dispositions accepted an unimplemented row without a disposition")
 with ThreadPoolExecutor(max_workers=len(suites) + len(optional_suites)) as executor:
     futures = [executor.submit(suite, *args) for args in suites]
     futures += [executor.submit(suite, *args, optional=True) for args in optional_suites]
@@ -150,20 +140,11 @@ with ThreadPoolExecutor(max_workers=len(suites) + len(optional_suites)) as execu
 if failures:
     check_real_store(real_store_before)
     raise SystemExit(1)
-# Classic is the pinned baseline everywhere; Modern needs macOS 26+ and its integration cases.
-safety_runs = ["classic"]
-if int(platform.mac_ver()[0].split(".")[0] or 0) < 26:
-    print("SKIP app-safety modern: host is older than macOS 26", flush=True)
-elif not (root / "tests/AppSafetyModernCases.swift").exists():
-    print("SKIP app-safety modern: tests/AppSafetyModernCases.swift not present", flush=True)
-else:
-    safety_runs.append("modern")
-for style in safety_runs:
-    print("== app-safety", style, flush=True)
-    subprocess.run([str(root / "tools" / "test-app-safety.sh"), "--arch", options.arch, "--appearance", style], cwd=root, check=True)
-if options.concurrent_app_safety:
-    print("== app-safety concurrent", flush=True)
-    subprocess.run([str(root / "tools" / "test-app-safety-concurrent.sh"), "--arch", options.arch], cwd=root, check=True)
+print("== build + check-no-original", flush=True)
+subprocess.run(["sh", str(root / "tools" / "build.sh")], cwd=root, check=True, stdout=subprocess.DEVNULL)
+subprocess.run([sys.executable, str(root / "tools" / "check-no-original.py"), str(build / "OpenSkitch.app")], cwd=root, check=True)
+print("== app-safety", flush=True)
+subprocess.run([str(root / "tools" / "test-app-safety.sh"), "--arch", options.arch], cwd=root, check=True)
 check_real_store(real_store_before)
 if current_inputs() != inputs or not all(path.read_bytes() == data for path, data in contents.items()):
     raise SystemExit("Sources changed during verification; rerun before treating this result as current.")

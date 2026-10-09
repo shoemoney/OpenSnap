@@ -170,13 +170,7 @@ private final class SketchTextGrip: NSView {
             }
     }
     deinit { if let frameObserver { NotificationCenter.default.removeObserver(frameObserver) } }
-    private static let moveCursor: NSCursor = {
-        if let url = Bundle.main.url(forResource: "CursorMove", withExtension: "png"),
-           let image = NSImage(contentsOf: url) {
-            return NSCursor(image: image, hotSpot: CGPoint(x: 1, y: 1))
-        }
-        return .closedHand
-    }()
+    private static let moveCursor: NSCursor = .closedHand
     override var isFlipped: Bool { true }
     override var acceptsFirstResponder: Bool { false }
     override var canBecomeKeyView: Bool { false }
@@ -310,8 +304,6 @@ final class CanvasView: NSView, NSTextViewDelegate {
     var onHistoryRestored: ((CGSize) -> Void)?
     var onToolChange: ((SketchTool) -> Void)?
     var onColorChange: ((NSColor) -> Void)?
-    /// Original resource stems: wipe_brushlayer, wipe_snap, wipe_already_blank.
-    var onSound: ((String) -> Void)?
     var onHintModifiers: ((NSEvent.ModifierFlags) -> Void)?
     var onHintHover: ((Bool) -> Void)?
     /// See-through framing is a view state; rendering/export/recovery keep the full document.
@@ -731,14 +723,12 @@ final class CanvasView: NSView, NSTextViewDelegate {
                 document.elements.removeAll(); selection.removeAll()
                 if document.backgroundPNG == nil { resetViewport() }
             }
-            onSound?("wipe_brushlayer")
         case .clear:
             edit("Wipe Snap") {
                 document.backgroundPNG = nil; document.backgroundColor = .white; resetViewport()
             }
-            onSound?("wipe_snap")
         case .blank:
-            onSound?("wipe_already_blank")
+            break
         }
     }
     private func resetViewport() { cropRect = nil; panBackground = nil; document.renderSize = nil }
@@ -746,10 +736,9 @@ final class CanvasView: NSView, NSTextViewDelegate {
     func wipeSnap() {
         finishTextEditing()
         guard document.backgroundPNG != nil || document.backgroundColor != .white else {
-            onSound?("wipe_already_blank"); return
+            return
         }
         edit("Wipe Snap Only") { document.backgroundPNG = nil; document.backgroundColor = .white; panBackground = nil }
-        onSound?("wipe_snap")
     }
     func clearAnnotations() {
         edit("Clear Annotations") { document.elements.removeAll(); selection.removeAll() }
