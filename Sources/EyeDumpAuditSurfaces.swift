@@ -436,10 +436,9 @@ extension AuditRun {
 
     func s11Fullscreen(populated: Bool) {
         let id = populated ? "S11FP" : "S11F"
-        if populated {
-            loadSynthetic(size: CGSize(width: 1200, height: 800), name: "Full screen")
-            _ = addAllAnnotationKinds(scale: 1)
-        }
+        // Populated = the blank 800x600 canvas plus every annotation kind. Loading a synthetic shot instead resizes the window to fit it,
+        // and the window then keeps that size inside the full-screen space (a 1609x1179 "full screen" window) rather than spanning the display.
+        if populated { _ = addAllAnnotationKinds(scale: 0.66) }
         window.makeKeyAndOrderFront(nil)
         window.collectionBehavior.insert(.fullScreenPrimary)
         window.toggleFullScreen(nil)
