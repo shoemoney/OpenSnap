@@ -28,25 +28,19 @@ def main():
         protos[f.stem.split("-")[1]] = json.loads(f.read_text())
 
     summary = []
-    for s in data["samples"]:
-        h = s.get("header", {})
-        slack = s.get("headerSlack", {})
-        rail = s.get("railColumn", {})
-        footer = s.get("footer", {})
-        fs = footer.get("slack", {})
-        sv = s.get("scrollView", {})
+    for s_ in data["samples"]:
+        top, bottom, vp = s_.get("topBar", {}), s_.get("bottomBar", {}), s_.get("viewport", {})
+        ts, bs = top.get("slack", {}), bottom.get("slack", {})
+        sw = bottom.get("statusWidths", {})
         summary.append({
-            "scenario": s["scenario"], "windowWidth": s["windowWidth"], "frameMode": s["frameMode"],
-            "headerGroupWidths": {k: (v["frame"][2] if v else None) for k, v in h.items()},
-            "headerGroupFittingWidths": {k: (v["fitting"][0] if v else None) for k, v in h.items()},
-            "headerRowWidth": slack.get("rowWidth"), "headerFreeHorizontal": slack.get("totalFreeHorizontal"),
-            "headerGapLeadingToTools": slack.get("leadingToTools"), "headerGapToolsToTrailing": slack.get("toolsToTrailing"),
-            "railColumnWidth": rail.get("railWidth"), "railColumnAreaPt2": rail.get("areaPt2"), "railBlankAreaPt2": rail.get("blankAreaPt2"),
-            "railBlankPctOfWindow": rail.get("blankPctOfWindow"), "railBlankPctOfContent": rail.get("blankPctOfContent"),
-            "footerRowWidth": fs.get("rowWidth"), "footerFreeHorizontal": fs.get("totalFree"), "footerStatusTruncated": fs.get("statusTruncated"),
-            "footerStatusFrameWidth": fs.get("statusLabelFrameWidth"), "footerStatusNeedsAt18pt": fs.get("statusLabelNeedsAt18pt"),
-            "scrollViewSize": sv.get("frame", [0, 0, 0, 0])[2:4] if sv else None,
-            "scrollTrailingGapToWindowEdge": s.get("scrollTrailingGapToWindowEdge"),
+            "scenario": s_["scenario"], "windowWidth": s_["windowWidth"], "frameMode": s_["frameMode"], "rail": s_.get("rail"),
+            "topGroupWidths": {k: (v["frame"][2] if v else None) for k, v in top.get("groups", {}).items()},
+            "topRowWidth": ts.get("rowWidth"), "topFreeHorizontal": ts.get("freeHorizontal"), "topMinGap": ts.get("minGap"), "topGaps": ts.get("gaps"),
+            "bottomGroupWidths": {k: (v["frame"][2] if v else None) for k, v in bottom.get("groups", {}).items()},
+            "bottomRowWidth": bs.get("rowWidth"), "bottomFreeHorizontal": bs.get("freeHorizontal"), "bottomMinGap": bs.get("minGap"),
+            "statusLabelWithCheckbox": sw.get("withCheckbox", {}).get("statusLabel"), "statusLabelWithoutCheckbox": sw.get("withoutCheckbox", {}).get("statusLabel"),
+            "statusNeedsAt18pt": sw.get("statusNeedsAt18pt"), "statusTruncated": bottom.get("statusTruncated"),
+            "viewportSize": vp.get("rect", [0, 0, 0, 0])[2:4] if vp else None, "viewportTrailingMargin": vp.get("trailingMargin"),
         })
     full = {"sourceSha": args.sha, "measuredLive": True, "summary": summary, "statusTextWidthsAt18pt": data["statusTextWidthsAt18pt"],
             "samples": data["samples"], "prototype": protos, "units": "points; frames are window coordinates, top-left origin; fitting = NSView.fittingSize"}
@@ -57,17 +51,15 @@ def main():
     L += ["**Typical status string at 18 pt:** " + ", ".join(f"“{k}” = {v:g} pt" for k, v in list(data["statusTextWidthsAt18pt"].items())[:4]), ""]
     for scenario in ("small-image", "large-image"):
         L += [f"## Scenario: {scenario}", "",
-              "| Window | Mode | Header row | Σ header groups | Header free | gap lead→tools / tools→trail | Rail col W | Rail BLANK pt² | Rail blank % window | Scroll view W×H | Scroll→window-edge | Footer free | Status W / needs |",
+              "| Window | Mode | rail | Top row | Top free | Top min gap | Bottom row | Bottom free | Status label w/ checkbox | w/o checkbox | Status needs 18pt | Viewport W×H | Trailing margin |",
               "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
-        for item, s in zip(summary, data["samples"]):
+        for item in summary:
             if item["scenario"] != scenario:
                 continue
-            gw = item["headerGroupWidths"]
-            tot = sum(v for v in gw.values() if v)
-            sv = item["scrollViewSize"] or ["—", "—"]
-            L.append(f"| {fmt(item['windowWidth'],0)} | {'Frame' if item['frameMode'] else 'normal'} | {fmt(item['headerRowWidth'])} | {fmt(tot)} | {fmt(item['headerFreeHorizontal'])} | "
-                     f"{fmt(item['headerGapLeadingToTools'])} / {fmt(item['headerGapToolsToTrailing'])} | {fmt(item['railColumnWidth'])} | {fmt(item['railBlankAreaPt2'],0)} | {fmt(item['railBlankPctOfWindow'])}% | "
-                     f"{fmt(sv[0])}×{fmt(sv[1])} | {fmt(item['scrollTrailingGapToWindowEdge'])} | {fmt(item['footerFreeHorizontal'])} | {fmt(item['footerStatusFrameWidth'])} / {fmt(item['footerStatusNeedsAt18pt'])}{' TRUNCATED' if item['footerStatusTruncated'] else ''} |")
+            vs = item["viewportSize"] or ["—", "—"]
+            L.append(f"| {fmt(item['windowWidth'],0)} | {'Frame' if item['frameMode'] else 'normal'} | {item['rail']} | {fmt(item['topRowWidth'])} | {fmt(item['topFreeHorizontal'])} | {fmt(item['topMinGap'])} | "
+                     f"{fmt(item['bottomRowWidth'])} | {fmt(item['bottomFreeHorizontal'])} | {fmt(item['statusLabelWithCheckbox'])} | {fmt(item['statusLabelWithoutCheckbox'])} | "
+                     f"{fmt(item['statusNeedsAt18pt'])}{' TRUNCATED' if item['statusTruncated'] else ''} | {fmt(vs[0])}×{fmt(vs[1])} | {fmt(item['viewportTrailingMargin'])} |")
         L.append("")
     L += ["## Per-element frames and fitting sizes (normal mode, small image)", ""]
     for s in data["samples"]:
@@ -78,23 +70,16 @@ def main():
             if not box:
                 return
             L.append(f"| {name} | {fmt(box['frame'][2])}×{fmt(box['frame'][3])} | {fmt(box['fitting'][0])}×{fmt(box['fitting'][1])} | {box.get('hidden')} |")
-        for gid, g in s.get("header", {}).items():
-            row(f"**{gid}**", g)
-            for c in (g or {}).get("controls", []):
-                row(f"  · {c.get('label') or c.get('contentLabel') or c.get('class')}", c)
-        for gid, g in s.get("rail", {}).items():
-            row(f"**{gid}** (rail)", g)
-            for c in (g or {}).get("controls", []):
-                row(f"  · {c.get('label') or c.get('contentLabel') or c.get('class')}", c)
-        f = s.get("footer", {})
-        for key in ("zoomPopup", "originalSizeCheckbox", "dragSizeLabel", "status", "statusRow"):
-            row(f"footer {key}", f.get(key))
-        g = f.get("footerRowGroup")
-        row("**GlassFooterRow**", g)
-        for c in (g or {}).get("controls", []):
-            row(f"  · {c.get('label') or c.get('contentLabel') or c.get('class')}", c)
-        row("scroll view", s.get("scrollView"))
-        row("canvas", s.get("canvasFrame"))
+        for bar in ("topBar", "bottomBar"):
+            for gid, g in s.get(bar, {}).get("groups", {}).items():
+                row(f"**{gid}**", g)
+                for c in (g or {}).get("controls", []):
+                    row(f"  · {c.get('label') or c.get('contentLabel') or c.get('class')}", c)
+        f = s.get("bottomBar", {})
+        for key in ("zoomPopup", "originalSizeCheckbox", "status", "statusRow"):
+            row(f"bottom bar {key}", f.get(key))
+        vp = s.get("viewport", {})
+        L.append(f"| viewport rect | {fmt(vp.get('rect', [0,0,0,0])[2])}×{fmt(vp.get('rect', [0,0,0,0])[3])} | — | — |")
         L.append("")
     if protos:
         L += ["## PROTOTYPE MOCK fit (NOT product; harness-only re-parenting)", "",

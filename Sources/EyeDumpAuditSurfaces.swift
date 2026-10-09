@@ -328,12 +328,22 @@ extension AuditRun {
             step("S26", "alerts") { s26() }
             step("S28", "keyboard focus") { s28() }
             step("S29", "extra surfaces") { s29() }
+            step("S30", "size popover") { s30() }
+            step("S31", "colour popover") { s31() }
+            step("S32", "frame mode, large canvas") { s32() }
+            step("S33", "large shot at 980") { s33() }
+            step("S34", "small canvas centred") { s34() }
+            step("S35", "large canvas fills viewport") { s35() }
+            step("S36", "selection and text editing at 980/1280") { s36() }
+            step("S37", "PNG and JPG at 980") { s37() }
             step("S13", "capture picker") { s13() }
             step("S14", "countdown") { s14() }
             step("S15", "capture flash") { s15() }
         }
-        if wanted.contains("S11M") { s11SizeMatrix() }
-        if wanted.contains("S11F") { s11Fullscreen() }
+        if wanted.contains("S11M") { s11SizeMatrix(populated: true) }
+        if wanted.contains("S11E") { s11SizeMatrix(populated: false) }
+        if wanted.contains("S11F") { s11Fullscreen(populated: false) }
+        if wanted.contains("S11FP") { s11Fullscreen(populated: true) }
         finish()
     }
 
@@ -378,45 +388,63 @@ extension AuditRun {
         restore()
     }
 
-    /// The rail-removal acceptance matrix: the editor at each named window size, populated with synthetic content.
+    /// The rail-removal acceptance matrix: the editor at each named window size, populated or empty.
     /// Sizes come from --audit-sizes: `WxH`, `Wxmin` (that width at the smallest height the window allows) or `full` (the screen's visible frame).
     static let defaultSizeSpecs = ["980xmin", "1024x740", "1280x800", "1440x900", "full"]
 
-    func s11SizeMatrix() {
+    /// Resolves a size spec to points; nil (and a gap record) when the spec is unusable.
+    func windowSize(for spec: String, surface: String) -> CGSize? {
+        if spec == "full" { return (window.screen?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)).size }
+        let parts = spec.split(separator: "x").map(String.init)
+        guard parts.count == 2, let width = Double(parts[0]), width > 0 else { gap(surface, "window size matrix", "unusable size spec \(spec)"); return nil }
+        let height = parts[1] == "min" ? Double(window.minSize.height) : (Double(parts[1]) ?? 0)
+        guard height > 0 else { gap(surface, "window size matrix", "unusable size spec \(spec)"); return nil }
+        return CGSize(width: width, height: height)
+    }
+
+    /// Puts the window at the top-left of the visible screen at `size` and reports whether AppKit clamped it.
+    @discardableResult
+    func placeWindow(_ size: CGSize) -> (landed: CGSize, clamped: Bool) {
+        let screen = window.screen?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
+        window.setFrame(CGRect(origin: CGPoint(x: screen.minX, y: screen.maxY - size.height), size: size), display: true)
+        pump(0.5)
+        let landed = window.frame.size
+        return (landed, abs(landed.width - size.width) > 1 || abs(landed.height - size.height) > 1)
+    }
+
+    func s11SizeMatrix(populated: Bool) {
+        let id = populated ? "S11M" : "S11E"
         let specs = sizes.isEmpty ? AuditRun.defaultSizeSpecs : sizes
         let defaultFrame = window.frame
-        let screen = window.screen?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
-        loadSynthetic(size: CGSize(width: 1200, height: 800), name: "Size matrix")
-        _ = addAllAnnotationKinds(scale: 1)
+        // Populated: a 1200x800 shot with every annotation kind. Empty: the fresh blank canvas this process started with.
+        if populated {
+            loadSynthetic(size: CGSize(width: 1200, height: 800), name: "Size matrix")
+            _ = addAllAnnotationKinds(scale: 1)
+        }
         for spec in specs {
-            var size = CGSize.zero
-            if spec == "full" { size = screen.size }
-            else {
-                let parts = spec.split(separator: "x").map(String.init)
-                guard parts.count == 2, let width = Double(parts[0]), width > 0 else { gap("S11M", "window size matrix", "unusable size spec \(spec)"); continue }
-                let height = parts[1] == "min" ? Double(window.minSize.height) : (Double(parts[1]) ?? 0)
-                guard height > 0 else { gap("S11M", "window size matrix", "unusable size spec \(spec)"); continue }
-                size = CGSize(width: width, height: height)
-            }
-            let origin = CGPoint(x: screen.minX, y: screen.maxY - size.height)
-            window.setFrame(CGRect(origin: origin, size: size), display: true)
-            pump(0.5)
-            let landed = window.frame.size
-            let clamped = abs(landed.width - size.width) > 1 || abs(landed.height - size.height) > 1
-            shoot("S11M", "size-\(spec)", surface: "window size matrix", state: "requested \(spec) (\(Int(size.width))x\(Int(size.height)) pt), window is \(Int(landed.width))x\(Int(landed.height)) pt",
-                  refs: ["ModernEditorChrome.swift|private func build(actions"], extra: ["requestedSize": spec, "requestedPoints": [Double(size.width), Double(size.height)], "sizeClamped": clamped])
+            guard let size = windowSize(for: spec, surface: id) else { continue }
+            let placed = placeWindow(size)
+            let slug = (populated ? "size-" : "empty-size-") + spec
+            shoot(id, slug, surface: populated ? "window size matrix, populated" : "window size matrix, empty",
+                  state: "requested \(spec) (\(Int(size.width))x\(Int(size.height)) pt), window is \(Int(placed.landed.width))x\(Int(placed.landed.height)) pt",
+                  refs: ["ModernEditorChrome.swift|private func build(actions"], extra: ["requestedSize": spec, "requestedPoints": [Double(size.width), Double(size.height)], "sizeClamped": placed.clamped])
         }
         window.setFrame(defaultFrame, display: true)
         pump(0.3)
     }
 
-    func s11Fullscreen() {
+    func s11Fullscreen(populated: Bool) {
+        let id = populated ? "S11FP" : "S11F"
+        if populated {
+            loadSynthetic(size: CGSize(width: 1200, height: 800), name: "Full screen")
+            _ = addAllAnnotationKinds(scale: 1)
+        }
         window.makeKeyAndOrderFront(nil)
         window.collectionBehavior.insert(.fullScreenPrimary)
         window.toggleFullScreen(nil)
         pump(3.5)
         let state = window.styleMask.contains(.fullScreen) ? "true full screen (styleMask.fullScreen)" : "toggleFullScreen requested but styleMask.fullScreen not set"
-        shoot("S11", "size-fullscreen", surface: "window sizes", state: state, refs: ["ModernEditorChrome.swift|private func build(actions"], settle: 0.5)
+        shoot(id, populated ? "size-fullscreen-populated" : "size-fullscreen", surface: populated ? "window sizes, populated" : "window sizes", state: state, refs: ["ModernEditorChrome.swift|private func build(actions"], settle: 0.5)
         if window.styleMask.contains(.fullScreen) { window.toggleFullScreen(nil); pump(3.0) }
     }
 
@@ -429,11 +457,10 @@ extension AuditRun {
 
     func s03() {
         loadSynthetic(size: CGSize(width: 1000, height: 700), name: "Quarterly mockup")
-        shoot("S03", "topbar", surface: "title / top-bar chrome", state: "logo-less glass header: Hide, Toolbox, Photos | ten tools + Resize | Save, History; title shows document name",
-              crop: headerCrop(), refs: ["ModernEditorChrome.swift|// Header: [Hide][Toolbox][Photos]", "App+ModernChrome.swift|func showDocumentName"])
-        shoot("S03", "rail", surface: "right rail", state: "Snap, Color, Font, Size slider, Undo, Wipe",
-              crop: region(of: find("GlassDrawingGroup")).map { CGRect(x: window.frame.width - 130, y: $0.minY - 90, width: 130, height: 520) },
-              refs: ["ModernEditorChrome.swift|// Right rail: Snap / Cancel"])
+        shoot("S03", "topbar", surface: "top bar", state: "Hide, Toolbox, Photos | Snap | ten tools | Color, Size, Font; title shows document name",
+              crop: headerCrop(), refs: ["ModernEditorChrome.swift|// Top bar: [Hide][Toolbox][Photos]", "App+ModernChrome.swift|func showDocumentName"])
+        shoot("S03", "bottombar", surface: "bottom bar", state: "Undo, Wipe | Zoom, Resize | status | Save, History | PNG|JPG, Drag, Upload",
+              crop: footerCrop(), refs: ["ModernEditorChrome.swift|// Bottom bar: [Undo][Wipe]"])
     }
 
     func s04() {
@@ -461,7 +488,7 @@ extension AuditRun {
         chrome.resizeButton.isEnabled = true; chrome.undoButton.isEnabled = true
         if let surface = chrome.surface(for: chrome.snapButton) {
             surface.setHovered(true)
-            shoot("S04", "snap-hover", surface: "tool states", state: "Snap (primary, accent) hovered", crop: CGRect(x: window.frame.width - 140, y: 40, width: 140, height: 180),
+            shoot("S04", "snap-hover", surface: "tool states", state: "Snap (primary, accent) hovered", crop: headerCrop(),
                   refs: ["GlassChrome.swift|enum Prominence"], settle: 0.4)
             surface.setHovered(false)
         }
@@ -510,8 +537,8 @@ extension AuditRun {
         for (name, value) in [("min", 1.5), ("mid", 6.75), ("max", 12.0)] {
             app.widthControl.doubleValue = value
             app.changeWidth(app.widthControl)
-            shoot("S06", "size-\(name)", surface: "size slider", state: "size slider at \(value) (\(name))",
-                  crop: CGRect(x: window.frame.width - 130, y: 60, width: 130, height: window.frame.height - 130), refs: ["BezelDrawingControls.swift|final class BezelSizeSlider"], settle: 0.3)
+            shoot("S06", "size-\(name)", surface: "size pill", state: "size pill glyph at \(value) (\(name))",
+                  crop: headerCrop(), refs: ["BezelDrawingControls.swift|final class BezelSizeSlider"], settle: 0.3)
         }
         canvas.fontName = "Helvetica-Bold"
         app.chooseFont()
@@ -622,7 +649,7 @@ extension AuditRun {
         pump(0.9)
         shoot("S12", "frame-resnap", surface: "Frame mode", state: "Re-snap (keep pen) Frame mode over existing annotations", refs: ["App.swift|@objc func resnap()"])
         app.leaveFrame()
-        for width in [980, 1024] {
+        for width in [980, 1024, 1280] {
             loadSynthetic(size: CGSize(width: 1000, height: 700), name: "Frame")
             var f = window.frame; f.size.width = CGFloat(width); window.setFrame(f, display: true); pump(0.3)
             app.enterFrame(keepingAnnotations: false, manualFlags: [])
@@ -631,6 +658,174 @@ extension AuditRun {
             app.leaveFrame(); pump(0.3)
             window.setFrame(CGRect(x: window.frame.minX, y: window.frame.minY, width: 1024, height: window.frame.height), display: true)
         }
+    }
+
+    // MARK: rail-removal state captures (T15 section j)
+
+    /// A popover's geometry against the window and the control it hangs from, in screen points (bottom-left origin).
+    func popoverMetrics(_ popoverWindow: NSWindow?, anchor: NSView) -> [String: Any] {
+        guard let popoverWindow else { return ["popoverWindow": "none"] }
+        let anchorScreen = window.convertToScreen(anchor.convert(anchor.bounds, to: nil))
+        let pop = popoverWindow.frame
+        return ["popoverClass": String(describing: type(of: popoverWindow)), "popoverFrameScreen": rectJSON(pop), "anchorFrameScreen": rectJSON(anchorScreen),
+                "windowFrameScreen": rectJSON(window.frame),
+                // The arrow tip may overlap the anchor by a few points, so "below" allows 14 pt.
+                "opensBelowAnchor": pop.maxY <= anchorScreen.minY + 14,
+                "insideWindowHorizontally": pop.minX >= window.frame.minX - 0.5 && pop.maxX <= window.frame.maxX + 0.5,
+                "insideScreen": window.screen.map { $0.frame.insetBy(dx: -0.5, dy: -0.5).contains(pop) } ?? false,
+                "popoverIsOpaque": popoverWindow.isOpaque, "popoverAlpha": Double(popoverWindow.alphaValue)]
+    }
+
+    /// Loads a synthetic shot, then puts the window at `spec`. Order matters: loading a shot resizes the window to fit it.
+    func loadThenPlace(_ spec: String, size: CGSize, name: String, surface: String) -> CGSize? {
+        loadSynthetic(size: size, name: name)
+        guard let target = windowSize(for: spec, surface: surface) else { return nil }
+        placeWindow(target)
+        return target
+    }
+
+    func widthSlug(_ spec: String) -> String { "w" + String(spec.prefix { $0.isNumber }) }
+
+    /// Stroke-size popover open from the top-bar pill, at 980 and 1280.
+    func s30() {
+        for spec in ["980xmin", "1280x800"] {
+            guard loadThenPlace(spec, size: CGSize(width: 1000, height: 700), name: "Size popover", surface: "S30") != nil else { continue }
+            app.setTool(.brush)
+            app.widthControl.doubleValue = 6.75
+            app.changeWidth(app.widthControl)
+            pump(0.2)
+            app.widthControl.showPopover()
+            pump(0.7)
+            let popoverWindow = app.widthControl.popover?.contentViewController?.view.window
+            popoverWindow?.orderFrontRegardless()
+            if popoverWindow == nil { gap("S30", "Size popover", "the popover window did not appear at \(spec)") }
+            shoot("S30", "size-popover-\(widthSlug(spec))", surface: "Size popover", state: "Size popover open below the pill at window width \(spec), value 6.75, Brush tool",
+                  windows: popoverWindow.map { [window, $0] } ?? [window], refs: ["BezelDrawingControls.swift|func showPopover", "BezelDrawingControls.swift|final class SizePopoverContent"],
+                  settle: 0.2, extra: popoverMetrics(popoverWindow, anchor: app.widthControl))
+            app.widthControl.dismissPopover()
+            pump(0.4)
+        }
+    }
+
+    /// Colour popover open from the top-bar swatch at 980.
+    func s31() {
+        guard loadThenPlace("980xmin", size: CGSize(width: 1000, height: 700), name: "Colour popover", surface: "S31") != nil else { return }
+        app.presentDrawingColors(hover: false)
+        pump(0.7)
+        let popoverWindow = app.colorPopover?.contentViewController?.view.window
+        popoverWindow?.orderFrontRegardless()
+        if popoverWindow == nil { gap("S31", "Colour popover", "the popover window did not appear") }
+        shoot("S31", "color-popover-w980", surface: "Colour popover", state: "Drawing colours popover open below the top-bar swatch at window width 980",
+              windows: popoverWindow.map { [window, $0] } ?? [window], refs: ["App.swift|func presentDrawingColors"], settle: 0.2,
+              extra: popoverMetrics(popoverWindow, anchor: app.paletteButton))
+        if let popoverWindow {
+            shoot("S31", "color-popover-only-w980", surface: "Colour popover", state: "the popover window alone", windows: [popoverWindow], refs: ["App.swift|func presentDrawingColors"], settle: 0.1)
+        }
+        app.closeDrawingColors()
+        pump(0.3)
+    }
+
+    /// A shot big enough that the Original-size checkbox shows (`isLargeShot`), growing the synthetic size until the app agrees.
+    func loadLargeShot(name: String) -> CGSize? {
+        for size in [CGSize(width: 2400, height: 1500), CGSize(width: 3600, height: 2250), CGSize(width: 5200, height: 3250)] {
+            loadSynthetic(size: size, name: name)
+            if app.isLargeShot { return size }
+        }
+        return nil
+    }
+
+    /// Frame mode at 980 and 1280 over a canvas that fills the viewport: the hole runs to the margin and the capture rect equals it.
+    func s32() {
+        for spec in ["980xmin", "1280x800"] {
+            guard loadLargeShot(name: "Frame large") != nil else { gap("S32", "Frame large", "no synthetic size made isLargeShot true"); return }
+            app.zoomControl.selectItem(withTitle: "100%")
+            app.changeZoom(app.zoomControl)
+            guard let target = windowSize(for: spec, surface: "S32") else { continue }
+            placeWindow(target)
+            app.enterFrame(keepingAnnotations: false, manualFlags: [])
+            pump(0.9)
+            shoot("S32", "frame-large-\(widthSlug(spec))", surface: "Frame mode, canvas fills the viewport", state: "Frame mode at \(spec): large shot at 100% so the canvas fills the viewport; Snap Frame + Cancel",
+                  refs: ["App.swift|func enterFrame", "App.swift|var frameViewportScreenRect"])
+            app.leaveFrame()
+            pump(0.3)
+        }
+    }
+
+    /// Large shot at 980 with the Original-size checkbox visible in the bottom bar.
+    func s33() {
+        guard let size = loadLargeShot(name: "Large shot") else { gap("S33", "Large shot", "no synthetic size made isLargeShot true"); return }
+        _ = addAllAnnotationKinds(scale: size.width / 1200)
+        placeWindow(windowSize(for: "980xmin", surface: "S33") ?? CGSize(width: 980, height: window.minSize.height))
+        app.updateDragPreview()
+        let shown = !app.dragOriginalControl.isHidden
+        if !shown { gap("S33", "Large shot", "the Original size checkbox is hidden although isLargeShot is true") }
+        let extra: [String: Any] = ["syntheticSize": [Double(size.width), Double(size.height)], "isLargeShot": app.isLargeShot, "originalSizeCheckboxVisible": shown]
+        shoot("S33", "large-shot-w980", surface: "Large shot at 980", state: "\(Int(size.width))x\(Int(size.height)) shot at window width 980, Original size checkbox \(shown ? "visible" : "HIDDEN")",
+              refs: ["AppViewport.swift|var isLargeShot", "ModernEditorChrome.swift|statusRow"], extra: extra)
+        shoot("S33", "large-shot-w980-bottombar", surface: "Large shot at 980", state: "bottom bar only: Original size checkbox, status, groups", crop: footerCrop(),
+              refs: ["ModernEditorChrome.swift|statusRow"], settle: 0.1, extra: extra)
+    }
+
+    /// A small canvas (150 x 90) sits in the middle of the viewport at every width.
+    func s34() {
+        for spec in ["980xmin", "1280x800", "1440x900"] {
+            guard loadThenPlace(spec, size: CGSize(width: 150, height: 90), name: "Small canvas", surface: "S34") != nil else { continue }
+            shoot("S34", "small-canvas-\(widthSlug(spec))", surface: "Small canvas centred", state: "150x90 canvas at window \(spec): equal margins left/right and top/bottom",
+                  refs: ["ModernEditorChrome.swift|final class CenteringClipView"])
+        }
+    }
+
+    /// A large canvas at 100% fills the viewport edge to edge (to the 12-pt margin) and pans.
+    func s35() {
+        for spec in ["980xmin", "1280x800"] {
+            guard loadLargeShot(name: "Large canvas") != nil else { gap("S35", "Large canvas", "no synthetic size made isLargeShot true"); return }
+            app.zoomControl.selectItem(withTitle: "100%")
+            app.changeZoom(app.zoomControl)
+            guard let target = windowSize(for: spec, surface: "S35") else { continue }
+            placeWindow(target)
+            shoot("S35", "large-canvas-\(widthSlug(spec))", surface: "Large canvas fills the viewport", state: "large shot at 100% in a \(spec) window: canvas runs to the 12-pt margin and scrolls",
+                  refs: ["ModernEditorChrome.swift|scrollView.trailingAnchor"])
+        }
+    }
+
+    /// Selection, then text editing, at 980 and 1280.
+    func s36() {
+        for spec in ["980xmin", "1280x800"] {
+            guard loadThenPlace(spec, size: CGSize(width: 1000, height: 700), name: "Selection", surface: "S36") != nil else { continue }
+            let named = addAllAnnotationKinds(scale: 1)
+            app.setTool(.select)
+            if let rect = named["rectangle"] { canvas.selection = [rect.id] }
+            shoot("S36", "selection-\(widthSlug(spec))", surface: "Selection", state: "rectangle selected with handles at window \(spec); Color/Size/Font act on it", refs: ["Canvas.swift|private func drawSelectionChrome"])
+            canvas.selection = []
+            app.setTool(.text)
+            if let down = mouse(.leftMouseDown, docPoint: CGPoint(x: 640, y: 690)), let up = mouse(.leftMouseUp, docPoint: CGPoint(x: 640, y: 690)) {
+                canvas.mouseDown(with: down); canvas.mouseUp(with: up)
+            }
+            pump(0.4)
+            if let editor = window.firstResponder as? NSTextView {
+                editor.insertText("Edit in progress", replacementRange: NSRange(location: NSNotFound, length: 0))
+            }
+            shoot("S36", "text-editing-\(widthSlug(spec))", surface: "Text editing", state: "text tool field editor active with typed text at window \(spec)",
+                  refs: ["Canvas.swift|private func beginTextEditing"], extra: ["fieldEditor": window.firstResponder.map { String(describing: type(of: $0)) } ?? "none"])
+            canvas.commitPendingTextEditing()
+        }
+    }
+
+    /// PNG and JPG both selected at 980 with a large shot (checkbox visible): the bottom bar must not change width.
+    func s37() {
+        guard loadLargeShot(name: "Format states") != nil else { gap("S37", "Format states", "no synthetic size made isLargeShot true"); return }
+        placeWindow(windowSize(for: "980xmin", surface: "S37") ?? CGSize(width: 980, height: window.minSize.height))
+        guard let toggle = firstView(of: NSSegmentedControl.self, label: "Image format") else { gap("S37", "Format states", "the PNG|JPG toggle was not found"); return }
+        for (index, name) in [(0, "PNG"), (1, "JPG")] {
+            toggle.selectedSegment = index
+            app.changeDragOptions(toggle)
+            app.updateDragPreview()
+            let width = find("GlassFooterRow").map { Double(windowRect($0).width) } ?? 0
+            shoot("S37", "format-\(name.lowercased())-w980", surface: "PNG | JPG at 980", state: "\(name) selected at window width 980 with the large-shot bottom bar; footer group width \(width) pt",
+                  crop: footerCrop(), refs: ["ImageExport.swift|enum FormatToggle"], settle: 0.5, extra: ["footerRowGroupWidth": width, "selectedFormat": name])
+        }
+        toggle.selectedSegment = 0
+        app.changeDragOptions(toggle)
     }
 
     func s16() {
@@ -894,7 +1089,7 @@ extension AuditRun {
         window.makeFirstResponder(chrome.hideButton)
         shoot("S28", "focus-topbar-hide", surface: "keyboard focus", state: "Hide button is first responder", crop: headerCrop(), refs: ["GlassChrome.swift|focusRingMaskBounds"], settle: 0.3)
         window.makeFirstResponder(chrome.snapButton)
-        shoot("S28", "focus-rail-snap", surface: "keyboard focus", state: "Snap (primary) is first responder", crop: CGRect(x: window.frame.width - 140, y: 40, width: 140, height: 200), refs: ["GlassChrome.swift|focusShape"], settle: 0.3)
+        shoot("S28", "focus-topbar-snap", surface: "keyboard focus", state: "Snap (primary) is first responder", crop: headerCrop(), refs: ["GlassChrome.swift|focusShape"], settle: 0.3)
         window.makeFirstResponder(app.zoomControl)
         shoot("S28", "focus-footer-zoom", surface: "keyboard focus", state: "Zoom popup is first responder", crop: footerCrop(), refs: ["ModernEditorChrome.swift|controls.zoomControl.isBordered"], settle: 0.3)
         if let format = firstView(of: NSPopUpButton.self, label: "Drag Me format") {
