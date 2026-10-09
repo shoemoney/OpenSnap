@@ -44,7 +44,7 @@ extension AuditRun {
     }
 
     func measureLayout(width: CGFloat, frameMode: Bool, scenario: String) -> [String: Any] {
-        var f = window.frame; f.size.width = width
+        var f = window.frame; f.size.width = width; f.size.height = 772
         window.setFrame(f, display: true)
         pump(0.5)
         if frameMode { app.enterFrame(keepingAnnotations: false, manualFlags: []) } else { app.leaveFrame() }

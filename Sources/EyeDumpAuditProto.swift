@@ -78,7 +78,7 @@ extension AuditRun {
     }
 
     func measureProto(width: CGFloat, frameMode: Bool) -> [String: Any] {
-        var f = window.frame; f.size.width = width; window.setFrame(f, display: true); pump(0.4)
+        var f = window.frame; f.size.width = width; f.size.height = 772; window.setFrame(f, display: true); pump(0.4)
         if frameMode { app.enterFrame(keepingAnnotations: false, manualFlags: []) } else { app.leaveFrame() }
         pump(0.6)
         window.contentView?.layoutSubtreeIfNeeded()
