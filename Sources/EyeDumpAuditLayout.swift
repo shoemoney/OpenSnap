@@ -156,22 +156,26 @@ extension AuditRun {
                                        "contentSize": [Double(chrome.scrollView.contentView.bounds.width), Double(chrome.scrollView.contentView.bounds.height)]]
         if let header { viewport["gapBelowTopBar"] = Double(scroll.minY - header.maxY) }
         if let footer { viewport["gapAboveBottomBar"] = Double(footer.minY - scroll.maxY) }
-        let visible = windowRectFromBottomLeft(app.canvas.convert(app.canvas.visibleRect, to: nil))
-        // Centring and filling are judged against the clip view: legacy scrollers take a 15-17 pt gutter out of the scroll view's own frame.
+        // Centring and filling are judged against the clip view (legacy scrollers take a 15-17 pt gutter out of the scroll view's own frame)
+        // and the canvas view's own frame, per axis: a canvas smaller than the clip must have equal margins, a larger one must cover it.
         let clip = windowRect(chrome.scrollView.contentView)
-        let gapLeft = Double(visible.minX - clip.minX), gapRight = Double(clip.maxX - visible.maxX)
-        let gapTop = Double(visible.minY - clip.minY), gapBottom = Double(clip.maxY - visible.maxY)
+        let canvasRect = windowRect(app.canvas)
+        let gapLeft = Double(canvasRect.minX - clip.minX), gapRight = Double(clip.maxX - canvasRect.maxX)
+        let gapTop = Double(canvasRect.minY - clip.minY), gapBottom = Double(clip.maxY - canvasRect.maxY)
+        let smallerX = canvasRect.width < clip.width - 0.5, smallerY = canvasRect.height < clip.height - 0.5
         viewport["clipRect"] = rectJSON(clip)
-        // The document view's own frame and bounds origin inside the clip view: a canvas view stretched to the viewport defeats centring.
-        viewport["canvasViewFrame"] = rectJSON(app.canvas.frame)
-        viewport["clipBounds"] = rectJSON(chrome.scrollView.contentView.bounds)
         viewport["scrollerGutter"] = [Double(scroll.width - clip.width), Double(scroll.height - clip.height)]
         viewport["scrollerStyle"] = chrome.scrollView.scrollerStyle == .legacy ? "legacy" : "overlay"
-        viewport["canvasVisible"] = rectJSON(visible)
-        viewport["canvas"] = ["frameInWindow": rectJSON(windowRect(app.canvas)), "canvasSize": [Double(app.canvas.canvasSize.width), Double(app.canvas.canvasSize.height)],
+        // The document view's own frame, bounds and visibleRect, and the clip bounds origin (negative when AppKit has centred a small canvas).
+        viewport["canvasViewFrame"] = rectJSON(app.canvas.frame)
+        viewport["canvasViewBounds"] = rectJSON(app.canvas.bounds)
+        viewport["canvasVisibleRectRaw"] = rectJSON(app.canvas.visibleRect)
+        viewport["clipBounds"] = rectJSON(chrome.scrollView.contentView.bounds)
+        viewport["canvas"] = ["frameInWindow": rectJSON(canvasRect), "canvasSize": [Double(app.canvas.canvasSize.width), Double(app.canvas.canvasSize.height)],
                               "zoom": Double(app.canvas.zoom), "gapLeft": gapLeft, "gapRight": gapRight, "gapTop": gapTop, "gapBottom": gapBottom,
-                              "fillsWidth": gapLeft <= 0.5 && gapRight <= 0.5, "fillsHeight": gapTop <= 0.5 && gapBottom <= 0.5,
-                              "centredHorizontally": abs(gapLeft - gapRight) <= 1, "centredVertically": abs(gapTop - gapBottom) <= 1] as [String: Any]
+                              "smallerThanViewportX": smallerX, "smallerThanViewportY": smallerY,
+                              "fillsWidth": !smallerX, "fillsHeight": !smallerY,
+                              "centredHorizontally": smallerX ? abs(gapLeft - gapRight) <= 1 : NSNull(), "centredVertically": smallerY ? abs(gapTop - gapBottom) <= 1 : NSNull()] as [String: Any]
         result["viewport"] = viewport
 
         // Rail assertion: neither retired group exists, the viewport reaches the 12-pt margin, and nothing narrow is parked on the trailing edge.
@@ -194,6 +198,7 @@ extension AuditRun {
             result["frameHole"] = ["hole": rectJSON(hole), "holeMaxXToMargin": contentWidth - AuditRun.viewportMargin - Double(hole.maxX),
                                    "captureRect": rectJSON(capture), "captureEqualsHole": [abs(capture.minX - hole.minX), abs(capture.minY - hole.minY), abs(capture.maxX - hole.maxX), abs(capture.maxY - hole.maxY)].allSatisfy { $0 <= 1 },
                                    "captureInsideHole": hole.insetBy(dx: -1, dy: -1).contains(capture), "controlsOverlappingHole": overlapping,
+                                   "canvasRectInWindow": rectJSON(canvasRect), "captureEqualsCanvasClippedToHole": canvasRect.intersection(hole).insetBy(dx: -1, dy: -1).contains(capture) && capture.insetBy(dx: -1, dy: -1).contains(canvasRect.intersection(hole)),
                                    "photosHidden": find("GlassHeaderLeading").map { $0.isHidden } ?? true]
         }
         return result
