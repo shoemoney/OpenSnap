@@ -48,7 +48,7 @@ git status --short
 python3 tools/test.py                      # add --concurrent-app-safety for the isolation proof
 sh tools/build.sh
 python3 tools/test-native-startup.py
-sh tools/eye-dump.sh                       # app-owned window PNGs in build/eye-dump/
+sh tools/eye-dump-audit.sh /tmp/run-OUT     # the ONLY screenshot path: isolated copy of the app, own-window PNGs + manifest + safety.txt
 ```
 
 Quit a running built app before rebuilding (the startup script refuses otherwise) and check for unsaved work first. Use the supported computer-use tooling for real UI interaction, not AppleScript, CGEvent or `screencapture`. Never build or test in the main checkout; use a worktree.

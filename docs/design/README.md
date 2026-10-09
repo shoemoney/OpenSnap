@@ -47,19 +47,18 @@ Findings show the header's evidence class and confidence in the form `R+S/H`: cl
 
 ## Regenerating the evidence
 
-The harness is on branch `audit/visual-harness` @ `6ed6828`. **It is unmerged until OSN-001.** Both scripts below live on that branch (`tools/eye-dump-audit.sh` and `tools/eye-dump-audit-assemble.py`); neither is on `main` yet.
+The harness is `tools/eye-dump-audit.sh` (merged by OSN-001; it is the only screenshot path and `tools/eye-dump.sh` is gone).
 
 ```sh
-# from a checkout of audit/visual-harness
-sh tools/eye-dump-audit.sh OUT --app APP --sha SHA --suffix @SHA --groups main,more,overlays,welcome,delta,proto,layout,fullscreen --appearances light,dark
+sh tools/eye-dump-audit.sh OUT [--groups main,more,overlays,sizes,fullscreen] [--appearances light,dark] [--icons sf|fa|both] [--sizes 980xmin,1024x740,1280x800,1440x900,full] [--sha SHA] [--suffix @SHA]
 
-# assemble the raw outputs into docs/design/evidence/<date>/ (usage from the script header)
-python3 -I tools/eye-dump-audit-assemble.py --out DIR --b93 RAW [RAW...] --delta RAW [RAW...] --layout RAW --observations FILE --sha SHA
+# assemble one icon mode of a run into an evidence folder (writes only to --out; run with -I)
+python3 -I tools/eye-dump-audit-assemble.py --out DIR --b93 RAW [RAW...] --delta RAW [RAW...] --layout RAW --observations FILE --sha SHA [--icons sf|fa] [--baseline-sha SHA]
 ```
 
-- `OUT` receives `raw/` (per-capture files), `safety.txt` (real-store hashes before and after) and `run.log`. `APP` is a built `OpenSkitch.app`; `SHA` is recorded as `sourceSha` in every capture; `--suffix @SHA` names the delta set.
-- The branch script still has the `welcome` group and the old bundle id `com.shoemoney.skitch-redux`. OSN-001 and OSN-030 change those. Do not run it against the owner's live store: OSN-001 makes the isolated bundle id and throwaway defaults domain the only path.
-- Group names accepted by the branch script are `main`, `more`, `overlays`, `welcome`, `fullscreen`, plus `layout`, `proto` and `delta`. Appearance names are `light` and `dark`.
+- `OUT` receives `raw-<icons>/` (per-capture files), `manifest.json` (every capture with `sourceSha`, surface id, appearance, window size and icon mode), `safety.txt` (real-store hashes before and after; the run exits non-zero if they changed) and `run.log`. `SHA` defaults to the build source's short SHA (`-dirty` when `Sources/` has uncommitted edits).
+- The app copy runs under a throwaway bundle id `com.shoemoney.opensnap.eyedump-<pid>`, so its defaults domain is not the owner's; its home, support and evidence folders are throwaway too.
+- Groups: `main`, `more`, `overlays`, `sizes` (the window-size matrix), `fullscreen`, plus `layout` and `delta`. The `welcome` group and the rail-less `proto` mock are gone. Appearance names are `light` and `dark`. `fa` icon runs need the Font Awesome subset fonts built into `build/OpenSnap.app`; otherwise the manifest lists `fa` under `unavailable` ("FA unavailable") instead of capturing SF icons.
 
 ## Safety proof
 

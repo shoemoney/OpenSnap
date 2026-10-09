@@ -337,6 +337,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         if let dumpDirectory = AppDelegate.eyeDumpDirectory() {
             DispatchQueue.main.asyncAfter(deadline: .now()+1) { self.runEyeDump(to: dumpDirectory) }
         }
+        if let auditDirectory = AppDelegate.eyeDumpAuditDirectory() {
+            DispatchQueue.main.asyncAfter(deadline: .now()+1) { self.runEyeDumpAudit(to: auditDirectory) }
+        }
     }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
