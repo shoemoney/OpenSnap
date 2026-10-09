@@ -632,7 +632,7 @@ extension AuditRun {
 
     func syntheticDestinations() {
         var s3 = PublishingSettings()
-        s3.transport = .s3; s3.publicBaseURL = "https://cdn.example.com/pics"
+        s3.transport = .s3; s3.publicBaseURL = "https://cdn.example.com/pics"; s3.username = "AKIAEXAMPLEEXAMPLE0"
         var options = S3Options(); options.bucket = "example-bucket"; options.region = "us-east-1"; options.credentialsProfile = ""
         s3.s3 = options
         var sftp = PublishingSettings()
@@ -641,7 +641,7 @@ extension AuditRun {
         dav.transport = .webDAV; dav.endpoint = "https://dav.example.com/files"; dav.username = "demo"; dav.publicBaseURL = "https://dav.example.com/files"
         let store = AppDelegate.publishingStore
         for (name, settings) in [("Example S3", s3), ("Example SFTP", sftp), ("Example WebDAV", dav)] {
-            try? store.save(PublishingDestination(name: name, settings: settings), password: "")
+            try? store.save(PublishingDestination(name: name, settings: settings), password: "example-secret-not-real")
         }
     }
 

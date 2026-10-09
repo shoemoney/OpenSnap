@@ -57,7 +57,7 @@ final class AuditRun {
     // MARK: image capture
 
     func grab(_ windows: [NSWindow]) -> (CGImage, String)? {
-        let numbers = windows.map { CGWindowID($0.windowNumber) }
+        let numbers = windows.map(\.windowNumber).filter { $0 > 0 }.map { CGWindowID($0) }
         let options: CGWindowImageOption = [.boundsIgnoreFraming, .bestResolution]
         var image: CGImage?
         if numbers.count == 1 {
@@ -109,6 +109,7 @@ final class AuditRun {
     func shoot(_ id: String, _ slug: String, surface: String, state: String, windows: [NSWindow]? = nil, crop: CGRect? = nil,
                refs: [String], settle: TimeInterval = 0.45, extra: [String: Any] = [:]) -> String? {
         let targets = windows ?? [window]
+        if targets.contains(where: { $0.windowNumber <= 0 }) { gap(id, surface + " / " + state, "the window has no window-server window number (not on screen), so it cannot be imaged"); return nil }
         pump(settle)
         for target in targets { target.contentView?.layoutSubtreeIfNeeded(); target.displayIfNeeded() }
         guard var (image, method) = grab(targets) else {
