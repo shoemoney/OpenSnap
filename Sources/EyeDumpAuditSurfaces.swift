@@ -705,8 +705,7 @@ extension AuditRun {
             view.showTestResult(ok: false, message: "The request signature does not match the signature provided.")
             pump(0.4)
             shootSheet("S19", "destinations-test-error", surface: "Destinations / Publishing", state: "S3 form after a synthetic failed Test: octagon glyph and an Error: line", refs: ["PublishingDestinationsView.swift|func showTestResult", "PublishingDestinationsView.swift|final class DestinationStatusRow"], host: window, sheet: panel)
-            app.publishing.cancelSettings()
-            pump(0.5)
+            closeHarnessSheet(panel)
             // Short display: the sheet is sized for a 1280 x 500 visible frame, so the form scrolls and the buttons stay pinned.
             let (shortPanel, shortView) = try app.publishing.buildSettings(visibleFrame: NSRect(x: 0, y: 0, width: 1280, height: 500))
             window.beginSheet(shortPanel)
@@ -715,9 +714,15 @@ extension AuditRun {
             shortView.editTapped()
             pump(0.5)
             shootSheet("S19", "destinations-short-screen", surface: "Destinations / Publishing", state: "edit form on a short display (visible frame 1280 x 500): the form scrolls and Test, Cancel and Save stay pinned", refs: ["Publishing.swift|func buildSettings(visibleFrame", "PublishingDestinationsView.swift|static func sheetSize"], host: window, sheet: shortPanel)
-            app.publishing.cancelSettings()
-            pump(0.5)
+            closeHarnessSheet(shortPanel)
         } catch { gap("S19", "Destinations list/edit form", "buildSettings threw: \(error.localizedDescription)") }
+    }
+
+    /// These sheets are begun on the window directly, not through the coordinator, so ending the sheet first keeps the
+    /// coordinator's quit barrier from waiting forever for a dismissal callback it never registered.
+    func closeHarnessSheet(_ panel: NSPanel) {
+        window.endSheet(panel); pump(0.4)
+        app.publishing.cancelSettings(); pump(0.3)
     }
 
     func s20() {
