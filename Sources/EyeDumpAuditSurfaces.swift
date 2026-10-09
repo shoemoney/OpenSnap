@@ -476,7 +476,7 @@ extension AuditRun {
         }
         canvas.fontName = "Helvetica-Bold"
         app.chooseFont()
-        pump(1.8)
+        pump(3.5)
         if let panel = app.fontPanel, panel.isVisible {
             shoot("S06", "fonts-panel", surface: "Fonts panel / text style form", state: "NSFontPanel with Outline / Shadow / Default accessory form",
                   windows: [panel], refs: ["App.swift|@objc func chooseFont()", "TextStyleForm.swift|final class TextStyleForm"], settle: 0.3)
