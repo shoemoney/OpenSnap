@@ -270,7 +270,23 @@ extension AuditRun {
             finish(); return
         }
         if wants("ENV") { writeEnvironment(preOverrideAppearance: before) }
+        // Any modal nobody asked for (an unexpected error alert) is recorded, then aborted so the run never wedges.
+        var unexpected = 0
+        let modalGuard = Timer(timeInterval: 2.5, repeats: true) { [self] _ in
+            MainActor.assumeIsolated {
+                guard let modal = NSApp.modalWindow else { return }
+                unexpected += 1
+                var texts: [String] = []
+                func collect(_ view: NSView) { if let field = view as? NSTextField, !field.stringValue.isEmpty { texts.append(field.stringValue) }; view.subviews.forEach(collect) }
+                if let content = modal.contentView { collect(content) }
+                shoot("ZZ", "unexpected-modal-\(unexpected)", surface: "unexpected modal alert", state: "a modal appeared that no surface expected", windows: [modal],
+                      refs: ["App.swift|func error(_ error: Error)"], settle: 0, extra: ["texts": texts])
+                NSApp.abortModal()
+            }
+        }
+        RunLoop.main.add(modalGuard, forMode: .common)
 
+        if wanted.contains("LAYOUT") { layoutBudget() }
         if wanted.contains("S27") { s27() }
         let fresh = !wanted.contains("S27")
         if fresh {
@@ -346,6 +362,12 @@ extension AuditRun {
         shoot("S11", "size-maximized", surface: "window sizes", state: "maximized to visibleFrame \(Int(screen.width))x\(Int(screen.height))", refs: ["ModernEditorChrome.swift|private func build(actions"])
         restore()
         shoot("S11", "size-default", surface: "window sizes", state: "default 1024x740", refs: ["App.swift|func buildWindow()"])
+        for width in [980, 1024, 1280, 1440] {
+            var f = defaultFrame; f.size.width = CGFloat(width)
+            window.setFrame(f, display: true); pump(0.4)
+            shoot("S11", "width-\(width)", surface: "window sizes", state: "window width \(width) pt, default height", refs: ["ModernEditorChrome.swift|static let minimumWindowWidth"])
+        }
+        restore()
     }
 
     func s11Fullscreen() {
@@ -505,7 +527,20 @@ extension AuditRun {
         app.status.stringValue = "Frame: position the window, then Snap · this status line is deliberately very long to test truncation at the footer edge"
         shoot("S09", "footer-long-status", surface: "footer", state: "very long status text", crop: footerCrop(), refs: ["ModernEditorChrome.swift|statusRow"])
         app.updateStatus()
-        guard let format = firstView(of: NSPopUpButton.self, label: "Drag Me format") else { gap("S09", "format popup open", "popup not found"); return }
+        if let toggle = firstView(of: NSSegmentedControl.self, label: "Image format") {
+            for (index, name) in [(0, "PNG"), (1, "JPG")] {
+                toggle.selectedSegment = index
+                app.changeDragOptions(toggle)
+                app.updateDragPreview()
+                shoot("S09", "format-toggle-\(name.lowercased())", surface: "footer", state: "PNG | JPG segmented toggle with \(name) selected", crop: footerCrop(),
+                      refs: ["App+ModernChrome.swift|dragFormatToggle.segmentStyle", "ImageExport.swift|enum FormatToggle"], settle: 0.5)
+            }
+            toggle.selectedSegment = 0; app.changeDragOptions(toggle)
+        }
+        guard let format = firstView(of: NSPopUpButton.self, label: "Drag Me format") else {
+            if firstView(of: NSSegmentedControl.self, label: "Image format") == nil { gap("S09", "format control", "neither the format popup nor the PNG|JPG toggle was found") }
+            return
+        }
         captureTrackedMenu("S09", "format-popup-open", surface: "footer", state: "format popup open (PNG selected)", refs: ["ModernEditorChrome.swift|let formatHolder", "App+ModernChrome.swift|dragFormatControl.addItems"],
                            dismiss: { format.menu?.cancelTracking() }, trigger: { format.menu?.popUp(positioning: nil, at: NSPoint(x: 0, y: format.bounds.height), in: format) })
         pump(0.4)
@@ -544,6 +579,15 @@ extension AuditRun {
         pump(0.9)
         shoot("S12", "frame-resnap", surface: "Frame mode", state: "Re-snap (keep pen) Frame mode over existing annotations", refs: ["App.swift|@objc func resnap()"])
         app.leaveFrame()
+        for width in [980, 1024] {
+            loadSynthetic(size: CGSize(width: 1000, height: 700), name: "Frame")
+            var f = window.frame; f.size.width = CGFloat(width); window.setFrame(f, display: true); pump(0.3)
+            app.enterFrame(keepingAnnotations: false, manualFlags: [])
+            pump(0.9)
+            shoot("S12", "frame-w\(width)", surface: "Frame mode", state: "Frame mode at window width \(width) pt", refs: ["App.swift|func enterFrame", "ModernEditorChrome.swift|private func applyFrameMode"])
+            app.leaveFrame(); pump(0.3)
+            window.setFrame(CGRect(x: window.frame.minX, y: window.frame.minY, width: 1024, height: window.frame.height), display: true)
+        }
     }
 
     func s16() {
@@ -715,7 +759,7 @@ extension AuditRun {
         menus["snapAlternate"] = "Snap has no menu: left-click = region/window snap, right-click or Control-click = Fullscreen alternate (OriginalActionButton.alternateAction); Frame mode clears the alternate"
         menus["statusItem"] = ["hasMenu": app.statusItem?.menu != nil, "action": "showHide (toggle editor visibility)", "buttonToolTip": app.statusItem?.button?.toolTip ?? "none",
                                "note": "The status item has no menu; Option-click quits"]
-        write(menus, to: "menus.json")
+        write(menus, to: "menus" + (ProcessInfo.processInfo.environment["AUDIT_STEM_SUFFIX"] ?? "") + ".json")
         guard let toolbox = firstView(of: NSPopUpButton.self, label: "Toolbox") else { gap("S23", "Toolbox menu open", "toolbox popup not found"); return }
         captureTrackedMenu("S23", "toolbox-menu-open", surface: "menus", state: "Toolbox pull-down open", refs: ["App.swift|func bezelToolbox()"],
                            dismiss: { toolbox.menu?.cancelTracking() }, trigger: { toolbox.performClick(nil) })

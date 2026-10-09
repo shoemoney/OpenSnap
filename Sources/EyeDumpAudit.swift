@@ -43,7 +43,7 @@ final class AuditRun {
 
     init(app: AppDelegate, dir: URL, appearance: String, wanted: Set<String>) {
         self.app = app; self.dir = dir; self.appearance = appearance; self.wanted = wanted
-        for sub in ["", "metrics", "ax", "meta"] {
+        for sub in ["", "metrics", "ax", "meta", "layout"] {
             try? FileManager.default.createDirectory(at: dir.appendingPathComponent(sub), withIntermediateDirectories: true)
         }
     }
@@ -337,7 +337,7 @@ final class AuditRun {
             "defaultWindowFrame": rectJSON(window.frame), "contentMinSize": [Double(window.contentMinSize.width), Double(window.contentMinSize.height)],
             "minSize": [Double(window.minSize.width), Double(window.minSize.height)]
         ]
-        write(environment, to: "environment.json")
+        write(environment, to: "environment" + (ProcessInfo.processInfo.environment["AUDIT_STEM_SUFFIX"] ?? "") + ".json")
     }
 
     func menuNode(_ menu: NSMenu, depth: Int = 0) -> [String: Any] {
