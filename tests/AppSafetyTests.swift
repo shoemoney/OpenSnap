@@ -39,8 +39,28 @@ final class AppSafetyPopover: NSObject {
     var contentViewController: NSViewController?
     var appearance: NSAppearance?
     var isShown = false
-    func show(relativeTo rect: NSRect, of view: NSView, preferredEdge: NSRectEdge) { isShown = true }
+    private(set) var preferredEdge: NSRectEdge?
+    private(set) weak var anchor: NSView?
+    func show(relativeTo rect: NSRect, of view: NSView, preferredEdge: NSRectEdge) { isShown = true; self.preferredEdge = preferredEdge; anchor = view }
     func performClose(_ sender: Any?) { isShown = false }
+}
+
+/// The Size pill's popover, kept off the screen: it reports where it was asked to open and runs the real close delegate calls.
+final class AppSafetySizePopover: NSPopover {
+    var open = false
+    private(set) var edge: NSRectEdge?
+    private(set) weak var anchor: NSView?
+    override var isShown: Bool { open }
+    override func show(relativeTo positioningRect: NSRect, of positioningView: NSView, preferredEdge: NSRectEdge) {
+        open = true; edge = preferredEdge; anchor = positioningView
+    }
+    override func performClose(_ sender: Any?) { close() }
+    override func close() {
+        guard open else { return }
+        delegate?.popoverWillClose?(Notification(name: NSPopover.willCloseNotification, object: self))
+        open = false
+        delegate?.popoverDidClose?(Notification(name: NSPopover.didCloseNotification, object: self))
+    }
 }
 
 final class AppSafetyColorPanel: NSColorPanel {
@@ -331,6 +351,7 @@ enum AppSafetyTests {
             app.timer?.invalidate(); app.timer = nil
             app.window.isReleasedWhenClosed = false
             try expect(app.window is AppSafetyWindow, "Window must never be ordered on screen")
+            app.widthControl.popoverProvider = { AppSafetySizePopover() }
             // No test may reach the network or the owner's real destination: a fake SFTP destination and an in-process transfer.
             // Destinations live in the isolated support folder with in-memory secrets; ~/.aws is never read.
             let support = app.support
@@ -3496,14 +3517,17 @@ enum AppSafetyTests {
             }),
             ("Recovered Size uses five original steps, Shift continuity and brush font mapping", {
                 try expect(OriginalDrawingControls.sizeSteps == [1.5,4.125,6.75,9.375,12], "Original five step values")
-                let slider = BezelSizeSlider(frame: NSRect(x: 0, y: 0, width: 40, height: 82))
-                slider.setValueForPoint(NSPoint(x: 20, y: 16), modifiers: [])
+                let slider = BezelSizeSlider(frame: NSRect(origin: .zero, size: BezelSizeSlider.pillSize))
+                try expect(slider.beginGesture(), "A gesture opens on an enabled pill")
+                slider.trackValue(fraction: 0.75, modifiers: [])
                 try expect(slider.doubleValue == 9.375, "Original ordinary point mapping")
-                slider.setValueForPoint(NSPoint(x: 20, y: 10), modifiers: [.shift])
+                slider.trackValue(fraction: 0.84375, modifiers: [.shift])
                 try expect(slider.doubleValue == 10.359375, "Shift keeps intermediate values")
-                slider.setValueForPoint(NSPoint(x: 20, y: -100), modifiers: [.shift]); try expect(slider.doubleValue == 12, "Top clamps to original maximum")
-                slider.setValueForPoint(NSPoint(x: 20, y: 100), modifiers: []); try expect(slider.doubleValue == 1.5, "Bottom clamps to original minimum")
-                slider.setValueForPoint(NSPoint(x: 20, y: CGFloat.nan), modifiers: []); try expect(slider.doubleValue == 1.5, "Nonfinite input is ignored")
+                slider.trackValue(fraction: 5, modifiers: [.shift]); try expect(slider.doubleValue == 12, "The far end clamps to original maximum")
+                slider.trackValue(fraction: -5, modifiers: []); try expect(slider.doubleValue == 1.5, "The near end clamps to original minimum")
+                slider.trackValue(fraction: CGFloat.nan, modifiers: []); try expect(slider.doubleValue == 1.5, "Nonfinite input is ignored")
+                slider.endTracking()
+                slider.trackValue(fraction: 0.5, modifiers: []); try expect(slider.doubleValue == 1.5, "A value cannot change outside a gesture, so no change escapes undo grouping")
                 try expect(abs(OriginalDrawingControls.originalFontSize(1.5)-10) < 0.001 && abs(OriginalDrawingControls.originalFontSize(12)-64) < 0.001,
                            "Recovered polynomial endpoints")
                 try expect(OriginalDrawingControls.readableFontSize(1.5) == 18, "Explicit readability floor retains18 points")
@@ -3548,12 +3572,14 @@ enum AppSafetyTests {
                 app.widthControl.performValueChange(9.375, continuous: false)
                 try expect(pending.superview === app.canvas && pending.string == "Size pending" && !app.sizeUndoGrouping,
                            "Size preserves the native pending editor and closes its gesture group")
-                let location = app.widthControl.convert(NSPoint(x: 20, y: 16), to: nil)
+                let location = app.widthControl.convert(NSPoint(x: 24, y: 18), to: nil)
                 let event = NSEvent.mouseEvent(with: .leftMouseDown, location: location, modifierFlags: [], timestamp: 0,
                                               windowNumber: app.window.windowNumber, context: nil, eventNumber: 1, clickCount: 1, pressure: 1)!
                 app.widthControl.mouseDown(with: event); app.widthControl.mouseUp(with: event)
-                try expect(app.window.firstResponder === pending && pending.superview === app.canvas && !app.sizeUndoGrouping,
-                           "Actual slider mouse handling keeps pending annotation focus, not only its staged model")
+                try expect(app.widthControl.isPopoverShown && app.window.firstResponder === pending && pending.superview === app.canvas && !app.sizeUndoGrouping,
+                           "Clicking the Size pill opens its popover and keeps pending annotation focus, not only its staged model")
+                app.widthControl.dismissPopover()
+                try expect(!app.widthControl.isPopoverShown && !app.sizeUndoGrouping, "Closing the popover leaves no undo group open")
                 app.canvas.document.renderSize = NSSize(width: 200, height: 150)
                 app.widthControl.performValueChange(12, continuous: false)
                 try expect(app.canvas.fontSize == 256 && pending.font?.pointSize == 64,
@@ -3659,7 +3685,9 @@ enum AppSafetyTests {
                 var controls: [NSControl] = []
                 func collect(_ view: NSView) {
                     guard view !== app.canvas else { return }
-                    if let control = view as? NSControl, control is NSButton || control is NSTextField || control is BezelSizeSlider { controls.append(control) }
+                    // AppKit hosts a borderless popup's title in a private text field that reports its own 13 pt default while drawing at the button's font.
+                    let privateTitle = view is NSTextField && view.superview is NSButton
+                    if let control = view as? NSControl, !privateTitle, control is NSButton || control is NSTextField || control is BezelSizeSlider { controls.append(control) }
                     for child in view.subviews { collect(child) }
                 }
                 collect(content)
@@ -3698,7 +3726,7 @@ enum AppSafetyTests {
                     app.window.setFrame(NSRect(origin: app.window.frame.origin, size: size), display: false)
                     content.layoutSubtreeIfNeeded()
                     for control in controls where !control.isHiddenOrHasHiddenAncestor {
-                        try expect((control.font?.pointSize ?? 0) >= 18, "Every readable control retains at least 18-point type")
+                        try expect((control.font?.pointSize ?? 0) >= 18, "Every readable control retains at least 18-point type (\(type(of: control)) \(control.accessibilityLabel() ?? control.toolTip ?? "unlabeled") is \(control.font?.pointSize ?? 0) pt)")
                         let rect = control.convert(control.bounds, to: content)
                         try expect(rect.width > 0 && rect.height > 0 && content.bounds.insetBy(dx: -1, dy: -1).contains(rect), "Every control has a nonzero frame inside the window")
                     }
@@ -3711,10 +3739,10 @@ enum AppSafetyTests {
                 try expect(fill.state == (app.canvas.filled ? .on : .off) && shadow.state == (app.canvas.shadowed ? .on : .off), "Toolbox style checks reflect their actual state")
                 app.toggleBezelFill(fill); app.toggleBezelShadow(shadow)
             }),
-            ("Rail Wipe button reads Blank/Clear/Wipe from content through Undo, Redo and field editing", {
+            ("Wipe button reads Blank/Clear/Wipe from content through Undo, Redo and field editing", {
                 let fixture = try Fixture(), app = fixture.app, canvas = app.canvas
-                guard let content = app.window.contentView, let button = app.wipeRailButton, button.action == #selector(AppDelegate.wipe),
-                      button.target === app, button.isDescendant(of: content) else { throw Failure(description: "Wipe rail button must be located by its action") }
+                guard let content = app.window.contentView, let button = app.wipeButton, button.action == #selector(AppDelegate.wipe),
+                      button.target === app, button.isDescendant(of: content) else { throw Failure(description: "Wipe button must be located by its action") }
                 func reads(_ title: String, _ enabled: Bool) -> Bool {
                     button.title == title && button.isEnabled == enabled && button.isAccessibilityEnabled() == enabled && button.accessibilityLabel() == title
                 }
@@ -3722,7 +3750,7 @@ enum AppSafetyTests {
                 let hint = button.subviews.compactMap { $0 as? HintTrackingView }.first
                 try expect(hint != nil, "The Wipe hover hint tracker is retained for the disabled state")
                 hint?.onHover?(true); hint?.onHover?(false)
-                try expect(reads("Blank", false) && app.wipeRailButton === button, "Hover hints neither retitle nor re-enable a Blank button")
+                try expect(reads("Blank", false) && app.wipeButton === button, "Hover hints neither retitle nor re-enable a Blank button")
                 canvas.setBackgroundColor(.red)
                 try expect(reads("Clear", true), "A non-white background without artwork reads an enabled Clear")
                 app.undo(); try expect(reads("Blank", false), "Undo restores Blank")
@@ -3761,7 +3789,9 @@ enum AppSafetyTests {
                 try expect(GlassChromeButton.textColor(on: .blue) == .white, "Dark blue needs a light selected label")
             })
         ]
-        let tests = sharedCases + Self.modernCases + Self.webpostCases + Self.retiredFormatCases
+        // Development aid: APP_SAFETY_FILTER=<text> runs only the cases whose title contains it. Unset, every case runs.
+        let filter = ProcessInfo.processInfo.environment["APP_SAFETY_FILTER"]
+        let tests = (sharedCases + Self.modernCases + Self.webpostCases + Self.retiredFormatCases).filter { filter.map($0.0.contains) ?? true }
         var results: [[String: Any]] = [], failures = 0
         for (name, test) in tests {
             AppSafetyAlert.answers = []; AppSafetyAlert.seen = []; AppSafetyAlert.unexpected = []
