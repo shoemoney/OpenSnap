@@ -59,7 +59,7 @@ extension AuditRun {
         var headerGroups: [String: Any] = [:]
         for id in ["GlassHeaderLeading", "GlassToolBar", "GlassHeaderTrailing"] { headerGroups[id] = describeGroup(id) as Any }
         result["header"] = headerGroups
-        if let header = find("OpenSkitchHeader") {
+        if let header = find("OpenSnapHeader") {
             result["headerRow"] = box(header)
             var slack: [String: Any] = [:]
             func frameOf(_ id: String) -> CGRect? { find(id).map { $0.convert($0.bounds, to: nil) } }
@@ -101,8 +101,8 @@ extension AuditRun {
         footer["statusStringWidthAt18pt"] = textWidth(app.status.stringValue, size: 18)
         footer["dragSizeLabelStringWidthAt18pt"] = textWidth(app.dragSizeLabel.stringValue, size: 18)
         footer["footerRowGroup"] = describeGroup("GlassFooterRow") as Any
-        if let statusRow = find("OpenSkitchStatusRow") { footer["statusRow"] = box(statusRow) }
-        if let foot = find("OpenSkitchFooter"), let statusRow = find("OpenSkitchStatusRow"), let group = find("GlassFooterRow") {
+        if let statusRow = find("OpenSnapStatusRow") { footer["statusRow"] = box(statusRow) }
+        if let foot = find("OpenSnapFooter"), let statusRow = find("OpenSnapStatusRow"), let group = find("GlassFooterRow") {
             let row = foot.convert(foot.bounds, to: nil), s = statusRow.convert(statusRow.bounds, to: nil), g = group.convert(group.bounds, to: nil)
             footer["footerRow"] = box(foot)
             footer["slack"] = ["rowWidth": Double(row.width), "statusRowWidth": Double(s.width), "groupWidth": Double(g.width),
@@ -122,7 +122,7 @@ extension AuditRun {
     }
 
     func layoutBudget() {
-        let sha = ProcessInfo.processInfo.environment["AUDIT_SOURCE_SHA"] ?? "unknown"
+        let sha = sourceSha
         let widths: [CGFloat] = [980, 1024, 1280, 1440]
         var samples: [[String: Any]] = []
         let defaultFrame = window.frame
@@ -145,7 +145,7 @@ extension AuditRun {
                      "Link copied: https://cdn.example.com/pics/Quarterly-mockup-0000.png", "800 × 600 · 10 KB", "2400 × 1500 · 610 KB"] {
             typical[text] = textWidth(text, size: 18)
         }
-        write(["sourceSha": sha, "widths": widths.map { Double($0) }, "samples": samples, "statusTextWidthsAt18pt": typical,
-               "note": "frames are window points, top-left origin; fitting = NSView.fittingSize; hidden = isHidden or alpha 0"], to: "layout/budget-\(sha).json")
+        write(["sourceSha": sha, "iconMode": iconMode, "appearance": appearance, "widths": widths.map { Double($0) }, "samples": samples, "statusTextWidthsAt18pt": typical,
+               "note": "frames are window points, top-left origin; fitting = NSView.fittingSize; hidden = isHidden or alpha 0"], to: "layout/budget-\(sha)\(iconMode == "sf" ? "" : "-" + iconMode).json")
     }
 }

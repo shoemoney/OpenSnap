@@ -1,71 +1,113 @@
 #!/bin/sh
-# Visual audit evidence run. Launches an ISOLATED COPY of the built app (throwaway bundle id, throwaway home,
-# throwaway support folder), once per appearance and surface group, and writes PNGs + metrics + AX dumps.
-# Captures only the app's own windows; never the screen. Proves the real stores were untouched.
+# The only screenshot path. Visual audit evidence run: launches an ISOLATED COPY of the built app (throwaway bundle id,
+# throwaway home, support folder and evidence folder) once per appearance, icon mode and surface group, and writes PNGs +
+# view-tree metrics + AX dumps + a manifest. It captures only the app's own windows (CGWindowList by window number, else
+# cacheDisplay); it never captures the screen. build/OpenSnap.app is never run in place, so the owner's defaults domain,
+# support folder and Keychain are never reachable; the real stores are hashed before and after and any change fails the run.
 #
-#   sh tools/eye-dump-audit.sh OUTDIR [--groups main,more,overlays,welcome,fullscreen] [--appearances light,dark]
+#   sh tools/eye-dump-audit.sh OUTDIR [--groups main,more,overlays,sizes,fullscreen] [--appearances light,dark]
+#                                     [--icons sf|fa|both] [--sizes 980xmin,1024x740,1280x800,1440x900,full]
 #
-# OUTDIR gets raw/ (per-capture files), safety.txt (hashes before/after), run.log.
+# Other groups: layout (width budget), delta (a short regression subset). --surfaces IDS runs exactly those surface ids.
+# --app APP uses a pre-built bundle instead of build/OpenSnap.app; --sha / --suffix tag the captures; --guard-home DIR points
+# the store guard at another home (tests only; recorded in safety.txt); --no-wait-gui skips waiting for other agents' GUI tests.
+#
+# OUTDIR gets raw-<icons>/ (per-capture files), manifest.json, safety.txt (hashes before/after) and run.log.
+# Exit status is non-zero when any watched real store changed.
 set -eu
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-OUT=${1:?usage: eye-dump-audit.sh OUTDIR [--groups ...] [--appearances ...]}
+OUT=${1:?usage: eye-dump-audit.sh OUTDIR [--groups ...] [--appearances ...] [--icons sf|fa|both] [--sizes ...]}
 shift
-GROUPS_WANTED="main,more,overlays,welcome,fullscreen"
+GROUPS_WANTED="main,more,overlays,sizes,fullscreen"
 APPEARANCES="light,dark"
-APP_SRC=""; SOURCE_SHA=""; SUFFIX=""; CUSTOM=""
+ICONS="sf"
+SIZES=""
+APP_SRC=""; SOURCE_SHA=""; SUFFIX=""; CUSTOM=""; GUARD_HOME=""; WAIT_GUI=yes; GROUPS_GIVEN=no
 while [ "$#" -gt 0 ]; do
     case "$1" in
-        --groups) GROUPS_WANTED=$2; shift 2 ;;
+        --groups) GROUPS_WANTED=$2; GROUPS_GIVEN=yes; shift 2 ;;
         --appearances) APPEARANCES=$2; shift 2 ;;
-        --surfaces) CUSTOM=$2; shift 2 ;;      # one custom run with exactly these surface ids
-        --app) APP_SRC=$2; shift 2 ;;          # a pre-built OpenSkitch.app to copy (default: build/OpenSkitch.app)
-        --sha) SOURCE_SHA=$2; shift 2 ;;       # recorded as sourceSha in every capture
-        --suffix) SUFFIX=$2; shift 2 ;;        # appended to every file stem, e.g. @4b2ae0f
+        --icons) ICONS=$2; shift 2 ;;
+        --sizes) SIZES=$2; shift 2 ;;
+        --surfaces) CUSTOM=$2; shift 2 ;;
+        --app) APP_SRC=$2; shift 2 ;;
+        --sha) SOURCE_SHA=$2; shift 2 ;;
+        --suffix) SUFFIX=$2; shift 2 ;;
+        --guard-home) GUARD_HOME=$2; shift 2 ;;
+        --no-wait-gui) WAIT_GUI=no; shift ;;
         *) echo "unknown argument $1" >&2; exit 2 ;;
     esac
 done
+case "$ICONS" in sf) ICON_MODES="sf" ;; fa) ICON_MODES="fa" ;; both) ICON_MODES="sf fa" ;; *) echo "--icons must be sf, fa or both" >&2; exit 2 ;; esac
+if [ -n "$SIZES" ] && [ "$GROUPS_GIVEN" = yes ]; then
+    case ",$GROUPS_WANTED," in *,sizes,*) ;; *) GROUPS_WANTED="$GROUPS_WANTED,sizes" ;; esac
+fi
 mkdir -p "$OUT"
 OUT=$(CDPATH= cd -- "$OUT" && pwd)
-RAW="$OUT/raw"; mkdir -p "$RAW"
 
 if [ -z "$APP_SRC" ]; then
-    APP_SRC="$ROOT/build/OpenSkitch.app"
+    APP_SRC="$ROOT/build/OpenSnap.app"
     NEWEST=$(ls -t "$ROOT"/Sources/*.swift | head -1)
-    if [ ! -x "$APP_SRC/Contents/MacOS/OpenSkitch" ] || [ "$NEWEST" -nt "$APP_SRC/Contents/MacOS/OpenSkitch" ]; then
+    if [ ! -x "$APP_SRC/Contents/MacOS/OpenSnap" ] || [ "$NEWEST" -nt "$APP_SRC/Contents/MacOS/OpenSnap" ]; then
         sh "$ROOT/tools/build.sh" >/dev/null
     fi
 fi
-[ -n "$SOURCE_SHA" ] || SOURCE_SHA=$(git -C "$ROOT" rev-parse --short HEAD)
+if [ -z "$SOURCE_SHA" ]; then
+    SOURCE_SHA=$(git -C "$ROOT" rev-parse --short HEAD)
+    [ -z "$(git -C "$ROOT" status --porcelain -- Sources 2>/dev/null)" ] || SOURCE_SHA="$SOURCE_SHA-dirty"
+fi
 
-REAL_ID="com.shoemoney.skitch-redux"
+REAL_ID="com.shoemoney.opensnap"
 THROWAWAY_ID="$REAL_ID.eyedump-$$"
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/eye-dump-audit.XXXXXX")
-APP="$TMP/OpenSkitch.app"
-REAL_SUPPORT="$HOME/Library/Application Support/SkitchRedux"
+APP_NAME=$(basename "$APP_SRC")
+APP="$TMP/$APP_NAME"
+EXE=$(/usr/libexec/PlistBuddy -c "Print :CFBundleExecutable" "$APP_SRC/Contents/Info.plist")
+GUARD="python3 -I $ROOT/tools/real_store_guard.py"
+[ -z "$GUARD_HOME" ] || GUARD="$GUARD --home $GUARD_HOME"
+REAL_HOME=${GUARD_HOME:-$HOME}
 
-store_hash() {
-    if [ -d "$REAL_SUPPORT" ]; then find "$REAL_SUPPORT" -type f -exec stat -f '%N %z %m' {} \; 2>/dev/null | sort | shasum | cut -d' ' -f1
-    else echo "absent"; fi
-}
-defaults_hash() { defaults export "$REAL_ID" - 2>/dev/null | shasum | cut -d' ' -f1; }
-
-cleanup() {
+drop_throwaway_defaults() {
     defaults delete "$THROWAWAY_ID" >/dev/null 2>&1 || true
     rm -f "$HOME/Library/Preferences/$THROWAWAY_ID.plist"
+}
+cleanup() {
+    drop_throwaway_defaults
     rm -rf "$TMP"
 }
 trap cleanup EXIT
 
-BEFORE_STORE=$(store_hash); BEFORE_DEFAULTS=$(defaults_hash)
+if [ "$THROWAWAY_ID" = "$REAL_ID" ]; then echo "refusing: throwaway id equals the real id" >&2; exit 2; fi
+$GUARD snapshot "$TMP/guard-before.json" > "$TMP/guard-before.txt"
 {
-    echo "before: SkitchRedux files hash   $BEFORE_STORE"
-    echo "before: $REAL_ID defaults hash   $BEFORE_DEFAULTS"
+    echo "sourceSha        $SOURCE_SHA"
+    echo "real stores      before: $(cat "$TMP/guard-before.txt")"
+    echo "guard home       $REAL_HOME"
+    echo "bundle id        $THROWAWAY_ID (real id $REAL_ID is never launched)"
+    echo "app copy         $APP (copied from $APP_SRC; the source bundle is never executed)"
+    echo "isolation        env -i; HOME and CFFIXED_USER_HOME, TMPDIR, OPENSNAP_APP_SUPPORT, OPENSNAP_EVIDENCE_DIR all under $TMP; OPENSNAP_FIXTURE unset"
+    echo "destinations     none exist in the throwaway support folder; with OPENSNAP_APP_SUPPORT set the app keeps secrets in memory (no Keychain item is read or written) and the S19/S21 flows stub the uploader"
 } | tee "$OUT/safety.txt"
 
-cp -R "$APP_SRC" "$APP"
-/usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $THROWAWAY_ID" "$APP/Contents/Info.plist"
-codesign --force --sign - "$APP" >/dev/null 2>&1
-mkdir -p "$TMP/home"
+# Kernel-enforced fences for the child, when sandbox-exec exists: no network at all, and no access to the real stores,
+# AWS/SSH config, Keychain files or any original/ asset folder. A violation shows up as an error in run.log, not as a silent read.
+SANDBOX=""
+PROFILE="$TMP/audit.sb"
+if [ -x /usr/bin/sandbox-exec ] && [ "${EYE_DUMP_AUDIT_NO_SANDBOX:-0}" != 1 ]; then
+    {
+        echo "(version 1)"
+        echo "(allow default)"
+        echo "(deny network* (remote ip))"
+        echo "(deny network-outbound (remote tcp) (remote udp))"
+        for fenced in "$REAL_HOME/Library/Application Support/OpenSnap" "$REAL_HOME/Library/Application Support/SkitchRedux" "$REAL_HOME/.aws" "$REAL_HOME/.ssh" "$REAL_HOME/Library/Keychains" "$ROOT/original"; do
+            echo "(deny file-read* file-write* (subpath \"$fenced\"))"
+        done
+    } > "$PROFILE"
+    SANDBOX="/usr/bin/sandbox-exec -f $PROFILE"
+    echo "sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and original/ unreadable" | tee -a "$OUT/safety.txt"
+else
+    echo "sandbox          NOT USED (sandbox-exec unavailable or disabled); only the before/after hash guard protects the real stores" | tee -a "$OUT/safety.txt"
+fi
 
 # Other agents' GUI test runs. Ignores shells whose command line merely mentions the names (including this script's own parent).
 other_gui_busy() {
@@ -80,6 +122,7 @@ other_gui_busy() {
     return 1
 }
 wait_for_other_gui() {
+    [ "$WAIT_GUI" = yes ] || return 0
     waited=0
     while other_gui_busy; do
         if [ "$waited" -ge 900 ]; then echo "other GUI tests still running after 15 minutes; giving up" >&2; return 1; fi
@@ -88,46 +131,76 @@ wait_for_other_gui() {
     done
 }
 
+# One throwaway copy of the app per icon mode. sf: the Font Awesome subset fonts are removed from the COPY so the chrome
+# can only resolve SF Symbols. fa: needs the subsets in the source bundle; without them the mode is reported unavailable.
+prepare_copy() {
+    mode=$1
+    rm -rf "$APP"
+    cp -R "$APP_SRC" "$APP"
+    /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $THROWAWAY_ID" "$APP/Contents/Info.plist"
+    if [ "$mode" = sf ]; then rm -f "$APP/Contents/Resources"/FontAwesome7Pro-*-subset.ttf; fi
+    codesign --force --sign - "$APP" >/dev/null 2>&1
+}
+have_fa_fonts() { ls "$APP_SRC/Contents/Resources"/FontAwesome7Pro-*-subset.ttf >/dev/null 2>&1; }
+
 run_one() {
-    appearance=$1; surfaces=$2; welcome=$3; label=$4
+    mode=$1; appearance=$2; surfaces=$3; label=$4
+    raw="$OUT/raw-$mode"
     wait_for_other_gui || return 1
-    support="$TMP/support-$label-$appearance"
-    mkdir -p "$support"
-    [ "$welcome" = yes ] || : > "$support/FirstLaunchDone"
-    echo "== $label ($appearance): $surfaces"
+    support="$TMP/support-$label-$appearance-$mode"
+    mkdir -p "$support" "$TMP/home" "$TMP/tmp"
+    echo "== $label ($appearance, icons $mode): $surfaces"
     (
-        env -u SKITCH_FIXTURE AUDIT_SOURCE_SHA="$SOURCE_SHA" AUDIT_STEM_SUFFIX="$SUFFIX" CFFIXED_USER_HOME="$TMP/home" SKITCH_APP_SUPPORT="$support" SKITCH_APPEARANCE=modern \
-            "$APP/Contents/MacOS/OpenSkitch" --eye-dump-audit "$RAW" --audit-appearance "$appearance" --audit-surfaces "$surfaces" >>"$OUT/run.log" 2>&1
+        # shellcheck disable=SC2086
+        env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin HOME="$TMP/home" CFFIXED_USER_HOME="$TMP/home" TMPDIR="$TMP/tmp" \
+            OPENSNAP_APP_SUPPORT="$support" OPENSNAP_EVIDENCE_DIR="$TMP/evidence" \
+            AUDIT_SOURCE_SHA="$SOURCE_SHA" AUDIT_STEM_SUFFIX="$SUFFIX" \
+            $SANDBOX "$APP/Contents/MacOS/$EXE" --eye-dump-audit "$raw" --audit-appearance "$appearance" --audit-icons "$mode" \
+            --audit-surfaces "$surfaces" --audit-sizes "$SIZES" >>"$OUT/run.log" 2>&1
     ) &
     child=$!
     ( sleep 420; kill "$child" >/dev/null 2>&1 || true ) 2>/dev/null &
     watchdog=$!
-    wait "$child" || echo "   child exited non-zero ($label/$appearance)" >&2
+    wait "$child" || echo "   child exited non-zero ($label/$appearance/$mode)" >&2
+    pkill -P "$watchdog" >/dev/null 2>&1 || true
     kill "$watchdog" >/dev/null 2>&1 || true
     wait "$watchdog" 2>/dev/null || true
     rm -rf "$support"
+    drop_throwaway_defaults
 }
 
-for appearance in $(echo "$APPEARANCES" | tr ',' ' '); do
-    if [ -n "$CUSTOM" ]; then run_one "$appearance" "$CUSTOM" no custom; continue; fi
-    for group in $(echo "$GROUPS_WANTED" | tr ',' ' '); do
-        case "$group" in
-            main) run_one "$appearance" "ENV,S01,S11,S02,S03,S04,S05,S06,S07,S08,S09,S10" no main ;;
-            more) run_one "$appearance" "S12,S16,S17,S18,S19,S20,S21,S22,S23,S24,S25,S26,S28,S29" no more ;;
-            overlays) run_one "$appearance" "S13,S14,S15" no overlays ;;
-            welcome) run_one "$appearance" "S27" yes welcome ;;
-            fullscreen) run_one "$appearance" "S11F" no fullscreen ;;
-            layout) run_one "$appearance" "LAYOUT" no layout ;;
-            proto) run_one "$appearance" "PROTO" no proto ;;
-            delta) run_one "$appearance" "ENV,S01,S02,S03,S05,S07,S09,S11,S12,S14,S17,S24,S25,S29" no delta ;;
-        esac
+for mode in $ICON_MODES; do
+    mkdir -p "$OUT/raw-$mode"
+    if [ "$mode" = fa ] && ! have_fa_fonts; then
+        printf '{"requested":"fa","effective":"none","reason":"FA unavailable: no FontAwesome7Pro-*-subset.ttf in %s (build with OPENSNAP_FETCH_FONTAWESOME=1 and your own token)"}\n' "$APP_SRC" > "$OUT/raw-fa/icon-mode-unavailable.json"
+        echo "icons fa: FA unavailable, skipped" | tee -a "$OUT/safety.txt"
+        continue
+    fi
+    prepare_copy "$mode"
+    for appearance in $(echo "$APPEARANCES" | tr ',' ' '); do
+        if [ -n "$CUSTOM" ]; then run_one "$mode" "$appearance" "$CUSTOM" custom; continue; fi
+        for group in $(echo "$GROUPS_WANTED" | tr ',' ' '); do
+            case "$group" in
+                main) run_one "$mode" "$appearance" "ENV,S01,S11,S02,S03,S04,S05,S06,S07,S08,S09,S10" main ;;
+                more) run_one "$mode" "$appearance" "S12,S16,S17,S18,S19,S20,S21,S22,S23,S24,S25,S26,S28,S29" more ;;
+                overlays) run_one "$mode" "$appearance" "S13,S14,S15" overlays ;;
+                sizes) run_one "$mode" "$appearance" "S11M" sizes ;;
+                fullscreen) run_one "$mode" "$appearance" "S11F" fullscreen ;;
+                layout) run_one "$mode" "$appearance" "LAYOUT" layout ;;
+                delta) run_one "$mode" "$appearance" "ENV,S01,S02,S03,S05,S07,S09,S11,S12,S14,S17,S24,S25,S29" delta ;;
+                *) echo "unknown group $group" >&2 ;;
+            esac
+        done
     done
 done
 
-AFTER_STORE=$(store_hash); AFTER_DEFAULTS=$(defaults_hash)
+drop_throwaway_defaults
+python3 -I "$ROOT/tools/eye-dump-audit-manifest.py" "$OUT" --sha "$SOURCE_SHA" --bundle-id "$THROWAWAY_ID" >/dev/null || echo "manifest could not be written" >&2
+
+status=0
+$GUARD compare "$TMP/guard-before.json" > "$TMP/guard-after.txt" || status=1
 {
-    echo "after:  SkitchRedux files hash   $AFTER_STORE"
-    echo "after:  $REAL_ID defaults hash   $AFTER_DEFAULTS"
-    [ "$BEFORE_STORE" = "$AFTER_STORE" ] && echo "RESULT store unchanged" || echo "RESULT STORE CHANGED"
-    [ "$BEFORE_DEFAULTS" = "$AFTER_DEFAULTS" ] && echo "RESULT defaults unchanged" || echo "RESULT DEFAULTS CHANGED"
+    echo "real stores      after:  $(sed -n '1p' "$TMP/guard-after.txt")"
+    sed -n '2,$p' "$TMP/guard-after.txt"
 } | tee -a "$OUT/safety.txt"
+exit "$status"

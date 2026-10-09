@@ -6,17 +6,23 @@ import Darwin
 /// a view-tree metrics file, an accessibility dump and the key-view loop, then quits. It captures only this process's own
 /// windows (CGWindowList by window number); it never captures the screen. Extra flags:
 ///   --audit-appearance light|dark   --audit-surfaces S01,S02,...   (default: every surface)
+///   --audit-icons sf|fa             --audit-sizes 980xmin,1024x740,...,full
+/// Run it only through tools/eye-dump-audit.sh, which supplies the isolation this file refuses to run without.
 extension AppDelegate {
+    /// Every bundle id a harness copy may carry. The real ids (com.shoemoney.opensnap, and the retired product's) never match.
+    static let auditBundlePrefix = "com.shoemoney.opensnap.eyedump-"
+
     /// The audit draws on the live canvas and quits clean, so it is ignored unless the process is fully isolated:
-    /// an isolated support folder, an isolated home, and a bundle id that is not the installed app's.
+    /// an isolated support folder, an isolated home, a throwaway bundle id (its own defaults domain) and no document fixture.
     static func eyeDumpAuditDirectory(arguments: [String] = CommandLine.arguments, environment: [String: String] = ProcessInfo.processInfo.environment,
                                       bundleIdentifier: String? = Bundle.main.bundleIdentifier) -> URL? {
         guard let flag = arguments.firstIndex(of: "--eye-dump-audit"), arguments.indices.contains(flag + 1) else { return nil }
         var isDirectory: ObjCBool = false
-        guard let support = environment["SKITCH_APP_SUPPORT"], !support.isEmpty,
+        guard let support = environment["OPENSNAP_APP_SUPPORT"], !support.isEmpty,
               FileManager.default.fileExists(atPath: support, isDirectory: &isDirectory), isDirectory.boolValue,
               let home = environment["CFFIXED_USER_HOME"], !home.isEmpty,
-              bundleIdentifier != "com.shoemoney.skitch-redux" else { return nil }
+              (environment["OPENSNAP_FIXTURE"] ?? "").isEmpty,
+              let bundleIdentifier, bundleIdentifier.hasPrefix(auditBundlePrefix) else { return nil }
         return URL(fileURLWithPath: arguments[flag + 1], isDirectory: true)
     }
 
@@ -25,34 +31,45 @@ extension AppDelegate {
         func value(_ flag: String) -> String? { args.firstIndex(of: flag).flatMap { args.indices.contains($0 + 1) ? args[$0 + 1] : nil } }
         let appearance = value("--audit-appearance") == "dark" ? "dark" : "light"
         let wanted = Set((value("--audit-surfaces") ?? "").split(separator: ",").map { String($0).trimmingCharacters(in: .whitespaces).uppercased() })
-        let run = AuditRun(app: self, dir: dir, appearance: appearance, wanted: wanted)
+        let requestedIcons = value("--audit-icons") == "fa" ? "fa" : "sf"
+        let sizes = (value("--audit-sizes") ?? "").split(separator: ",").map { String($0).trimmingCharacters(in: .whitespaces).lowercased() }.filter { !$0.isEmpty }
+        let run = AuditRun(app: self, dir: dir, appearance: appearance, wanted: wanted, requestedIcons: requestedIcons, sizes: sizes)
         run.execute()
         dirty = false
         NSApp.terminate(nil)
     }
 }
 
-/// One audit process: one appearance, one set of surfaces, one fresh isolated support folder.
+/// One audit process: one appearance, one icon mode, one set of surfaces, one fresh isolated support folder.
 @MainActor
 final class AuditRun {
     unowned let app: AppDelegate
     let dir: URL
     let appearance: String
     let wanted: Set<String>
+    let requestedIcons: String
+    let sizes: [String]
     var gaps: [[String: String]] = []
     var window: NSWindow { app.window }
 
-    init(app: AppDelegate, dir: URL, appearance: String, wanted: Set<String>) {
+    init(app: AppDelegate, dir: URL, appearance: String, wanted: Set<String>, requestedIcons: String = "sf", sizes: [String] = []) {
         self.app = app; self.dir = dir; self.appearance = appearance; self.wanted = wanted
+        self.requestedIcons = requestedIcons; self.sizes = sizes
         for sub in ["", "metrics", "ax", "meta", "layout"] {
             try? FileManager.default.createDirectory(at: dir.appendingPathComponent(sub), withIntermediateDirectories: true)
         }
     }
 
     func wants(_ id: String) -> Bool { wanted.isEmpty || wanted.contains(id) }
+
+    /// What the chrome really resolved, not what was asked for: "fa" only when both bundled Font Awesome families are registered
+    /// (the harness script removes the font files from its throwaway copy to force "sf").
+    var iconMode: String { FontAwesomeFont.isAvailable(.regular) && FontAwesomeFont.isAvailable(.solid) ? "fa" : "sf" }
+    var sourceSha: String { ProcessInfo.processInfo.environment["AUDIT_SOURCE_SHA"] ?? "unknown" }
+    var stemSuffix: String { ProcessInfo.processInfo.environment["AUDIT_STEM_SUFFIX"] ?? "" }
     func pump(_ seconds: TimeInterval = 0.45) { RunLoop.current.run(until: Date(timeIntervalSinceNow: seconds)) }
     func gap(_ id: String, _ surface: String, _ reason: String) {
-        gaps.append(["id": id, "surface": surface, "appearance": appearance, "reason": reason])
+        gaps.append(["id": id, "surface": surface, "appearance": appearance, "iconMode": iconMode, "reason": reason])
     }
 
     // MARK: image capture
@@ -141,27 +158,31 @@ final class AuditRun {
                 pointSize = CGSize(width: CGFloat(cropped.width) / scale, height: CGFloat(cropped.height) / scale)
             }
         }
-        let stem = "\(id)-\(slug)-\(appearance)" + (ProcessInfo.processInfo.environment["AUDIT_STEM_SUFFIX"] ?? "")
+        let stem = stemFor(id, slug)
         guard let png = NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]) else {
             gap(id, surface + " / " + state, "PNG encoding failed"); return nil
         }
         try? png.write(to: dir.appendingPathComponent(stem + ".png"))
 
         let windowsInfo = targets.map { windowMetrics($0) }
-        write(["appearance": appearance, "windows": windowsInfo], to: "metrics/\(stem).json")
-        write(["appearance": appearance, "windows": targets.map { accessibilityDump($0) }], to: "ax/\(stem).json")
+        write(["sourceSha": sourceSha, "id": id, "appearance": appearance, "iconMode": iconMode, "windows": windowsInfo], to: "metrics/\(stem).json")
+        write(["sourceSha": sourceSha, "id": id, "appearance": appearance, "iconMode": iconMode, "windows": targets.map { accessibilityDump($0) }], to: "ax/\(stem).json")
 
         var meta: [String: Any] = [
             "id": id, "slug": slug, "surface": surface, "state": state, "appearance": appearance, "file": stem + ".png",
             "pixelSize": [image.width, image.height], "pointSize": [Double(pointSize.width.rounded()), Double(pointSize.height.rounded())],
             "scale": Double(scale), "method": method, "sourceRefs": refs,
             "windows": targets.map { ["title": $0.title, "class": String(describing: type(of: $0)), "frame": rectJSON($0.frame), "isKey": $0.isKeyWindow] },
-            "sourceSha": ProcessInfo.processInfo.environment["AUDIT_SOURCE_SHA"] ?? "unknown", "windowAlpha": Double(targets.first?.alphaValue ?? 1), "appActive": NSApp.isActive, "opaqueFraction": opaqueFraction(image)
+            "sourceSha": sourceSha, "iconMode": iconMode, "windowSize": [Double(window.frame.width.rounded()), Double(window.frame.height.rounded())],
+            "windowAlpha": Double(targets.first?.alphaValue ?? 1), "appActive": NSApp.isActive, "opaqueFraction": opaqueFraction(image)
         ]
         for (key, item) in extra { meta[key] = item }
         write(meta, to: "meta/\(stem).json")
         return stem
     }
+
+    /// File stem shared by every artefact of one capture. Icon-mode runs write to separate folders, so the stem stays the same.
+    func stemFor(_ id: String, _ slug: String) -> String { "\(id)-\(slug)-\(appearance)" + stemSuffix }
 
     func write(_ object: Any, to relative: String) {
         guard JSONSerialization.isValidJSONObject(object),
@@ -349,10 +370,12 @@ final class AuditRun {
             "modernChromePresent": app.modernChrome != nil,
             "appIsActive": NSApp.isActive, "mainWindowIsKey": window.isKeyWindow,
             "bundleIdentifier": Bundle.main.bundleIdentifier ?? "bare binary (no bundle)",
+            "sourceSha": sourceSha, "iconMode": iconMode, "iconModeRequested": requestedIcons,
+            "fontAwesomeRegular": FontAwesomeFont.isAvailable(.regular), "fontAwesomeSolid": FontAwesomeFont.isAvailable(.solid),
             "defaultWindowFrame": rectJSON(window.frame), "contentMinSize": [Double(window.contentMinSize.width), Double(window.contentMinSize.height)],
             "minSize": [Double(window.minSize.width), Double(window.minSize.height)]
         ]
-        write(environment, to: "environment" + (ProcessInfo.processInfo.environment["AUDIT_STEM_SUFFIX"] ?? "") + ".json")
+        write(environment, to: "environment" + stemSuffix + ".json")
     }
 
     func menuNode(_ menu: NSMenu, depth: Int = 0) -> [String: Any] {

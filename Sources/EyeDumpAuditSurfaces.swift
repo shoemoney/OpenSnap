@@ -66,12 +66,12 @@ extension AuditRun {
     }
 
     func headerCrop() -> CGRect? {
-        guard let header = find("OpenSkitchHeader") else { return nil }
+        guard let header = find("OpenSnapHeader") else { return nil }
         let r = header.convert(header.bounds, to: nil)
         return CGRect(x: 0, y: 0, width: window.frame.width, height: window.frame.height - r.minY + 6)
     }
     func footerCrop() -> CGRect? {
-        guard let footer = find("OpenSkitchFooter") else { return nil }
+        guard let footer = find("OpenSnapFooter") else { return nil }
         let r = footer.convert(footer.bounds, to: nil)
         let top = window.frame.height - r.maxY - 8
         return CGRect(x: 0, y: top, width: window.frame.width, height: window.frame.height - top)
@@ -197,7 +197,7 @@ extension AuditRun {
     func loadSynthetic(size: CGSize, name: String) {
         canvas.newBlank(size: size)
         canvas.setBackground(AuditRun.syntheticImage(size: size))
-        app.documentGeneration = UUID(); app.legacyMetadata = .init()
+        app.documentGeneration = UUID()
         canvas.editingUndoManager.removeAllActions(); app.currentURL = nil
         app.adoptRasterViewport()
         app.nameField.stringValue = name
@@ -272,7 +272,16 @@ extension AuditRun {
         window.makeKeyAndOrderFront(nil)
         pump(1.0)
         guard app.modernChrome != nil else {
-            gap("ALL", "Whole audit", "Modern chrome is absent in this process; nothing audited")
+            gap("ALL", "Whole audit", "The editor chrome is absent in this process; nothing audited")
+            finish(); return
+        }
+        if requestedIcons == "fa" && iconMode != "fa" {
+            gap("ALL", "Whole audit", "FA unavailable: icon mode fa was requested but no Font Awesome subset fonts are bundled in this app copy, so nothing was captured")
+            write(["requested": "fa", "effective": iconMode, "reason": "FA unavailable"], to: "icon-mode-unavailable.json")
+            finish(); return
+        }
+        if requestedIcons == "sf" && iconMode != "sf" {
+            gap("ALL", "Whole audit", "icon mode sf was requested but Font Awesome fonts are registered in this app copy, so nothing was captured (the script must remove them from its throwaway copy)")
             finish(); return
         }
         if wants("ENV") { writeEnvironment(preOverrideAppearance: before) }
@@ -293,10 +302,7 @@ extension AuditRun {
         RunLoop.main.add(modalGuard, forMode: .common)
 
         if wanted.contains("LAYOUT") { layoutBudget() }
-        if wanted.contains("PROTO") { if #available(macOS 26, *) { proto() } }
-        if wanted.contains("S27") { s27() }
-        let fresh = !wanted.contains("S27")
-        if fresh {
+        do {
             step("S01", "editor empty") { s01() }
             step("S11", "window sizes") { s11() }
             step("S02", "editor populated") { s02() }
@@ -326,23 +332,18 @@ extension AuditRun {
             step("S14", "countdown") { s14() }
             step("S15", "capture flash") { s15() }
         }
+        if wanted.contains("S11M") { s11SizeMatrix() }
         if wanted.contains("S11F") { s11Fullscreen() }
         finish()
     }
 
     func finish() {
-        let name = "gaps-\(appearance)-\(wanted.sorted().joined(separator: "_"))-\(getpid()).json"
+        let name = "gaps-\(appearance)-\(iconMode)-\(wanted.sorted().joined(separator: "_"))-\(getpid()).json"
         try? FileManager.default.createDirectory(at: dir.appendingPathComponent("gapsraw"), withIntermediateDirectories: true)
         write(gaps, to: "gapsraw/\(name)")
     }
 
     // MARK: surfaces
-
-    func s27() {
-        // The app opened its own bundled welcome document at launch (no FirstLaunchDone marker in the isolated support folder).
-        shoot("S27", "first-launch-welcome", surface: "first launch / welcome document", state: "empty support dir: bundled welcome document",
-              refs: ["App.swift|firstLaunchDocumentURL", "App.swift|openURL(welcome)"], settle: 1.0)
-    }
 
     func s01() {
         shoot("S01", "editor-empty", surface: "editor, empty", state: "fresh blank canvas, default window",
@@ -375,6 +376,38 @@ extension AuditRun {
             shoot("S11", "width-\(width)", surface: "window sizes", state: "window width \(width) pt, default height", refs: ["ModernEditorChrome.swift|static let minimumWindowWidth"])
         }
         restore()
+    }
+
+    /// The rail-removal acceptance matrix: the editor at each named window size, populated with synthetic content.
+    /// Sizes come from --audit-sizes: `WxH`, `Wxmin` (that width at the smallest height the window allows) or `full` (the screen's visible frame).
+    static let defaultSizeSpecs = ["980xmin", "1024x740", "1280x800", "1440x900", "full"]
+
+    func s11SizeMatrix() {
+        let specs = sizes.isEmpty ? AuditRun.defaultSizeSpecs : sizes
+        let defaultFrame = window.frame
+        let screen = window.screen?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
+        loadSynthetic(size: CGSize(width: 1200, height: 800), name: "Size matrix")
+        _ = addAllAnnotationKinds(scale: 1)
+        for spec in specs {
+            var size = CGSize.zero
+            if spec == "full" { size = screen.size }
+            else {
+                let parts = spec.split(separator: "x").map(String.init)
+                guard parts.count == 2, let width = Double(parts[0]), width > 0 else { gap("S11M", "window size matrix", "unusable size spec \(spec)"); continue }
+                let height = parts[1] == "min" ? Double(window.minSize.height) : (Double(parts[1]) ?? 0)
+                guard height > 0 else { gap("S11M", "window size matrix", "unusable size spec \(spec)"); continue }
+                size = CGSize(width: width, height: height)
+            }
+            let origin = CGPoint(x: screen.minX, y: screen.maxY - size.height)
+            window.setFrame(CGRect(origin: origin, size: size), display: true)
+            pump(0.5)
+            let landed = window.frame.size
+            let clamped = abs(landed.width - size.width) > 1 || abs(landed.height - size.height) > 1
+            shoot("S11M", "size-\(spec)", surface: "window size matrix", state: "requested \(spec) (\(Int(size.width))x\(Int(size.height)) pt), window is \(Int(landed.width))x\(Int(landed.height)) pt",
+                  refs: ["ModernEditorChrome.swift|private func build(actions"], extra: ["requestedSize": spec, "requestedPoints": [Double(size.width), Double(size.height)], "sizeClamped": clamped])
+        }
+        window.setFrame(defaultFrame, display: true)
+        pump(0.3)
     }
 
     func s11Fullscreen() {
@@ -602,7 +635,7 @@ extension AuditRun {
 
     func s16() {
         let message = "Screen Recording access is not granted. Enable this app in System Settings > Privacy & Security > Screen Recording, then reopen it if macOS requests that."
-        let error = NSError(domain: "SkitchRedux.Capture", code: 6, userInfo: [NSLocalizedDescriptionKey: message])
+        let error = NSError(domain: "OpenSnap.Capture", code: 6, userInfo: [NSLocalizedDescriptionKey: message])
         captureModal("S16", "permission-alert", surface: "Screen Recording permission alert", state: "the alert Capture.swift raises when Screen Recording is missing (built in-process; TCC never asked)",
                      refs: ["Capture.swift|Screen Recording access is not granted", "App.swift|func error(_ error: Error)"]) { app.error(error) }
     }
@@ -614,7 +647,7 @@ extension AuditRun {
             shoot("S17", "preferences-general", surface: "Preferences: General", state: "General preferences window (single page)", windows: [prefs],
                   refs: ["App.swift|@objc func showPreferences()", "GeneralPreferencesForm.swift|final class GeneralPreferencesForm"])
             if let form = app.preferencesForm {
-                form.synchronize(GeneralPreferencesState(drawingPrecision: .loose, arrowHead: 1, includeSkitch: true, statusMenu: 1, showToolTips: true, showKeyboardTips: true))
+                form.synchronize(GeneralPreferencesState(drawingPrecision: .loose, arrowHead: 1, includeApp: true, statusMenu: 1, showToolTips: true, showKeyboardTips: true))
                 shoot("S17", "preferences-alt-values", surface: "Preferences: General", state: "alternate values selected (Loose, Start, Menu bar, both tip overlays on)", windows: [prefs],
                       refs: ["GeneralPreferencesForm.swift|func synchronize"])
             }
@@ -769,7 +802,7 @@ extension AuditRun {
         menus["snapAlternate"] = "Snap has no menu: left-click = region/window snap, right-click or Control-click = Fullscreen alternate (OriginalActionButton.alternateAction); Frame mode clears the alternate"
         menus["statusItem"] = ["hasMenu": app.statusItem?.menu != nil, "action": "showHide (toggle editor visibility)", "buttonToolTip": app.statusItem?.button?.toolTip ?? "none",
                                "note": "The status item has no menu; Option-click quits"]
-        write(menus, to: "menus" + (ProcessInfo.processInfo.environment["AUDIT_STEM_SUFFIX"] ?? "") + ".json")
+        write(menus, to: "menus" + stemSuffix + ".json")
         guard let toolbox = firstView(of: NSPopUpButton.self, label: "Toolbox") else { gap("S23", "Toolbox menu open", "toolbox popup not found"); return }
         captureTrackedMenu("S23", "toolbox-menu-open", surface: "menus", state: "Toolbox pull-down open", refs: ["App.swift|func bezelToolbox()"],
                            dismiss: { toolbox.menu?.cancelTracking() }, trigger: { toolbox.performClick(nil) })
@@ -783,7 +816,7 @@ extension AuditRun {
 
     /// Renders one view (no window capture) at 2x. Used for the status-bar button, whose host window cannot be imaged by number.
     func shootView(_ id: String, _ slug: String, surface: String, state: String, view: NSView, refs: [String], extra: [String: Any] = [:]) {
-        let stem = "\(id)-\(slug)-\(appearance)" + (ProcessInfo.processInfo.environment["AUDIT_STEM_SUFFIX"] ?? "")
+        let stem = stemFor(id, slug)
         guard view.bounds.width > 1, view.bounds.height > 1, let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) else {
             gap(id, surface + " / " + state, "the view has no drawable bounds"); return
         }
@@ -793,7 +826,7 @@ extension AuditRun {
         var meta: [String: Any] = ["id": id, "slug": slug, "surface": surface, "state": state, "appearance": appearance, "file": stem + ".png",
             "pixelSize": [rep.pixelsWide, rep.pixelsHigh], "pointSize": [Double(view.bounds.width), Double(view.bounds.height)],
             "scale": Double(rep.pixelsWide) / Double(view.bounds.width), "method": "NSView.cacheDisplay (view only, not a window capture)", "sourceRefs": refs,
-            "sourceSha": ProcessInfo.processInfo.environment["AUDIT_SOURCE_SHA"] ?? "unknown", "appActive": NSApp.isActive]
+            "sourceSha": sourceSha, "iconMode": iconMode, "windowSize": [Double(window.frame.width.rounded()), Double(window.frame.height.rounded())], "appActive": NSApp.isActive]
         for (key, item) in extra { meta[key] = item }
         write(meta, to: "meta/\(stem).json")
     }
@@ -815,7 +848,7 @@ extension AuditRun {
         pump(1.0)
         let panels = NSApp.windows.filter { !known.contains($0.windowNumber) && $0.isVisible }
         if let panel = panels.first {
-            shoot("S25", "about-panel", surface: "About panel", state: "standard About panel with OpenSkitch credits", windows: [panel], refs: ["App.swift|@objc func about()"])
+            shoot("S25", "about-panel", surface: "About panel", state: "standard About panel with OpenSnap credits", windows: [panel], refs: ["App.swift|@objc func about()"])
             panel.orderOut(nil)
         } else { gap("S25", "About panel", "the standard About panel window was not found") }
     }
@@ -826,7 +859,7 @@ extension AuditRun {
         captureModal("S26", "close-unsaved", surface: "alerts / sheets", state: "Save your drawing? (Save / Cancel / Discard)", refs: ["App.swift|func allowDiscard("]) { _ = app.allowDiscard() }
         app.dirty = false
         captureModal("S26", "error-generic", surface: "alerts / sheets", state: "generic NSAlert(error:) alert", refs: ["App.swift|func error(_ error: Error)"]) {
-            app.error(NSError(domain: "SkitchRedux", code: 5, userInfo: [NSLocalizedDescriptionKey: "This capture is too large or cannot be decoded safely."]))
+            app.error(NSError(domain: "OpenSnap", code: 5, userInfo: [NSLocalizedDescriptionKey: "This capture is too large or cannot be decoded safely."]))
         }
         if let store = try? app.archiveStore() {
             if store.entries.isEmpty, let snapshot = try? app.historySnapshot() { _ = try? store.archive(snapshot, name: "Alert demo", action: .archived) }
@@ -891,10 +924,10 @@ extension AuditRun {
         app.iconifyDrag(id)
         pump(2.0)
         if let thumbnail = app.dragThumbnailWindow {
-            shoot("S29", "drag-thumbnail", surface: "drag-out thumbnail", state: "Drag Me thumbnail panel after the editor shrinks (Skitch_Cancel_DragMe hover art absent: not hovering)", windows: [thumbnail], refs: ["App.swift|final class DragThumbnailView", "App.swift|func iconifyDrag"])
+            shoot("S29", "drag-thumbnail", surface: "drag-out thumbnail", state: "Drag Me thumbnail panel after the editor shrinks (not hovering)", windows: [thumbnail], refs: ["App.swift|final class DragThumbnailView", "App.swift|func iconifyDrag"])
             if let view = thumbnail.contentView as? DragThumbnailView {
                 view.clickToExpand = true
-                shoot("S29", "drag-thumbnail-expand", surface: "drag-out thumbnail", state: "clickToExpand overlay (original Skitch_ShowSkitch artwork)", windows: [thumbnail], refs: ["App.swift|let name = hovering ? \"Skitch_ShowSkitch_mouseover\""])
+                shoot("S29", "drag-thumbnail-expand", surface: "drag-out thumbnail", state: "clickToExpand overlay", windows: [thumbnail], refs: ["App.swift|final class DragThumbnailView"])
             }
         } else { gap("S29", "Drag thumbnail", "iconifyDrag produced no thumbnail window") }
         app.removeDragThumbnail(); app.activeDragID = nil
