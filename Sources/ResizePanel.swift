@@ -83,6 +83,14 @@ enum ResizePanelValidation {
         if isValidDimension(value) { return String(Int(value)) }
         return String(Double(value))
     }
+
+    /// What a dimension field shows for a stored size. Whole pixels, rounded half away from zero (1516.5 reads 1517,
+    /// 1516.4 reads 1516). Only the shown text is rounded: `ResizePanelState` keeps the source size at full precision for
+    /// the proportional math, and typed text still goes through `dimension(from:)` unchanged, so a typed 1516 stays 1516.
+    static func displayText(for value: CGFloat) -> String {
+        if value.isFinite, abs(value) < 1e15 { return String(Int(value.rounded())) }
+        return text(for: value)
+    }
 }
 
 struct ResizePanelSubmission: Equatable {
@@ -123,10 +131,13 @@ struct ResizePanelState {
     private(set) var heightText: String
     var anchor: ResizePanelAnchor = .center
     var limitMode: ResizePanelLimitMode = .greatest
-    var limitText: String
+    var limitText: String { didSet { untouched.remove(.limit) } }
     private let originalSize: CGSize
     private let originalRatio: CGFloat?
     private var lastEdited: Dimension = .width
+    /// Fields still holding the untouched formatting of the source size; only these are shown rounded to whole pixels.
+    private enum Field { case width, height, limit }
+    private var untouched: Set<Field> = [.width, .height, .limit]
 
     init(size: CGSize) {
         originalSize = size
@@ -138,6 +149,12 @@ struct ResizePanelState {
     }
 
     var locksProportions: Bool { mode == .resize && preserveRatio }
+
+    var displayWidthText: String { untouched.contains(.width) ? ResizePanelValidation.displayText(for: originalSize.width) : widthText }
+    var displayHeightText: String { untouched.contains(.height) ? ResizePanelValidation.displayText(for: originalSize.height) : heightText }
+    var displayLimitText: String {
+        untouched.contains(.limit) ? ResizePanelValidation.displayText(for: max(originalSize.width, originalSize.height)) : limitText
+    }
 
     mutating func setMode(_ mode: ResizePanelMode) {
         guard self.mode != mode else { return }
@@ -152,6 +169,7 @@ struct ResizePanelState {
 
     mutating func edit(_ dimension: Dimension, text: String) {
         lastEdited = dimension
+        untouched.remove(dimension == .width ? .width : .height)
         switch dimension {
         case .width: widthText = text
         case .height: heightText = text
@@ -162,6 +180,7 @@ struct ResizePanelState {
     mutating func selectPreset(_ preset: ResizePreset) {
         switch preset.mode { case .scale: mode = .resize; case .crop: mode = .crop; case .limit: mode = .limit }
         widthText = String(preset.width); heightText = String(preset.height)
+        untouched = []
         preserveRatio = preset.proportions && originalRatio != nil
         anchor = ResizePanelAnchor(rawValue: preset.anchor) ?? .center
         limitMode = ResizePanelLimitMode(rawValue: preset.limitMode.rawValue) ?? .greatest
@@ -200,10 +219,10 @@ struct ResizePanelState {
         switch lastEdited {
         case .width:
             guard let width = try? ResizePanelValidation.dimension(from: widthText) else { return }
-            heightText = pixelText(width / ratio)
+            heightText = pixelText(width / ratio); untouched.remove(.height)
         case .height:
             guard let height = try? ResizePanelValidation.dimension(from: heightText) else { return }
-            widthText = pixelText(height * ratio)
+            widthText = pixelText(height * ratio); untouched.remove(.width)
         }
     }
 
@@ -384,8 +403,8 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         let help = NSTextField(wrappingLabelWithString: "")
         help.font = .systemFont(ofSize: 20)
         helpLabel = help
-        let width = dimensionField(value: session.state.widthText, name: "Width in pixels")
-        let height = dimensionField(value: session.state.heightText, name: "Height in pixels")
+        let width = dimensionField(value: session.state.displayWidthText, name: "Width in pixels")
+        let height = dimensionField(value: session.state.displayHeightText, name: "Height in pixels")
         widthField = width
         heightField = height
         let grid = NSGridView(views: [[label("Width (pixels)"), width],
@@ -395,7 +414,7 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         grid.rowAlignment = .firstBaseline
         grid.column(at: 1).width = 240
         dimensionGrid = grid
-        let limit = dimensionField(value: session.state.limitText, name: "Size limit in pixels")
+        let limit = dimensionField(value: session.state.displayLimitText, name: "Size limit in pixels")
         limitField = limit
         let limitChoice = NSPopUpButton(frame: .zero, pullsDown: false)
         limitChoice.font = .systemFont(ofSize: 20)
@@ -514,11 +533,11 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
 
     private func renderState(editing field: NSTextField? = nil) {
         modeControl?.selectedSegment = session.state.mode.rawValue
-        if field !== widthField { widthField?.stringValue = session.state.widthText }
-        if field !== heightField { heightField?.stringValue = session.state.heightText }
+        if field !== widthField { widthField?.stringValue = session.state.displayWidthText }
+        if field !== heightField { heightField?.stringValue = session.state.displayHeightText }
         let crop = session.state.mode == .crop
         let limit = session.state.mode == .limit
-        if field !== limitField { limitField?.stringValue = session.state.limitText }
+        if field !== limitField { limitField?.stringValue = session.state.displayLimitText }
         limitPopup?.selectItem(at: session.state.limitMode.rawValue)
         dimensionGrid?.isHidden = limit
         limitRow?.isHidden = !limit

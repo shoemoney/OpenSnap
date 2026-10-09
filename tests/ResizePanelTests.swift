@@ -224,6 +224,39 @@ private enum ResizePanelTests {
         customState.selectPreset(custom)
         try expect(try customState.preset(id: custom.id, name: custom.name, format: custom.format) == custom,
                    "UI preserves all custom preset fields and opaque format metadata")
+        // OSN-058: the fields show whole pixels, rounded half away from zero; only the shown text is rounded.
+        for (value, shown) in [(CGFloat(1516.5), "1517"), (1516.4, "1516"), (1516, "1516"), (0.5, "1"), (1515.5, "1516"), (16384, "16384")] as [(CGFloat, String)] {
+            try expect(ResizePanelValidation.displayText(for: value) == shown, "\(value) displays as \(shown), got \(ResizePanelValidation.displayText(for: value))")
+        }
+        for value: CGFloat in [1516.5, 1234.567, 99999.75, 0.25, -3.5, .nan, .infinity, .greatestFiniteMagnitude] {
+            let text = ResizePanelValidation.displayText(for: value) // never traps on odd input
+            if value.isFinite && abs(value) < 1e15 { try expect(!text.contains("."), "\(value) shows no decimal point, got \(text)") }
+        }
+        let fractional = ResizePanelState(size: CGSize(width: 1516.5, height: 1000))
+        try expect(fractional.displayWidthText == "1517" && fractional.displayHeightText == "1000" && fractional.displayLimitText == "1517",
+                   "width, height and limit fields show whole pixels: \(fractional.displayWidthText) x \(fractional.displayHeightText), limit \(fractional.displayLimitText)")
+        try expect(fractional.widthText == "1516.5", "the text the validator reads is untouched: \(fractional.widthText)")
+        // the stored size is still 1516.5: limit mode scales from it (a size rounded to 1517 first gives a 999 high result)
+        var limited = fractional
+        limited.setMode(.limit); limited.limitText = "1516"
+        try expect(try limited.submission().size == CGSize(width: 1516, height: 1000), "limit math runs on the full-precision 1516.5, got \(try limited.submission().size)")
+        var rounded = ResizePanelState(size: CGSize(width: 1517, height: 1000))
+        rounded.setMode(.limit); rounded.limitText = "1516"
+        try expect(try rounded.submission().size == CGSize(width: 1516, height: 999), "a stored 1517 gives 999 here, so the case above really tells the two apart")
+        // typed values pass through untouched and are never re-rounded on display
+        var typed = fractional
+        typed.edit(.width, text: "1516")
+        try expect(typed.widthText == "1516" && typed.displayWidthText == "1516" && (try typed.submission().size.width) == 1516, "a typed 1516 stays 1516")
+        typed.edit(.height, text: "1.5")
+        try expect(typed.displayHeightText == "1.5", "typed text is shown exactly as typed, not rounded: \(typed.displayHeightText)")
+        typed.edit(.height, text: "1000")
+        try expect(typed.displayHeightText == "1000" && (try typed.submission().size) == CGSize(width: 1516, height: 1000), "a typed 1000 round-trips")
+        var whole = ResizePanelState(size: CGSize(width: 1516, height: 1000))
+        try expect(whole.displayWidthText == "1516" && whole.displayHeightText == "1000", "whole-pixel sources display unchanged")
+        whole.edit(.width, text: "758")
+        try expect(whole.widthText == "758" && whole.heightText == "500" && whole.displayHeightText == "500", "proportional math on a whole-pixel size is unchanged")
+        whole.edit(.height, text: "1000")
+        try expect(whole.widthText == "1516" && (try whole.submission().size) == CGSize(width: 1516, height: 1000), "a typed 1000 round-trips to the original 1516 x 1000")
         print("ResizePanelTests: \(checks) checks passed (pure state; no desktop input)")
     }
 }
