@@ -37,11 +37,13 @@ flowchart LR
 ./tools/build.sh                       # builds build/OpenSnap.app
 python3 tools/test.py                  # every suite; add --concurrent-app-safety for the isolation proof
 python3 tools/test-native-startup.py   # launches the built app against throwaway storage
-./tools/eye-dump.sh                    # saves PNGs of the app's own windows to build/eye-dump/
+./tools/eye-dump-audit.sh OUTDIR       # the only screenshot path: PNGs of an isolated copy of the app's own windows (see below)
 sh tools/release.sh VERSION            # release zip + manifest (see below)
 ```
 
 Test and harness runs isolate themselves with `OPENSNAP_APP_SUPPORT` (a throwaway storage folder; the one-time data migration never runs when it is set), `OPENSNAP_EVIDENCE_DIR` and, for the startup script, a temporary `CFFIXED_USER_HOME`.
+
+`tools/eye-dump-audit.sh` never runs `build/OpenSnap.app` itself: it copies the bundle, gives the copy a throwaway bundle id (its own defaults domain) and ad-hoc re-signs it, then launches it with a throwaway home, support and evidence folder inside a `sandbox-exec` fence (no network; the real stores, `~/.aws`, `~/.ssh` and Keychains unreadable). The real stores are hashed before and after (`tools/real_store_guard.py`) and the run exits non-zero if any changed (`safety.txt`). Options: `--groups`, `--appearances light,dark`, `--icons sf|fa|both` (`fa` reports "FA unavailable" unless the Font Awesome subsets are bundled) and `--sizes 980xmin,1024x740,1280x800,1440x900,full`.
 
 Run `tools/build.sh` before `tools/test-native-startup.py`, and quit a running copy of the app first; the startup script refuses otherwise. The Xcode command line tools provide the Swift toolchain.
 
