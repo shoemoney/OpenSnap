@@ -45,6 +45,16 @@ struct HistoryBrowserTests {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("HistoryBrowserTests-"+UUID().uuidString,isDirectory:true)
         try FileManager.default.createDirectory(at:url,withIntermediateDirectories:false); return url
     }
+    static func laidOut(_ browser: HistoryBrowser,width: CGFloat,height: CGFloat) {
+        browser.window!.setFrame(NSRect(x:0,y:0,width:width,height:height),display:false)
+        browser.window!.contentView!.layoutSubtreeIfNeeded()
+    }
+    /// The frames the flow layout assigns, in the grid's own coordinates.
+    static func tileFrames(_ browser: HistoryBrowser) throws -> [NSRect] {
+        let grid = try grid(browser)
+        grid.layoutSubtreeIfNeeded()
+        return (grid.collectionViewLayout?.layoutAttributesForElements(in:grid.bounds) ?? []).filter { $0.representedElementCategory == .item }.map(\.frame)
+    }
     static func main() {
         _ = NSApplication.shared
         NSApp.setActivationPolicy(.prohibited)
@@ -198,6 +208,7 @@ struct HistoryBrowserTests {
                     for action in [HistoryBrowser.Action.copyLink,.openLink,.remove,.deleteRemote] { try expect(browser.canPerform(action),"Missing item loses available action") }
                     let labels = descendants(browser.window!.contentView!).compactMap { $0 as? NSTextField }
                     try expect(labels.contains { !$0.isHidden && $0.stringValue.contains("file is missing") },"Missing warning absent")
+                    try expect(labels.contains { !$0.isHidden && $0.stringValue.hasPrefix("Error: ") && $0.stringValue.contains("file is missing") },"Warning rows carry the Error: prefix, not colour alone")
                     browser.select(ids:[missing.id,valid.id]); try expect(!browser.canPerform(.open) && !browser.canPerform(.copyLink),"Mixed selection silently operates on subset")
                 }
             }),
@@ -267,7 +278,8 @@ struct HistoryBrowserTests {
                     let fields = descendants(cell.view).compactMap { $0 as? NSTextField }
                     try expect(fields.contains { $0.stringValue == "A" && $0.font!.pointSize >= 20 },"Thumbnail name below20")
                     browser.window!.contentView!.layoutSubtreeIfNeeded()
-                    try expect(grid.enclosingScrollView!.frame.width > 900 && grid.enclosingScrollView!.frame.height >= 240,"Grid collapsed instead of filling window")
+                    // OSN-053: the 1000 x 720 window keeps the details panel beside the grid, so the grid is narrower than in the old 1180 window.
+                    try expect(grid.enclosingScrollView!.frame.width > 600 && grid.enclosingScrollView!.frame.height >= 240,"Grid collapsed instead of filling window")
                 }
             }),
             ("History drag format has independent persistence and strict choices", {
@@ -320,6 +332,150 @@ struct HistoryBrowserTests {
                     browser.select(ids:[a.id]); browser.update(items:[])
                     try expect(browser.selectedIDs.isEmpty,"Removed item remains selected")
                 }
+            }),
+            ("Window opens 1000 x 720 with an 880 x 600 minimum", {
+                try browser { browser,_ in
+                    try expect(browser.window!.frame.size == NSSize(width:1000,height:720),"Default History size is \(browser.window!.frame.size)")
+                    try expect(browser.window!.minSize == NSSize(width:880,height:600),"Minimum History size is \(browser.window!.minSize)")
+                }
+            }),
+            ("Tabs use plain names", {
+                try browser { browser,_ in
+                    let segmented = try descendants(browser.window!.contentView!).compactMap { $0 as? NSSegmentedControl }.first.unwrap("category control")
+                    let labels = (0..<segmented.segmentCount).map { segmented.label(forSegment:$0) ?? "" }
+                    try expect(labels == ["All","Posted to Web","Saved","Archived"],"Tab names are \(labels)")
+                    try expect(HistoryBrowser.Category.allCases.map(\.title) == labels,"Category titles match the control")
+                    try expect(!labels.joined().contains("DragMe") && !labels.joined().contains("/"),"The cramped Saved/DragMe'd name is gone")
+                }
+            }),
+            ("Grid reflows at the 880 x 600 minimum with no horizontal scroller", {
+                try browser { browser,_ in
+                    browser.update(items:(0..<18).map { item("Tile \($0)",-($0/3)) })
+                    laidOut(browser,width:1000,height:720)
+                    let wide = try tileFrames(browser)
+                    laidOut(browser,width:880,height:600)
+                    let scroll = try grid(browser).enclosingScrollView.unwrap("grid scroll view")
+                    let narrow = try tileFrames(browser)
+                    try expect(!scroll.hasHorizontalScroller,"Horizontal scrolling must be off; the grid reflows instead")
+                    let clip = scroll.contentView.bounds.width
+                    try expect(try grid(browser).frame.width <= clip + 0.5,"The grid is wider than its clip view (\(try grid(browser).frame.width) > \(clip)): it would scroll sideways")
+                    try expect(narrow.allSatisfy { $0.maxX <= clip + 0.5 },"A tile pokes past the right edge at 880 wide (clip \(clip), max \(narrow.map(\.maxX).max() ?? 0))")
+                    func columns(_ frames: [NSRect]) -> Int { Set(frames.map { Int($0.minX.rounded()) }).count }
+                    try expect(columns(narrow) >= 2,"Minimum width fits fewer than two tile columns: \(columns(narrow))")
+                    try expect(columns(wide) > columns(narrow),"The grid does not reflow: \(columns(wide)) columns wide, \(columns(narrow)) at the minimum")
+                    try expect(narrow.allSatisfy { abs($0.width - 210) < 0.5 && abs($0.height - 234) < 0.5 },"Tiles are about 210 x 234")
+                }
+            }),
+            ("Details panel sits beside the grid and collapses below it under 760 wide", {
+                try browser { browser,_ in
+                    laidOut(browser,width:1000,height:720)
+                    let scroll = try grid(browser).enclosingScrollView.unwrap("grid scroll view"), content = browser.window!.contentView!
+                    @MainActor func frame(_ view: NSView) -> NSRect { view.convert(view.bounds,to:content) }
+                    try expect(browser.detailsPlacement == .beside && frame(browser.detailsPanel).minX >= frame(scroll).maxX - 0.5,"Wide windows put details beside the grid")
+                    browser.layoutDetails(forContentWidth:759)
+                    content.layoutSubtreeIfNeeded()
+                    try expect(browser.detailsPlacement == .below,"Under 760 the placement is not .below")
+                    try expect(frame(browser.detailsPanel).maxY <= frame(scroll).minY + 0.5 && frame(browser.detailsPanel).height > 0,"Under 760 the details panel is not under the grid")
+                    browser.layoutDetails(forContentWidth:760)
+                    try expect(browser.detailsPlacement == .beside,"760 is wide enough for the side panel")
+                }
+            }),
+            ("Selected tile shows an accent border and a check badge, not colour alone", {
+                try browser { browser,_ in
+                    let a = item("Picked"); browser.update(items:[a]); laidOut(browser,width:1000,height:720)
+                    let grid = try grid(browser)
+                    let cell = browser.collectionView(grid,itemForRepresentedObjectAt:IndexPath(item:0,section:0))
+                    guard let tile = cell.view as? HistoryTileView else { throw Failure("The tile is not a HistoryTileView") }
+                    let badge = try tile.checkBadge.unwrap("check badge subview")
+                    try expect(badge.superview === tile && badge.image != nil,"The badge is not an image subview of the tile")
+                    try expect(badge.isHidden && !tile.isTileSelected,"An unselected tile must not show the badge")
+                    tile.updateLayer(); try expect(tile.layer?.borderWidth == 0,"An unselected tile has a border")
+                    cell.isSelected = true
+                    try expect(!badge.isHidden,"A selected tile shows no check badge: the cue would be colour only")
+                    tile.updateLayer(); try expect(tile.layer?.borderWidth == 2,"A selected tile has no accent border")
+                    try expect(tile.accessibilityValue() as? String == "Selected","VoiceOver is not told the tile is selected")
+                    cell.isSelected = false
+                    try expect(badge.isHidden,"Deselecting leaves the badge showing")
+                    // Through the real selection path, when AppKit has made the item.
+                    browser.select(ids:[a.id])
+                    if let live = grid.item(at:IndexPath(item:0,section:0)) as NSCollectionViewItem?, let liveTile = live.view as? HistoryTileView {
+                        try expect(liveTile.isTileSelected && !(liveTile.checkBadge?.isHidden ?? true),"Selecting through the browser does not badge the live tile")
+                    }
+                }
+            }),
+            ("Empty state is centred and its hint follows the live Save to History shortcut", {
+                try browser { browser,_ in
+                    laidOut(browser,width:1000,height:720)
+                    let scroll = try grid(browser).enclosingScrollView.unwrap("grid scroll view"), content = browser.window!.contentView!
+                    try expect(!browser.emptyState.isHidden && browser.emptyTitle.stringValue == "No history yet.","Empty History shows no empty state")
+                    let box = browser.emptyState.convert(browser.emptyState.bounds,to:content), well = scroll.convert(scroll.bounds,to:content)
+                    try expect(abs(box.midX - well.midX) < 1.5 && abs(box.midY - well.midY) < 1.5,"Empty state is off-centre: \(box) in \(well)")
+                    // This test process has no main menu, so no shortcut is invented.
+                    try expect(browser.emptyHint.stringValue == "Use Save to History to keep a snap","Hint without a shortcut: \(browser.emptyHint.stringValue)")
+                    browser.saveShortcut = { "⌘S" }; browser.setFilters(category:.all)
+                    try expect(browser.emptyHint.stringValue == "Press ⌘S to save a snap","Hint with a shortcut: \(browser.emptyHint.stringValue)")
+                    browser.saveShortcut = { nil }; browser.setFilters(category:.all)
+                    try expect(browser.emptyHint.stringValue == "Use Save to History to keep a snap","Hint after the shortcut is removed")
+                    browser.update(items:[item("One")])
+                    try expect(browser.emptyState.isHidden,"The empty state stays over a populated grid")
+                    browser.setFilters(category:.all,query:"zzz")
+                    try expect(!browser.emptyState.isHidden && browser.emptyTitle.stringValue.contains("match") && browser.emptyHint.isHidden,"Filtered-out History says no items match, with no save hint")
+                }
+            }),
+            ("Save to History shortcut is read from the main menu, never invented", {
+                func menu(key: String,mask: NSEvent.ModifierFlags) -> NSMenu {
+                    let main = NSMenu(), file = NSMenuItem(title:"File",action:nil,keyEquivalent:""), sub = NSMenu(title:"File")
+                    let other = NSMenuItem(title:"Save Editable Document",action:NSSelectorFromString("saveFile"),keyEquivalent:"s")
+                    let save = NSMenuItem(title:"Save to History",action:NSSelectorFromString("saveHistory"),keyEquivalent:key); save.keyEquivalentModifierMask = mask
+                    sub.addItem(other); sub.addItem(save); file.submenu = sub; main.addItem(file); return main
+                }
+                try expect(HistoryBrowser.liveSaveToHistoryShortcut(menu:menu(key:"",mask:.command)) == nil,"A menu item with no key equivalent produced a shortcut")
+                try expect(HistoryBrowser.liveSaveToHistoryShortcut(menu:menu(key:"h",mask:.command)) == "⌘H","Command-H")
+                try expect(HistoryBrowser.liveSaveToHistoryShortcut(menu:menu(key:"S",mask:.command)) == "⇧⌘S","Uppercase key implies Shift")
+                try expect(HistoryBrowser.liveSaveToHistoryShortcut(menu:menu(key:"h",mask:[.command,.option])) == "⌥⌘H","Option-Command-H")
+                try expect(HistoryBrowser.liveSaveToHistoryShortcut(menu:nil) == nil,"No main menu means no shortcut")
+                try expect(HistoryBrowser.liveSaveToHistoryShortcut(menu:NSMenu()) == nil,"A menu without the item means no shortcut")
+            }),
+            ("Drag formats are PNG JPG PDF TIFF SVG and the .opensnap document", {
+                try browser { browser,_ in
+                    let titles = HistoryBrowser.dragFormats.map(HistoryBrowser.dragFormatTitle)
+                    try expect(titles == ["PNG","JPG","PDF","TIFF","SVG",".opensnap document"],"Drag format titles are \(titles)")
+                    let popup = try descendants(browser.window!.contentView!).compactMap { $0 as? NSPopUpButton }.first { $0.accessibilityLabel() == "History drag export format" }.unwrap("format popup")
+                    try expect(popup.itemTitles == titles,"The popup shows \(popup.itemTitles)")
+                    try expect(!popup.itemTitles.joined().lowercased().contains("skitch"),"The format popup names the retired product")
+                }
+            }),
+            ("The seven actions are a toolbar row and a context menu, each with a name for VoiceOver", {
+                try browser { browser,_ in
+                    let row = browser.actionRow.arrangedSubviews.compactMap { $0 as? NSButton }.filter { !($0 is NSPopUpButton) }
+                    try expect(row.count == 7,"The action row has \(row.count) buttons")
+                    for (button,action) in zip(row,HistoryBrowser.Action.allCases) {
+                        try expect(button.toolTip == action.title && button.accessibilityLabel() == action.title,"\(action) has no tooltip and accessibility name")
+                        try expect(button.image != nil && button.imagePosition == .imageOnly,"\(action) has no glyph")
+                        try expect(!button.isEnabled,"\(action) is enabled with nothing selected")
+                    }
+                    // The old layout stacked the same seven in two text-button rows under the details.
+                    let textButtons = descendants(browser.window!.contentView!).compactMap { $0 as? NSButton }.filter { !($0 is NSPopUpButton) && !$0.title.isEmpty && $0.bezelStyle == .rounded }
+                    try expect(textButtons.isEmpty,"Text buttons are back under the grid: \(textButtons.map(\.title))")
+                    let menu = try grid(browser).menu.unwrap("context menu")
+                    try expect(menu.items.map(\.title) == HistoryBrowser.Action.allCases.map(\.title),"Context menu items: \(menu.items.map(\.title))")
+                    let a = item("A",action:"Shared",link:true); browser.update(items:[a]); browser.select(ids:[a.id])
+                    browser.onOpen = { _ in }; browser.onCopy = { _ in }
+                    try expect(row[0].isEnabled && row[1].isEnabled && !row[2].isEnabled,"Row buttons keep their validation")
+                }
+            }),
+            ("Every control in History is body size or larger and the filter row fits at the minimum", {
+                try browser { browser,_ in
+                    browser.update(items:[item("A")]); laidOut(browser,width:880,height:600)
+                    let content = browser.window!.contentView!
+                    for control in descendants(content).compactMap({ $0 as? NSControl }) {
+                        try expect((control.font?.pointSize ?? 20) >= 18,"\(type(of:control)) is below 18 pt")
+                    }
+                    let segmented = try descendants(content).compactMap { $0 as? NSSegmentedControl }.first.unwrap("category control")
+                    try expect(segmented.font?.pointSize == 20,"Tabs are body size")
+                    try expect(browser.filterRow.frame.maxX <= content.bounds.width + 0.5 && browser.filterRow.frame.minX >= 0,"The filter row overflows the window at 880 wide: \(browser.filterRow.frame)")
+                    try expect(browser.actionRow.frame.maxX <= content.bounds.width + 0.5,"The action row overflows the window at 880 wide")
+                }
             })
         ]
         var failures = 0
@@ -329,6 +485,12 @@ struct HistoryBrowserTests {
         }
         print("HistoryBrowserTests: \(tests.count-failures)/\(tests.count) passed")
         if failures != 0 { exit(1) }
+    }
+}
+extension Optional {
+    func unwrap(_ what: String) throws -> Wrapped {
+        guard let self else { throw HistoryBrowserTests.Failure("Missing \(what)") }
+        return self
     }
 }
 #endif

@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 
 // Standalone pure checks for multi-destination storage and S3 transport. No network, no Keychain,
@@ -31,6 +32,7 @@ enum PublishingDestinationsTests {
         try credentialsFile()
         try migration()
         try storeOperations()
+        try MainActor.assumeIsolated { try destinationsSheet() }
         print("Destination and S3 self-checks passed: \(checks). No uploads were executed.")
     }
 
@@ -351,6 +353,161 @@ enum PublishingDestinationsTests {
 
     /// --live-s3 "<destination name>": upload a tiny PNG, verify its public URL, print it, then DELETE the object.
     /// Reads the saved destination (and AWS profile or Keychain secret) exactly as the app would.
+    // MARK: Destinations sheet (OSN-052): size, scrolling, keys, result row, Default pill, placeholders, message sheets, shutdown barrier
+
+    static func keyEvent(_ characters: String, keyCode: UInt16, window: NSWindow) -> NSEvent {
+        NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0, windowNumber: window.windowNumber, context: nil,
+                         characters: characters, charactersIgnoringModifiers: characters, isARepeat: false, keyCode: keyCode)!
+    }
+    @MainActor static func descendants(_ view: NSView) -> [NSView] { [view] + view.subviews.flatMap(descendants) }
+    @MainActor static func spin(_ seconds: Double, until done: () -> Bool = { false }) {
+        let end = Date().addingTimeInterval(seconds)
+        while !done() && Date() < end { _ = RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.02)) }
+    }
+    @MainActor static func coordinator(destinations: [PublishingDestination]) throws -> PublishingCoordinator {
+        let coordinator = PublishingCoordinator()
+        coordinator.store = PublishingDestinationStore(directory: try temporaryDirectory(), secrets: PublishingMemorySecrets())
+        for destination in destinations { try coordinator.store.save(destination, password: "") }
+        return coordinator
+    }
+    @MainActor static func fixtureDestinations() -> [PublishingDestination] {
+        var s3 = awsCDN(); s3.s3?.credentialsProfile = "default"
+        var dav = PublishingSettings(); dav.endpoint = "https://dav.example.com/files"; dav.publicBaseURL = "https://dav.example.com/files"
+        return [PublishingDestination(name: "Example S3", settings: s3), PublishingDestination(name: "Example WebDAV", settings: dav)]
+    }
+
+    @MainActor static func destinationsSheet() throws {
+        _ = NSApplication.shared
+        NSApp.setActivationPolicy(.prohibited)
+        let fake = NSRect(x: 0, y: 0, width: 1280, height: 800)
+
+        // Size: 720 wide, min(720, visible height - 120), never taller than the screen.
+        let size = PublishingDestinationsView.sheetSize(visibleFrame: fake)
+        try expect(size.width == 720 && size.height == 680, "1280 x 800 gives a 720 x 680 sheet, got \(size)")
+        try expect(PublishingDestinationsView.sheetSize(visibleFrame: NSRect(x: 0, y: 0, width: 1920, height: 1200)).height == 720, "a tall screen caps the sheet at 720")
+        let short = NSRect(x: 0, y: 0, width: 1280, height: 500)
+        try expect(PublishingDestinationsView.sheetSize(visibleFrame: short).height == 380 && PublishingDestinationsView.sheetSize(visibleFrame: short).height <= 500, "a short screen shrinks the sheet")
+        try expect(PublishingDestinationsView.sheetSize(visibleFrame: NSRect(x: 0, y: 0, width: 800, height: 300)).height <= 300, "the sheet never exceeds a tiny screen")
+
+        let destinations = fixtureDestinations()
+        let publisher = try coordinator(destinations: destinations)
+        let (panel, view) = try publisher.buildSettings(visibleFrame: fake)
+        defer { panel.orderOut(nil) }
+        let content = panel.contentRect(forFrameRect: panel.frame)
+        try expect(content.width == 720 && content.height == 680 && panel.frame.height <= fake.height, "the real panel is 720 x 680 on a 1280 x 800 screen: \(content.size)")
+        try expect(view.scrollView.hasVerticalScroller && !view.scrollView.hasHorizontalScroller && view.scrollView.documentView != nil, "the form lives in a vertical NSScrollView")
+        panel.contentView?.layoutSubtreeIfNeeded()
+
+        // A short screen: the S3 form is taller than the sheet, so it scrolls, and Save/Cancel stay on screen.
+        let (shortPanel, shortView) = try publisher.buildSettings(visibleFrame: short)
+        defer { shortPanel.orderOut(nil) }
+        shortPanel.contentView?.layoutSubtreeIfNeeded()
+        shortView.select(id: destinations[0].id); shortView.editTapped()
+        shortPanel.contentView?.layoutSubtreeIfNeeded()
+        let document = try unwrap(shortView.scrollView.documentView), clip = shortView.scrollView.contentView.bounds
+        try expect(shortPanel.contentRect(forFrameRect: shortPanel.frame).height <= short.height, "the short-screen sheet fits the visible frame")
+        try expect(document.frame.height > clip.height, "the S3 form (\(document.frame.height)) is not taller than the visible scroll area (\(clip.height)): nothing would need to scroll")
+        try expect(document.frame.width <= clip.width + 0.5, "the form is wider than the sheet and would scroll sideways")
+        let bounds = try unwrap(shortPanel.contentView).bounds
+        for button in [shortView.saveButton, shortView.cancelButton] {
+            let frame = button.convert(button.bounds, to: shortPanel.contentView)
+            try expect(bounds.contains(frame) && !button.isHiddenOrHasHiddenAncestor, "\(button.title) scrolled out of the short sheet: \(frame) in \(bounds)")
+        }
+
+        // Section headers group the rows.
+        view.addTapped(); panel.contentView?.layoutSubtreeIfNeeded()
+        try expect(view.sectionHeaders.map(\.stringValue) == ["Connection", "Credentials"], "section headers: \(view.sectionHeaders.map(\.stringValue))")
+        try expect(view.sectionHeaders.allSatisfy { $0.font?.pointSize == 22 && !$0.isHiddenOrHasHiddenAncestor }, "section headers use the headline style")
+        let doc = try unwrap(view.scrollView.documentView)
+        func y(_ item: NSView) -> CGFloat { item.convert(item.bounds, to: doc).minY }
+        try expect(y(view.sectionHeaders[0]) < y(view.endpointField) && y(view.endpointField) < y(view.sectionHeaders[1]) && y(view.sectionHeaders[1]) < y(view.usernameField),
+                   "Connection rows sit under Connection and Credentials rows under Credentials")
+
+        // Text sizes: body everywhere readable, headline for headers.
+        for control in descendants(view).compactMap({ $0 as? NSControl }) where !control.isHiddenOrHasHiddenAncestor {
+            try expect((control.font?.pointSize ?? 20) >= 18, "\(type(of: control)) is below 18 pt")
+        }
+        try expect([view.saveButton, view.cancelButton, view.doneButton, view.testButton].allSatisfy { $0.font?.pointSize == 20 }, "dialog buttons are body size (20 pt)")
+
+        // Placeholders are neutral.
+        let fields = descendants(view).compactMap { $0 as? NSTextField }.compactMap(\.placeholderString)
+        try expect(!fields.isEmpty && !fields.contains { $0.lowercased().contains("shoemoney") }, "a placeholder names the owner: \(fields.filter { $0.lowercased().contains("shoemoney") })")
+        try expect(view.aliasField.placeholderString == "myserver (from ~/.ssh/config)" && view.remoteRootField.placeholderString == "/var/www/site/uploads"
+                   && view.endpointField.placeholderString == "https://example.com/uploads" && view.folderField.placeholderString?.hasPrefix("screenshots") == true,
+                   "neutral SSH alias, SFTP root, endpoint and folder placeholders")
+
+        // Return saves, Escape cancels (form page).
+        var saved: [String] = []
+        view.onSave = { destination, _ in saved.append(destination.name) }
+        view.nameField.stringValue = "Keys"; view.endpointField.stringValue = "https://dav.example.com/up"
+        try expect(view.saveButton.keyEquivalent == "\r" && view.cancelButton.keyEquivalent == "\u{1b}", "Save is the Return button and Cancel the Escape button")
+        panel.contentView?.layoutSubtreeIfNeeded()
+        try expect(panel.contentView?.performKeyEquivalent(with: keyEvent("\r", keyCode: 36, window: panel)) == true && saved == ["Keys"], "Return did not save (saved \(saved))")
+        try expect(panel.contentView?.performKeyEquivalent(with: keyEvent("\u{1b}", keyCode: 53, window: panel)) == true && view.editing == nil && view.cancelButton.isHiddenOrHasHiddenAncestor,
+                   "Escape did not cancel the form back to the list")
+        // List page: Return and Escape both finish.
+        var done = 0
+        view.onDone = { done += 1 }
+        try expect(!view.doneButton.isHiddenOrHasHiddenAncestor && view.doneButton.keyEquivalent == "\r", "Done is the list sheet's Return button")
+        try expect(panel.contentView?.performKeyEquivalent(with: keyEvent("\r", keyCode: 36, window: panel)) == true && done == 1, "Return did not finish the list sheet")
+        try expect(panel.contentView?.performKeyEquivalent(with: keyEvent("\u{1b}", keyCode: 53, window: panel)) == true && done == 2, "Escape did not finish the list sheet")
+
+        // Test result: glyph and words together.
+        view.addTapped()
+        view.showTestResult(ok: true, message: "OK: credentials and bucket verified. Nothing was uploaded.")
+        var row = view.formResult
+        try expect(!row.isHiddenOrHasHiddenAncestor && row.kind == .success && row.text.stringValue == "Connected" && row.glyph.image != nil && !row.glyph.isHidden, "success shows a glyph and the word Connected")
+        try expect(row.detail.stringValue.contains("Nothing was uploaded") && !row.detail.isHidden, "the server's detail follows the word Connected")
+        let successGlyph = row.glyph.image
+        view.showTestResult(ok: false, message: "AccessDenied: no such bucket")
+        row = view.formResult
+        try expect(row.kind == .failure && row.text.stringValue == "Error: AccessDenied: no such bucket" && row.glyph.image != nil && !row.glyph.isHidden, "failure shows a glyph and an Error: line")
+        try expect(row.glyph.image !== successGlyph, "success and failure use different glyphs")
+        view.showStatus("Network is down")
+        try expect(view.formResult.text.stringValue == "Error: Network is down" && view.formResult.glyph.image != nil, "a coordinator failure is prefixed and carries the failure glyph")
+        view.protocolPopup.selectItem(withTitle: PublishingProtocol.s3.title); view.formChanged()
+        view.sourcePopup.selectItem(at: 0); view.formChanged(); view.profileField.stringValue = ""
+        view.saveTapped()
+        try expect(view.formResult.text.stringValue.hasPrefix("Error: ") && view.formResult.glyph.image != nil, "a validation error also gets the prefix and glyph: \(view.formResult.text.stringValue)")
+        view.cancelFormTapped()
+
+        // Default pill instead of the "(Default)" suffix.
+        view.reload(try publisher.store.load())
+        let defaultRow = try unwrap(view.table.view(atColumn: 0, row: 0, makeIfNecessary: true) as? DestinationRowView)
+        let otherRow = try unwrap(view.table.view(atColumn: 0, row: 1, makeIfNecessary: true) as? DestinationRowView)
+        let pill = try unwrap(defaultRow.pill)
+        try expect(pill.label.stringValue == "Default" && pill.glyph.image != nil, "the Default pill has the word and a check glyph")
+        try expect(otherRow.pill == nil, "a non-default destination has no pill")
+        try expect(!defaultRow.nameField.stringValue.contains("(Default)") && defaultRow.nameField.stringValue == "Example S3" && defaultRow.transportField.stringValue == "S3", "the name no longer carries a (Default) suffix")
+        try publisher.setDefaultDestination(destinations[1].id); view.reload(try publisher.store.load())
+        let moved = try unwrap(view.table.view(atColumn: 0, row: 1, makeIfNecessary: true) as? DestinationRowView)
+        try expect(moved.pill != nil && (view.table.view(atColumn: 0, row: 0, makeIfNecessary: true) as? DestinationRowView)?.pill == nil, "the pill follows the default")
+
+        // Message sheets are at least 560 wide.
+        let parent = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 600), styleMask: [.titled], backing: .buffered, defer: false)
+        parent.isReleasedWhenClosed = false
+        let messenger = PublishingCoordinator()
+        messenger.presentMessage("The sharing settings could not be opened because the destination list is unreadable.", relativeTo: parent)
+        let message = try unwrap(parent.attachedSheet)
+        try expect(message.frame.width >= 560 && PublishingCoordinator.messageSheetMinimumWidth == 560, "message sheet is \(message.frame.width) wide, below 560")
+        try expect(message.contentMinSize.width >= 560, "message sheet minimum width is below 560")
+        messenger.cancelSettings(); spin(1) { parent.attachedSheet == nil }
+
+        // The shutdown barrier still runs with the Destinations sheet open.
+        let shutdownParent = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 600), styleMask: [.titled], backing: .buffered, defer: false)
+        shutdownParent.isReleasedWhenClosed = false
+        let closing = try coordinator(destinations: destinations)
+        closing.showSettings(relativeTo: shutdownParent)
+        try expect(shutdownParent.attachedSheet != nil, "the Destinations sheet did not open")
+        var acknowledged = false
+        closing.shutdown { acknowledged = true }
+        spin(5) { acknowledged && shutdownParent.attachedSheet == nil }
+        try expect(acknowledged, "shutdown never acknowledged with the sheet open")
+        try expect(shutdownParent.attachedSheet == nil, "shutdown left the Destinations sheet attached")
+        closing.showSettings(relativeTo: shutdownParent)
+        try expect(shutdownParent.attachedSheet == nil, "a sheet opened after shutdown")
+    }
+
     static func liveS3() throws {
         let arguments = CommandLine.arguments
         guard let flag = arguments.firstIndex(of: "--live-s3"), flag + 1 < arguments.count else {

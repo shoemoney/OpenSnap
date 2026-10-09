@@ -888,7 +888,7 @@ public final class PublishingCoordinator: NSObject {
         if let panel = settingsPanel { panel.makeKeyAndOrderFront(nil); return }
         guard window.attachedSheet == nil else { return }
         do {
-            let (panel, view) = try buildSettings()
+            let (panel, view) = try buildSettings(visibleFrame: (window.screen ?? NSScreen.main)?.visibleFrame)
             beginSheet(panel, relativeTo: window)
             workController.start(work: { try PublishingCurl.capabilities(cancellation: $0) }) { result in
                 guard self.settingsPanel === panel else { return }
@@ -905,8 +905,10 @@ public final class PublishingCoordinator: NSObject {
     }
 
     /// Creates the settings panel and wires every list action to storage. Tests drive the returned view directly.
-    func buildSettings() throws -> (NSPanel, PublishingDestinationsView) {
-        let panel = makePanel(title: "Upload Destinations", width: 820, height: 860)
+    /// `visibleFrame` is the screen the sheet will appear on; the sheet is 720 wide and shrinks to fit a short screen, scrolling its form.
+    func buildSettings(visibleFrame: NSRect? = nil) throws -> (NSPanel, PublishingDestinationsView) {
+        let size = PublishingDestinationsView.sheetSize(visibleFrame: visibleFrame ?? NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1280, height: 800))
+        let panel = makePanel(title: "Upload Destinations", width: size.width, height: size.height)
         let view = PublishingDestinationsView(list: try store.load())
         view.legacyCredentialID = store.legacyCredentialID()
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -1053,8 +1055,8 @@ public final class PublishingCoordinator: NSObject {
         }) { result in
             guard self.settingsPanel === panel, let view = self.destinationsView else { return }
             switch result {
-            case .success(let check): view.showStatus(check.message)
-            case .failure(let error): view.showStatus("Test failed: " + error.localizedDescription)
+            case .success(let check): view.showTestResult(ok: check.ok, message: check.message)
+            case .failure(let error): view.showStatus(error.localizedDescription)
             }
         }
     }
@@ -1065,36 +1067,45 @@ public final class PublishingCoordinator: NSObject {
         panel.title = title; panel.isReleasedWhenClosed = false; return panel
     }
     private func label(_ text: String) -> NSTextField {
-        let field = NSTextField(wrappingLabelWithString: text); field.font = .systemFont(ofSize: 18)
-        field.textColor = .labelColor; return field
+        let field = NSTextField(wrappingLabelWithString: text); DesignTokens.Typography.apply(.body, to: field)
+        field.textColor = DesignTokens.Palette.Text.primary; return field
     }
     private func field(_ text: String, placeholder: String) -> NSTextField {
-        let field = NSTextField(string: text); field.font = .systemFont(ofSize: 20)
+        let field = NSTextField(string: text); DesignTokens.Typography.apply(.body, to: field)
         field.placeholderString = placeholder; return field
     }
     private func button(_ title: String, _ action: Selector) -> NSButton {
-        let button = NSButton(title: title, target: self, action: action); button.font = .systemFont(ofSize: 18)
-        button.heightAnchor.constraint(greaterThanOrEqualToConstant: 36).isActive = true; return button
+        let button = NSButton(title: title, target: self, action: action); DesignTokens.Typography.apply(.body, to: button)
+        button.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.control).isActive = true; return button
     }
     private func buttonRow(_ buttons: [NSButton]) -> NSStackView {
-        let stack = NSStackView(views: buttons); stack.orientation = .horizontal; stack.spacing = 16; return stack
+        let stack = NSStackView(views: buttons); stack.orientation = .horizontal; stack.spacing = DesignTokens.Space.s4; return stack
     }
     private func verticalStack() -> NSStackView {
-        let stack = NSStackView(); stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = 20; return stack
+        let stack = NSStackView(); stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = DesignTokens.Space.s5 - DesignTokens.Space.s1; return stack
     }
     private func install(_ form: NSStackView, in panel: NSPanel) {
         guard let content = panel.contentView else { return }
+        let margin = DesignTokens.Space.s5
         form.translatesAutoresizingMaskIntoConstraints = false; content.addSubview(form)
-        NSLayoutConstraint.activate([form.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: 24),
-                                     form.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -24),
-                                     form.topAnchor.constraint(equalTo: content.topAnchor, constant: 24),
-                                     form.bottomAnchor.constraint(lessThanOrEqualTo: content.bottomAnchor, constant: -24)])
+        NSLayoutConstraint.activate([form.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: margin),
+                                     form.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -margin),
+                                     form.topAnchor.constraint(equalTo: content.topAnchor, constant: margin),
+                                     form.bottomAnchor.constraint(lessThanOrEqualTo: content.bottomAnchor, constant: -margin)])
     }
-    private func presentMessage(_ message: String, relativeTo window: NSWindow) {
+    /// Message sheets are never narrower than this; the text wraps inside it and the height follows the text.
+    static let messageSheetMinimumWidth: CGFloat = 560
+
+    func presentMessage(_ message: String, relativeTo window: NSWindow) {
         guard window.attachedSheet == nil else { return }
-        let panel = makePanel(title: "Publishing Settings", width: 700, height: 300)
-        let form = verticalStack(); let text = label(message); text.preferredMaxLayoutWidth = 640
+        let margin = DesignTokens.Space.s5, width = Self.messageSheetMinimumWidth
+        let panel = makePanel(title: "Publishing Settings", width: width, height: 300)
+        let form = verticalStack(); let text = label(message); text.preferredMaxLayoutWidth = width - 2 * margin
         form.addArrangedSubview(text); form.addArrangedSubview(button("Close", #selector(cancelSettings)))
-        install(form, in: panel); settingsPanel = panel; beginSheet(panel, relativeTo: window)
+        install(form, in: panel)
+        form.layoutSubtreeIfNeeded()
+        panel.setContentSize(NSSize(width: width, height: max(160, form.fittingSize.height + 2 * margin)))
+        panel.contentMinSize = NSSize(width: Self.messageSheetMinimumWidth, height: 0)
+        settingsPanel = panel; beginSheet(panel, relativeTo: window)
     }
 }
