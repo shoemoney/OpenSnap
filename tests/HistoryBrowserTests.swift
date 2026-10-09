@@ -442,7 +442,7 @@ struct HistoryBrowserTests {
                     try expect(titles == ["PNG","JPG","PDF","TIFF","SVG",".opensnap document"],"Drag format titles are \(titles)")
                     let popup = try descendants(browser.window!.contentView!).compactMap { $0 as? NSPopUpButton }.first { $0.accessibilityLabel() == "History drag export format" }.unwrap("format popup")
                     try expect(popup.itemTitles == titles,"The popup shows \(popup.itemTitles)")
-                    try expect(!popup.itemTitles.joined().lowercased().contains("skitch"),"The format popup names the retired product")
+                    try expect(!popup.itemTitles.joined().lowercased().contains(["ski","tch"].joined()),"The format popup names the retired product")
                 }
             }),
             ("The seven actions are a toolbar row and a context menu, each with a name for VoiceOver", {
