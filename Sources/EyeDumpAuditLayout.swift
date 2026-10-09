@@ -162,6 +162,9 @@ extension AuditRun {
         let gapLeft = Double(visible.minX - clip.minX), gapRight = Double(clip.maxX - visible.maxX)
         let gapTop = Double(visible.minY - clip.minY), gapBottom = Double(clip.maxY - visible.maxY)
         viewport["clipRect"] = rectJSON(clip)
+        // The document view's own frame and bounds origin inside the clip view: a canvas view stretched to the viewport defeats centring.
+        viewport["canvasViewFrame"] = rectJSON(app.canvas.frame)
+        viewport["clipBounds"] = rectJSON(chrome.scrollView.contentView.bounds)
         viewport["scrollerGutter"] = [Double(scroll.width - clip.width), Double(scroll.height - clip.height)]
         viewport["scrollerStyle"] = chrome.scrollView.scrollerStyle == .legacy ? "legacy" : "overlay"
         viewport["canvasVisible"] = rectJSON(visible)

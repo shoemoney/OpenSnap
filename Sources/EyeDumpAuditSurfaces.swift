@@ -340,8 +340,9 @@ extension AuditRun {
             step("S14", "countdown") { s14() }
             step("S15", "capture flash") { s15() }
         }
-        if wanted.contains("S11M") { s11SizeMatrix(populated: true) }
+        // The empty matrix goes first: it needs the blank canvas this process started with, and the populated one replaces it.
         if wanted.contains("S11E") { s11SizeMatrix(populated: false) }
+        if wanted.contains("S11M") { s11SizeMatrix(populated: true) }
         if wanted.contains("S11F") { s11Fullscreen(populated: false) }
         if wanted.contains("S11FP") { s11Fullscreen(populated: true) }
         finish()
@@ -442,7 +443,11 @@ extension AuditRun {
         window.makeKeyAndOrderFront(nil)
         window.collectionBehavior.insert(.fullScreenPrimary)
         window.toggleFullScreen(nil)
+        // The transition runs longer with a big populated canvas: wait until the window really spans its screen before imaging it.
         pump(3.5)
+        var waited = 0.0
+        while waited < 10, window.screen.map({ abs(window.frame.width - $0.frame.width) > 2 }) ?? false { pump(0.5); waited += 0.5 }
+        pump(0.8)
         let state = window.styleMask.contains(.fullScreen) ? "true full screen (styleMask.fullScreen)" : "toggleFullScreen requested but styleMask.fullScreen not set"
         shoot(id, populated ? "size-fullscreen-populated" : "size-fullscreen", surface: populated ? "window sizes, populated" : "window sizes", state: state, refs: ["ModernEditorChrome.swift|private func build(actions"], settle: 0.5)
         if window.styleMask.contains(.fullScreen) { window.toggleFullScreen(nil); pump(3.0) }
@@ -772,6 +777,14 @@ extension AuditRun {
             guard loadThenPlace(spec, size: CGSize(width: 150, height: 90), name: "Small canvas", surface: "S34") != nil else { continue }
             shoot("S34", "small-canvas-\(widthSlug(spec))", surface: "Small canvas centred", state: "150x90 canvas at window \(spec): equal margins left/right and top/bottom",
                   refs: ["ModernEditorChrome.swift|final class CenteringClipView"])
+            if spec == "980xmin" {
+                // Diagnostic twin: the same document after the window is nudged taller and back, which fires the clip view's resize path.
+                let landed = window.frame.size
+                placeWindow(CGSize(width: landed.width, height: landed.height + 2))
+                placeWindow(landed)
+                shoot("S34", "small-canvas-w980-after-resize", surface: "Small canvas centred", state: "same 150x90 canvas at 980xmin after the window was resized +2 pt and back (diagnostic: does resizing re-centre it?)",
+                      refs: ["ModernEditorChrome.swift|final class CenteringClipView"])
+            }
         }
     }
 
