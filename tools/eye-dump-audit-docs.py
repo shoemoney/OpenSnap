@@ -46,10 +46,13 @@ def write_gaps(out, observations):
     raw = load_json(out / "gaps-raw.json") if (out / "gaps-raw.json").exists() else []
     seen, rows = set(), []
     for item in raw:
+        # Menu/modal timers that did not fire are superseded by the curated rows below (the alerts were captured by the unexpected-modal guard).
+        if item["reason"].startswith(("the modal call returned", "menu tracking returned")):
+            continue
         key = (item["id"], item["surface"], item["reason"])
         if key in seen:
             continue
-        seen.add(key); rows.append(item)
+        seen.add(key); rows.append(dict(item, appearance="both"))
     manifest = load_json(out / "manifest.json")
     captured = {m["id"] for m in manifest}
     lines = ["# Coverage gaps", "",
