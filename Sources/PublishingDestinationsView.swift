@@ -41,7 +41,7 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
     let regionField = NSTextField(), bucketField = NSTextField(), profileField = NSTextField()
     let protocolPopup = NSPopUpButton(frame: .zero, pullsDown: false)
     let sourcePopup = NSPopUpButton(frame: .zero, pullsDown: false)
-    let aclCheckbox = NSButton(checkboxWithTitle: "Make uploads public-read (leave off when the bucket disables ACLs)", target: nil, action: nil)
+    let aclCheckbox = NSButton(checkboxWithTitle: "Make uploads public-read", target: nil, action: nil)
     private(set) var sectionHeaders: [NSTextField] = []
 
     private struct Row { let label: NSTextField; let stack: NSStackView; let visible: (PublishingProtocol, Bool) -> Bool }
@@ -143,9 +143,9 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         let title = label("Upload destinations. The one marked Default receives a Webpost click; right-click Webpost to switch.")
         title.preferredMaxLayoutWidth = Self.contentWidth
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("destination"))
-        column.resizingMask = .autoresizingMask; column.width = Self.contentWidth
+        column.resizingMask = .autoresizingMask; column.minWidth = 200; column.width = Self.contentWidth - 24
         table.addTableColumn(column); table.headerView = nil; table.rowHeight = DesignTokens.Size.row
-        table.columnAutoresizingStyle = .uniformColumnAutoresizingStyle
+        table.columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle
         table.dataSource = self; table.delegate = self; table.allowsEmptySelection = true
         table.setAccessibilityLabel("Destinations")
         let scroll = NSScrollView(); scroll.documentView = table; scroll.hasVerticalScroller = true
@@ -345,7 +345,7 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         case .s3:
             caption("endpoint", "Endpoint (blank = AWS)"); caption("folder", "Key prefix")
             caption("username", "Access key ID"); caption("password", "Secret access key")
-            formHelp.stringValue = "Path-style S3 over system curl. Public base URL maps to the key prefix; the uploaded file is downloaded from it to verify the exact bytes. Test lists the bucket without uploading."
+            formHelp.stringValue = "Path-style S3 over system curl. Public base URL maps to the key prefix; the uploaded file is downloaded from it to verify the exact bytes. Test lists the bucket without uploading. Leave public-read off when the bucket disables ACLs."
         case .sftp:
             caption("endpoint", "Endpoint URL"); caption("folder", "Remote folder"); caption("username", "Username"); caption("password", "Password")
             formHelp.stringValue = "SFTP uses keys from SSH configuration or your agent, with strict known-host checks. Leave username and port empty to use the alias settings. Folders must exist."

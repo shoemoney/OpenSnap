@@ -101,6 +101,8 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
     private var detailValues: [String: NSTextField] = [:]
     private var detailPairs: [NSStackView] = []
     private var detailLabelWidths: [NSLayoutConstraint] = []
+    private var detailsFields: NSStackView?
+    private let detailsHint = NSTextField(wrappingLabelWithString:"Select a snap to see its details.")
     private var buttons: [Action: NSButton] = [:]
     private var contextItems: [Action: NSMenuItem] = [:]
     /// The grid's scroll view. Horizontal scrolling is off: the grid reflows instead.
@@ -383,7 +385,8 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         detailsPanel.translatesAutoresizingMaskIntoConstraints = false
         detailsPanel.orientation = .vertical; detailsPanel.alignment = .leading; detailsPanel.spacing = Space.s3
         detailsImage.imageScaling = .scaleProportionallyUpOrDown; detailsImage.setAccessibilityLabel("Selected history preview")
-        detailsImage.heightAnchor.constraint(equalToConstant:150).isActive = true
+        let imageHeight = detailsImage.heightAnchor.constraint(equalToConstant:150); imageHeight.priority = .init(749); imageHeight.isActive = true
+        detailsImage.heightAnchor.constraint(greaterThanOrEqualToConstant:48).isActive = true
         detailsImage.setContentHuggingPriority(.defaultLow,for:.horizontal)
         let fields = NSStackView(); fields.orientation = .vertical; fields.alignment = .leading; fields.spacing = Space.s2
         for name in ["Name","Date","Size","Action","Destination"] {
@@ -396,6 +399,10 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
             detailLabelWidths.append(label.widthAnchor.constraint(equalToConstant:118))
             pair.widthAnchor.constraint(equalTo:fields.widthAnchor).isActive = true
         }
+        detailsFields = fields
+        detailsHint.font = Typography.font(.body); detailsHint.textColor = Palette.Text.secondary; detailsHint.maximumNumberOfLines = 0
+        detailsHint.preferredMaxLayoutWidth = Self.detailsWidth
+        detailsPanel.addArrangedSubview(detailsHint)
         detailsPanel.addArrangedSubview(detailsImage); detailsPanel.addArrangedSubview(fields)
         detailsImage.widthAnchor.constraint(equalTo:detailsPanel.widthAnchor).isActive = true
         fields.widthAnchor.constraint(equalTo:detailsPanel.widthAnchor).isActive = true
@@ -479,6 +486,7 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         let missingCount = selected.filter(\.missing).count
         warning.stringValue = missingCount == 0 ? "" : "Error: \(missingCount) selected \(missingCount == 1 ? "file is" : "files are") missing. You can remove the history entry or use its web link."
         warning.isHidden = missingCount == 0
+        detailsHint.isHidden = !selected.isEmpty; detailsImage.isHidden = selected.isEmpty; detailsFields?.isHidden = selected.isEmpty
         guard let value = selected.first else {
             detailsImage.image = nil; detailValues.values.forEach { $0.stringValue = "—" }; return
         }
