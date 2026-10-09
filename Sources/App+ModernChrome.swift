@@ -9,7 +9,7 @@ extension AppDelegate {
         if !on { status.toolTip = nil }
     }
 
-    /// The Drag Me thumbnail doubles as the canvas bleed under the rails.
+    /// The Drag Me thumbnail doubles as the canvas bleed under the bars.
     func feedCanvasBleed() {
         (modernChrome as? ModernEditorChrome)?.updateCanvasBleed(dragExportView?.overview)
     }
@@ -77,13 +77,12 @@ extension AppDelegate {
         for (index, title) in FormatToggle.titles.enumerated() { dragFormatToggle.setLabel(title, forSegment: index); dragFormatToggle.setWidth(0, forSegment: index); dragFormatToggle.setToolTip(FormatToggle.toolTip, forSegment: index) }
         dragFormatToggle.target = self; dragFormatToggle.action = #selector(changeDragOptions(_:))
         dragFormatToggle.selectedSegment = FormatToggle.segment(forStoredChoice: UserDefaults.standard.integer(forKey: FormatToggle.defaultsKey))
-        dragSizeLabel.font = .systemFont(ofSize: 18); dragSizeLabel.lineBreakMode = .byTruncatingTail
         status.font = .systemFont(ofSize: 18); status.lineBreakMode = .byTruncatingTail
 
         let controls = ModernEditorChrome.SharedControls(
             canvas: canvas, canvasBorder: canvasBorder, status: status, sizeLabel: sizeLabel,
             widthControl: widthControl, paletteButton: paletteButton, zoomControl: zoomControl, dragFormatControl: dragFormatToggle,
-            dragOriginalControl: dragOriginalControl, dragSizeLabel: dragSizeLabel, dragExportView: drag, toolbox: toolbox)
+            dragOriginalControl: dragOriginalControl, dragExportView: drag, toolbox: toolbox)
         let actions = ModernEditorChrome.Actions(
             target: self, hide: #selector(vanish), photos: #selector(showPhotos), saveHistory: #selector(saveHistory),
             showHistory: #selector(showHistory), chooseTool: #selector(chooseTool(_:)), snap: #selector(snapButtonPressed),

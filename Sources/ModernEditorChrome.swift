@@ -24,14 +24,21 @@ private final class ControlHolderView: NSView {
     }
 }
 
-/// The Modern editor layout: a window backdrop, a header holding every command, the canvas beside one right rail and a single footer row.
-/// Glass sits only on the command layer and never over the canvas; every control is owned by the caller and re-parented here.
+/// The zoom popup. Its face shows only the percentage, so the mode word of a computed zoom (Fit, Frame, Normal, ...)
+/// travels on the item's tooltip and in the spoken value instead.
+final class ZoomPopUpButton: NSPopUpButton {
+    override func accessibilityValue() -> Any? { selectedItem?.toolTip ?? titleOfSelectedItem }
+}
+
+/// The Modern editor layout: a window backdrop, a top bar holding capture and annotation, the canvas across the full
+/// width and a bottom bar holding document and output. Glass sits only on the command layer and never over the canvas;
+/// every control is owned by the caller and re-parented here.
 @MainActor
 final class ModernEditorChrome: NSView {
     struct SharedControls {
         let canvas: NSView, canvasBorder: NSView, status: NSTextField, sizeLabel: NSTextField
         let widthControl: NSControl, paletteButton: NSButton, zoomControl: NSPopUpButton, dragFormatControl: NSControl
-        let dragOriginalControl: NSButton, dragSizeLabel: NSTextField, dragExportView: NSView, toolbox: NSPopUpButton
+        let dragOriginalControl: NSButton, dragExportView: NSView, toolbox: NSPopUpButton
     }
 
     struct Actions {
@@ -46,7 +53,8 @@ final class ModernEditorChrome: NSView {
         "fill": .fillDrip, "eraser": .eraser, "text": .text, "arrow": .arrowUpRight, "crop": .cropSimple
     ]
 
-    /// Narrowest window the one-row top bar fits in without clipping (measured 976 pt, rounded up).
+    /// Narrowest window both one-row bars fit in without clipping. The Frame-mode top bar is the widest at about 970 pt
+    /// (see GlassChromeTests' width budget), so 980 is a floor derived from `Metrics`, not a guess.
     static let minimumWindowWidth: CGFloat = 980
 
     let scrollView = NSScrollView()
@@ -57,7 +65,7 @@ final class ModernEditorChrome: NSView {
     var backdropIsVisible: Bool { !backdrop.isHidden }
     var bleedIsVisible: Bool { !bleed.isHidden }
 
-    /// Snap becomes Snap Frame, Cancel appears beneath it, and the translucent backdrop gives way to the Frame-mode hole.
+    /// Snap becomes Snap Frame, Cancel appears beside it, and the translucent backdrop gives way to the Frame-mode hole.
     var frameMode = false {
         didSet { if frameMode != oldValue { applyFrameMode() } }
     }
@@ -154,7 +162,7 @@ final class ModernEditorChrome: NSView {
         accessibility = accessibilityProvider()
     }
 
-    /// The thumbnail that bleeds under the rails; nil, Frame mode, Reduce Transparency or the flag hide it.
+    /// The thumbnail that bleeds under the bars; nil, Frame mode, Reduce Transparency or the flag hide it.
     func updateCanvasBleed(_ image: NSImage?) {
         bleedImage.image = image
         updateBackdropAndBleed()
@@ -200,7 +208,7 @@ final class ModernEditorChrome: NSView {
         for view in views { surfaces[ObjectIdentifier(view)] = surface }
     }
 
-    /// Every icon-only command shares one glass size so the rails and bars read as one set.
+    /// Every icon-only command shares one glass size so the bars read as one set.
     private func iconPill(_ control: NSView, size: NSSize = GlassChrome.Metrics.iconButton) -> GlassSurfaceView {
         let surface = GlassChrome.surface(control, shape: .capsule, accessibility: accessibility, size: size)
         register(surface, for: control)
@@ -213,22 +221,20 @@ final class ModernEditorChrome: NSView {
 
     private func build(actions: Actions) {
         typealias Metrics = GlassChrome.Metrics
-        let margin: CGFloat = 12, gap: CGFloat = 8
+        let margin: CGFloat = 12, gap: CGFloat = 8, groupGap = Metrics.groupGap
         let headerTop: CGFloat = 4, rowHeight: CGFloat = 44, footerBottom: CGFloat = 8
 
         for control in [controls.dragFormatControl, controls.toolbox, controls.paletteButton] as [NSControl] { GlassChrome.useExtraLarge(control) }
         for control in [controls.dragFormatControl, controls.toolbox] as [NSControl] { readable(control, 20) }
-        for control in [controls.status, controls.dragSizeLabel, controls.zoomControl, controls.dragOriginalControl, controls.widthControl] as [NSControl] { readable(control, 18) }
+        for control in [controls.status, controls.zoomControl, controls.dragOriginalControl, controls.widthControl] as [NSControl] { readable(control, 18) }
         // Color shows only its swatch: the title stays on the control (and its accessibility label) but is never drawn.
         controls.paletteButton.isBordered = false
         controls.paletteButton.imagePosition = .imageOnly
         controls.paletteButton.toolTip = "Color: " + (controls.paletteButton.toolTip.map { $0.prefix(1).lowercased() + $0.dropFirst() } ?? "pick a drawing color")
         controls.widthControl.toolTip = "Size"
-        for label in [controls.status, controls.dragSizeLabel] { label.textColor = .labelColor }
-        for label in [controls.status, controls.dragSizeLabel] {
-            label.lineBreakMode = .byTruncatingTail
-            label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        }
+        controls.status.textColor = .labelColor
+        controls.status.lineBreakMode = .byTruncatingTail
+        controls.status.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         controls.status.setContentHuggingPriority(.defaultLow, for: .horizontal)
 
         backdrop.material = .underWindowBackground
@@ -247,7 +253,7 @@ final class ModernEditorChrome: NSView {
         scrollView.contentView.drawsBackground = false
         scrollView.borderType = .noBorder
 
-        // Header: [Hide][Toolbox][Photos] · brand · [Save][History]
+        // Top bar: [Hide][Toolbox][Photos] · [Snap][Cancel] · ten tools · [Color][Size][Font]
         header.identifier = NSUserInterfaceItemIdentifier("OpenSnapHeader")
         let toolboxIcon = ChromeIcons.resolve(.toolbox, family: .regular, pointSize: Metrics.iconPointSize)
         if let image = toolboxIcon.image, let first = controls.toolbox.itemArray.first {
@@ -262,12 +268,18 @@ final class ModernEditorChrome: NSView {
                                                  size: Metrics.toolboxButton)
         register(toolboxSurface, for: controls.toolbox, toolboxHolder)
         let photosSurface = iconPill(photosButton)
-        let saveSurface = iconPill(saveButton)
-        let historySurface = iconPill(historyButton)
         let leadingGroup = GlassChrome.group([hideSurface, toolboxSurface, photosSurface], orientation: .horizontal, identifier: "GlassHeaderLeading")
-        let trailingGroup = GlassChrome.group([saveSurface, historySurface], orientation: .horizontal, identifier: "GlassHeaderTrailing")
 
-        // The ten tools, archive order, icon only, then Resize: one centred row between the two end groups.
+        // Capture: Snap stays put; Cancel joins it on the right in Frame mode only (a hidden surface collapses out of the stack).
+        snapButton.isPrimary = true
+        snapButton.toolTip = Self.snapToolTip
+        cancelFrameButton.isHidden = true
+        let snapSurface = iconPill(snapButton, size: Metrics.primaryButton)
+        snapSurface.prominence = .primary
+        let cancelSurface = iconPill(cancelFrameButton)
+        let captureGroup = GlassChrome.group([snapSurface, cancelSurface], orientation: .horizontal, identifier: "GlassCaptureGroup")
+
+        // The ten tools, archive order, icon only.
         var toolSurfaces: [GlassSurfaceView] = []
         for id in toolOrder {
             guard let icon = Self.toolIcons[id] else { continue }
@@ -283,55 +295,59 @@ final class ModernEditorChrome: NSView {
             toolButtons[id] = button
             toolSurfaces.append(surface)
         }
-        let resizeSurface = iconPill(resizeButton)
-        let toolGroup = GlassChrome.group(toolSurfaces + [resizeSurface], orientation: .horizontal, identifier: "GlassToolBar", spacing: Metrics.toolSpacing)
-        if let stack = toolGroup.contentView as? NSStackView { stack.setCustomSpacing(Metrics.resizeSeparation, after: toolSurfaces.last ?? resizeSurface) }
-        for view in [leadingGroup, toolGroup, trailingGroup] {
+        let toolGroup = GlassChrome.group(toolSurfaces, orientation: .horizontal, identifier: "GlassToolBar", spacing: Metrics.toolSpacing)
+
+        // Annotation: Color, Size (a pill that opens its popover) and Font sit beside the tools they modify.
+        let colorSurface = iconPill(controls.paletteButton)
+        let sizeSurface = iconPill(controls.widthControl)
+        let fontSurface = iconPill(fontButton)
+        let annotationGroup = GlassChrome.group([colorSurface, sizeSurface, fontSurface], orientation: .horizontal, identifier: "GlassAnnotationGroup")
+
+        let headerGroups = [leadingGroup, captureGroup, toolGroup, annotationGroup]
+        for view in headerGroups {
             view.translatesAutoresizingMaskIntoConstraints = false
             header.addSubview(view)
         }
-        let centred = toolGroup.centerXAnchor.constraint(equalTo: header.centerXAnchor)
-        centred.priority = .defaultHigh
+        // The tool row is centred between the capture and annotation groups by two equal spacers, so Snap never moves.
+        let beforeTools = NSLayoutGuide(), afterTools = NSLayoutGuide()
+        header.addLayoutGuide(beforeTools)
+        header.addLayoutGuide(afterTools)
         NSLayoutConstraint.activate([
             leadingGroup.leadingAnchor.constraint(equalTo: header.leadingAnchor),
-            trailingGroup.trailingAnchor.constraint(equalTo: header.trailingAnchor),
-            centred,
-            toolGroup.leadingAnchor.constraint(greaterThanOrEqualTo: leadingGroup.trailingAnchor, constant: margin),
-            trailingGroup.leadingAnchor.constraint(greaterThanOrEqualTo: toolGroup.trailingAnchor, constant: margin),
-            leadingGroup.centerYAnchor.constraint(equalTo: header.centerYAnchor),
-            toolGroup.centerYAnchor.constraint(equalTo: header.centerYAnchor),
-            trailingGroup.centerYAnchor.constraint(equalTo: header.centerYAnchor)
-        ])
+            captureGroup.leadingAnchor.constraint(equalTo: leadingGroup.trailingAnchor, constant: groupGap),
+            annotationGroup.trailingAnchor.constraint(equalTo: header.trailingAnchor),
+            beforeTools.leadingAnchor.constraint(equalTo: captureGroup.trailingAnchor),
+            beforeTools.trailingAnchor.constraint(equalTo: toolGroup.leadingAnchor),
+            afterTools.leadingAnchor.constraint(equalTo: toolGroup.trailingAnchor),
+            afterTools.trailingAnchor.constraint(equalTo: annotationGroup.leadingAnchor),
+            beforeTools.widthAnchor.constraint(equalTo: afterTools.widthAnchor),
+            beforeTools.widthAnchor.constraint(greaterThanOrEqualToConstant: groupGap)
+        ] + headerGroups.map { $0.centerYAnchor.constraint(equalTo: header.centerYAnchor) })
 
-        // Right rail: Snap / Cancel · Color / Font / Size · Undo / Wipe, stacked with normal spacing, all icon-only
-        snapButton.isPrimary = true
-        snapButton.toolTip = Self.snapToolTip
-        cancelFrameButton.isHidden = true
-        let snapSurface = iconPill(snapButton, size: Metrics.primaryButton)
-        snapSurface.prominence = .primary
-        let cancelSurface = iconPill(cancelFrameButton)
-        let colorSurface = iconPill(controls.paletteButton)
-        let fontSurface = iconPill(fontButton)
-        let sizeStack = NSStackView(views: [controls.widthControl])
-        sizeStack.orientation = .vertical
-        sizeStack.spacing = 4
-        sizeStack.alignment = .centerX
-        sizeStack.edgeInsets = NSEdgeInsets(top: 8, left: 6, bottom: 8, right: 6)
-        let sliderWidth = controls.widthControl.widthAnchor.constraint(equalToConstant: 36)
-        let sliderHeight = controls.widthControl.heightAnchor.constraint(equalToConstant: 96)
-        NSLayoutConstraint.activate([sliderWidth, sliderHeight])
-        let sizeSurface = GlassChrome.surface(sizeStack, shape: .rounded(Metrics.toolRadius), accessibility: accessibility,
-                                              size: NSSize(width: Metrics.iconButton.width, height: ceil(sizeStack.fittingSize.height)))
-        register(sizeSurface, for: sizeStack, controls.widthControl)
+        // Bottom bar: [Undo][Wipe] · [Zoom][Resize…] · [Original size] status · [Save][History] · [PNG|JPG][Drag][Upload]
         let undoSurface = iconPill(undoButton)
         let wipeSurface = iconPill(wipeButton)
-        let captureGroup = GlassChrome.group([snapSurface, cancelSurface], orientation: .vertical, identifier: "GlassCaptureGroup")
-        let drawingGroup = GlassChrome.group([colorSurface, fontSurface, sizeSurface], orientation: .vertical, identifier: "GlassDrawingGroup")
-        let historyGroup = GlassChrome.group([undoSurface, wipeSurface], orientation: .vertical, identifier: "GlassHistoryGroup")
-        let rightRail = NSView()
-        for group in [captureGroup, drawingGroup, historyGroup] { rightRail.addSubview(group) }
+        let undoWipeGroup = GlassChrome.group([undoSurface, wipeSurface], orientation: .horizontal, identifier: "GlassUndoWipeGroup")
 
-        // One footer row: [zoom][status text] ········ [format][drag][upload]
+        // The zoom popup sits in a glass capsule, sized once for its widest face (the percentage alone) so it never jumps.
+        let zoomInset: CGFloat = 4
+        controls.zoomControl.isBordered = false
+        let zoomHolder = ControlHolderView(controls.zoomControl, inset: zoomInset)
+        let selectedZoom = controls.zoomControl.indexOfSelectedItem
+        let widestZoom = (0..<controls.zoomControl.numberOfItems).map { index -> CGFloat in
+            controls.zoomControl.selectItem(at: index); return controls.zoomControl.fittingSize.width
+        }.max() ?? 0
+        if selectedZoom >= 0 { controls.zoomControl.selectItem(at: selectedZoom) }
+        let zoomSurface = GlassChrome.surface(zoomHolder, shape: .capsule, accessibility: accessibility,
+                                              size: NSSize(width: ceil(widestZoom) + 2 * zoomInset, height: Metrics.commandHeight))
+        register(zoomSurface, for: controls.zoomControl, zoomHolder)
+        let resizeSurface = iconPill(resizeButton)
+        let viewGroup = GlassChrome.group([zoomSurface, resizeSurface], orientation: .horizontal, identifier: "GlassViewGroup")
+
+        let saveSurface = iconPill(saveButton)
+        let historySurface = iconPill(historyButton)
+        let saveGroup = GlassChrome.group([saveSurface, historySurface], orientation: .horizontal, identifier: "GlassSaveGroup")
+
         let formatControl = controls.dragFormatControl
         let formatInset: CGFloat = 4
         let formatHolder = ControlHolderView(formatControl, inset: formatInset)
@@ -354,11 +370,8 @@ final class ModernEditorChrome: NSView {
         let footerGroup = GlassChrome.group([formatSurface, dragSurface, shareSurface], orientation: .horizontal, identifier: "GlassFooterRow")
         if let stack = footerGroup.contentView as? NSStackView { stack.distribution = .fill }
 
-        controls.zoomControl.isBordered = true
-        let zoomWidth = controls.zoomControl.widthAnchor.constraint(equalToConstant: 160)
-        zoomWidth.priority = .defaultHigh
-        zoomWidth.isActive = true
-        let statusRow = NSStackView(views: [controls.zoomControl, controls.dragOriginalControl, controls.dragSizeLabel, controls.status])
+        // The status takes whatever width the groups leave; the Original size checkbox only exists for a large shot.
+        let statusRow = NSStackView(views: [controls.dragOriginalControl, controls.status])
         statusRow.orientation = .horizontal
         statusRow.spacing = 12
         statusRow.alignment = .centerY
@@ -366,11 +379,13 @@ final class ModernEditorChrome: NSView {
 
         let footer = NSView()
         footer.identifier = NSUserInterfaceItemIdentifier("OpenSnapFooter")
-        footer.addSubview(statusRow)
-        footer.addSubview(footerGroup)
-        let all: [NSView] = [backdrop, bleed, scrollView, header, rightRail, footer]
-        let rails: [NSView] = [captureGroup, drawingGroup, historyGroup, footerGroup, statusRow]
-        for view in all + rails { view.translatesAutoresizingMaskIntoConstraints = false }
+        let footerParts: [NSView] = [undoWipeGroup, viewGroup, statusRow, saveGroup, footerGroup]
+        for part in footerParts {
+            part.translatesAutoresizingMaskIntoConstraints = false
+            footer.addSubview(part)
+        }
+        let all: [NSView] = [backdrop, bleed, scrollView, header, footer]
+        for view in all { view.translatesAutoresizingMaskIntoConstraints = false }
         for view in all { addSubview(view) }
         addSubview(controls.canvasBorder)
 
@@ -389,29 +404,25 @@ final class ModernEditorChrome: NSView {
             footer.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -margin),
             footer.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -footerBottom),
             footer.heightAnchor.constraint(equalToConstant: rowHeight),
-            statusRow.leadingAnchor.constraint(equalTo: footer.leadingAnchor), statusRow.centerYAnchor.constraint(equalTo: footer.centerYAnchor),
-            statusRow.trailingAnchor.constraint(lessThanOrEqualTo: footerGroup.leadingAnchor, constant: -margin),
-            footerGroup.trailingAnchor.constraint(equalTo: footer.trailingAnchor), footerGroup.centerYAnchor.constraint(equalTo: footer.centerYAnchor),
+            undoWipeGroup.leadingAnchor.constraint(equalTo: footer.leadingAnchor),
+            viewGroup.leadingAnchor.constraint(equalTo: undoWipeGroup.trailingAnchor, constant: groupGap),
+            statusRow.leadingAnchor.constraint(equalTo: viewGroup.trailingAnchor, constant: groupGap),
+            statusRow.trailingAnchor.constraint(lessThanOrEqualTo: saveGroup.leadingAnchor, constant: -groupGap),
+            saveGroup.trailingAnchor.constraint(equalTo: footerGroup.leadingAnchor, constant: -groupGap),
+            footerGroup.trailingAnchor.constraint(equalTo: footer.trailingAnchor)
+        ] + footerParts.map { $0.centerYAnchor.constraint(equalTo: footer.centerYAnchor) } + [
 
-            rightRail.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -margin),
-            rightRail.widthAnchor.constraint(equalToConstant: Metrics.rightRailWidth),
-            rightRail.topAnchor.constraint(equalTo: header.bottomAnchor, constant: gap),
-            rightRail.bottomAnchor.constraint(equalTo: footer.topAnchor, constant: -gap),
-            captureGroup.centerXAnchor.constraint(equalTo: rightRail.centerXAnchor), captureGroup.topAnchor.constraint(equalTo: rightRail.topAnchor),
-            drawingGroup.centerXAnchor.constraint(equalTo: rightRail.centerXAnchor),
-            drawingGroup.topAnchor.constraint(equalTo: captureGroup.bottomAnchor, constant: Metrics.groupSpacing),
-            historyGroup.centerXAnchor.constraint(equalTo: rightRail.centerXAnchor),
-            historyGroup.topAnchor.constraint(equalTo: drawingGroup.bottomAnchor, constant: Metrics.groupSpacing),
-
+            // The canvas runs edge to edge between the bars; nothing is reserved on either side of it.
             scrollView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: margin),
-            scrollView.trailingAnchor.constraint(equalTo: rightRail.leadingAnchor, constant: -gap),
-            scrollView.topAnchor.constraint(equalTo: rightRail.topAnchor), scrollView.bottomAnchor.constraint(equalTo: rightRail.bottomAnchor)
+            scrollView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -margin),
+            scrollView.topAnchor.constraint(equalTo: header.bottomAnchor, constant: gap),
+            scrollView.bottomAnchor.constraint(equalTo: footer.topAnchor, constant: -gap)
         ])
 
-        // Only the mirrored edge of the thumbnail shows under the bars and rails; the canvas area itself stays clear.
+        // Only the mirrored edge of the thumbnail shows under the bars; the canvas area itself stays clear.
         bleed.additionalSafeAreaInsets = NSEdgeInsets(
             top: headerTop + Metrics.headerHeight + gap, left: margin,
-            bottom: footerBottom + rowHeight + gap, right: margin + Metrics.rightRailWidth + gap)
+            bottom: footerBottom + rowHeight + gap, right: margin)
         updateBackdropAndBleed()
     }
 }
