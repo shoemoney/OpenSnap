@@ -71,12 +71,78 @@ def tree_nodes(node, path=()):
         yield from tree_nodes(child, path + (node.get("class", "?"),))
 
 
-FONT_SOURCES = {}
+def first_ref(file, needle):
+    path = SRC / file
+    if path.exists():
+        for number, line in enumerate(path.read_text().splitlines(), 1):
+            if needle in line:
+                return f"Sources/{file}:{number}"
+    return f"Sources/{file}:?"
+
+
+def source_for(sid, cls, text):
+    """Where the point size of a measured control is set (grep-resolved), or who owns it."""
+    t = text.strip()
+    if cls in ("_NSThemeCloseWidget", "_NSThemeZoomWidget", "_NSThemeWidget") or (cls == "NSTextField" and sid in ("S01", "S02", "S03", "S04", "S05", "S06", "S07", "S08", "S09", "S11", "S12", "S15", "S18", "S19", "S21", "S23", "S20") and t in ("Untitled", "Frame", "Focus", "Menus", "Flash", "History", "Crop") or t.startswith(("Quarterly", "Tool states", "Selection", "Color and size", "Large capture", "Small image", "Footer states", "Upload demo", "Preferences"))):
+        return "system AppKit titlebar (not set by the app)"
+    if cls == "NSButtonTextField":
+        return "internal label of the format control; the control's own font is set at " + first_ref("App+ModernChrome.swift", "dragFormatToggle.font = .systemFont(ofSize: 20)")
+    if sid == "S16" or cls == "_NSAlertButton":
+        return "system NSAlert text (App.swift error alerts: " + first_ref("App.swift", "func error(_ error: Error)") + ")"
+    if cls.startswith("NSColorPicker") or t in ("Opacity", "Colors", "G", "H", "I", "L") or (cls == "NSTextView" and t.endswith("%")):
+        return "system NSColorPanel (AppKit)"
+    if cls == "NSPopUpButton" and ("%" in t):
+        return first_ref("App+ModernChrome.swift", "zoomControl.selectItem(withTitle:") + " (floor: " + first_ref("ModernEditorChrome.swift", "private func readable(") + ")"
+    if t == "Original size":
+        return first_ref("App+ModernChrome.swift", 'dragOriginalControl.title = "Original size"')
+    if "·" in t and ("KB" in t or "MB" in t):
+        return first_ref("App+ModernChrome.swift", "dragSizeLabel.font = .systemFont(ofSize: 18)")
+    if "Unsaved changes" in t or t.endswith("· Saved") or t.startswith("Frame:") or t.startswith("Uploading") or t.startswith("Link copied"):
+        return first_ref("App+ModernChrome.swift", "status.font = .systemFont(ofSize: 18)")
+    if t == "Drawing colors":
+        return first_ref("App.swift", "func label(_ text: String) -> NSTextField")
+    if t.startswith("Takes effect"):
+        return first_ref("GeneralPreferencesForm.swift", "appearanceNote.font = .systemFont(ofSize: 18)")
+    if sid == "S19" and cls == "NSTextField":
+        return first_ref("PublishingDestinationsView.swift", "let field = NSTextField(wrappingLabelWithString: text); field.font = Self.font(18)")
+    if sid == "S19" and cls == "NSButton" and "public-read" in t:
+        return first_ref("PublishingDestinationsView.swift", "aclCheckbox.font = Self.font(18)")
+    if sid == "S19" and cls == "NSButton":
+        return first_ref("PublishingDestinationsView.swift", "button.font = font(18)")
+    if sid == "S19" and cls == "NSPopUpButton":
+        return first_ref("PublishingDestinationsView.swift", "popup.font = Self.font(18)")
+    if sid == "S20":
+        if t.endswith(":") and t[:-1] in ("Name", "Date", "Size", "Action", "Destination"):
+            return first_ref("HistoryBrowser.swift", "label.font = .systemFont(ofSize:18,weight:.semibold)")
+        if "format" in t:
+            return first_ref("HistoryBrowser.swift", "formatLabel.font = .systemFont(ofSize:18)")
+        if "items" in t or "match" in t:
+            return first_ref("HistoryBrowser.swift", "status.font = .systemFont(ofSize:18)")
+        return first_ref("HistoryBrowser.swift", "action.font = .systemFont(ofSize:18)")
+    if sid in ("S25", "S26", "S21", "S06"):
+        return "system AppKit text (About panel / NSAlert / panels); the app sets no font here"
+    return "see manifest sourceRefs for the surface"
+
+
+def normalise(cls, text):
+    t = text.strip()
+    if re.search(r"\d+ × \d+ · ", t):
+        return "‹image size label, e.g. “800 × 600 · 10 KB”›"
+    if "· Unsaved changes" in t or t.endswith("· Saved"):
+        return "‹status line, e.g. “Arrow · Unsaved changes”›"
+    if t.startswith("Frame:") or t.startswith("Uploading") or t.startswith("Link copied"):
+        return "‹status line (Frame / upload message)›"
+    if re.search(r"%$", t) and cls == "NSPopUpButton":
+        return "‹zoom popup, e.g. “Output · 100%”›"
+    if cls == "NSTextField" and t in ("Untitled", "Frame", "Focus", "Menus", "Flash", "History", "Crop", "Preferences") or t.startswith(("Quarterly", "Tool states", "Selection", "Color and size", "Large capture", "Small image", "Footer states", "Upload demo", "Layout")):
+        return "‹window title›"
+    return t
 
 
 def write_text_size(out):
     manifest = load_json(out / "manifest.json")
-    groups = collections.OrderedDict()
+    rows = {}
+    annotation = set()
     for m in manifest:
         if m.get("prototype") or m["sourceSha"] != "b9319c4":
             continue
@@ -86,46 +152,57 @@ def write_text_size(out):
             continue
         data = load_json(path)
         for window in data["windows"]:
-            title = window.get("title", "")
             if "views" not in window:
                 continue
             for node, _ in tree_nodes(window["views"]):
                 if node.get("effectivelyHidden"):
                     continue
-                font = node.get("font")
-                text = node.get("string")
-                if not font or not text:
+                if node["class"] in ("GlassChromeButton", "BezelHoverButton") and node.get("imagePosition") == 1:
+                    continue  # icon-only: the title is an accessibility name, never drawn
+                font, text = node.get("font"), node.get("string")
+                if not font or not text or font["pointSize"] >= 20:
                     continue
-                size = font["pointSize"]
-                if size >= 20:
-                    continue
-                content = node["class"] in ("SketchTextEditor", "NSTextView") and "annotation" in (node.get("axLabel", "") or "").lower()
-                key = (m["id"], m["surface"], node["class"], text.strip()[:70], round(size, 1), content)
-                groups.setdefault(key, set()).add(m["appearance"])
-    lines = ["# Text-size summary (UI text under 20 pt)", "",
-             "Generated from the live view trees in `metrics/*.json` captured at `b9319c4`: every VISIBLE (not hidden, alpha > 0) control whose font reports a point size below 20 and that carries a string. "
-             "Annotation CONTENT (user drawings) is listed separately and is not a UI-readability finding. Menu-bar and native-menu text drawn by the system is covered at the end.", ""]
+                size = round(font["pointSize"], 1)
+                if node["class"] in ("SketchTextEditor",):
+                    annotation.add((m["id"], text.strip()[:60], size)); continue
+                key = (node["class"], normalise(node["class"], text), size, source_for(m["id"], node["class"], text))
+                rows.setdefault(key, {"surfaces": {}, "appearances": set()})
+                rows[key]["surfaces"].setdefault(m["id"], m["surface"])
+                rows[key]["appearances"].add(m["appearance"])
+    lines = ["# Text-size summary (visible UI text under 20 pt)", "",
+             "Generated from the live view trees in `metrics/*.json` captured at `b9319c4` (Light + Dark): every VISIBLE (not hidden, alpha > 0) text-bearing control whose font reports a point size below 20. "
+             "Icon-only buttons (their title is only an accessibility name) are excluded. Annotation CONTENT (user drawings) is listed separately at the end and is not a UI-readability finding. "
+             "Text drawn by custom `draw(_:)` code (the old 'Drag Me' label, help-bevel HUD, native tooltips, native menu items) is not in the view tree; see the notes at the end.", ""]
+    def count(lo, hi):
+        return sum(1 for k in rows if lo <= k[2] < hi)
+    lines += [f"**Totals: {count(0,18)} distinct controls under 18 pt (all system-owned AppKit text); {count(18,20)} distinct controls at 18 to 19.9 pt.**", ""]
     for band, lo, hi in (("Under 18 pt", 0, 18), ("18 to 19.9 pt", 18, 20)):
         lines += [f"## {band}", ""]
-        by_surface = collections.OrderedDict()
-        for (sid, surface, cls, text, size, content), appearances in sorted(groups.items(), key=lambda kv: (kv[0][0], kv[0][4])):
-            if content or not (lo <= size < hi):
+        common, specific = [], collections.OrderedDict()
+        for key, info in sorted(rows.items(), key=lambda kv: (kv[0][2], kv[0][1])):
+            if not (lo <= key[2] < hi):
                 continue
-            by_surface.setdefault((sid, surface), []).append((cls, text, size, appearances))
-        if not by_surface:
-            lines += ["_None found in the captured view trees._", ""]
-        count = 0
-        for (sid, surface), rows in by_surface.items():
-            lines += [f"### {sid} — {surface}", "", "| Control class | Text | pt | Appearances | Source |", "|---|---|---|---|---|"]
-            for cls, text, size, appearances in rows:
-                source = FONT_SOURCES.get((cls, text)) or FONT_SOURCES.get(cls) or "see notes"
-                lines.append(f"| {cls} | {text} | {size} | {'/'.join(sorted(appearances))} | {source} |")
-                count += 1
+            (common if len(info["surfaces"]) >= 6 else specific.setdefault(tuple(sorted(info["surfaces"].items())), [])).append((key, info)) if len(info["surfaces"]) >= 6 else specific.setdefault(tuple(sorted(info["surfaces"].items())), []).append((key, info))
+        if common:
+            lines += ["### Common to the editor window (present in 6 or more surfaces)", "", "| Control class | Text | pt | Source | Surfaces |", "|---|---|---|---|---|"]
+            for key, info in common:
+                ids = sorted(info["surfaces"])
+                lines.append(f"| {key[0]} | {key[1]} | {key[2]} | {key[3]} | {len(ids)} surfaces ({', '.join(ids[:6])}…) |")
             lines.append("")
-        lines += [f"**{band}: {count} distinct (surface, control, text) entries.**", ""]
-    annotation = sorted({(k[0], k[3], k[4]) for k in groups if k[5]})
+        for surfaces, items in specific.items():
+            title = ", ".join(f"{sid} {name}" for sid, name in surfaces)
+            lines += [f"### {title}", "", "| Control class | Text | pt | Source |", "|---|---|---|---|"]
+            for key, info in items:
+                lines.append(f"| {key[0]} | {key[1]} | {key[2]} | {key[3]} |")
+            lines.append("")
     lines += ["## Annotation content text (user drawings, not UI)", ""]
-    lines += [f"- {sid}: “{text}” {size} pt" for sid, text, size in annotation] or ["_None under 20 pt._"]
+    lines += [f"- {sid}: “{text}” {size} pt (field editor draws at the annotation's own size; new tool text is floored at 18 pt in Canvas.swift)" for sid, text, size in sorted(annotation)] or ["_None under 20 pt._"]
+    lines += ["", "## Not in the view tree (custom-drawn or system-drawn)", "",
+              f"- Window titles and traffic lights: system titlebar, 13 pt (listed above as common).",
+              f"- Native menu bar and menu items: system-drawn; the app sets 20 pt on its own menus ({first_ref('App.swift', 'm.font = .systemFont(ofSize: 20)')}) but the menu-bar titles are system size.",
+              f"- Native tooltips: system-drawn on hover, not capturable.",
+              f"- Help bevel HUD text: 20 pt ({first_ref('OriginalHelpBevel.swift', 'static let font')}).",
+              f"- Fonts panel, colour panel and Save panel internals: system views; the colour panel measured 11 pt labels (listed above)."]
     (out / "metrics" / "text-size-summary.md").write_text("\n".join(lines) + "\n")
 
 

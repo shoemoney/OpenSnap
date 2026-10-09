@@ -35,12 +35,21 @@ def main():
         (out / sub).mkdir(parents=True, exist_ok=True)
     observations = json.loads(pathlib.Path(args.observations).read_text())
     manifest, gaps = [], []
+    dropped = set(observations.get("_drop", []))
+
+    def is_dropped(name: str) -> bool:
+        base = re.sub(r"-(light|dark)(@.*)?(\.png|\.json)?$", "", name)
+        return base in dropped
+
     for raw in map(pathlib.Path, args.raw):
         for png in sorted(raw.glob("*.png")):
+            if is_dropped(png.name):
+                continue
             shutil.copy2(png, out / png.name)
         for sub in ("metrics", "ax"):
             for f in (raw / sub).glob("*.json"):
-                shutil.copy2(f, out / sub / f.name)
+                if not is_dropped(f.name):
+                    shutil.copy2(f, out / sub / f.name)
         for f in raw.glob("menus*.json"):
             shutil.copy2(f, out / f.name)
         for f in raw.glob("environment*.json"):
@@ -52,13 +61,15 @@ def main():
         for f in sorted((raw / "meta").glob("*.json")):
             meta = json.loads(f.read_text())
             stem = f.stem
+            if is_dropped(stem):
+                continue
             base = re.sub(r"-(light|dark)(@.*)?$", "", stem)
             suffix = ""
             if "@" in stem:
                 suffix = "@" + stem.split("@", 1)[1]
             note = observations.get(stem) or observations.get(base + suffix) or observations.get(base) or {}
             manifest.append({
-                "id": meta["id"], "surface": meta["surface"], "state": meta["state"], "appearance": meta["appearance"], "file": meta["file"],
+                "id": note.get("id", meta["id"]), "surface": note.get("surface", meta["surface"]), "state": note.get("state", meta["state"]), "appearance": meta["appearance"], "file": meta["file"],
                 "pixelSize": meta["pixelSize"], "pointSize": meta["pointSize"], "scale": meta["scale"], "method": meta["method"],
                 "sourceRefs": [resolve_ref(r) for r in meta["sourceRefs"]], "sourceSha": meta.get("sourceSha", "unknown"),
                 "observed": note.get("observed", ""), "issues": note.get("issues", []),
