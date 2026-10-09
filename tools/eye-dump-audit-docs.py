@@ -143,12 +143,15 @@ def normalise(cls, text):
     return t
 
 
+BASELINE_SHA = "b9319c4"
+
+
 def write_text_size(out):
     manifest = load_json(out / "manifest.json")
     rows = {}
     annotation = set()
     for m in manifest:
-        if m.get("prototype") or m["sourceSha"] != "b9319c4":
+        if m.get("prototype") or m["sourceSha"] != BASELINE_SHA:
             continue
         stem = m["file"][:-4]
         path = out / "metrics" / f"{stem}.json"
@@ -222,7 +225,7 @@ def write_captures(out, observations):
     groups = collections.OrderedDict()
     for m in manifest:
         sha = m["sourceSha"]
-        suffix = "@" + sha if sha != "b9319c4" else ""
+        suffix = "@" + sha if sha != BASELINE_SHA else ""
         stem = m["file"][:-4]
         base = re.sub(r"-(light|dark)(@.*)?$", "", stem)
         groups.setdefault((sha, "PROTO" if m["id"] == "PROTO" else "product", base), {})[m["appearance"]] = m
@@ -260,10 +263,13 @@ def write_captures(out, observations):
 
 
 def main():
+    global BASELINE_SHA
     ap = argparse.ArgumentParser()
     ap.add_argument("--dir", required=True)
     ap.add_argument("--observations", required=True)
+    ap.add_argument("--baseline-sha", default=BASELINE_SHA)
     args = ap.parse_args()
+    BASELINE_SHA = args.baseline_sha
     out = pathlib.Path(args.dir)
     observations = load_json(args.observations)
     write_gaps(out, observations)

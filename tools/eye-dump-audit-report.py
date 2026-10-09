@@ -29,6 +29,7 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--raw", action="append", required=True)
     ap.add_argument("--observations", required=True)
+    ap.add_argument("--baseline-sha", default="b9319c4", help="captures at this sha sort first and carry no @sha suffix")
     args = ap.parse_args()
     out = pathlib.Path(args.out)
     for sub in ("metrics", "ax", "layout"):
@@ -73,9 +74,10 @@ def main():
                 "pixelSize": meta["pixelSize"], "pointSize": meta["pointSize"], "scale": meta["scale"], "method": meta["method"],
                 "sourceRefs": [resolve_ref(r) for r in meta["sourceRefs"]], "sourceSha": meta.get("sourceSha", "unknown"),
                 "observed": note.get("observed", ""), "issues": note.get("issues", []),
+                "windowSize": meta.get("windowSize"), "iconMode": meta.get("iconMode", "sf"),
                 "windowAlpha": meta.get("windowAlpha"), "appActive": meta.get("appActive"), "prototype": bool(meta.get("prototype", False)),
             })
-    manifest.sort(key=lambda m: (m["sourceSha"] != "b9319c4", m["id"], m["file"]))
+    manifest.sort(key=lambda m: (m["sourceSha"] != args.baseline_sha, m["id"], m["file"]))
     (out / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n")
     (out / "gaps-raw.json").write_text(json.dumps(gaps, indent=2) + "\n")
     print(f"{len(manifest)} captures, {len(gaps)} raw gap records")

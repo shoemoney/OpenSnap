@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Assemble docs/design/evidence/<date>/ from the raw harness outputs and keep it under the size cap.
+"""Assemble an evidence folder (the --out path you give; nothing is written elsewhere) from the raw harness outputs and keep it under the size cap.
 
   python3 -I tools/eye-dump-audit-assemble.py --out DIR --b93 RAW [RAW...] --delta RAW [RAW...] --layout RAW --observations FILE --sha SHA
 """
@@ -9,11 +9,13 @@ from PIL import Image
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 
-def stage(dirs, dest):
+def stage(dirs, dest, icons="sf"):
     for sub in ("metrics", "ax", "meta", "gapsraw", "layout"):
         (dest / sub).mkdir(parents=True, exist_ok=True)
     for d in map(pathlib.Path, dirs):
-        r = d / "raw" if (d / "raw").is_dir() else d
+        # A run dir holds raw/ (older runs) or raw-<icons>/ (tools/eye-dump-audit.sh). One icon mode per assembly: file stems
+        # repeat across modes, so assemble sf and fa separately.
+        r = d / "raw" if (d / "raw").is_dir() else d / f"raw-{icons}" if (d / f"raw-{icons}").is_dir() else d
         if not r.is_dir():
             continue
         for pat, sub in (("*.png", ""), ("metrics/*.json", "metrics"), ("ax/*.json", "ax"), ("meta/*.json", "meta"), ("gapsraw/*.json", "gapsraw"),
@@ -31,15 +33,17 @@ def main():
     ap.add_argument("--observations", required=True)
     ap.add_argument("--sha", required=True)
     ap.add_argument("--max-width", type=int, default=1200)
+    ap.add_argument("--baseline-sha", default="b9319c4")
+    ap.add_argument("--icons", choices=["sf", "fa"], default="sf", help="which raw-<icons> folder of each run dir to assemble")
     args = ap.parse_args()
     out = pathlib.Path(args.out)
     work = pathlib.Path(tempfile.mkdtemp(prefix="audit-assemble."))
-    stage(args.b93 + args.delta + args.layout, work)
+    stage(args.b93 + args.delta + args.layout, work, args.icons)
     shutil.rmtree(out, ignore_errors=True)
     out.mkdir(parents=True)
     py = sys.executable
-    subprocess.run([py, "-I", str(ROOT / "tools/eye-dump-audit-report.py"), "--out", str(out), "--raw", str(work), "--observations", args.observations], check=True)
-    subprocess.run([py, "-I", str(ROOT / "tools/eye-dump-audit-docs.py"), "--dir", str(out), "--observations", args.observations], check=True)
+    subprocess.run([py, "-I", str(ROOT / "tools/eye-dump-audit-report.py"), "--out", str(out), "--raw", str(work), "--observations", args.observations, "--baseline-sha", args.baseline_sha], check=True)
+    subprocess.run([py, "-I", str(ROOT / "tools/eye-dump-audit-docs.py"), "--dir", str(out), "--observations", args.observations, "--baseline-sha", args.baseline_sha], check=True)
     if list((out / "layout").glob(f"budget-{args.sha}.json")):
         subprocess.run([py, "-I", str(ROOT / "tools/eye-dump-audit-layout-md.py"), "--dir", str(out), "--sha", args.sha], check=True)
     def prune(node):
