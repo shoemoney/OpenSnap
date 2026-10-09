@@ -12,11 +12,12 @@ OUT=${1:?usage: eye-dump-audit.sh OUTDIR [--groups ...] [--appearances ...]}
 shift
 GROUPS_WANTED="main,more,overlays,welcome,fullscreen"
 APPEARANCES="light,dark"
-APP_SRC=""; SOURCE_SHA=""; SUFFIX=""
+APP_SRC=""; SOURCE_SHA=""; SUFFIX=""; CUSTOM=""
 while [ "$#" -gt 0 ]; do
     case "$1" in
         --groups) GROUPS_WANTED=$2; shift 2 ;;
         --appearances) APPEARANCES=$2; shift 2 ;;
+        --surfaces) CUSTOM=$2; shift 2 ;;      # one custom run with exactly these surface ids
         --app) APP_SRC=$2; shift 2 ;;          # a pre-built OpenSkitch.app to copy (default: build/OpenSkitch.app)
         --sha) SOURCE_SHA=$2; shift 2 ;;       # recorded as sourceSha in every capture
         --suffix) SUFFIX=$2; shift 2 ;;        # appended to every file stem, e.g. @4b2ae0f
@@ -108,6 +109,7 @@ run_one() {
 }
 
 for appearance in $(echo "$APPEARANCES" | tr ',' ' '); do
+    if [ -n "$CUSTOM" ]; then run_one "$appearance" "$CUSTOM" no custom; continue; fi
     for group in $(echo "$GROUPS_WANTED" | tr ',' ' '); do
         case "$group" in
             main) run_one "$appearance" "ENV,S01,S11,S02,S03,S04,S05,S06,S07,S08,S09,S10" no main ;;

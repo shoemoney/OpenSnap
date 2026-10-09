@@ -115,6 +115,7 @@ extension AuditRun {
                             delay: TimeInterval = 0.8, dismiss: @escaping () -> Void, trigger: () -> Void) {
         let known = Set(NSApp.windows.map(\.windowNumber))
         var fired = false
+        var dismissTimer: Timer?
         let timer = Timer(timeInterval: delay, repeats: false) { [self] _ in
             MainActor.assumeIsolated {
                 fired = true
@@ -122,10 +123,15 @@ extension AuditRun {
                 shoot(id, slug, surface: surface, state: state, windows: [window] + extra, refs: refs, settle: 0,
                       extra: ["menuWindows": extra.map { String(describing: type(of: $0)) }])
                 dismiss()
+                // Keep asking until tracking really ends; a single cancelTracking() has left a popUp blocking before.
+                let again = Timer(timeInterval: 0.3, repeats: true) { _ in MainActor.assumeIsolated { dismiss(); NSApp.mainMenu?.cancelTracking() } }
+                RunLoop.main.add(again, forMode: .common)
+                dismissTimer = again
             }
         }
         RunLoop.main.add(timer, forMode: .common)
         trigger()
+        dismissTimer?.invalidate()
         timer.invalidate()
         if !fired { gap(id, surface + " / " + state, "menu tracking returned before the capture timer fired (menu did not open)") }
     }
