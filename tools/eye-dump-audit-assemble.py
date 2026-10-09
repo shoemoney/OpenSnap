@@ -30,7 +30,7 @@ def main():
     ap.add_argument("--layout", nargs="*", default=[])
     ap.add_argument("--observations", required=True)
     ap.add_argument("--sha", required=True)
-    ap.add_argument("--max-width", type=int, default=1400)
+    ap.add_argument("--max-width", type=int, default=1200)
     args = ap.parse_args()
     out = pathlib.Path(args.out)
     work = pathlib.Path(tempfile.mkdtemp(prefix="audit-assemble."))
@@ -42,11 +42,26 @@ def main():
     subprocess.run([py, "-I", str(ROOT / "tools/eye-dump-audit-docs.py"), "--dir", str(out), "--observations", args.observations], check=True)
     if list((out / "layout").glob(f"budget-{args.sha}.json")):
         subprocess.run([py, "-I", str(ROOT / "tools/eye-dump-audit-layout-md.py"), "--dir", str(out), "--sha", args.sha], check=True)
+    def prune(node):
+        for key, default in (("acceptsFirstResponder", None), ("canBecomeKeyView", None), ("alpha", 1.0), ("hidden", False), ("effectivelyHidden", False), ("glassDepth", 0)):
+            if key in node and (default is None or node[key] == default):
+                del node[key]
+        layer = node.get("layer")
+        if layer and layer.get("cornerRadius", 0) == 0 and "backgroundColor" not in layer and "borderWidth" not in layer:
+            del node["layer"]
+        for child in node.get("children", []):
+            prune(child)
+
     # metrics: minify, and drop the in-context duplicates' trees (the sheet-alone capture already carries the sheet's tree)
     for f in (out / "metrics").glob("*.json"):
         if "in-context" in f.name:
             f.unlink(); continue
-        f.write_text(json.dumps(json.loads(f.read_text()), separators=(",", ":"), ensure_ascii=False))
+        data = json.loads(f.read_text())
+        for window in data.get("windows", []):
+            if "views" in window:
+                prune(window["views"])
+        data["note"] = "default-valued keys (alpha 1, hidden false, glassDepth 0, acceptsFirstResponder, canBecomeKeyView, square layers) are omitted to stay under the size cap"
+        f.write_text(json.dumps(data, separators=(",", ":"), ensure_ascii=False))
     for f in (out / "ax").glob("*.json"):
         if "in-context" in f.name:
             f.unlink(); continue
