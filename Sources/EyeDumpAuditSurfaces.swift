@@ -287,6 +287,7 @@ extension AuditRun {
         RunLoop.main.add(modalGuard, forMode: .common)
 
         if wanted.contains("LAYOUT") { layoutBudget() }
+        if wanted.contains("PROTO") { if #available(macOS 26, *) { proto() } }
         if wanted.contains("S27") { s27() }
         let fresh = !wanted.contains("S27")
         if fresh {
@@ -456,6 +457,9 @@ extension AuditRun {
         let popoverWindow = app.colorPopover?.contentViewController?.view.window
         shoot("S06", "color-palette", surface: "color picker", state: "preset palette popover open (original ten presets + Custom color…)",
               windows: popoverWindow.map { [window, $0] } ?? [window], refs: ["App.swift|func presentDrawingColors"])
+        if let popoverWindow {
+            shoot("S06", "color-palette-popover", surface: "color picker", state: "preset palette popover window alone", windows: [popoverWindow], refs: ["App.swift|func presentDrawingColors"], settle: 0.2)
+        }
         app.closeDrawingColors(); pump(0.3)
         if let well = firstView(of: NSButton.self, label: "Drawing colors") { _ = well }
         app.chooseCustomColor(app.paletteButton)

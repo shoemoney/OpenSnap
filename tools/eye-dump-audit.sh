@@ -115,6 +115,9 @@ for appearance in $(echo "$APPEARANCES" | tr ',' ' '); do
             overlays) run_one "$appearance" "S13,S14,S15" no overlays ;;
             welcome) run_one "$appearance" "S27" yes welcome ;;
             fullscreen) run_one "$appearance" "S11F" no fullscreen ;;
+            layout) run_one "$appearance" "LAYOUT" no layout ;;
+            proto) run_one "$appearance" "PROTO" no proto ;;
+            delta) run_one "$appearance" "ENV,S01,S02,S03,S05,S07,S09,S11,S12" no delta ;;
         esac
     done
 done
