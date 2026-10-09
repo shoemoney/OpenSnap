@@ -119,7 +119,7 @@ for appearance in $(echo "$APPEARANCES" | tr ',' ' '); do
             fullscreen) run_one "$appearance" "S11F" no fullscreen ;;
             layout) run_one "$appearance" "LAYOUT" no layout ;;
             proto) run_one "$appearance" "PROTO" no proto ;;
-            delta) run_one "$appearance" "ENV,S01,S02,S03,S05,S07,S09,S11,S12" no delta ;;
+            delta) run_one "$appearance" "ENV,S01,S02,S03,S05,S07,S09,S11,S12,S14,S17,S24,S25,S29" no delta ;;
         esac
     done
 done

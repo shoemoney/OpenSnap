@@ -1,5 +1,6 @@
 import AppKit
 import CoreGraphics
+import Darwin
 
 /// `--eye-dump-audit <outdir>`: audit-only evidence harness. For every surface it writes the app's own window as a PNG plus
 /// a view-tree metrics file, an accessibility dump and the key-view loop, then quits. It captures only this process's own
@@ -61,12 +62,12 @@ final class AuditRun {
         let options: CGWindowImageOption = [.boundsIgnoreFraming, .bestResolution]
         var image: CGImage?
         if numbers.count == 1 {
-            image = CGWindowListCreateImage(.null, .optionIncludingWindow, numbers[0], options)
+            image = Self.windowImage(numbers[0], options)
         } else if numbers.count > 1 {
             let pointers = UnsafeMutablePointer<UnsafeRawPointer?>.allocate(capacity: numbers.count)
             for (index, number) in numbers.enumerated() { pointers[index] = UnsafeRawPointer(bitPattern: UInt(number)) }
             if let array = CFArrayCreate(kCFAllocatorDefault, pointers, numbers.count, nil) {
-                image = CGImage(windowListFromArrayScreenBounds: .null, windowArray: array, imageOption: options)
+                image = Self.windowImage(array, options)
             }
             pointers.deallocate()
         }
@@ -78,6 +79,19 @@ final class AuditRun {
         view.cacheDisplay(in: view.bounds, to: rep)
         guard let cg = rep.cgImage else { return nil }
         return (cg, "cacheDisplay (CGWindowList image was blank)")
+    }
+
+    // Since macOS 15 the SDK marks CGWindowListCreateImage unavailable, but the symbol is still in CoreGraphics and still images this
+    // process's own windows without any capture grant. Looked up at run time so the harness keeps building against the macOS 26 SDK.
+    private typealias WindowImageFn = @convention(c) (CGRect, CGWindowListOption, CGWindowID, CGWindowImageOption) -> Unmanaged<CGImage>?
+    private typealias WindowArrayImageFn = @convention(c) (CGRect, CFArray, CGWindowImageOption) -> Unmanaged<CGImage>?
+    static func windowImage(_ number: CGWindowID, _ options: CGWindowImageOption) -> CGImage? {
+        guard let symbol = dlsym(UnsafeMutableRawPointer(bitPattern: -2), "CGWindowListCreateImage") else { return nil }
+        return unsafeBitCast(symbol, to: WindowImageFn.self)(.null, .optionIncludingWindow, number, options)?.takeRetainedValue()
+    }
+    static func windowImage(_ array: CFArray, _ options: CGWindowImageOption) -> CGImage? {
+        guard let symbol = dlsym(UnsafeMutableRawPointer(bitPattern: -2), "CGWindowListCreateImageFromArray") else { return nil }
+        return unsafeBitCast(symbol, to: WindowArrayImageFn.self)(.null, array, options)?.takeRetainedValue()
     }
 
     static func isBlank(_ image: CGImage) -> Bool {
@@ -332,7 +346,7 @@ final class AuditRun {
             "fullKeyboardAccess_AppleKeyboardUIMode": global("AppleKeyboardUIMode"),
             "boldText": "not readable through a public API without changing nothing; recorded as a coverage gap",
             "appleInterfaceStyleGlobal": global("AppleInterfaceStyle"),
-            "appStyle": Appearance.current.rawValue, "modernChromePresent": app.modernChrome != nil,
+            "modernChromePresent": app.modernChrome != nil,
             "appIsActive": NSApp.isActive, "mainWindowIsKey": window.isKeyWindow,
             "bundleIdentifier": Bundle.main.bundleIdentifier ?? "bare binary (no bundle)",
             "defaultWindowFrame": rectJSON(window.frame), "contentMinSize": [Double(window.contentMinSize.width), Double(window.contentMinSize.height)],

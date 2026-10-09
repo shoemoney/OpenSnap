@@ -272,7 +272,7 @@ extension AuditRun {
         window.makeKeyAndOrderFront(nil)
         pump(1.0)
         guard app.modernChrome != nil else {
-            gap("ALL", "Whole audit", "Modern chrome is absent in this process (Appearance resolved to \(Appearance.current.rawValue)); nothing audited")
+            gap("ALL", "Whole audit", "Modern chrome is absent in this process; nothing audited")
             finish(); return
         }
         if wants("ENV") { writeEnvironment(preOverrideAppearance: before) }
@@ -614,8 +614,8 @@ extension AuditRun {
             shoot("S17", "preferences-general", surface: "Preferences: General", state: "General preferences window (single page)", windows: [prefs],
                   refs: ["App.swift|@objc func showPreferences()", "GeneralPreferencesForm.swift|final class GeneralPreferencesForm"])
             if let form = app.preferencesForm {
-                form.synchronize(GeneralPreferencesState(drawingPrecision: .loose, arrowHead: 1, includeSkitch: true, playSounds: false, statusMenu: 1, showToolTips: true, showKeyboardTips: true, appearance: .classic))
-                shoot("S17", "preferences-alt-values", surface: "Preferences: General", state: "alternate values selected (Loose, Start, Menu bar, Classic appearance radio)", windows: [prefs],
+                form.synchronize(GeneralPreferencesState(drawingPrecision: .loose, arrowHead: 1, includeSkitch: true, statusMenu: 1, showToolTips: true, showKeyboardTips: true))
+                shoot("S17", "preferences-alt-values", surface: "Preferences: General", state: "alternate values selected (Loose, Start, Menu bar, both tip overlays on)", windows: [prefs],
                       refs: ["GeneralPreferencesForm.swift|func synchronize"])
             }
         } else { gap("S17", "Preferences", "preferencesWindow was nil") }
