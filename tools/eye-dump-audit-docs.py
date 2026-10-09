@@ -48,7 +48,7 @@ def write_gaps(out, observations):
     seen, rows = set(), []
     for item in raw:
         # Menu/modal timers that did not fire are superseded by the curated rows below (the alerts were captured by the unexpected-modal guard).
-        if item["reason"].startswith(("the modal call returned", "menu tracking returned")):
+        if item["reason"].startswith(("the modal call returned", "menu tracking returned", "no modal alert appeared")):
             continue
         key = (item["id"], item["surface"], item["reason"])
         if key in seen:
@@ -214,7 +214,10 @@ def write_captures(out, observations):
     manifest = load_json(out / "manifest.json")
     lines = ["# Visual audit — capture gallery", "",
              "Rendered evidence of the **Modern** UI, gathered by the flag-gated harness (`--eye-dump-audit`, branch `audit/visual-harness`) from an isolated copy of the app: throwaway bundle id, home and support folder; own windows only (CGWindowList by window number); synthetic content only.", "",
-             "Observed-issue bullets describe what is visible in the PNG next to them. Source behaviour is cited in `manifest.json` (`sourceRefs`), never offered as an observation.", ""]
+             "Observed-issue bullets describe what is visible in the PNG next to them. Source behaviour is cited in `manifest.json` (`sourceRefs`), never offered as an observation.", "",
+             "**Baseline vs delta.** Captures without a suffix were taken at `b9319c4` (the audit baseline). Files suffixed `@dc1eb26` are the delta set taken after main moved (own drawn countdown digits, PNG|JPG toggle, no Classic/Appearance/Relaunch/welcome). Every manifest entry carries `sourceSha`.", "",
+             "**Size cap.** To keep the folder under 40 MB, window-size captures were downscaled to at most 1200 px wide and every PNG over 150 KB was palette-quantised with `pngquant --quality 85-95`, then `oxipng -o 2 --strip safe`. `pixelSize` in the manifest is the original capture; `storedPixelSize` is what is on disk (small crops keep full resolution). Alert and status-button PNGs are flattened onto a neutral backdrop because the glass material is not captured (see gaps.md).", "",
+             "**Capture limitations seen while reviewing:** menu windows and some overlay windows (colour popover, flash) do not appear in multi-window composites; the Fonts panel's left pane renders blank; the status-bar button is drawn as a bare view. These are harness limits, not product findings.", ""]
     banner = observations.get("_protoBanner")
     groups = collections.OrderedDict()
     for m in manifest:
@@ -250,6 +253,7 @@ def write_captures(out, observations):
         observed = any_m["observed"]
         label = f"**{any_m['id']}** {any_m['surface']}<br>_{any_m['state']}_<br>`{any_m['pixelSize'][0]}×{any_m['pixelSize'][1]}px · {any_m['pointSize'][0]}×{any_m['pointSize'][1]}pt @{any_m['scale']:g}x · {any_m['method'].split('(')[0]}`"
         body = (observed + "<br>" if observed else "") + "<br>".join(f"• {i}" for i in issues)
+        label, body = label.replace("|", "\\|"), body.replace("|", "\\|")
         lines.append(f"| {label} | {cells[0]} | {cells[1]} | {body} |")
     lines += ["", observations.get("_footer", "")]
     (out / "captures.md").write_text("\n".join(lines) + "\n")
