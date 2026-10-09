@@ -191,7 +191,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     private var hintEventMonitor: Any?
     let photoBrowser = PhotoBrowserCoordinator()
     let nameField = DocumentNameField(string: "Untitled")
-    let status = NSTextField(labelWithString: "")
+    let status = StatusTextField(labelWithString: "")
     let colorWell = NSColorWell()
     let widthControl = BezelSizeSlider(frame: .zero)
     let sizeLabel = NSTextField(labelWithString: "Size · 6.75")
@@ -1031,6 +1031,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         }
         status.stringValue = text
         status.toolTip = text
+        status.spokenValue = nil; status.setAccessibilityHelp(nil)
     }
     var dragFormat: String {
         FormatToggle.payload(forSegment: dragFormatToggle.selectedSegment).format
@@ -1716,9 +1717,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         snapButton.toolTip = "Capture the area inside the frame; hold Shift for a six-second timer"
         cancelFrameButton.isHidden = false
         setModernFrameMode(true)
-        let fullStatus = keepingAnnotations ? "Frame preview · Snap Frame replaces the picture and keeps your drawing" : "Frame preview · Position the window, then choose Snap Frame"
-        status.stringValue = keepingAnnotations ? "Frame: Snap keeps your drawing" : "Frame: position the window, then Snap"
+        let fullStatus = keepingAnnotations ? "Frame preview · Snap Frame replaces the picture and keeps your drawing" : "Frame: position the window, then Snap"
+        status.stringValue = keepingAnnotations ? "Frame: Snap keeps your drawing" : "Frame: position, then Snap"
         status.toolTip = fullStatus
+        status.spokenValue = fullStatus; status.setAccessibilityHelp(fullStatus)
     }
     @objc func cancelFrame() {
         guard !frameCaptureInProgress else { return }

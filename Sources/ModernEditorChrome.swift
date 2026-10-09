@@ -24,9 +24,18 @@ private final class ControlHolderView: NSView {
     }
 }
 
+/// The status line. When its visible text is a shortened hint, `spokenValue` carries the full sentence for VoiceOver
+/// (NSTextField would otherwise always speak its string value).
+final class StatusTextField: NSTextField {
+    var spokenValue: String?
+    override func accessibilityValue() -> String? { spokenValue ?? super.accessibilityValue() }
+}
+
 /// The zoom popup. Its face shows only the percentage, so the mode word of a computed zoom (Fit, Frame, Normal, ...)
 /// travels on the item's tooltip and in the spoken value instead.
 final class ZoomPopUpButton: NSPopUpButton {
+    /// The menu-only Actual Size command: it never becomes the face, so it is not part of the capsule's width budget.
+    static let actualSizeTag = 998
     override func accessibilityValue() -> Any? { selectedItem?.toolTip ?? titleOfSelectedItem }
 }
 
@@ -334,7 +343,7 @@ final class ModernEditorChrome: NSView {
         controls.zoomControl.isBordered = false
         let zoomHolder = ControlHolderView(controls.zoomControl, inset: zoomInset)
         let selectedZoom = controls.zoomControl.indexOfSelectedItem
-        let widestZoom = (0..<controls.zoomControl.numberOfItems).map { index -> CGFloat in
+        let widestZoom = (0..<controls.zoomControl.numberOfItems).filter { controls.zoomControl.item(at: $0)?.tag != ZoomPopUpButton.actualSizeTag && controls.zoomControl.item(at: $0)?.isSeparatorItem == false }.map { index -> CGFloat in
             controls.zoomControl.selectItem(at: index); return controls.zoomControl.fittingSize.width
         }.max() ?? 0
         if selectedZoom >= 0 { controls.zoomControl.selectItem(at: selectedZoom) }

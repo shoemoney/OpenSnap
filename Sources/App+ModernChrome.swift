@@ -6,7 +6,7 @@ extension AppDelegate {
         let chrome = modernChrome as? ModernEditorChrome
         chrome?.frameMode = on
         chrome?.syncSnapPresentation()
-        if !on { status.toolTip = nil }
+        if !on { status.toolTip = nil; status.spokenValue = nil; status.setAccessibilityHelp(nil) }
     }
 
     /// The Drag Me thumbnail doubles as the canvas bleed under the bars.
@@ -64,6 +64,11 @@ extension AppDelegate {
         zoomControl.addItems(withTitles: ["25%", "50%", "75%", "100%", "150%", "200%"])
         for (index, item) in zoomControl.itemArray.enumerated() { item.representedObject = [0.25, 0.5, 0.75, 1, 1.5, 2][index] }
         zoomControl.selectItem(withTitle: "100%"); zoomControl.font = .systemFont(ofSize: 18)
+        // Actual Size is the live main-menu command (same action, target and key equivalent), copied so the menu stays the source of truth.
+        if let actual = copiedMainMenuItem(#selector(toggleActualSize)) {
+            actual.tag = ZoomPopUpButton.actualSizeTag
+            zoomControl.menu?.addItem(.separator()); zoomControl.menu?.addItem(actual)
+        }
         zoomControl.target = self; zoomControl.action = #selector(changeZoom(_:)); zoomControl.setAccessibilityLabel("Canvas zoom")
         let drag = DragExportView(); dragExportView = drag
         drag.drawsBackground = false

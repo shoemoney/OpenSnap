@@ -22,7 +22,8 @@ extension AppSafetyTests {
             ("Modern centres a small canvas in the editor area at default and minimum size and leaves larger and wide documents panning unconstrained", modernCanvasCentred),
             ("Hide and Undo tooltips read their shortcuts from the real menu items", modernShortcutHintsFollowMenu),
             ("Rename is unavailable during Frame capture and termination", modernRenameAvailability),
-            ("The Frame status hint fits at the default width and carries the full text as a tooltip", modernFrameStatusFits),
+            ("The short Frame status hint fits whole at 980 and 1024 and the full sentence is its tooltip and accessibility value", modernFrameStatusFits),
+            ("The zoom popup offers the main menu's Actual Size command, keeps a percentage face and follows the command's availability", modernZoomActualSize),
             ("A click at the visual centre of the centred canvas selects the element at the document centre", modernCanvasCentredHitTest),
             ("Modern puts capture, tools and annotation in the top bar, document and output in the bottom bar, and no rail", modernTopBarLayout),
             ("Modern has one footer row and no file-name field; the window title is the document name and Rename changes the export name", modernDocumentNameInTitle),
@@ -580,14 +581,57 @@ extension AppSafetyTests {
     private static func modernFrameStatusFits() throws {
         let (fixture, chrome) = try modernFixture()
         let app = fixture.app
-        app.setWindowFrame(CGRect(origin: app.window.frame.origin, size: CGSize(width: 1024, height: app.window.frame.height)))
-        app.enterFrame(keepingAnnotations: false, manualFlags: [])
-        defer { app.cancelFrame() }
-        app.window.contentView?.layoutSubtreeIfNeeded()
-        let full = app.status.attributedStringValue.size().width
-        try expect(app.status.stringValue == "Frame: position the window, then Snap" && (app.status.toolTip ?? "").contains("Position the window, then choose Snap Frame"),
-                   "Frame status is the short hint with the full text as its tooltip: \(app.status.stringValue) / \(app.status.toolTip ?? "nil")")
-        try expect(full <= app.status.frame.width + 0.5, "The Frame hint fits at 1024 wide (\(full) vs \(app.status.frame.width))")
+        let shortHint = "Frame: position, then Snap", fullHint = "Frame: position the window, then Snap"
+        let minimum = app.window.minSize
+        for (width, height) in [(minimum.width, minimum.height), (1024, app.window.frame.height)] {
+            app.setWindowFrame(CGRect(origin: app.window.frame.origin, size: CGSize(width: width, height: height)))
+            app.enterFrame(keepingAnnotations: false, manualFlags: [])
+            defer { app.cancelFrame() }
+            app.window.contentView?.layoutSubtreeIfNeeded()
+            let measured = app.status.attributedStringValue.size().width
+            try expect(measured <= app.status.frame.width + 0.5,
+                       "The Frame hint '\(app.status.stringValue)' fits whole at \(Int(width)) wide (\(measured) vs \(app.status.frame.width))")
+            try expect(app.status.stringValue == shortHint, "The Frame status shows the short hint: \(app.status.stringValue)")
+            try expect(app.status.toolTip == fullHint, "The full sentence is the Frame status tooltip: \(app.status.toolTip ?? "nil")")
+            try expect(app.status.accessibilityValue() == fullHint && app.status.accessibilityHelp() == fullHint,
+                       "The full sentence is the Frame status accessibility value and help")
+        }
+        try expect(app.status.accessibilityValue() == app.status.stringValue && app.status.accessibilityHelp() == nil,
+                   "Leaving Frame hands the status its own accessibility value back")
+        _ = chrome
+    }
+
+    private static func modernZoomActualSize() throws {
+        let (fixture, chrome) = try modernFixture()
+        let app = fixture.app
+        try viewportFixture(app)
+        func live(_ menu: NSMenu) -> NSMenuItem? {
+            for item in menu.items {
+                if item.action == #selector(AppDelegate.toggleActualSize) { return item }
+                if let submenu = item.submenu, let found = live(submenu) { return found }
+            }
+            return nil
+        }
+        guard let main = NSApp.mainMenu.flatMap(live) else { throw Failure(description: "The main menu has no Actual Size command") }
+        guard let menu = app.zoomControl.menu, let index = (0..<menu.numberOfItems).first(where: { menu.item(at: $0)?.tag == ZoomPopUpButton.actualSizeTag }),
+              let item = menu.item(at: index) else { throw Failure(description: "The zoom menu has no Actual Size item") }
+        try expect(item.title == main.title && item.action == main.action && item.target === main.target && item.target === app,
+                   "The zoom item is the main-menu Actual Size command (\(item.title), \(String(describing: item.action)))")
+        try expect(item.keyEquivalent == main.keyEquivalent && item.keyEquivalentModifierMask == main.keyEquivalentModifierMask,
+                   "The zoom item carries exactly the key equivalent the main menu has ('\(main.keyEquivalent)')")
+        try expect(app.validateMenuItem(item) == app.canToggleActualSize && app.canToggleActualSize, "The zoom item is enabled when Actual Size is available")
+        app.terminationStarted = true
+        try expect(!app.validateMenuItem(item), "The zoom item follows the command's disabled state")
+        app.terminationStarted = false
+        try expect(app.zoomControl.titleOfSelectedItem?.hasSuffix("%") == true, "The popup face is a percentage before the choice: \(app.zoomControl.titleOfSelectedItem ?? "nil")")
+        // A popup selects the chosen item first and then sends its action; do the same.
+        app.zoomControl.select(item)
+        menu.performActionForItem(at: index)
+        defer { if app.isActualSize { app.leaveActualSize() } }
+        try expect(app.isActualSize && app.canvas.zoom == 1 && app.canvas.outputSize == app.canvas.fullResolutionOutputSize,
+                   "Choosing the zoom item puts the canvas at Actual Size (zoom \(app.canvas.zoom), output \(app.canvas.outputSize))")
+        try expect(app.zoomControl.titleOfSelectedItem == "100%" && app.zoomControl.selectedItem?.tag != ZoomPopUpButton.actualSizeTag,
+                   "The popup face stays a percentage after the choice: \(app.zoomControl.titleOfSelectedItem ?? "nil")")
         _ = chrome
     }
 
@@ -1176,10 +1220,11 @@ extension AppSafetyTests {
         let index = try (zoom.itemArray.firstIndex { $0.title == "150%" }).unwrap("150% item")
         zoom.selectItem(at: index); app.changeZoom(zoom)
         try expect((zoom.accessibilityValue() as? String) == "150%" && abs(app.canvas.zoom - 1.5) < 0.001, "Picking a plain zoom speaks only its percentage, never the previous mode word")
-        // The capsule is sized once for the widest face, so no title is ever clipped.
+        // The capsule is sized once for the widest face, so no title is ever clipped. The menu-only Actual Size command is never a face.
         let surface = try surface(chrome, zoom)
-        for title in zoom.itemTitles {
-            zoom.selectItem(withTitle: title)
+        for item in zoom.itemArray where item.tag != ZoomPopUpButton.actualSizeTag && !item.isSeparatorItem {
+            let title = item.title
+            zoom.select(item)
             try expect(zoom.fittingSize.width <= surface.frame.width - 8 + 0.5, "\(title) fits the zoom capsule (\(zoom.fittingSize.width) in \(surface.frame.width))")
         }
         try expect(zoom.toolTip == nil || zoom.toolTip == "Canvas zoom", "Zoom keeps its tooltip")
