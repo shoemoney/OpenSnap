@@ -19,6 +19,8 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
     /// The sheet is 720 wide and at most 720 tall; on a short screen it shrinks and the form scrolls instead of clipping.
     static let sheetWidth: CGFloat = 720, sheetMaxHeight: CGFloat = 720, sheetScreenMargin: CGFloat = 120, sheetMinHeight: CGFloat = 360
     static var contentWidth: CGFloat { sheetWidth - 2 * Space.s5 }
+    /// The list page shows between `minListRows` and `maxListRows` rows, so a short list does not leave the sheet mostly blank.
+    static let minListRows = 4, maxListRows = 8
     static func sheetSize(visibleFrame: NSRect) -> NSSize {
         let height = max(sheetMinHeight, min(sheetMaxHeight, visibleFrame.height - sheetScreenMargin))
         return NSSize(width: sheetWidth, height: min(height, visibleFrame.height))
@@ -26,6 +28,20 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
 
     private(set) var list: PublishingDestinationList
     private(set) var editing: PublishingDestination?
+
+    /// The tallest the sheet may be (set from the screen). The form page always asks for all of it and scrolls;
+    /// the list page asks only for what its content needs.
+    var maxSheetHeight: CGFloat = PublishingDestinationsView.sheetMaxHeight
+    /// Called when the page the sheet should hug changes, so the coordinator can resize the panel.
+    var onPreferredHeightChange: ((CGFloat) -> Void)?
+    /// The content height the visible page wants: the form page fills the sheet, the list page hugs table, buttons and footer.
+    var preferredHeight: CGFloat { listPage.isHidden ? maxSheetHeight : min(maxSheetHeight, listPageHeight) }
+    /// Page content, the separator, the footer, and the margins around them.
+    var listPageHeight: CGFloat {
+        Space.s5 + listPage.fittingSize.height + Space.s5 + 1 + Space.s3 + listFooter.fittingSize.height + Space.s4
+    }
+    private func notifyPreferredHeight() { onPreferredHeightChange?(preferredHeight) }
+    private var tableHeight: NSLayoutConstraint?
 
     let table = NSTableView()
     let scrollView = NSScrollView()
@@ -43,6 +59,8 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
     let sourcePopup = NSPopUpButton(frame: .zero, pullsDown: false)
     let aclCheckbox = NSButton(checkboxWithTitle: "Make uploads public-read", target: nil, action: nil)
     private(set) var sectionHeaders: [NSTextField] = []
+    /// The caption of every visible form row, so tests can check each fits its column on one line.
+    var visibleFormCaptions: [NSTextField] { rows.values.filter { !$0.stack.isHidden && !$0.label.stringValue.isEmpty }.map(\.label) }
 
     private struct Row { let label: NSTextField; let stack: NSStackView; let visible: (PublishingProtocol, Bool) -> Bool }
     private var rows: [String: Row] = [:]
@@ -140,7 +158,7 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
 
     private func buildList() {
         listPage.orientation = .vertical; listPage.alignment = .leading; listPage.spacing = Space.s4
-        let title = label("Upload destinations. The one marked Default receives a Webpost click; right-click Webpost to switch.")
+        let title = label("Upload destinations. The one marked Default receives an Upload click; right-click Upload to switch.")
         title.preferredMaxLayoutWidth = Self.contentWidth
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("destination"))
         column.resizingMask = .autoresizingMask; column.minWidth = 200; column.width = Self.contentWidth - 24
@@ -151,7 +169,8 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         let scroll = NSScrollView(); scroll.documentView = table; scroll.hasVerticalScroller = true
         scroll.borderType = .bezelBorder
         scroll.translatesAutoresizingMaskIntoConstraints = false
-        scroll.heightAnchor.constraint(equalToConstant: DesignTokens.Size.row * 6).isActive = true
+        let tableHeight = scroll.heightAnchor.constraint(equalToConstant: 0); tableHeight.isActive = true
+        self.tableHeight = tableHeight; fitTable()
         scroll.widthAnchor.constraint(equalToConstant: Self.contentWidth).isActive = true
         let add = Self.button("Add…", self, #selector(addTapped))
         let edit = Self.button("Edit…", self, #selector(editTapped))
@@ -164,6 +183,11 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         listButtons = (edit, remove, makeDefault)
     }
     private var listButtons: (edit: NSButton, remove: NSButton, makeDefault: NSButton)?
+    /// The table shows every row it has, between four and eight, and scrolls past that.
+    private func fitTable() {
+        let rows = min(Self.maxListRows, max(Self.minListRows, list.destinations.count))
+        tableHeight?.constant = CGFloat(rows) * (DesignTokens.Size.row + table.intercellSpacing.height) + 4
+    }
 
     func numberOfRows(in tableView: NSTableView) -> Int { list.destinations.count }
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
@@ -192,15 +216,18 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
     /// Replaces the list (after a save, remove or default change) and returns to the list page.
     func reload(_ list: PublishingDestinationList, status text: String = "", selecting id: String? = nil) {
         self.list = list
+        fitTable()
         table.reloadData()
         if let id { select(id: id) }
         showList()
         listStatus.show(text.isEmpty ? .idle : .info, text)
+        notifyPreferredHeight()
     }
     /// A failure from storage or a worker. The row says "Error:" and carries a glyph, so it never relies on colour.
     func showStatus(_ text: String) {
         let message = text.hasPrefix("Error:") ? text : "Error: " + text
         listStatus.show(.failure, message); formResult.show(.failure, message)
+        notifyPreferredHeight()
     }
     /// The S3 Test result: "Connected" with the server's detail, or "Error: <message>".
     func showTestResult(ok: Bool, message: String) {
@@ -232,7 +259,7 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
             if let next = list.destinations.first(where: { $0.id != destination.id }) {
                 detail += " It is the default, so “\(next.name)” becomes the default."
             } else {
-                detail += " It is the only destination, so Webpost will need a new one before it can upload."
+                detail += " It is the only destination, so Upload will need a new one before it can upload."
             }
         }
         return ("Remove “\(destination.name)”?", detail)
@@ -254,7 +281,7 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
     private func showList() {
         formPage.isHidden = true; listPage.isHidden = false
         formFooter.isHidden = true; listFooter.isHidden = false
-        editing = nil; updateListButtons(); updateDefaultButton(); scrollToTop()
+        editing = nil; updateListButtons(); updateDefaultButton(); scrollToTop(); notifyPreferredHeight()
     }
     private func scrollToTop() {
         scrollView.contentView.scroll(to: .zero); scrollView.reflectScrolledClipView(scrollView.contentView)
@@ -297,6 +324,7 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         formPage.orientation = .vertical; formPage.alignment = .leading; formPage.spacing = Space.s3
         for popup in [protocolPopup, sourcePopup] { Typography.apply(.body, to: popup); popup.menu?.autoenablesItems = false }
         protocolPopup.addItems(withTitles: PublishingProtocol.allCases.map(\.title))
+        for (index, transport) in PublishingProtocol.allCases.enumerated() { protocolPopup.item(at: index)?.toolTip = transport.detail }
         protocolPopup.target = self; protocolPopup.action = #selector(formChanged)
         sourcePopup.addItems(withTitles: ["AWS credentials profile", "Access key stored in Keychain"])
         sourcePopup.target = self; sourcePopup.action = #selector(formChanged)
@@ -304,7 +332,7 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         Typography.apply(.body, to: passwordField)
         let all: (PublishingProtocol, Bool) -> Bool = { _, _ in true }
         formPage.addArrangedSubview(sectionHeader("Connection"))
-        addRow("name", "Name", styled(nameField, "Shown in the Webpost right-click menu"), visible: all)
+        addRow("name", "Name", styled(nameField, "Shown in the Upload right-click menu"), visible: all)
         addRow("protocol", "Protocol", protocolPopup, visible: all)
         addRow("endpoint", "Endpoint URL", styled(endpointField, "https://example.com/uploads"), visible: all)
         addRow("region", "Region", styled(regionField, "us-east-1 (auto for Cloudflare R2)"), visible: { p, _ in p == .s3 })
@@ -340,17 +368,21 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
     private func refreshForm() {
         let transport = selectedProtocol, keychain = keychainSource
         for row in rows.values { row.stack.isHidden = !row.visible(transport, keychain) }
+        let endpointExample = "https://example.com/uploads"
         func caption(_ id: String, _ text: String) { rows[id]?.label.stringValue = text; rows[id]?.stack.arrangedSubviews.last?.setAccessibilityLabel(text) }
         switch transport {
         case .s3:
-            caption("endpoint", "Endpoint (blank = AWS)"); caption("folder", "Key prefix")
+            caption("endpoint", "Endpoint"); caption("folder", "Key prefix")
+            endpointField.placeholderString = "Leave blank for AWS, or https://s3.example.com"
             caption("username", "Access key ID"); caption("password", "Secret access key")
-            formHelp.stringValue = "Path-style S3 over system curl. Public base URL maps to the key prefix; the uploaded file is downloaded from it to verify the exact bytes. Test lists the bucket without uploading. Leave public-read off when the bucket disables ACLs."
+            formHelp.stringValue = "Path-style S3 over system curl, for AWS, Cloudflare R2, Backblaze B2, DigitalOcean Spaces, Wasabi and MinIO. Public base URL maps to the key prefix; the uploaded file is downloaded from it to verify the exact bytes. Test lists the bucket without uploading. Leave public-read off when the bucket disables ACLs."
         case .sftp:
             caption("endpoint", "Endpoint URL"); caption("folder", "Remote folder"); caption("username", "Username"); caption("password", "Password")
+            endpointField.placeholderString = endpointExample
             formHelp.stringValue = "SFTP uses keys from SSH configuration or your agent, with strict known-host checks. Leave username and port empty to use the alias settings. Folders must exist."
         default:
             caption("endpoint", "Endpoint URL"); caption("folder", "Remote folder"); caption("username", "Username"); caption("password", "Password")
+            endpointField.placeholderString = endpointExample
             formHelp.stringValue = "FTPS: ftp:// is explicit TLS, ftps:// is implicit TLS. Folders must exist. Public base URL maps to the upload folder; only the filename is appended."
         }
         testButton.isHidden = transport != .s3
@@ -379,7 +411,7 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         formResult.show(.idle, "")
         listPage.isHidden = true; formPage.isHidden = false
         listFooter.isHidden = true; formFooter.isHidden = false
-        refreshForm(); updateDefaultButton(); scrollToTop()
+        refreshForm(); updateDefaultButton(); scrollToTop(); notifyPreferredHeight()
     }
 
     /// Assembles the destination the form describes, preserving the edited entry's id.
@@ -535,7 +567,7 @@ final class DefaultPillView: NSView {
     }
 }
 
-/// A destination row: name, transport, and a Default pill for the destination Webpost uses.
+/// A destination row: name, transport, and a Default pill for the destination Upload uses.
 final class DestinationRowView: NSTableCellView {
     let nameField: NSTextField, transportField: NSTextField
     private(set) var pill: DefaultPillView?

@@ -8,13 +8,23 @@ import CoreFoundation
 enum PublishingProtocol: String, Codable, CaseIterable {
     case webDAV, ftp, ftps, sftp, s3
 
+    /// Short enough for the Protocol popup at 720 wide; `detail` carries what used to be crammed into the title.
     var title: String {
         switch self {
-        case .webDAV: return "WebDAV / HTTP PUT"
+        case .webDAV: return "WebDAV"
         case .ftp: return "FTP"
-        case .ftps: return "FTPS (TLS required)"
-        case .sftp: return "SFTP (SSH config / agent keys)"
-        case .s3: return "S3-compatible (AWS, R2, B2, Spaces, Wasabi, MinIO)"
+        case .ftps: return "FTPS"
+        case .sftp: return "SFTP"
+        case .s3: return "S3-compatible"
+        }
+    }
+    var detail: String {
+        switch self {
+        case .webDAV: return "WebDAV or any server that accepts an HTTP PUT"
+        case .ftp: return "Plain FTP"
+        case .ftps: return "FTP with TLS required"
+        case .sftp: return "SFTP using your SSH configuration and agent keys"
+        case .s3: return "AWS S3, Cloudflare R2, Backblaze B2, DigitalOcean Spaces, Wasabi, MinIO"
         }
     }
     var schemes: Set<String> {
@@ -908,8 +918,17 @@ public final class PublishingCoordinator: NSObject {
     /// `visibleFrame` is the screen the sheet will appear on; the sheet is 720 wide and shrinks to fit a short screen, scrolling its form.
     func buildSettings(visibleFrame: NSRect? = nil) throws -> (NSPanel, PublishingDestinationsView) {
         let size = PublishingDestinationsView.sheetSize(visibleFrame: visibleFrame ?? NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1280, height: 800))
-        let panel = makePanel(title: "Upload Destinations", width: size.width, height: size.height)
         let view = PublishingDestinationsView(list: try store.load())
+        view.maxSheetHeight = size.height
+        let panel = makePanel(title: "Upload Destinations", width: size.width, height: view.preferredHeight)
+        // The list page hugs its content and the form page fills the sheet, so the panel follows the page (top edge fixed).
+        view.onPreferredHeightChange = { [weak panel] height in
+            guard let panel else { return }
+            let current = panel.frame
+            let target = panel.frameRect(forContentRect: NSRect(x: 0, y: 0, width: size.width, height: height))
+            guard abs(target.height - current.height) > 0.5 else { return }
+            panel.setFrame(NSRect(x: current.minX, y: current.maxY - target.height, width: current.width, height: target.height), display: true)
+        }
         view.legacyCredentialID = store.legacyCredentialID()
         view.translatesAutoresizingMaskIntoConstraints = false
         panel.contentView?.addSubview(view)
@@ -933,7 +952,7 @@ public final class PublishingCoordinator: NSObject {
         return (panel, view)
     }
 
-    /// Persists the default destination chosen from the Webpost menu or the settings list.
+    /// Persists the default destination chosen from the Upload menu or the settings list.
     func setDefaultDestination(_ id: String) throws { try store.setDefault(id) }
     func removeDestination(_ id: String) throws { try store.remove(id) }
     func destinations() -> PublishingDestinationList { (try? store.load()) ?? PublishingDestinationList() }

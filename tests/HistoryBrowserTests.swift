@@ -363,7 +363,37 @@ struct HistoryBrowserTests {
                     func columns(_ frames: [NSRect]) -> Int { Set(frames.map { Int($0.minX.rounded()) }).count }
                     try expect(columns(narrow) >= 2,"Minimum width fits fewer than two tile columns: \(columns(narrow))")
                     try expect(columns(wide) > columns(narrow),"The grid does not reflow: \(columns(wide)) columns wide, \(columns(narrow)) at the minimum")
-                    try expect(narrow.allSatisfy { abs($0.width - 210) < 0.5 && abs($0.height - 234) < 0.5 },"Tiles are about 210 x 234")
+                    try expect(narrow.allSatisfy { $0.width >= 209.5 && abs($0.height - 234) < 0.5 },"Tiles are at least 210 wide and 234 tall: \(narrow.map(\.size))")
+                }
+            }),
+            ("Tiles in a row are evenly spaced, with no large gap, at 880, 1000 and 1280", {
+                try browser { browser,_ in
+                    // Nine snaps on one day so a wide window has full rows, plus three on an earlier day for a short row.
+                    browser.update(items:(0..<9).map { item("Today \($0)",0) } + (0..<3).map { item("Earlier \($0)",-3) })
+                    for (width,expectedColumns) in [(880.0,2),(1000.0,3),(1280.0,4)] as [(CGFloat,Int)] {
+                        laidOut(browser,width:width,height:720)
+                        let frames = try tileFrames(browser)
+                        var rows: [Int: [NSRect]] = [:]
+                        for frame in frames { rows[Int(frame.minY.rounded()),default:[]].append(frame) }
+                        let widest = rows.values.map(\.count).max() ?? 0
+                        try expect(widest == expectedColumns,"\(width) wide fits \(widest) columns, expected \(expectedColumns)")
+                        var gaps: [CGFloat] = []
+                        for row in rows.values {
+                            let ordered = row.sorted { $0.minX < $1.minX }
+                            gaps += zip(ordered,ordered.dropFirst()).map { $1.minX - $0.maxX }
+                        }
+                        try expect(!gaps.isEmpty,"\(width) wide has no row with two tiles to measure")
+                        let spread = (gaps.max() ?? 0) - (gaps.min() ?? 0)
+                        try expect(spread <= 1,"Gaps between tiles are uneven at \(width) wide: \(gaps.sorted())")
+                        try expect((gaps.max() ?? 0) <= 24,"A gap between tiles is wider than 24 pt at \(width) wide: \(gaps.sorted())")
+                        // Rows with fewer tiles start at the same columns as full rows rather than spreading out.
+                        let fullRow = (rows.values.first { $0.count == widest } ?? []).map(\.minX).sorted()
+                        for row in rows.values where row.count < widest {
+                            for (index,frame) in row.sorted(by:{ $0.minX < $1.minX }).enumerated() {
+                                try expect(abs(frame.minX - fullRow[index]) <= 1,"A short row spreads its tiles at \(width) wide: \(row.map(\.minX)) vs \(fullRow)")
+                            }
+                        }
+                    }
                 }
             }),
             ("Details panel sits beside the grid and collapses below it under 760 wide", {

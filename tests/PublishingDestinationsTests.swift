@@ -393,10 +393,43 @@ enum PublishingDestinationsTests {
         let publisher = try coordinator(destinations: destinations)
         let (panel, view) = try publisher.buildSettings(visibleFrame: fake)
         defer { panel.orderOut(nil) }
-        let content = panel.contentRect(forFrameRect: panel.frame)
-        try expect(content.width == 720 && content.height == 680 && panel.frame.height <= fake.height, "the real panel is 720 x 680 on a 1280 x 800 screen: \(content.size)")
-        try expect(view.scrollView.hasVerticalScroller && !view.scrollView.hasHorizontalScroller && view.scrollView.documentView != nil, "the form lives in a vertical NSScrollView")
         panel.contentView?.layoutSubtreeIfNeeded()
+        try expect(view.scrollView.hasVerticalScroller && !view.scrollView.hasHorizontalScroller && view.scrollView.documentView != nil, "the form lives in a vertical NSScrollView")
+
+        // The list page hugs its content: table, buttons and footer, with no blank slab under them (two rows here, shown as the four-row minimum).
+        func contentHeight(_ p: NSPanel) -> CGFloat { p.contentRect(forFrameRect: p.frame).height }
+        func listSlack(_ p: NSPanel, _ v: PublishingDestinationsView) throws -> (slack: CGFloat, height: CGFloat) {
+            p.contentView?.layoutSubtreeIfNeeded()
+            let title = try unwrap(descendants(v).compactMap { $0 as? NSTextField }.first { $0.stringValue.hasPrefix("Upload destinations") })
+            let add = try unwrap(descendants(v).compactMap { $0 as? NSButton }.first { $0.title == "Add…" })
+            let table = try unwrap(v.table.enclosingScrollView)
+            // Title, table and buttons plus the two gaps between them, the page margins, separator, footer gap, footer and its bottom margin.
+            let needed = title.frame.height + table.frame.height + add.frame.height + 2 * DesignTokens.Space.s4
+                + 2 * DesignTokens.Space.s5 + 1 + DesignTokens.Space.s3 + v.doneButton.frame.height + DesignTokens.Space.s4
+            return (contentHeight(p) - needed, contentHeight(p))
+        }
+        let hugged = try listSlack(panel, view)
+        try expect(hugged.slack <= 40 && hugged.slack >= -1, "the list page has \(hugged.slack) pt of slack (sheet \(hugged.height)); it should hug table, buttons and footer")
+        try expect(hugged.height < 600, "the list sheet is \(hugged.height) tall; it must not stretch to the form's 680")
+        let listRowHeight = DesignTokens.Size.row + view.table.intercellSpacing.height
+        try expect((view.table.enclosingScrollView?.frame.height ?? 0) >= 4 * listRowHeight, "the table shows fewer than four rows")
+        let listPanelWidth = panel.contentRect(forFrameRect: panel.frame).width
+        try expect(listPanelWidth == 720 && panel.frame.height <= fake.height, "the sheet is 720 wide: \(listPanelWidth)")
+        // Paging to the form grows the sheet to the full height (top edge fixed); Cancel hugs the list again.
+        let topEdge = panel.frame.maxY
+        view.addTapped(); panel.contentView?.layoutSubtreeIfNeeded()
+        try expect(contentHeight(panel) == 680 && panel.frame.maxY == topEdge, "the form page is 720 wide by 680 with the top edge fixed: \(contentHeight(panel)), top \(panel.frame.maxY) vs \(topEdge)")
+        view.cancelFormTapped()
+        let back = try listSlack(panel, view)
+        try expect(abs(back.height - hugged.height) <= 0.5 && panel.frame.maxY == topEdge, "Cancel did not return to the hugged list height: \(back.height) vs \(hugged.height)")
+        // A long list stops growing at eight rows and scrolls.
+        let many = try coordinator(destinations: (0..<12).map { PublishingDestination(name: "Destination \($0)", settings: destinations[1].settings) })
+        let (manyPanel, manyView) = try many.buildSettings(visibleFrame: fake)
+        defer { manyPanel.orderOut(nil) }
+        manyPanel.contentView?.layoutSubtreeIfNeeded()
+        let manyHeight = try unwrap(manyView.table.enclosingScrollView).frame.height
+        try expect(abs(manyHeight - (CGFloat(PublishingDestinationsView.maxListRows) * listRowHeight + 4)) <= 0.5 && contentHeight(manyPanel) <= 680,
+                   "twelve destinations show \(manyHeight) pt of table in a \(contentHeight(manyPanel)) sheet; the cap is eight rows")
 
         // A short screen: the S3 form is taller than the sheet, so it scrolls, and Save/Cancel stay on screen.
         let (shortPanel, shortView) = try publisher.buildSettings(visibleFrame: short)
@@ -436,6 +469,63 @@ enum PublishingDestinationsTests {
                    && view.endpointField.placeholderString == "https://example.com/uploads" && view.folderField.placeholderString?.hasPrefix("screenshots") == true,
                    "neutral SSH alias, SFTP root, endpoint and folder placeholders")
 
+        // The product word is Upload: no user-visible string on either page says Webpost.
+        func visibleStrings(_ root: NSView) -> [String] {
+            var strings: [String] = []
+            for item in descendants(root) {
+                strings.append(contentsOf: [item.toolTip, item.accessibilityLabel()].compactMap { $0 })
+                if let field = item as? NSTextField { strings.append(contentsOf: [field.stringValue, field.placeholderString].compactMap { $0 }) }
+                if let button = item as? NSButton { strings.append(button.title) }
+                if let popup = item as? NSPopUpButton { strings.append(contentsOf: popup.itemArray.flatMap { [$0.title, $0.toolTip ?? ""] }) }
+            }
+            return strings
+        }
+        func noWebpost(_ page: String) throws {
+            let offenders = visibleStrings(view).filter { $0.lowercased().contains("webpost") }
+            try expect(offenders.isEmpty, "\(page) page still says Webpost: \(offenders)")
+        }
+        view.cancelFormTapped()
+        try noWebpost("list")
+        try expect(visibleStrings(view).contains { $0.contains("Upload click") }, "the list intro names the Upload click")
+        for transport in PublishingProtocol.allCases {
+            view.addTapped(); view.protocolPopup.selectItem(withTitle: transport.title); view.formChanged()
+            try noWebpost("\(transport.title) form")
+            view.cancelFormTapped()
+        }
+        let lastOne = PublishingDestinationList(defaultID: destinations[0].id, destinations: [destinations[0]])
+        try expect(!PublishingDestinationsView.removalPrompt(for: destinations[0], in: lastOne).detail.lowercased().contains("webpost"), "the remove prompt still says Webpost")
+
+        // No form label wraps or truncates at 720 wide, for any protocol and credential source, and the Protocol popup shows every title whole.
+        view.addTapped()
+        for transport in PublishingProtocol.allCases {
+            for source in 0...1 {
+                view.protocolPopup.selectItem(withTitle: transport.title); view.sourcePopup.selectItem(at: source); view.formChanged()
+                panel.contentView?.layoutSubtreeIfNeeded()
+                let captions = view.visibleFormCaptions
+                try expect(captions.count >= 6, "\(transport.title)/\(source): only \(captions.count) form captions found")
+                for caption in captions {
+                    let cell = try unwrap(caption.cell)
+                    let natural = cell.cellSize(forBounds: NSRect(x: 0, y: 0, width: 10_000, height: 1_000))
+                    try expect(natural.width <= caption.frame.width + 0.5,
+                               "“\(caption.stringValue)” needs \(natural.width) pt on one line but its column is \(caption.frame.width) (\(transport.title)/\(source))")
+                    try expect(caption.frame.height <= natural.height + 0.5, "“\(caption.stringValue)” wraps to \(caption.frame.height) pt tall (\(transport.title)/\(source))")
+                }
+            }
+        }
+        view.protocolPopup.selectItem(withTitle: PublishingProtocol.s3.title); view.formChanged()
+        try expect(view.visibleFormCaptions.contains { $0.stringValue == "Endpoint" } && view.endpointField.placeholderString?.contains("blank for AWS") == true,
+                   "the S3 endpoint row is labelled Endpoint with the AWS hint as its placeholder")
+        panel.contentView?.layoutSubtreeIfNeeded()
+        let popupFont = try unwrap(view.protocolPopup.font)
+        for item in view.protocolPopup.itemArray {
+            let width = (item.title as NSString).size(withAttributes: [.font: popupFont]).width
+            try expect(width + 30 <= view.protocolPopup.frame.width && view.protocolPopup.frame.width >= view.protocolPopup.intrinsicContentSize.width - 0.5,
+                       "the Protocol item “\(item.title)” (\(width) pt) truncates in a \(view.protocolPopup.frame.width) pt popup that wants \(view.protocolPopup.intrinsicContentSize.width)")
+            try expect(item.toolTip?.isEmpty == false && item.title.count <= 16, "“\(item.title)” is a short title with the provider detail in its tooltip")
+        }
+        view.cancelFormTapped()
+
+        view.addTapped(); panel.contentView?.layoutSubtreeIfNeeded()
         // Return saves, Escape cancels (form page).
         var saved: [String] = []
         view.onSave = { destination, _ in saved.append(destination.name) }

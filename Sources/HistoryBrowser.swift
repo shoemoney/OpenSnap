@@ -61,6 +61,15 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
     /// Below this content width the details panel moves from beside the grid to under it.
     static let detailsCollapseWidth: CGFloat = 760
     static let tileSize = NSSize(width: 210, height: 234)
+    /// Space between neighbouring tiles, and the grid's side inset.
+    static let tileGap = DesignTokens.Space.s4, gridSideInset = DesignTokens.Space.s3
+    /// Tiles share the row width exactly: as many as fit at the minimum width, each stretched to fill, so the gap between
+    /// neighbours is always `tileGap` instead of the flow layout spreading fixed tiles to the far edges.
+    static func tileWidth(forGridWidth width: CGFloat) -> CGFloat {
+        let available = width - 2 * gridSideInset
+        let columns = max(1, ((available + tileGap) / (tileSize.width + tileGap)).rounded(.down))
+        return max(1, ((available - (columns - 1) * tileGap) / columns).rounded(.down))
+    }
     nonisolated static let dragFormatDefaultsKey = "OpenSnap.HistoryDragFormat"
 
     var onOpen: (([UUID]) -> Void)? { didSet { updateControls() } }
@@ -329,9 +338,9 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
 
         // Body: the grid, with the details panel beside it (or under it when narrow).
         let body = NSView(); body.translatesAutoresizingMaskIntoConstraints = false; root.addArrangedSubview(body)
-        let layout = NSCollectionViewFlowLayout(); layout.itemSize = Self.tileSize
-        layout.minimumInteritemSpacing = Space.s4; layout.minimumLineSpacing = Space.s4; layout.headerReferenceSize = NSSize(width:1,height:52)
-        layout.sectionInset = NSEdgeInsets(top:Space.s2,left:Space.s3,bottom:Space.s5,right:Space.s3)
+        let layout = HistoryFlowLayout(); layout.itemSize = Self.tileSize
+        layout.minimumInteritemSpacing = Self.tileGap; layout.minimumLineSpacing = Space.s4; layout.headerReferenceSize = NSSize(width:1,height:52)
+        layout.sectionInset = NSEdgeInsets(top:Space.s2,left:Self.gridSideInset,bottom:Space.s5,right:Self.gridSideInset)
         collection.frame = NSRect(x:0,y:0,width:640,height:400); collection.autoresizingMask = [.width]
         collection.collectionViewLayout = layout; collection.dataSource = self; collection.delegate = self
         collection.isSelectable = true; collection.allowsMultipleSelection = true; collection.allowsEmptySelection = true
@@ -616,6 +625,23 @@ private final class HistoryThumbnail: NSCollectionViewItem {
     private func refreshSelection() {
         guard isViewLoaded, let tile = view as? HistoryTileView else { return }
         tile.isTileSelected = isSelected
+    }
+}
+
+/// A flow layout whose tiles stretch to share the row exactly, so gaps stay equal at every window width.
+@MainActor
+private final class HistoryFlowLayout: NSCollectionViewFlowLayout {
+    private func fit(toGridWidth width: CGFloat) {
+        let size = NSSize(width:HistoryBrowser.tileWidth(forGridWidth:width),height:HistoryBrowser.tileSize.height)
+        if itemSize != size { itemSize = size }
+    }
+    override func prepare() {
+        if let width = collectionView?.bounds.width { fit(toGridWidth:width) }
+        super.prepare()
+    }
+    override func shouldInvalidateLayout(forBoundsChange newBounds: NSRect) -> Bool {
+        fit(toGridWidth:newBounds.width)
+        return super.shouldInvalidateLayout(forBoundsChange:newBounds)
     }
 }
 
