@@ -1160,7 +1160,9 @@ extension AppSafetyTests {
         try expect(!app.dragOriginalControl.isHidden && app.isLargeShot, "A large shot shows the Original size checkbox")
         let full = app.status.attributedStringValue.size().width
         try expect(app.status.frame.width >= 120 && app.status.frame.width <= full + 0.5, "At the minimum width with the checkbox the status keeps \(app.status.frame.width) pt (needs 120)")
-        try expect(app.status.frame.maxX <= chrome.saveButton.convert(chrome.saveButton.bounds, to: app.status.superview).minX - 11, "The status never runs under Save")
+        // A label's frame reaches 2 pt past the alignment rect layout places; the 12 pt group gap is measured on the alignment rect.
+        let placed = app.status.superview!.convert(app.status.alignmentRect(forFrame: app.status.frame), to: nil)
+        try expect(placed.maxX <= chrome.saveButton.convert(chrome.saveButton.bounds, to: nil).minX - 12 + 0.5, "The status keeps its 12 pt gap before Save")
     }
 
     private static func modernZoomFace() throws {

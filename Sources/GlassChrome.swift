@@ -438,7 +438,7 @@ enum GlassChrome {
         if let font { control.font = font }
     }
 
-    /// Experimental canvas bleed under the rails; off falls back to the plain window backdrop.
+    /// Experimental canvas bleed under the bars; off falls back to the plain window backdrop.
     static var usesCanvasBleed = false
 
     /// Wraps `control` in a glass surface. Without an explicit size the surface is a command-height pill that
