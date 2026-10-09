@@ -71,6 +71,13 @@ def main():
     for m in manifest:
         png = out / m["file"]
         im = Image.open(png)
+        if im.mode == "RGBA" and m["id"] in ("S16", "S26", "S21") and "alert" in (m["state"] + m["surface"]).lower() or (im.mode == "RGBA" and m["id"] in ("S16", "S26") ):
+            alpha = im.getchannel("A")
+            opaque = sum(1 for v in alpha.get_flattened_data() if v > 250) / (im.width * im.height) if hasattr(alpha, "get_flattened_data") else sum(1 for v in alpha.getdata() if v > 250) / (im.width * im.height)
+            if opaque < 0.6:
+                backdrop = (44, 42, 41, 255) if m["appearance"] == "dark" else (236, 236, 236, 255)
+                base = Image.new("RGBA", im.size, backdrop); base.alpha_composite(im); im = base
+                im.save(png); m["flattenedOnBackdrop"] = "#%02X%02X%02X" % backdrop[:3]
         m["storedPixelSize"] = [im.width, im.height]
         if im.width > args.max_width:
             r = args.max_width / im.width
