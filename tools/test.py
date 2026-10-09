@@ -46,6 +46,8 @@ def secrets_guard():
 print("PASS", secrets_guard(), flush=True)
 # The retired product name stays confined to the migration; the reader of retired formats stays unreachable from the app.
 subprocess.run([sys.executable, str(root / "tools" / "check-skitch-strings.py")], cwd=root, check=True)
+# The screenshot harness's protections (store guard, isolation of the launched copy, sandbox fence) must be able to fail.
+subprocess.run([sys.executable, "-I", str(root / "tools" / "test-eye-dump-audit-guard.py")], cwd=root, check=True)
 snapshot = Path(tempfile.mkdtemp(prefix="test-snapshot.", dir=build))
 
 def current_inputs():

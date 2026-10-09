@@ -90,7 +90,7 @@ $GUARD snapshot "$TMP/guard-before.json" > "$TMP/guard-before.txt"
 } | tee "$OUT/safety.txt"
 
 # Kernel-enforced fences for the child, when sandbox-exec exists: no network at all, and no access to the real stores,
-# AWS/SSH config, Keychain files or any original/ asset folder. A violation shows up as an error in run.log, not as a silent read.
+# AWS/SSH config, Keychain files or the original-art folder. A violation shows up as an error in run.log, not as a silent read.
 SANDBOX=""
 PROFILE="$TMP/audit.sb"
 if [ -x /usr/bin/sandbox-exec ] && [ "${EYE_DUMP_AUDIT_NO_SANDBOX:-0}" != 1 ]; then
@@ -99,12 +99,17 @@ if [ -x /usr/bin/sandbox-exec ] && [ "${EYE_DUMP_AUDIT_NO_SANDBOX:-0}" != 1 ]; t
         echo "(allow default)"
         echo "(deny network* (remote ip))"
         echo "(deny network-outbound (remote tcp) (remote udp))"
-        for fenced in "$REAL_HOME/Library/Application Support/OpenSnap" "$REAL_HOME/Library/Application Support/SkitchRedux" "$REAL_HOME/.aws" "$REAL_HOME/.ssh" "$REAL_HOME/Library/Keychains" "$ROOT/original"; do
-            echo "(deny file-read* file-write* (subpath \"$fenced\"))"
+        {
+            $GUARD folders
+            echo "$REAL_HOME/.aws"; echo "$REAL_HOME/.ssh"; echo "$REAL_HOME/Library/Keychains"; echo "$ROOT/original"
+        } | while IFS= read -r fenced; do
+            # The kernel matches resolved paths (/var is /private/var), so fence the physical path as well as the given one.
+            physical=$(python3 -I -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$fenced")
+            echo "(deny file-read* file-write* (subpath \"$fenced\") (subpath \"$physical\"))"
         done
     } > "$PROFILE"
     SANDBOX="/usr/bin/sandbox-exec -f $PROFILE"
-    echo "sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and original/ unreadable" | tee -a "$OUT/safety.txt"
+    echo "sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable" | tee -a "$OUT/safety.txt"
 else
     echo "sandbox          NOT USED (sandbox-exec unavailable or disabled); only the before/after hash guard protects the real stores" | tee -a "$OUT/safety.txt"
 fi

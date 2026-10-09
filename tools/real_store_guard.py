@@ -79,12 +79,15 @@ def compare(before, opensnap_folder_existed, plists_before=None):
 
 
 def _cli(argv):
-    """guard.py [--home DIR] snapshot FILE | compare FILE  (exit 1 when anything watched changed; contents never printed)."""
+    """guard.py [--home DIR] snapshot FILE | compare FILE | folders  (exit 1 when anything watched changed; contents never printed)."""
     home = None
     if argv[:1] == ["--home"]:
         home, argv = argv[1], argv[2:]
     if home:
         use_home(home)
+    if argv == ["folders"]:
+        print("\n".join(str(path) for path in REAL_STORE_FOLDERS))
+        return 0
     if len(argv) != 2 or argv[0] not in ("snapshot", "compare"):
         print(_cli.__doc__, file=sys.stderr)
         return 2

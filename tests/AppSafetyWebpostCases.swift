@@ -41,6 +41,7 @@ extension AppSafetyTests {
             ("The right-click menu lists every destination; choosing one persists it and the next Webpost click uploads there", webpostMultipleDestinations),
             ("Destination settings: Add, Make Default and Remove round-trip through storage with an S3 profile destination", webpostDestinationSettingsRoundTrip),
             ("--eye-dump is ignored unless OPENSNAP_APP_SUPPORT names an existing directory", webpostEyeDumpGate),
+            ("--eye-dump-audit needs the throwaway harness bundle id, an isolated home and support folder, and no fixture", webpostEyeDumpAuditGate),
             ("The upload button is icon-only with the iCloud upload symbol and an explicit label", webpostModernIconOnly)
         ]
     }
@@ -294,6 +295,21 @@ extension AppSafetyTests {
         try expect(AppDelegate.eyeDumpDirectory(arguments: args, environment: ["OPENSNAP_APP_SUPPORT": "/nonexistent/opensnap-support"]) == nil, "Missing directory: ignored")
         try expect(AppDelegate.eyeDumpDirectory(arguments: args, environment: ["OPENSNAP_APP_SUPPORT": NSTemporaryDirectory()])?.path == "/tmp/out", "Isolated support directory: honoured")
         try expect(AppDelegate.eyeDumpDirectory(arguments: ["OpenSnap"], environment: ["OPENSNAP_APP_SUPPORT": NSTemporaryDirectory()]) == nil, "No flag: nil")
+    }
+
+    static func webpostEyeDumpAuditGate() throws {
+        let args = ["OpenSnap", "--eye-dump-audit", "/tmp/audit-out"]
+        let support = NSTemporaryDirectory()
+        let isolated = ["OPENSNAP_APP_SUPPORT": support, "CFFIXED_USER_HOME": "/tmp/audit-home"]
+        let throwaway = AppDelegate.auditBundlePrefix + "123"
+        try expect(AppDelegate.eyeDumpAuditDirectory(arguments: args, environment: isolated, bundleIdentifier: throwaway)?.path == "/tmp/audit-out", "Fully isolated harness copy: honoured")
+        try expect(AppDelegate.eyeDumpAuditDirectory(arguments: args, environment: isolated, bundleIdentifier: "com.shoemoney.opensnap") == nil, "The real bundle id: ignored")
+        try expect(AppDelegate.eyeDumpAuditDirectory(arguments: args, environment: isolated, bundleIdentifier: nil) == nil, "A bare binary without a bundle id: ignored")
+        try expect(AppDelegate.eyeDumpAuditDirectory(arguments: args, environment: isolated, bundleIdentifier: "com.example.other") == nil, "Any non-harness bundle id: ignored")
+        try expect(AppDelegate.eyeDumpAuditDirectory(arguments: args, environment: isolated.merging(["OPENSNAP_FIXTURE": "/tmp/doc.opensnap"]) { $1 }, bundleIdentifier: throwaway) == nil, "A document fixture: ignored")
+        try expect(AppDelegate.eyeDumpAuditDirectory(arguments: args, environment: ["OPENSNAP_APP_SUPPORT": support], bundleIdentifier: throwaway) == nil, "No isolated home: ignored")
+        try expect(AppDelegate.eyeDumpAuditDirectory(arguments: args, environment: ["CFFIXED_USER_HOME": "/tmp/audit-home"], bundleIdentifier: throwaway) == nil, "No isolated support folder: ignored")
+        try expect(AppDelegate.eyeDumpAuditDirectory(arguments: ["OpenSnap"], environment: isolated, bundleIdentifier: throwaway) == nil, "No flag: nil")
     }
 
     static func webpostModernIconOnly() throws {
