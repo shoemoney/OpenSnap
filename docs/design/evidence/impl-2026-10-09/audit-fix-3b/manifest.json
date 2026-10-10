@@ -1,0 +1,5467 @@
+{
+ "sourceSha": "526ab3c",
+ "bundleId": "com.shoemoney.opensnap.eyedump-11168",
+ "iconMode": "sf",
+ "faMode": "FA unavailable: no FontAwesome7Pro subset fonts are bundled in this build, so every capture uses SF Symbols (nothing was faked)",
+ "captureCount": 176,
+ "unavailable": [],
+ "gaps": [],
+ "captures": [
+  {
+   "id": "S17",
+   "slug": "settings-capture",
+   "surface": "Settings: Capture",
+   "state": "Capture tab: flash on, shortcuts enabled, every action None",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    1200
+   ],
+   "pointSize": [
+    640,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1125
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S17-settings-capture-dark@2cc07da.png"
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture",
+   "surface": "Settings: Capture",
+   "state": "Capture tab: flash on, shortcuts enabled, every action None",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    1200
+   ],
+   "pointSize": [
+    640,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1125
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture-1280x800",
+   "surface": "Settings: Capture",
+   "state": "Capture tab: flash on, shortcuts enabled, every action None, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    1200
+   ],
+   "pointSize": [
+    640,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-1280x800-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1125
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S17-settings-capture-1280x800-dark@2cc07da.png"
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture-1280x800",
+   "surface": "Settings: Capture",
+   "state": "Capture tab: flash on, shortcuts enabled, every action None, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    1200
+   ],
+   "pointSize": [
+    640,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-1280x800-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1125
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture-error",
+   "surface": "Settings: Capture",
+   "state": "Capture tab with a refused shortcut (a key with no Command or Control)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1314,
+    1200
+   ],
+   "pointSize": [
+    657,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-error-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1096
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S17-settings-capture-error-dark@2cc07da.png"
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture-error",
+   "surface": "Settings: Capture",
+   "state": "Capture tab with a refused shortcut (a key with no Command or Control)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1314,
+    1200
+   ],
+   "pointSize": [
+    657,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-error-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1096
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture-error-1280x800",
+   "surface": "Settings: Capture",
+   "state": "Capture tab with a refused shortcut (a key with no Command or Control), sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1314,
+    1200
+   ],
+   "pointSize": [
+    657,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-error-1280x800-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1096
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S17-settings-capture-error-1280x800-dark@2cc07da.png"
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture-error-1280x800",
+   "surface": "Settings: Capture",
+   "state": "Capture tab with a refused shortcut (a key with no Command or Control), sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1314,
+    1200
+   ],
+   "pointSize": [
+    657,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-error-1280x800-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1096
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture-modifiers",
+   "surface": "Settings: Capture",
+   "state": "Capture tab with Option-Control-K chosen for Screen region: the selected modifier segments are in the accent",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    1200
+   ],
+   "pointSize": [
+    640,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-modifiers-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1125
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture-modifiers",
+   "surface": "Settings: Capture",
+   "state": "Capture tab with Option-Control-K chosen for Screen region: the selected modifier segments are in the accent",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    1200
+   ],
+   "pointSize": [
+    640,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-modifiers-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1125
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture-modifiers-1280x800",
+   "surface": "Settings: Capture",
+   "state": "Capture tab with Option-Control-K chosen for Screen region: the selected modifier segments are in the accent, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    1200
+   ],
+   "pointSize": [
+    640,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-modifiers-1280x800-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1125
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture-modifiers-1280x800",
+   "surface": "Settings: Capture",
+   "state": "Capture tab with Option-Control-K chosen for Screen region: the selected modifier segments are in the accent, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    1200
+   ],
+   "pointSize": [
+    640,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-modifiers-1280x800-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1125
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-drawing",
+   "surface": "Settings: Drawing",
+   "state": "Drawing tab, default values",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    1200
+   ],
+   "pointSize": [
+    640,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-drawing-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1125
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S17-settings-drawing-dark@2cc07da.png"
+  },
+  {
+   "id": "S17",
+   "slug": "settings-drawing",
+   "surface": "Settings: Drawing",
+   "state": "Drawing tab, default values",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    1200
+   ],
+   "pointSize": [
+    640,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-drawing-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1125
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-drawing-1280x800",
+   "surface": "Settings: Drawing",
+   "state": "Drawing tab, default values, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    1200
+   ],
+   "pointSize": [
+    640,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-drawing-1280x800-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1125
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S17-settings-drawing-1280x800-dark@2cc07da.png"
+  },
+  {
+   "id": "S17",
+   "slug": "settings-drawing-1280x800",
+   "surface": "Settings: Drawing",
+   "state": "Drawing tab, default values, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    1200
+   ],
+   "pointSize": [
+    640,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-drawing-1280x800-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1125
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-drawing-alt",
+   "surface": "Settings: Drawing",
+   "state": "Drawing tab, alternate values (Loose, Start)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    1200
+   ],
+   "pointSize": [
+    640,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-drawing-alt-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1125
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S17-settings-drawing-alt-dark@2cc07da.png"
+  },
+  {
+   "id": "S17",
+   "slug": "settings-drawing-alt",
+   "surface": "Settings: Drawing",
+   "state": "Drawing tab, alternate values (Loose, Start)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    1200
+   ],
+   "pointSize": [
+    640,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-drawing-alt-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1125
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-drawing-alt-1280x800",
+   "surface": "Settings: Drawing",
+   "state": "Drawing tab, alternate values (Loose, Start), sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    1200
+   ],
+   "pointSize": [
+    640,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-drawing-alt-1280x800-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1125
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S17-settings-drawing-alt-1280x800-dark@2cc07da.png"
+  },
+  {
+   "id": "S17",
+   "slug": "settings-drawing-alt-1280x800",
+   "surface": "Settings: Drawing",
+   "state": "Drawing tab, alternate values (Loose, Start), sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    1200
+   ],
+   "pointSize": [
+    640,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-drawing-alt-1280x800-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1125
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-general",
+   "surface": "Settings: General",
+   "state": "General tab, default values",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    1200
+   ],
+   "pointSize": [
+    640,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-general-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1125
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S17-settings-general-dark@2cc07da.png"
+  },
+  {
+   "id": "S17",
+   "slug": "settings-general",
+   "surface": "Settings: General",
+   "state": "General tab, default values",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    1200
+   ],
+   "pointSize": [
+    640,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-general-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1125
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-general-1280x800",
+   "surface": "Settings: General",
+   "state": "General tab, default values, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    1200
+   ],
+   "pointSize": [
+    640,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-general-1280x800-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1125
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S17-settings-general-1280x800-dark@2cc07da.png"
+  },
+  {
+   "id": "S17",
+   "slug": "settings-general-1280x800",
+   "surface": "Settings: General",
+   "state": "General tab, default values, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    1200
+   ],
+   "pointSize": [
+    640,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-general-1280x800-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1125
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-general-alt",
+   "surface": "Settings: General",
+   "state": "General tab, alternate values (Menu bar, snap window off, both hint options on)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    1200
+   ],
+   "pointSize": [
+    640,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-general-alt-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1125
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S17-settings-general-alt-dark@2cc07da.png"
+  },
+  {
+   "id": "S17",
+   "slug": "settings-general-alt",
+   "surface": "Settings: General",
+   "state": "General tab, alternate values (Menu bar, snap window off, both hint options on)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    1200
+   ],
+   "pointSize": [
+    640,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-general-alt-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1125
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-general-alt-1280x800",
+   "surface": "Settings: General",
+   "state": "General tab, alternate values (Menu bar, snap window off, both hint options on), sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    1200
+   ],
+   "pointSize": [
+    640,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-general-alt-1280x800-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1125
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S17-settings-general-alt-1280x800-dark@2cc07da.png"
+  },
+  {
+   "id": "S17",
+   "slug": "settings-general-alt-1280x800",
+   "surface": "Settings: General",
+   "state": "General tab, alternate values (Menu bar, snap window off, both hint options on), sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    1200
+   ],
+   "pointSize": [
+    640,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-general-alt-1280x800-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1125
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload",
+   "surface": "Settings: Upload",
+   "state": "Upload tab: three saved destinations, the first is the default",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    1200
+   ],
+   "pointSize": [
+    640,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1125
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S17-settings-upload-dark@2cc07da.png"
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload",
+   "surface": "Settings: Upload",
+   "state": "Upload tab: three saved destinations, the first is the default",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    1200
+   ],
+   "pointSize": [
+    640,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1125
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-1280x800",
+   "surface": "Settings: Upload",
+   "state": "Upload tab: three saved destinations, the first is the default, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    1200
+   ],
+   "pointSize": [
+    640,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-1280x800-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1125
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S17-settings-upload-1280x800-dark@2cc07da.png"
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-1280x800",
+   "surface": "Settings: Upload",
+   "state": "Upload tab: three saved destinations, the first is the default, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    1200
+   ],
+   "pointSize": [
+    640,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-1280x800-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1125
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-empty",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, no destination saved",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    1200
+   ],
+   "pointSize": [
+    640,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-empty-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1125
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S17-settings-upload-empty-dark@2cc07da.png"
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-empty",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, no destination saved",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    1200
+   ],
+   "pointSize": [
+    640,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-empty-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1125
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-empty-1280x800",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, no destination saved, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    1200
+   ],
+   "pointSize": [
+    640,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-empty-1280x800-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1125
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S17-settings-upload-empty-1280x800-dark@2cc07da.png"
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-empty-1280x800",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, no destination saved, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    1200
+   ],
+   "pointSize": [
+    640,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-empty-1280x800-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1125
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-edit-form",
+   "surface": "Destinations / Publishing",
+   "state": "edit form for the selected destination",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1474,
+    1520
+   ],
+   "pointSize": [
+    737,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-edit-form-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1237
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S19-destinations-edit-form-dark@2cc07da.png"
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-edit-form",
+   "surface": "Destinations / Publishing",
+   "state": "edit form for the selected destination",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1474,
+    1520
+   ],
+   "pointSize": [
+    737,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-edit-form-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1237
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-edit-form-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "edit form for the selected destination (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-edit-form-in-context-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S19-destinations-edit-form-in-context-dark@2cc07da.png"
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-edit-form-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "edit form for the selected destination (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-edit-form-in-context-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-empty",
+   "surface": "Destinations / Publishing",
+   "state": "Upload Destinations sheet, no destination saved",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1474,
+    818
+   ],
+   "pointSize": [
+    737,
+    409
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-empty-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    666
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S19-destinations-empty-dark@2cc07da.png"
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-empty",
+   "surface": "Destinations / Publishing",
+   "state": "Upload Destinations sheet, no destination saved",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1474,
+    818
+   ],
+   "pointSize": [
+    737,
+    409
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-empty-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    666
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-empty-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "Upload Destinations sheet, no destination saved (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-empty-in-context-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S19-destinations-empty-in-context-dark@2cc07da.png"
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-empty-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "Upload Destinations sheet, no destination saved (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-empty-in-context-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-focus",
+   "surface": "Preferences text field focus",
+   "state": "first visible text field focused in the destination edit form",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1474,
+    1520
+   ],
+   "pointSize": [
+    737,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-form-focus-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1237
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S19-destinations-form-focus-dark@2cc07da.png"
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-focus",
+   "surface": "Preferences text field focus",
+   "state": "first visible text field focused in the destination edit form",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1474,
+    1520
+   ],
+   "pointSize": [
+    737,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-form-focus-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1237
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-focus-in-context",
+   "surface": "Preferences text field focus",
+   "state": "first visible text field focused in the destination edit form (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-form-focus-in-context-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S19-destinations-form-focus-in-context-dark@2cc07da.png"
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-focus-in-context",
+   "surface": "Preferences text field focus",
+   "state": "first visible text field focused in the destination edit form (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-form-focus-in-context-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-ftp",
+   "surface": "Destinations / Publishing",
+   "state": "new FTP destination: its own endpoint scheme, placeholders and help, and the Test note in the reserved result band",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1474,
+    1520
+   ],
+   "pointSize": [
+    737,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-form-ftp-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1237
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-ftp",
+   "surface": "Destinations / Publishing",
+   "state": "new FTP destination: its own endpoint scheme, placeholders and help, and the Test note in the reserved result band",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1474,
+    1520
+   ],
+   "pointSize": [
+    737,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-form-ftp-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1237
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-ftp-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "new FTP destination: its own endpoint scheme, placeholders and help, and the Test note in the reserved result band (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-form-ftp-in-context-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-ftp-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "new FTP destination: its own endpoint scheme, placeholders and help, and the Test note in the reserved result band (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-form-ftp-in-context-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-ftps",
+   "surface": "Destinations / Publishing",
+   "state": "new FTPS destination: its own endpoint scheme, placeholders and help, and the Test note in the reserved result band",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1474,
+    1520
+   ],
+   "pointSize": [
+    737,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-form-ftps-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1237
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-ftps",
+   "surface": "Destinations / Publishing",
+   "state": "new FTPS destination: its own endpoint scheme, placeholders and help, and the Test note in the reserved result band",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1474,
+    1520
+   ],
+   "pointSize": [
+    737,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-form-ftps-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1237
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-ftps-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "new FTPS destination: its own endpoint scheme, placeholders and help, and the Test note in the reserved result band (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-form-ftps-in-context-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-ftps-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "new FTPS destination: its own endpoint scheme, placeholders and help, and the Test note in the reserved result band (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-form-ftps-in-context-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-s3",
+   "surface": "Destinations / Publishing",
+   "state": "new S3-compatible destination: its own endpoint scheme, placeholders and help, and the Test note in the reserved result band",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1474,
+    1520
+   ],
+   "pointSize": [
+    737,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-form-s3-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1237
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-s3",
+   "surface": "Destinations / Publishing",
+   "state": "new S3-compatible destination: its own endpoint scheme, placeholders and help, and the Test note in the reserved result band",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1474,
+    1520
+   ],
+   "pointSize": [
+    737,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-form-s3-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1237
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-s3-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "new S3-compatible destination: its own endpoint scheme, placeholders and help, and the Test note in the reserved result band (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-form-s3-in-context-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-s3-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "new S3-compatible destination: its own endpoint scheme, placeholders and help, and the Test note in the reserved result band (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-form-s3-in-context-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-sftp",
+   "surface": "Destinations / Publishing",
+   "state": "new SFTP destination: its own endpoint scheme, placeholders and help, and the Test note in the reserved result band",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1474,
+    1520
+   ],
+   "pointSize": [
+    737,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-form-sftp-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1237
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-sftp",
+   "surface": "Destinations / Publishing",
+   "state": "new SFTP destination: its own endpoint scheme, placeholders and help, and the Test note in the reserved result band",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1474,
+    1520
+   ],
+   "pointSize": [
+    737,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-form-sftp-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1237
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-sftp-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "new SFTP destination: its own endpoint scheme, placeholders and help, and the Test note in the reserved result band (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-form-sftp-in-context-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-sftp-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "new SFTP destination: its own endpoint scheme, placeholders and help, and the Test note in the reserved result band (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-form-sftp-in-context-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-webdav",
+   "surface": "Destinations / Publishing",
+   "state": "new WebDAV destination: its own endpoint scheme, placeholders and help, and the Test note in the reserved result band",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1474,
+    1520
+   ],
+   "pointSize": [
+    737,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-form-webdav-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1237
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-webdav",
+   "surface": "Destinations / Publishing",
+   "state": "new WebDAV destination: its own endpoint scheme, placeholders and help, and the Test note in the reserved result band",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1474,
+    1520
+   ],
+   "pointSize": [
+    737,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-form-webdav-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1237
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-webdav-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "new WebDAV destination: its own endpoint scheme, placeholders and help, and the Test note in the reserved result band (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-form-webdav-in-context-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-webdav-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "new WebDAV destination: its own endpoint scheme, placeholders and help, and the Test note in the reserved result band (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-form-webdav-in-context-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-from-settings-640",
+   "surface": "Destinations / Publishing",
+   "state": "the sheet as hosted by the 640 pt Settings window: 640 wide, so it never overhangs its parent",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1314,
+    1520
+   ],
+   "pointSize": [
+    657,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-from-settings-640-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1388
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-from-settings-640",
+   "surface": "Destinations / Publishing",
+   "state": "the sheet as hosted by the 640 pt Settings window: 640 wide, so it never overhangs its parent",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1314,
+    1520
+   ],
+   "pointSize": [
+    657,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-from-settings-640-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1388
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-from-settings-640-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "the sheet as hosted by the 640 pt Settings window: 640 wide, so it never overhangs its parent (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-from-settings-640-in-context-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-from-settings-640-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "the sheet as hosted by the 640 pt Settings window: 640 wide, so it never overhangs its parent (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-from-settings-640-in-context-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-list",
+   "surface": "Destinations / Publishing",
+   "state": "three synthetic destinations (Example S3 default, SFTP, WebDAV)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1474,
+    818
+   ],
+   "pointSize": [
+    737,
+    409
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-list-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    666
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S19-destinations-list-dark@2cc07da.png"
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-list",
+   "surface": "Destinations / Publishing",
+   "state": "three synthetic destinations (Example S3 default, SFTP, WebDAV)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1474,
+    818
+   ],
+   "pointSize": [
+    737,
+    409
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-list-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    666
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-list-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "three synthetic destinations (Example S3 default, SFTP, WebDAV) (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-list-in-context-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S19-destinations-list-in-context-dark@2cc07da.png"
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-list-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "three synthetic destinations (Example S3 default, SFTP, WebDAV) (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-list-in-context-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-short-screen",
+   "surface": "Destinations / Publishing",
+   "state": "edit form on a short display (visible frame 1280 x 500): the form scrolls and Test, Cancel and Save stay pinned",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1474,
+    760
+   ],
+   "pointSize": [
+    737,
+    380
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-short-screen-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    619
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S19-destinations-short-screen-dark@2cc07da.png"
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-short-screen",
+   "surface": "Destinations / Publishing",
+   "state": "edit form on a short display (visible frame 1280 x 500): the form scrolls and Test, Cancel and Save stay pinned",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1474,
+    760
+   ],
+   "pointSize": [
+    737,
+    380
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-short-screen-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    619
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-short-screen-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "edit form on a short display (visible frame 1280 x 500): the form scrolls and Test, Cancel and Save stay pinned (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-short-screen-in-context-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S19-destinations-short-screen-in-context-dark@2cc07da.png"
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-short-screen-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "edit form on a short display (visible frame 1280 x 500): the form scrolls and Test, Cancel and Save stay pinned (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-short-screen-in-context-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-test-connected",
+   "surface": "Destinations / Publishing",
+   "state": "S3 form after a synthetic successful Test: check glyph, Connected, detail line",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1474,
+    1520
+   ],
+   "pointSize": [
+    737,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-test-connected-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1237
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S19-destinations-test-connected-dark@2cc07da.png"
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-test-connected",
+   "surface": "Destinations / Publishing",
+   "state": "S3 form after a synthetic successful Test: check glyph, Connected, detail line",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1474,
+    1520
+   ],
+   "pointSize": [
+    737,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-test-connected-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1237
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-test-connected-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "S3 form after a synthetic successful Test: check glyph, Connected, detail line (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-test-connected-in-context-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S19-destinations-test-connected-in-context-dark@2cc07da.png"
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-test-connected-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "S3 form after a synthetic successful Test: check glyph, Connected, detail line (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-test-connected-in-context-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-test-error",
+   "surface": "Destinations / Publishing",
+   "state": "S3 form after a synthetic failed Test: octagon glyph and an Error: line",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1474,
+    1520
+   ],
+   "pointSize": [
+    737,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-test-error-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1237
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S19-destinations-test-error-dark@2cc07da.png"
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-test-error",
+   "surface": "Destinations / Publishing",
+   "state": "S3 form after a synthetic failed Test: octagon glyph and an Error: line",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1474,
+    1520
+   ],
+   "pointSize": [
+    737,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-test-error-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1237
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-test-error-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "S3 form after a synthetic failed Test: octagon glyph and an Error: line (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-test-error-in-context-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S19-destinations-test-error-in-context-dark@2cc07da.png"
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-test-error-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "S3 form after a synthetic failed Test: octagon glyph and an Error: line (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-test-error-in-context-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-test-error-webdav",
+   "surface": "Destinations / Publishing",
+   "state": "WebDAV form after a synthetic failed Test (HTTP 401): the same band, the form above it unchanged",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1474,
+    1520
+   ],
+   "pointSize": [
+    737,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-test-error-webdav-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1237
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-test-error-webdav",
+   "surface": "Destinations / Publishing",
+   "state": "WebDAV form after a synthetic failed Test (HTTP 401): the same band, the form above it unchanged",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1474,
+    1520
+   ],
+   "pointSize": [
+    737,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-test-error-webdav-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1237
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-test-error-webdav-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "WebDAV form after a synthetic failed Test (HTTP 401): the same band, the form above it unchanged (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-test-error-webdav-in-context-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-test-error-webdav-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "WebDAV form after a synthetic failed Test (HTTP 401): the same band, the form above it unchanged (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-test-error-webdav-in-context-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-1120x850-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 1120 x 850: grid reflow, check badge, details beside the grid",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1700
+   ],
+   "pointSize": [
+    1120,
+    850
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-1120x850-selected-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    911
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S20-history-1120x850-selected-dark@2cc07da.png"
+  },
+  {
+   "id": "S20",
+   "slug": "history-1120x850-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 1120 x 850: grid reflow, check badge, details beside the grid",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1700
+   ],
+   "pointSize": [
+    1120,
+    850
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-1120x850-selected-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    911
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-1280x800-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 1280 x 800: grid reflow, check badge, details beside the grid",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-1280x800-selected-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S20-history-1280x800-selected-dark@2cc07da.png"
+  },
+  {
+   "id": "S20",
+   "slug": "history-1280x800-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 1280 x 800: grid reflow, check badge, details beside the grid",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-1280x800-selected-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-880x600-none",
+   "surface": "History browser",
+   "state": "880 x 600, nothing selected: the details column shows the summary instead of a blank hint; tiles sized to their preview",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1760,
+    1200
+   ],
+   "pointSize": [
+    880,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-880x600-none-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-880x600-none",
+   "surface": "History browser",
+   "state": "880 x 600, nothing selected: the details column shows the summary instead of a blank hint; tiles sized to their preview",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1760,
+    1200
+   ],
+   "pointSize": [
+    880,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-880x600-none-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-880x600-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 880 x 600: grid reflow, check badge, details beside the grid",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1760,
+    1280
+   ],
+   "pointSize": [
+    880,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-880x600-selected-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    873
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S20-history-880x600-selected-dark@2cc07da.png"
+  },
+  {
+   "id": "S20",
+   "slug": "history-880x600-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 880 x 600: grid reflow, check badge, details beside the grid",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1760,
+    1280
+   ],
+   "pointSize": [
+    880,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-880x600-selected-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    873
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-empty",
+   "surface": "History browser",
+   "state": "History window with no entries",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-empty-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S20-history-empty-dark@2cc07da.png"
+  },
+  {
+   "id": "S20",
+   "slug": "history-empty",
+   "surface": "History browser",
+   "state": "History window with no entries",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-empty-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-link-copied",
+   "surface": "History browser",
+   "state": "a Shared entry selected after Copy Link: the footer confirms, and the destination link is cut in its middle with the full text in its tooltip",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1760,
+    1292
+   ],
+   "pointSize": [
+    880,
+    646
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-link-copied-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    881
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-link-copied",
+   "surface": "History browser",
+   "state": "a Shared entry selected after Copy Link: the footer confirms, and the destination link is cut in its middle with the full text in its tooltip",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1760,
+    1292
+   ],
+   "pointSize": [
+    880,
+    646
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-link-copied-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    881
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-no-match",
+   "surface": "History browser",
+   "state": "filters that match nothing at 880 x 600: centred message, no save hint",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1760,
+    1200
+   ],
+   "pointSize": [
+    880,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-no-match-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S20-history-no-match-dark@2cc07da.png"
+  },
+  {
+   "id": "S20",
+   "slug": "history-no-match",
+   "surface": "History browser",
+   "state": "filters that match nothing at 880 x 600: centred message, no save hint",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1760,
+    1200
+   ],
+   "pointSize": [
+    880,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-no-match-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-no-match-footer",
+   "surface": "History browser",
+   "state": "filters that match nothing: the footer stays (0 of 6 items) and Clear filters offers the way out",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1760,
+    1292
+   ],
+   "pointSize": [
+    880,
+    646
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-no-match-footer-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    881
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-no-match-footer",
+   "surface": "History browser",
+   "state": "filters that match nothing: the footer stays (0 of 6 items) and Clear filters offers the way out",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1760,
+    1292
+   ],
+   "pointSize": [
+    880,
+    646
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-no-match-footer-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    881
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-populated",
+   "surface": "History browser",
+   "state": "six synthetic entries across dates and actions (Saved/Exported/Shared)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-populated-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S20-history-populated-dark@2cc07da.png"
+  },
+  {
+   "id": "S20",
+   "slug": "history-populated",
+   "surface": "History browser",
+   "state": "six synthetic entries across dates and actions (Saved/Exported/Shared)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-populated-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-selected",
+   "surface": "History browser",
+   "state": "one entry selected (action buttons enabled)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-selected-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S20-history-selected-dark@2cc07da.png"
+  },
+  {
+   "id": "S20",
+   "slug": "history-selected",
+   "surface": "History browser",
+   "state": "one entry selected (action buttons enabled)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-selected-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-tile-hover",
+   "surface": "History browser",
+   "state": "one entry selected (accent fill, border, check badge) and another tile hovered (label 0.08 fill)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-tile-hover-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S20-history-selected-dark@2cc07da.png"
+  },
+  {
+   "id": "S20",
+   "slug": "history-tile-hover",
+   "surface": "History browser",
+   "state": "one entry selected (accent fill, border, check badge) and another tile hovered (label 0.08 fill)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-tile-hover-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-cancelled-w1280",
+   "surface": "publish cancelled",
+   "state": "Upload cancelled in the status line after Cancel, kept for ten seconds, at w1280",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-cancelled-w1280-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-cancelled-w1280-dark@526ab3c.json",
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-cancelled-w1280",
+   "surface": "publish cancelled",
+   "state": "Upload cancelled in the status line after Cancel, kept for ten seconds, at w1280",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-cancelled-w1280-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-cancelled-w1280-light@526ab3c.json",
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-cancelled-w1440",
+   "surface": "publish cancelled",
+   "state": "Upload cancelled in the status line after Cancel, kept for ten seconds, at w1440",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-cancelled-w1440-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-cancelled-w1440-dark@526ab3c.json",
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-cancelled-w1440",
+   "surface": "publish cancelled",
+   "state": "Upload cancelled in the status line after Cancel, kept for ten seconds, at w1440",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-cancelled-w1440-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-cancelled-w1440-light@526ab3c.json",
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-cancelled-w980",
+   "surface": "publish cancelled",
+   "state": "Upload cancelled in the status line after Cancel, kept for ten seconds, at w980",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-cancelled-w980-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-cancelled-w980-dark@526ab3c.json",
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-cancelled-w980",
+   "surface": "publish cancelled",
+   "state": "Upload cancelled in the status line after Cancel, kept for ten seconds, at w980",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-cancelled-w980-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-cancelled-w980-light@526ab3c.json",
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-details-w1280",
+   "surface": "publish error",
+   "state": "the Details… sheet with the whole error (no second Error: under the title), at w1280",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S21-publish-error-details-w1280-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S21-publish-error-details-w1280-dark@2cc07da.png"
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-details-w1280",
+   "surface": "publish error",
+   "state": "the Details… sheet with the whole error (no second Error: under the title), at w1280",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S21-publish-error-details-w1280-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-details-w1440",
+   "surface": "publish error",
+   "state": "the Details… sheet with the whole error (no second Error: under the title), at w1440",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S21-publish-error-details-w1440-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S21-publish-error-details-w1280-dark@2cc07da.png"
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-details-w1440",
+   "surface": "publish error",
+   "state": "the Details… sheet with the whole error (no second Error: under the title), at w1440",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S21-publish-error-details-w1440-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-details-w980",
+   "surface": "publish error",
+   "state": "the Details… sheet with the whole error (no second Error: under the title), at w980",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S21-publish-error-details-w980-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S21-publish-error-details-w980-dark@2cc07da.png"
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-details-w980",
+   "surface": "publish error",
+   "state": "the Details… sheet with the whole error (no second Error: under the title), at w980",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S21-publish-error-details-w980-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-footer-w1280",
+   "surface": "publish error",
+   "state": "footer crop with the inline error, Retry and Details, at w1280",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    120
+   ],
+   "pointSize": [
+    1280,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-error-footer-w1280-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    56
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-error-footer-w1280-dark@526ab3c.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S21-publish-error-footer-w1280-dark@2cc07da.png"
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-footer-w1280",
+   "surface": "publish error",
+   "state": "footer crop with the inline error, Retry and Details, at w1280",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    120
+   ],
+   "pointSize": [
+    1280,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-error-footer-w1280-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    56
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-error-footer-w1280-light@526ab3c.json",
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-footer-w1440",
+   "surface": "publish error",
+   "state": "footer crop with the inline error, Retry and Details, at w1440",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    120
+   ],
+   "pointSize": [
+    1440,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-error-footer-w1440-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    50
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-error-footer-w1440-dark@526ab3c.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S21-publish-error-footer-w1280-dark@2cc07da.png"
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-footer-w1440",
+   "surface": "publish error",
+   "state": "footer crop with the inline error, Retry and Details, at w1440",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    120
+   ],
+   "pointSize": [
+    1440,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-error-footer-w1440-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    50
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-error-footer-w1440-light@526ab3c.json",
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-footer-w980",
+   "surface": "publish error",
+   "state": "footer crop with the inline error, Retry and Details, at w980",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-error-footer-w980-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-error-footer-w980-dark@526ab3c.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S21-publish-error-footer-w980-dark@2cc07da.png"
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-footer-w980",
+   "surface": "publish error",
+   "state": "footer crop with the inline error, Retry and Details, at w980",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-error-footer-w980-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-error-footer-w980-light@526ab3c.json",
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-w1280",
+   "surface": "publish error",
+   "state": "inline Error: with the Retry and Details icon buttons on their plate after a stubbed failed upload, at w1280",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-error-w1280-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-error-w1280-dark@526ab3c.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S21-publish-error-w1280-dark@2cc07da.png"
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-w1280",
+   "surface": "publish error",
+   "state": "inline Error: with the Retry and Details icon buttons on their plate after a stubbed failed upload, at w1280",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-error-w1280-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-error-w1280-light@526ab3c.json",
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-w1440",
+   "surface": "publish error",
+   "state": "inline Error: with the Retry and Details icon buttons on their plate after a stubbed failed upload, at w1440",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-error-w1440-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-error-w1440-dark@526ab3c.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S21-publish-error-w1280-dark@2cc07da.png"
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-w1440",
+   "surface": "publish error",
+   "state": "inline Error: with the Retry and Details icon buttons on their plate after a stubbed failed upload, at w1440",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-error-w1440-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-error-w1440-light@526ab3c.json",
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-w980",
+   "surface": "publish error",
+   "state": "inline Error: with the Retry and Details icon buttons on their plate after a stubbed failed upload, at w980",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-error-w980-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-error-w980-dark@526ab3c.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S21-publish-error-w980-dark@2cc07da.png"
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-w980",
+   "surface": "publish error",
+   "state": "inline Error: with the Retry and Details icon buttons on their plate after a stubbed failed upload, at w980",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-error-w980-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-error-w980-light@526ab3c.json",
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-progress-footer-w1280",
+   "surface": "publish progress",
+   "state": "footer crop during the upload, at w1280",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    120
+   ],
+   "pointSize": [
+    1280,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-progress-footer-w1280-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    56
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-progress-footer-w1280-dark@526ab3c.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S21-publish-progress-footer-w1280-dark@2cc07da.png"
+  },
+  {
+   "id": "S21",
+   "slug": "publish-progress-footer-w1280",
+   "surface": "publish progress",
+   "state": "footer crop during the upload, at w1280",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    120
+   ],
+   "pointSize": [
+    1280,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-progress-footer-w1280-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    56
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-progress-footer-w1280-light@526ab3c.json",
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-progress-footer-w1440",
+   "surface": "publish progress",
+   "state": "footer crop during the upload, at w1440",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    120
+   ],
+   "pointSize": [
+    1440,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-progress-footer-w1440-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    50
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-progress-footer-w1440-dark@526ab3c.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S21-publish-progress-footer-w1280-dark@2cc07da.png"
+  },
+  {
+   "id": "S21",
+   "slug": "publish-progress-footer-w1440",
+   "surface": "publish progress",
+   "state": "footer crop during the upload, at w1440",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    120
+   ],
+   "pointSize": [
+    1440,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-progress-footer-w1440-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    50
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-progress-footer-w1440-light@526ab3c.json",
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-progress-footer-w980",
+   "surface": "publish progress",
+   "state": "footer crop during the upload, at w980",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-progress-footer-w980-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-progress-footer-w980-dark@526ab3c.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S21-publish-progress-footer-w980-dark@2cc07da.png"
+  },
+  {
+   "id": "S21",
+   "slug": "publish-progress-footer-w980",
+   "surface": "publish progress",
+   "state": "footer crop during the upload, at w980",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-progress-footer-w980-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-progress-footer-w980-light@526ab3c.json",
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-progress-w1280",
+   "surface": "publish progress",
+   "state": "Uploading <name>…: 20 pt spinner, truncating status, Cancel on its plate; the Original size checkbox only where the slot holds it, at w1280",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-progress-w1280-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-progress-w1280-dark@526ab3c.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S21-publish-progress-w1280-dark@2cc07da.png"
+  },
+  {
+   "id": "S21",
+   "slug": "publish-progress-w1280",
+   "surface": "publish progress",
+   "state": "Uploading <name>…: 20 pt spinner, truncating status, Cancel on its plate; the Original size checkbox only where the slot holds it, at w1280",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-progress-w1280-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-progress-w1280-light@526ab3c.json",
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-progress-w1440",
+   "surface": "publish progress",
+   "state": "Uploading <name>…: 20 pt spinner, truncating status, Cancel on its plate; the Original size checkbox only where the slot holds it, at w1440",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-progress-w1440-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-progress-w1440-dark@526ab3c.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S21-publish-progress-w1280-dark@2cc07da.png"
+  },
+  {
+   "id": "S21",
+   "slug": "publish-progress-w1440",
+   "surface": "publish progress",
+   "state": "Uploading <name>…: 20 pt spinner, truncating status, Cancel on its plate; the Original size checkbox only where the slot holds it, at w1440",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-progress-w1440-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-progress-w1440-light@526ab3c.json",
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-progress-w980",
+   "surface": "publish progress",
+   "state": "Uploading <name>…: 20 pt spinner, truncating status, Cancel on its plate; the Original size checkbox only where the slot holds it, at w980",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-progress-w980-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-progress-w980-dark@526ab3c.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S21-publish-progress-w980-dark@2cc07da.png"
+  },
+  {
+   "id": "S21",
+   "slug": "publish-progress-w980",
+   "surface": "publish progress",
+   "state": "Uploading <name>…: 20 pt spinner, truncating status, Cancel on its plate; the Original size checkbox only where the slot holds it, at w980",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-progress-w980-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-progress-w980-light@526ab3c.json",
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-retrying-w1280",
+   "surface": "publish retry",
+   "state": "Retrying <name>… with the spinner and Cancel, after Retry from a failed upload, at w1280",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-retrying-w1280-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-retrying-w1280-dark@526ab3c.json",
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-retrying-w1280",
+   "surface": "publish retry",
+   "state": "Retrying <name>… with the spinner and Cancel, after Retry from a failed upload, at w1280",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-retrying-w1280-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-retrying-w1280-light@526ab3c.json",
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-retrying-w1440",
+   "surface": "publish retry",
+   "state": "Retrying <name>… with the spinner and Cancel, after Retry from a failed upload, at w1440",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-retrying-w1440-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-retrying-w1440-dark@526ab3c.json",
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-retrying-w1440",
+   "surface": "publish retry",
+   "state": "Retrying <name>… with the spinner and Cancel, after Retry from a failed upload, at w1440",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-retrying-w1440-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-retrying-w1440-light@526ab3c.json",
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-retrying-w980",
+   "surface": "publish retry",
+   "state": "Retrying <name>… with the spinner and Cancel, after Retry from a failed upload, at w980",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-retrying-w980-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-retrying-w980-dark@526ab3c.json",
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-retrying-w980",
+   "surface": "publish retry",
+   "state": "Retrying <name>… with the spinner and Cancel, after Retry from a failed upload, at w980",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-retrying-w980-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-retrying-w980-light@526ab3c.json",
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-success-footer-w1280",
+   "surface": "publish success",
+   "state": "footer crop with Link copied · the link, Open and Copy, at w1280",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    120
+   ],
+   "pointSize": [
+    1280,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-success-footer-w1280-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    56
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-success-footer-w1280-dark@526ab3c.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S21-publish-success-footer-w1280-dark@2cc07da.png"
+  },
+  {
+   "id": "S21",
+   "slug": "publish-success-footer-w1280",
+   "surface": "publish success",
+   "state": "footer crop with Link copied · the link, Open and Copy, at w1280",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    120
+   ],
+   "pointSize": [
+    1280,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-success-footer-w1280-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    56
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-success-footer-w1280-light@526ab3c.json",
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-success-footer-w1440",
+   "surface": "publish success",
+   "state": "footer crop with Link copied · the link, Open and Copy, at w1440",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    120
+   ],
+   "pointSize": [
+    1440,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-success-footer-w1440-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    50
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-success-footer-w1440-dark@526ab3c.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S21-publish-success-footer-w1280-dark@2cc07da.png"
+  },
+  {
+   "id": "S21",
+   "slug": "publish-success-footer-w1440",
+   "surface": "publish success",
+   "state": "footer crop with Link copied · the link, Open and Copy, at w1440",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    120
+   ],
+   "pointSize": [
+    1440,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-success-footer-w1440-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    50
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-success-footer-w1440-light@526ab3c.json",
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-success-footer-w980",
+   "surface": "publish success",
+   "state": "footer crop with Link copied · the link, Open and Copy, at w980",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-success-footer-w980-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-success-footer-w980-dark@526ab3c.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S21-publish-success-footer-w980-dark@2cc07da.png"
+  },
+  {
+   "id": "S21",
+   "slug": "publish-success-footer-w980",
+   "surface": "publish success",
+   "state": "footer crop with Link copied · the link, Open and Copy, at w980",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-success-footer-w980-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-success-footer-w980-light@526ab3c.json",
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-success-w1280",
+   "surface": "publish success",
+   "state": "Link copied · the link itself, then Open and Copy on their plate, after a stubbed upload, at w1280",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-success-w1280-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-success-w1280-dark@526ab3c.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S21-publish-success-w1280-dark@2cc07da.png"
+  },
+  {
+   "id": "S21",
+   "slug": "publish-success-w1280",
+   "surface": "publish success",
+   "state": "Link copied · the link itself, then Open and Copy on their plate, after a stubbed upload, at w1280",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-success-w1280-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-success-w1280-light@526ab3c.json",
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-success-w1440",
+   "surface": "publish success",
+   "state": "Link copied · the link itself, then Open and Copy on their plate, after a stubbed upload, at w1440",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-success-w1440-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-success-w1440-dark@526ab3c.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S21-publish-success-w1280-dark@2cc07da.png"
+  },
+  {
+   "id": "S21",
+   "slug": "publish-success-w1440",
+   "surface": "publish success",
+   "state": "Link copied · the link itself, then Open and Copy on their plate, after a stubbed upload, at w1440",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-success-w1440-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-success-w1440-light@526ab3c.json",
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "publish-success-w980",
+   "surface": "publish success",
+   "state": "Link copied · the link itself, then Open and Copy on their plate, after a stubbed upload, at w980",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-success-w980-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-success-w980-dark@526ab3c.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S21-publish-success-w980-dark@2cc07da.png"
+  },
+  {
+   "id": "S21",
+   "slug": "publish-success-w980",
+   "surface": "publish success",
+   "state": "Link copied · the link itself, then Open and Copy on their plate, after a stubbed upload, at w980",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-success-w980-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-success-w980-light@526ab3c.json",
+   "before": null
+  },
+  {
+   "id": "S21",
+   "slug": "upload-menu-busy",
+   "surface": "publish progress",
+   "state": "destination menu while an upload runs (Cancel Upload offered)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    2468,
+    1816
+   ],
+   "pointSize": [
+    1234,
+    908
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 3 own windows)",
+   "file": "S21-upload-menu-busy-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    883
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-upload-menu-busy-dark@526ab3c.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S21-upload-menu-busy-dark@2cc07da.png"
+  },
+  {
+   "id": "S21",
+   "slug": "upload-menu-busy",
+   "surface": "publish progress",
+   "state": "destination menu while an upload runs (Cancel Upload offered)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    2468,
+    1816
+   ],
+   "pointSize": [
+    1234,
+    908
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 3 own windows)",
+   "file": "S21-upload-menu-busy-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    883
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-upload-menu-busy-light@526ab3c.json",
+   "before": null
+  },
+  {
+   "id": "S25",
+   "slug": "about-panel",
+   "surface": "About window",
+   "state": "app-owned About window: icon, name, version and build, credit line, license link",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    720,
+    744
+   ],
+   "pointSize": [
+    360,
+    372
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S25-about-panel-dark@526ab3c.png",
+   "storedPixelSize": [
+    720,
+    744
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S25-about-panel-dark@2cc07da.png"
+  },
+  {
+   "id": "S25",
+   "slug": "about-panel",
+   "surface": "About window",
+   "state": "app-owned About window: icon, name, version and build, credit line, license link",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    720,
+    744
+   ],
+   "pointSize": [
+    360,
+    372
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S25-about-panel-light@526ab3c.png",
+   "storedPixelSize": [
+    720,
+    744
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S25",
+   "slug": "license-window",
+   "surface": "About window",
+   "state": "the MIT License window with the paragraphs reflowed to the window width",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    1240,
+    1184
+   ],
+   "pointSize": [
+    620,
+    592
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S25-license-window-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1146
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S25",
+   "slug": "license-window",
+   "surface": "About window",
+   "state": "the MIT License window with the paragraphs reflowed to the window width",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    1240,
+    1184
+   ],
+   "pointSize": [
+    620,
+    592
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S25-license-window-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    1146
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S26",
+   "slug": "remove-destination",
+   "surface": "alerts / sheets",
+   "state": "Remove “Example S3”? sheet on the Upload Destinations sheet (default destination): Cancel is the default, Remove is destructive",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 3 own windows)",
+   "file": "S26-remove-destination-dark@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b-before/S26-remove-destination-dark@2cc07da.png"
+  },
+  {
+   "id": "S26",
+   "slug": "remove-destination",
+   "surface": "alerts / sheets",
+   "state": "Remove “Example S3”? sheet on the Upload Destinations sheet (default destination): Cancel is the default, Remove is destructive",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "526ab3c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 3 own windows)",
+   "file": "S26-remove-destination-light@526ab3c.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  }
+ ]
+}

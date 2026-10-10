@@ -57,7 +57,7 @@ extension AppDelegate {
     }
 
     @objc func showUploadErrorDetails() {
-        guard let detail = uploadState.failureBody, !terminationStarted else { return }
+        guard let detail = uploadState.failureDetail, !terminationStarted else { return }
         present(AppAlert(title: "Upload failed", message: detail))
     }
 
