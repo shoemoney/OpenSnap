@@ -93,6 +93,15 @@ private enum IconCoverageTests {
         expect(FontAwesomeFree.glyph(for: .circle, family: .regular)?.style == .regular && FontAwesomeFree.glyph(for: .circle, family: .solid)?.style == .solid,
                "Circle: regular outline, solid disc")
         expect(FontAwesomeFree.glyph(for: .toolbox, family: .regular)?.style == .solid, "An icon with no Free regular style uses solid for both families")
+        // One weight across the bars: only the unfilled shape tools take the outline, and no unused outline is embedded.
+        let outlined = Set(FAIcon.allCases.filter { $0.freeSource.hasRegular })
+        expect(outlined == [.circle, .square], "Only the circle and square tools use the regular outline (\(outlined.map(\.rawValue).sorted()))")
+        for icon in FAIcon.allCases {
+            expect(FontAwesomeFree.glyph(for: icon, family: .solid)?.style == .solid, "\(icon) solid is the solid vector")
+            expect(FontAwesomeFree.glyph(for: icon, family: .regular)?.style == (outlined.contains(icon) ? .regular : .solid), "\(icon) regular follows hasRegular")
+        }
+        let embeddedRegular = Set(FontAwesomeFree.entries.filter { $0.style == .regular }.map(\.name))
+        expect(embeddedRegular == Set(outlined.map { $0.freeSource.name }), "Embedded regular vectors are exactly the ones used: \(embeddedRegular.sorted())")
     }
 
     // MARK: (b) every case has a user
