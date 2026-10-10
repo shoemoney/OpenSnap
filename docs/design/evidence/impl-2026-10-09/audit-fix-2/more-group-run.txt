@@ -1,0 +1,5 @@
+sh tools/eye-dump-audit.sh OUT --groups more --appearances light --icons sf --no-wait-gui  (source 2275c5b)
+surfaces: S12,S16,S17,S18,S19,S20,S21,S22,S23,S24,S25,S26,S26D,S28,S29
+result: exited on its own in 1:52.66, no watchdog kill (no "child exited non-zero"), RESULT stores unchanged, 87 PNGs written
+baseline (7191f04, same command with --surfaces S26D): 7:00.68, killed by the 420 s watchdog; S26 alone exits in 12.6 s
+only-harness-fixed build, S26D alone: 7.1 s   only-product-fixed build (old harness line), S26D alone: 6.8 s
