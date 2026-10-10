@@ -321,6 +321,33 @@ def protection_results(base, text, tag, app, home):
     return refused, drop_refused, plist_survives
 
 
+def normalized(path):
+    return bool(path) and path == os.path.normpath(path) and "//" not in path
+
+
+def test_normalized_home(base, home):
+    """F-J5-005: the audit opens system panels, and macOS 27's Open/Save panel service spins to tens of GB when the inherited
+    CFFIXED_USER_HOME is not normalized. Real macOS TMPDIR ends in "/", so the raw mktemp path has "//"; the script must canonicalize."""
+    scratch_tmp = Path(base) / "tmp-normalized"
+    scratch_tmp.mkdir(exist_ok=True)
+    app = fake_app(base)
+    args = ["--app", str(app), "--guard-home", str(home), "--no-wait-gui", "--sha", "testsha", "--groups", "main", "--appearances", "light", "--icons", "both"]
+    def cfhome(script, name):
+        out = Path(base) / name
+        result = run_harness(script, out, args, {"TMPDIR": str(scratch_tmp) + "/"})
+        launches = read_launches(out)
+        return result, [launch.get("cfhome", "") for launch in launches]
+    result, homes = cfhome(SCRIPT, "out-normalized")
+    check(result.returncode == 0 and homes and all(normalized(h) for h in homes),
+          f"F-J5-005: with a trailing-slash TMPDIR every launch gets a normalized CFFIXED_USER_HOME ({homes[:1]})")
+    canon = 'TMP=$(CDPATH= cd -- "$TMP" && pwd -P)\n'
+    text = SCRIPT.read_text()
+    check(canon in text, "F-J5-005: the canonicalizing line is where the test expects it (so the mutant below really removes it)")
+    _, mutant_homes = cfhome(script_copy(base, "mut-normalize", text.replace(canon, "")), "out-mutant-normalize")
+    check(mutant_homes and not any(normalized(h) for h in mutant_homes),
+          f"F-J5-005 (can fail): without the canonicalizing line CFFIXED_USER_HOME keeps '//' ({mutant_homes[:1]}), so the check above goes red")
+
+
 def test_cleanup_protection(base, home):
     text = SCRIPT.read_text()
     app = fake_app(base)
@@ -500,6 +527,7 @@ with tempfile.TemporaryDirectory(prefix="eyedump-guard-test.") as scratch:
     fake_recorder, fake_log = make_fake_defaults(scratch)
     SAFE.update(home=str(scratch_home), defaults=str(fake_recorder), log=str(fake_log))
     test_script(scratch, scratch_home)
+    test_normalized_home(scratch, scratch_home)
     test_cleanup_protection(scratch, scratch_home)
     test_display_injection(scratch, scratch_home)
     test_input_fence(scratch)

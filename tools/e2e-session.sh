@@ -309,6 +309,9 @@ cmd_start() {
     mkdir -p "$SESSIONS"
 
     TMP=$(mktemp -d "${TMPDIR:-/tmp}/e2e-session.XXXXXX")
+    # F-J5-005: the child's CFFIXED_USER_HOME is built from this path, and $TMPDIR ends in "/" so the raw mktemp result contains "//". macOS 27's
+    # Open/Save panel service inherits CFFIXED_USER_HOME and spins to tens of GB on any non-normalized value ("//", "/./", "/../"). Canonicalize once.
+    TMP=$(CDPATH= cd -- "$TMP" && pwd -P)
     printf '%s' "$THROWAWAY_ID" > "$TMP/.e2e-session"
     APP_PID=""
     LAUNCHED=no
