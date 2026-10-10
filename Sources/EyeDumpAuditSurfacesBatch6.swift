@@ -63,7 +63,7 @@ extension AuditRun {
         if let wide = windowSize(for: "1440x900", surface: "S44") {
             placeWindow(wide); pump(0.4)
             app.uploadState = .failure(message: "The server returned HTTP 403 for this request and refused it."); pump(0.4)
-            shoot("S44", "footer-w1440-error", surface: "Bottom bar", state: "1440 wide, a failed upload: the whole first line fits", crop: footerCrop(),
+            shoot("S44", "footer-w1440-error", surface: "Bottom bar", state: "1440 wide with Original size showing, a failed upload: the 61-character line does not fit the slot, so it reads Upload failed · HTTP 403, not a cut sentence", crop: footerCrop(),
                   refs: ["UploadStatus.swift|static func errorVariants"], settle: 0.2, extra: ["status": app.status.stringValue, "variants": app.status.variants])
             app.uploadState = .idle; app.updateStatus(); pump(0.2)
             shoot("S44", "footer-w1440-unsaved", surface: "Bottom bar", state: "1440 wide: both format segments, the whole status", crop: footerCrop(), refs: ["ModernEditorChrome.swift|static let compactFormatBelow"],
