@@ -11,7 +11,9 @@ once ran its EXIT cleanup against the real defaults domain). Proved, each with a
      when it is that session's app copy;
  (e) cleanup runs BEFORE the real-store compare (an evil `defaults` that damages a real store during cleanup must make stop fail);
  (f) a tampered real store makes stop exit non-zero; SIGKILL follows an ignored SIGTERM;
- (g) --aws never echoes credential content (sentinel in a fake credentials file never appears in any output or file).
+ (g) --aws never echoes credential content (sentinel in a fake credentials file never appears in any output or file);
+ (h) the E2E inventory (tools/e2e-inventory.py): docs/design/e2e/inventory.json and the coverage matrix match the sources, every FAIcon case and
+     menu symbol is listed, every pre-filled proof names a real test, and scratch copies with a drift or a bad proof make --check fail.
 Run: python3 -I tools/test-e2e-session-guard.py
 """
 from pathlib import Path
@@ -519,6 +521,88 @@ def test_aws(base, app):
         creds.with_name("credentials.off").rename(creds)
 
 
+def inventory_tree(base, name):
+    """A scratch copy of everything the inventory generator reads, so mutants never touch the real files."""
+    tree = Path(base) / name
+    (tree / "tools").mkdir(parents=True)
+    shutil.copy(root / "tools/e2e-inventory.py", tree / "tools/e2e-inventory.py")
+    shutil.copytree(root / "Sources", tree / "Sources", ignore=shutil.ignore_patterns("*.ttf"))
+    (tree / "tests").mkdir()
+    for path in (root / "tests").glob("*.swift"):
+        shutil.copy(path, tree / "tests" / path.name)
+    shutil.copytree(root / "docs/design/e2e", tree / "docs/design/e2e")
+    return tree
+
+
+def inventory_check(tree):
+    return subprocess.run([sys.executable, "-I", str(tree / "tools/e2e-inventory.py"), "--check"], capture_output=True, text=True, cwd=tree)
+
+
+def test_inventory(base):
+    folder = root / "docs/design/e2e"
+    result = subprocess.run([sys.executable, "-I", str(root / "tools/e2e-inventory.py"), "--check"], capture_output=True, text=True, cwd=root)
+    check(result.returncode == 0, f"inventory: inventory.json and the coverage matrix match the sources ({(result.stdout + result.stderr).strip()[-160:]})")
+    data = json.loads((folder / "inventory.json").read_text())
+    entries = data["entries"]
+    ids = [e["id"] for e in entries]
+    check(len(ids) == len(set(ids)) and all(re.fullmatch(r"E2E-[A-Z0-9]+-\d{3}", i) for i in ids), "inventory: every audit ID is unique and shaped E2E-<AREA>-<nnn>")
+    required = ("id", "area", "surface", "name", "type", "icon", "entryPath", "prerequisite", "expected", "owner", "exercise", "gap")
+    check(all(all(k in e for k in required) and e["name"] and e["entryPath"] and e["expected"] for e in entries), "inventory: every entry has the required fields filled")
+    check(all((e["exercise"] == "e2e") == (e["gap"] is None) and (e["gap"] is None or e["gap"] in data["gaps"]) for e in entries),
+          "inventory: an entry has a named gap reason exactly when it is not fully real-click exercisable")
+    icons_src = (root / "Sources/FontAwesomeIcons.swift").read_text()
+    cases = re.findall(r"case \.(\w+): return 0x[0-9A-Fa-f]+", icons_src)
+    fa_entries = [e for e in entries if e["area"] == "ICON" and e["surface"] == "FAIcon"]
+    check(len(cases) >= 35 and len(fa_entries) == len(cases), f"inventory: every FAIcon case is an icon entry ({len(fa_entries)} of {len(cases)})")
+    symbols = set(re.findall(r'\("[A-Za-z0-9]+", "([^"]+)"\)', (root / "Sources/MenuSymbols.swift").read_text()))
+    listed = {e["name"] for e in entries if e["surface"] == "Menu leading symbol"}
+    check(symbols and symbols <= listed, f"inventory: every menu leading SF symbol is an icon entry ({len(symbols & listed)} of {len(symbols)})")
+    matrix = (folder / "coverage-matrix.md").read_text()
+    rows = re.findall(r"^\| (E2E-[A-Z0-9]+-\d{3}) \|", matrix, re.M)
+    check(rows == ids, "inventory: the coverage matrix has exactly one row per audit ID, in order")
+    tests = {p.name: p.read_text() for p in (root / "tests").glob("*.swift")}
+    proven = [e for e in entries if e["proof"]]
+    check(proven and all(p["test"] in tests.get(p["file"], "") for e in proven for p in e["proof"]), f"inventory: every pre-filled unit/source proof names a test that exists ({len(proven)} entries)")
+    check(all(("unit/source" in line) == ("| test " in line) for line in matrix.splitlines() if line.startswith("| E2E-")), "inventory: only rows that name a test are marked unit/source")
+
+    # Can-fail: scratch copies with one thing broken must make --check red, and an untouched copy must pass.
+    tree = inventory_check(inventory_tree(base, "inv-clean"))
+    check(tree.returncode == 0, "inventory (can fail): an untouched scratch copy passes")
+    mutants = {}
+    t = inventory_tree(base, "inv-drop-entry")
+    doc = json.loads((t / "docs/design/e2e/inventory.json").read_text()); doc["entries"].pop(10)
+    (t / "docs/design/e2e/inventory.json").write_text(json.dumps(doc, indent=1, ensure_ascii=False) + "\n")
+    mutants["an entry deleted from inventory.json"] = t
+    t = inventory_tree(base, "inv-new-icon")
+    src = t / "Sources/FontAwesomeIcons.swift"
+    text = src.read_text()
+    text = text.replace("circleCheck = \"circle-check\", gear", "circleCheck = \"circle-check\", gear, newcomer", 1)
+    text = text.replace("        case .gear: return 0xF013\n", "        case .gear: return 0xF013\n        case .newcomer: return 0xF999\n", 1)
+    text = text.replace('        case .gear: return "gearshape.fill"\n', '        case .gear: return "gearshape.fill"\n        case .newcomer: return "star"\n', 1)
+    check(text != src.read_text(), "inventory (can fail): the new-icon mutation applied")
+    src.write_text(text)
+    mutants["a new FAIcon case the inventory does not list"] = t
+    t = inventory_tree(base, "inv-new-menu")
+    app = t / "Sources/App.swift"
+    text = app.read_text().replace('("Wipe Snap Only", #selector(wipeSnap), "")', '("Wipe Snap Only", #selector(wipeSnap), ""), ("Brand New Command", #selector(brandNew), "")', 1)
+    check(text != app.read_text(), "inventory (can fail): the new-menu mutation applied")
+    app.write_text(text)
+    mutants["a new menu item nobody classified"] = t
+    t = inventory_tree(base, "inv-matrix-row")
+    lines = (t / "docs/design/e2e/coverage-matrix.md").read_text().splitlines()
+    index = next(i for i, line in enumerate(lines) if line.startswith("| E2E-MENU-003"))
+    (t / "docs/design/e2e/coverage-matrix.md").write_text("\n".join(lines[:index] + lines[index + 1:]) + "\n")
+    mutants["a matrix row deleted"] = t
+    t = inventory_tree(base, "inv-proof")
+    test_file = t / "tests/SettingsWindowTests.swift"
+    text = test_file.read_text().replace("Command-W is handled by the window", "Command-W is handled")
+    check(text != test_file.read_text(), "inventory (can fail): the proof mutation applied")
+    test_file.write_text(text)
+    mutants["a pre-filled proof whose test no longer exists"] = t
+    for label, tree in mutants.items():
+        check(inventory_check(tree).returncode != 0, f"inventory (can fail): {label} makes --check fail")
+
+
 def test_runs_were_safe():
     check(len(RUNS) > 0 and all(env_problem(env) is None for env in RUNS),
           f"every one of the {len(RUNS)} script runs used the scratch HOME and TMPDIR and a fake defaults recorder")
@@ -544,6 +628,7 @@ with tempfile.TemporaryDirectory(prefix="e2e-guard-test.") as scratch:
         test_kill_fallback(scratch)
         test_protections(scratch, app)
         test_aws(scratch, app)
+        test_inventory(scratch)
         test_runs_were_safe()
     finally:
         reap()
