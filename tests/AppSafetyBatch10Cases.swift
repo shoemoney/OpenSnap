@@ -109,17 +109,22 @@ extension AppSafetyTests {
             let board = b6Pasteboard(app); defer { board.releaseGlobally() }
             try b10Snap(app, ticked: ticked)
             let steps = { app.canvas.editingUndoManager.canUndo }
+            // R4-003: ticked, the picture scales by the drag's proportion of its own pixels; unticked, the dragged shown size is the picture.
+            let shownWidth = app.canvas.outputSize.width
+            func picture(forDragged dragged: CGSize) -> CGSize {
+                ticked ? SketchDocument.wholePixels(CGSize(width: b10Snap.width * dragged.width / shownWidth, height: b10Snap.height * dragged.width / shownWidth)) : dragged
+            }
             // Smaller than the shown size.
             try expect(app.beginWindowGesture(.corner(.bottomRight)), "Begin the corner drag")
             app.previewBorderGesture(delta: CGPoint(x: -300, y: 0), flags: [])
             let dragged = SketchDocument.wholePixels(app.canvas.outputSize)
             try expect(dragged.width < app.canvas.fullResolutionOutputSize.width && dragged.width < 996, "The drag previews narrower than the shown size (\(dragged))")
             app.endWindowGesture()
-            try expect(app.canvas.canvasSize == dragged && app.canvas.document.renderSize == nil && !app.isLargeShot,
-                       "Ticked \(ticked): the dragged size is the picture's own (\(app.canvas.canvasSize), render \(String(describing: app.canvas.document.renderSize)))")
-            try b6AllAgree(app, board, dragged, "Dragged smaller, ticked \(ticked)")
+            try expect(app.canvas.canvasSize == picture(forDragged: dragged) && app.canvas.document.renderSize == nil && !app.isLargeShot,
+                       "Ticked \(ticked): the dragged size scales the picture's own pixels (\(app.canvas.canvasSize), render \(String(describing: app.canvas.document.renderSize)))")
+            try b6AllAgree(app, board, picture(forDragged: dragged), "Dragged smaller, ticked \(ticked)")
             app.dragOriginalControl.state = ticked ? .off : .on; app.updateDragPreview()
-            try b6AllAgree(app, board, dragged, "Dragged smaller, box flipped")
+            try b6AllAgree(app, board, picture(forDragged: dragged), "Dragged smaller, box flipped")
             app.dragOriginalControl.state = ticked ? .on : .off; app.updateDragPreview()
             try expect(steps(), "The drag is an Undo step")
             app.undo()
@@ -127,7 +132,7 @@ extension AppSafetyTests {
             // Larger than the window holds: shown by zoom, still the dragged pixels.
             try expect(app.beginWindowGesture(.corner(.bottomRight)), "Begin a second corner drag")
             app.previewBorderGesture(delta: CGPoint(x: 600, y: 0), flags: [])
-            let bigger = SketchDocument.wholePixels(app.canvas.outputSize)
+            let bigger = picture(forDragged: SketchDocument.wholePixels(app.canvas.outputSize))
             app.endWindowGesture()
             try b10ExpectPictureIsOutput(app, bigger, "Dragged larger, ticked \(ticked)")
             try b6AllAgree(app, board, bigger, "Dragged larger, ticked \(ticked)")

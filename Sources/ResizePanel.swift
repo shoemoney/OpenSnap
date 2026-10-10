@@ -158,9 +158,18 @@ enum ResizePanelGeometry {
                                                                height: ResizePanelValidation.wholePixel(displayed.height * factor)))
         // A proportional size typed on a shown size that was itself rounded to whole pixels (996 × 700 for a 2560 × 1800 snap) comes back
         // a pixel short on the other side; the picture is then exactly what was typed, so the title reads the number that was entered (R3-001).
-        if request.constrainProportions,
-           abs(displayed.height * typed.width / displayed.width - typed.height) <= 1,
-           abs(displayed.width * typed.height / displayed.height - typed.width) <= 1 { scaled = typed }
+        // Fitting by the smaller ratio also lands a pixel short on the side that was typed when the partner rounded down by half a pixel
+        // (a Limit of 1400 on 1981 × 953 pairs 673, and 1981 × 673 fits at 1399): a request whose partner is the rounded proportion on
+        // either side is the picture exactly as typed.
+        if request.constrainProportions {
+            let heightOff = abs(displayed.height * typed.width / displayed.width - typed.height)
+            let widthOff = abs(displayed.width * typed.height / displayed.height - typed.width)
+            if (heightOff <= 1 && widthOff <= 1) || min(heightOff, widthOff) <= 0.5 + 1e-6 { scaled = typed }
+            // R4-002: one side the picture's own and the partner its rounded proportion (2560 × 1799 of a 2560 × 1800 snap) is the
+            // picture itself, not a resample a pixel short.
+            if (typed.width == source.width && abs(typed.height - source.height) <= 1)
+                || (typed.height == source.height && abs(typed.width - source.width) <= 1) { scaled = source }
+        }
         let scaleTo = scaled == source ? nil : scaled
         if request.constrainProportions { return ResizePicturePlan(scaleTo: scaleTo, crop: nil, size: scaled) }
         return ResizePicturePlan(scaleTo: scaleTo,

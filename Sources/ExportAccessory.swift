@@ -149,6 +149,10 @@ final class ExportAccessory: NSObject {
     var fixedJPEGQuality: Double? { didSet { render() } }
     var effectiveJPEGQuality: Double { fixedJPEGQuality ?? options.jpegQuality }
 
+    /// Whether "Export at original size" has anything to choose between: false when the picture is the size it is shown at, where the box
+    /// would promise a difference that is not there (R4-007). Set before the view is first read.
+    var offersOriginalSize = true { didSet { render() } }
+
     func updateByteCount(_ count: Int?, size: CGSize) {
         preview = ExportAccessoryPreview(byteCount: count, size: size)
         render()
@@ -243,6 +247,7 @@ final class ExportAccessory: NSObject {
         qualityLabel?.isEnabled = options.jpegControlsEnabled
         qualityLabel?.stringValue = Self.qualityText(effectiveJPEGQuality)
         originalSizeCheckbox?.state = options.originalSize ? .on : .off
+        originalSizeCheckbox?.isHidden = !offersOriginalSize
         dimensionsLabel?.stringValue = preview.dimensionsLabel
         byteCountLabel?.stringValue = preview.byteCountLabel
     }

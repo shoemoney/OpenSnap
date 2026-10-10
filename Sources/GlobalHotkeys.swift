@@ -110,9 +110,29 @@ private func globalHotkeyFailure(_ message: String, underlying: [Error] = []) ->
     return NSError(domain: "OpenSnap.GlobalHotkeys", code: 1, userInfo: info)
 }
 
-private func carbonHotkeyFailure(_ operation: String, _ status: OSStatus) -> NSError {
-    NSError(domain: NSOSStatusErrorDomain, code: Int(status),
-            userInfo: [NSLocalizedDescriptionKey: "\(operation) failed (OSStatus \(status))."])
+/// A Carbon hotkey call that failed. The words say what to do when the status is one a person can act on (a key another app holds, a key
+/// macOS cannot register); the call and the raw status stay in `NSDebugDescriptionErrorKey`, which the Capture note carries as its help.
+func carbonHotkeyFailure(_ operation: String, _ status: OSStatus, shortcut: String? = nil) -> NSError {
+    let technical = "\(operation) failed (OSStatus \(status))."
+    var words = technical
+    if let shortcut {
+        switch status {
+        case OSStatus(eventHotKeyExistsErr): words = "\(shortcut) is already used by another app. Choose a different shortcut."
+        case OSStatus(eventHotKeyInvalidErr): words = "macOS cannot register \(shortcut). Choose a different shortcut."
+        default: break
+        }
+    }
+    return NSError(domain: NSOSStatusErrorDomain, code: Int(status),
+                   userInfo: [NSLocalizedDescriptionKey: words, NSDebugDescriptionErrorKey: technical])
+}
+
+extension Error {
+    /// The raw call and status behind a hotkey error whose message was put in words, else nil.
+    var hotkeyTechnicalDetail: String? {
+        let error = self as NSError
+        if let detail = error.userInfo[NSDebugDescriptionErrorKey] as? String { return detail }
+        return (error.userInfo[NSUnderlyingErrorKey] as? NSError)?.hotkeyTechnicalDetail
+    }
 }
 
 struct GlobalHotkeySettings: Codable, Equatable, Sendable {
@@ -373,7 +393,7 @@ private final class CarbonGlobalHotkeyBackend: GlobalHotkeyBackend {
         let status = RegisterEventHotKey(code, binding.modifiers.carbonFlags,
                                          EventHotKeyID(signature: relay.signature, id: id),
                                          GetApplicationEventTarget(), UInt32(kEventHotKeyExclusive), &ref)
-        guard status == noErr else { throw carbonHotkeyFailure("RegisterEventHotKey for \(binding.displayName)", status) }
+        guard status == noErr else { throw carbonHotkeyFailure("RegisterEventHotKey for \(binding.displayName)", status, shortcut: binding.displayName) }
         guard let ref else { throw globalHotkeyFailure("RegisterEventHotKey returned success without a registration reference.") }
         resources.refs[id] = ref
     }
@@ -614,7 +634,7 @@ final class GlobalHotkeyForm: NSView {
         shortcutsPaused = paused
         // Putting the shortcuts back can fail (a key another app took meanwhile): the note must not go on saying they are live (R3-008).
         if !paused, let error = manager?.lastError {
-            setStatus("Error: " + error.localizedDescription, isError: true)
+            setStatus("Error: " + error.localizedDescription, isError: true, error: error)
             errorFromPause = true
         } else if !showsError || errorFromPause { setStatus(liveStatus, isError: false) }
     }
@@ -690,13 +710,15 @@ final class GlobalHotkeyForm: NSView {
         guard let manager else { return }
         fill(manager.settings)
         setStatus(manager.lastError.map { "Error: " + $0.localizedDescription } ?? liveStatus,
-                  isError: manager.lastError != nil)
+                  isError: manager.lastError != nil, error: manager.lastError)
     }
 
-    private func setStatus(_ text: String, isError: Bool) {
+    private func setStatus(_ text: String, isError: Bool, error: Error? = nil) {
         let changed = statusField.stringValue != text
         showsError = isError; errorFromPause = false
         statusField.stringValue = text
+        // The words are for the person; the call and status that failed ride on the tooltip and the spoken help.
+        AppToolTip.setText(error?.hotkeyTechnicalDetail, for: statusField)
         statusField.textColor = isError ? DesignTokens.Palette.feedbackError : DesignTokens.Palette.Text.primary
         if changed { invalidateIntrinsicContentSize(); needsLayout = true; onResize?() }
     }
@@ -728,7 +750,7 @@ final class GlobalHotkeyForm: NSView {
     private func commit() {
         guard let manager else { return }
         do { try manager.apply(draft()); setStatus(liveStatus, isError: false) }
-        catch { setStatus("Error: " + error.localizedDescription, isError: true) }
+        catch { setStatus("Error: " + error.localizedDescription, isError: true, error: error) }
     }
 
     /// Unticking the box switches off what is saved. A draft the manager had rejected (two actions on one key, say) is dropped with its
@@ -737,7 +759,7 @@ final class GlobalHotkeyForm: NSView {
         guard let manager else { return }
         var saved = manager.settings; saved.enabled = false
         do { try manager.apply(saved); reload() }
-        catch { setStatus("Error: " + error.localizedDescription, isError: true) }
+        catch { setStatus("Error: " + error.localizedDescription, isError: true, error: error) }
     }
 
     @objc private func enabledChanged(_ sender: NSButton) { if sender.state == .off { disableSaved() } else { commit() } }

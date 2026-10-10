@@ -8,16 +8,20 @@
 //   tests/TestDefaults.swift tests/ViewTreeAudit.swift tests/SettingsWindowTests.swift -o build/settings-window-tests
 #if SETTINGS_WINDOW_TESTS
 import AppKit
+import Carbon
 
 @MainActor
 private final class FakeHotkeyBackend: GlobalHotkeyBackend {
     var bindings: [UInt32: GlobalHotkeyBinding] = [:]
     /// Another app has taken the key: registering fails while this is set.
     var failRegister = false
+    /// The status Carbon answers with for a key another app holds, put through the app's own mapping to words.
+    var failRegisterStatus: OSStatus?
     var registeredIDs: Set<UInt32> { Set(bindings.keys) }
     func installHandler(onEvent: @escaping @MainActor @Sendable (UInt32) -> Void) throws {}
     func systemReservedBindings() throws -> Set<GlobalHotkeyBinding> { [] }
     func register(_ binding: GlobalHotkeyBinding, id: UInt32) throws {
+        if let failRegisterStatus { throw carbonHotkeyFailure("RegisterEventHotKey for \(binding.displayName)", failRegisterStatus, shortcut: binding.displayName) }
         if failRegister { throw NSError(domain: "FakeHotkeyBackend", code: 1, userInfo: [NSLocalizedDescriptionKey: "That key is already taken by another app."]) }
         bindings[id] = binding
     }
@@ -1023,8 +1027,24 @@ private enum SettingsWindowTests {
         expect(note().hasPrefix("Error: ") && note().contains("already taken") && (form().statusField.accessibilityValue() as? String) == note(),
                "the note and its accessibility value carry the manager's error when the pause lifts (\(note()))")
         expect(form().statusField.textColor == DesignTokens.Palette.feedbackError, "…in the error colour")
-        // Once the key is free the next pause and release restores the plain note.
+        // R4: the real Carbon status reads as words on the note, with the call and the raw status kept on the help, not as "OSStatus -9878".
         backend.failRegister = false
+        backend.failRegisterStatus = OSStatus(eventHotKeyExistsErr)
+        controller.activityChanged(key: true, appActive: true)
+        controller.activityChanged(key: false)
+        let screenName = (manager.settings.screen).displayName
+        expect(note() == "Error: \(screenName) is already used by another app. Choose a different shortcut." && !note().contains("OSStatus") && !note().contains("RegisterEventHotKey"),
+               "an exclusive-key conflict reads in plain words (\(note()))")
+        expect(form().statusField.accessibilityHelp()?.contains("RegisterEventHotKey for \(screenName) failed (OSStatus -9878)") == true,
+               "…and the raw call and status ride on the spoken help (\(String(describing: form().statusField.accessibilityHelp())))")
+        backend.failRegisterStatus = OSStatus(eventHotKeyInvalidErr)
+        controller.activityChanged(key: true, appActive: true)
+        controller.activityChanged(key: false)
+        expect(note() == "Error: macOS cannot register \(screenName). Choose a different shortcut.", "an invalid-key status reads in words too (\(note()))")
+        expect(carbonHotkeyFailure("Op", -50).localizedDescription == "Op failed (OSStatus -50)." && carbonHotkeyFailure("Op", -50).hotkeyTechnicalDetail == "Op failed (OSStatus -50).",
+               "a status with no plain-word copy keeps the raw message")
+        // Once the key is free the next pause and release restores the plain note.
+        backend.failRegisterStatus = nil
         controller.activityChanged(key: true, appActive: true)
         controller.activityChanged(key: false)
         expect(!manager.editing && manager.lastError == nil && note() == GlobalHotkeyForm.idleLiveStatus, "a later successful release clears the error from the note (\(note()))")
