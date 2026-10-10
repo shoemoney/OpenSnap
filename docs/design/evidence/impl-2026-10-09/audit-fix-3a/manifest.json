@@ -1,0 +1,755 @@
+{
+ "sourceSha": "cc05825",
+ "bundleId": "com.shoemoney.opensnap.eyedump-59376",
+ "iconMode": "sf",
+ "faMode": "FA unavailable: no FontAwesome7Pro subset fonts are bundled in this build, so every capture uses SF Symbols (nothing was faked)",
+ "captureCount": 24,
+ "unavailable": [],
+ "gaps": [],
+ "captures": [
+  {
+   "id": "S08",
+   "slug": "crop-mode",
+   "surface": "crop mode",
+   "state": "crop tool with a 640x420 crop rectangle",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    2358
+   ],
+   "pointSize": [
+    1561,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "3a-wip",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S08-crop-mode-dark@cc05825.png",
+   "storedPixelSize": [
+    1200,
+    906
+   ],
+   "downscaled": true,
+   "layout": "layout/S08-crop-mode-dark@cc05825.json",
+   "before": null
+  },
+  {
+   "id": "S08",
+   "slug": "crop-mode",
+   "surface": "crop mode",
+   "state": "crop tool with a 640x420 crop rectangle",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    2358
+   ],
+   "pointSize": [
+    1561,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "3a-wip",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S08-crop-mode-light@cc05825.png",
+   "storedPixelSize": [
+    1200,
+    906
+   ],
+   "downscaled": true,
+   "layout": "layout/S08-crop-mode-light@cc05825.json",
+   "before": null
+  },
+  {
+   "id": "S08",
+   "slug": "resize-panel",
+   "surface": "Resize panel",
+   "state": "Resize sheet with built-in + two synthetic presets",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    1200,
+    1300
+   ],
+   "pointSize": [
+    600,
+    650
+   ],
+   "scale": 2,
+   "sourceSha": "3a-wip",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S08-resize-panel-dark@cc05825.png",
+   "storedPixelSize": [
+    1200,
+    1300
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S08",
+   "slug": "resize-panel",
+   "surface": "Resize panel",
+   "state": "Resize sheet with built-in + two synthetic presets",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    1200,
+    1300
+   ],
+   "pointSize": [
+    600,
+    650
+   ],
+   "scale": 2,
+   "sourceSha": "3a-wip",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S08-resize-panel-light@cc05825.png",
+   "storedPixelSize": [
+    1200,
+    1300
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S08",
+   "slug": "resize-panel-in-context",
+   "surface": "Resize panel",
+   "state": "Resize sheet with built-in + two synthetic presets (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    2358
+   ],
+   "pointSize": [
+    1561,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "3a-wip",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S08-resize-panel-in-context-dark@cc05825.png",
+   "storedPixelSize": [
+    1200,
+    906
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S08",
+   "slug": "resize-panel-in-context",
+   "surface": "Resize panel",
+   "state": "Resize sheet with built-in + two synthetic presets (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    2358
+   ],
+   "pointSize": [
+    1561,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "3a-wip",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S08-resize-panel-in-context-light@cc05825.png",
+   "storedPixelSize": [
+    1200,
+    906
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S41",
+   "slug": "color-popover-blue-checked-w980",
+   "surface": "Colour popover",
+   "state": "Blue picked, popover reopened: Blue is checked and drawn in the colour the toolbar swatch shows (F-J1-002)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "3a-wip",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S41-color-popover-blue-checked-w980-dark@cc05825.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S41-color-popover-blue-checked-w980-dark@cc05825.json",
+   "before": "docs/design/evidence/e2e-2026-10-10/j1/07-color-popover-after-blue-no-check.jpg"
+  },
+  {
+   "id": "S41",
+   "slug": "color-popover-blue-checked-w980",
+   "surface": "Colour popover",
+   "state": "Blue picked, popover reopened: Blue is checked and drawn in the colour the toolbar swatch shows (F-J1-002)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "3a-wip",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S41-color-popover-blue-checked-w980-light@cc05825.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S41-color-popover-blue-checked-w980-light@cc05825.json",
+   "before": "docs/design/evidence/e2e-2026-10-10/j1/07-color-popover-after-blue-no-check.jpg"
+  },
+  {
+   "id": "S41",
+   "slug": "color-popover-only-blue-checked-w980",
+   "surface": "Colour popover",
+   "state": "the popover window alone, Blue checked",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    548,
+    366
+   ],
+   "pointSize": [
+    272,
+    182
+   ],
+   "scale": 2.014705882352941,
+   "sourceSha": "3a-wip",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S41-color-popover-only-blue-checked-w980-dark@cc05825.png",
+   "storedPixelSize": [
+    548,
+    366
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": "docs/design/evidence/e2e-2026-10-10/j1/07-color-popover-after-blue-no-check.jpg"
+  },
+  {
+   "id": "S41",
+   "slug": "color-popover-only-blue-checked-w980",
+   "surface": "Colour popover",
+   "state": "the popover window alone, Blue checked",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    548,
+    368
+   ],
+   "pointSize": [
+    272,
+    183
+   ],
+   "scale": 2.014705882352941,
+   "sourceSha": "3a-wip",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S41-color-popover-only-blue-checked-w980-light@cc05825.png",
+   "storedPixelSize": [
+    548,
+    368
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": "docs/design/evidence/e2e-2026-10-10/j1/07-color-popover-after-blue-no-check.jpg"
+  },
+  {
+   "id": "S41",
+   "slug": "colors-panel-at-current-colour",
+   "surface": "Colors panel",
+   "state": "Custom color… with Black current and the shared panel last left on blue: it opens on Black and the drawing colour is untouched (F-J1-003)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    532,
+    908
+   ],
+   "pointSize": [
+    266,
+    454
+   ],
+   "scale": 2,
+   "sourceSha": "3a-wip",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S41-colors-panel-at-current-colour-dark@cc05825.png",
+   "storedPixelSize": [
+    532,
+    908
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": "docs/design/evidence/e2e-2026-10-10/j1/10-colors-panel-opens-showing-blue.jpg"
+  },
+  {
+   "id": "S41",
+   "slug": "colors-panel-at-current-colour",
+   "surface": "Colors panel",
+   "state": "Custom color… with Black current and the shared panel last left on blue: it opens on Black and the drawing colour is untouched (F-J1-003)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    532,
+    908
+   ],
+   "pointSize": [
+    266,
+    454
+   ],
+   "scale": 2,
+   "sourceSha": "3a-wip",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S41-colors-panel-at-current-colour-light@cc05825.png",
+   "storedPixelSize": [
+    532,
+    908
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": "docs/design/evidence/e2e-2026-10-10/j1/10-colors-panel-opens-showing-blue.jpg"
+  },
+  {
+   "id": "S41",
+   "slug": "crop-dropped-w980",
+   "surface": "Crop hint",
+   "state": "after choosing the Brush tool the dim crop overlay and its hint are gone",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    2358
+   ],
+   "pointSize": [
+    1489,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "3a-wip",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S41-crop-dropped-w980-dark@cc05825.png",
+   "storedPixelSize": [
+    1200,
+    950
+   ],
+   "downscaled": true,
+   "layout": "layout/S41-crop-dropped-w980-dark@cc05825.json",
+   "before": "docs/design/evidence/e2e-2026-10-10/j1/55-keyboard-trap-tab-in-canvas-toggles-brush-crop-overlay-lingers.jpg"
+  },
+  {
+   "id": "S41",
+   "slug": "crop-dropped-w980",
+   "surface": "Crop hint",
+   "state": "after choosing the Brush tool the dim crop overlay and its hint are gone",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    2358
+   ],
+   "pointSize": [
+    1489,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "3a-wip",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S41-crop-dropped-w980-light@cc05825.png",
+   "storedPixelSize": [
+    1200,
+    950
+   ],
+   "downscaled": true,
+   "layout": "layout/S41-crop-dropped-w980-light@cc05825.json",
+   "before": "docs/design/evidence/e2e-2026-10-10/j1/55-keyboard-trap-tab-in-canvas-toggles-brush-crop-overlay-lingers.jpg"
+  },
+  {
+   "id": "S41",
+   "slug": "crop-hint-w980",
+   "surface": "Crop hint",
+   "state": "a pending crop: the status line reads Crop: press Return to apply, Esc to cancel (F-J1-011)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    2358
+   ],
+   "pointSize": [
+    1489,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "3a-wip",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S41-crop-hint-w980-dark@cc05825.png",
+   "storedPixelSize": [
+    1200,
+    950
+   ],
+   "downscaled": true,
+   "layout": "layout/S41-crop-hint-w980-dark@cc05825.json",
+   "before": "docs/design/evidence/e2e-2026-10-10/j1/52-crop-tool-region-dimmed-no-apply-hint.jpg"
+  },
+  {
+   "id": "S41",
+   "slug": "crop-hint-w980",
+   "surface": "Crop hint",
+   "state": "a pending crop: the status line reads Crop: press Return to apply, Esc to cancel (F-J1-011)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    2358
+   ],
+   "pointSize": [
+    1489,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "3a-wip",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S41-crop-hint-w980-light@cc05825.png",
+   "storedPixelSize": [
+    1200,
+    950
+   ],
+   "downscaled": true,
+   "layout": "layout/S41-crop-hint-w980-light@cc05825.json",
+   "before": "docs/design/evidence/e2e-2026-10-10/j1/52-crop-tool-region-dimmed-no-apply-hint.jpg"
+  },
+  {
+   "id": "S41",
+   "slug": "footer-blank-w980",
+   "surface": "Bottom bar",
+   "state": "a blank drawing: Undo and Clear image are dimmed; Save to History is the archive box beside the History clock (F-J1-020, F-J1-021)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "3a-wip",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S41-footer-blank-w980-dark@cc05825.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S41-footer-blank-w980-dark@cc05825.json",
+   "before": "docs/design/evidence/e2e-2026-10-10/j1/00-brush-tool-selected.jpg"
+  },
+  {
+   "id": "S41",
+   "slug": "footer-blank-w980",
+   "surface": "Bottom bar",
+   "state": "a blank drawing: Undo and Clear image are dimmed; Save to History is the archive box beside the History clock (F-J1-020, F-J1-021)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "3a-wip",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S41-footer-blank-w980-light@cc05825.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S41-footer-blank-w980-light@cc05825.json",
+   "before": "docs/design/evidence/e2e-2026-10-10/j1/00-brush-tool-selected.jpg"
+  },
+  {
+   "id": "S41",
+   "slug": "footer-drawn-w980",
+   "surface": "Bottom bar",
+   "state": "the same bar once the drawing has something to undo: Undo is live",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "3a-wip",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S41-footer-drawn-w980-dark@cc05825.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S41-footer-drawn-w980-dark@cc05825.json",
+   "before": "docs/design/evidence/e2e-2026-10-10/j1/84-bottom-bar-save-button-saved-to-history.jpg"
+  },
+  {
+   "id": "S41",
+   "slug": "footer-drawn-w980",
+   "surface": "Bottom bar",
+   "state": "the same bar once the drawing has something to undo: Undo is live",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "3a-wip",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S41-footer-drawn-w980-light@cc05825.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S41-footer-drawn-w980-light@cc05825.json",
+   "before": "docs/design/evidence/e2e-2026-10-10/j1/84-bottom-bar-save-button-saved-to-history.jpg"
+  },
+  {
+   "id": "S41",
+   "slug": "text-size-committed-w980",
+   "surface": "Selected text",
+   "state": "text typed at the smallest size, recoloured and resized while open, then committed and selected (before the second size change)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "3a-wip",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S41-text-size-committed-w980-dark@cc05825.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S41-text-size-committed-w980-dark@cc05825.json",
+   "before": "docs/design/evidence/e2e-2026-10-10/j1/12-size-popover-open-size7.jpg"
+  },
+  {
+   "id": "S41",
+   "slug": "text-size-committed-w980",
+   "surface": "Selected text",
+   "state": "text typed at the smallest size, recoloured and resized while open, then committed and selected (before the second size change)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "3a-wip",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S41-text-size-committed-w980-light@cc05825.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S41-text-size-committed-w980-light@cc05825.json",
+   "before": "docs/design/evidence/e2e-2026-10-10/j1/12-size-popover-open-size7.jpg"
+  },
+  {
+   "id": "S41",
+   "slug": "text-size-selected-w980",
+   "surface": "Selected text",
+   "state": "...then resized as a selection (32 pt): the glyphs fill the frame (F-J1-005)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "3a-wip",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S41-text-size-selected-w980-dark@cc05825.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S41-text-size-selected-w980-dark@cc05825.json",
+   "before": "docs/design/evidence/e2e-2026-10-10/j1/13-size-popover-preset12-text-frame-balloons.jpg"
+  },
+  {
+   "id": "S41",
+   "slug": "text-size-selected-w980",
+   "surface": "Selected text",
+   "state": "...then resized as a selection (32 pt): the glyphs fill the frame (F-J1-005)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "3a-wip",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S41-text-size-selected-w980-light@cc05825.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S41-text-size-selected-w980-light@cc05825.json",
+   "before": "docs/design/evidence/e2e-2026-10-10/j1/13-size-popover-preset12-text-frame-balloons.jpg"
+  }
+ ]
+}
