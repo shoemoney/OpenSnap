@@ -1,13 +1,14 @@
 # OpenSnap visual audit: roadmap (final, round 2)
 
-Status: **implementation in progress at main `fa4715f`** (baseline `bad6617`): 29 done, 2 verified, 1 not-a-bug, 3 in-progress, 1 pending, of 36 todos. Per-todo state is in `backlog.json`, `todo-checklist.md` and `progress.md`; section 2b has the merge map and milestone status. The audit findings and the section 4 statuses are as at `dc1eb26`. This roadmap and `todo-checklist.md` and `backlog.json` are generated from the same data, which is parsed from `visual-audit.md` (FINAL). Authoritative sources: `visual-audit.md` (findings, section 9 backlog, section 6.0 status at `dc1eb26`), `technical-spec.md` (implementation detail and section 0 decisions), `user-feedback.md` (owner request), `build/declassic-plan.md` (WP0 to WP7; owner decisions in section 4).
+Status: **implementation in progress at main `33743c5`** (baseline `bad6617`): 29 done, 2 verified, 1 not-a-bug, 3 in-progress, 1 pending, of 36 todos. Per-todo state is in `backlog.json`, `todo-checklist.md` and `progress.md`; section 2b has the merge map and milestone status. The audit findings and the section 4 statuses are as at `dc1eb26`. This roadmap and `todo-checklist.md` and `backlog.json` are generated from the same data, which is parsed from `visual-audit.md` (FINAL). Authoritative sources: `visual-audit.md` (findings, section 9 backlog, section 6.0 status at `dc1eb26`), `technical-spec.md` (implementation detail and section 0 decisions), `user-feedback.md` (owner request), `build/declassic-plan.md` (WP0 to WP7; owner decisions in section 4).
 
 ## 1. Summary
 
 - **29 findings:** 6 P0, 16 P1, 7 P2. By evidence class: 22 rendered or measured (R/M), 6 source-only (S), 1 unverified (U, VF-27). The class rule is in section 13, item 1.
-- **36 todos at main `fa4715f` (statuses unchanged since `284f028`):** 29 done, 2 verified (landed before the baseline; checked only), 1 not-a-bug, 3 in-progress, 1 pending. M0 to M5 are done (OSN-044 merged in `3ee9503`; OSN-054 merged in `7c8bdb1`). M6 has OSN-060 and OSN-061 done (`7c8bdb1`, `accfedd` and `3ee9503`) and OSN-062 in progress (the manual VoiceOver pass is not recorded). M7 is in progress (OSN-070 and OSN-072 partial; OSN-071 pending). Section 2b has the table.
+- **36 todos at main `33743c5` (statuses unchanged since `284f028`):** 29 done, 2 verified (landed before the baseline; checked only), 1 not-a-bug, 3 in-progress, 1 pending. M0 to M5 are done (OSN-044 merged in `3ee9503`; OSN-054 merged in `7c8bdb1`). M6 has OSN-060 and OSN-061 done (`7c8bdb1`, `accfedd` and `3ee9503`) and OSN-062 in progress (the manual VoiceOver pass is not recorded). M7 is in progress (OSN-070 and OSN-072 partial; OSN-071 pending). Section 2b has the table.
 - **The owner's P1 layout request** (remove the permanent right rail, `user-feedback.md`) is **done** in M1 (OSN-010 to OSN-014, merged in `c53155c`). OSN-013 captured the layout from 980 pt to full screen (80 captures at `fef46c7`, `evidence/impl-2026-10-09/m1-rail/`). Live screen capture was not run.
 - **Still open:** the recorded manual VoiceOver pass (OSN-062), the gates beyond those on main (OSN-070), the full visual acceptance run and sign-off (OSN-071), and migration on a copy of the owner's real store plus the release (OSN-072). Component states (OSN-044), upload feedback (OSN-054), the keyboard pass (OSN-060) and display-option consumers (OSN-061) are on main.
+- **E2E audit since `fa4715f`:** batches 5 to 8 (`0bd6f94`, `5989fa0`, `5b30929`, `87abbfd`), journeys J6 to J8 (`14d4d9f`, `5310a2c`, `33743c5`), review round 2 and the final render pass (`0b03903`, `7f0a767`) are merged. Batch 9 (F-R-001 to 005) and independent review round 3 are pending, and OSN-071 waits on round 3. Details in `progress.md`, E2E audit section.
 - **Owner input:** 10 decisions (section 3). All ten are resolved.
 - **Estimate:** 18.0 d numeric across 18 todos, plus 17.5 d of unsplit spec figures, total 35.5 d (section 8). This is the round-1 plan figure and has not been re-estimated. It still carries round-1 scope for OSN-020 to OSN-023, most of which has landed (section 13, item 11).
 - **Not done:** no push and no release. The first real launch and migration on the owner's machine is parked by the owner.
@@ -74,7 +75,7 @@ Branch commits for merges 1 to 6 are those the orchestrator named. Merges of mai
 
 Milestone status is computed from the todo statuses. Section 5 exit criteria are unchanged; this table does not say they are met.
 
-| Milestone | Done | Verified | Not-a-bug | In progress | Pending | Status at `fa4715f` |
+| Milestone | Done | Verified | Not-a-bug | In progress | Pending | Status at `33743c5` |
 |---|---|---|---|---|---|---|
 | M0 Baseline, safety, decisions | 2 | 0 | 0 | 0 | 0 | Done |
 | M1 Owner layout (rail removal) | 5 | 0 | 0 | 0 | 0 | Done |

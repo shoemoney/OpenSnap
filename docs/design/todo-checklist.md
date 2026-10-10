@@ -1,6 +1,6 @@
 # OpenSnap todo checklist (visual audit, 2026-10-09, final)
 
-Status of every todo at main `fa4715f` (implementation baseline `bad6617`): **29 done, 2 verified, 1 not-a-bug, 3 in-progress, 1 pending.** Unchanged since `284f028`. Each todo has an Implementation note (merge, evidence, open items). Counts and the commit map are in `progress.md`. IDs, priorities, milestones, dependencies and Lane A match `visual-audit.md` section 9 exactly. Each section records the main state at the SHA in its own note; sections with a **Since 284f028** line add the E2E audit merges. The audit's section 9 state at `dc1eb26` is in `visual-audit.md`. This file is generated from the same data as `backlog.json`. Edit the source, not the output.
+Status of every todo at main `33743c5` (implementation baseline `bad6617`): **29 done, 2 verified, 1 not-a-bug, 3 in-progress, 1 pending.** Unchanged since `284f028`. Each todo has an Implementation note (merge, evidence, open items). Counts and the commit map are in `progress.md`. IDs, priorities, milestones, dependencies and Lane A match `visual-audit.md` section 9 exactly. Each section records the main state at the SHA in its own note; sections with a **Since 284f028** line add the E2E audit merges. The audit's section 9 state at `dc1eb26` is in `visual-audit.md`. This file is generated from the same data as `backlog.json`. Edit the source, not the output.
 
 Snapshot: briefed at `b9319c4`; drift to `4b2ae0f` and then `dc1eb26` (checked 11:01 CDT). WP4 (rename) merged before the implementation baseline (`f7ff86b`, `d2dc3c9`). Reconcile each todo against main before starting it (roadmap section 2a). Line numbers, counts and words such as 'today' in substeps and acceptance describe the `4b2ae0f` source unless a todo says otherwise. Estimates are in d, following the round-1 method (one implementer-day). Lane A means the todo edits `Sources/App.swift`, which is serial.
 
@@ -49,7 +49,7 @@ Visual validation checklists cite BEFORE capture stems from `evidence/2026-10-09
 
 Counts: 36 todos. P0 12, P1 20, P2 4. M0 2, M1 5, M2 5, M3 3, M4 6, M5 9, M6 3, M7 3. Lane A 22.
 
-Status at `284f028` and at `fa4715f`: 29 done, 2 verified, 1 not-a-bug, 3 in-progress (OSN-062, OSN-070, OSN-072), 1 pending (OSN-071). OSN-044, OSN-054, OSN-060 and OSN-061 landed on main in `3ee9503`, `7c8bdb1` and `accfedd`; OSN-062 stays in-progress until the manual VoiceOver pass is recorded.
+Status at `284f028`, `fa4715f` and `33743c5`: 29 done, 2 verified, 1 not-a-bug, 3 in-progress (OSN-062, OSN-070, OSN-072), 1 pending (OSN-071). OSN-044, OSN-054, OSN-060 and OSN-061 landed on main in `3ee9503`, `7c8bdb1` and `accfedd`; OSN-062 stays in-progress until the manual VoiceOver pass is recorded.
 
 ---
 
@@ -1261,7 +1261,7 @@ Status at `284f028` and at `fa4715f`: 29 done, 2 verified, 1 not-a-bug, 3 in-pro
 
 **Main state (658a16f):** Done: chrome icons resolve as Font Awesome Free 7.3.1 vectors compiled as path data (Sources/FontAwesomeFree.swift; no font files, no Pro material). The chain is Pro glyph (dev only), then Free vector, then SF Symbol, then none. Icons are CC BY 4.0, credited in THIRD_PARTY_NOTICES.md and reachable from About via "Third-party notices". Wipe uses the broom icon (SF fallback eraser.line.dashed); delete is trash. Menus keep SF Symbols (Q1). Merged in 439d734.
 
-**Since 284f028:** Batch 4 (`1d8c3d3`) gave Resize the Font Awesome Free resize arrows and drew icons on the Toolbox rows. Rendered in `audit-fix-4` only, in SF icon mode (Font Awesome unavailable at `1026e58`); not real-click retested (pending J6).
+**Since 284f028:** Batch 4 (`1d8c3d3`) gave Resize the Font Awesome Free resize arrows and drew icons on the Toolbox rows. Rendered in `audit-fix-4` only, in SF icon mode (Font Awesome unavailable at `1026e58`). Real-click retested in J6 (`14d4d9f`): the Toolbox rows draw their icons (F-J6-009, R1-005; J7 item 4 pass, `5b30929`). Resize's glyph was later removed for the Resize… text button (R1-006, batch 5).
 
 **Findings:** VF-05, VF-25. **Spec:** T5.
 
@@ -1386,7 +1386,7 @@ Status at `284f028` and at `fa4715f`: 29 done, 2 verified, 1 not-a-bug, 3 in-pro
 
 **Main state (658a16f):** In integration at a79a1d8 (branch impl/m5-settings, not on main yet; full suite running). App-owned 20 pt tab strip (General, Drawing, Capture, Upload) replaces the 13 pt toolbar tabs, with a gear icon, centred forms and scrolling on short screens. "Show capture flash" is bound to showCaptureFlash. Shortcuts are embedded live; Upload has a compact list and "Manage Destinations...". No Done button; Escape and Command-W close. The legacy GeneralPreferencesForm is retired. On main, Settings is still titled Preferences.
 
-**Since 284f028:** Batch 4 (`d9ed8b7`, `12b75e6`) fitted the destination forms, made destructive sheets Cancel-first and put destination errors on the page they were raised on. Rendered in `audit-fix-4`; not real-click retested (pending J6).
+**Since 284f028:** Batch 4 (`d9ed8b7`, `12b75e6`) fitted the destination forms, made destructive sheets Cancel-first and put destination errors on the page they were raised on. Rendered in `audit-fix-4`. Real-click retested in J6 (`14d4d9f`): the destination forms fit per protocol (F-J3-003), the destructive sheets are Cancel-first and the stale Test error clears (F-J4-001, F-J4-005).
 
 **Findings:** VF-18. **Spec:** T8, T11.
 
@@ -1495,7 +1495,7 @@ Status at `284f028` and at `fa4715f`: 29 done, 2 verified, 1 not-a-bug, 3 in-pro
 
 **Main state (658a16f):** Done: History is a content-first grid (16 pt gaps, 2, 3 and 4 columns at 880, 1000 and 1280) with check-badge selection, centred empty state, icon action row and .opensnap drag, merged in f484d3e.
 
-**Since 284f028:** Batch 4 (`d9ed8b7`, `e3f99b8`) added a History footer notice after Delete from Web and kept the published size on Shared entries. Not real-click retested (pending J6).
+**Since 284f028:** Batch 4 (`d9ed8b7`, `e3f99b8`) added a History footer notice after Delete from Web and kept the published size on Shared entries. Real-click retested in J6 (`14d4d9f`): the footer notice after Delete from Web passed (F-J4-003). The published size on Shared entries was confirmed in J8 (`33743c5`, item 3).
 
 **Findings:** VF-20. **Spec:** T11.
 
@@ -1856,7 +1856,7 @@ Status at `284f028` and at `fa4715f`: 29 done, 2 verified, 1 not-a-bug, 3 in-pro
 
 **Main state (284f028):** Done. Parts 1 and 2 are on main. A DisplayOptions model reads Reduce Motion, Reduce Transparency, Increase Contrast and Differentiate Without Color live and observes them. A harness-gated `--display` injection mode is in `tools/eye-dump-audit.sh`; a normal launch cannot use it.
 
-**Since 284f028:** Batch 4 (`6d833a8`) outlines the selected PNG | JPG and the Settings tab under Differentiate Without Color, and darkens glyphs under Increase Contrast. Rendered in `audit-fix-4` (dwc and ic, source `1026e58`, SF icon mode); not real-click.
+**Since 284f028:** Batch 4 (`6d833a8`) outlines the selected PNG | JPG and the Settings tab under Differentiate Without Color, and darkens glyphs under Increase Contrast. Rendered in `audit-fix-4` (dwc and ic, source `1026e58`, SF icon mode); not real-click. Final render pass (`5b30929`, `7f0a767`): the outline and the Settings tab cue are drawn under Differentiate Without Color; glyph and disabled contrast under Increase Contrast did not rise (F-R-002, batch 9).
 
 **Findings:** VF-10, VF-14. **Spec:** T7, T14.
 
@@ -2035,7 +2035,7 @@ Status at `284f028` and at `fa4715f`: 29 done, 2 verified, 1 not-a-bug, 3 in-pro
 
 **Main state (658a16f):** Open: the full visual acceptance gallery and the independent visual sign-off have not been run on the implemented surfaces.
 
-**Since 284f028:** Pending. The E2E audit and review round 1 do not close this todo; it waits for independent review round 2 and the final gates.
+**Since 284f028:** Pending. The E2E audit and review rounds 1 and 2 do not close this todo; it waits for independent review round 3, focused on the round 2 regression fixes, and the final gates.
 
 **Findings:** VF-01, VF-02, VF-03, VF-04, VF-05, VF-06, VF-07, VF-08, VF-09, VF-10, VF-11, VF-12, VF-13, VF-14, VF-15, VF-16, VF-17, VF-18, VF-19, VF-20, VF-21, VF-22, VF-23, VF-24, VF-25, VF-26, VF-27, VF-28, VF-29. **Spec:** T14, T15 j.
 

@@ -3,7 +3,7 @@
     "project": "OpenSnap",
     "round": 2,
     "generated": "2026-10-09",
-    "statusNote": "Implementation progress at main fa4715f (baseline bad6617): 29 done, 2 verified, 1 not-a-bug, 3 in-progress, 1 pending, of 36 todos. Statuses are unchanged since 284f028. The E2E audit merges since then (batch 4 `04dda5b`, panel-service fix `fa4715f`) changed evidence notes only, on OSN-045, OSN-051, OSN-053 and OSN-061. OSN-044, OSN-054, OSN-060 and OSN-061 are done at merges 3ee9503, 7c8bdb1 and accfedd; OSN-062 stays in-progress (manual VoiceOver pass not recorded); OSN-071 stays pending until independent review round 2. Each todo's status, mainState and implementation block record its main state at the SHA named there. Audit findings and priority counts are unchanged.",
+    "statusNote": "Implementation progress at main 33743c5 (baseline bad6617): 29 done, 2 verified, 1 not-a-bug, 3 in-progress, 1 pending, of 36 todos. Statuses are unchanged since 284f028. The E2E audit merges since then changed evidence notes only, on OSN-045, OSN-051, OSN-053 and OSN-061: panel-service fix fa4715f; batches 5 to 8 (0bd6f94, 5989fa0, 5b30929, 87abbfd); journeys J6, J7 and J8 (14d4d9f, 5310a2c, 33743c5); review round 2 tools and ledger (0b03903); final render pass (7f0a767). OSN-044, OSN-054, OSN-060 and OSN-061 are done at merges 3ee9503, 7c8bdb1 and accfedd; OSN-062 stays in-progress (manual VoiceOver pass not recorded); OSN-071 stays pending until independent review round 3 signs off (batch 9 and review round 3 are in progress). Each todo's status, mainState and implementation block record its main state at the SHA named there. Audit findings and priority counts are unchanged.",
     "auditedShas": {
       "briefed": "b9319c4",
       "drift": [
@@ -2778,7 +2778,7 @@
       "priority": "P0",
       "milestone": "M7",
       "status": "pending",
-      "mainState": "Pending: the full visual acceptance gallery and the independent visual sign-off have not been run on the implemented surfaces. The E2E audit and review round 1 do not close this todo; it waits for independent review round 2 and the final gates.",
+      "mainState": "Pending: the full visual acceptance gallery and the independent visual sign-off have not been run on the implemented surfaces. The E2E audit and review rounds 1 and 2 do not close this todo; it waits for independent review round 3, focused on the review round 2 regression fixes, and the final gates.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
