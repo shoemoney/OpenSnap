@@ -160,9 +160,10 @@ suites = [
     ("migration-tests", ["SVGPath.swift", "LegacyReader.swift", "DocumentModel.swift", "VectorGeometry.swift", "StrokeFitting.swift", "ImageExport.swift", "Canvas.swift", "OpenSnapFile.swift", "HistoryStore.swift", "Migration.swift"], "MigrationTests.swift", "MIGRATION_TESTS", (), {"CFFIXED_USER_HOME": "@temp-home"}),
     ("capture-tests", ["DisplayOptions.swift", "OriginalCaptureTiming.swift", "OriginalCaptureMagnifier.swift", "OriginalCapturePicker.swift", "OriginalCaptureCountdown.swift", "OriginalCaptureFlash.swift", "Capture.swift"], "CaptureTests.swift", "CAPTURE_TESTS", ()),
     ("photo-browser-tests", ["PhotoBrowser.swift"], "PhotoBrowserTests.swift", None, ()),
-    ("display-options-tests", ["DisplayOptions.swift", "DisplayOptions+ChromeAccessibility.swift", "OriginalActionButton.swift", *ICONS, "AppToolTip.swift", "GlassChrome.swift"], "DisplayOptionsTests.swift", "DISPLAY_OPTIONS_TESTS", ()),
+    ("display-options-tests", ["DisplayOptions.swift", "DisplayOptions+ChromeAccessibility.swift", "OriginalActionButton.swift", *ICONS, "AppToolTip.swift", "StateStyles.swift", "GlassChrome.swift"], "DisplayOptionsTests.swift", "DISPLAY_OPTIONS_TESTS", ()),
     ("typography-tests", [], "TypographyTests.swift", "TYPOGRAPHY_TESTS", ()),
     ("palette-tests", [], "PaletteTests.swift", "PALETTE_TESTS", ()),
+    ("state-styles-tests", ["StateStyles.swift"], "StateStylesTests.swift", "STATE_STYLES_TESTS", ()),
     ("status-item-tests", ["StatusItemSupport.swift"], "StatusItemSupportTests.swift", "STATUS_ITEM_TESTS", ()),
     ("about-window-tests", ["AboutWindow.swift"], "AboutWindowTests.swift", "ABOUT_WINDOW_TESTS", ()),
     ("app-alert-tests", ["AppAlert.swift"], "AppAlertTests.swift", "APP_ALERT_TESTS", ()),
@@ -181,7 +182,7 @@ modern_suites = [
     ("fontawesome-icons-tests", [*ICONS], "FontAwesomeIconsTests.swift", "FONTAWESOME_ICONS_TESTS", (), font_environment),
     ("menu-symbols-tests", [*ICONS, "MenuSymbols.swift"], "MenuSymbolsTests.swift", "MENU_SYMBOLS_TESTS", ()),
     ("icon-coverage-tests", [*ICONS], "IconCoverageTests.swift", "ICON_COVERAGE_TESTS", ()),
-    ("glass-chrome-tests", ["DisplayOptions.swift", "DisplayOptions+ChromeAccessibility.swift", "OriginalActionButton.swift", *ICONS, "BezelDrawingControls.swift", "DocumentModel.swift", "GlassChrome.swift", "ModernEditorChrome.swift", "AppToolTip.swift"], "GlassChromeTests.swift", "GLASS_CHROME_TESTS", ()),
+    ("glass-chrome-tests", ["DisplayOptions.swift", "DisplayOptions+ChromeAccessibility.swift", "OriginalActionButton.swift", *ICONS, "BezelDrawingControls.swift", "DocumentModel.swift", "StateStyles.swift", "GlassChrome.swift", "ModernEditorChrome.swift", "AppToolTip.swift"], "GlassChromeTests.swift", "GLASS_CHROME_TESTS", ()),
 ]
 with ThreadPoolExecutor(max_workers=len(suites) + len(modern_suites)) as executor:
     futures = [executor.submit(suite, *args) for args in suites]

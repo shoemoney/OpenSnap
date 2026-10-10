@@ -115,11 +115,7 @@ extension AppDelegate {
         configureDragExport(drag)
         drag.showsHandIconOnly = true
         AppToolTip.setText("Drag the drawing into Finder or another app", for: drag)
-        dragFormatToggle.segmentStyle = .capsule
-        dragFormatToggle.font = DesignTokens.Typography.font(.body)
-        dragFormatToggle.setAccessibilityLabel("Image format")
         AppToolTip.setText(FormatToggle.toolTip, for: dragFormatToggle)
-        for (index, title) in FormatToggle.titles.enumerated() { dragFormatToggle.setLabel(title, forSegment: index); dragFormatToggle.setWidth(0, forSegment: index) }
         dragFormatToggle.target = self; dragFormatToggle.action = #selector(changeDragOptions(_:))
         dragFormatToggle.selectedSegment = FormatToggle.segment(forStoredChoice: UserDefaults.standard.integer(forKey: FormatToggle.defaultsKey))
         status.font = DesignTokens.Typography.font(.caption); status.lineBreakMode = .byTruncatingTail
@@ -150,6 +146,11 @@ extension AppDelegate {
 
         snapButton = chrome.snapButton; cancelFrameButton = chrome.cancelFrameButton
         resizeButton = chrome.resizeButton
+        // The drag well draws its own glyph; the cell behind it fills for its press.
+        drag.onInteractionChange = { [weak drag] in
+            guard let drag, let cell = drag.superview as? ChromeFillCell else { return }
+            cell.setPressed(drag.isPressed)
+        }
         chrome.snapButton.alternateTarget = self
         chrome.snapButton.alternateAction = #selector(fullscreenSnap)
         for tool in SketchTool.allCases {
