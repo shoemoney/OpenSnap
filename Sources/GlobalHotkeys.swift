@@ -549,6 +549,184 @@ final class GlobalHotkeyManager: NSObject {
     }
 }
 
+/// The shortcut editor, shared by the capture sheet and the Settings window.
+///
+/// `.sheet` keeps the original transaction: edits stay in the draft until Save (Cancel discards them), and Reset Defaults
+/// and Disable All only change the draft. `.live` is for the Settings window: every edit is applied through the manager at
+/// once, and one the manager rejects stays on screen with an "Error:" line until the next edit that it accepts.
+@MainActor
+final class GlobalHotkeyForm: NSView {
+    enum Mode { case sheet, live }
+    private typealias Typography = DesignTokens.Typography
+    private typealias Space = DesignTokens.Space
+
+    /// Segment order of the modifier control: symbol, spoken name.
+    static let modifierSegments: [(GlobalHotkeyModifiers, String, String)] = [
+        (.command, "\u{2318}", "Command"), (.option, "\u{2325}", "Option"), (.control, "\u{2303}", "Control"), (.shift, "\u{21E7}", "Shift")]
+    static let idleLiveStatus = "Shortcuts are saved as you change them."
+    static let idleSheetStatus = "Shortcuts pause while this panel or another capture sheet is open. Save applies your changes; Cancel leaves them unchanged."
+    static let keyPopupWidth: CGFloat = 120, modifierSegmentWidth: CGFloat = 44
+
+    /// The label column is shared with the form it sits in, so its labels line up with the rows around it.
+    static func labelTexts() -> [String] { ["Shortcuts:"] + GlobalHotkeyAction.allCases.map { $0.title + ":" } }
+    static func labelFont() -> NSFont { Typography.font(.bodyStrong) }
+
+    private final class Row {
+        let key: NSPopUpButton
+        let modifiers: NSSegmentedControl
+        init(key: NSPopUpButton, modifiers: NSSegmentedControl) { self.key = key; self.modifiers = modifiers }
+    }
+
+    let mode: Mode
+    private weak var manager: GlobalHotkeyManager?
+    private var rows: [GlobalHotkeyAction: Row] = [:]
+    let enabledCheckbox = NSButton(checkboxWithTitle: "Enable global capture shortcuts", target: nil, action: nil)
+    let statusField = NSTextField(wrappingLabelWithString: "")
+    private(set) var resetButton: NSButton!, disableButton: NSButton!
+    private(set) var cancelButton: NSButton?, saveButton: NSButton?
+    /// The sheet asks its panel to close; the live form never calls this.
+    var onFinish: (() -> Void)?
+    /// The status line changed height, so the window holding the form may need a new size.
+    var onResize: (() -> Void)?
+
+    func keyPopup(for action: GlobalHotkeyAction) -> NSPopUpButton { rows[action]!.key }
+    func modifierControl(for action: GlobalHotkeyAction) -> NSSegmentedControl { rows[action]!.modifiers }
+
+    init(manager: GlobalHotkeyManager, mode: Mode, labelWidth: CGFloat, width: CGFloat) {
+        self.manager = manager; self.mode = mode
+        super.init(frame: .zero)
+        let statusWidth = width - labelWidth - Space.s4
+        func label(_ text: String) -> NSTextField {
+            let field = NSTextField(labelWithString: text)
+            field.font = Self.labelFont(); field.alignment = .right; field.textColor = DesignTokens.Palette.Text.primary
+            return field
+        }
+        enabledCheckbox.font = Typography.font(.body); enabledCheckbox.controlSize = .large
+        enabledCheckbox.target = self; enabledCheckbox.action = #selector(enabledChanged(_:))
+        var gridRows: [[NSView]] = [[label("Shortcuts:"), enabledCheckbox]]
+        for action in GlobalHotkeyAction.allCases {
+            let key = NSPopUpButton(frame: .zero, pullsDown: false)
+            Typography.apply(.body, to: key)
+            key.addItems(withTitles: ["None"] + GlobalHotkeyKeys.choices.map(\.name))
+            key.widthAnchor.constraint(equalToConstant: Self.keyPopupWidth).isActive = true
+            key.setAccessibilityLabel("\(action.title) key")
+            key.target = self; key.action = #selector(keyChanged(_:))
+            let modifiers = NSSegmentedControl(labels: Self.modifierSegments.map(\.1), trackingMode: .selectAny, target: self, action: #selector(modifiersChanged(_:)))
+            modifiers.font = Typography.font(.body); modifiers.controlSize = .large
+            for index in Self.modifierSegments.indices { modifiers.setWidth(Self.modifierSegmentWidth, forSegment: index) }
+            modifiers.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.control).isActive = true
+            modifiers.setAccessibilityLabel("\(action.title) modifier keys")
+            modifiers.toolTip = "Modifier keys: " + Self.modifierSegments.map { "\($0.1) \($0.2)" }.joined(separator: ", ")
+            let line = NSStackView(views: [key, modifiers])
+            line.orientation = .horizontal; line.alignment = .centerY; line.spacing = Space.s3
+            rows[action] = Row(key: key, modifiers: modifiers)
+            gridRows.append([label(action.title + ":"), line])
+        }
+        statusField.font = Typography.font(.body)
+        statusField.preferredMaxLayoutWidth = statusWidth
+        statusField.widthAnchor.constraint(equalToConstant: statusWidth).isActive = true
+        gridRows.append([NSGridCell.emptyContentView, statusField])
+        resetButton = Self.button("Reset Defaults", self, #selector(reset(_:)))
+        disableButton = Self.button("Disable All", self, #selector(disable(_:)))
+        var buttons: [NSButton] = [resetButton, disableButton]
+        if mode == .sheet {
+            let cancel = Self.button("Cancel", self, #selector(cancel(_:))); cancel.keyEquivalent = "\u{1b}"
+            let save = Self.button("Save", self, #selector(save(_:))); save.keyEquivalent = "\r"
+            cancelButton = cancel; saveButton = save; buttons += [cancel, save]
+        }
+        let buttonRow = NSStackView(views: buttons); buttonRow.orientation = .horizontal; buttonRow.spacing = Space.s3
+        gridRows.append([NSGridCell.emptyContentView, buttonRow])
+
+        let grid = NSGridView(views: gridRows)
+        grid.translatesAutoresizingMaskIntoConstraints = false
+        grid.rowSpacing = Space.s4; grid.columnSpacing = Space.s4
+        grid.column(at: 0).xPlacement = .trailing; grid.column(at: 0).width = labelWidth
+        grid.column(at: 1).xPlacement = .leading
+        for index in 0..<grid.numberOfRows { grid.row(at: index).yPlacement = .center }
+        addSubview(grid)
+        NSLayoutConstraint.activate([
+            grid.leadingAnchor.constraint(equalTo: leadingAnchor), grid.trailingAnchor.constraint(equalTo: trailingAnchor),
+            grid.topAnchor.constraint(equalTo: topAnchor), grid.bottomAnchor.constraint(equalTo: bottomAnchor)])
+        reload()
+    }
+    required init?(coder: NSCoder) { fatalError("Use init(manager:mode:labelWidth:width:)") }
+
+    private static func button(_ title: String, _ target: AnyObject, _ action: Selector) -> NSButton {
+        let button = NSButton(title: title, target: target, action: action)
+        button.bezelStyle = .rounded; Typography.apply(.body, to: button)
+        button.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.control).isActive = true
+        return button
+    }
+
+    /// Shows what the manager has saved, drops any unsaved draft and clears the status line. Delivers nothing.
+    func reload() {
+        guard let manager else { return }
+        fill(manager.settings)
+        setStatus(manager.lastError.map { "Error: " + $0.localizedDescription } ?? (mode == .live ? Self.idleLiveStatus : Self.idleSheetStatus),
+                  isError: manager.lastError != nil)
+    }
+
+    private func setStatus(_ text: String, isError: Bool) {
+        let changed = statusField.stringValue != text
+        statusField.stringValue = text
+        statusField.textColor = isError ? DesignTokens.Palette.feedbackError : DesignTokens.Palette.Text.primary
+        if changed { invalidateIntrinsicContentSize(); needsLayout = true; onResize?() }
+    }
+
+    private func fill(_ settings: GlobalHotkeySettings) {
+        enabledCheckbox.state = settings.enabled ? .on : .off
+        for action in GlobalHotkeyAction.allCases {
+            guard let row = rows[action] else { continue }
+            let binding = settings[action]
+            let index = binding.keyCode.flatMap { code in GlobalHotkeyKeys.choices.firstIndex { $0.code == code } }.map { $0 + 1 } ?? 0
+            row.key.selectItem(at: index)
+            for (segment, entry) in Self.modifierSegments.enumerated() { row.modifiers.setSelected(binding.modifiers.contains(entry.0), forSegment: segment) }
+            row.modifiers.isEnabled = index > 0
+        }
+    }
+
+    func draft() -> GlobalHotkeySettings {
+        var settings = GlobalHotkeySettings(); settings.enabled = enabledCheckbox.state == .on
+        for action in GlobalHotkeyAction.allCases {
+            guard let row = rows[action], row.key.indexOfSelectedItem > 0 else { settings[action] = .none; continue }
+            var modifiers: GlobalHotkeyModifiers = []
+            for (segment, entry) in Self.modifierSegments.enumerated() where row.modifiers.isSelected(forSegment: segment) { modifiers.insert(entry.0) }
+            settings[action] = .init(keyCode: GlobalHotkeyKeys.choices[row.key.indexOfSelectedItem - 1].code, modifiers: modifiers)
+        }
+        return settings
+    }
+
+    /// Live mode: apply the draft now. A rejected draft stays on screen beside its error.
+    private func commit() {
+        guard mode == .live, let manager else { return }
+        do { try manager.apply(draft()); setStatus(Self.idleLiveStatus, isError: false) }
+        catch { setStatus("Error: " + error.localizedDescription, isError: true) }
+    }
+
+    @objc private func enabledChanged(_ sender: NSButton) { commit() }
+    @objc private func keyChanged(_ sender: NSPopUpButton) {
+        guard let row = rows.values.first(where: { $0.key === sender }) else { return }
+        row.modifiers.isEnabled = sender.indexOfSelectedItem > 0
+        if !row.modifiers.isEnabled { for segment in Self.modifierSegments.indices { row.modifiers.setSelected(false, forSegment: segment) } }
+        commit()
+    }
+    @objc private func modifiersChanged(_ sender: NSSegmentedControl) { commit() }
+    @objc private func reset(_ sender: Any?) {
+        fill(.defaults)
+        if mode == .live { commit() } else { setStatus("Defaults restored in this panel. Select Save to apply them.", isError: false) }
+    }
+    @objc private func disable(_ sender: Any?) {
+        enabledCheckbox.state = .off
+        if mode == .live { commit() } else { setStatus("All global shortcuts will be disabled when you select Save. Your key choices are kept.", isError: false) }
+    }
+    @objc private func save(_ sender: Any?) {
+        guard let manager else { return }
+        do { try manager.apply(draft()); onFinish?() }
+        catch { setStatus("Error: " + error.localizedDescription, isError: true) }
+    }
+    @objc private func cancel(_ sender: Any?) { onFinish?() }
+}
+
 @MainActor
 private final class GlobalHotkeyDocumentView: NSView {
     override var isFlipped: Bool { true }
@@ -556,26 +734,20 @@ private final class GlobalHotkeyDocumentView: NSView {
 
 @MainActor
 private final class GlobalHotkeySettingsPanel: NSWindowController, NSWindowDelegate {
-    private final class Row {
-        let key: NSPopUpButton
-        let modifiers: [(GlobalHotkeyModifiers, NSButton)]
-        init(key: NSPopUpButton, modifiers: [(GlobalHotkeyModifiers, NSButton)]) { self.key = key; self.modifiers = modifiers }
-    }
+    static let width: CGFloat = 760, margin = DesignTokens.Space.s5
     private weak var manager: GlobalHotkeyManager?
-    private var rows: [GlobalHotkeyAction: Row] = [:]
-    private let enabled = NSButton(checkboxWithTitle: "Enable global capture shortcuts", target: nil, action: nil)
-    private let status = NSTextField(wrappingLabelWithString: "")
+    private var form: GlobalHotkeyForm?
 
     init(manager: GlobalHotkeyManager) {
         self.manager = manager
-        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 940, height: 660),
+        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: Self.width, height: 600),
                             styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
         panel.title = "Global Capture Shortcuts"
         panel.isReleasedWhenClosed = false
-        panel.contentMinSize = NSSize(width: 880, height: 530)
+        panel.contentMinSize = NSSize(width: Self.width, height: 440)
         super.init(window: panel)
         panel.delegate = self
-        buildContent(panel)
+        buildContent(panel, manager: manager)
     }
     required init?(coder: NSCoder) { nil }
 
@@ -584,13 +756,7 @@ private final class GlobalHotkeySettingsPanel: NSWindowController, NSWindowDeleg
         label.font = DesignTokens.Typography.font(heading ? .title : .body)
         return label
     }
-    private func button(_ text: String, _ selector: Selector) -> NSButton {
-        let button = NSButton(title: text, target: self, action: selector)
-        button.bezelStyle = .rounded; button.font = DesignTokens.Typography.font(.body)
-        button.heightAnchor.constraint(greaterThanOrEqualToConstant: 40).isActive = true
-        return button
-    }
-    private func buildContent(_ panel: NSPanel) {
+    private func buildContent(_ panel: NSPanel, manager: GlobalHotkeyManager) {
         let content = NSView(); panel.contentView = content
         let scroll = NSScrollView()
         scroll.hasVerticalScroller = true; scroll.drawsBackground = false
@@ -606,112 +772,40 @@ private final class GlobalHotkeySettingsPanel: NSWindowController, NSWindowDeleg
         document.translatesAutoresizingMaskIntoConstraints = false
         document.widthAnchor.constraint(equalTo: scroll.contentView.widthAnchor).isActive = true
         let stack = NSStackView()
-        stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = 20
+        stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = DesignTokens.Space.s4
         stack.translatesAutoresizingMaskIntoConstraints = false
         document.addSubview(stack)
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: document.leadingAnchor, constant: 24),
-            stack.trailingAnchor.constraint(equalTo: document.trailingAnchor, constant: -24),
-            stack.topAnchor.constraint(equalTo: document.topAnchor, constant: 24),
-            stack.bottomAnchor.constraint(equalTo: document.bottomAnchor, constant: -24)
+            stack.leadingAnchor.constraint(equalTo: document.leadingAnchor, constant: Self.margin),
+            stack.trailingAnchor.constraint(equalTo: document.trailingAnchor, constant: -Self.margin),
+            stack.topAnchor.constraint(equalTo: document.topAnchor, constant: Self.margin),
+            stack.bottomAnchor.constraint(equalTo: document.bottomAnchor, constant: -Self.margin)
         ])
+        let contentWidth = Self.width - 2 * Self.margin
         let heading = label("Global Capture Shortcuts", heading: true)
         let introduction = label("Choose Command or Control with a key. None disables an action. Key names refer to physical US keyboard positions.")
-        enabled.font = DesignTokens.Typography.font(.body)
-        stack.addArrangedSubview(heading); stack.addArrangedSubview(introduction); stack.addArrangedSubview(enabled)
-        introduction.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
-        for action in GlobalHotkeyAction.allCases {
-            let line = NSStackView(); line.orientation = .horizontal; line.alignment = .centerY; line.spacing = 12
-            let name = label(action.title)
-            name.widthAnchor.constraint(equalToConstant: 145).isActive = true
-            let key = NSPopUpButton(frame: .zero, pullsDown: false)
-            key.font = DesignTokens.Typography.font(.body); key.menu?.font = DesignTokens.Typography.font(.body)
-            key.addItems(withTitles: ["None"] + GlobalHotkeyKeys.choices.map(\.name))
-            key.widthAnchor.constraint(equalToConstant: 150).isActive = true
-            key.setAccessibilityLabel("\(action.title) key")
-            key.target = self; key.action = #selector(keyChanged(_:))
-            line.addArrangedSubview(name); line.addArrangedSubview(key)
-            let options: [(GlobalHotkeyModifiers, String)] = [(.command,"Command"),(.option,"Option"),(.control,"Control"),(.shift,"Shift")]
-            let controls = options.map { modifier, title -> (GlobalHotkeyModifiers, NSButton) in
-                let checkbox = NSButton(checkboxWithTitle: title, target: nil, action: nil)
-                checkbox.font = DesignTokens.Typography.font(.body)
-                checkbox.setAccessibilityLabel("\(action.title) \(title) modifier")
-                line.addArrangedSubview(checkbox)
-                return (modifier, checkbox)
-            }
-            rows[action] = Row(key: key, modifiers: controls)
-            stack.addArrangedSubview(line)
-        }
+        let labelWidth = Self.labelWidth()
+        let form = GlobalHotkeyForm(manager: manager, mode: .sheet, labelWidth: labelWidth, width: contentWidth)
+        form.onFinish = { [weak self] in self?.dismiss() }
+        self.form = form
         let defaults = label("All actions start at None. Original Frame used Command + Shift + 7, but that shortcut may already belong to macOS or another app. Configure and save only the shortcuts you want.")
-        stack.addArrangedSubview(defaults)
-        defaults.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
-        status.font = DesignTokens.Typography.font(.body)
-        stack.addArrangedSubview(status)
-        status.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
-        let buttons = NSStackView(); buttons.orientation = .horizontal; buttons.spacing = 12
-        buttons.addArrangedSubview(button("Reset Defaults", #selector(reset(_:))))
-        buttons.addArrangedSubview(button("Disable All", #selector(disable(_:))))
-        let cancel = button("Cancel", #selector(cancel(_:))); cancel.keyEquivalent = "\u{1b}"
-        buttons.addArrangedSubview(cancel)
-        let save = button("Save", #selector(save(_:))); save.keyEquivalent = "\r"
-        buttons.addArrangedSubview(save)
-        stack.addArrangedSubview(buttons)
+        for view in [heading, introduction, form, defaults] { stack.addArrangedSubview(view) }
+        for view in [introduction, defaults] { view.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true }
+        AppToolTip.install(on: content)
+    }
+    /// The widest row label, so the sheet's label column fits every action name on one line.
+    static func labelWidth() -> CGFloat {
+        let font = GlobalHotkeyForm.labelFont()
+        return ceil(GlobalHotkeyForm.labelTexts().map { ($0 as NSString).size(withAttributes: [.font: font]).width }.max() ?? 0)
     }
     func present(attachedTo parent: NSWindow?) {
-        guard let window, let manager else { return }
+        guard let window else { return }
         if window.isVisible { window.makeKeyAndOrderFront(nil); return }
-        fill(manager.settings)
-        status.textColor = .labelColor
-        status.stringValue = manager.lastError?.localizedDescription ?? "Shortcuts pause while this panel or another capture sheet is open. Save applies your changes; Cancel leaves them unchanged."
+        form?.reload()
         if let parent, parent.attachedSheet == nil { parent.beginSheet(window) }
         else { window.center(); showWindow(nil) }
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
-    private func fill(_ settings: GlobalHotkeySettings) {
-        enabled.state = settings.enabled ? .on : .off
-        for action in GlobalHotkeyAction.allCases {
-            guard let row = rows[action] else { continue }
-            let binding = settings[action]
-            let index = binding.keyCode.flatMap { code in GlobalHotkeyKeys.choices.firstIndex { $0.code == code } }.map { $0 + 1 } ?? 0
-            row.key.selectItem(at: index)
-            for (modifier, control) in row.modifiers {
-                control.state = binding.modifiers.contains(modifier) ? .on : .off
-                control.isEnabled = index > 0
-            }
-        }
-    }
-    private func draft() -> GlobalHotkeySettings {
-        var settings = GlobalHotkeySettings(); settings.enabled = enabled.state == .on
-        for action in GlobalHotkeyAction.allCases {
-            guard let row = rows[action], row.key.indexOfSelectedItem > 0 else { settings[action] = .none; continue }
-            let index = row.key.indexOfSelectedItem - 1
-            var modifiers: GlobalHotkeyModifiers = []
-            for (modifier, control) in row.modifiers where control.state == .on { modifiers.insert(modifier) }
-            settings[action] = .init(keyCode: GlobalHotkeyKeys.choices[index].code, modifiers: modifiers)
-        }
-        return settings
-    }
-    @objc private func keyChanged(_ sender: NSPopUpButton) {
-        guard let row = rows.values.first(where: { $0.key === sender }) else { return }
-        for (_, control) in row.modifiers {
-            control.isEnabled = sender.indexOfSelectedItem > 0
-            if !control.isEnabled { control.state = .off }
-        }
-    }
-    @objc private func reset(_ sender: Any?) {
-        fill(.defaults); status.textColor = .labelColor
-        status.stringValue = "Defaults restored in this panel. Select Save to apply them."
-    }
-    @objc private func disable(_ sender: Any?) {
-        enabled.state = .off; status.textColor = .labelColor
-        status.stringValue = "All global shortcuts will be disabled when you select Save. Your key choices are kept."
-    }
-    @objc private func save(_ sender: Any?) {
-        guard let manager else { return }
-        do { try manager.apply(draft()); dismiss() }
-        catch { status.textColor = .systemRed; status.stringValue = error.localizedDescription }
-    }
-    @objc private func cancel(_ sender: Any?) { dismiss() }
     private func dismiss() {
         guard let window else { return }
         if let parent = window.sheetParent { parent.endSheet(window) }

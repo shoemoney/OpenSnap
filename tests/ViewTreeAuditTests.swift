@@ -4,9 +4,22 @@
 //   Sources/DesignTokens.swift Sources/AboutWindow.swift Sources/HistoryBrowser.swift Sources/ResizePresets.swift Sources/ResizePanel.swift \
 //   Sources/Publishing.swift Sources/PublishingS3.swift Sources/PublishingDestinations.swift Sources/PublishingDestinationsView.swift \
 //   Sources/SVGPath.swift Sources/StrokeFitting.swift Sources/GeneralPreferencesForm.swift Sources/TextStyleForm.swift Sources/ExportAccessory.swift \
+//   Sources/SettingsWindow.swift Sources/GlobalHotkeys.swift Sources/AppToolTip.swift Sources/DisplayOptions.swift Sources/OriginalCaptureFlash.swift \
+//   Sources/FontAwesomeIcons.swift Sources/ChromeIcons.swift Sources/FontAwesomeFree.swift \
 //   tests/TestDefaults.swift tests/ViewTreeAudit.swift tests/ViewTreeAuditTests.swift -o /tmp/opensnap-view-tree-audit-tests
 #if VIEW_TREE_AUDIT_TESTS
 import AppKit
+
+/// A shortcut backend that registers nothing, so the Settings window can be built without touching the system.
+@MainActor
+private final class InertHotkeyBackend: GlobalHotkeyBackend {
+    var registeredIDs: Set<UInt32> { [] }
+    func installHandler(onEvent: @escaping @MainActor @Sendable (UInt32) -> Void) throws {}
+    func systemReservedBindings() throws -> Set<GlobalHotkeyBinding> { [] }
+    func register(_ binding: GlobalHotkeyBinding, id: UInt32) throws {}
+    func unregister(id: UInt32) throws {}
+    func shutdown() throws {}
+}
 
 @main
 @MainActor
@@ -268,6 +281,32 @@ private enum ViewTreeAuditTests {
         let general = GeneralPreferencesForm(state: GeneralPreferencesState(drawingPrecision: .medium, arrowHead: 2, includeApp: true, statusMenu: 0, showToolTips: true))
         general.layoutSubtreeIfNeeded()
         record("General preferences", Audit.audit(general, surface: "General preferences"))
+        // The Settings window, every tab, as the user can reach it: the window walk follows the selected tab, the tab views are walked directly.
+        let settingsSuite = "OpenSnapViewTreeAudit.settings." + UUID().uuidString
+        let settingsDefaults = TestDefaults(name: settingsSuite)
+        defer { TestDefaults.dispose(settingsDefaults, name: settingsSuite) }
+        let settings = SettingsWindowController(state: { GeneralPreferencesState(drawingPrecision: .medium, arrowHead: 2, includeApp: true, statusMenu: 0, showToolTips: true) },
+                                                hotkeys: GlobalHotkeyManager(defaults: settingsDefaults, backend: InertHotkeyBackend()), defaults: settingsDefaults,
+                                                destinations: { PublishingDestinationList(defaultID: first.id, destinations: [first, second]) }, manageDestinations: { _ in })
+        for (index, item) in settings.tabItems.enumerated() {
+            settings.select(index)
+            settings.window.contentView?.layoutSubtreeIfNeeded()
+            record("Settings: \(item.label)", Audit.audit(settings.window, surface: "Settings: \(item.label)"))
+            record("Settings: \(item.label) (tab view)", Audit.audit(item.viewController!.view, surface: "Settings: \(item.label) (tab view)"))
+        }
+        // A seeded 14 pt row label on the real window is caught, so zero above is not the walker looking at nothing.
+        settings.select(0)
+        func rowLabel(in view: NSView) -> NSTextField? {
+            if let field = view as? NSTextField, field.stringValue == "Show in:" { return field }
+            for child in view.subviews { if let hit = rowLabel(in: child) { return hit } }
+            return nil
+        }
+        let seeded = rowLabel(in: settings.general.view)
+        expect(seeded != nil, "the seeded row label exists")
+        let seededFont = seeded?.font
+        seeded?.font = font(14)
+        expect(Audit.audit(settings.window, surface: "Settings (seeded)").violations.count == 1, "Settings: a 14 pt row label is caught on the real window")
+        seeded?.font = seededFont
         let style = TextStyleForm(outlined: nil, shadowed: nil)
         record("Text style", Audit.audit(style, surface: "Text style"))
         let accessory = ExportAccessory(format: "jpeg", originalSize: false, jpegQuality: 0.7)

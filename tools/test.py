@@ -151,7 +151,10 @@ suites = [
     ("publishing-tests", ["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift", *ICONS], "PublishingTests.swift", None, ("--test",)),
     ("publishing-shutdown-tests", ["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift", *ICONS], "PublishingShutdownTests.swift", None, ("--test",)),
     ("publishing-destinations-tests", ["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift", *ICONS], "PublishingDestinationsTests.swift", None, ("--test",)),
-    ("hotkey-tests", ["GlobalHotkeys.swift", "TestDefaults.swift"], "GlobalHotkeysTests.swift", "GLOBAL_HOTKEY_TESTS", ()),
+    ("hotkey-tests", ["GlobalHotkeys.swift", "AppToolTip.swift", "TestDefaults.swift"], "GlobalHotkeysTests.swift", "GLOBAL_HOTKEY_TESTS", ()),
+    ("settings-window-tests", ["SettingsWindow.swift", "GeneralPreferencesForm.swift", "GlobalHotkeys.swift", "AppToolTip.swift", "DisplayOptions.swift", "OriginalCaptureFlash.swift",
+                               "StrokeFitting.swift", "Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift", *ICONS,
+                               "TestDefaults.swift", "ViewTreeAudit.swift"], "SettingsWindowTests.swift", "SETTINGS_WINDOW_TESTS", ()),
     ("svg-tests", ["SVGPath.swift", "DocumentModel.swift", "VectorGeometry.swift", "StrokeFitting.swift", "ImageExport.swift", "Canvas.swift", "SVGExport.swift"], "SVGExportTests.swift", "SVG_EXPORT_TESTS", ()),
     ("opensnap-file-tests", ["SVGPath.swift", "DocumentModel.swift", "VectorGeometry.swift", "StrokeFitting.swift", "ImageExport.swift", "Canvas.swift", "OpenSnapFile.swift"], "OpenSnapFileTests.swift", "OPENSNAP_FILE_TESTS", ()),
     ("migration-tests", ["SVGPath.swift", "LegacyReader.swift", "DocumentModel.swift", "VectorGeometry.swift", "StrokeFitting.swift", "ImageExport.swift", "Canvas.swift", "OpenSnapFile.swift", "HistoryStore.swift", "Migration.swift"], "MigrationTests.swift", "MIGRATION_TESTS", (), {"CFFIXED_USER_HOME": "@temp-home"}),
@@ -167,7 +170,8 @@ suites = [
     # G4: the font-floor walker over every surface whose sources compile in isolation. The full main window joins via app-safety.
     ("view-tree-audit-tests", ["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift",
                                "AboutWindow.swift", "HistoryBrowser.swift", "ResizePresets.swift", "ResizePanel.swift", *ICONS, "StrokeFitting.swift",
-                               "GeneralPreferencesForm.swift", "TextStyleForm.swift", "ExportAccessory.swift", "TestDefaults.swift", "ViewTreeAudit.swift"],
+                               "GeneralPreferencesForm.swift", "TextStyleForm.swift", "ExportAccessory.swift", "TestDefaults.swift", "ViewTreeAudit.swift",
+                               "SettingsWindow.swift", "GlobalHotkeys.swift", "AppToolTip.swift", "DisplayOptions.swift", "OriginalCaptureFlash.swift"],
      "ViewTreeAuditTests.swift", "VIEW_TREE_AUDIT_TESTS", ()),
 ]
 # These need the Modern chrome sources; a missing file fails the suite. Only the Font Awesome glyph branch inside them
