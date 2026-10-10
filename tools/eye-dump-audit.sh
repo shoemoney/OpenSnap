@@ -7,6 +7,12 @@
 #
 #   sh tools/eye-dump-audit.sh OUTDIR [--groups main,more,overlays,sizes,fullscreen,states] [--appearances light,dark]
 #                                     [--icons sf|fa|both] [--sizes 980xmin,1024x740,1280x800,1440x900,full]
+#                                     [--display reduceTransparency,increaseContrast,differentiateWithoutColor,reduceMotion]
+#
+# --display simulates system display options INSIDE the throwaway copy only: the list goes to the child as
+# OPENSNAP_AUDIT_DISPLAY_OPTIONS, which the app honours only when it is a harness copy (throwaway bundle id, isolated support
+# folder and home, --eye-dump-audit). No system accessibility setting is ever written. Any subset; default none (the system's own
+# state). The app tags each capture's file stem (-rt -ic -dwc -rm) and records the effective options in every meta/layout JSON and the manifest.
 #
 # Other groups: pairs (the S01/S02/S03/S12 captures that have a pre-rail twin), states (rail-removal state captures S30-S38, S38 being the app tooltip plate: popovers, Frame at 980/1280, large shot, centring, selection, PNG|JPG),
 # layout (width budget), delta (a short regression subset). sizes runs the populated (S11M) and empty (S11E) matrix. --surfaces IDS runs exactly those surface ids.
@@ -23,6 +29,7 @@ GROUPS_WANTED="main,more,overlays,sizes,fullscreen"
 APPEARANCES="light,dark"
 ICONS="sf"
 SIZES=""
+DISPLAY_OPTIONS=""
 APP_SRC=""; SOURCE_SHA=""; SUFFIX=""; CUSTOM=""; GUARD_HOME=""; WAIT_GUI=yes; GROUPS_GIVEN=no
 while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -30,6 +37,7 @@ while [ "$#" -gt 0 ]; do
         --appearances) APPEARANCES=$2; shift 2 ;;
         --icons) ICONS=$2; shift 2 ;;
         --sizes) SIZES=$2; shift 2 ;;
+        --display) DISPLAY_OPTIONS=$2; shift 2 ;;
         --surfaces) CUSTOM=$2; shift 2 ;;
         --app) APP_SRC=$2; shift 2 ;;
         --sha) SOURCE_SHA=$2; shift 2 ;;
@@ -37,6 +45,13 @@ while [ "$#" -gt 0 ]; do
         --guard-home) GUARD_HOME=$2; shift 2 ;;
         --no-wait-gui) WAIT_GUI=no; shift ;;
         *) echo "unknown argument $1" >&2; exit 2 ;;
+    esac
+done
+# Display options are validated before anything else exists: an unknown name is a typo, not something to launch with.
+for option in $(echo "$DISPLAY_OPTIONS" | tr ',' ' '); do
+    case "$option" in
+        reduceMotion|reduceTransparency|increaseContrast|differentiateWithoutColor) ;;
+        *) echo "--display: unknown option '$option' (use reduceTransparency, increaseContrast, differentiateWithoutColor, reduceMotion)" >&2; exit 2 ;;
     esac
 done
 case "$ICONS" in sf) ICON_MODES="sf" ;; fa) ICON_MODES="fa" ;; both) ICON_MODES="sf fa" ;; *) echo "--icons must be sf, fa or both" >&2; exit 2 ;; esac
@@ -104,6 +119,7 @@ $GUARD snapshot "$TMP/guard-before.json" > "$TMP/guard-before.txt"
     echo "guard home       $REAL_HOME"
     echo "bundle id        $THROWAWAY_ID (real id $REAL_ID is never launched)"
     echo "app copy         $APP (copied from $APP_SRC; the source bundle is never executed)"
+    echo "display options  ${DISPLAY_OPTIONS:-none} (simulated inside the throwaway copy only; no system setting is written)"
     echo "isolation        env -i; HOME and CFFIXED_USER_HOME, TMPDIR, OPENSNAP_APP_SUPPORT, OPENSNAP_EVIDENCE_DIR all under $TMP; OPENSNAP_FIXTURE unset"
     echo "destinations     none exist in the throwaway support folder; with OPENSNAP_APP_SUPPORT set the app keeps secrets in memory (no Keychain item is read or written) and the S19/S21 flows stub the uploader"
 } | tee "$OUT/safety.txt"
@@ -167,6 +183,10 @@ prepare_copy() {
 }
 have_fa_fonts() { ls "$APP_SRC/Contents/Resources"/FontAwesome7Pro-*-subset.ttf >/dev/null 2>&1; }
 
+# Only set when --display was given, and only on the env -i child below.
+DISPLAY_ENV=""
+[ -z "$DISPLAY_OPTIONS" ] || DISPLAY_ENV="OPENSNAP_AUDIT_DISPLAY_OPTIONS=$DISPLAY_OPTIONS"
+
 run_one() {
     mode=$1; appearance=$2; surfaces=$3; label=$4
     raw="$OUT/raw-$mode"
@@ -178,7 +198,7 @@ run_one() {
         # shellcheck disable=SC2086
         env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin HOME="$TMP/home" CFFIXED_USER_HOME="$TMP/home" TMPDIR="$TMP/tmp" \
             OPENSNAP_APP_SUPPORT="$support" OPENSNAP_EVIDENCE_DIR="$TMP/evidence" \
-            AUDIT_SOURCE_SHA="$SOURCE_SHA" AUDIT_STEM_SUFFIX="$SUFFIX" \
+            AUDIT_SOURCE_SHA="$SOURCE_SHA" AUDIT_STEM_SUFFIX="$SUFFIX" $DISPLAY_ENV \
             $SANDBOX "$APP/Contents/MacOS/$EXE" --eye-dump-audit "$raw" --audit-appearance "$appearance" --audit-icons "$mode" \
             --audit-surfaces "$surfaces" --audit-sizes "$SIZES" >>"$OUT/run.log" 2>&1
     ) &

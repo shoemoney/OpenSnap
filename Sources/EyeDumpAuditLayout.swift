@@ -265,7 +265,7 @@ extension AuditRun {
                      "Link copied: https://cdn.example.com/pics/Quarterly-mockup-0000.png", "Brush · Unsaved changes · 2400 × 1500 · 610 KB"] {
             typical[text] = textWidth(text, size: 18)
         }
-        write(["sourceSha": sha, "iconMode": iconMode, "appearance": appearance, "widths": widths.map { Double($0) }, "samples": samples, "summary": summary, "statusTextWidthsAt18pt": typical,
-               "note": "frames are window points, top-left origin; fitting = NSView.fittingSize; hidden = isHidden or alpha 0"], to: "layout/budget-\(sha)\(iconMode == "sf" ? "" : "-" + iconMode).json")
+        write(["sourceSha": sha, "iconMode": iconMode, "displayOptions": displayOptionsJSON, "appearance": appearance, "widths": widths.map { Double($0) }, "samples": samples, "summary": summary, "statusTextWidthsAt18pt": typical,
+               "note": "frames are window points, top-left origin; fitting = NSView.fittingSize; hidden = isHidden or alpha 0"], to: "layout/budget-\(sha)\(iconMode == "sf" ? "" : "-" + iconMode)\(injectedDisplayOptions?.stemSuffix ?? "").json")
     }
 }
