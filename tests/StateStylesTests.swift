@@ -195,6 +195,14 @@ private enum StateStylesTests {
                 }
             }
         }
+        // The style itself, with an accent that separates the blend from the opaque fill: a navy accent at 0.20 over the window is a pale tint
+        // (black text) in light, while the opaque navy needs white. Under dark the dark window keeps the tint dark (white text).
+        let navyAccent = NSColor(srgbRed: 0, green: 0.1, blue: 0.5, alpha: 1)
+        let lightSelected = StateStyles.command(.selected, primary: false, focused: false, highContrast: false, differentiate: false, accent: navyAccent, appearance: aqua)
+        let darkSelected = StateStyles.command(.selected, primary: false, focused: false, highContrast: false, differentiate: false, accent: navyAccent, appearance: dark)
+        try expect(lightSelected.content == .black && darkSelected.content == .white, "a selected glyph is chosen against the blended fill, not the opaque accent (light \(lightSelected.content), dark \(darkSelected.content))")
+        let lightPrimary = StateStyles.command(.rest, primary: true, focused: false, highContrast: false, differentiate: false, accent: navyAccent, appearance: aqua)
+        try expect(lightPrimary.content == .white && same(lightPrimary.fill, navyAccent), "Snap on the opaque navy gets white: the opaque fill is what it sits on")
         // computed, not assumed: a fill that white cannot reach gets black, and the other way round, whatever the accent
         let plate = NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 1), darkPlate = NSColor(srgbRed: 0.12, green: 0.12, blue: 0.12, alpha: 1)
         let yellow = NSColor(srgbRed: 1, green: 0.8, blue: 0, alpha: 1), navy = NSColor(srgbRed: 0, green: 0.1, blue: 0.5, alpha: 1)

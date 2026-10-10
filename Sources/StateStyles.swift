@@ -89,8 +89,9 @@ enum StateStyles {
     /// A command button: a tool, Undo, Wipe, Hide, Snap...
     /// - Parameters:
     ///   - selected: the control is also selected while it is hovered or pressed; `.selected` itself already means it.
+    ///   - accent: replaces the system accent colour; tests use it to prove the glyph colour follows the blended fill, whatever the accent.
     static func command(_ state: ControlState, primary: Bool, focused: Bool, highContrast: Bool, differentiate: Bool,
-                        selected: Bool = false, appearance: NSAppearance = .currentDrawing()) -> StateStyle {
+                        selected: Bool = false, accent accentOverride: NSColor? = nil, appearance: NSAppearance = .currentDrawing()) -> StateStyle {
         let arm = arm(for: appearance, highContrast: highContrast)
         let disabled = state == .disabled
         let ring = focused && !disabled
@@ -98,7 +99,7 @@ enum StateStyles {
         let window = resolve(Palette.Surface.window, arm)
 
         if primary {
-            var fill = resolve(Palette.State.primaryFill, arm)
+            var fill = accentOverride ?? resolve(Palette.State.primaryFill, arm)
             if state == .pressed { fill = fill.blended(withFraction: primaryPressedDarkening, of: .black) ?? fill }
             else if state == .hover { fill = fill.blended(withFraction: primaryHoverBrightness, of: .white) ?? fill }
             // The glyph is chosen against the fill that is on screen, not the opaque accent, so a hover or press never costs contrast.
@@ -112,7 +113,7 @@ enum StateStyles {
         if (state == .selected || selected) && !disabled {
             let base = resolve(Palette.State.selectedFill, arm).alphaComponent
             let shown = state == .pressed ? base + selectedPressedBoost : base
-            let accent = resolve(Palette.accent, arm)
+            let accent = accentOverride ?? resolve(Palette.accent, arm)
             return StateStyle(fill: accent.withAlphaComponent(shown),
                               content: Palette.onAccent(fill: accent, alpha: shown, over: window),
                               border: accent, borderWidth: 1, contentAlpha: 1, indicator: differentiate,
