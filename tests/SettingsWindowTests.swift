@@ -940,23 +940,51 @@ private enum SettingsWindowTests {
         expect(backend.bindings[GlobalHotkeyAction.screen.carbonID] != nil && !manager.editing, "a saved shortcut is live while Settings is closed")
         controller.show(tab: SettingsWindowController.captureTabIndex)
         controller.activityChanged(key: false, appActive: false)
+        // F-J7-004: the Capture note says whether the shortcuts are paused, to the eye and to VoiceOver, and always agrees with the manager.
+        func note() -> String { controller.capture.hotkeyForm.statusField.stringValue }
+        func agrees(_ what: String) {
+            let paused = manager.editing
+            let field = controller.capture.hotkeyForm.statusField
+            expect(note() == (paused ? GlobalHotkeyForm.pausedStatus : GlobalHotkeyForm.idleLiveStatus) && (field.accessibilityValue() as? String) == note() && controller.capture.hotkeyForm.shortcutsPaused == paused,
+                   "\(what): the note and its accessibility value say \(paused ? "paused" : "not paused") like the manager (\(note()))")
+        }
         expect(!manager.editing && backend.bindings[GlobalHotkeyAction.screen.carbonID] != nil, "Settings merely shown on Capture, behind another window or app, pauses nothing (R2-001)")
+        agrees("shown, not key")
         controller.activityChanged(key: true, appActive: true)
         expect(manager.editing && backend.bindings.isEmpty, "Settings key and the app active on Capture pauses every shortcut")
+        agrees("key and active")
         controller.windowDidResignKey(Notification(name: NSWindow.didResignKeyNotification, object: controller.window))
         expect(!manager.editing && backend.bindings[GlobalHotkeyAction.screen.carbonID] != nil, "another window becoming key puts them back")
+        agrees("resigned key")
         controller.windowDidBecomeKey(Notification(name: NSWindow.didBecomeKeyNotification, object: controller.window))
         controller.activityChanged(key: true, appActive: true)
         expect(manager.editing, "key again pauses again")
+        agrees("key again")
         controller.activityChanged(appActive: false)
         expect(!manager.editing && backend.bindings[GlobalHotkeyAction.screen.carbonID] != nil, "the app resigning active puts them back")
+        agrees("app deactivated")
         controller.activityChanged(key: true, appActive: true)
         controller.select(0)
         expect(!manager.editing && backend.bindings[GlobalHotkeyAction.screen.carbonID] != nil, "switching to another tab lets them go live again")
+        agrees("other tab")
         controller.select(SettingsWindowController.captureTabIndex)
         expect(manager.editing && backend.bindings.isEmpty, "coming back to Capture pauses them again")
+        agrees("back on Capture")
+        // An error keeps the line until an edit is accepted; the pause state is still tracked underneath it.
+        let form = controller.capture.hotkeyForm!
+        let key = form.keyPopup(for: .window), other = form.keyPopup(for: .fullscreen)
+        other.selectItem(at: 1); _ = other.target?.perform(other.action, with: other)
+        key.selectItem(at: 1); _ = key.target?.perform(key.action, with: key)
+        expect(note().hasPrefix("Error: "), "two actions on one key put an error on the note (\(note()))")
+        controller.activityChanged(key: false)
+        expect(note().hasPrefix("Error: ") && !controller.capture.hotkeyForm.shortcutsPaused, "an error is not overwritten by the pause note when focus leaves, and the pause state is still tracked")
+        other.selectItem(at: 0); _ = other.target?.perform(other.action, with: other)
+        key.selectItem(at: 0); _ = key.target?.perform(key.action, with: key)
+        controller.activityChanged(key: true, appActive: true)
+        agrees("after edits")
         controller.windowHidden()
         expect(!manager.editing && backend.bindings[GlobalHotkeyAction.screen.carbonID] != nil, "hiding the window resumes them")
+        agrees("hidden")
         controller.window.orderOut(nil)
     }
 

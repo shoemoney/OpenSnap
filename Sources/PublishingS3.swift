@@ -257,7 +257,7 @@ struct PublishingS3Plan {
                         username: String, password: String, sessionToken: String = "") throws {
         guard exitCode == 0 else {
             let detail = PublishingPlan.sanitized(stderr, username: username, password: password, sessionToken: sessionToken)
-            throw PublishingFailure("Upload failed (curl \(exitCode))." + (detail.isEmpty ? "" : "\n" + detail))
+            throw PublishingFailure(PublishingPlan.transferFailure(exitCode: exitCode, stdout: stdout, stderr: stderr, detail: detail))
         }
         let lines = stdout.components(separatedBy: "\n")
         guard lines.count == 4, lines.last == "", let code = Int(lines[0]) else {

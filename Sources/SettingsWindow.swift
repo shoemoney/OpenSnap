@@ -317,6 +317,7 @@ final class CaptureSettingsTab: SettingsTabViewController {
             // The status line wraps to one line or more; the grid has not laid it out yet.
             DispatchQueue.main.async { self?.contentChanged() }
         }
+        hotkeyForm.setShortcutsPaused(shortcutsPaused)
         defer { refresh() }
         return [[SettingsLayout.rowLabel("Flash:"), flashCheckbox], [hotkeyForm, NSGridCell.emptyContentView]]
     }
@@ -331,6 +332,10 @@ final class CaptureSettingsTab: SettingsTabViewController {
         guard flashCheckbox != nil else { return }
         flashCheckbox.state = OriginalCaptureFlashTiming.showFlash(defaults: defaults) ? .on : .off
     }
+
+    /// Whether the shortcuts are paused now; kept here so a form built after the window went key still opens in the right state.
+    private(set) var shortcutsPaused = false
+    func setShortcutsPaused(_ paused: Bool) { shortcutsPaused = paused; hotkeyForm?.setShortcutsPaused(paused) }
 
     /// The shortcuts are re-read from the manager only when the window opens, so an error beside an edit survives a refresh.
     func reloadShortcuts() { hotkeyForm?.reload() }
@@ -1064,7 +1069,11 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     /// While the Capture tab is in front the global shortcuts are paused: edits are saved as they are made but go live as soon as the window
     /// is not the one being used (another window key, another app active, the tab left, the window hidden or closed), so a half-entered chord
     /// never starts working system-wide and pressing one to try it cannot start a capture. Merely leaving the window open pauses nothing (R2-001).
-    private func updateShortcutEditing() { hotkeys.setEditing(isShown && isKey && appIsActive && selectedIndex == Self.captureTabIndex) }
+    private func updateShortcutEditing() {
+        let editing = isShown && isKey && appIsActive && selectedIndex == Self.captureTabIndex
+        hotkeys.setEditing(editing)
+        capture.setShortcutsPaused(editing)
+    }
 
     /// Window and app activity as the delegate and the application report it; a test drives it directly.
     func activityChanged(key: Bool? = nil, appActive: Bool? = nil) {

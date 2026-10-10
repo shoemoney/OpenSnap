@@ -528,6 +528,27 @@ enum PublishingDestinationsTests {
         panel.contentView?.layoutSubtreeIfNeeded()
         let successFrame = box(view.formResult)
         try expect(successFrame.minY >= buttonsTop() - 0.5 && successFrame.height < errorFrame.height, "a success is shorter than the error and still clear of the buttons: \(successFrame)")
+        // F-J7-001: every WebDAV Test note that can come back, with a login and without, is shown whole at the narrowest and the widest
+        // sheet: the field's wrapped height at its laid-out width equals its frame, so nothing is cut with an ellipsis.
+        func webDAV(_ code: String, user: String) -> String { PublishingConnectionTest.webDAVOutcome(stdout: code, exitCode: 0, stderr: "", username: user, password: user.isEmpty ? "" : "pw").message }
+        let notes = [webDAV("207", user: "me"), webDAV("200", user: ""), webDAV("405", user: "me"), webDAV("501", user: "")]
+        try expect(notes[0].hasSuffix("Nothing was uploaded.") && notes[0].contains("(HTTP 207)"), "the login note ends with its closing sentence: \(notes[0])")
+        for (hostWidth, label) in [(CGFloat(640), "640"), (CGFloat(900), "900")] {
+            let (widthPanel, widthView) = publisher.buildEditor(editing: nil, visibleFrame: screen, hostWidth: hostWidth)
+            defer { widthPanel.orderOut(nil) }
+            widthView.showForm(for: nil); widthView.protocolPopup.selectItem(withTitle: PublishingProtocol.webDAV.title); widthView.formChanged()
+            for note in notes {
+                widthView.showTestResult(ok: true, message: note)
+                widthPanel.contentView?.layoutSubtreeIfNeeded()
+                let field = widthView.formResult.detail
+                // Measured without the field's own line cap, so a note that needs a fourth line cannot hide behind it.
+                let natural = (note as NSString).boundingRect(with: NSSize(width: field.frame.width, height: 10_000), options: .usesLineFragmentOrigin, attributes: [.font: try unwrap(field.font)])
+                let captionLine = ceil(NSLayoutManager().defaultLineHeight(for: DesignTokens.Typography.font(.caption)))
+                try expect(natural.height <= 3 * captionLine + 1, "the note needs more than three lines at \(label) pt: \(natural.height) pt for “\(note)”")
+                try expect(field.frame.height >= natural.height - 0.5 && field.stringValue == note && field.maximumNumberOfLines >= 3,
+                           "the whole note is visible at \(label) pt (frame \(field.frame.height) pt, needs \(natural.height) pt): “\(note)”")
+            }
+        }
         // A result for a form is gone with the form: the band returns to its one idle line and the form its room.
         view.showForm(for: nil); view.protocolPopup.selectItem(withTitle: PublishingProtocol.s3.title); view.formChanged()
         panel.contentView?.layoutSubtreeIfNeeded()
@@ -666,6 +687,31 @@ enum PublishingDestinationsTests {
         let asked = server.requests
         try expect(asked.count == 4 && asked.allSatisfy { $0.line.hasPrefix("PROPFIND /dav/") && $0.length == 0 }, "the stub saw four PROPFIND and no body, and no OPTIONS: \(asked.map(\.line))")
         try expect(asked.allSatisfy { !$0.line.hasPrefix("PUT ") && !$0.line.hasPrefix("POST ") && !$0.line.hasPrefix("DELETE ") && !$0.line.hasPrefix("MKCOL ") }, "no request wrote anything")
+
+        // F-J7-002: the real upload against a stub that refuses every PUT. The error leads with the status the server sent, not curl's exit
+        // code 22, so the footer can read "Upload failed · HTTP 403"; the password never appears.
+        func refusedUpload(_ status: Int) throws -> String {
+            let refusing = try LoopbackHTTP { line, _ in line.hasPrefix("PUT ") ? status : 400 }
+            defer { refusing.stop() }
+            let upload = try plan(settings(.webDAV, endpoint: "http://127.0.0.1:\(refusing.port)/dav"))
+            nonisolated(unsafe) var outcome: Result<URL, Error>?
+            let done = DispatchSemaphore(value: 0)
+            DispatchQueue.global().async {
+                outcome = Result { try PublishingTransfer.upload(data: Data("synthetic image bytes".utf8), plan: upload, username: "me", password: "hunter2-pw") }
+                done.signal()
+            }
+            guard done.wait(timeout: .now() + 40) == .success else { throw PublishingFailure("SELF-CHECK FAILED: the loopback upload hung") }
+            do { _ = try outcome!.get() } catch { return (error as? PublishingFailure)?.message ?? "\(error)" }
+            throw PublishingFailure("SELF-CHECK FAILED: a refused PUT counted as an upload")
+        }
+        for status in [403, 507] {
+            let message = try refusedUpload(status)
+            try expect(message.components(separatedBy: "\n")[0] == "Upload failed · HTTP \(status)" && !message.contains("hunter2") && !message.hasPrefix("Upload failed (curl"),
+                       "a \(status) from a WebDAV PUT leads with the status, not curl 22: \(message)")
+        }
+        try expect(PublishingPlan.transferFailure(exitCode: 22, stdout: "", stderr: "curl: (22) The requested URL returned error: 404", detail: "x").hasPrefix("Upload failed · HTTP 404\n"), "the status is also read from curl's own words")
+        try expect(PublishingPlan.transferFailure(exitCode: 6, stdout: "403\n", stderr: "curl: (6) Could not resolve host", detail: "").hasPrefix("Upload failed (curl 6)."), "an exit that is not an HTTP error keeps curl's code")
+        try expect(PublishingPlan.transferFailure(exitCode: 22, stdout: "", stderr: "curl: (22) something else", detail: "").hasPrefix("Upload failed (curl 22)."), "a 22 with no status anywhere keeps curl's code")
     }
 
     /// --live-s3 "<destination name>": upload a tiny PNG, verify its public URL, print it, then DELETE the object.

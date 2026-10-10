@@ -7,7 +7,7 @@ extension AppSafetyTests {
     static var batch6Cases: [(String, () throws -> Void)] {
         [
             ("With Original size ticked, Resize, Crop and Limit change the picture itself: title, status, export, drag, copy and upload all carry the new pixels (F-J6-001, R2-002)", b6TickedPictureSize),
-            ("Unticked, Resize changes only the shown size; the picture's own pixels come back when the box is ticked (F-J6-001)", b6UntickedShownSize),
+            ("Unticked, Resize and Limit rewrite the picture exactly as when ticked: one rule, so ticking the box afterwards changes nothing (F-J6-001, F-J7-005)", b6UntickedShownSize),
             ("Copy Image sends the same pixels as export, drag and upload, with the box ticked and unticked (F-J6-002)", b6CopyImage),
             ("Apply keeps the change and the sheet; Cancel then undoes only what was typed after it; OK straight after Apply adds no second step (F-J6-007)", b6ApplyCommits),
             ("The title and the footer follow the Original size box in the same pass, before the byte-count timer (F-J6-005)", b6TitleFollowsBox),
@@ -113,15 +113,46 @@ extension AppSafetyTests {
         try b6Large(app)
         app.dragOriginalControl.state = .off; app.updateDragPreview()
         let shown = app.canvas.outputSize
+        // A request for the size already shown changes nothing: no edit, no Undo step, the picture keeps its pixels.
+        let same = try app.makeResizeSession().b6Unwrap("a no-change session")
+        _ = try same.commit()
+        try expect(app.canvas.canvasSize == CGSize(width: 2400, height: 1600) && !app.canvas.editingUndoManager.canUndo, "Apply at the shown size is no edit (\(app.canvas.canvasSize))")
+        same.cancel()
         let session = try app.makeResizeSession().b6Unwrap("the resize session")
-        session.state.edit(.width, text: String(Int(shown.width) / 2))
+        let half = Int(shown.width) / 2
+        session.state.edit(.width, text: String(half))
         try expect(try session.commit(), "Apply half the shown width")
-        try expect(app.canvas.canvasSize == CGSize(width: 2400, height: 1600), "The picture's own pixels are untouched (\(app.canvas.canvasSize))")
-        try b6AllAgree(app, board, app.canvas.outputSize, "Resized, unticked")
-        try expect(abs(app.canvas.outputSize.width - shown.width / 2) <= 1, "Half the shown width (\(app.canvas.outputSize) from \(shown))")
+        // The picture itself is now the chosen size; there is no older, larger picture left behind for the box to bring back.
+        let chosen = app.canvas.canvasSize
+        try expect(abs(chosen.width - CGFloat(half)) <= 1 && abs(chosen.height / chosen.width - 1600.0 / 2400.0) < 0.01, "The picture is the chosen \(half) wide, in proportion (\(chosen))")
+        try b6AllAgree(app, board, chosen, "Resized, unticked")
+        try expect(app.canvas.outputSize == chosen && !app.isLargeShot && app.dragOriginalControl.isHidden, "Picture and shown size agree, so the box has nothing to offer (\(app.canvas.outputSize))")
+        // Ticking is a no-op: nothing jumps back to 2400 × 1600.
         app.dragOriginalControl.state = .on; app.updateDragPreview()
-        try b6AllAgree(app, board, CGSize(width: 2400, height: 1600), "Same picture, ticked")
+        try b6AllAgree(app, board, chosen, "Resized, then ticked")
+        app.dragOriginalControl.state = .off; app.updateDragPreview()
+        try b6AllAgree(app, board, chosen, "Resized, ticked, unticked again")
         session.cancel()
+        // The same size reached ticked gives the same picture, byte for byte in size.
+        app.undo()
+        try expect(app.canvas.canvasSize == CGSize(width: 2400, height: 1600), "One Undo returns the original (\(app.canvas.canvasSize))")
+        app.dragOriginalControl.state = .on; app.updateDragPreview()
+        let tickedSession = try app.makeResizeSession().b6Unwrap("a ticked session")
+        tickedSession.state.edit(.width, text: String(Int(chosen.width)))
+        try expect(try tickedSession.commit(), "Apply the same width ticked")
+        try expect(app.canvas.canvasSize == chosen, "Ticked and unticked reach the same picture (\(app.canvas.canvasSize) vs \(chosen))")
+        tickedSession.cancel()
+        // Limit follows the same rule when unticked.
+        while app.canvas.editingUndoManager.canUndo { app.undo() }
+        app.dragOriginalControl.state = .off; app.updateDragPreview()
+        let limit = try app.makeResizeSession().b6Unwrap("a limit session")
+        limit.state.setMode(.limit); limit.state.limitText = "900"
+        try expect(try limit.commit(), "Apply a limit unticked")
+        try expect(app.canvas.canvasSize == CGSize(width: 900, height: 600), "Limit 900 rewrites the picture to 900 × 600 (\(app.canvas.canvasSize))")
+        try b6AllAgree(app, board, CGSize(width: 900, height: 600), "Limited, unticked")
+        app.dragOriginalControl.state = .on; app.updateDragPreview()
+        try b6AllAgree(app, board, CGSize(width: 900, height: 600), "Limited, then ticked")
+        limit.cancel()
     }
 
     private static func b6CopyImage() throws {

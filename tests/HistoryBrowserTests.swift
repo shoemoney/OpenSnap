@@ -783,7 +783,13 @@ struct HistoryBrowserTests {
                     browser.update(items:[shared]); browser.select(ids:[shared.id]); laidOut(browser,width:1000,height:640)
                     let fields = descendants(browser.window!.contentView!).compactMap { $0 as? NSTextField }
                     let size = fields.first { $0.accessibilityLabel() == "Size" }, date = fields.first { $0.accessibilityLabel() == "Date" }
-                    try expect(size?.stringValue == "800 × 600","A shared entry reports what was published: \(size?.stringValue ?? "none")")
+                    try expect(size?.stringValue == "800 × 600 (published)","A shared entry reports what was published, and says so: \(size?.stringValue ?? "none")")
+                    // F-J7-003: the web copy goes (link gone, nothing else about the entry moves) and the same selection reads the same Size.
+                    var taken = shared; taken.link = nil; taken.canDeleteFromWeb = false
+                    browser.update(items:[taken]); browser.select(ids:[taken.id]); laidOut(browser,width:1000,height:640)
+                    let afterDelete = descendants(browser.window!.contentView!).compactMap { $0 as? NSTextField }.first { $0.accessibilityLabel() == "Size" }
+                    try expect(afterDelete?.stringValue == "800 × 600 (published)","After Delete from Web the Size is unchanged: \(afterDelete?.stringValue ?? "none")")
+                    browser.update(items:[shared]); browser.select(ids:[shared.id])
                     guard let date else { throw Failure("Missing Date field") }
                     try expect(date.stringValue.hasSuffix("PM"),"The time of day with its AM/PM is in the text: \(date.stringValue)")
                     date.superview?.layoutSubtreeIfNeeded()
