@@ -116,6 +116,7 @@ private enum GlassChromeTests {
             surfaceTests()
             let fonts = fontDirectory()
             chromeTests(glyphs: false)
+            uploadVariantChecks()
             if let fonts {
                 for family in FAFamily.allCases {
                     expect(FontAwesomeFont.register(url: fonts.appendingPathComponent(family.resourceName + ".ttf"), family: family), "Subset font \(family) registers")
@@ -1312,6 +1313,78 @@ private enum GlassChromeTests {
             }
         }
         canvasReachesMarginChecks(tag, minimum: minimum)
+        adaptiveCheckboxChecks(tag, minimum: minimum)
+    }
+
+    /// Audit fix 1 (item 3): the Original size checkbox steps aside during an upload only where the measured slot cannot hold it beside the
+    /// status minimum and the commands. At 980 it cannot (in every state); at 1440 it can, and everything then fits without overlap.
+    private static func adaptiveCheckboxChecks(_ tag: String, minimum: NSSize) {
+        let url = URL(string: "https://cdn.example.com/pics/x.png")!
+        let states: [(String, UploadState)] = [("uploading", .uploading(name: String(repeating: "A long screenshot name ", count: 4))), ("Link copied", .success(url: url, copied: true)),
+                                               ("error", .failure(message: "Upload to Example S3 failed: the connection was refused."))]
+        for width in [980, 1440] as [CGFloat] {
+            let rig = makeRig(NSSize(width: width, height: width == 980 ? minimum.height : 740))
+            let chrome = rig.chrome, shared = rig.controls, upload = chrome.uploadControls
+            let checkbox = shared.dragOriginalControl.fittingSize.width
+            let save = rect(group(rig, "GlassSaveGroup"), in: rig), view = rect(group(rig, "GlassViewGroup"), in: rig)
+            let measured = save.minX - 12 - (view.maxX + 12)
+            expect(abs(chrome.statusSlotWidth() - measured) < 0.5, "\(tag) \(Int(width)): statusSlotWidth is the room the laid-out bar leaves (\(chrome.statusSlotWidth()) vs \(measured))")
+            for (name, state) in states {
+                let label = "\(tag) \(Int(width)) \(name)"
+                upload.apply(state)
+                let fits = chrome.slotHasRoomForCheckbox(during: state)
+                shared.dragOriginalControl.isHidden = false // forced on: what the bar would do if the rule did not step in
+                shared.status.stringValue = state.statusText ?? ""
+                shared.status.invalidateIntrinsicContentSize()
+                rig.content.layoutSubtreeIfNeeded()
+                let status = rect(shared.status, in: rig), box = rect(shared.dragOriginalControl, in: rig)
+                if width == 980 {
+                    expect(!fits, "\(label): at 980 the \(Int(chrome.statusSlotWidth())) pt slot cannot hold the checkbox (\(Int(checkbox)) pt) with the status minimum and commands (\(Int(chrome.slotNeed(for: state))) pt)")
+                    expect(status.width < ModernEditorChrome.minimumUploadStatusWidth, "\(label): the rule is not vacuous, with the checkbox forced on the status would drop to \(Int(status.width)) pt")
+                } else {
+                    expect(fits, "\(label): at 1440 the \(Int(chrome.statusSlotWidth())) pt slot holds the checkbox (\(Int(checkbox)) pt) and \(Int(chrome.slotNeed(for: state))) pt of message and commands")
+                    expect(status.width >= ModernEditorChrome.minimumUploadStatusWidth - 0.5, "\(label): with the checkbox shown the status keeps \(Int(status.width)) pt")
+                    expect(box.intersection(status).width <= 0.5 && box.maxX <= status.minX + 0.5, "\(label): the checkbox stands clear of the status (\(box) vs \(status))")
+                }
+            }
+            upload.apply(.idle)
+        }
+        // A window between the two: the answer follows the measured width, flipping exactly where the slot grows past the need.
+        var previous = false
+        for width in stride(from: 980 as CGFloat, through: 1500, by: 20) {
+            let rig = makeRig(NSSize(width: width, height: 740))
+            let state = UploadState.failure(message: "x")
+            let fits = rig.chrome.slotHasRoomForCheckbox(during: state)
+            let need = rig.chrome.slotNeed(for: state) + 12 + rig.controls.dragOriginalControl.fittingSize.width
+            expect(fits == (rig.chrome.statusSlotWidth() >= need) && (fits || !previous), "\(tag) \(Int(width)): the answer is the measured comparison and never flips back as the window grows")
+            previous = fits
+        }
+        expect(previous, "\(tag): by 1500 pt the checkbox stays beside an error")
+    }
+
+    /// Audit fix 1 (item 2): "Link copied" shows the link itself, cut in the middle as the slot narrows, and gives up the link before itself.
+    private static func uploadVariantChecks() {
+        let url = URL(string: "https://cdn.shoemoney.com/pics/Shot-20261010-153012.png")!
+        let variants = UploadState.success(url: url, copied: true).statusVariants
+        expect(variants.first == "Link copied · cdn.shoemoney.com/pics/Shot-20261010-153012.png", "The longest variant is Link copied · the address without its scheme (\(variants.first ?? ""))")
+        expect(variants.count > 5 && variants.last == variants.first, "There are middle-cut steps, and the whole sentence comes last so the cell cuts it at its tail when nothing fits (\(variants.count))")
+        expect(zip(variants.dropLast(), variants.dropLast().dropFirst()).allSatisfy { $0.count > $1.count }, "The steps only get shorter")
+        expect(variants.dropFirst().dropLast().allSatisfy { $0.hasPrefix("Link copied · ") && $0.contains("…") }, "Every step after the first keeps Link copied · and cuts the address in its middle")
+        expect(variants.dropFirst().dropLast().allSatisfy { $0.hasPrefix("Link copied · cdn") && $0.hasSuffix("png") }, "The host's start and the file name's end survive the cuts (\(variants[3]))")
+        expect(UploadState.success(url: url, copied: true).detailText == "Link copied: " + url.absoluteString, "The full URL stays in the tooltip and the VoiceOver help")
+        expect(UploadState.success(url: url, copied: false).statusVariants == ["Published image"] && UploadState.idle.statusVariants.isEmpty, "An uncopied link and idle have no link text")
+        expect(UploadState.uploading(name: "Shot").statusVariants == ["Uploading Shot…"] && UploadState.failure(message: "No.\nMore").statusVariants == ["Error: No."], "Uploading and error stay one sentence")
+        expect(UploadState.middleTruncated("abcdefghij", to: 6) == "ab…hij" && UploadState.middleTruncated("abc", to: 6) == "abc", "middleTruncated keeps the end a little longer than the start")
+        let field = StatusTextField(labelWithString: "")
+        field.font = DesignTokens.Typography.font(.body)
+        field.lineBreakMode = .byTruncatingTail
+        field.setVariants(variants)
+        func shown(_ width: CGFloat) -> String { field.setFrameSize(NSSize(width: width, height: 24)); return field.stringValue }
+        expect(shown(2000) == variants.first, "A wide slot shows the whole sentence")
+        let mid = shown(340)
+        expect(mid != variants.first && mid != "Link copied" && mid.hasPrefix("Link copied · ") && mid.contains("…"), "A narrower slot cuts the middle of the link (\(mid))")
+        expect(shown(150) == variants.first && !shown(150).dropFirst(11).contains("……") && field.spokenValue == nil, "A slot too narrow for any step shows the whole sentence and lets the cell cut its tail, so Link copied leads and no second ellipsis appears")
+        expect(field.cell?.cellSize.width ?? 0 > 150 && field.lineBreakMode == .byTruncatingTail, "...that cut is the status line's own tail truncation")
     }
 
     // MARK: T15 regression tests (each fails if the rail, its blank column or an overflow comes back)
@@ -1387,8 +1460,9 @@ private enum GlassChromeTests {
     }
 
     /// FooterLayoutTests (OSN-054): an upload swaps what sits in the status slot and never widens the bar. In each state the commands that
-    /// belong to it are inside the bar, whole and clear of every other control, the status gives way (truncating at its tail) before any
-    /// control clips, the Original size checkbox is out of the way while uploading, and the PNG | JPG toggle still exposes its two children.
+    /// belong to it are icon buttons on one plate, inside the bar, whole and clear of every other control, the status gives way (truncating
+    /// at its tail) before any control clips, the Original size checkbox is out of the way exactly where the slot cannot hold it (the
+    /// measured rule, `slotHasRoomForCheckbox`), and the PNG | JPG toggle still exposes its two children.
     private static func footerUploadChecks(_ rig: Rig, _ label: String) {
         let chrome = rig.chrome, shared = rig.controls, upload = chrome.uploadControls
         let footer = rect(descendantsOf(chrome).first { $0.identifier?.rawValue == "OpenSnapFooter" }!, in: rig)
@@ -1397,21 +1471,19 @@ private enum GlassChromeTests {
         let fixed: [NSView] = [chrome.undoButton, chrome.wipeButton, shared.zoomControl, chrome.resizeButton, chrome.saveButton, chrome.historyButton,
                                shared.dragFormatControl, shared.dragExportView, chrome.shareButton]
         let widthBefore = chrome.measuredWindowWidth()
-        func fixedWidth(_ button: CommandButton) -> CGFloat {
-            if button.visibleTitle.isEmpty { return GlassChrome.Metrics.iconButton.width }
-            return ceil((button.visibleTitle as NSString).size(withAttributes: [.font: button.font as Any]).width) + 2 * DesignTokens.Space.s3
-        }
-        let all: [(String, CommandButton)] = [("Cancel upload", upload.cancelButton), ("Open link", upload.openButton), ("Copy link", upload.copyButton), ("Retry", upload.retryButton), ("Details…", upload.detailsButton)]
+        let all: [(String, CommandButton)] = [("Cancel upload", upload.cancelButton), ("Open link", upload.openButton), ("Copy link", upload.copyButton), ("Retry", upload.retryButton), ("Details", upload.detailsButton)]
         let states: [(String, UploadState, [String])] = [
             ("uploading", .uploading(name: longName), ["Cancel upload"]),
             ("uploading a short name", .uploading(name: "Shot"), ["Cancel upload"]),
             ("success", .success(url: url, copied: true), ["Open link", "Copy link"]),
-            ("failure", .failure(message: "The file uploaded, but public URL verification failed or timed out. No link was copied."), ["Retry", "Details…"])
+            ("failure", .failure(message: "The file uploaded, but public URL verification failed or timed out. No link was copied."), ["Retry", "Details"])
         ]
         for (name, state, commands) in states {
             let tag = "\(label) \(name)"
             upload.apply(state)
-            shared.dragOriginalControl.isHidden = state.occupiesStatusSlot // the app hides the checkbox while an upload has the slot
+            // The app keeps the checkbox only where the measured slot holds it beside the message and the commands.
+            let checkboxFits = chrome.slotHasRoomForCheckbox(during: state)
+            shared.dragOriginalControl.isHidden = state.occupiesStatusSlot && !checkboxFits
             shared.status.stringValue = state.statusText ?? ""
             shared.status.invalidateIntrinsicContentSize()
             rig.content.layoutSubtreeIfNeeded()
@@ -1429,10 +1501,15 @@ private enum GlassChromeTests {
                 guard shown else { continue }
                 let frame = rect(button, in: rig)
                 expect(footer.insetBy(dx: -0.5, dy: -0.5).contains(frame), "\(tag): \(title) lies inside the bottom bar (\(frame) vs \(footer))")
-                expect(abs(frame.width - fixedWidth(button)) < 0.5, "\(tag): \(title) is not squeezed (\(frame.width) of \(fixedWidth(button)))")
-                expect(frame.height >= 36 && (button.font?.pointSize ?? 0) >= 18, "\(tag): \(title) is 36 pt tall with readable type")
+                expect(abs(frame.width - GlassChrome.Metrics.iconButton.width) < 0.5, "\(tag): \(title) is not squeezed (\(frame.width) of \(GlassChrome.Metrics.iconButton.width))")
+                expect(frame.height >= 36 && button.visibleTitle.isEmpty && button.icon != nil, "\(tag): \(title) is a 36 pt icon button")
+                expect(button.showsRestPlate && button.plate.style.fill != nil, "\(tag): \(title) carries a rest plate, so it reads as a button before the pointer arrives")
                 occupied.append((title, frame))
             }
+            expect(surfaces(rig).count == 8 && surfaces(rig).allSatisfy { $0.identifier?.rawValue != "GlassUploadCommands" }, "\(tag): the upload adds no glass plate; the bars still hold eight")
+            let spinnerPart: CGFloat = state.isUploading ? UploadStatusControls.spinnerSide + ModernEditorChrome.statusRowSpacing : 0
+            expect(abs(chrome.slotNeed(for: state) - (ModernEditorChrome.minimumUploadStatusWidth + spinnerPart + CGFloat(commands.count) * (GlassChrome.Metrics.iconButton.width + ModernEditorChrome.statusRowSpacing))) < 0.5,
+                   "\(tag): slotNeed counts the message minimum, the spinner and each command with its gap")
             let status = rect(shared.status, in: rig)
             occupied.append(("status", status))
             for (index, a) in occupied.enumerated() {
@@ -1450,7 +1527,7 @@ private enum GlassChromeTests {
             if let first = all.first(where: { commands.contains($0.0) }) {
                 expect(status.maxX <= rect(first.1, in: rig).minX + 0.5, "\(tag): the status ends before the first command (\(status.maxX) vs \(rect(first.1, in: rig).minX))")
             }
-            expect(shared.dragOriginalControl.isHidden, "\(tag): the Original size checkbox is out of the way while the upload has the slot")
+            expect(shared.dragOriginalControl.isHidden == !checkboxFits, "\(tag): the Original size checkbox is \(checkboxFits ? "kept" : "out of the way") where the slot \(checkboxFits ? "holds" : "cannot hold") it (slot \(Int(chrome.statusSlotWidth())) pt, needs \(Int(chrome.slotNeed(for: state) + 12 + shared.dragOriginalControl.fittingSize.width)))")
             if name != "uploading a short name" { print("  footer @\(Int(rig.size.width)) \(name): the status gets \(Int(status.width)) of the \(Int(slot.width)) pt slot") }
             expect(abs(chrome.measuredWindowWidth() - widthBefore) < 0.5, "\(tag): the bar does not widen (\(chrome.measuredWindowWidth()) vs \(widthBefore))")
             let children = shared.dragFormatControl.accessibilityChildren() ?? []
@@ -1613,9 +1690,9 @@ private enum GlassChromeTests {
         for (button, title, hit) in [(chrome.hideButton, "Hide", "hide"), (chrome.photosButton, "Photos", "photos"), (chrome.saveButton, "Save", "saveHistory"),
                                      (chrome.historyButton, "History", "showHistory"), (chrome.snapButton, "Snap", "snap"),
                                      (chrome.cancelFrameButton, "Cancel", "cancelFrame"), (chrome.fontButton, "Font", "font"), (chrome.undoButton, "Undo", "undo"),
-                                     (chrome.wipeButton, "Wipe", "wipe"), (chrome.resizeButton, "Resize…", "resize")] {
-            expect(button.title == title, "\(label): \(title) keeps its classic name")
-            expect(button.accessibilityLabel() == title, "\(label): \(title) is read by its old title")
+                                     (chrome.wipeButton, "Clear image", "wipe"), (chrome.resizeButton, "Resize…", "resize")] {
+            expect(button.title == title, "\(label): \(title) keeps its name")
+            expect(button.accessibilityLabel() == title, "\(label): \(title) is read by its title")
             expect(button.controlSize == .extraLarge, "\(label): \(title) uses Apple's Extra Large control size")
             expect(button.icon != nil && button.image != nil && button.imagePosition == .imageOnly && button.visibleTitle.isEmpty, "\(label): \(title) is icon-only")
             expect(button.identifier == nil, "\(label): \(title) has no identifier, as in classic")
@@ -1708,7 +1785,7 @@ private enum GlassChromeTests {
         let expected: [(NSButton, String, String)] = [
             (chrome.hideButton, "Hide", "Hide (⌘M)"), (chrome.photosButton, "Photos", "Photos"), (chrome.saveButton, "Save", "Save to History"),
             (chrome.historyButton, "History", "History"), (chrome.snapButton, "Snap", snapToolTip), (chrome.cancelFrameButton, "Cancel", "Cancel"),
-            (chrome.fontButton, "Font", "Font"), (chrome.undoButton, "Undo", "Undo (⌘Z)"), (chrome.wipeButton, "Wipe", "Wipe"),
+            (chrome.fontButton, "Font", "Font"), (chrome.undoButton, "Undo", "Undo (⌘Z)"), (chrome.wipeButton, "Clear image", "Clear image"),
             (chrome.resizeButton, "Resize…", "Resize…"),
             (chrome.shareButton, "Upload image", "Upload image")]
         for (button, name, tip) in expected {
@@ -1723,9 +1800,9 @@ private enum GlassChromeTests {
         expect(shared.toolbox.imagePosition == .imageOnly && shared.toolbox.accessibilityLabel() == "Toolbox", "\(label): Toolbox is icon-only")
         expect(shared.sizeLabel.superview == nil && AppToolTip.text(for: shared.widthControl) == "Size", "\(label): the Size text is gone; the pill keeps a tooltip")
         // Retitles move the tooltip and label, not drawn text.
-        chrome.wipeButton.title = "Blank"
-        expect(AppToolTip.text(for: chrome.wipeButton) == "Blank" && chrome.wipeButton.accessibilityLabel() == "Blank" && chrome.wipeButton.visibleTitle.isEmpty, "\(label): Wipe's staged title becomes its tooltip and label")
-        chrome.wipeButton.title = "Wipe"
+        chrome.wipeButton.title = "Remove annotations"
+        expect(AppToolTip.text(for: chrome.wipeButton) == "Remove annotations" && chrome.wipeButton.accessibilityLabel() == "Remove annotations" && chrome.wipeButton.visibleTitle.isEmpty, "\(label): Wipe's staged name becomes its tooltip and label")
+        chrome.wipeButton.title = "Clear image"
     }
 
     private static func frameModeChecks(_ rig: Rig, _ label: String) {
@@ -1796,7 +1873,12 @@ private enum GlassChromeTests {
         expect(saturated().count == 1 && saturated()[0] === chrome.snapButton, "\(label): at rest exactly one saturated accent exists: Snap (\(saturated().map(describe)))")
         expect(chrome.snapButton.plate.style.fill?.alphaComponent == 1, "\(label): Snap's fill is the accent at 1.0")
         for view in owners where view !== chrome.snapButton {
-            expect(plateOf(view)?.style.fill == nil, "\(label): \(describe(view)) has no fill at rest")
+            if let restPlated = view as? CommandButton, restPlated.showsRestPlate {
+                // The upload's commands sit on the bar and carry the faint rest plate on purpose (audit fix 1); it is never a saturated accent.
+                expect(abs((restPlated.plate.style.fill?.alphaComponent ?? 0) - StateStyles.restPlateAlpha(highContrast: false)) < 0.001, "\(label): \(describe(view)) rests on the faint plate (0.06)")
+            } else {
+                expect(plateOf(view)?.style.fill == nil, "\(label): \(describe(view)) has no fill at rest")
+            }
         }
         chrome.toolButtons["ellipse"]?.appearance = NSAppearance(named: .aqua)
         chrome.toolButtons["ellipse"]?.state = .on

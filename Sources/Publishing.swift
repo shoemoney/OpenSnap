@@ -1033,6 +1033,7 @@ public final class PublishingCoordinator: NSObject {
         pendingCompletion = nil; completion?(result)
     }
     @objc func cancelSettings() {
+        destinationsView?.dismissRemovalQuestion()
         if let panel = settingsPanel { dismissSheet(panel) }
         settingsPanel = nil; destinationsView = nil
     }

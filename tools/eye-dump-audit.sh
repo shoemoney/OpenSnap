@@ -226,7 +226,7 @@ for mode in $ICON_MODES; do
         for group in $(echo "$GROUPS_WANTED" | tr ',' ' '); do
             case "$group" in
                 main) run_one "$mode" "$appearance" "ENV,S01,S11,S02,S03,S04,S05,S06,S07,S08,S09,S10" main ;;
-                more) run_one "$mode" "$appearance" "S12,S16,S17,S18,S19,S20,S21,S22,S23,S24,S25,S26,S28,S29" more ;;
+                more) run_one "$mode" "$appearance" "S12,S16,S17,S18,S19,S20,S21,S22,S23,S24,S25,S26,S26D,S28,S29" more ;;
                 overlays) run_one "$mode" "$appearance" "S13,S14,S15" overlays ;;
                 sizes) run_one "$mode" "$appearance" "S11M,S11E" sizes ;;
                 fullscreen) run_one "$mode" "$appearance" "S11F,S11FP" fullscreen ;;

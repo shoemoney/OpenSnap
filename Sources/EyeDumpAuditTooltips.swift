@@ -32,5 +32,28 @@ extension AuditRun {
             tip.dismiss()
         }
         AppToolTip.setText(nil, for: app.zoomControl)
+        wipeTooltips(tip)
+    }
+
+    /// The Wipe button names what it does, not the legacy stage: "Remove annotations" over artwork, "Clear image" over a snap alone,
+    /// and a dimmed button that says why ("Nothing to clear") on a blank canvas. The plate opens above the footer button.
+    private func wipeTooltips(_ tip: AppToolTip) {
+        guard let wipe = app.wipeButton else { gap("S38", "Tooltip wipe", "the Wipe button was not found"); return }
+        _ = addAllAnnotationKinds(scale: 1)
+        app.updateWipeButton(); pump(0.3)
+        func capture(_ slug: String, _ state: String) {
+            guard AppToolTip.text(for: wipe) != nil else { gap("S38", "Tooltip " + slug, "the Wipe button has no tooltip text"); return }
+            tip.show(for: wipe)
+            guard let plate = tip.panel, tip.isShown else { gap("S38", "Tooltip " + slug, "the tooltip plate did not appear"); return }
+            shoot("S38", "tooltip-\(slug)-w980", surface: "App tooltip", state: state, windows: [window, plate], refs: ["App.swift|func updateWipeButton", "Canvas.swift|enum WipeStage"], settle: 0.3,
+                  extra: ["tooltipText": tip.shownText ?? "", "wipeAccessibilityLabel": wipe.accessibilityLabel() ?? "", "wipeAccessibilityHelp": wipe.accessibilityHelp() ?? "", "wipeEnabled": wipe.isEnabled,
+                          "tooltipFontPoints": Double(tip.label?.font?.pointSize ?? 0), "tooltipFrame": NSStringFromRect(plate.frame)])
+            tip.dismiss()
+        }
+        capture("wipe-annotations", "Wipe over artwork: the plate says Remove annotations")
+        app.canvas.wipe(); app.updateWipeButton(); pump(0.3)
+        capture("wipe-image", "Wipe over a snap alone: the plate says Clear image")
+        app.canvas.wipe(); app.updateWipeButton(); pump(0.3)
+        capture("wipe-blank", "Wipe on a blank canvas: dimmed, the plate says Nothing to clear")
     }
 }

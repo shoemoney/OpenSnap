@@ -173,8 +173,10 @@ extension AppDelegate {
     func updateViewportChrome() {
         resizeButton?.isEnabled = !isActualSize && !frameMode
         zoomControl.isEnabled = !isActualSize
-        // An upload (running, done or failed) gives the checkbox's place to its message and commands, so the bar never widens.
-        dragOriginalControl.isHidden = isActualSize || frameMode || !isLargeShot || uploadState.occupiesStatusSlot
+        // An upload (running, done or failed) keeps the checkbox only when the slot, at this window width, holds it beside the message and
+        // commands; otherwise the checkbox steps aside, so the bar never widens.
+        let crowded = uploadState.occupiesStatusSlot && (modernChrome as? ModernEditorChrome)?.slotHasRoomForCheckbox(during: uploadState) != true
+        dragOriginalControl.isHidden = isActualSize || frameMode || !isLargeShot || crowded
         guard let content = window?.contentView, canvas.enclosingScrollView != nil else {
             canvasBorder.isHidden = true; return
         }

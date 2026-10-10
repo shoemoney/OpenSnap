@@ -283,6 +283,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     var colorControlHovered = false, colorPaletteHovered = false, colorOpenedByHover = false
     private var colorHoverDismissal: DispatchWorkItem?
     var presetColorButtons: [BezelColorButton] = []
+    weak var customColorButton: BezelCustomColorButton?
     var sizeUndoGrouping = false
     var customDrawingColor = NSColor(calibratedRed: 0, green: 1, blue: 1, alpha: 1) // token-exempt: drawing colour data, not chrome
     let zoomControl = ZoomPopUpButton(frame: .zero, pullsDown: false)
@@ -1008,6 +1009,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             let preset = OriginalDrawingControls.presets.first { $0.tag == button.tag }
             button.state = preset.map { SketchColor($0.color) == chosen } == true ? .on : .off
         }
+        // A colour that is none of the presets is marked on the Custom color… row instead.
+        customColorButton?.currentColor = presetColorButtons.contains { $0.state == .on } ? nil : canvas.strokeColor
         paletteButton.setAccessibilityValue(String(format: "Red %.3g, green %.3g, blue %.3g, alpha %.3g", chosen.red, chosen.green, chosen.blue, chosen.alpha))
     }
     @objc func showDrawingColors(_ sender: NSButton) {
@@ -1048,12 +1051,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         guard !terminationStarted, !frameCaptureInProgress, window.isVisible,
               window.attachedSheet == nil, colorPopover?.isShown != true else { return }
         colorOpenedByHover = hover
-        let view = BezelHoverPaletteView(frame: NSRect(x: 0, y: 0, width: 246, height: 140))
+        // 12 pt margins around a grid of five 42 x 32 swatches (each draws 3 pt inside its frame); the Custom color… row spans exactly the
+        // drawn grid, so the left and right edges of every row line up.
+        let view = BezelHoverPaletteView(frame: NSRect(x: 0, y: 0, width: 246, height: 155))
         view.onHover = { [weak self] inside in self?.drawingColorHover(inside, palette: true) }
-        let title = label("Drawing colors"); title.frame = NSRect(x: 12, y: 108, width: 222, height: 25); view.addSubview(title)
+        let title = label("Drawing colors"); title.frame = NSRect(x: 13, y: 118, width: 220, height: 25); view.addSubview(title)
         presetColorButtons.removeAll()
         for (index, preset) in OriginalDrawingControls.presets.enumerated() {
-            let button = BezelColorButton(frame: NSRect(x: CGFloat(12+(index%5)*44), y: CGFloat(68-(index/5)*34), width: 42, height: 32))
+            let button = BezelColorButton(frame: NSRect(x: CGFloat(12+(index%5)*45), y: CGFloat(78-(index/5)*34), width: 42, height: 32))
             button.title = ""; button.isBordered = false; button.font = DesignTokens.Typography.font(.body)
             button.drawingColor = preset.swatchColor; button.tag = preset.tag
             button.target = self; button.action = #selector(choosePresetColor(_:))
@@ -1061,8 +1066,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             trackHint(button, owner: "color-" + String(preset.tag)) { OriginalHintMessages.hover(actionTag: preset.tag) }
             presetColorButtons.append(button); view.addSubview(button)
         }
-        let custom = button("Custom color…", #selector(chooseCustomColor(_:))); custom.font = DesignTokens.Typography.font(.body)
-        custom.frame = NSRect(x: 12, y: 2, width: 222, height: 30); custom.tag = 110; view.addSubview(custom)
+        let custom = BezelCustomColorButton(title: "Custom color…", target: self, action: #selector(chooseCustomColor(_:)))
+        custom.font = DesignTokens.Typography.font(.body)
+        custom.frame = NSRect(x: 15, y: 12, width: 216, height: 30); custom.tag = 110; view.addSubview(custom)
+        customColorButton = custom
         // The popover is its own window: the preset swatches in reading order, then Custom color…, then round again.
         let swatchOrder: [NSView] = presetColorButtons + [custom]
         for (index, swatch) in swatchOrder.enumerated() { swatch.nextKeyView = swatchOrder[(index + 1) % swatchOrder.count] }
@@ -1153,13 +1160,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             historyFollowTimer = timer; RunLoop.main.add(timer, forMode: .common)
         }
     }
-    /// Original updateWipeButton: Blank (disabled) / Clear / Wipe, derived from the canvas.
+    /// Original updateWipeButton: the stage (blank, clear, wipe) is derived from the canvas; the button says what it does ("Remove annotations",
+    /// "Clear image") and, dimmed on a blank canvas, why there is nothing to do.
     func updateWipeButton() {
         if wipeButton == nil { wipeButton = findWipeButton(in: window?.contentView) }
         guard let button = wipeButton else { return }
         let stage = canvas.wipeStage
-        if button.title != stage.title { button.title = stage.title }
+        if button.title != stage.actionName { button.title = stage.actionName }
         if button.isEnabled != stage.isEnabled { button.isEnabled = stage.isEnabled }
+        if AppToolTip.text(for: button) != stage.toolTip { AppToolTip.setText(stage.toolTip, for: button) }
     }
     private func findWipeButton(in view: NSView?) -> NSButton? {
         guard let view else { return nil }
@@ -1177,7 +1186,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     func refreshStatusText() {
         guard !frameMode else { return }
         let variants: [String]
-        if let text = uploadState.statusText { variants = [text] }
+        if !uploadState.statusVariants.isEmpty { variants = uploadState.statusVariants }
         else {
             let tool = canvas.tool.rawValue.capitalized, state = dirty ? "Unsaved changes" : "Saved"
             let detail = dragSizeLabel.stringValue

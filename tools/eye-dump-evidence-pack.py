@@ -26,6 +26,13 @@ def before_stem(c):
                # OSN-054: the upload states live in the status slot at two widths; each is compared with the same state before.
                **{("S21", f"publish-{kind}{part}-{w}"): f"S21-publish-{kind}{part}" for kind in ("progress", "success", "error") for part in ("", "-footer") for w in ("w980", "w1280")},
                ("S21", "publish-error-details-w980"): "S21-publish-error", ("S21", "publish-error-details-w1280"): "S21-publish-error",
+               # Audit fix 1: 1440 has no pre-change capture of its own; the 1280 one is the nearest (same states, 160 pt less slot).
+               **{("S21", f"publish-{kind}{part}-w1440"): f"S21-publish-{kind}{part}-w1280" for kind in ("progress", "success", "error") for part in ("", "-footer")},
+               ("S21", "publish-error-details-w1440"): "S21-publish-error-details-w1280",
+               # The remove-destination question was a system NSAlert; the new one is an app-owned sheet on the destinations sheet.
+               ("S26", "remove-destination"): "S26-remove-destination",
+               # The Wipe tooltip plate is the same plate as the zoom control's: its pre-change twin is the zoom tooltip over the footer.
+               ("S38", "tooltip-wipe-annotations-w980"): "S38-tooltip-zoom-w980", ("S38", "tooltip-wipe-image-w980"): "S38-tooltip-zoom-w980", ("S38", "tooltip-wipe-blank-w980"): "S38-tooltip-zoom-w980",
                # The titled window with subtitle is compared with the same window before: the plain "OpenSnap" title bar.
                ("S39", "titled-window-w980"): "S11-width-980", ("S39", "titled-window-w1280"): "S11-width-1280",
                ("S39", "titlebar-crop-w980"): "S01-editor-empty", ("S39", "titlebar-crop-w1280"): "S01-editor-empty"}
@@ -57,7 +64,10 @@ def before_stem(c):
     table = {
         ("S01", "editor-empty"): "S01-editor-empty", ("S02", "populated"): "S02-populated", ("S03", "topbar"): "S03-topbar",
         ("S30", "size-popover-w980"): "S06-size-mid", ("S30", "size-popover-w1280"): "S06-size-mid",
-        ("S31", "color-popover-w980"): "S06-color-palette",
+        ("S31", "color-popover-w980"): "S06-color-palette", ("S31", "color-popover-custom-w980"): "S31-color-popover-w980",
+        ("S31", "color-popover-w1440"): "S31-color-popover-w980", ("S31", "color-popover-custom-w1440"): "S31-color-popover-w980",
+        ("S31", "color-popover-only-custom-w980"): "S31-color-popover-only-w980",
+        ("S31", "color-popover-only-w1440"): "S31-color-popover-only-w980", ("S31", "color-popover-only-custom-w1440"): "S31-color-popover-only-w980",
         ("S32", "frame-large-w980"): "S12-frame-w980",
         ("S33", "large-shot-w980"): "S07-large-fit", ("S33", "large-shot-w980-bottombar"): "S09-footer",
         ("S34", "small-canvas-w980"): "S07-small-centred", ("S34", "small-canvas-w1280"): "S07-small-centred", ("S34", "small-canvas-w1440"): "S07-small-centred",

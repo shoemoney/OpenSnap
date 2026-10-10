@@ -31,7 +31,7 @@
   "HARN": "Seen by the harness, not accounted for by a source table"
  },
  "counts": {
-  "total": 603,
+  "total": 605,
   "byArea": {
    "A11Y": 6,
    "ALERT": 7,
@@ -41,7 +41,7 @@
    "DEST": 37,
    "HIST": 42,
    "HOT": 40,
-   "ICON": 103,
+   "ICON": 105,
    "KEY": 34,
    "MENU": 87,
    "SET": 24,
@@ -55,7 +55,7 @@
    "alert": 6,
    "control": 149,
    "gesture": 28,
-   "icon": 103,
+   "icon": 105,
    "menu item": 147,
    "popover": 2,
    "preference": 18,
@@ -66,14 +66,14 @@
    "window": 3
   },
   "byExercise": {
-   "e2e": 522,
+   "e2e": 524,
    "e2e-partial": 55,
    "gap": 26
   },
   "byGap": {
    "display-hardware": 3,
    "global-hotkey-background": 6,
-   "none": 522,
+   "none": 524,
    "os-panel": 40,
    "photos-library": 1,
    "printer": 3,
@@ -82,7 +82,7 @@
    "voiceover": 1
   },
   "byOwner": {
-   "app": 584,
+   "app": 586,
    "os": 19
   }
  },
@@ -11183,7 +11183,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "case .font; Free codepoint 0xF031; SF fallback textformat.size; used in AboutWindow.swift, Canvas.swift, DesignTokens.swift, DocumentModel.swift, ExportAccessory.swift, EyeDumpAudit.swift, EyeDumpAuditSurfaces.swift, GlassChrome.swift, GlobalHotkeys.swift, LegacyReader.swift, ModernEditorChrome.swift, OriginalCaptureCountdown.swift, OriginalHelpBevel.swift, ResizePanel.swift, SVGExport.swift, SettingsWindow.swift, StatusItemSupport.swift, TextStyleForm.swift, UploadStatus.swift",
+   "note": "case .font; Free codepoint 0xF031; SF fallback textformat.size; used in AboutWindow.swift, Canvas.swift, DesignTokens.swift, DocumentModel.swift, ExportAccessory.swift, EyeDumpAudit.swift, EyeDumpAuditSurfaces.swift, GlassChrome.swift, GlobalHotkeys.swift, LegacyReader.swift, ModernEditorChrome.swift, OriginalCaptureCountdown.swift, OriginalHelpBevel.swift, ResizePanel.swift, SVGExport.swift, SettingsWindow.swift, StatusItemSupport.swift, TextStyleForm.swift",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -11351,7 +11351,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "case .warning; Free codepoint 0xF06A; SF fallback exclamationmark.circle; used in PublishingDestinationsView.swift",
+   "note": "case .warning; Free codepoint 0xF06A; SF fallback exclamationmark.circle; used in icon tables only",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -13790,6 +13790,54 @@
     "source"
    ],
    "id": "E2E-ICON-103"
+  },
+  {
+   "area": "ICON",
+   "surface": "FAIcon",
+   "name": "arrow-rotate-right",
+   "type": "icon",
+   "icon": "arrow-rotate-right",
+   "entryPath": "see source",
+   "prerequisite": "Control visible",
+   "expected": "Renders as a Font Awesome glyph (0xF01E) in release builds, or SF Symbol arrow.clockwise when no glyph resolves; centred, template-tinted, matches its meaning",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": "case .arrowRotateRight; Free codepoint 0xF01E; SF fallback arrow.clockwise; used in UploadStatus.swift",
+   "shortcut": null,
+   "proof": [],
+   "rendered": [
+    "S03",
+    "S04"
+   ],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-ICON-104"
+  },
+  {
+   "area": "ICON",
+   "surface": "FAIcon",
+   "name": "circle-info",
+   "type": "icon",
+   "icon": "circle-info",
+   "entryPath": "see source",
+   "prerequisite": "Control visible",
+   "expected": "Renders as a Font Awesome glyph (0xF05A) in release builds, or SF Symbol info.circle when no glyph resolves; centred, template-tinted, matches its meaning",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": "case .circleInfo; Free codepoint 0xF05A; SF fallback info.circle; used in UploadStatus.swift",
+   "shortcut": null,
+   "proof": [],
+   "rendered": [
+    "S03",
+    "S04"
+   ],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-ICON-105"
   },
   {
    "area": "KEY",

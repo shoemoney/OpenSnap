@@ -3791,35 +3791,39 @@ enum AppSafetyTests {
                 try expect(fill.state == (app.canvas.filled ? .on : .off) && shadow.state == (app.canvas.shadowed ? .on : .off), "Toolbox style checks reflect their actual state")
                 app.toggleBezelFill(fill); app.toggleBezelShadow(shadow)
             }),
-            ("Wipe button reads Blank/Clear/Wipe from content through Undo, Redo and field editing", {
+            ("Wipe button says Clear image / Remove annotations (and why it is dimmed) from content through Undo, Redo and field editing", {
                 let fixture = try Fixture(), app = fixture.app, canvas = app.canvas
                 guard let content = app.window.contentView, let button = app.wipeButton, button.action == #selector(AppDelegate.wipe),
                       button.target === app, button.isDescendant(of: content) else { throw Failure(description: "Wipe button must be located by its action") }
-                func reads(_ title: String, _ enabled: Bool) -> Bool {
-                    button.title == title && button.isEnabled == enabled && button.isAccessibilityEnabled() == enabled && button.accessibilityLabel() == title
+                func reads(_ stage: WipeStage) -> Bool {
+                    button.title == stage.actionName && button.isEnabled == stage.isEnabled && button.isAccessibilityEnabled() == stage.isEnabled && button.accessibilityLabel() == stage.actionName
+                        && MainActor.assumeIsolated({ AppToolTip.text(for: button) }) == stage.toolTip && button.accessibilityHelp() == stage.toolTip
                 }
-                try expect(reads("Blank", false), "A fresh white drawing reads Blank and is disabled")
+                try expect(["Clear image", "Remove annotations", "Nothing to clear"] == [WipeStage.clear.actionName, WipeStage.wipe.actionName, WipeStage.blank.toolTip]
+                           && !["Blank", "Clear", "Wipe"].contains(WipeStage.blank.actionName) && !["Blank", "Clear", "Wipe"].contains(WipeStage.clear.actionName) && WipeStage.wipe.actionName != "Wipe",
+                           "The stages are spoken as actions, never as the legacy stage names")
+                try expect(reads(.blank), "A fresh white drawing reads a disabled Clear image whose tooltip and help say Nothing to clear")
                 let hint = button.subviews.compactMap { $0 as? HintTrackingView }.first
                 try expect(hint != nil, "The Wipe hover hint tracker is retained for the disabled state")
                 hint?.onHover?(true); hint?.onHover?(false)
-                try expect(reads("Blank", false) && app.wipeButton === button, "Hover hints neither retitle nor re-enable a Blank button")
+                try expect(reads(.blank) && app.wipeButton === button, "Hover hints neither retitle nor re-enable a Blank button")
                 canvas.setBackgroundColor(.red)
-                try expect(reads("Clear", true), "A non-white background without artwork reads an enabled Clear")
-                app.undo(); try expect(reads("Blank", false), "Undo restores Blank")
-                app.redo(); try expect(reads("Clear", true), "Redo restores Clear")
+                try expect(reads(.clear), "A non-white background without artwork reads an enabled Clear")
+                app.undo(); try expect(reads(.blank), "Undo restores Blank")
+                app.redo(); try expect(reads(.clear), "Redo restores Clear")
                 let shape = SketchElement(kind: .rectangle)
                 canvas.document.elements = [shape]; canvas.selection = [shape.id]; canvas.duplicateSelection()
-                try expect(reads("Wipe", true), "Artwork reads an enabled Wipe")
-                app.wipe(); try expect(reads("Clear", true) && canvas.document.elements.isEmpty, "Wiping artwork leaves the snap, so the button reads Clear")
-                app.undo(); try expect(reads("Wipe", true), "Undo of Wipe restores the Wipe stage from content")
-                app.redo(); try expect(reads("Clear", true), "Redo of Wipe returns to Clear")
-                app.wipe(); try expect(reads("Blank", false), "Clearing the snap reads a disabled Blank")
-                app.undo(); try expect(reads("Clear", true), "Undo of Clear restores the enabled Clear stage")
-                app.redo(); try expect(reads("Blank", false), "Redo of Clear returns to Blank")
+                try expect(reads(.wipe), "Artwork reads an enabled Wipe")
+                app.wipe(); try expect(reads(.clear) && canvas.document.elements.isEmpty, "Wiping artwork leaves the snap, so the button reads Clear")
+                app.undo(); try expect(reads(.wipe), "Undo of Wipe restores the Wipe stage from content")
+                app.redo(); try expect(reads(.clear), "Redo of Wipe returns to Clear")
+                app.wipe(); try expect(reads(.blank), "Clearing the snap reads a disabled Blank")
+                app.undo(); try expect(reads(.clear), "Undo of Clear restores the enabled Clear stage")
+                app.redo(); try expect(reads(.blank), "Redo of Clear returns to Blank")
                 let text = try editor(app, text: "Typing")
-                try expect(reads("Wipe", true), "Field editing reads an enabled Wipe over an otherwise blank drawing")
+                try expect(reads(.wipe), "Field editing reads an enabled Wipe over an otherwise blank drawing")
                 text.string = ""; canvas.commitPendingTextEditing()
-                try expect(reads("Blank", false) && canvas.document.elements.isEmpty, "Ending an emptied field returns the button to Blank")
+                try expect(reads(.blank) && canvas.document.elements.isEmpty, "Ending an emptied field returns the button to Blank")
                 let editMenu = NSApp.mainMenu!.items.first { $0.submenu?.title == "Edit" }!.submenu!
                 try expect(editMenu.items.first { $0.action == #selector(AppDelegate.wipe) }?.title == "Wipe", "The Edit menu item keeps its Wipe title")
             }),
