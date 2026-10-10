@@ -308,10 +308,14 @@ private enum CanvasNavigatorTests {
         let band = (190 - Int(NavigatorGeometry.padding) - Int(NavigatorGeometry.headerHeight))..<(190 - Int(NavigatorGeometry.padding))
         let background = luminance(215, band.lowerBound)
         let inkRows = band.filter { y in (Int(NavigatorGeometry.padding)..<200).contains { abs(luminance($0, y) - background) > 80 } }
-        try expect(!inkRows.isEmpty, "Header draws visible ink")
+        let inkColumns = (0..<220).filter { x in band.contains { abs(luminance(x, $0) - background) > 80 } }
+        try expect(!inkRows.isEmpty && !inkColumns.isEmpty, "Header draws visible ink")
         let height = (inkRows.max() ?? 0) - (inkRows.min() ?? 0) + 1
-        try expect(height >= 14 && DesignTokens.Typography.font(.bodyStrong).pointSize == 20,
-                   "Header glyphs are 20 pt (ink \(height) px tall), not an 18 pt or smaller literal")
+        let width = (inkColumns.max() ?? 0) - (inkColumns.min() ?? 0) + 1
+        // The word set in the token font is this wide (its advance is a hair more than its ink); an 18 pt literal is ~8 px narrower.
+        let advance = ("Overview" as NSString).size(withAttributes: DesignTokens.Typography.attributes(.bodyStrong)).width
+        try expect(DesignTokens.Typography.font(.bodyStrong).pointSize == 20 && height >= 16 && abs(CGFloat(width) - advance) <= 3,
+                   "Header is set in the 20 pt body-strong token: ink \(width) x \(height) px against an advance of \(advance)")
     }
 
     static func main() throws {

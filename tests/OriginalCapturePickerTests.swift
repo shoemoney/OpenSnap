@@ -538,11 +538,12 @@ private enum OriginalCapturePickerTests {
         let interior = rgba(rep, box.minX + 3, (box.minY + box.maxY) / 2)
         // The plate is white at 0.75 laid over the 0.65 scrim, so the composite alpha is 0.75 + 0.65 * 0.25.
         expect(abs(interior.a - 0.9125) < 0.02 && interior.r > 0.8, "Plate fill is the plate token (white at 0.75), got alpha \(interior.a), red \(interior.r)")
-        // The stroke is half outside the fill, so it shows as a darker ring just beyond the fill's bounding box.
+        // The stroke is half outside the fill: just beyond the plate the pixels are scrim plus a faint tint, not bare scrim.
         let midY = (box.minY + box.maxY) / 2, midX = (box.minX + box.maxX) / 2
-        let ring = [rgba(rep, box.minX - 1, midY), rgba(rep, box.minX, midY), rgba(rep, midX, box.minY - 1), rgba(rep, midX, box.maxY + 1)]
-        expect(ring.contains { $0.r < interior.r - 0.01 && $0.a > 0.5 },
-               "The plate has a 1 pt separator edge: ring pixels \(ring.map(\.r)) vs fill \(interior.r)")
+        let scrim = rgba(rep, 390, 290)
+        let outside = [rgba(rep, box.minX - 1, midY), rgba(rep, midX, box.minY - 1), rgba(rep, midX, box.maxY + 1)]
+        expect(outside.allSatisfy { $0.a < 0.8 } && outside.allSatisfy { $0.r > scrim.r + 0.03 },
+               "The plate has a 1 pt separator edge: ring pixels \(outside.map(\.r)) are lighter than bare scrim \(scrim.r)")
         // Rounded with the small radius: the plate's own corner pixel is not filled, but one 6 pt in is.
         let corner = rgba(rep, box.minX, box.minY)
         expect(corner.a < interior.a - 0.1 || corner.a < 0.05, "Plate corner is rounded off")
