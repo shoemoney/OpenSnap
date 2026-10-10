@@ -17,7 +17,7 @@ extension AppDelegate {
     /// Modern has no name field: the window title is the document name.
     func showDocumentName(_ name: String) {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        window.title = trimmed.isEmpty ? "OpenSnap" : trimmed
+        window.title = trimmed.isEmpty ? DesignTokens.Brand.name : trimmed
     }
 
     /// What this process's window is built from, so tools/test-native-startup.py can tell the glass chrome really built.
@@ -69,6 +69,7 @@ extension AppDelegate {
             actual.tag = ZoomPopUpButton.actualSizeTag
             zoomControl.menu?.addItem(.separator()); zoomControl.menu?.addItem(actual)
         }
+        if let zoomMenu = zoomControl.menu { MenuTypography.apply(to: zoomMenu) }
         zoomControl.target = self; zoomControl.action = #selector(changeZoom(_:)); zoomControl.setAccessibilityLabel("Canvas zoom")
         let drag = DragExportView(); dragExportView = drag
         drag.drawsBackground = false

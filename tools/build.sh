@@ -32,6 +32,8 @@ if ! xcrun actool "$ROOT/Resources/OpenSnap.icon" --compile "$APP/Contents/Resou
   iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/OpenSnap.icns"
 fi
 cp "$ROOT/Resources/OpenSnap.png" "$APP/Contents/Resources/"
+# The About window reads the MIT license text from here, so showing it never needs a network.
+cp "$ROOT/LICENSE" "$APP/Contents/Resources/LICENSE.txt"
 # Font Awesome Pro is optional and never committed: with your own token the
 # fetch step builds glyph subsets under build/fonts; without them Modern
 # falls back to SF Symbols. A failed fetch must not fail the build.

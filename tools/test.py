@@ -129,6 +129,8 @@ suites = [
     ("photo-browser-tests", ["PhotoBrowser.swift"], "PhotoBrowserTests.swift", None, ()),
     ("typography-tests", [], "TypographyTests.swift", "TYPOGRAPHY_TESTS", ()),
     ("palette-tests", [], "PaletteTests.swift", "PALETTE_TESTS", ()),
+    ("status-item-tests", ["StatusItemSupport.swift"], "StatusItemSupportTests.swift", "STATUS_ITEM_TESTS", ()),
+    ("about-window-tests", ["AboutWindow.swift"], "AboutWindowTests.swift", "ABOUT_WINDOW_TESTS", ()),
     ("metrics-tests", [], "MetricsTests.swift", "METRICS_TESTS", ()),
 ]
 # Modern appearance suites are skipped, not failed, while their files are not in the tree yet.
