@@ -57,6 +57,8 @@ subprocess.run([sys.executable, str(root / "tools" / "check-brand.py")], cwd=roo
 subprocess.run([sys.executable, str(root / "tools" / "check-brand.py"), "--self-test"], cwd=root, check=True)
 # The screenshot harness's protections (store guard, isolation of the launched copy, sandbox fence) must be able to fail.
 subprocess.run([sys.executable, "-I", str(root / "tools" / "test-eye-dump-audit-guard.py")], cwd=root, check=True)
+# The interactive E2E launcher's protections (id validation, isolation, cleanup-before-compare, credential redaction) must be able to fail.
+subprocess.run([sys.executable, "-I", str(root / "tools" / "test-e2e-session-guard.py")], cwd=root, check=True)
 # The startup smoke runs a re-identified temp copy and compares the real stores; its protections must be able to fail too.
 subprocess.run([sys.executable, "-I", str(root / "tools" / "test-native-startup-guard.py")], cwd=root, check=True)
 # G9: literal fonts, colours and radii outside the tokens. Report mode until the token sweeps land; the self-test proves --strict can fail.
