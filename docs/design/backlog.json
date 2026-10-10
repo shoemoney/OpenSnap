@@ -156,7 +156,7 @@
       "OSN-070"
     ],
     "implementationBaseline": "bad6617",
-    "implementationMainSha": "658a16f"
+    "implementationMainSha": "e124f77"
   },
   "decisions": [
     {
@@ -1991,8 +1991,8 @@
       "title": "Settings window rebuild: toolbar tabs, no Done, Escape closes, aligned grid",
       "priority": "P1",
       "milestone": "M5",
-      "status": "in-progress",
-      "mainState": "In integration at a79a1d8 (branch impl/m5-settings, not on main yet; full suite running). App-owned 20 pt tab strip (General, Drawing, Capture, Upload) replaces the 13 pt toolbar tabs, with a gear icon, centred forms and scrolling on short screens. \"Show capture flash\" is bound to showCaptureFlash. Shortcuts are embedded live; Upload has a compact list and \"Manage Destinations...\". No Done button; Escape and Command-W close. The legacy GeneralPreferencesForm is retired. On main, Settings is still titled Preferences.",
+      "status": "done",
+      "mainState": "Merged to main in e124f77 (impl/m5-settings integrated at a79a1d8 with the App.swift hunk, app-safety seam and legacy form removal); full suite green, app-safety 166/166.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -2040,10 +2040,10 @@
       ],
       "decisions": [],
       "implementation": {
-        "mergeCommit": null,
+        "mergeCommit": "e124f77",
         "branchCommits": [],
-        "tests": "full suite running on impl/m5-settings at a79a1d8; no count recorded",
-        "evidence": "docs/design/evidence/impl-2026-10-09/m5-settings/ (36 captures at a48d0df; on impl/m5-settings, pending merge)",
+        "tests": "SettingsWindowTests 1405 checks; G4 walker 0 violations over the Settings tabs; app-safety 166/166 at integration",
+        "evidence": "docs/design/evidence/impl-2026-10-09/m5-settings/ (36 captures at a48d0df)",
         "openItems": [
           "Integrated at a79a1d8 on impl/m5-settings; not on main. Not claimed as done until the suite passes and the branch merges."
         ]

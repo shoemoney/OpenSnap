@@ -67,7 +67,7 @@ Todos that are in progress or partly landed:
 | Todo | Status | Implemented (commit) | Tested | Rendered (evidence) |
 |---|---|---|---|---|
 | OSN-044 | in-progress | `impl/m4-states`, not merged; no branch SHA recorded in this pass | none recorded | none |
-| OSN-051 | in-progress (in integration) | `a79a1d8` on `impl/m5-settings`, not on main; full suite running | suite running; no count recorded | `m5-settings`, 36 at `a48d0df`, pending merge |
+| OSN-051 | done | `e124f77` (integrated at `a79a1d8`) | SettingsWindowTests 1405; G4 0 violations; app-safety 166/166 | `m5-settings`, 36 at `a48d0df` |
 | OSN-054 | pending | AWS validation only (see the AWS section); the upload UX is not built | one synthetic object through the app's S3 path, 2026-10-09 | none (validation recorded below) |
 | OSN-061 | in-progress (part 1) | `accfedd` (`de21b6e`, `d0f8013`, `2dc613e`, `eaab72f`, `f975dfa`) | DisplayOptionsTests: 92 checks | none recorded |
 | OSN-070 | in-progress (partial) | `0996da5` (`90f70bc`, `2cbf59c`, `bb0659a`); wired into `tools/test.py` by `efe2f68` (`b6658d2`) | can-fail self-tests for G6 and G11 (`90f70bc`); seeded can-fail cases for G4 (`bb0659a`) | none |
@@ -97,7 +97,7 @@ Unified window chrome and app-owned alerts. Evidence: `evidence/impl-2026-10-09/
 
 **OS-owned limitations:** see the section below.
 
-**Tests:** app-safety 166 (154 before; 12 new window-chrome cases, one existing Frame-prompt case changed on purpose: the Discard prompt is now a sheet on the Frame window, so it no longer runs with the pre-Frame level), `AppAlertTests` 77 checks, `GlassChromeTests` 13544 checks. Twelve can-fail mutations each fail the suite that should catch them and were reverted. The alert count is not reconciled; see the gaps.
+**Tests:** app-safety 166 (154 before; 12 new window-chrome cases, one existing Frame-prompt case changed on purpose: the Discard prompt is now a sheet on the Frame window, so it no longer runs with the pre-Frame level), `AppAlertTests` 77 checks, `GlassChromeTests` 13544 checks. Twelve can-fail mutations each fail the suite that should catch them and were reverted.
 
 ## AWS live validation (2026-10-09)
 
@@ -131,7 +131,7 @@ App-specific alerts are no longer NSAlert: they are app-owned sheets at 20 pt (O
 - **OSN-042 (merged in `8015360`):** the phantom capsule under Snap and the full-screen salmon tint are gone (no per-button glass, no backdrop or bleed). Open: the legacy-scroller corner is slightly lighter than the well (AppKit draws it; there is no public API). Controls are 36 pt tall inside 44 pt bars; to be reviewed at sign-off (OSN-071). Evidence: `evidence/impl-2026-10-09/m4-glass/`.
 - **Size popover** can overhang the window edge. It stays on screen and is accepted as standard NSPopover behaviour.
 - **Canvas centring** was a pre-existing bug, also present at `bad6617`. It is fixed for document changes in the rail-removal branch (`c53155c`).
-- **Settings (OSN-051):** in integration at `a79a1d8` on `impl/m5-settings`. Not on main. The full suite is running. On main, Settings is still titled "Preferences". The `m5-settings` evidence folder is pending the merge.
+- **Settings (OSN-051):** merged in `e124f77`; the full integration suite passed (app-safety 166/166). The window title follows the selected tab (no "Preferences").
 - **OSN-044:** `impl/m4-states` is not merged. No branch SHA is recorded in this pass.
 - **OSN-061:** part 1 only is on main; the todo stays in-progress.
 - **OSN-070:** not recorded as landed: G3 (`check-user-strings.py`), the dynamic Skitch-string check, and a layout-fit-at-980 gate beyond the measured-width test in `658a16f`. G5 and G9 are not further recorded in this pass.
@@ -139,5 +139,5 @@ App-specific alerts are no longer NSAlert: they are app-owned sheets at 20 pt (O
 - **OSN-054:** the AWS run is validation evidence only. The upload UX is not built.
 - **Not run:** live screen capture; real popover translucency; VoiceOver speech (OSN-062 manual pass); Reduce Transparency alone and Increase Contrast alone captures (both together are in `m4-glass`); FA Pro icon mode; the OSN-071 visual gallery and Opus sign-off.
 - **OSN-023:** manual 1x and 2x menu-bar check not done.
-- **Alert check count not reconciled:** `AppAlertTests` is recorded as 77 checks in the window-chrome note above, but the commit message of `2cc0415` says 74 alert checks. The app-safety figure (166/166) is the one the facts record. Reconcile before quoting either number.
+- **Alert check count reconciled:** the full integration run at `a79a1d8` prints `AppAlertTests: 77 checks passed`; the `2cc0415` commit message figure (74) predates later additions.
 - **Not done:** no push and no release. The first real launch and migration on the owner's machine is parked by the owner.

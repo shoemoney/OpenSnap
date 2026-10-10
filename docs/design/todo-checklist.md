@@ -49,7 +49,7 @@ Visual validation checklists cite BEFORE capture stems from `evidence/2026-10-09
 
 Counts: 36 todos. P0 12, P1 20, P2 4. M0 2, M1 5, M2 5, M3 3, M4 6, M5 9, M6 3, M7 3. Lane A 22.
 
-Status at `658a16f`: 24 done, 2 verified, 1 not-a-bug, 5 in-progress (OSN-044, OSN-051, OSN-061, OSN-070, OSN-072), 4 pending (OSN-054, OSN-060, OSN-062, OSN-071).
+Status at `e124f77`: 25 done, 2 verified, 1 not-a-bug, 4 in-progress (OSN-044, OSN-061, OSN-070, OSN-072), 4 pending (OSN-054, OSN-060, OSN-062, OSN-071).
 
 ---
 
@@ -1378,7 +1378,7 @@ Status at `658a16f`: 24 done, 2 verified, 1 not-a-bug, 5 in-progress (OSN-044, O
 
 ## OSN-051 · Settings window rebuild: toolbar tabs, no Done, Escape closes, aligned grid
 
-`OSN-051 · P1 · M5 · Status: in-progress`
+`OSN-051 · P1 · M5 · Status: done`
 
 **Implementation (main 658a16f):** no merge to main; Evidence: `docs/design/evidence/impl-2026-10-09/m5-settings/` (36 captures at a48d0df; on impl/m5-settings, pending merge). Open: Integrated at a79a1d8 on impl/m5-settings; not on main. Not claimed as done until the suite passes and the branch merges.
 
