@@ -16,6 +16,12 @@ WIDTHS = {"980xmin": "980", "1024x740": "1024", "1280x800": "1280", "1440x900": 
 def before_stem(c):
     """Stem (without appearance/sha) of the pre-rail-removal capture that shows the same thing, or None."""
     i, slug = c["id"], c["slug"]
+    special = {("S15", "flash-peak"): "S15-flash-full", ("S15", "flash-half"): "S15-flash-full",
+               ("S16", "permission-sheet"): "S16-permission-alert"}
+    if (i, slug) in special:
+        return special[(i, slug)]
+    if i in ("S13", "S14", "S29"):
+        return f"{i}-{slug}"  # capture-surface runs keep the same slug; a missing twin just prints a dash
     if i == "S11E":
         spec = slug.removeprefix("empty-size-")
         return f"S11-width-{WIDTHS[spec]}" if spec in WIDTHS else "S11-size-maximized" if spec == "full" else None
@@ -83,8 +89,9 @@ def main():
         bs = before_stem(c)
         before_rel = None
         if bs:
-            cand = before / f"{bs}-{c['appearance']}@{args.before_sha}.png"
-            if cand.is_file():
+            # Older evidence folders hold some twins without the @sha suffix.
+            cand = next((p for p in (before / f"{bs}-{c['appearance']}@{args.before_sha}.png", before / f"{bs}-{c['appearance']}.png") if p.is_file()), None)
+            if cand:
                 before_rel = str(cand.relative_to(REPO)) if cand.is_absolute() and str(cand).startswith(str(REPO)) else str(cand)
         entry = {k: c[k] for k in ("id", "slug", "surface", "state", "appearance", "iconMode", "windowSize", "pixelSize", "pointSize", "scale", "sourceSha", "method")}
         entry.update({"file": dst.name, "storedPixelSize": stored, "downscaled": stored != c["pixelSize"], "layout": layout_rel, "before": before_rel})
@@ -98,7 +105,7 @@ def main():
 
     L = [f"# {args.title}", "", f"Source `{args.sha}`; icon mode **sf** (FA unavailable); {len(packed)} captures, every PNG scaled to at most {args.max_width} px wide.",
          f"Pre-change twins are referenced from `{before}` at `{args.before_sha}`; they are not copied.", "",
-         "| Capture | Appearance | Window pt | What it shows | Layout JSON | BEFORE (pre-rail-removal) |", "|---|---|---|---|---|---|"]
+         "| Capture | Appearance | Window pt | What it shows | Layout JSON | BEFORE (pre-change) |", "|---|---|---|---|---|---|"]
     for e in packed:
         win = "×".join(str(int(v)) for v in e["windowSize"]) if e.get("windowSize") else "—"
         L.append(f"| `{e['file']}` | {e['appearance']} | {win} | {e['state'].replace('|', '/')} | `{e['layout'] or '—'}` | {('`' + e['before'] + '`') if e['before'] else '—'} |")

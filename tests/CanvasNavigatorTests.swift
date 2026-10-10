@@ -287,10 +287,42 @@ private enum CanvasNavigatorTests {
         try expect(preview.destinations.count == 2, "Invalid document never draws thumbnail")
     }
 
+    /// The "Overview" header is set in the semibold 20 pt body-strong token: its capital height alone is over 14 px, which an
+    /// 18 pt or smaller literal would not reach, and it is drawn with real ink (not blank).
+    static func headerTypeToken() throws {
+        let view = CanvasNavigator(frame: CGRect(x: 0, y: 0, width: 220, height: 190))
+        guard let bitmap = CGContext(data: nil, width: 220, height: 190, bitsPerComponent: 8,
+            bytesPerRow: 220 * 4, space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
+            throw Failure(description: "Cannot create local drawing context")
+        }
+        let previous = NSGraphicsContext.current
+        NSGraphicsContext.current = NSGraphicsContext(cgContext: bitmap, flipped: true)
+        defer { NSGraphicsContext.current = previous }
+        guard let light = NSAppearance(named: .aqua) else { throw Failure(description: "Missing native appearance") }
+        light.performAsCurrentDrawingAppearance { view.draw(view.bounds) }
+        guard let data = bitmap.data else { throw Failure(description: "No bitmap data") }
+        let pixels = data.bindMemory(to: UInt8.self, capacity: 220 * 190 * 4)
+        func luminance(_ x: Int, _ y: Int) -> Int { Int(pixels[(y * 220 + x) * 4]) }
+        // A flipped context over a plain CGContext lands the header in the bottom rows of memory.
+        let band = (190 - Int(NavigatorGeometry.padding) - Int(NavigatorGeometry.headerHeight))..<(190 - Int(NavigatorGeometry.padding))
+        let background = luminance(215, band.lowerBound)
+        let inkRows = band.filter { y in (Int(NavigatorGeometry.padding)..<200).contains { abs(luminance($0, y) - background) > 80 } }
+        let inkColumns = (0..<220).filter { x in band.contains { abs(luminance(x, $0) - background) > 80 } }
+        try expect(!inkRows.isEmpty && !inkColumns.isEmpty, "Header draws visible ink")
+        let height = (inkRows.max() ?? 0) - (inkRows.min() ?? 0) + 1
+        let width = (inkColumns.max() ?? 0) - (inkColumns.min() ?? 0) + 1
+        // The word set in the token font is this wide (its advance is a hair more than its ink); an 18 pt literal is ~8 px narrower.
+        let advance = ("Overview" as NSString).size(withAttributes: DesignTokens.Typography.attributes(.bodyStrong)).width
+        try expect(DesignTokens.Typography.font(.bodyStrong).pointSize == 20 && height >= 16 && abs(CGFloat(width) - advance) <= 3,
+                   "Header is set in the 20 pt body-strong token: ink \(width) x \(height) px against an advance of \(advance)")
+    }
+
     static func main() throws {
         try geometry()
         try interaction()
         try offscreenDrawing()
+        try headerTypeToken()
         print("CanvasNavigatorTests: \(checks) checks passed (standalone; no windows or desktop input)")
     }
 }

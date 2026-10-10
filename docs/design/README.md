@@ -1,6 +1,6 @@
 # docs/design: index
 
-Design docs for the OpenSnap visual and cosmetic audit (2026-10-09, final). Start with `roadmap.md` for the plan, then `todo-checklist.md` for the work items. `backlog.json` is the same work in machine-readable form.
+Design docs for the OpenSnap visual and cosmetic audit (2026-10-09, final). Start with `roadmap.md` for the plan, then `todo-checklist.md` for the work items. `backlog.json` is the same work in machine-readable form. Implementation progress at main `f3ba77f` (baseline `bad6617`) is in `progress.md`.
 
 Open [audit-overview.html](audit-overview.html) for the self-contained interactive roadmap and evidence gallery: milestone filtering, task details, shortlisting, side-by-side comparisons, and downloads. It embeds ECharts and a selected set of ten evidence images, including placement mocks explicitly labelled as unimplemented. The full evidence set remains below. Viewer text was checked at 728 and 360 CSS px widths with an 18 px minimum; filtering, previews, shortlisting and comparison were exercised in the browser.
 
@@ -11,7 +11,8 @@ Open [audit-overview.html](audit-overview.html) for the self-contained interacti
 | `README.md` | docs child C (round 2) | `claude-haiku-5-5` | This index: files, evidence key, screenshot location, rerun commands, safety proof, coverage gaps, counts. |
 | `roadmap.md` | docs child C (round 2) | `claude-haiku-5-5` | Summary, drift, owner decisions, findings, milestones, lane and file ownership, estimates, gates, risks, outward-facing steps, source inconsistencies. |
 | `todo-checklist.md` | docs child C (round 2) | `claude-haiku-5-5` | One section per todo (36 todos, OSN-001 to OSN-072 as numbered in `visual-audit.md` section 9), in milestone order: main state, substeps, files, prerequisites, estimates, acceptance, visual checks with BEFORE stems, and tests. |
-| `backlog.json` | docs child C (round 2) | `claude-haiku-5-5` | The same backlog as JSON: `meta`, `decisions` (10), `milestones` (8), `todos` (36), `findings` (29). Every todo has `"status": "pending"` and a `mainState`. |
+| `backlog.json` | docs child C (round 2), implementation update | `claude-haiku-5-5` | The same backlog as JSON: `meta`, `decisions` (10), `milestones` (8), `todos` (36), `findings` (29). Each todo has a `status`, a `mainState` and an `implementation` block at `f3ba77f`. Each decision has a `resolution`. |
+| `progress.md` | implementation docs writer | `claude-haiku-5-5` | Implementation progress at `f3ba77f`: baseline and merge map, todo to commit to test to evidence table, open items and gaps. |
 | `visual-audit.md` | orchestrator | `claude-opus-5-5` | Source, read-only here. FINAL audit: summary, drift (section 0), coverage (section 5), findings VF-01 to VF-29 (section 6, with status at `dc1eb26` in 6.0), reconciliation (section 7), owner layout (section 8), backlog (section 9). |
 | `technical-spec.md` | source and spec child B | `claude-sonnet-5-5` | Source, read-only here. Decisions Q1 to Q5 (section 0), implementation specs T1 to T15, file ownership map (section O). |
 | `source-inventory.md` | source and spec child B | `claude-sonnet-5-5` | Source, read-only here. File and line inventory at `4b2ae0f`. |
@@ -44,6 +45,15 @@ Findings show the header's evidence class and confidence in the form `R+S/H`: cl
 - **Counts (from `manifest.json`):** 297 entries in total: **205** at `b9319c4`, **84** at `dc1eb26`, and **8** PROTO mocks (`sourceSha` `dc1eb26`, rail-less harness mocks, not product).
 - **Index:** `manifest.json` lists every capture with its `sourceSha`. `captures.md` is the human index. `gaps.md` lists what was not captured and why. Also: `layout-width-budget.json` and `.md` (live widths at `dc1eb26`), `metrics/` (view-tree metrics), `ax/` (AX dumps), `menus.json` (menu text), `observations.json`, `environment.json` and `environment@dc1eb26.json`, and `safety.txt`.
 - **Environment (M):** macOS 27.2 (build 26B5101f), built-in 2x Retina display, system appearance Dark, accent colour yellow. Every accent in the captures is yellow for that reason.
+
+## Implementation evidence
+
+Captures from the implementation run. They are separate from the audit set above. Each folder's `captures.md` and `manifest.json` list every capture with its `sourceSha`.
+
+| Folder | sourceSha | Captures | Todos | What it shows |
+|---|---|---|---|---|
+| `evidence/impl-2026-10-09/m1-rail/` | `fef46c7` | 80 PNG (7.9 MB), plus `layout/` metrics | OSN-010 to OSN-014 | Rail-removal matrix: light and dark, 980 to full screen, empty and populated, Frame, popovers, PNG and JPG. FA mode unavailable. |
+| `evidence/impl-2026-10-09/m5-capture/` | `8a0e8d9` | 38 PNG | OSN-050, OSN-056 (and the OSN-021 countdown) | Screen Recording sheet and its no-grant placeholder, countdown, picker, hint plate clear of the title bar and bars. |
 
 ## Regenerating the evidence
 
@@ -93,9 +103,9 @@ Full list in `evidence/2026-10-09/gaps.md` and section 5 of the audit. Summary:
 | Todos by milestone | M0 2, M1 5, M2 5, M3 3, M4 6, M5 9, M6 3, M7 3 |
 | Todos in Lane A (`Sources/App.swift`, serial) | 22 (19 in the serial order, plus 3 landed) |
 | Todos new in round 2 | 3: OSN-014, OSN-057, OSN-058 |
-| Owner decisions | 10: Q1 to Q5, D-TEXT, D-HINT, D-T15-1 to D-T15-3. Each has a recommended default. |
+| Owner decisions | 10: Q1 to Q5, D-TEXT, D-HINT, D-T15-1 to D-T15-3. Each has a recommended default. Nine are resolved; Q3 is open until the OSN-042 spike. |
 | Estimate | 18.0 d numeric across 18 todos, plus 17.5 d of unsplit spec figures, total 35.5 d (`roadmap.md` section 8) |
-| Status | 36 of 36 `pending`. Four are landed in source at `dc1eb26` (OSN-020 to OSN-023) and need verification. Section 2a of the roadmap. |
+| Status at `f3ba77f` | 20 done, 2 verified, 1 not-a-bug, 1 in-progress, 12 pending (`progress.md`; roadmap section 2b). |
 
 ## Validating the files
 

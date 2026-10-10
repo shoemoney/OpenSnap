@@ -418,7 +418,7 @@ final class OriginalCaptureSelectionView: NSView {
             let shade = NSBezierPath(rect: bounds)
             shade.windingRule = .evenOdd
             shade.append(NSBezierPath(rect: rect))
-            NSColor(deviceRed: 24 / 255, green: 24 / 255, blue: 24 / 255, alpha: 0.65).setFill()
+            DesignTokens.Palette.Overlay.scrim.setFill()
             shade.fill()
             if rect.width > 3, rect.height > 3 { drawSize(rect) }
         } else if let p = cursorPoint {
@@ -428,23 +428,32 @@ final class OriginalCaptureSelectionView: NSView {
             cross.line(to: NSPoint(x: p.x + 0.5, y: bounds.maxY))
             cross.move(to: NSPoint(x: bounds.minX, y: p.y + 2.5))
             cross.line(to: NSPoint(x: bounds.maxX, y: p.y + 2.5))
-            NSColor(calibratedWhite: 1, alpha: 0.2).setStroke(); cross.lineWidth = 3; cross.stroke()
-            NSColor(calibratedWhite: 0, alpha: 0.4).setStroke(); cross.lineWidth = 1; cross.stroke()
+            DesignTokens.Palette.Overlay.crosshairOuter.setStroke(); cross.lineWidth = 3; cross.stroke()
+            DesignTokens.Palette.Overlay.crosshairInner.setStroke(); cross.lineWidth = 1; cross.stroke()
         }
     }
 
+    /// The "%dx%dpx" read-out: HUD type on a light plate with a hairline edge, so it holds up on dark and light pixels alike.
+    static let readoutPlateInset = NSSize(width: 6, height: 4)
+    static func readoutAttributes() -> [NSAttributedString.Key: Any] {
+        DesignTokens.Typography.attributes(.hud, color: DesignTokens.Palette.Overlay.plateText)
+    }
+
     private func drawSize(_ rect: NSRect) {
-        // Original "%dx%dpx", rounded white .75/radius5 bezel. Font20
-        // replaces original LucidaGrande10 for the user's readability floor.
         let text = "\(Int(rect.width))x\(Int(rect.height))px" as NSString
-        let attributes: [NSAttributedString.Key: Any] = [.font: NSFont.systemFont(ofSize: 20), .foregroundColor: NSColor.black]
+        let attributes = Self.readoutAttributes()
         let size = text.size(withAttributes: attributes)
-        guard bounds.width >= size.width + 12, bounds.height >= size.height + 8 else { return }
-        let origin = NSPoint(x: min(max(rect.maxX + 4, bounds.minX + 6), bounds.maxX - size.width - 6),
-                             y: min(max(rect.maxY + 4, bounds.minY + 4), bounds.maxY - size.height - 4))
-        let bezel = NSRect(origin: origin, size: size).insetBy(dx: -6, dy: -4)
-        NSColor(calibratedWhite: 1, alpha: 0.75).setFill()
-        NSBezierPath(roundedRect: bezel, xRadius: 5, yRadius: 5).fill()
+        let inset = Self.readoutPlateInset
+        guard bounds.width >= size.width + 2 * inset.width, bounds.height >= size.height + 2 * inset.height else { return }
+        let origin = NSPoint(x: min(max(rect.maxX + 4, bounds.minX + inset.width), bounds.maxX - size.width - inset.width),
+                             y: min(max(rect.maxY + 4, bounds.minY + inset.height), bounds.maxY - size.height - inset.height))
+        let plate = NSRect(origin: origin, size: size).insetBy(dx: -inset.width, dy: -inset.height)
+        let path = NSBezierPath(roundedRect: plate, xRadius: DesignTokens.Radius.sm, yRadius: DesignTokens.Radius.sm)
+        DesignTokens.Palette.Overlay.plateFill.setFill()
+        path.fill()
+        DesignTokens.Palette.separator.setStroke()
+        path.lineWidth = 1
+        path.stroke()
         text.draw(at: origin, withAttributes: attributes)
     }
 }
