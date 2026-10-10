@@ -621,7 +621,7 @@ These rows were tested against the current behaviour and need a second look once
 - **Observed:** the Upload destinations sheet opens with a blank list box, Add… enabled and the help line "The one marked Default receives an Upload click" (`42-…jpg`); nothing says that no destination is configured (the menu does say No destination configured).
 - **Suggested fix:** show an empty-state line such as "No destinations yet. Add one to upload."
 
-### F-J5-005 · P1 (reported by the ops watchdog, cause not isolated) · The Open/Save panel service grows to ~66 GB when the isolated copy shows a system panel
+### F-J5-005 · P1 (root cause found and fixed in the launchers, see "Root cause" at the end of the investigation) · The Open/Save panel service grows to ~66 GB when the isolated copy shows a system panel
 - **Surface:** ⌘E Export…, ⌘O Open…, ⌘S / ⇧⌘S Save (system panels, out-of-process `com.apple.appkit.xpc.openAndSavePanelService`)
 - **Steps:** in session 70334 press ⌘E, ⌘O, ⌘S, ⇧⌘S in turn, each dismissed with Esc or ⌘. after 3–6 s.
 - **Observed:** the app's AX tree collapses to one element while a panel is open and the panel is not visible to the harness. The ops log sweep (a peer session's message, not measured by this lane) reports the panel service footprint reaching ~66 GB within about two minutes, twice (07:26:29 and 07:31:04 CDT), ~52 GB of swap and free disk falling from 87 to 34 GiB; ops killed pids 77714 and 98463. This lane's own sample at 07:29 was pid 77714 at 57 % CPU and 3.3 GB resident. After that report this lane opened no further system panels (the Open Folder, Photos and Export accessory rows are therefore `gap: OS-owned`). The panel also registered `com.apple.xctest.FakeForceTouchDevice` (ops note).
@@ -643,7 +643,7 @@ These rows were tested against the current behaviour and need a second look once
 - Menu picks commit ~3 s after the AX press and only while the app is active; indexes in the AX tree drift between menu opens, so re-query the menu item right before each press. A stale index silently presses a neighbouring item (this duplicated a rectangle once).
 - `AXShowMenu` on the Upload button opens the destinations menu without uploading (AXPress uploads); the AX press error code returned is misleading, the menu opens anyway.
 - `type_text` can report "not delivered, window occluded" while the text arrives; check the screenshot.
-- System panels (Open, Save, Export, Print) are out of process: the app's AX tree shrinks to one element and the harness cannot see or click them; ⌘. dismissed the print panel when Esc did not. Page Setup is in-process and visible. See F-J5-005 before opening any of them.
+- System panels (Open, Save, Export, Print) are out of process: the app's AX tree shrinks to one element and the harness cannot see or click them; ⌘. dismissed the print panel when Esc did not. Page Setup is in-process and visible. **Superseded by the F-J5-005 root cause:** that invisibility was the runaway service spinning before it could draw; with a normalized session home the Open, Save and Export panels are visible and clickable through the driver (a Cancel click needs a fresh AX snapshot, and a background Escape does not reach a panel while the window is occluded).
 - The owner's other windows can occlude the isolated window, after which menu bar picks are refused ("background app") and clicks are swallowed; a real drag makes the window key for one or two calls.
 - After a stop, the real-store compare may list `com.shoemoney.opensnap.eyedump-<pid>.plist` files: during this run pids 6797 and 6799 were live `tools/eye-dump-audit.sh` processes of the batch 4 lane (`/tmp/a4/ev/...`), so the plists are theirs and were not deleted. Sessions 86919 and 23880 stopped with "stores unchanged"; 70334's compare listed only those two plists.
 
@@ -737,3 +737,89 @@ An independent review found class inflation in `coverage-matrix.md`. Changes (th
 - **Stale rows.** DEST-036 now records the J4 pass (the app deleted its own S3 upload from History › Delete from Web; `j4/69`–`71`, `j4-aws-log.md`) beside the J2 refusal. DEST-010 is marked "re-check after batch 4" (pre-batch-4 SFTP form). SHEET-002 to SHEET-006 said "pending batch 3c": they now say they were drawn on the pre-3c sheet and need a re-check. MENU-004 is `unverified` (it observed the Capture Shortcuts sheet, removed in d9ed8b7; the entry now opens Settings › Capture). HOT-001 to HOT-018 (the removed sheet) are marked retired, and HOT-041 is the new row for the menu entry. HIST-003 to HIST-005 keep their IDs and evidence under the current tab names (Shared, Exported, Saved).
 - **J4 retest table.** F-J1-019 is PARTIAL (the cited image shows the popover open). F-J2-006 reads "not reproduced (no defect seen)", which is an absence of the symptom, not a verified fix.
 - **Class counts** (589 rows): `E2E` 304 → 299, `rendered` 94 → 71, `unit/source` 91 → 91, `unverified` 101 → 129.
+
+### Root cause (found 2026-10-10, same day): a non-normalized `CFFIXED_USER_HOME`
+
+**The service loops because the app was launched with `CFFIXED_USER_HOME=/var/folders/…/T//e2e-session.XXXXXX/home` (a double slash).** macOS 27.2 beta's `com.apple.appkit.xpc.openAndSavePanelService` takes `CFFIXED_USER_HOME`, `HOME` and `TMPDIR` from the app that opens the panel, and on a path containing `//`, `/./` or `/../` it never leaves the first `_CFURLIsProtectedDirectory` call: it keeps taking the parent of the URL (`CFURLCreateCopyDeletingLastPathComponent`), adding each result to a set, and never reaches the root. Memory grows ~1.2 GB/s at 100 % CPU; the panel UI never finishes loading, which is why J5 saw an empty AX tree and could not dismiss anything. The path got its `//` because `tools/e2e-session.sh` (and `tools/eye-dump-audit.sh`) build the session dir as `mktemp -d "${TMPDIR:-/tmp}/…"` and macOS `$TMPDIR` ends in `/`. Nothing in OpenSnap is involved: the probe app reproduces it with a plain `NSOpenPanel()`.
+
+**Evidence.**
+- `sample` of the growing service (1 s, 650 samples): one thread, every sample under `NSRemoteSavePanel initWithOptions:` → nib load → `FITagEditorView` → `FinderKit` → `TNode::Initialize` → `TFSVolumeInfo::AddVolume` → `_CFURLIsProtectedDirectory` (a `dispatch_once` block) → `CFURLCreateCopyDeletingLastPathComponent` + `CFBasicHashAddValue`.
+- `ps eww` of the service: it carries `CFFIXED_USER_HOME`, `HOME` and `TMPDIR` of the client (healthy run: `/tmp/pf/man.X/home`; runaway run: `…/T//man.X/home`).
+- Isolating one variable at a time on a bare OpenSnap with no delegate, each in a fresh `env -i` launch: `//` in `CFFIXED_USER_HOME` alone reproduces; `//` in `HOME` alone or in `TMPDIR` alone does not; a trailing slash does not; `/./` and `/x/../` do; a leading `//` does; the same `/var/folders` location with a single slash does not.
+- The stock probe reproduces with `CFFIXED_USER_HOME=…//home` (2 GB, watchdog kill) and is fine with the same path normalized, so it is an OS bug triggered by the client's environment, not an OpenSnap defect.
+- An in-process `setenv("CFFIXED_USER_HOME", normalized)` before opening the panel does **not** help (the service still sees the launch-time value), so the app cannot defend itself; the fix has to be where the app is launched.
+
+**Why the earlier probe never reproduced.** Its trials put `$T` under `/tmp` (or a TMPDIR with the slash stripped), so the path never had a `//`. The real launcher used the raw `$TMPDIR/` prefix.
+
+**Fix (efb8e1c).** `tools/e2e-session.sh` and `tools/eye-dump-audit.sh` canonicalize the session dir right after `mktemp` (`TMP=$(CDPATH= cd -- "$TMP" && pwd -P)`), so HOME, CFFIXED_USER_HOME, TMPDIR and the support folder passed to the app are normalized. No source change in the app. Tests: `tools/test-e2e-session-guard.py` now runs every launch with a trailing-slash TMPDIR (what macOS does) and `test_normalized_home` asserts the app saw a normalized CFFIXED_USER_HOME, HOME and support path; the same assertion is in `tools/test-eye-dump-audit-guard.py`. Both have a can-fail mutant (the script copy without the canonicalizing line) that must produce a `//` path and turn the check red; both mutants went red and the real scripts green. `tools/panel-service-check.sh` is a manual live check (not in `tools/test.py`): it opens one real panel from the probe under the launcher's isolation with the 2 GB watchdog, `sh tools/panel-service-check.sh` expects a peak under 300 MB and `--reproduce` deliberately passes a `//` home and shows the OS bug is still there on this build (peak 2.1 GB, watchdog kill).
+
+**Hypotheses tested and rejected.** LaunchServices pollution (the orchestrator's lead): 764 throwaway-id references and 208 registered paths of deleted throwaway copies were unregistered with `lsregister -u` (only paths under `eye-dump-audit.*`, `e2e-session.*`, `opensnap-startup-*`, `e2e-probe.*`); the next trial still reached 2.67 GB, so it is not the cause (the stale registrations are untidy but harmless here). Link target (probe built `-target arm64-apple-macosx26.0`): 86 MB. App icon/`Assets.car` (probe inside a full copy of the app bundle): 89 MB. WebKit/ImageIO linked into the probe: 88 MB. Panel configuration (content types, accessory): a bare `NSOpenPanel()` in the app grows identically. Main window, activation policy, status item: no effect. App launch stages (menus, window, observers, status item, policy, hints, hotkeys, end): all fine when the home is normalized. Driver input: the in-app auto-panel (no driver) already reproduced.
+
+**Trials** (every run behind the 2 GB watchdog; free memory stayed ≥ 80 %; "killed" = the watchdog ended it, so the peak is just past 2 GB):
+
+| # | Condition | Panel service peak |
+|---|---|---|
+| 1 | Session + in-app auto-panel, `openFile()`, no driver | killed at 2.1 GB (~1.1 GB/s) |
+| 2 | Same after unregistering 208 stale LaunchServices paths | killed at 2.67 GB |
+| 3 | Same, `sample` taken at 0.5 s | killed at 2.35 GB; stack above |
+| 4 | Probe `-target 26.0`; probe in full app bundle; probe + WebKit/ImageIO (isolated, `/tmp`) | 86 / 89 / 88 MB |
+| 5 | Plain `NSOpenPanel()` inside the app (session) | killed at 2.4 GB |
+| 6 | Same plus close all windows / accessory policy / no status item | 2.1 / 2.1 / 2.05 GB (killed) |
+| 7 | Bare OpenSnap, no delegate (`/tmp`) | 88 MB |
+| 8 | Launch stages menus, window, observers, status item, policy, hints, pre-status, pre-show, shown, hotkeys, end (`/tmp`) | 87-97 MB (11 runs) |
+| 9 | Full launch + late timer trigger; same orphaned with nohup (`/tmp`) | 90 / 90 MB |
+| 10 | Launcher-like: under `$TMPDIR` + numeric id | killed at 1.9 GB |
+| 11 | Path only (`$TMPDIR`, other id) / id only (`/tmp`) / name only (`/tmp`) / `$TMPDIR` with a different name | 1.97 GB killed / 89 / 89 / 2.2 GB killed |
+| 12 | Bare OpenSnap under `$TMPDIR`, stages bare … end | 1.9-2.4 GB killed (6 runs) |
+| 13 | Probe under `$TMPDIR` with the slash stripped (full bundle, plain and configured panel) | 88 / 87 MB |
+| 14 | Probe with `CFFIXED_USER_HOME=…//home` | killed at 2.0 GB |
+| 15 | `//` in HOME only / CFFIXED only / TMPDIR only / all three | 88 MB / 1.87 GB killed / 90 MB / 1.99 GB killed |
+| 16 | CFFIXED forms: trailing `/`, `/./`, `/x/../`, leading `//`, mid `//` | 90 MB / 2.4 GB / 1.87 GB / 1.88 GB / 1.85 GB (last four killed) |
+| 17 | Runtime `setenv` of the normalized value before the panel (2 runs) | killed at 2.4 / 2.3 GB (service env unchanged) |
+| 18 | `$TMPDIR` location with the slash stripped | 90 MB |
+| 19 | Fixed launcher: in-app auto-panel Open / Save / Export, each cancelled with `cancel(nil)` after 3 s (`runModal` returned at 3.02 s) | 94 / 87 / 88 MB, kills 0 |
+| 20 | Fixed launcher, real-click driver, one press each: ⌘O, ⌘E, ⌘S, ⇧⌘S, dismissed with a Cancel click | 89 / 77-86 / 89 / 90 MB, kills 0 |
+| 21 | `tools/panel-service-check.sh` and `--reproduce` | 90 MB ok / 2.1 GB killed (OS bug still present) |
+
+**Live verification of the fix.** Panel service 77-94 MB at its peak for Open, Save, Export in the app and for ⌘O, ⌘E, ⌘S, ⇧⌘S under the driver; CPU 0 % once drawn; watchdog kills 0 in every session. The service does **not** exit within a second of the panel closing: it idles at ~80-90 MB until the app exits (the earlier probe's "gone within a second" was measured after the probe process exited). Matrix rows E2E-KEY-004..007 now carry `E2E` evidence (`docs/design/evidence/e2e-2026-10-10/panelfix/`); the ⌘O screenshot lists the owner's Documents folder and is deliberately not stored.
+
+**Still open / notes for the next person.** The OS bug itself is unfixed on 27.2 (26B5101f): any app launched with a non-normalized CFFIXED_USER_HOME hangs its first Open/Save panel. OpenSnap cannot trigger it for a user (a real launch has a normal home). Two other scripts build session paths the same way but never open a panel and were left alone: `tools/test-app-safety.sh` and `tools/check-clean-clone.sh`; any new harness that opens a system panel must canonicalize its home first.
+
+## Independent review round 1 (pinned e41f0c2)
+
+**Verdict:** needs fixes.
+
+**Strengths noted:**
+
+- No real Keychain, UserDefaults or Application Support access, and no outside network, in the new tests.
+- All 39 Font Awesome Free paths match the official 7.3.1 data byte for byte.
+- No app-owned text below 18 pt in source.
+
+**Findings** (severity · ID · surface · finding · status):
+
+- P1 · R1-001 · evidence · private text visible in a harness capture (m4-glass S01 dark rt-ic); harness window accepted real input · capture withdrawn from the tree and replaced (b09ecc6); OCR sweep tool added (tools/evidence-ocr-sweep.py, 1849 images, no other leak); harness input fence added; history cleanup owned by root before any push.
+- P1 · R1-002 · Upload · upload sent the fitted size while title/status/tooltip promise the picture's own pixel size when "Original size" is ticked · batch 5.
+- P2 · R1-003 · Resize sheet · opens in output points (e.g. 1517×1011) under a title showing pixel size (2400×1600) · batch 5.
+- P2 · R1-004 · build / E2E sessions · default dev builds bundled Font Awesome Pro and E2E copies didn't strip it · fixed b09ecc6 (Pro opt-in only; sessions strip Pro and print the icon mode).
+- P2 · R1-005 · Toolbox pull-down · icons unverified in a real menu; batch-4 capture overclaimed; near-identical symbols for Actual Size/Full Screen/Resize and Close/Cancel Snapshot · batch 5.
+- P2 · R1-006 · bottom bar · Resize glyph reads as expand/full screen · batch 5 (decision: "Resize…" text button if it fits at 980).
+- P2 · R1-007 · ledger · rows still described the removed Capture Shortcuts sheet and old History tab names · fixed b09ecc6 (rows retired, new entry-path row, generator updated).
+- P2 · R1-008 · ledger · class inflation: 23 rendered rows were AX listings only; 4 E2E rows lacked a screenshot of the claim; 5 rows used a substituted entry path · fixed b09ecc6 (reclassified/annotated).
+- P2 · R1-009 · process · batch 4 had no real-click retest · J6 pending after batch 5.
+- P2 · R1-010 · Delete from Web · re-saving a destination changed its credential id and fingerprint, so older entries refused deletion with a still-enabled button · batch 5.
+- P2 · R1-011 · Settings › Upload · duplicated the Destinations sheet · batch 5 (decision: single surface in Settings › Upload).
+- P2 · R1-012 · History toolbar · seven unlabeled glyphs beside empty space; eye-slash meaning differs from the editor · batch 5.
+- P2 · R1-013 · status line · repeated the title's size/format/bytes, starving it at 980 · batch 5.
+- P2 · R1-014 · status line · 980 upload success showed "Link copied · cdn.exa…" · batch 5.
+- P3 · R1-015 · empty states/copy · Destinations empty list had no text; punctuation/units inconsistencies · batch 5.
+- P3 · R1-016 · Actual Size navigator · full-height column mostly empty · deferred.
+- P3 · R1-017 · Settings › Capture · redundant Disable All / Reset Defaults; edits go live mid-entry; 69-item key pop-up (record field not built) · batch 5 (cleanup), record field deferred.
+- P3 · R1-018 · Settings tab strip · Differentiate Without Color outline didn't update live · batch 5.
+- P3 · R1-019 · tests · six weak/tautological assertions · batch 5.
+- P3 · R1-020 · Window › Full Screen · acted on the editor while another window was key or after Hide · batch 5.
+- P3 · R1-021 · eraser · drops the shadow from the whole remaining shape · batch 5 stretch.
+- P3 · R1-022 · misc · WebDAV Test accepted 3xx/unauthenticated OPTIONS; clearRemote left publishedSize; notices hid upload status; Capture Shortcuts… enabled under a sheet; weak SF fallbacks · batch 5.
+- P2 · R1-023 · docs/tooling · model and AI-tool names in committed docs/tooling · fixed b09ecc6 except root-owned files (the audit plan, the presentation page) and the vendored tool-skills folder (owner decision).
+- — · R1-024 · F-J5-005 judgement · reviewer saw no app cause; root cause later found in the launchers (non-normalized CFFIXED_USER_HOME triggering a macOS 27.2 panel-service loop) and fixed in fa4715f.
+
+**Ledger-honesty sample.** 25 E2E, 15 rendered and 15 unverified rows were sampled. All cited files existed. Overclaims were found and corrected in b09ecc6: BAR-034/035, SHEET-017 (weak), MENU-011 and SET-010 (partial), DEST-036 and DEST-010 (stale), 6 AX-only rendered rows, SHEET-003, and HOT-014. No row claims VoiceOver speech or live capture as proven.

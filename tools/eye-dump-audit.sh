@@ -97,6 +97,9 @@ if [ -z "$SOURCE_SHA" ]; then
 fi
 
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/eye-dump-audit.XXXXXX")
+# F-J5-005: the child's CFFIXED_USER_HOME is built from this path, and $TMPDIR ends in "/" so the raw mktemp result contains "//". macOS 27's
+# Open/Save panel service inherits CFFIXED_USER_HOME and spins to tens of GB on any non-normalized value ("//", "/./", "/../"). Canonicalize once.
+TMP=$(CDPATH= cd -- "$TMP" && pwd -P)
 # EXIT safety net only: removes $TMP and re-runs the validated drop (a no-op after the explicit drop below). The explicit drop
 # runs BEFORE the final guard compare, so any damage cleanup could do to a real store is visible to the compare, never after it.
 DROPPED=no

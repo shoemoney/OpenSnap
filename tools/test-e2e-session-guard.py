@@ -112,7 +112,7 @@ def make_recorders(base):
 def env_problem(env):
     if env.get("HOME") != SAFE["home"]:
         return "HOME is not the scratch home"
-    if env.get("TMPDIR") != SAFE["tmp"]:
+    if env.get("TMPDIR") not in (SAFE["tmp"], SAFE["tmp"] + "/"):
         return "TMPDIR is not the scratch tmp"
     if env.get("E2E_DEFAULTS") not in (SAFE["defaults"], SAFE["evil"]):
         return "E2E_DEFAULTS is not a fake recorder"
@@ -124,7 +124,7 @@ def env_problem(env):
 def run(script, args, extra_env=None, defaults=None, timeout=120):
     """The only way this file executes a copy of e2e-session.sh: scratch HOME and TMPDIR, fake defaults, recorded."""
     env = dict(os.environ, **(extra_env or {}))
-    env.update(HOME=SAFE["home"], TMPDIR=SAFE["tmp"], E2E_DEFAULTS=defaults or SAFE["defaults"], E2E_STOP_TIMEOUT=env.get("E2E_STOP_TIMEOUT", "2"),
+    env.update(HOME=SAFE["home"], TMPDIR=SAFE["tmp"] + "/", E2E_DEFAULTS=defaults or SAFE["defaults"], E2E_STOP_TIMEOUT=env.get("E2E_STOP_TIMEOUT", "2"),
                E2E_LAUNCH_WAIT="0.4", E2E_WATCHDOG_PS=SAFE["fake_ps"], E2E_WATCHDOG_KILL=SAFE["fake_kill"], E2E_WATCHDOG_INTERVAL="0.1")
     env.pop("E2E_STATE_DIR", None)
     problem = env_problem(env)
@@ -387,6 +387,32 @@ def test_start_stop(base, app):
     check(result.returncode != 0 and not session_dirs() and not sessions(), "start: a missing app bundle is refused before any temp dir or launch")
     result = run(SCRIPT, ["stop"])
     check(result.returncode == 2 and "no matching" in result.stderr, "stop: with no session it refuses (exit 2)")
+
+
+def normalized(path):
+    return bool(path) and path == os.path.normpath(path) and "//" not in path
+
+
+def test_normalized_home(base, app):
+    """F-J5-005: macOS 27's Open/Save panel service inherits CFFIXED_USER_HOME and spins to tens of GB when it is not normalized. Real macOS
+    TMPDIR ends in "/", so a raw mktemp path has "//"; run() therefore passes a trailing-slash TMPDIR and the launcher must canonicalize."""
+    def launched(script):
+        reap()
+        result = start(app, script=script)
+        files = sessions()
+        info = launch_info(read_session(files[0])["dir"]) if files else {}
+        stop(script=script)
+        return result, info
+    result, info = launched(SCRIPT)
+    check(result.returncode == 0 and normalized(info.get("cfhome", "")) and normalized(info.get("home", "")) and normalized(info.get("support", "")),
+          f"F-J5-005: with a trailing-slash TMPDIR the app is launched with normalized HOME, CFFIXED_USER_HOME and support paths (cfhome={info.get('cfhome')})")
+    text = SCRIPT.read_text()
+    canon = '    TMP=$(CDPATH= cd -- "$TMP" && pwd -P)\n'
+    check(canon in text, "F-J5-005: the canonicalizing line is where the test expects it (so the mutant below really removes it)")
+    _, mutant_info = launched(script_copy(base, "mut-normalize", text.replace(canon, "")))
+    check(not normalized(mutant_info.get("cfhome", "")) and "//" in mutant_info.get("cfhome", ""),
+          f"F-J5-005 (can fail): without the canonicalizing line CFFIXED_USER_HOME contains '//' ({mutant_info.get('cfhome')}), so the check above goes red")
+    reap()
 
 
 def test_tamper_and_order(base, app):
@@ -821,6 +847,7 @@ with tempfile.TemporaryDirectory(prefix="e2e-guard-test.") as scratch:
     try:
         test_static()
         test_start_stop(scratch, app)
+        test_normalized_home(scratch, app)
         test_tamper_and_order(scratch, app)
         test_kill_fallback(scratch)
         test_free_icons(scratch)

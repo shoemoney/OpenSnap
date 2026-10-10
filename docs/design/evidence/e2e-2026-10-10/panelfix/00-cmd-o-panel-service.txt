@@ -1,0 +1,14 @@
+F-J5-005 fix verification, real-click driver (mcp kimi-cu), isolated session started by tools/e2e-session.sh (watchdog threshold 2097152 KB, kills 0).
+Session home was canonical (/private/var/folders/.../T/e2e-session.XXXXXX, no "//").
+
+Cmd+O pressed once on pid 68590; panel-service samples 1 s apart (pid, RSS, CPU):
+  69006   89 MB  2.9 %   <- panel up
+  69006   89 MB  0.0 %
+  69006   89 MB  0.0 %
+  69006   89 MB  0.0 %
+  69006   88 MB  0.0 %
+  69006   79 MB  0.0 %
+The Open panel was viewed in a screenshot (it lists the owner's real Documents folder, so the image is NOT stored here), its AX tree was
+readable (264 elements, Cancel and a disabled Open button present), Escape through the background key path did not reach it while the
+window was occluded, and a click on Cancel closed it: the editor window "Untitled - 800 x 600 - PNG - 10 KB" was back (04-after-cancel-editor-back.jpg).
+Nothing was chosen. The service stays alive, idle at 80-90 MB, until the app exits.
