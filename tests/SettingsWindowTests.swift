@@ -197,6 +197,15 @@ private enum SettingsWindowTests {
         expect(abs(window.frame.height - drawing) < 0.5, "after a second switch the window is \(window.frame.height), not the first target \(capture) (Drawing wants \(drawing))")
         controller.select(2); spin(0.6)
         expect(abs(window.frame.height - capture) < 0.5, "an undisturbed switch arrives at its target (\(window.frame.height) vs \(capture))")
+        // The same when the later change is immediate (a refit that is not animated): the earlier animation must not step on past it.
+        controller.select(0); spin(0.6)
+        controller.select(2); spin(0.06)
+        controller.reduceMotion = { true }
+        controller.select(1)
+        spin(0.6)
+        expect(abs(window.frame.height - drawing) < 0.5, "an immediate resize is not undone by the animation it interrupted: \(window.frame.height) vs \(drawing)")
+        controller.reduceMotion = { false }
+        controller.select(2); spin(0.6)
         controller.reduceMotion = { true }
         controller.select(0)
         expect(abs(window.frame.height - general) < 0.5, "under Reduce Motion the window is its new size at once (\(window.frame.height))")
