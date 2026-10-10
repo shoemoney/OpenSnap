@@ -12,7 +12,7 @@ Open [audit-overview.html](audit-overview.html) for the self-contained interacti
 | `roadmap.md` | docs child C (round 2) | `claude-haiku-5-5` | Summary, drift, owner decisions, findings, milestones, lane and file ownership, estimates, gates, risks, outward-facing steps, source inconsistencies. |
 | `todo-checklist.md` | docs child C (round 2) | `claude-haiku-5-5` | One section per todo (36 todos, OSN-001 to OSN-072 as numbered in `visual-audit.md` section 9), in milestone order: main state, substeps, files, prerequisites, estimates, acceptance, visual checks with BEFORE stems, and tests. |
 | `backlog.json` | docs child C (round 2), implementation update | `claude-haiku-5-5` | The same backlog as JSON: `meta`, `decisions` (10), `milestones` (8), `todos` (36), `findings` (29). Each todo has a `status`, a `mainState` and an `implementation` block at `658a16f`. Each decision has a `resolution`. |
-| `progress.md` | implementation docs writer | `claude-haiku-5-5` | Implementation progress at `658a16f`: baseline and merge map (13 merges), todo to commit to test to evidence table, AWS live validation, OS-owned limitations, open items and gaps. |
+| `progress.md` | implementation docs writer | `claude-haiku-5-5` | Implementation progress at `284f028`: baseline and merge map (18 merges), E2E audit (journeys, fix batches, finding dispositions, coverage, gaps), todo to commit to test to evidence table, AWS live validation, OS-owned limitations, open items and gaps. |
 | `visual-audit.md` | orchestrator | `claude-opus-5-5` | Source, read-only here. FINAL audit: summary, drift (section 0), coverage (section 5), findings VF-01 to VF-29 (section 6, with status at `dc1eb26` in 6.0), reconciliation (section 7), owner layout (section 8), backlog (section 9). |
 | `technical-spec.md` | source and spec child B | `claude-sonnet-5-5` | Source, read-only here. Decisions Q1 to Q5 (section 0), implementation specs T1 to T15, file ownership map (section O). |
 | `source-inventory.md` | source and spec child B | `claude-sonnet-5-5` | Source, read-only here. File and line inventory at `4b2ae0f`. |
@@ -57,6 +57,27 @@ Captures from the implementation run. They are separate from the audit set above
 | `evidence/impl-2026-10-09/m4-glass/` | `da2738d` | 98 captures | OSN-042 | Glass consolidation: 8 group plates in 2 containers, solid canvas well, Snap as the only saturated control, Reduce Transparency and Increase Contrast. Legacy-scroller corner noted as open. |
 | `evidence/impl-2026-10-09/m4-window/` | `7bf20f8` | 50 captures | OSN-043, OSN-041 (step 5) | Unified window chrome: document title, proxy icon, subtitle, seamless title bar, app-owned alert sheets. |
 | `evidence/impl-2026-10-09/m5-settings/` | `a48d0df` | 36 captures | OSN-051 | Settings rebuild. **Pending merge:** lives on `impl/m5-settings` (integrated at `a79a1d8`), not on main yet. |
+
+## E2E audit
+
+Owner-authorized end-to-end audit (2026-10-09 to 2026-10-10): every option, icon and state, checked with real clicks where the session allowed it and with rendered harness captures otherwise. The classes are never merged; the rendered folders are harness renders, not real-click proof.
+
+| File or folder | What it is |
+|---|---|
+| `e2e-audit-plan.md` | The audit plan and its phases. |
+| `e2e/README.md` | The method, the evidence classes, the inventory and the launcher. |
+| `e2e/findings.md` | Findings for J1, J2, J3 and J4, and the J4 retest table (38 pass, 7 partial, 2 unverified of 47). |
+| `e2e/coverage-matrix.md` | One row per audit ID (589 rows): E2E 258, rendered 94, unit/source 91, unverified 146. |
+| `e2e/inventory.json` | The 589 audit entries, generated from the sources and the harness. |
+| `e2e/j4-aws-log.md` | The live S3 log for the F-J2-002 retest (J4): one synthetic upload and its delete through the app. |
+| `evidence/e2e-2026-10-10/j1/` | J1 real-click captures (editor core). |
+| `evidence/e2e-2026-10-10/j2/` | J2 real-click captures (History, Settings, Destinations, upload). |
+| `evidence/e2e-2026-10-10/j3/` | J3 rendered matrix, 111 captures (not real-click). |
+| `evidence/e2e-2026-10-10/j3-diffs/` | Positive-control composites for the display options (rendered). |
+| `evidence/e2e-2026-10-10/j4/` | J4 real-click retest captures. |
+| `evidence/impl-2026-10-09/audit-fix-1` to `audit-fix-3c`, `audit-fix-3b-before` | Visual acceptance for fix batches 1, 2, 3a, 3b (and its before twins) and 3c. |
+
+The full index with the source SHA for each folder is in `progress.md`, section E2E audit.
 
 ## Regenerating the evidence
 
@@ -108,7 +129,7 @@ Full list in `evidence/2026-10-09/gaps.md` and section 5 of the audit. Summary:
 | Todos new in round 2 | 3: OSN-014, OSN-057, OSN-058 |
 | Owner decisions | 10: Q1 to Q5, D-TEXT, D-HINT, D-T15-1 to D-T15-3. Each has a recommended default. All ten are resolved; Q3 is option B (custom bars), Q4 is implemented in OSN-043. |
 | Estimate | 18.0 d numeric across 18 todos, plus 17.5 d of unsplit spec figures, total 35.5 d (`roadmap.md` section 8) |
-| Status at `658a16f` | 24 done, 2 verified, 1 not-a-bug, 5 in-progress, 4 pending (`progress.md`; roadmap section 2b). |
+| Status at `284f028` | 29 done, 2 verified, 1 not-a-bug, 3 in-progress, 1 pending (`progress.md`; roadmap section 2b). |
 
 ## Validating the files
 
