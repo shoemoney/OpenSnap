@@ -24,6 +24,7 @@ private enum AboutWindowTests {
         dismissal()
         licenseWindow()
         noticesWindow()
+        reflowAndNotices()
         noNetwork()
         print("AboutWindowTests: \(checks) checks passed (windows never ordered on screen)")
     }
@@ -136,6 +137,36 @@ private enum AboutWindowTests {
         let fallback = AboutWindow.bundledNoticesText()
         expect(fallback == AboutWindow.missingNotices && fallback.contains("Font Awesome Free") && fallback.contains("CC BY 4.0"), "Without the bundled file the fallback still credits Font Awesome Free under CC BY 4.0")
         expect(!fallback.lowercased().contains(["ski", "tch"].joined()), "The fallback names no retired product")
+    }
+
+    /// F-J2-023: the license is shown as paragraphs, not as the file's 80-column lines, and the notices describe the icon set that ships.
+    private static func reflowAndNotices() {
+        let wrapped = "MIT License\n\nCopyright (c) 2026 Someone\n\nPermission is hereby granted, free of charge, to any person\nobtaining a copy of this software, to deal\nin the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\".\n"
+        let flowed = LicenseWindow.reflowed(wrapped)
+        expect(flowed == "MIT License\n\nCopyright (c) 2026 Someone\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software, to deal in the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\".\n",
+               "A wrapped paragraph becomes one line and paragraph breaks stay: \(flowed.debugDescription)")
+        expect(LicenseWindow.reflowed("") == "" && LicenseWindow.reflowed("one line") == "one line" && LicenseWindow.reflowed("a\r\nb") == "a b", "Edge cases: empty, one line, CRLF")
+        // Layout the file chose on purpose survives: a title over its rule, and an indented block.
+        let structured = "Title\n-----\n\nIntro that wraps\nover two lines.\n\n  Indented one\n  Indented two\n"
+        expect(LicenseWindow.reflowed(structured) == "Title\n-----\n\nIntro that wraps over two lines.\n\n  Indented one\n  Indented two\n", "Titles, rules and indented blocks keep their lines: \(LicenseWindow.reflowed(structured).debugDescription)")
+        let window = make(license: { wrapped })
+        expect(window.makeLicenseWindow().textView.string == flowed, "The license window shows the reflowed text")
+        expect(window.titleVisibility == .visible && window.title == "About OpenSnap", "The About window shows its title")
+        // The real files: the shipped LICENSE has no line left that is a fragment of a paragraph, and the notices match the icon source.
+        let here = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        let root = [here.deletingLastPathComponent(), here].first { FileManager.default.fileExists(atPath: $0.appendingPathComponent("LICENSE").path) }
+        guard let root, let license = try? String(contentsOf: root.appendingPathComponent("LICENSE"), encoding: .utf8),
+              let notices = try? String(contentsOf: root.appendingPathComponent("THIRD_PARTY_NOTICES.md"), encoding: .utf8),
+              let icons = try? String(contentsOf: root.appendingPathComponent("Sources/FontAwesomeFree.swift"), encoding: .utf8) else {
+            return expect(false, "LICENSE, THIRD_PARTY_NOTICES.md or FontAwesomeFree.swift was not found; the notice check must not skip")
+        }
+        let paragraphs = LicenseWindow.reflowed(license).components(separatedBy: "\n")
+        expect(paragraphs.allSatisfy { $0.count < 40 || $0.hasSuffix(".") || $0.hasSuffix(":") || $0.hasSuffix("SOFTWARE.") }, "A license paragraph is still cut across lines: \(paragraphs.filter { $0.count >= 40 && !$0.hasSuffix(".") })")
+        expect(paragraphs.filter { $0.hasPrefix("Permission is hereby granted") }.first?.contains("Software is furnished to do so") == true, "The grant paragraph is one line")
+        let version = icons.range(of: #"static let version = "([0-9.]+)""#, options: .regularExpression).map { String(icons[$0]) } ?? ""
+        let number = version.components(separatedBy: "\"").dropFirst().first ?? "?"
+        expect(notices.contains("Font Awesome Free \(number)") && number.hasPrefix("7."), "The notices name the Font Awesome Free version the vectors were copied from (\(number))")
+        expect(notices.contains("CC BY 4.0") && notices.contains("nothing from Font Awesome Pro is included") && notices.contains("No font files are included"), "The notices say the shipped set is Free vectors only")
     }
 
     /// The About window must work offline: nothing in its source reaches for a URL loader or the browser.

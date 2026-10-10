@@ -622,6 +622,8 @@ final class GlobalHotkeyForm: NSView {
             key.target = self; key.action = #selector(keyChanged(_:))
             let modifiers = NSSegmentedControl(labels: Self.modifierSegments.map(\.1), trackingMode: .selectAny, target: self, action: #selector(modifiersChanged(_:)))
             modifiers.font = Typography.font(.body); modifiers.controlSize = .large
+            // A chosen modifier is drawn in the app's accent, not the system's pale selection, so it reads against the ones left off.
+            modifiers.selectedSegmentBezelColor = DesignTokens.Palette.accent
             for index in Self.modifierSegments.indices { modifiers.setWidth(Self.modifierSegmentWidth, forSegment: index) }
             modifiers.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.control).isActive = true
             modifiers.setAccessibilityLabel("\(action.title) modifier keys")
@@ -713,6 +715,15 @@ final class GlobalHotkeyForm: NSView {
         catch { setStatus("Error: " + error.localizedDescription, isError: true) }
     }
 
+    /// Live Disable All: switch off what is saved. A draft the manager had rejected (two actions on one key, say) is dropped with its
+    /// error instead of being validated again, so the red line does not outlive the command that made it moot.
+    private func disableSaved() {
+        guard let manager else { return }
+        var saved = manager.settings; saved.enabled = false
+        do { try manager.apply(saved); reload() }
+        catch { setStatus("Error: " + error.localizedDescription, isError: true) }
+    }
+
     @objc private func enabledChanged(_ sender: NSButton) { commit() }
     @objc private func keyChanged(_ sender: NSPopUpButton) {
         guard let row = rows.values.first(where: { $0.key === sender }) else { return }
@@ -727,7 +738,7 @@ final class GlobalHotkeyForm: NSView {
     }
     @objc private func disable(_ sender: Any?) {
         enabledCheckbox.state = .off
-        if mode == .live { commit() } else { setStatus("All global shortcuts will be disabled when you select Save. Your key choices are kept.", isError: false) }
+        if mode == .live { disableSaved() } else { setStatus("All global shortcuts will be disabled when you select Save. Your key choices are kept.", isError: false) }
     }
     @objc private func save(_ sender: Any?) {
         guard let manager else { return }

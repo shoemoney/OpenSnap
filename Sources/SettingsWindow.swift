@@ -453,7 +453,24 @@ final class UploadSettingsTab: SettingsTabViewController {
 
     override func refresh() {
         guard manageButton != nil else { return }
-        let list = destinations()
+        render(destinations())
+    }
+
+    /// The height of the form with the longest list it shows: `visibleRows` rows and the "and N more" line. The window is sized to it, so
+    /// the Upload tab never grows past the window however many destinations are saved.
+    func worstCaseFittingHeight() -> CGFloat {
+        guard manageButton != nil else { return fittingHeight }
+        let shown = destinations()
+        let crowded = PublishingDestinationList(defaultID: nil, destinations: (0...Self.visibleRows).map {
+            PublishingDestination(id: "worst-case-\($0)", name: "Destination \($0)", settings: PublishingSettings())
+        })
+        render(crowded, notify: false)
+        let height = fittingHeight
+        render(shown, notify: false)
+        return height
+    }
+
+    private func render(_ list: PublishingDestinationList, notify: Bool = true) {
         let defaultID = list.defaultDestination?.id
         for view in listStack.arrangedSubviews { listStack.removeArrangedSubview(view); view.removeFromSuperview() }
         rows = []
@@ -494,7 +511,7 @@ final class UploadSettingsTab: SettingsTabViewController {
                 wrapper.widthAnchor.constraint(equalToConstant: SettingsLayout.controlColumnWidth)])
             listStack.addArrangedSubview(wrapper)
         }
-        if isViewLoaded { contentChanged() }
+        if isViewLoaded, notify { contentChanged() }
     }
 
     @objc private func manageTapped() { manage() }
@@ -902,11 +919,17 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
 
     // MARK: Sizing
 
-    /// The window frame a tab asks for: 640 wide, the strip plus its own height, the top edge kept where it is.
+    /// One content height for all four tabs, so the window never changes size when a tab is chosen (OSN F-J2-012): the tallest tab at its
+    /// worst (Upload with a full list, Capture with a two-line shortcut message). A tab that is still taller scrolls inside the window.
+    private(set) lazy var contentHeight: CGFloat = {
+        let capture = tabItems[2].viewController.fittingHeight + ceil(NSLayoutManager().defaultLineHeight(for: DesignTokens.Typography.font(.body)))
+        return ceil(max(general.fittingHeight, drawing.fittingHeight, capture, upload.worstCaseFittingHeight()))
+    }()
+
+    /// The window frame every tab asks for: 640 wide, the strip plus the one content height, the top edge kept where it is.
     func frame(forTabAt index: Int, keepingTopOf current: NSRect) -> NSRect {
-        let tab = tabItems[index].viewController
         let size = window.frameRect(forContentRect: NSRect(x: 0, y: 0, width: SettingsLayout.contentWidth,
-                                                           height: SettingsContentView.chromeHeight + tab.fittingHeight)).size
+                                                           height: SettingsContentView.chromeHeight + contentHeight)).size
         return NSRect(x: current.minX, y: current.maxY - size.height, width: size.width, height: size.height)
     }
 

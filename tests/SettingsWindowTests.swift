@@ -368,8 +368,9 @@ private enum SettingsWindowTests {
             expect(height <= fakeVisible.height, "\(controller.tabItems[index].label) needs \(height) pt; the fake 1280 x 800 screen shows \(fakeVisible.height)")
             expect(abs(window.frame.height - height) < 0.5, "the window is the height its tab asks for (\(window.frame.height) vs \(height))")
             expect(abs(window.contentLayoutRect.width - SettingsLayout.contentWidth) < 0.5, "the content is 640 wide on every tab")
-            expect(abs(window.contentLayoutRect.height - (SettingsContentView.chromeHeight + controller.selectedTab.fittingHeight)) < 0.5,
-                   "the window is the strip, a separator and the tab's own height: \(window.contentLayoutRect.height)")
+            expect(abs(window.contentLayoutRect.height - (SettingsContentView.chromeHeight + controller.contentHeight)) < 0.5,
+                   "the window is the strip, a separator and the one content height: \(window.contentLayoutRect.height)")
+            expect(controller.selectedTab.fittingHeight <= controller.contentHeight + 0.5, "\(controller.tabItems[index].label) needs \(controller.selectedTab.fittingHeight) pt; the one content height is \(controller.contentHeight)")
             expect(controller.content.scrollableExtent < 0.5, "\(controller.tabItems[index].label) fits the fake screen, so it does not scroll")
             expect(abs(window.frame.maxY - top) < 0.5, "switching tabs keeps the top edge where it was")
             window.contentView?.layoutSubtreeIfNeeded()
@@ -379,33 +380,18 @@ private enum SettingsWindowTests {
                 expect(tabView.bounds.insetBy(dx: -0.5, dy: -0.5).contains(box), "\(controller.tabItems[index].label): \(control.className) at \(box) is outside the \(tabView.bounds) tab")
             }
         }
-        expect(Set(heights).count == 4, "each tab sizes to its own content, not one shared height: \(heights)")
-        expect(heights[2] > heights[0] && heights[2] > heights[3], "Capture, the longest form, is the tallest: \(heights)")
-        // A tab switch animates; a second switch while the first is under way replaces it, and the window ends on the later size.
+        // F-J2-012: the window never changes height when a tab is chosen.
+        expect(Set(heights.map { $0.rounded() }).count == 1, "every tab has the same window height: \(heights)")
+        let tallest = controller.tabItems.map(\.viewController.fittingHeight).max() ?? 0
+        expect(abs(controller.contentHeight - tallest) <= 60, "the one height is the tallest tab's (plus room for a wrapped message), not a guess: \(controller.contentHeight) vs \(tallest)")
+        // A tab switch is not a resize, so there is nothing to animate and nothing to jump.
         controller.reduceMotion = { false }; controller.animatesWhenHidden = true
-        controller.select(0); spin(0.5)
-        let general = controller.windowHeight(forTabAt: 0), capture = controller.windowHeight(forTabAt: 2), drawing = controller.windowHeight(forTabAt: 1)
-        expect(abs(window.frame.height - general) < 0.5 && Set([general, capture, drawing]).count == 3, "the General tab's size is settled (\(window.frame.height))")
-        controller.select(2)
-        spin(0.06)
-        expect(window.frame.height > general + 1 && window.frame.height < capture - 1, "the switch to Capture is animating (\(general) < \(window.frame.height) < \(capture))")
-        controller.select(1)
-        spin(0.6)
-        expect(abs(window.frame.height - drawing) < 0.5, "after a second switch the window is \(window.frame.height), not the first target \(capture) (Drawing wants \(drawing))")
-        controller.select(2); spin(0.6)
-        expect(abs(window.frame.height - capture) < 0.5, "an undisturbed switch arrives at its target (\(window.frame.height) vs \(capture))")
-        // The same when the later change is immediate (a refit that is not animated): the earlier animation must not step on past it.
-        controller.select(0); spin(0.6)
-        controller.select(2); spin(0.06)
-        controller.reduceMotion = { true }
-        controller.select(1)
-        spin(0.6)
-        expect(abs(window.frame.height - drawing) < 0.5, "an immediate resize is not undone by the animation it interrupted: \(window.frame.height) vs \(drawing)")
-        controller.reduceMotion = { false }
-        controller.select(2); spin(0.6)
-        controller.reduceMotion = { true }
-        controller.select(0)
-        expect(abs(window.frame.height - general) < 0.5, "under Reduce Motion the window is its new size at once (\(window.frame.height))")
+        controller.select(0); spin(0.3)
+        let settled = window.frame
+        for index in [2, 3, 1, 0] {
+            controller.select(index); spin(0.05)
+            expect(window.frame == settled, "choosing \(controller.tabItems[index].label) moved or resized the window: \(window.frame) vs \(settled)")
+        }
         controller.reduceMotion = { false }; controller.animatesWhenHidden = false
         // A screen too short for a tab limits the window instead of letting it run off the bottom.
         controller.visibleFrame = { NSRect(x: 0, y: 0, width: 1280, height: 400) }
@@ -423,12 +409,14 @@ private enum SettingsWindowTests {
         let window = controller.window
         let short = NSRect(x: 0, y: 40, width: 1280, height: 500)
         controller.visibleFrame = { short }
+        controller.fit(animated: false)
         for index in controller.tabItems.indices {
             controller.select(index)
             window.contentView?.layoutSubtreeIfNeeded()
             let name = controller.tabItems[index].label
-            let wanted = controller.windowHeight(forTabAt: index)
             let tab = controller.selectedTab
+            // What this tab needs on its own, with the window's title bar and strip: the window itself is the same height for every tab.
+            let wanted = window.frameRect(forContentRect: NSRect(x: 0, y: 0, width: SettingsLayout.contentWidth, height: SettingsContentView.chromeHeight + tab.fittingHeight)).height
             expect(window.frame.height <= short.height + 0.5 && window.frame.minY >= short.minY - 0.5 && window.frame.maxY <= short.maxY + 0.5,
                    "\(name): the window stays on a 500 pt screen (\(window.frame) in \(short))")
             let document = tab.view, clip = controller.content.scroll.contentView
@@ -437,7 +425,7 @@ private enum SettingsWindowTests {
             let lowest = controls.min { frame(of: $0, in: document).minY < frame(of: $1, in: document).minY }!
             let box = frame(of: lowest, in: document)
             if wanted > short.height + 0.5 {
-                expect(abs(window.frame.height - short.height) < 0.5, "\(name): a tab that needs \(wanted) pt takes the whole 500 pt screen (\(window.frame.height))")
+                expect(abs(window.frame.height - short.height) < 0.5, "\(name): a tab that needs \(wanted) pt sits in the whole 500 pt screen (\(window.frame.height))")
                 expect(controller.content.scrollableExtent > 1, "\(name): the rest of the tab scrolls (\(controller.content.scrollableExtent) pt)")
                 expect(clip.bounds.origin.y < 0.5, "\(name): a tab opens at its top (clip origin \(clip.bounds.origin.y))")
                 expect(!clip.documentVisibleRect.contains(box), "\(name): the last control starts below the fold (\(box) vs \(clip.documentVisibleRect))")
@@ -447,7 +435,7 @@ private enum SettingsWindowTests {
                 expect(abs(clip.bounds.maxY - document.frame.height) < 1, "\(name): nothing is clipped past the end")
                 clip.scroll(to: .zero); controller.content.scroll.reflectScrolledClipView(clip)
             } else {
-                expect(controller.content.scrollableExtent < 0.5 && abs(window.frame.height - wanted) < 0.5, "\(name): a tab that fits is not scrolled (\(controller.content.scrollableExtent))")
+                expect(controller.content.scrollableExtent < 0.5, "\(name): a tab that fits is not scrolled (\(controller.content.scrollableExtent))")
             }
         }
         // A scrolled tab goes back to its top when it is chosen again.
@@ -642,6 +630,19 @@ private enum SettingsWindowTests {
         expect(manager.settings == .defaults && form.enabledCheckbox.state == .on, "Reset Defaults applies the defaults at once")
         form.disableButton.performClick(nil)
         expect(!manager.settings.enabled, "Disable All applies at once")
+        // F-J2-020: a duplicate the manager refused leaves a red line; Disable All answers it instead of validating the same draft again.
+        form.resetButton.performClick(nil)
+        for action in [GlobalHotkeyAction.screen, .window] {
+            let key = form.keyPopup(for: action), mods = form.modifierControl(for: action)
+            key.selectItem(at: k); _ = key.target?.perform(key.action, with: key)
+            mods.setSelected(true, forSegment: 0); _ = mods.target?.perform(mods.action, with: mods)
+        }
+        expect(form.statusField.stringValue.hasPrefix("Error: ") && form.statusField.stringValue.contains("same shortcut"), "the duplicate leaves its error on screen: '\(form.statusField.stringValue)'")
+        form.disableButton.performClick(nil)
+        expect(!manager.settings.enabled && form.enabledCheckbox.state == .off && form.statusField.stringValue == GlobalHotkeyForm.idleLiveStatus && form.statusField.textColor == DesignTokens.Palette.Text.primary,
+               "Disable All clears the stale duplicate error: '\(form.statusField.stringValue)'")
+        expect(form.keyPopup(for: .window).indexOfSelectedItem == 0, "the rejected draft is dropped, not kept beside a disabled form")
+        expect(GlobalHotkeyAction.allCases.allSatisfy { form.modifierControl(for: $0).selectedSegmentBezelColor == DesignTokens.Palette.accent }, "a chosen modifier is drawn in the accent")
         controller.show(); controller.window.orderOut(nil)
     }
 
@@ -724,6 +725,14 @@ private enum SettingsWindowTests {
         many.0.select(3); _ = many.0.upload.view; many.0.upload.refresh()
         expect(many.0.upload.listedNames.count == UploadSettingsTab.visibleRows && many.0.upload.summaryText == "and 3 more in Manage Destinations…", "a long list is summarised, not scrolled: \(String(describing: many.0.upload.summaryText))")
         expect(many.0.windowHeight(forTabAt: 3) <= fakeVisible.height, "even a long list fits the fake screen")
+        // F-J2-012: the Upload tab is the same height empty and full, and its caption is never below the fold.
+        expect(abs(many.0.windowHeight(forTabAt: 3) - empty.0.windowHeight(forTabAt: 3)) < 0.5 && abs(many.0.windowHeight(forTabAt: 3) - many.0.windowHeight(forTabAt: 0)) < 0.5,
+               "Upload with a full list is the window every other tab has")
+        many.0.window.contentView?.layoutSubtreeIfNeeded()
+        let caption = descendants(many.0.upload.view).compactMap { $0 as? NSTextField }.first { $0.stringValue == "Uploads go to the default destination." }
+        let captionBox = caption.map { frame(of: $0, in: many.0.upload.view) }
+        expect(many.0.content.scrollableExtent < 0.5 && captionBox.map { many.0.upload.view.bounds.insetBy(dx: -0.5, dy: -0.5).contains($0) } == true && many.0.upload.fittingHeight <= many.0.contentHeight + 0.5,
+               "the caption under a full list is on screen without scrolling (\(String(describing: captionBox)), extent \(many.0.content.scrollableExtent))")
     }
 
     /// The real coordinator: the sheet attaches to the Settings window, the list refreshes when it ends, and the shutdown barrier still runs.
