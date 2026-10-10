@@ -297,6 +297,12 @@ final class AuditRun {
             node["segments"] = (0..<segmented.segmentCount).map { segmented.label(forSegment: $0) ?? "" }
             if text == nil { text = (0..<segmented.segmentCount).compactMap { segmented.label(forSegment: $0) }.joined(separator: " | ") }
         }
+        if let toggle = view as? SegmentedToggle {
+            node["segments"] = toggle.titles
+            node["selectedSegment"] = toggle.selectedSegment
+            font = toggle.textFont(forSegment: toggle.selectedSegment)
+            if text == nil { text = toggle.titles.joined(separator: " | ") }
+        }
         if let imageView = view as? NSImageView, let image = imageView.image { node["image"] = imageInfo(image) }
         if let font = fontInfo(font) { node["font"] = font }
         if let text, !text.isEmpty { node["string"] = text }

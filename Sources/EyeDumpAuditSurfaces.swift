@@ -352,6 +352,7 @@ extension AuditRun {
             step("S37", "PNG and JPG at 980") { s37() }
             step("S38", "app tooltips") { s38() }
             step("S39", "titled window and alert sheets") { s39() }
+            step("S40", "component states") { s40() }
             step("S13", "capture picker") { s13() }
             step("S14", "countdown") { s14() }
             step("S15", "capture flash") { s15() }
@@ -615,7 +616,7 @@ extension AuditRun {
         app.status.stringValue = "Frame: position the window, then Snap · this status line is deliberately very long to test truncation at the footer edge"
         shoot("S09", "footer-long-status", surface: "footer", state: "very long status text", crop: footerCrop(), refs: ["ModernEditorChrome.swift|statusRow"])
         app.updateStatus()
-        if let toggle = firstView(of: NSSegmentedControl.self, label: "Image format") {
+        if let toggle = firstView(of: SegmentedToggle.self, label: "Image format") {
             for (index, name) in [(0, "PNG"), (1, "JPG")] {
                 toggle.selectedSegment = index
                 app.changeDragOptions(toggle)
@@ -626,7 +627,7 @@ extension AuditRun {
             toggle.selectedSegment = 0; app.changeDragOptions(toggle)
         }
         guard let format = firstView(of: NSPopUpButton.self, label: "Drag Me format") else {
-            if firstView(of: NSSegmentedControl.self, label: "Image format") == nil { gap("S09", "format control", "neither the format popup nor the PNG|JPG toggle was found") }
+            if firstView(of: SegmentedToggle.self, label: "Image format") == nil { gap("S09", "format control", "neither the format popup nor the PNG|JPG toggle was found") }
             return
         }
         captureTrackedMenu("S09", "format-popup-open", surface: "footer", state: "format popup open (PNG selected)", refs: ["ModernEditorChrome.swift|let formatHolder", "App+ModernChrome.swift|dragFormatControl.addItems"],
@@ -834,7 +835,7 @@ extension AuditRun {
     func s37() {
         guard loadLargeShot(name: "Format states") != nil else { gap("S37", "Format states", "no synthetic size made isLargeShot true"); return }
         placeWindow(windowSize(for: "980xmin", surface: "S37") ?? CGSize(width: 980, height: window.minSize.height))
-        guard let toggle = firstView(of: NSSegmentedControl.self, label: "Image format") else { gap("S37", "Format states", "the PNG|JPG toggle was not found"); return }
+        guard let toggle = firstView(of: SegmentedToggle.self, label: "Image format") else { gap("S37", "Format states", "the PNG|JPG toggle was not found"); return }
         for (index, name) in [(0, "PNG"), (1, "JPG")] {
             toggle.selectedSegment = index
             app.changeDragOptions(toggle)
@@ -845,6 +846,179 @@ extension AuditRun {
         }
         toggle.selectedSegment = 0
         app.changeDragOptions(toggle)
+    }
+
+    /// OSN-044: every state the component state model draws, one capture per state at window width 980. The harness drives the same entry points the
+    /// tracking areas and the responder chain do (`setHovered`, `highlight`, `makeFirstResponder`); a real pointer cannot be moved here.
+    func s40() {
+        guard #available(macOS 26, *), let chrome = app.modernChrome as? ModernEditorChrome,
+              loadThenPlace("980xmin", size: CGSize(width: 1000, height: 700), name: "Component states", surface: "S40") != nil else { return }
+        NSApp.activate(ignoringOtherApps: true)
+        window.makeKeyAndOrderFront(nil)
+        app.setTool(.brush)
+        app.widthControl.doubleValue = 6.75
+        app.changeWidth(app.widthControl)
+        app.updateDragPreview()
+        pump(0.3)
+        func header(_ slug: String, _ state: String, _ refs: [String]) { shoot("S40", slug, surface: "component states", state: state, crop: headerCrop(), refs: refs, settle: 0.4) }
+        func footer(_ slug: String, _ state: String, _ refs: [String]) { shoot("S40", slug, surface: "component states", state: state, crop: footerCrop(), refs: refs, settle: 0.4) }
+        func focus(_ view: NSView?) { window.makeFirstResponder(view); pump(0.15) }
+        let command = ["StateStyles.swift|static func command"]
+
+        // Tools: the selected Brush shows the selection fill, border (and the capsule under Differentiate Without Color); the rest are bare.
+        header("tool-selected-rest", "Brush selected (accent 0.20 fill, 1 pt accent border, computed glyph colour; a 2 x 16 pt capsule under Differentiate Without Color); the other nine tools at rest", command)
+        if let tool = chrome.toolButtons["rectangle"] {
+            tool.setHovered(true)
+            header("tool-hover", "Rectangle tool hovered: a label 0.08 fill (0.16 under Increase Contrast); Brush still selected", ["GlassChrome.swift|func setHovered"])
+            tool.setHovered(false)
+            tool.highlight(true)
+            header("tool-pressed", "Rectangle tool pressed: a label 0.16 fill (0.28 under Increase Contrast) and the glyph drawn at 0.96", ["GlassChrome.swift|override func highlight"])
+            tool.highlight(false)
+            tool.isEnabled = false
+            header("tool-disabled", "Rectangle tool disabled: no fill, content dimmed to 0.38", ["GlassChrome.swift|alphaValue = style.contentAlpha"])
+            tool.isEnabled = true
+            focus(tool)
+            header("tool-focus", "Rectangle tool keyboard-focused: AppKit's focus ring drawn through the button's own rounded mask", ["GlassChrome.swift|override func drawFocusRingMask"])
+        }
+        if let brush = chrome.toolButtons["brush"] {
+            focus(brush)
+            header("tool-selected-focus", "Brush (selected) keyboard-focused: the ring around the selection fill", ["GlassChrome.swift|override func becomeFirstResponder"])
+            brush.setHovered(true)
+            header("tool-selected-hover", "Brush (selected) hovered: hover does not wash out the selection", command)
+            brush.highlight(true)
+            header("tool-selected-pressed", "Brush (selected) pressed: the selected fill deepens by 0.12", command)
+            brush.highlight(false); brush.setHovered(false)
+        }
+        focus(canvas)
+
+        // Snap: the one saturated command.
+        let snap = chrome.snapButton
+        header("snap-rest", "Snap at rest: opaque accent fill, glyph colour computed against it", ["GlassChrome.swift|var isPrimary"])
+        snap.setHovered(true)
+        header("snap-hover", "Snap hovered: the accent brightened 8 %", ["StateStyles.swift|primaryHoverBrightness"])
+        snap.setHovered(false)
+        snap.highlight(true)
+        header("snap-pressed", "Snap pressed: the accent darkened 12 % and the glyph at 0.96", ["StateStyles.swift|primaryPressedDarkening"])
+        snap.highlight(false)
+        snap.isEnabled = false
+        header("snap-disabled", "Snap disabled: the accent dimmed to 0.38", ["GlassChrome.swift|alphaValue = style.contentAlpha"])
+        snap.isEnabled = true
+        focus(snap)
+        header("snap-focus", "Snap keyboard-focused", ["GlassChrome.swift|override func becomeFirstResponder"])
+        focus(canvas)
+
+        // The Size pill: the cell behind it fills for hover and press, the stroke dims when disabled.
+        let pill = app.widthControl, pillCell = pill.superview as? ChromeFillCell
+        header("size-pill-rest", "Size pill at rest: the stroke is the current thickness (6.75)", ["BezelDrawingControls.swift|var pillStyle: StateStyle"])
+        pillCell?.setHovered(true); pill.setHovered(true)
+        header("size-pill-hover", "Size pill hovered: the cell takes the label 0.08 fill", ["GlassChrome.swift|func setPressed"])
+        pillCell?.setHovered(false); pill.setHovered(false)
+        pill.setPressed(true)
+        header("size-pill-pressed", "Size pill pressed: the cell takes the 0.16 fill and the stroke is drawn 0.96 shorter", ["BezelDrawingControls.swift|func setPressed"])
+        pill.setPressed(false)
+        pill.isEnabled = false
+        header("size-pill-disabled", "Size pill disabled: stroke dimmed to 0.38, no fill, not draggable", ["BezelDrawingControls.swift|override var isEnabled"])
+        pill.isEnabled = true
+        focus(pill)
+        header("size-pill-focus", "Size pill keyboard-focused", ["BezelDrawingControls.swift|override var acceptsFirstResponder"])
+        focus(canvas)
+
+        // Size popover: the track's knob grows on hover and press.
+        pill.showPopover()
+        pump(0.6)
+        if let popoverWindow = pill.popover?.contentViewController?.view.window, let track = pill.popoverContent?.trackView {
+            popoverWindow.orderFrontRegardless()
+            track.setHovered(true)
+            shoot("S40", "size-track-hover", surface: "component states", state: "Size popover, pointer over the track: the knob grows to 1.15", windows: popoverWindow === window ? [window] : [window, popoverWindow],
+                  refs: ["BezelDrawingControls.swift|var knobRect"], settle: 0.3, extra: popoverMetrics(popoverWindow, anchor: pill))
+            track.setPressed(true)
+            shoot("S40", "size-track-pressed", surface: "component states", state: "Size popover, knob held: the knob at 1.25 and an accent 0.3 wash over the track", windows: [window, popoverWindow],
+                  refs: ["StateStyles.swift|static func track"], settle: 0.3, extra: popoverMetrics(popoverWindow, anchor: pill))
+            track.setPressed(false); track.setHovered(false)
+            if let preset = pill.popoverContent?.presetButtons.first {
+                preset.setHovered(true)
+                shoot("S40", "size-preset-hover", surface: "component states", state: "Size popover, the smallest preset hovered (command hover fill) beside the selected one", windows: [window, popoverWindow],
+                      refs: ["BezelDrawingControls.swift|var commandStyle: StateStyle"], settle: 0.3, extra: popoverMetrics(popoverWindow, anchor: pill))
+                preset.setHovered(false)
+            }
+        } else { gap("S40", "Size track states", "the Size popover window did not appear") }
+        pill.dismissPopover()
+        pump(0.3)
+
+        // Colour swatches: selected (3 pt accent outline + check), hover, pressed.
+        app.presentDrawingColors(hover: false)
+        pump(0.7)
+        if let popoverWindow = app.colorPopover?.contentViewController?.view.window, app.presetColorButtons.count > 4 {
+            popoverWindow.orderFrontRegardless()
+            let swatches = app.presetColorButtons
+            swatches[2].setHovered(true)
+            swatches[4].highlight(true)
+            shoot("S40", "swatch-states", surface: "component states", state: "Colour popover: Red selected (3 pt accent outline and check glyph), Blue hovered (label 0.5 outline), Translucent gray pressed (0.16 fill)",
+                  windows: [popoverWindow], refs: ["BezelDrawingControls.swift|var swatchStyle: SwatchStyle", "BezelDrawingControls.swift|static func drawTinted"], settle: 0.3, extra: popoverMetrics(popoverWindow, anchor: app.paletteButton))
+            swatches[2].setHovered(false); swatches[4].highlight(false)
+        } else { gap("S40", "Swatch states", "the colour popover window did not appear") }
+        app.closeDrawingColors()
+        pump(0.3)
+
+        // Bottom bar: Undo and Wipe, the drag well, the PNG | JPG toggle.
+        chrome.undoButton.setHovered(true)
+        footer("undo-hover", "Undo hovered: label 0.08 fill", ["GlassChrome.swift|func setHovered"])
+        chrome.undoButton.setHovered(false)
+        chrome.wipeButton.highlight(true)
+        footer("wipe-pressed", "Wipe pressed: label 0.16 fill, glyph at 0.96", ["GlassChrome.swift|override func highlight"])
+        chrome.wipeButton.highlight(false)
+        chrome.undoButton.isEnabled = false; chrome.wipeButton.isEnabled = false
+        footer("undo-wipe-disabled", "Undo and Wipe disabled: no fill, content at 0.38", ["GlassChrome.swift|alphaValue = style.contentAlpha"])
+        chrome.undoButton.isEnabled = true; chrome.wipeButton.isEnabled = true
+        focus(chrome.undoButton)
+        footer("undo-focus", "Undo keyboard-focused", ["GlassChrome.swift|override func becomeFirstResponder"])
+        focus(canvas)
+
+        if let drag = app.dragExportView {
+            let cell = drag.superview as? ChromeFillCell
+            footer("drag-rest", "Drag well at rest: the open-hand glyph, no plate", ["App.swift|final class DragExportView"])
+            cell?.setHovered(true); drag.setHovered(true)
+            footer("drag-hover", "Drag well hovered: the cell takes the label 0.08 fill; the pointer is an open hand", ["App.swift|override func resetCursorRects"])
+            cell?.setHovered(false); drag.setHovered(false)
+            drag.setPressed(true)
+            footer("drag-pressed", "Drag well held: the cell takes the 0.16 fill; the pointer is a closed hand", ["App.swift|var wellCursor: NSCursor"])
+            drag.setPressed(false)
+            focus(drag)
+            footer("drag-focus", "Drag well keyboard-focused (Space or Return opens the Export panel)", ["App.swift|override func drawFocusRingMask", "App.swift|override func accessibilityPerformPress"])
+            focus(canvas)
+        } else { gap("S40", "Drag well states", "the drag well was not found") }
+
+        let toggle = app.dragFormatToggle
+        toggle.selectedSegment = 0; app.changeDragOptions(toggle)
+        footer("toggle-png", "PNG | JPG with PNG selected: accent 0.20 plate, 1 pt border, bodyStrong text; JPG on its faint plate", ["GlassChrome.swift|final class SegmentedToggle"])
+        toggle.selectedSegment = 1; app.changeDragOptions(toggle)
+        footer("toggle-jpg", "PNG | JPG with JPG selected", ["GlassChrome.swift|final class SegmentedToggle"])
+        toggle.selectedSegment = 0; app.changeDragOptions(toggle)
+        toggle.setHoveredSegment(1)
+        footer("toggle-hover", "PNG selected, JPG hovered: label 0.08 plate", ["GlassChrome.swift|func setHoveredSegment"])
+        toggle.setHoveredSegment(nil)
+        toggle.setPressedSegment(1)
+        footer("toggle-pressed", "PNG selected, JPG pressed: label 0.16 plate", ["GlassChrome.swift|func setPressedSegment"])
+        toggle.setPressedSegment(nil)
+        focus(toggle)
+        footer("toggle-focus", "PNG | JPG keyboard-focused (Left, Right and Space change the format)", ["GlassChrome.swift|override func keyDown"])
+        focus(canvas)
+        toggle.isEnabled = false
+        footer("toggle-disabled", "PNG | JPG disabled: both segments' content at 0.38", ["GlassChrome.swift|override var isEnabled: Bool { didSet { needsDisplay"])
+        toggle.isEnabled = true
+        app.updateStatus()
+
+        // The canvas border on a small canvas, so the hairline and the handles are easy to see.
+        loadSynthetic(size: CGSize(width: 520, height: 300), name: "Border states")
+        app.setTool(.arrow)
+        pump(1.0)
+        shoot("S40", "border-rest", surface: "component states", state: "Canvas border at rest: a separator hairline, no handles", refs: ["CanvasBorderView.swift|guard revealsHandles"], settle: 0.4)
+        app.canvasBorder.setHovered(true)
+        shoot("S40", "border-hover", surface: "component states", state: "Pointer over the border: the accent outline and the four corner handles", refs: ["CanvasBorderView.swift|func setHovered"], settle: 0.4)
+        app.canvasBorder.setHovered(false)
+        app.setTool(.crop)
+        shoot("S40", "border-crop-tool", surface: "component states", state: "Crop tool chosen: the handles stay on without hover", refs: ["App.swift|canvasBorder.showsHandles"], settle: 0.4)
+        app.setTool(.arrow)
     }
 
     func s16() {
@@ -976,6 +1150,15 @@ extension AuditRun {
             if let first = app.historyStore?.entries.first?.id {
                 app.historyBrowser?.select(ids: [first])
                 shoot("S20", "history-selected", surface: "History browser", state: "one entry selected (action buttons enabled)", windows: [history], refs: ["HistoryBrowser.swift|private func updateControls()"])
+                var tiles: [HistoryTileView] = []
+                func collectTiles(_ view: NSView) { if let tile = view as? HistoryTileView { tiles.append(tile) }; view.subviews.forEach(collectTiles) }
+                if let content = history.contentView { collectTiles(content) }
+                if let other = tiles.first(where: { !$0.isTileSelected }) {
+                    other.setHovered(true)
+                    shoot("S20", "history-tile-hover", surface: "History browser", state: "one entry selected (accent fill, border, check badge) and another tile hovered (label 0.08 fill)", windows: [history],
+                          refs: ["HistoryBrowser.swift|func setHovered"], settle: 0.4)
+                    other.setHovered(false)
+                } else { gap("S20", "History tile hover", "no unselected tile was found in the grid") }
                 for (width, height) in [(880, 600), (1120, 850), (1280, 800)] as [(CGFloat, CGFloat)] {
                     history.setFrame(NSRect(x: history.frame.minX, y: max(40, history.frame.maxY - height), width: width, height: height), display: true)
                     pump(0.8)
