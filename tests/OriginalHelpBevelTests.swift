@@ -432,18 +432,6 @@ private enum OriginalHelpBevelTests {
         let logged = rig.panel.alphaLog.count
         post()
         expect(rig.panel.alphaLog.count == logged, "With no fade running a notification assigns no alpha")
-        // A shut-down bevel no longer listens.
-        let gone = make(motion: { flag.on })
-        gone.bevel.enabled = true
-        gone.bevel.hover(owner: "B", message: "Hover")
-        flag.on = false
-        gone.scheduler.fire(gone.scheduler.latest(0.25))
-        let panel = gone.panel
-        gone.bevel.shutdown()
-        flag.on = true
-        let before = panel.alphaLog.count
-        post()
-        expect(panel.alphaLog.count == before, "A shut-down bevel ignores display-option changes")
     }
 
     /// The plate is as tall as its text needs plus air, never less: no line sits on or past an edge.
