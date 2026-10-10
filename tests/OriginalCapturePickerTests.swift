@@ -127,6 +127,25 @@ private enum OriginalCapturePickerTests {
         expect(G.magnifierBorderRect == NSRect(x: 3, y: 3, width: 106, height: 106), "border inset -3 (69437)")
         expect(G.requiredDisplaySize(labelRect: NSRect(x: 6, y: 112, width: 80, height: 14)) == NSSize(width: 112, height: 129),
                "requiredDisplaySize is inset(-3) of border union label (69338)")
+        let labelText = NSSize(width: 54, height: 22)
+        let label = G.labelRect(textSize: labelText)
+        expect(label.minY - G.magnifierRect.maxY >= 4 && !label.intersects(G.magnifierRect) && !label.intersects(G.magnifierBorderRect),
+               "The size label starts at least 4 pt below the lens and clears its border: label \(label), lens \(G.magnifierRect)")
+        expect(label.midX == G.magnifierBorderRect.midX && label.size == NSSize(width: labelText.width + 8, height: labelText.height + 10),
+               "The label stays centred under the lens, 4 pt left and right and 5 pt above and below its text")
+        let labelled = OriginalCaptureMagnifierView(frame: NSRect(origin: .zero, size: G.initialSize))
+        labelled.labelString = "1028x664"
+        labelled.frame.size = labelled.requiredDisplaySize
+        expect(labelled.bounds.contains(labelled.labelRect) && labelled.labelRect.minY - G.magnifierRect.maxY >= 4,
+               "The mounted view is sized to hold lens and label together, with the 4 pt gap")
+        let display = NSRect(x: 0, y: 0, width: 1000, height: 800)
+        for pointer in [NSPoint(x: 5, y: 5), NSPoint(x: 995, y: 795), NSPoint(x: 5, y: 795), NSPoint(x: 995, y: 5), NSPoint(x: 500, y: 400)] {
+            let frame = G.placementFrame(mousePoint: pointer, requiredSize: labelled.requiredDisplaySize, in: display)
+            let onScreenLabel = labelled.labelRect.offsetBy(dx: frame.minX, dy: frame.minY)
+            let onScreenLens = G.magnifierRect.offsetBy(dx: frame.minX, dy: frame.minY)
+            expect(display.contains(onScreenLabel) && display.contains(onScreenLens) && onScreenLabel.minY - onScreenLens.maxY >= 4,
+                   "At \(pointer) lens and label are both on screen and keep the gap: label \(onScreenLabel), lens \(onScreenLens)")
+        }
         // DAT_00260520 = -2.0f (disassembly 0x1e417: movss 0x242463(%ebx), ebx=0x1e0bd).
         expect(G.placementOffset == -2, "Placement offset DAT_00260520")
         expect(G.sourceRect(mousePoint: NSPoint(x: 40, y: 50)) == NSRect(x: 35, y: 45, width: 11, height: 11),

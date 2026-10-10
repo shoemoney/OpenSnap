@@ -11,8 +11,8 @@ enum OriginalCaptureFlashTiming {
     static let peakAlpha: Float32 = 0.7
     /// Reduce Motion: no ramp, one frame at peak alpha for this long.
     static let reducedMotionDuration: TimeInterval = 0.05
-    /// UserDefaults key for "Show capture flash". Absent means on. It only matters under Reduce Motion: with Reduce Motion on
-    /// and this off the flash is skipped entirely. There is deliberately no Settings row yet.
+    /// UserDefaults key for "Show capture flash". Absent means on. Off means no flash at any time, with or without Reduce
+    /// Motion; Reduce Motion with it on plays the single reduced frame. There is deliberately no Settings row yet.
     static let showFlashKey = "showCaptureFlash"
 
     enum Phase { case flash, deflash }
@@ -29,8 +29,8 @@ enum OriginalCaptureFlashTiming {
         Float32(elapsed) >= duration
     }
 
-    /// Whether to flash at all: only the combination Reduce Motion on + "Show capture flash" off skips it.
-    static func shouldFlash(reduceMotion: Bool, showFlash: Bool) -> Bool { !reduceMotion || showFlash }
+    /// Whether to flash at all: the preference is a plain user opt-out, so off never flashes. Reduce Motion only changes how.
+    static func shouldFlash(showFlash: Bool) -> Bool { showFlash }
 
     /// Reads `showFlashKey`; a missing key counts as on.
     static func showFlash(defaults: UserDefaults = .standard) -> Bool {
@@ -159,11 +159,11 @@ final class OriginalCaptureFlashController: CaptureFlashPresenting {
     }
 
     /// A zero or empty frame covers every screen (original passes NSZeroRect -> totalFrame).
-    /// Under Reduce Motion there is no ramp: one frame at peak alpha for 0.05 s, or nothing when "Show capture flash" is off.
+    /// Nothing when "Show capture flash" is off. Under Reduce Motion there is no ramp: one frame at peak alpha for 0.05 s.
     func play(frame: NSRect, deflashDuration: Float32) {
         guard window == nil else { return }
         let reduced = reduceMotion()
-        guard OriginalCaptureFlashTiming.shouldFlash(reduceMotion: reduced, showFlash: showFlash()) else { return }
+        guard OriginalCaptureFlashTiming.shouldFlash(showFlash: showFlash()) else { return }
         self.deflashDuration = deflashDuration
         let target = frame.isEmpty ? NSScreen.screens.map(\.frame).reduce(NSRect.null) { $0.union($1) } : frame
         guard !target.isNull, !target.isEmpty else { return }

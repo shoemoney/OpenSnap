@@ -141,7 +141,7 @@ extension AuditRun {
         sheet.displayIfNeeded()
         shoot(id, slug, surface: surface, state: state, windows: [sheet], refs: refs, settle: 0.4,
               extra: ["capturedWindow": "sheet itself", "sheetClass": String(describing: type(of: sheet)), "sheetOnScreen": sheet.isVisible])
-        shoot(id, slug + "-in-context", surface: surface, state: state + " (parent window + sheet composite)", windows: [host, sheet], refs: refs, settle: 0.1,
+        shoot(id, slug + "-in-context", surface: surface, state: state + " (parent window + sheet composite)", windows: [sheet, host], refs: refs, settle: 0.1,
               extra: ["capturedWindow": "parent + sheet composite"])
     }
 
@@ -1154,13 +1154,23 @@ extension AuditRun {
         window.makeKeyAndOrderFront(nil)
         pump(0.4)
         app.helpBevel?.enabled = true
-        app.helpBevel?.hover(owner: "audit", message: "Rectangle tool: drag to draw a rectangle. Hold Shift for a square.")
-        pump(1.2)
+        let bands = OriginalHelpBevel.discoverBands(in: window)
+        let hint = "Rectangle tool: drag to draw a rectangle. Hold Shift for a square."
+        // The editor is at the top of the screen, so the plate goes inside the window: under the top bar for a top-bar control,
+        // above the bottom bar for a bottom-bar control, and never over the title bar or the traffic lights.
+        for (slug, control, point) in [("help-bevel", "top-bar control (Rectangle tool)", NSPoint(x: bands.header.midX, y: bands.header.midY)),
+                                       ("help-bevel-bottom", "bottom-bar control (Wipe)", NSPoint(x: bands.footer.minX + 60, y: bands.footer.midY))] {
+            app.helpBevel?.pointer = { point }
+            app.helpBevel?.hover(owner: "audit-" + slug, message: hint)
+            pump(1.2)
+            let known = Set([window.windowNumber])
+            let helpers = NSApp.windows.filter { !known.contains($0.windowNumber) && $0.isVisible && String(describing: type(of: $0)).contains("Help") }
+            shoot("S29", slug, surface: "help bevel (tool-tip overlay)", state: "OriginalHelpBevel HUD with a hover hint for a \(control) (feature is off by default); editor at the top of the screen, so the plate sits inside the window, clear of the title bar and both bars", windows: helpers + [window], refs: ["OriginalHelpBevel.swift|final class OriginalHelpBevelView", "OriginalHelpBevel.swift|private func insideFrame"],
+                  extra: ["helpWindowFound": !helpers.isEmpty, "plateFrame": NSStringFromRect(helpers.first?.frame ?? .zero), "titleBar": NSStringFromRect(bands.titleBar),
+                          "header": NSStringFromRect(bands.header), "footer": NSStringFromRect(bands.footer)])
+            app.helpBevel?.clear()
+        }
         let known = Set([window.windowNumber])
-        let helpers = NSApp.windows.filter { !known.contains($0.windowNumber) && $0.isVisible && String(describing: type(of: $0)).contains("Help") }
-        shoot("S29", "help-bevel", surface: "help bevel (tool-tip overlay)", state: "OriginalHelpBevel HUD with a hover hint (feature is off by default); editor at the top of the screen, so the plate sits inside its top edge", windows: helpers + [window], refs: ["OriginalHelpBevel.swift|final class OriginalHelpBevelView"],
-              extra: ["helpWindowFound": !helpers.isEmpty])
-        app.helpBevel?.clear()
         // With room above the editor the plate hangs from its top edge instead of sitting inside it.
         if let screen = window.screen ?? NSScreen.main {
             var frame = window.frame
@@ -1168,7 +1178,7 @@ extension AuditRun {
             window.setFrame(frame, display: true)
             window.makeKeyAndOrderFront(nil)
             pump(0.4)
-            app.helpBevel?.hover(owner: "audit", message: "Rectangle tool: drag to draw a rectangle. Hold Shift for a square.")
+            app.helpBevel?.hover(owner: "audit", message: hint)
             pump(1.2)
             let hanging = NSApp.windows.filter { !known.contains($0.windowNumber) && $0.isVisible && String(describing: type(of: $0)).contains("Help") }
             shoot("S29", "help-bevel-hanging", surface: "help bevel (tool-tip overlay)", state: "the same hint with 140 pt free above the editor: the plate hangs from its top edge, behind it",
@@ -1229,6 +1239,22 @@ extension AuditRun {
             picker.cancel()
             pump(0.4)
         }
+        // Magnifier, lens and size label together at the screen's corners: both stay on screen with the gap between them.
+        let edgePicker = OriginalCapturePicker(displayFrames: { [screen.frame] }, windowRecords: { [] }, screenImage: { _ in nil }, mouseLocation: { centre })
+        edgePicker.begin(windowOnly: false) { _ in }
+        pump(0.8)
+        if let panel = edgePicker.panels.first, let selection = panel.contentView as? OriginalCaptureSelectionView {
+            for (corner, point) in [("top-left", NSPoint(x: selection.bounds.minX + 6, y: selection.bounds.minY + 6)),
+                                    ("bottom-right", NSPoint(x: selection.bounds.maxX - 6, y: selection.bounds.maxY - 6))] {
+                if let move = NSEvent.mouseEvent(with: .mouseMoved, location: point, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: panel.windowNumber, context: nil, eventNumber: 0, clickCount: 0, pressure: 0) {
+                    selection.mouseMoved(with: move)
+                }
+                shoot("S13", "picker-no-recording-grant-edge-\(corner)", surface: "capture picker / crosshair + magnifier", state: "magnifier with the pointer at the \(corner) corner of the display (placeholder lens): lens and size label both stay on screen, 4 pt apart",
+                      windows: [panel], refs: ["OriginalCaptureMagnifier.swift|static func labelRect", "OriginalCaptureMagnifier.swift|static func placementFrame"], settle: 0.4)
+            }
+        } else { gap("S13", "capture picker (screen edge)", "picker did not create an overlay panel") }
+        edgePicker.cancel()
+        pump(0.4)
         UserDefaults.standard.removeObject(forKey: OriginalCaptureMagnifierGeometry.defaultsKey)
     }
 

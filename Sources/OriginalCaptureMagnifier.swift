@@ -27,14 +27,17 @@ enum OriginalCaptureMagnifierGeometry {
         magnifierBorderRect.union(labelRect).insetBy(dx: -3, dy: -3).size
     }
 
-    /// decompiled.c:69462-69530 (labelRect): centered under the border, overlapping
-    /// its bottom by 10, 8 wider and 14 taller than the text.
+    /// Clear air between the lens border and the size label. The original (decompiled.c:69462-69530) overlapped the border's
+    /// bottom by 10, so the label sat on the lens; the plate now starts below the border instead.
+    static let labelGap = DesignTokens.Space.s1
+
+    /// Centered under the border, `labelGap` below it, 8 wider and 10 taller than the text, so the text sits in the middle of the plate.
     static func labelRect(textSize: NSSize) -> NSRect {
         let border = magnifierBorderRect
         return NSRect(x: border.minX + border.width * 0.5 - (textSize.width * 0.5 + 4),
-                      y: border.maxY - 10,
+                      y: border.maxY + labelGap,
                       width: textSize.width + 8,
-                      height: textSize.height + 10 + 4)
+                      height: textSize.height + 10)
     }
 
     /// Point-space source square (decompiled.c:69150-69168): zero rect at mouse+0.5,

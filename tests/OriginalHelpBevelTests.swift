@@ -102,8 +102,9 @@ private enum OriginalHelpBevelTests {
         let factoryCalls: NSMutableArray
         var panel: HelpPanel { bevel.panel as! HelpPanel }
     }
-    private static func make(reduceMotion: Bool = false, screen: NSRect? = nil) -> Rig {
-        let host = HelpHost(contentRect: NSRect(x: -700, y: 100, width: 800, height: 500),
+    private static func make(reduceMotion: Bool = false, screen: NSRect? = nil, frame: NSRect = NSRect(x: -700, y: 100, width: 800, height: 500),
+                             bands: OriginalHelpBevel.Bands? = nil, pointer: NSPoint = NSPoint(x: 0, y: 1_000_000)) -> Rig {
+        let host = HelpHost(contentRect: frame,
                             styleMask: [.borderless], backing: .buffered, defer: true)
         host.isReleasedWhenClosed = false
         let scheduler = ControlledHelpScheduler()
@@ -112,7 +113,7 @@ private enum OriginalHelpBevelTests {
             factoryCalls.add(true)
             return HelpPanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel],
                              backing: .buffered, defer: true)
-        }, scheduler: scheduler, reduceMotion: { reduceMotion }, screenFrame: { _ in screen })
+        }, scheduler: scheduler, reduceMotion: { reduceMotion }, screenFrame: { _ in screen }, bands: bands, pointer: { pointer })
         return Rig(host: host, scheduler: scheduler, bevel: bevel, factoryCalls: factoryCalls)
     }
 
@@ -126,6 +127,8 @@ private enum OriginalHelpBevelTests {
         plateFitsText()
         tokensOnly()
         staysOnScreen()
+        insideStaysClearOfChrome()
+        discoversChromeBands()
         teardownAndReachability()
         nativeRunLoopModes()
         print("PASS OriginalHelpBevelTests (\(checks) checks; injected nonordering panels, no desktop input or permissions)")
@@ -444,7 +447,8 @@ private enum OriginalHelpBevelTests {
         expect(visible.contains(tight.panel.frame), "Plate stays inside the visible screen: \(tight.panel.frame) in \(visible)")
         expect(!tightView.joinsHost && tight.host.attachments.first?.1 == .above,
                "Pushed inside the host: rounded on all corners and ordered in front of it")
-        expect(abs(tight.panel.frame.maxY - 600) < 0.001, "Sits flush under the screen's top edge")
+        expect(abs(tight.panel.frame.maxY - (600 - OriginalHelpBevel.insideMargin)) < 0.001,
+               "Sits one margin under the content's top edge (no chrome bars in this host), not flush against the screen")
         // Growing taller than the room still keeps the whole plate on screen.
         tight.bevel.modifiers(message: String(repeating: "Hold Option to sample a color, then continue drawing. ", count: 8))
         expect(visible.contains(tight.panel.frame) && tight.host.attachments.count == 1, "A long message stays on screen too, with one attachment")
@@ -463,6 +467,89 @@ private enum OriginalHelpBevelTests {
         tight.bevel.modifiers(message: "Hold Shift to constrain")
         expect((tight.panel.contentView as! OriginalHelpBevelView).joinsHost && tight.host.attachments.first?.1 == .below && tight.host.attachments.count == 1,
                "With room again the plate returns to hanging from the host, re-attached once")
+    }
+
+    /// A window at the top of the screen: the plate goes inside, and must never cover the title bar (traffic lights), the top bar or
+    /// the bottom bar. A top-bar control puts it just under the top bar; a bottom-bar control just above the bottom bar.
+    private static func insideStaysClearOfChrome() {
+        let frame = NSRect(x: 100, y: 100, width: 1000, height: 600)
+        let screen = NSRect(x: 0, y: 0, width: 1400, height: 700)
+        let bands = OriginalHelpBevelBands(
+            content: NSRect(x: 100, y: 100, width: 1000, height: 572),
+            titleBar: NSRect(x: 100, y: 672, width: 1000, height: 28),
+            header: NSRect(x: 112, y: 628, width: 976, height: 40),
+            footer: NSRect(x: 112, y: 112, width: 976, height: 40),
+            viewport: NSRect(x: 112, y: 160, width: 976, height: 460))
+        let message = "Rectangle tool: drag to draw a rectangle. Hold Shift for a square."
+        for (name, pointer, anchor) in [("top-bar control", NSPoint(x: 600, y: 648), OriginalHelpBevelAnchor.top),
+                                        ("canvas", NSPoint(x: 600, y: 400), .top),
+                                        ("bottom-bar control", NSPoint(x: 600, y: 132), .bottom)] {
+            let rig = make(screen: screen, frame: frame, bands: { _ in bands }, pointer: pointer)
+            defer { rig.bevel.shutdown() }
+            rig.bevel.enabled = true
+            rig.bevel.modifiers(message: message)
+            let plate = rig.panel.frame
+            let view = rig.panel.contentView as! OriginalHelpBevelView
+            expect(!view.joinsHost && rig.host.attachments.first?.1 == .above, "\(name): no room above, so the plate sits inside, in front, fully rounded")
+            expect(!plate.intersects(bands.titleBar), "\(name): never covers the title bar or its traffic lights: \(plate) vs \(bands.titleBar)")
+            expect(!plate.intersects(bands.header), "\(name): never covers the top bar: \(plate) vs \(bands.header)")
+            expect(!plate.intersects(bands.footer), "\(name): never covers the bottom bar: \(plate) vs \(bands.footer)")
+            expect(bands.content.contains(plate) && screen.contains(plate), "\(name): inside the window's content rect and the screen: \(plate)")
+            expect(near(plate.midX, bands.content.midX), "\(name): centred in the window")
+            switch anchor {
+            case .top:
+                expect(near(plate.maxY, bands.viewport.maxY - OriginalHelpBevel.insideMargin),
+                       "\(name): one margin under the top bar, over the top of the canvas viewport: \(plate)")
+            case .bottom:
+                expect(near(plate.minY, bands.viewport.minY + OriginalHelpBevel.insideMargin),
+                       "\(name): one margin above the bottom bar, over the bottom of the canvas viewport: \(plate)")
+            }
+            rig.bevel.modifiers(message: String(repeating: "Hold Option to sample a color, then continue drawing. ", count: 8))
+            let tall = rig.panel.frame
+            expect(!tall.intersects(bands.titleBar) && !tall.intersects(bands.header) && !tall.intersects(bands.footer) && bands.content.contains(tall),
+                   "\(name): a long message stays clear of the chrome too: \(tall)")
+        }
+        // A short display clips the visible frame below the content: the plate follows the visible frame, not just the window.
+        let short = NSRect(x: 0, y: 0, width: 1400, height: 400)
+        let low = make(screen: short, frame: NSRect(x: 100, y: 0, width: 1000, height: 400),
+                       bands: { _ in OriginalHelpBevelBands(content: NSRect(x: 100, y: 0, width: 1000, height: 372), titleBar: NSRect(x: 100, y: 372, width: 1000, height: 28),
+                                                             header: NSRect(x: 112, y: 328, width: 976, height: 40), footer: NSRect(x: 112, y: 12, width: 976, height: 40),
+                                                             viewport: NSRect(x: 112, y: 60, width: 976, height: 260)) },
+                       pointer: NSPoint(x: 600, y: 348))
+        defer { low.bevel.shutdown() }
+        low.bevel.enabled = true
+        low.bevel.modifiers(message: message)
+        expect(short.contains(low.panel.frame) && !low.panel.frame.intersects(NSRect(x: 100, y: 372, width: 1000, height: 28))
+               && !low.panel.frame.intersects(NSRect(x: 112, y: 328, width: 976, height: 40)),
+               "Short display: still on screen and clear of the title bar and top bar: \(low.panel.frame)")
+    }
+
+    /// The default band discovery on a real titled, full-size-content window: the title bar is the strip above the layout rect and
+    /// the bars are found by the editor chrome's identifiers.
+    private static func discoversChromeBands() {
+        let host = NSWindow(contentRect: NSRect(x: 100, y: 100, width: 800, height: 500),
+                            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView], backing: .buffered, defer: true)
+        host.isReleasedWhenClosed = false
+        let content = host.contentView!
+        func add(_ id: String, _ frame: NSRect) {
+            let view = NSView(frame: frame); view.identifier = NSUserInterfaceItemIdentifier(id); content.addSubview(view)
+        }
+        let height = content.bounds.height
+        add("OpenSnapHeader", NSRect(x: 12, y: height - 100, width: 776, height: 44))
+        add("OpenSnapFooter", NSRect(x: 12, y: 12, width: 776, height: 44))
+        let scroll = NSScrollView(frame: NSRect(x: 12, y: 64, width: 776, height: height - 176)); content.addSubview(scroll)
+        let bands = OriginalHelpBevel.discoverBands(in: host)
+        expect(bands.titleBar.height > 0 && near(bands.titleBar.maxY, host.frame.maxY) && near(bands.titleBar.minY, bands.content.maxY),
+               "Title bar is the strip between the layout rect and the window's top edge: \(bands.titleBar)")
+        expect(near(bands.header.height, 44) && near(bands.footer.height, 44) && near(bands.viewport.height, height - 176),
+               "Header, footer and viewport are found by identifier / scroll view: \(bands)")
+        expect(near(bands.header.minY, host.frame.minY + height - 100) && near(bands.footer.minY, host.frame.minY + 12),
+               "Band rectangles are in screen coordinates")
+        let bare = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 300), styleMask: [.borderless], backing: .buffered, defer: true)
+        bare.isReleasedWhenClosed = false
+        let empty = OriginalHelpBevel.discoverBands(in: bare)
+        expect(empty.header.height == 0 && empty.footer.height == 0 && empty.viewport == empty.content && empty.titleBar.height == 0,
+               "A window without the editor chrome collapses the bars to empty strips and the viewport to the content rect")
     }
 
     private static func teardownAndReachability() {

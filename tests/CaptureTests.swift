@@ -616,7 +616,7 @@ private enum CaptureTests {
         override func object(forKey defaultName: String) -> Any? { values[defaultName] }
     }
 
-    /// Peak white 0.7, a single 0.05 s frame under Reduce Motion, and no flash at all for Reduce Motion + preference off.
+    /// Peak white 0.7, a single 0.05 s frame under Reduce Motion, and no flash at all whenever the preference is off.
     static func captureFlashPeakAndReduceMotion() throws {
         typealias T = OriginalCaptureFlashTiming
         try expect(T.peakAlpha <= 0.7 && T.peakAlpha == 0.7, "flash peak is 0.7, not 1.0")
@@ -627,10 +627,7 @@ private enum CaptureTests {
         try expect(!T.showFlash(defaults: defaults), "an explicit off is read as off")
         defaults.values[T.showFlashKey] = true
         try expect(T.showFlash(defaults: defaults), "an explicit on is read as on")
-        for (reduce, show, expected) in [(false, true, true), (false, false, true), (true, true, true), (true, false, false)] {
-            try expect(T.shouldFlash(reduceMotion: reduce, showFlash: show) == expected,
-                       "reduce \(reduce), show \(show) flashes: \(expected)")
-        }
+        try expect(T.shouldFlash(showFlash: true) && !T.shouldFlash(showFlash: false), "the preference alone decides whether it flashes")
 
         // Normal motion: whatever the ramp does, the window never goes above the peak.
         var now: TimeInterval = 0
@@ -638,7 +635,7 @@ private enum CaptureTests {
         let window = FakeFlashWindow()
         let normal = OriginalCaptureFlashController(clock: { now }, windowFactory: { _ in window },
                                                     timerFactory: { _, tick in ticks.append(tick); return {} },
-                                                    reduceMotion: { false }, showFlash: { false })
+                                                    reduceMotion: { false }, showFlash: { true })
         normal.play(frame: NSRect(x: 0, y: 0, width: 50, height: 50), deflashDuration: 0.1)
         for step in 1...30 { now = Double(step) * 0.01; ticks.last?() }
         try expect(!window.alphas.isEmpty && window.alphas.max()! <= 0.7 + 1e-6 && window.alphas.max()! > 0.69,
@@ -660,21 +657,16 @@ private enum CaptureTests {
         try expect(single.alphas == [0.7, 0] && single.ordered == 1 && !reduced.isRunning && invalidations >= 1,
                    "after 0.05 s the frame is gone, got \(single.alphas)")
 
-        // Reduce Motion with "Show capture flash" off: nothing at all.
-        var made = 0, timers = 0
-        let skipped = OriginalCaptureFlashController(clock: { 0 }, windowFactory: { _ in made += 1; return FakeFlashWindow() },
-                                                     timerFactory: { _, _ in timers += 1; return {} },
-                                                     reduceMotion: { true }, showFlash: { false })
-        skipped.play(frame: NSRect(x: 0, y: 0, width: 50, height: 50), deflashDuration: 0.1)
-        try expect(made == 0 && timers == 0 && !skipped.isRunning, "Reduce Motion + preference off creates no window and no timer")
-
-        // Preference off alone does not skip it (the rule is the combination).
-        var madeAlone = 0
-        let offAlone = OriginalCaptureFlashController(clock: { 0 }, windowFactory: { _ in madeAlone += 1; return FakeFlashWindow() },
-                                                      timerFactory: { _, _ in {} }, reduceMotion: { false }, showFlash: { false })
-        offAlone.play(frame: NSRect(x: 0, y: 0, width: 50, height: 50), deflashDuration: 0.1)
-        try expect(madeAlone == 1, "preference off without Reduce Motion still flashes")
-        offAlone.cancel()
+        // "Show capture flash" off: nothing at all, with Reduce Motion on or off.
+        for reduce in [true, false] {
+            var made = 0, timers = 0
+            let skipped = OriginalCaptureFlashController(clock: { 0 }, windowFactory: { _ in made += 1; return FakeFlashWindow() },
+                                                         timerFactory: { _, _ in timers += 1; return {} },
+                                                         reduceMotion: { reduce }, showFlash: { false })
+            skipped.play(frame: NSRect(x: 0, y: 0, width: 50, height: 50), deflashDuration: 0.1)
+            try expect(made == 0 && timers == 0 && !skipped.isRunning,
+                       "preference off (Reduce Motion \(reduce)) creates no window and no timer")
+        }
     }
 
     /// What a test needs to watch a coordinator's trip through the Screen Recording gate.
