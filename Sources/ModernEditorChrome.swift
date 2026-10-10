@@ -162,11 +162,11 @@ final class ModernEditorChrome: NSView {
         undoButton = make("Undo", .arrowRotateLeft, actions.undo, shortcut: Self.menuShortcut(for: actions.undo))
         wipeButton = make("Wipe", .broom, actions.wipe)
         resizeButton = make("Resize…", .rulerCombined, actions.resize)
-        // Icon-only upload command: a native SF Symbol, no title, so nothing but the explicit label is read aloud.
+        // Icon-only upload command: the semantic Upload icon, no title, so nothing but the explicit label is read aloud.
         shareButton = GlassChromeButton(title: "", target: actions.target, action: actions.share)
         GlassChrome.useExtraLarge(shareButton)
-        shareButton.image = NSImage(systemSymbolName: Self.uploadSymbolName, accessibilityDescription: "Upload")?
-            .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: GlassChrome.Metrics.iconPointSize, weight: .regular))
+        shareButton.image = ChromeIcons.resolve(.upload, family: .regular, pointSize: GlassChrome.Metrics.iconPointSize).image
+        shareButton.image?.accessibilityDescription = "Upload"
         shareButton.imagePosition = .imageOnly
         AppToolTip.setText("Upload", for: shareButton)
         super.init(frame: .zero)

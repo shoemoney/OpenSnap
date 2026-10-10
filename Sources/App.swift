@@ -44,8 +44,7 @@ final class DragExportView: NSView, NSDraggingSource, NSFilePromiseProviderDeleg
     override func draw(_ dirtyRect: NSRect) {
         if drawsBackground { NSColor.controlBackgroundColor.setFill(); NSBezierPath(roundedRect: bounds.insetBy(dx: 2, dy: 2), xRadius: 8, yRadius: 8).fill() }
         if showsHandIconOnly {
-            let configuration = NSImage.SymbolConfiguration(pointSize: 22, weight: .semibold)
-            guard let hand = NSImage(systemSymbolName: Self.handSymbolName, accessibilityDescription: nil)?.withSymbolConfiguration(configuration) else { return }
+            guard let hand = ChromeIcons.resolve(.dragHand, family: .solid, pointSize: 22).image else { return }
             let tinted = NSImage(size: hand.size, flipped: false) { rect in
                 hand.draw(in: rect); NSColor.labelColor.setFill(); rect.fill(using: .sourceAtop); return true
             }
