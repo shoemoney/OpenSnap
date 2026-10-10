@@ -304,6 +304,9 @@ final class PhotoBrowserCoordinator: NSObject, NSTableViewDataSource, NSTableVie
     private var browserContent: NSView?
     private let table = NSTableView()
     private let status = NSTextField(labelWithString: "")
+    /// Zero while the status line has nothing to say, so no blank line sits between the grid and the buttons.
+    private lazy var statusCollapsed = status.heightAnchor.constraint(equalToConstant: 0)
+    private func setStatus(_ text: String) { status.stringValue = text; statusCollapsed.isActive = text.isEmpty }
     private let openButton = NSButton()
     private let folderButton = NSButton()
     private let libraryButton = NSButton()
@@ -327,6 +330,11 @@ final class PhotoBrowserCoordinator: NSObject, NSTableViewDataSource, NSTableVie
     private let sources = NSStackView()
     private var loading = false
 
+    /// The sheet's size: 900 x 700 where the window has room, and always inside the window's content.
+    nonisolated static func sheetSize(in room: NSSize) -> NSSize {
+        NSSize(width: max(1, min(900, room.width - 40)), height: max(1, min(700, room.height - 16)))
+    }
+
     /// onOpen must synchronously read/decode the URL, as App.openURL does. The
     /// Photos copy is removed after it returns, including a declined dirty prompt.
     func show(relativeTo parent: NSWindow, onOpen: @escaping (URL) -> Void) {
@@ -334,9 +342,11 @@ final class PhotoBrowserCoordinator: NSObject, NSTableViewDataSource, NSTableVie
         if let panel { panel.makeKeyAndOrderFront(nil); return }
         guard let session = session.begin(onOpen: onOpen) else { return }
         thumbnails.countLimit = 128
-        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 900, height: 700),
+        // A sheet hangs from the top of its window, so one taller than the window's content would run off its bottom edge at the minimum window.
+        let size = Self.sheetSize(in: parent.contentLayoutRect.size)
+        let panel = NSPanel(contentRect: NSRect(origin: .zero, size: size),
                             styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
-        panel.title = "Photos"; panel.minSize = NSSize(width: 760, height: 540)
+        panel.title = "Photos"; panel.minSize = NSSize(width: min(760, size.width), height: min(540, size.height))
         panel.isReleasedWhenClosed = false; panel.delegate = self; self.panel = panel
         buildContent(in: panel)
         // Retain a temporary coordinator until the sheet actually completes.
@@ -375,7 +385,7 @@ final class PhotoBrowserCoordinator: NSObject, NSTableViewDataSource, NSTableVie
         let bottom = NSStackView(views: [close, openButton]); bottom.spacing = 16
         status.font = DesignTokens.Typography.font(.body); status.maximumNumberOfLines = 2
         status.setAccessibilityRole(.staticText)
-        status.stringValue = ""
+        setStatus("")
         table.setAccessibilityLabel("Photos in the chosen folder")
         table.headerView = nil; table.rowHeight = 140; table.intercellSpacing = NSSize(width: 0, height: 4)
         table.dataSource = self; table.delegate = self; table.target = self
@@ -435,7 +445,7 @@ final class PhotoBrowserCoordinator: NSObject, NSTableViewDataSource, NSTableVie
         else { emptyActions.setViews([], in: .center); sources.setViews([folderButton, libraryButton], in: .leading) }
     }
     /// Errors say "Error:" in words, so they never rest on colour alone.
-    private func showError(_ text: String) { status.stringValue = text.hasPrefix("Error:") ? text : "Error: " + text }
+    private func showError(_ text: String) { setStatus(text.hasPrefix("Error:") ? text : "Error: " + text) }
     private func configure(_ button: NSButton, _ title: String, _ action: Selector) {
         button.title = title; button.target = self; button.action = action
         button.bezelStyle = .rounded; button.font = DesignTokens.Typography.font(.body)
@@ -468,7 +478,7 @@ final class PhotoBrowserCoordinator: NSObject, NSTableViewDataSource, NSTableVie
         let request = UUID()
         cancellation = cancel; folderAccess = access; requestID = request
         entries = []; thumbnails.removeAllObjects(); table.reloadData(); setLoading(true)
-        status.stringValue = "Reading \(url.lastPathComponent)…"
+        setStatus("Reading \(url.lastPathComponent)…")
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             let result = Result { try PhotoBrowserCatalog.entries(in: access.url, isCancelled: { cancel.isCancelled }) }
             Task { @MainActor [weak self] in
@@ -476,7 +486,7 @@ final class PhotoBrowserCoordinator: NSObject, NSTableViewDataSource, NSTableVie
                 switch result {
                 case .success(let entries):
                     self.entries = entries
-                    self.status.stringValue = entries.isEmpty ? "No supported photos in \(url.lastPathComponent). Choose another folder or use Photos Library." : "\(entries.count) photos in \(url.lastPathComponent). Double-click a photo to open it."
+                    self.setStatus(entries.isEmpty ? "No supported photos in \(url.lastPathComponent). Choose another folder or use Photos Library." : "\(entries.count) photos in \(url.lastPathComponent). Double-click a photo to open it.")
                     self.table.reloadData()
                 case .failure(let error): self.showError(error.localizedDescription)
                 }
@@ -507,7 +517,7 @@ final class PhotoBrowserCoordinator: NSObject, NSTableViewDataSource, NSTableVie
         let request = UUID(), cancel = PhotoBrowserCancellation()
         cancellation?.cancel(); cancellation = cancel
         requestID = request; setLoading(true)
-        status.stringValue = "Preparing selected photo…"
+        setStatus("Preparing selected photo…")
         let work = importWork
         pickerProgress = provider.loadFileRepresentation(forTypeIdentifier: identifier) { [weak self] url, error in
             guard !cancel.isCancelled, let admission = work.admitCopy() else { return }

@@ -60,4 +60,76 @@ extension AuditRun {
         canvas.newBlank(size: CGSize(width: 800, height: 600)); canvas.editingUndoManager.removeAllActions()
         app.fitCanvasToWindow(); app.updateStatus()
     }
+
+    /// Audit fix batch 3c round 2: the Resize and Photos sheets at the 980 x minimum window (nothing may hang over the parent or clip), the selection
+    /// handles at 25% zoom, and History's Delete from Web turned off with its reason on the tooltip plate. Synthetic content only.
+    func s43() {
+        loadSynthetic(size: CGSize(width: 1200, height: 800), name: "Audit 3c round 2")
+        placeWindow(windowSize(for: "980xmin", surface: "S43") ?? CGSize(width: 980, height: window.minSize.height))
+        func sheetAtMinimum(_ slug: String, _ state: String, refs: [String], dismiss: () -> Void) {
+            pump(0.9)
+            guard let sheet = window.attachedSheet else { gap("S43", slug, "the sheet did not attach"); return }
+            sheet.displayIfNeeded()
+            let parent = window.frame, frame = sheet.frame
+            let extra: [String: Any] = ["sheetFrame": NSStringFromRect(frame), "parentFrame": NSStringFromRect(parent),
+                                        "sheetHangsBelowParent": frame.minY < parent.minY - 0.5, "sheetWiderThanParent": frame.width > parent.width + 0.5,
+                                        "sheetContentFits": sheet.contentView.map { $0.fittingSize.height <= sheet.contentLayoutRect.height + 0.5 && $0.fittingSize.width <= sheet.contentLayoutRect.width + 0.5 } ?? false]
+            shoot("S43", slug, surface: "Sheet at the minimum window", state: state, windows: [sheet], refs: refs, settle: 0.3, extra: extra)
+            shoot("S43", slug + "-in-context", surface: "Sheet at the minimum window", state: state + " (parent window + sheet composite)", windows: [sheet, window], refs: refs, settle: 0.1, extra: extra)
+            dismiss()
+            pump(0.4)
+        }
+        for (mode, label) in [(ResizePanelMode.resize, "resize"), (.crop, "crop"), (.limit, "limit")] {
+            app.resize()
+            if let panel = window.attachedSheet, let control = firstView(of: NSSegmentedControl.self, label: "Size operation", in: panel.contentView) {
+                control.selectedSegment = mode.rawValue
+                _ = control.target?.perform(control.action, with: control)
+            }
+            sheetAtMinimum("w980-resize-\(label)", "Resize or Crop sheet, \(label) mode, over the 980 x minimum-height window: whole sheet inside the parent, no clipped row",
+                           refs: ["ResizePanel.swift|private func buildContent"]) { [self] in
+                if let sheet = window.attachedSheet { window.endSheet(sheet, returnCode: .cancel) }
+                app.activeResizeSession?.cancel()
+            }
+        }
+        app.photoBrowser.show(relativeTo: window) { _ in }
+        sheetAtMinimum("w980-photos-empty", "Photos sheet with nothing chosen over the 980 x minimum-height window: the grid, then the buttons with no blank band between",
+                       refs: ["PhotoBrowser.swift|private func buildContent"]) { [self] in
+            if let sheet = window.attachedSheet { window.endSheet(sheet, returnCode: .cancel) }
+        }
+        // Selection handles at 25% zoom keep one size on screen (F-J1-016).
+        loadSynthetic(size: CGSize(width: 1000, height: 700), name: "Zoom 25")
+        let named = addAllAnnotationKinds(scale: 1)
+        app.setTool(.select)
+        if let rect = named["rectangle"] { canvas.selection = [rect.id] }
+        app.setCanvasDisplayZoom(0.25, label: "Zoom"); pump(0.5)
+        shoot("S43", "zoom25-selection-handles", surface: "Selection", state: "rectangle selected at 25% zoom: handles stay a usable size and do not bury the selection (F-J1-016)", refs: ["Canvas.swift|static func handleLayout"], settle: 0.3)
+        canvas.selection = []
+        app.fitCanvasToWindow()
+        // History: Delete from Web off for an upload made before the app recorded where it went, with its reason on the tooltip plate.
+        app.showHistory()
+        pump(0.8)
+        if let history = app.historyWindow, let store = try? app.archiveStore(), let browser = app.historyBrowser, let snapshot = try? app.historySnapshot() {
+            let url = URL(string: "https://cdn.example.com/pics/Legacy-upload.png")!
+            let legacy = try? store.archive(snapshot, name: "Legacy upload", action: .shared, destination: url.absoluteString, remoteURL: url)
+            app.refreshHistory(); pump(0.6)
+            if let legacy {
+                browser.select(ids: [legacy]); pump(0.5)
+                let button = browser.actionRow.arrangedSubviews.compactMap { $0 as? NSButton }.first { $0.accessibilityLabel() == HistoryBrowser.Action.deleteRemote.title }
+                let tip = AppToolTip.shared
+                tip.dismiss(); tip.reduceMotion = { true }; tip.dismissesOnWindowChanges = false
+                if let button, AppToolTip.text(for: button) != nil {
+                    tip.show(for: button)
+                    if let plate = tip.panel, tip.isShown {
+                        shoot("S43", "history-delete-web-disabled", surface: "History browser", state: "Delete from Web dimmed for an upload with no recorded destination, its reason on the tooltip plate (F-J2-002)",
+                              windows: [history, plate], refs: ["HistoryBrowser.swift|nonisolated static func deleteRemoteHelp", "App.swift|canDeleteFromWeb"], settle: 0.3,
+                              extra: ["buttonEnabled": button.isEnabled, "tooltipText": tip.shownText ?? ""])
+                    } else { gap("S43", "Delete from Web tooltip", "the tooltip plate did not appear") }
+                    tip.dismiss()
+                } else { gap("S43", "Delete from Web tooltip", "the button or its tooltip text was not found") }
+                tip.dismissesOnWindowChanges = true
+            }
+            history.orderOut(nil)
+        } else { gap("S43", "History Delete from Web", "History or its store was unavailable") }
+        window.makeKeyAndOrderFront(nil)
+    }
 }
