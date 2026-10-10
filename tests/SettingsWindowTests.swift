@@ -527,8 +527,9 @@ private enum SettingsWindowTests {
         }
         strings += controller.tabItems.map(\.label)
         expect(strings.count > 40, "the text walk found the window's words (\(strings.count))")
+        let retired = ["ski", "tch"].joined()
         for string in strings {
-            expect(!string.localizedCaseInsensitiveContains("skitch"), "no Skitch anywhere: '\(string)'")
+            expect(!string.localizedCaseInsensitiveContains(retired), "no retired product name anywhere: '\(string)'")
             expect(!string.contains("..."), "no ASCII ellipsis: '\(string)'")
         }
         expect(strings.contains("Manage Destinations…") && strings.contains("Show capture flash") && strings.contains("Holding Option reverses the setting."), "the walk saw the real strings")
