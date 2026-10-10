@@ -1,0 +1,2316 @@
+{
+ "source": "tools/eye-dump-audit.sh --groups main,more,overlays,states,pairs --appearances light --icons sf",
+ "surfaces": {
+  "S01": {
+   "id": "S01",
+   "slug": "editor-empty",
+   "surface": "editor, empty",
+   "state": "fresh blank canvas, default window"
+  },
+  "S02": {
+   "id": "S02",
+   "slug": "populated",
+   "surface": "editor, populated",
+   "state": "synthetic 1200x800 background + arrow, line, rectangle (open+filled), ellipse, brush, highlighter, fill, text (outline+shadow, plain), SVG path, raster"
+  },
+  "S03": {
+   "id": "S03",
+   "slug": "topbar",
+   "surface": "top bar",
+   "state": "Hide, Toolbox, Photos | Snap | ten tools | Color, Size, Font; title shows document name"
+  },
+  "S04": {
+   "id": "S04",
+   "slug": "tool-text",
+   "surface": "tool states",
+   "state": "text tool selected"
+  },
+  "S05": {
+   "id": "S05",
+   "slug": "text-editing",
+   "surface": "text editing",
+   "state": "text tool field editor active with typed text and grip"
+  },
+  "S06": {
+   "id": "S06",
+   "slug": "size-min",
+   "surface": "size pill",
+   "state": "size pill glyph at 1.5 (min)"
+  },
+  "S07": {
+   "id": "S07",
+   "slug": "zoom-50",
+   "surface": "canvas viewport",
+   "state": "zoom 50%"
+  },
+  "S08": {
+   "id": "S08",
+   "slug": "resize-panel",
+   "surface": "Resize panel",
+   "state": "Resize sheet with built-in + two synthetic presets"
+  },
+  "S09": {
+   "id": "S09",
+   "slug": "format-toggle-png",
+   "surface": "footer",
+   "state": "PNG | JPG segmented toggle with PNG selected"
+  },
+  "S10": {
+   "id": "S10",
+   "slug": "export-accessory-alone",
+   "surface": "export save panel",
+   "state": "ExportAccessory view rendered in its own window (JPEG selected)"
+  },
+  "S11": {
+   "id": "S11",
+   "slug": "width-980",
+   "surface": "window sizes",
+   "state": "window width 980 pt, default height"
+  },
+  "S12": {
+   "id": "S12",
+   "slug": "frame-w980",
+   "surface": "Frame mode",
+   "state": "Frame mode at window width 980 pt"
+  },
+  "S13": {
+   "id": "S13",
+   "slug": "picker-synthetic-lens",
+   "surface": "capture picker / crosshair + magnifier",
+   "state": "crosshair overlay with magnifier (lens fed synthetic pixels), no drag yet"
+  },
+  "S14": {
+   "id": "S14",
+   "slug": "countdown-3",
+   "surface": "countdown overlay",
+   "state": "countdown digit 3 (tick 2)"
+  },
+  "S15": {
+   "id": "S15",
+   "slug": "flash-peak",
+   "surface": "capture flash",
+   "state": "flash panel at its peak alpha (0.7) in front of the editor, editor behind it"
+  },
+  "S16": {
+   "id": "S16",
+   "slug": "permission-sheet",
+   "surface": "Screen Recording permission sheet",
+   "state": "app-owned sheet: title, instructions, Open System Settings (default) and Cancel"
+  },
+  "S17": {
+   "id": "S17",
+   "slug": "settings-upload",
+   "surface": "Settings: Upload",
+   "state": "Upload tab: three saved destinations, the first is the default"
+  },
+  "S18": {
+   "id": "S18",
+   "slug": "hotkeys-sheet",
+   "surface": "Preferences: Hotkeys",
+   "state": "Capture Shortcuts sheet (all actions None)"
+  },
+  "S19": {
+   "id": "S19",
+   "slug": "destinations-test-error",
+   "surface": "Destinations / Publishing",
+   "state": "S3 form after a synthetic failed Test: octagon glyph and an Error: line"
+  },
+  "S20": {
+   "id": "S20",
+   "slug": "history-selected",
+   "surface": "History browser",
+   "state": "one entry selected (action buttons enabled)"
+  },
+  "S21": {
+   "id": "S21",
+   "slug": "upload-menu-busy",
+   "surface": "publish progress",
+   "state": "destination menu while an upload runs (Cancel Upload offered)"
+  },
+  "S23": {
+   "id": "S23",
+   "slug": "toolbox-menu-open",
+   "surface": "menus",
+   "state": "Toolbox pull-down open"
+  },
+  "S24": {
+   "id": "S24",
+   "slug": "statusitem-normal",
+   "surface": "status-bar item",
+   "state": "menu-bar icon, normal (the button view only; the real bar is not captured)"
+  },
+  "S25": {
+   "id": "S25",
+   "slug": "about-panel",
+   "surface": "About window",
+   "state": "app-owned About window: icon, name, version and build, credit line, license link"
+  },
+  "S26": {
+   "id": "S26",
+   "slug": "rename",
+   "surface": "alerts / sheets",
+   "state": "Rename… sheet with text field"
+  },
+  "S30": {
+   "id": "S30",
+   "slug": "size-popover-w980",
+   "surface": "Size popover",
+   "state": "Size popover open below the pill at window width 980xmin, value 6.75, Brush tool"
+  },
+  "S31": {
+   "id": "S31",
+   "slug": "color-popover-w980",
+   "surface": "Colour popover",
+   "state": "Drawing colours popover open below the top-bar swatch at window width 980"
+  },
+  "S32": {
+   "id": "S32",
+   "slug": "frame-large-w980",
+   "surface": "Frame mode, canvas fills the viewport",
+   "state": "Frame mode at 980xmin: large shot at 100% so the canvas fills the viewport; Snap Frame + Cancel; no Original size checkbox"
+  },
+  "S33": {
+   "id": "S33",
+   "slug": "large-shot-w980",
+   "surface": "Large shot at 980",
+   "state": "2400x1500 shot at window width 980, Original size checkbox visible"
+  },
+  "S34": {
+   "id": "S34",
+   "slug": "small-canvas-w980",
+   "surface": "Small canvas centred",
+   "state": "150x90 canvas at window 980xmin: equal margins left/right and top/bottom"
+  },
+  "S35": {
+   "id": "S35",
+   "slug": "large-canvas-w980",
+   "surface": "Large canvas fills the viewport",
+   "state": "large shot at 100% in a 980xmin window: canvas runs to the 12-pt margin and scrolls"
+  },
+  "S36": {
+   "id": "S36",
+   "slug": "text-editing-w980",
+   "surface": "Text editing",
+   "state": "text tool field editor active with typed text at window 980xmin"
+  },
+  "S37": {
+   "id": "S37",
+   "slug": "format-png-w980",
+   "surface": "PNG | JPG at 980",
+   "state": "PNG selected at window width 980 with the large-shot bottom bar; footer group width 257.0 pt"
+  },
+  "S38": {
+   "id": "S38",
+   "slug": "tooltip-zoom-w980",
+   "surface": "App tooltip",
+   "state": "a bottom-bar control: the plate opens above the zoom face because there is no room below"
+  },
+  "S39": {
+   "id": "S39",
+   "slug": "upload-error-sheet",
+   "surface": "alerts / sheets",
+   "state": "error sheet after a stubbed failed upload, over the titled window"
+  }
+ },
+ "controls": [
+  [
+   "AXButton",
+   "Add Preset",
+   [
+    "S08"
+   ]
+  ],
+  [
+   "AXButton",
+   "Add…",
+   [
+    "S19"
+   ]
+  ],
+  [
+   "AXButton",
+   "Apply",
+   [
+    "S08"
+   ]
+  ],
+  [
+   "AXButton",
+   "Black",
+   [
+    "S06",
+    "S31"
+   ]
+  ],
+  [
+   "AXButton",
+   "Blank",
+   [
+    "S01",
+    "S11"
+   ]
+  ],
+  [
+   "AXButton",
+   "Blue",
+   [
+    "S06",
+    "S31"
+   ]
+  ],
+  [
+   "AXButton",
+   "Cancel",
+   [
+    "S08",
+    "S12",
+    "S16",
+    "S18",
+    "S19",
+    "S26",
+    "S32",
+    "S39"
+   ]
+  ],
+  [
+   "AXButton",
+   "Clear",
+   [
+    "S03",
+    "S04",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S12",
+    "S15",
+    "S16",
+    "S18",
+    "S19",
+    "S21",
+    "S30",
+    "S31",
+    "S32",
+    "S34",
+    "S35",
+    "S37",
+    "S38"
+   ]
+  ],
+  [
+   "AXButton",
+   "Color Palettes",
+   [
+    "S06"
+   ]
+  ],
+  [
+   "AXButton",
+   "Color Sliders",
+   [
+    "S06"
+   ]
+  ],
+  [
+   "AXButton",
+   "Color Wheel",
+   [
+    "S06"
+   ]
+  ],
+  [
+   "AXButton",
+   "Color: hover for original preset colors",
+   [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S11",
+    "S12",
+    "S15",
+    "S16",
+    "S18",
+    "S19",
+    "S21",
+    "S23",
+    "S26",
+    "S30",
+    "S31",
+    "S32",
+    "S33",
+    "S34",
+    "S35",
+    "S36",
+    "S37",
+    "S38",
+    "S39"
+   ]
+  ],
+  [
+   "AXButton",
+   "Copy",
+   [
+    "S20"
+   ]
+  ],
+  [
+   "AXButton",
+   "Copy Link",
+   [
+    "S20"
+   ]
+  ],
+  [
+   "AXButton",
+   "Custom color…",
+   [
+    "S06",
+    "S31"
+   ]
+  ],
+  [
+   "AXButton",
+   "Delete from Web",
+   [
+    "S20"
+   ]
+  ],
+  [
+   "AXButton",
+   "Disable All",
+   [
+    "S17",
+    "S18"
+   ]
+  ],
+  [
+   "AXButton",
+   "Done",
+   [
+    "S19"
+   ]
+  ],
+  [
+   "AXButton",
+   "Don’t Save",
+   [
+    "S26",
+    "S39"
+   ]
+  ],
+  [
+   "AXButton",
+   "Edit…",
+   [
+    "S19"
+   ]
+  ],
+  [
+   "AXButton",
+   "Font",
+   [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S11",
+    "S12",
+    "S15",
+    "S16",
+    "S18",
+    "S19",
+    "S21",
+    "S23",
+    "S26",
+    "S30",
+    "S31",
+    "S32",
+    "S33",
+    "S34",
+    "S35",
+    "S36",
+    "S37",
+    "S38",
+    "S39"
+   ]
+  ],
+  [
+   "AXButton",
+   "Green",
+   [
+    "S06",
+    "S31"
+   ]
+  ],
+  [
+   "AXButton",
+   "Hide",
+   [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S11",
+    "S12",
+    "S15",
+    "S16",
+    "S18",
+    "S19",
+    "S21",
+    "S23",
+    "S26",
+    "S30",
+    "S31",
+    "S32",
+    "S33",
+    "S34",
+    "S35",
+    "S36",
+    "S37",
+    "S38",
+    "S39"
+   ]
+  ],
+  [
+   "AXButton",
+   "Hide from History",
+   [
+    "S20"
+   ]
+  ],
+  [
+   "AXButton",
+   "Highlighter",
+   [
+    "S06",
+    "S31"
+   ]
+  ],
+  [
+   "AXButton",
+   "History",
+   [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S11",
+    "S12",
+    "S15",
+    "S16",
+    "S18",
+    "S19",
+    "S21",
+    "S23",
+    "S26",
+    "S30",
+    "S31",
+    "S32",
+    "S33",
+    "S34",
+    "S35",
+    "S36",
+    "S37",
+    "S38",
+    "S39"
+   ]
+  ],
+  [
+   "AXButton",
+   "Image Palettes",
+   [
+    "S06"
+   ]
+  ],
+  [
+   "AXButton",
+   "MIT License",
+   [
+    "S25"
+   ]
+  ],
+  [
+   "AXButton",
+   "Make Default",
+   [
+    "S19"
+   ]
+  ],
+  [
+   "AXButton",
+   "Manage Destinations…",
+   [
+    "S17"
+   ]
+  ],
+  [
+   "AXButton",
+   "Move to Trash",
+   [
+    "S20",
+    "S26"
+   ]
+  ],
+  [
+   "AXButton",
+   "OK",
+   [
+    "S08",
+    "S21",
+    "S26",
+    "S39"
+   ]
+  ],
+  [
+   "AXButton",
+   "Open",
+   [
+    "S20"
+   ]
+  ],
+  [
+   "AXButton",
+   "Open Link",
+   [
+    "S20"
+   ]
+  ],
+  [
+   "AXButton",
+   "Open System Settings",
+   [
+    "S16"
+   ]
+  ],
+  [
+   "AXButton",
+   "Orange",
+   [
+    "S06",
+    "S31"
+   ]
+  ],
+  [
+   "AXButton",
+   "Pencils",
+   [
+    "S06"
+   ]
+  ],
+  [
+   "AXButton",
+   "Photos",
+   [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S11",
+    "S12",
+    "S15",
+    "S16",
+    "S18",
+    "S19",
+    "S21",
+    "S23",
+    "S26",
+    "S30",
+    "S31",
+    "S32",
+    "S33",
+    "S34",
+    "S35",
+    "S36",
+    "S37",
+    "S38",
+    "S39"
+   ]
+  ],
+  [
+   "AXButton",
+   "Pink",
+   [
+    "S06",
+    "S31"
+   ]
+  ],
+  [
+   "AXButton",
+   "Red",
+   [
+    "S06",
+    "S31"
+   ]
+  ],
+  [
+   "AXButton",
+   "Remove",
+   [
+    "S08",
+    "S19"
+   ]
+  ],
+  [
+   "AXButton",
+   "Reset Defaults",
+   [
+    "S17",
+    "S18"
+   ]
+  ],
+  [
+   "AXButton",
+   "Resize…",
+   [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S11",
+    "S12",
+    "S15",
+    "S16",
+    "S18",
+    "S19",
+    "S21",
+    "S23",
+    "S26",
+    "S30",
+    "S31",
+    "S32",
+    "S33",
+    "S34",
+    "S35",
+    "S36",
+    "S37",
+    "S38",
+    "S39"
+   ]
+  ],
+  [
+   "AXButton",
+   "Save",
+   [
+    "S18",
+    "S19",
+    "S26",
+    "S39"
+   ]
+  ],
+  [
+   "AXButton",
+   "Save Preset",
+   [
+    "S08"
+   ]
+  ],
+  [
+   "AXButton",
+   "Save to History",
+   [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S11",
+    "S12",
+    "S15",
+    "S16",
+    "S18",
+    "S19",
+    "S21",
+    "S23",
+    "S26",
+    "S30",
+    "S31",
+    "S32",
+    "S33",
+    "S34",
+    "S35",
+    "S36",
+    "S37",
+    "S38",
+    "S39"
+   ]
+  ],
+  [
+   "AXButton",
+   "Size 12",
+   [
+    "S30"
+   ]
+  ],
+  [
+   "AXButton",
+   "Size 2",
+   [
+    "S30"
+   ]
+  ],
+  [
+   "AXButton",
+   "Size 4",
+   [
+    "S30"
+   ]
+  ],
+  [
+   "AXButton",
+   "Size 7",
+   [
+    "S30"
+   ]
+  ],
+  [
+   "AXButton",
+   "Size 9",
+   [
+    "S30"
+   ]
+  ],
+  [
+   "AXButton",
+   "Snap Frame: capture the area inside the frame",
+   [
+    "S12",
+    "S32"
+   ]
+  ],
+  [
+   "AXButton",
+   "Snap: drag an area or click a window",
+   [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S11",
+    "S15",
+    "S16",
+    "S18",
+    "S19",
+    "S21",
+    "S23",
+    "S26",
+    "S30",
+    "S31",
+    "S33",
+    "S34",
+    "S35",
+    "S36",
+    "S37",
+    "S38",
+    "S39"
+   ]
+  ],
+  [
+   "AXButton",
+   "Test",
+   [
+    "S19"
+   ]
+  ],
+  [
+   "AXButton",
+   "Third-party notices",
+   [
+    "S25"
+   ]
+  ],
+  [
+   "AXButton",
+   "Translucent gray",
+   [
+    "S06",
+    "S31"
+   ]
+  ],
+  [
+   "AXButton",
+   "Undo",
+   [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S11",
+    "S12",
+    "S15",
+    "S16",
+    "S18",
+    "S19",
+    "S21",
+    "S23",
+    "S26",
+    "S30",
+    "S31",
+    "S32",
+    "S33",
+    "S34",
+    "S35",
+    "S36",
+    "S37",
+    "S38",
+    "S39"
+   ]
+  ],
+  [
+   "AXButton",
+   "Upload",
+   [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S11",
+    "S12",
+    "S15",
+    "S16",
+    "S18",
+    "S19",
+    "S21",
+    "S23",
+    "S26",
+    "S30",
+    "S31",
+    "S32",
+    "S33",
+    "S34",
+    "S35",
+    "S36",
+    "S37",
+    "S38",
+    "S39"
+   ]
+  ],
+  [
+   "AXButton",
+   "White",
+   [
+    "S06",
+    "S31"
+   ]
+  ],
+  [
+   "AXButton",
+   "Wipe",
+   [
+    "S02",
+    "S05",
+    "S07",
+    "S12",
+    "S23",
+    "S26",
+    "S33",
+    "S36",
+    "S39"
+   ]
+  ],
+  [
+   "AXButton",
+   "Yellow",
+   [
+    "S06",
+    "S31"
+   ]
+  ],
+  [
+   "AXButton",
+   "this button also has an action to zoom the window",
+   [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S11",
+    "S15",
+    "S20",
+    "S21",
+    "S23",
+    "S30",
+    "S31",
+    "S33",
+    "S34",
+    "S35",
+    "S36",
+    "S37",
+    "S38",
+    "S39"
+   ]
+  ],
+  [
+   "AXCheckBox",
+   "Arrow tool",
+   [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S11",
+    "S12",
+    "S15",
+    "S16",
+    "S18",
+    "S19",
+    "S21",
+    "S23",
+    "S26",
+    "S30",
+    "S31",
+    "S32",
+    "S33",
+    "S34",
+    "S35",
+    "S36",
+    "S37",
+    "S38",
+    "S39"
+   ]
+  ],
+  [
+   "AXCheckBox",
+   "Brush tool",
+   [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S11",
+    "S12",
+    "S15",
+    "S16",
+    "S18",
+    "S19",
+    "S21",
+    "S23",
+    "S26",
+    "S30",
+    "S31",
+    "S32",
+    "S33",
+    "S34",
+    "S35",
+    "S36",
+    "S37",
+    "S38",
+    "S39"
+   ]
+  ],
+  [
+   "AXCheckBox",
+   "Crop tool",
+   [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S11",
+    "S12",
+    "S15",
+    "S16",
+    "S18",
+    "S19",
+    "S21",
+    "S23",
+    "S26",
+    "S30",
+    "S31",
+    "S32",
+    "S33",
+    "S34",
+    "S35",
+    "S36",
+    "S37",
+    "S38",
+    "S39"
+   ]
+  ],
+  [
+   "AXCheckBox",
+   "Ellipse tool",
+   [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S11",
+    "S12",
+    "S15",
+    "S16",
+    "S18",
+    "S19",
+    "S21",
+    "S23",
+    "S26",
+    "S30",
+    "S31",
+    "S32",
+    "S33",
+    "S34",
+    "S35",
+    "S36",
+    "S37",
+    "S38",
+    "S39"
+   ]
+  ],
+  [
+   "AXCheckBox",
+   "Enable global capture shortcuts",
+   [
+    "S17",
+    "S18"
+   ]
+  ],
+  [
+   "AXCheckBox",
+   "Eraser tool",
+   [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S11",
+    "S12",
+    "S15",
+    "S16",
+    "S18",
+    "S19",
+    "S21",
+    "S23",
+    "S26",
+    "S30",
+    "S31",
+    "S32",
+    "S33",
+    "S34",
+    "S35",
+    "S36",
+    "S37",
+    "S38",
+    "S39"
+   ]
+  ],
+  [
+   "AXCheckBox",
+   "Export at original size",
+   [
+    "S10"
+   ]
+  ],
+  [
+   "AXCheckBox",
+   "Fill tool",
+   [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S11",
+    "S12",
+    "S15",
+    "S16",
+    "S18",
+    "S19",
+    "S21",
+    "S23",
+    "S26",
+    "S30",
+    "S31",
+    "S32",
+    "S33",
+    "S34",
+    "S35",
+    "S36",
+    "S37",
+    "S38",
+    "S39"
+   ]
+  ],
+  [
+   "AXCheckBox",
+   "Line tool",
+   [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S11",
+    "S12",
+    "S15",
+    "S16",
+    "S18",
+    "S19",
+    "S21",
+    "S23",
+    "S26",
+    "S30",
+    "S31",
+    "S32",
+    "S33",
+    "S34",
+    "S35",
+    "S36",
+    "S37",
+    "S38",
+    "S39"
+   ]
+  ],
+  [
+   "AXCheckBox",
+   "Lock proportions",
+   [
+    "S08"
+   ]
+  ],
+  [
+   "AXCheckBox",
+   "Make uploads public-read",
+   [
+    "S19"
+   ]
+  ],
+  [
+   "AXCheckBox",
+   "Original size",
+   [
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S15",
+    "S16",
+    "S18",
+    "S19",
+    "S21",
+    "S23",
+    "S26",
+    "S30",
+    "S31",
+    "S33",
+    "S35",
+    "S36",
+    "S37",
+    "S38",
+    "S39"
+   ]
+  ],
+  [
+   "AXCheckBox",
+   "Rectangle tool",
+   [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S11",
+    "S12",
+    "S15",
+    "S16",
+    "S18",
+    "S19",
+    "S21",
+    "S23",
+    "S26",
+    "S30",
+    "S31",
+    "S32",
+    "S33",
+    "S34",
+    "S35",
+    "S36",
+    "S37",
+    "S38",
+    "S39"
+   ]
+  ],
+  [
+   "AXCheckBox",
+   "Select tool",
+   [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S11",
+    "S12",
+    "S15",
+    "S16",
+    "S18",
+    "S19",
+    "S21",
+    "S23",
+    "S26",
+    "S30",
+    "S31",
+    "S32",
+    "S33",
+    "S34",
+    "S35",
+    "S36",
+    "S37",
+    "S38",
+    "S39"
+   ]
+  ],
+  [
+   "AXCheckBox",
+   "Show OpenSnap window in fullscreen and crosshair snaps",
+   [
+    "S17"
+   ]
+  ],
+  [
+   "AXCheckBox",
+   "Show capture flash",
+   [
+    "S17"
+   ]
+  ],
+  [
+   "AXCheckBox",
+   "Show hover hints for tools",
+   [
+    "S17"
+   ]
+  ],
+  [
+   "AXCheckBox",
+   "Show keyboard tip overlay",
+   [
+    "S17"
+   ]
+  ],
+  [
+   "AXCheckBox",
+   "Text tool",
+   [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S11",
+    "S12",
+    "S15",
+    "S16",
+    "S18",
+    "S19",
+    "S21",
+    "S23",
+    "S26",
+    "S30",
+    "S31",
+    "S32",
+    "S33",
+    "S34",
+    "S35",
+    "S36",
+    "S37",
+    "S38",
+    "S39"
+   ]
+  ],
+  [
+   "AXCheckBox",
+   "pick color",
+   [
+    "S06"
+   ]
+  ],
+  [
+   "AXCheckBox",
+   "⇧",
+   [
+    "S17",
+    "S18"
+   ]
+  ],
+  [
+   "AXCheckBox",
+   "⌃",
+   [
+    "S17",
+    "S18"
+   ]
+  ],
+  [
+   "AXCheckBox",
+   "⌘",
+   [
+    "S17",
+    "S18"
+   ]
+  ],
+  [
+   "AXCheckBox",
+   "⌥",
+   [
+    "S17",
+    "S18"
+   ]
+  ],
+  [
+   "AXMenuButton",
+   "Common drawing and capture commands",
+   [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S11",
+    "S12",
+    "S15",
+    "S16",
+    "S18",
+    "S19",
+    "S21",
+    "S23",
+    "S26",
+    "S30",
+    "S31",
+    "S32",
+    "S33",
+    "S34",
+    "S35",
+    "S36",
+    "S37",
+    "S38",
+    "S39"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "About OpenSnap",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Actual Size",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Add Shadow",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Arrow Head",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "At End",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "At Start",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Bring to Front",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Cancel Frame",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Cancel Snapshot",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Capture",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Capture Shortcuts…",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Check Spelling",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Check Spelling as You Type",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Close",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Copy",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Crop Selection",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Crop Snap at Current Edges",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Crosshair Snapshot",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Cut",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Default Text Style",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Delete",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Drawing",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Duplicate",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Export…",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "File",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Filled Shapes",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Flatten",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Flip Horizontal",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Flip Vertical",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Frame Snapshot",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Fullscreen Snapshot",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Group",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "History",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Image",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Loose",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Medium",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "More Commands",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "New",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Open…",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Page Setup…",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Paste",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Pencil Smoothing",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Photos…",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Precise",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Print…",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Publish…",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Quit OpenSnap",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Re-snap (Keep Pen)",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Rename…",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Resize…",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Rotate Clockwise",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Rotate Counterclockwise",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Save",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Save As…",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Save to History",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Select All",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Send to Back",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Set Snap to Normal Size",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Settings…",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Shadow",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Share…",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Sharing Settings…",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Show Spelling and Grammar",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Snap from Link…",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Spelling",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Text",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Text Style…",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Timed Snapshot…",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Toggle Text Outline",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Toggle Text Shadow",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Transparent Background",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Ungroup",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "White Background",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Window Snapshot",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXMenuItem",
+   "Wipe Snap Only",
+   [
+    "S23"
+   ]
+  ],
+  [
+   "AXPopUpButton",
+   "Actual, 100%",
+   [
+    "S07"
+   ]
+  ],
+  [
+   "AXPopUpButton",
+   "Fit, 83%",
+   [
+    "S38"
+   ]
+  ],
+  [
+   "AXPopUpButton",
+   "Output, 100%",
+   [
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S12",
+    "S15",
+    "S16",
+    "S18",
+    "S19",
+    "S21",
+    "S23",
+    "S26",
+    "S30",
+    "S31",
+    "S32",
+    "S33",
+    "S34",
+    "S35",
+    "S36",
+    "S37",
+    "S39"
+   ]
+  ],
+  [
+   "AXRadioButton",
+   "All",
+   [
+    "S20"
+   ]
+  ],
+  [
+   "AXRadioButton",
+   "Archived",
+   [
+    "S20"
+   ]
+  ],
+  [
+   "AXRadioButton",
+   "Both",
+   [
+    "S17"
+   ]
+  ],
+  [
+   "AXRadioButton",
+   "Capture",
+   [
+    "S17"
+   ]
+  ],
+  [
+   "AXRadioButton",
+   "Crop",
+   [
+    "S08"
+   ]
+  ],
+  [
+   "AXRadioButton",
+   "Dock",
+   [
+    "S17"
+   ]
+  ],
+  [
+   "AXRadioButton",
+   "Drawing",
+   [
+    "S17"
+   ]
+  ],
+  [
+   "AXRadioButton",
+   "End",
+   [
+    "S17"
+   ]
+  ],
+  [
+   "AXRadioButton",
+   "General",
+   [
+    "S17"
+   ]
+  ],
+  [
+   "AXRadioButton",
+   "JPG",
+   [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S11",
+    "S12",
+    "S15",
+    "S16",
+    "S18",
+    "S19",
+    "S21",
+    "S23",
+    "S26",
+    "S30",
+    "S31",
+    "S32",
+    "S33",
+    "S34",
+    "S35",
+    "S36",
+    "S37",
+    "S38",
+    "S39"
+   ]
+  ],
+  [
+   "AXRadioButton",
+   "Limit",
+   [
+    "S08"
+   ]
+  ],
+  [
+   "AXRadioButton",
+   "Loose",
+   [
+    "S17"
+   ]
+  ],
+  [
+   "AXRadioButton",
+   "Medium",
+   [
+    "S17"
+   ]
+  ],
+  [
+   "AXRadioButton",
+   "Menu bar",
+   [
+    "S17"
+   ]
+  ],
+  [
+   "AXRadioButton",
+   "PNG",
+   [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S11",
+    "S12",
+    "S15",
+    "S16",
+    "S18",
+    "S19",
+    "S21",
+    "S23",
+    "S26",
+    "S30",
+    "S31",
+    "S32",
+    "S33",
+    "S34",
+    "S35",
+    "S36",
+    "S37",
+    "S38",
+    "S39"
+   ]
+  ],
+  [
+   "AXRadioButton",
+   "Posted to Web",
+   [
+    "S20"
+   ]
+  ],
+  [
+   "AXRadioButton",
+   "Precise",
+   [
+    "S17"
+   ]
+  ],
+  [
+   "AXRadioButton",
+   "Resize",
+   [
+    "S08"
+   ]
+  ],
+  [
+   "AXRadioButton",
+   "Saved",
+   [
+    "S20"
+   ]
+  ],
+  [
+   "AXRadioButton",
+   "Start",
+   [
+    "S17"
+   ]
+  ],
+  [
+   "AXRadioButton",
+   "Upload",
+   [
+    "S17"
+   ]
+  ],
+  [
+   "AXSlider",
+   "Drawing size",
+   [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S11",
+    "S12",
+    "S15",
+    "S16",
+    "S18",
+    "S19",
+    "S21",
+    "S23",
+    "S26",
+    "S30",
+    "S31",
+    "S32",
+    "S33",
+    "S34",
+    "S35",
+    "S36",
+    "S37",
+    "S38",
+    "S39"
+   ]
+  ],
+  [
+   "AXSlider",
+   "Size",
+   [
+    "S30"
+   ]
+  ],
+  [
+   "AXSlider",
+   "color slider",
+   [
+    "S06"
+   ]
+  ]
+ ]
+}
