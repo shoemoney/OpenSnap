@@ -201,12 +201,12 @@ private enum GlassChromeTests {
 
         let actual = GlassChromeButton(title: "Actual Size", target: nil, action: nil)
         actual.setButtonType(.toggle)
-        actual.icon = .maximize
-        actual.selectedIcon = .minimize
+        actual.icon = .eyeSlash
+        actual.selectedIcon = .xmark
         expect(actual.imagePosition == .imageLeading, "Icon beside a label leads it")
-        if case .sfSymbol(let name) = actual.iconSource { expect(name == FAIcon.maximize.sfSymbolFallback, "Off shows maximize") }
+        if case .fontAwesomeFree(let name) = actual.iconSource { expect(name == FAIcon.eyeSlash.freeSource.name, "Off shows the icon") }
         actual.state = .on
-        if case .sfSymbol(let name) = actual.iconSource { expect(name == FAIcon.minimize.sfSymbolFallback, "On shows minimize") }
+        if case .fontAwesomeFree(let name) = actual.iconSource { expect(name == FAIcon.xmark.freeSource.name, "On shows the selected icon") }
         expect(actual.activeFamily == .solid, "Actual Size on is the solid family")
         let blank = GlassChromeButton(title: "Plain", target: nil, action: nil)
         expect(blank.iconSource == .none && blank.image == nil && blank.imagePosition == .noImage, "Without an icon the title stands alone")

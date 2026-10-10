@@ -836,7 +836,8 @@ extension AppSafetyTests {
                 if isOn {
                     try expect(abs((button.plate.style.fill?.alphaComponent ?? 0) - 0.20) < 0.001 && button.layer?.borderWidth == 1, "\(label): \(tool) carries the 0.20 accent fill and a 1 pt border")
                     try expect(sameColor(button.contentTintColor, .controlAccentColor), "\(label): \(tool) glyph is the accent")
-                    let expected: ChromeIconSource = FontAwesomeFont.isAvailable(.solid) ? .fontAwesome(.solid) : .sfSymbol(button.icon?.sfSymbolFallback ?? "")
+                    let free = button.icon.flatMap { FontAwesomeFree.glyph(for: $0, family: .solid) }
+                    let expected: ChromeIconSource = FontAwesomeFont.isAvailable(.solid) ? .fontAwesome(.solid) : free.map { .fontAwesomeFree($0.name) } ?? .sfSymbol(button.icon?.sfSymbolFallback ?? "")
                     try expect(button.iconSource == expected, "\(label): \(tool) icon source \(button.iconSource)")
                 }
             }

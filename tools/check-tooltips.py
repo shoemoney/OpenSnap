@@ -16,7 +16,7 @@ DECLARATION = re.compile(r"\b(let|var|static let|static var)\s+toolTip\b")
 ALLOWED = {
     "AppToolTip.swift": (r".", "the implementation clears and reads system tooltips"),
     "StatusItemSupport.swift": (r"button\.toolTip", "the menu-bar status item lives in the system's status bar window; the OS draws it"),
-    "AboutWindow.swift": (r"licenseButton\.toolTip", "adopted by AppToolTip.install(on:) when About is shown"),
+    "AboutWindow.swift": (r"(licenseButton|noticesButton)\.toolTip", "adopted by AppToolTip.install(on:) when About is shown"),
     "HistoryBrowser.swift": (r"button\.toolTip", "adopted by AppToolTip.install(on:) when History is shown"),
     "PublishingDestinationsView.swift": (r"item\(at: index\)\?\.toolTip", "an NSMenuItem tooltip inside an open menu; the OS draws it"),
     "App.swift": (r"\bitem\.toolTip", "the zoom menu item's mode text (read by VoiceOver); the zoom control's own tooltip goes through AppToolTip"),

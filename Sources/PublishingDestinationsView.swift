@@ -70,9 +70,11 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         Typography.apply(.body, to: button); button.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.control).isActive = true
         return button
     }
-    static func symbol(_ name: String, pointSize: CGFloat = Typography.iconInline, description: String? = nil) -> NSImage? {
-        NSImage(systemSymbolName: name, accessibilityDescription: description)?
-            .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: pointSize, weight: .semibold))
+    /// Status and pill glyphs share the chrome's icon family (ChromeIcons), so Destinations never mixes in a stray SF Symbol.
+    static func icon(_ icon: FAIcon, pointSize: CGFloat = Typography.iconInline, description: String? = nil) -> NSImage? {
+        let image = ChromeIcons.resolve(icon, family: .solid, pointSize: pointSize).image
+        image?.accessibilityDescription = description
+        return image
     }
 
     // Footer buttons: pinned below the scroll view so Return and Escape always have a visible target.
@@ -514,13 +516,13 @@ final class DestinationStatusRow: NSStackView {
     func show(_ kind: Kind, _ message: String, detail extra: String = "") {
         self.kind = kind
         text.stringValue = message; detail.stringValue = extra; detail.isHidden = extra.isEmpty
-        let symbol: String?
+        let icon: FAIcon?
         switch kind {
-        case .success: symbol = "checkmark.circle"
-        case .failure: symbol = "xmark.octagon"
-        case .idle, .working, .info: symbol = nil
+        case .success: icon = .circleCheck
+        case .failure: icon = .xmarkCircle
+        case .idle, .working, .info: icon = nil
         }
-        glyph.image = symbol.flatMap { PublishingDestinationsView.symbol($0, pointSize: DesignTokens.Typography.iconInline, description: kind == .success ? "Connected" : "Error") }
+        glyph.image = icon.flatMap { PublishingDestinationsView.icon($0, pointSize: DesignTokens.Typography.iconInline, description: kind == .success ? "Connected" : "Error") }
         glyph.isHidden = glyph.image == nil
         let color = kind == .failure ? Palette.feedbackError : Palette.Text.primary
         text.textColor = color; glyph.contentTintColor = color
@@ -539,7 +541,7 @@ final class DefaultPillView: NSView {
     init() {
         super.init(frame: .zero)
         wantsLayer = true; layer?.borderWidth = 1
-        glyph.image = PublishingDestinationsView.symbol("checkmark", pointSize: DesignTokens.Typography.readableMinimum)
+        glyph.image = PublishingDestinationsView.icon(.check, pointSize: DesignTokens.Typography.readableMinimum)
         glyph.imageScaling = .scaleProportionallyDown
         label.font = DesignTokens.Typography.font(.bodyStrong)
         let stack = NSStackView(views: [glyph, label]); stack.orientation = .horizontal; stack.spacing = DesignTokens.Space.s1; stack.alignment = .centerY
