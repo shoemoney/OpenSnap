@@ -356,50 +356,101 @@ private enum SettingsWindowTests {
     // MARK: Fit
 
     private static func fit() {
-        let (controller, _, _, _, _, _) = makeController()
+        let (controller, _, _, _, _, _) = makeController(destinations: sampleDestinations(count: 3))
         let window = controller.window
         window.setFrameTopLeftPoint(NSPoint(x: 100, y: fakeVisible.maxY - 20))
         var heights: [CGFloat] = []
         for index in controller.tabItems.indices {
             let top = window.frame.maxY
             controller.select(index)
-            let height = controller.windowHeight(forTabAt: index)
-            heights.append(height)
-            expect(height <= fakeVisible.height, "\(controller.tabItems[index].label) needs \(height) pt; the fake 1280 x 800 screen shows \(fakeVisible.height)")
-            expect(abs(window.frame.height - height) < 0.5, "the window is the height its tab asks for (\(window.frame.height) vs \(height))")
-            expect(abs(window.contentLayoutRect.width - SettingsLayout.contentWidth) < 0.5, "the content is 640 wide on every tab")
-            expect(abs(window.contentLayoutRect.height - (SettingsContentView.chromeHeight + controller.contentHeight)) < 0.5,
-                   "the window is the strip, a separator and the one content height: \(window.contentLayoutRect.height)")
-            expect(controller.selectedTab.fittingHeight <= controller.contentHeight + 0.5, "\(controller.tabItems[index].label) needs \(controller.selectedTab.fittingHeight) pt; the one content height is \(controller.contentHeight)")
-            expect(controller.content.scrollableExtent < 0.5, "\(controller.tabItems[index].label) fits the fake screen, so it does not scroll")
-            expect(abs(window.frame.maxY - top) < 0.5, "switching tabs keeps the top edge where it was")
             window.contentView?.layoutSubtreeIfNeeded()
-            let tabView = controller.selectedTab.view
-            for control in descendants(tabView).compactMap({ $0 as? NSControl }) where !control.isHidden && control.bounds.width > 0 {
+            let name = controller.tabItems[index].label, tab = controller.selectedTab
+            let wanted = window.frameRect(forContentRect: NSRect(x: 0, y: 0, width: SettingsLayout.contentWidth, height: SettingsContentView.chromeHeight + tab.fittingHeight)).height
+            heights.append(wanted)
+            expect(wanted <= fakeVisible.height, "\(name) needs \(wanted) pt; the fake 1280 x 800 screen shows \(fakeVisible.height)")
+            // F-J2-012: each tab is as tall as its own form and the standard margins, no more.
+            expect(abs(window.frame.height - wanted) < 0.5 && abs(controller.windowHeight(forTabAt: index) - wanted) < 0.5, "\(name): the window is the height its own tab asks for (\(window.frame.height) vs \(wanted))")
+            expect(abs(window.contentLayoutRect.width - SettingsLayout.contentWidth) < 0.5, "the content is 640 wide on every tab")
+            expect(abs(window.contentLayoutRect.height - (SettingsContentView.chromeHeight + tab.fittingHeight)) < 0.5, "\(name): the content is the strip, a separator and the tab's own height: \(window.contentLayoutRect.height)")
+            expect(controller.content.scrollableExtent < 0.5, "\(name) fits the fake screen, so it does not scroll")
+            expect(abs(window.frame.maxY - top) < 0.5, "\(name): switching tabs keeps the top edge where it was")
+            let tabView = tab.view
+            expect(abs(tabView.frame.height - tab.fittingHeight) < 0.5, "\(name): the tab fills its window with nothing left over (\(tabView.frame.height) vs \(tab.fittingHeight))")
+            let controls = descendants(tabView).compactMap { $0 as? NSControl }.filter { !$0.isHidden && $0.bounds.width > 0 }
+            let lowest = controls.map { frame(of: $0, in: tabView).minY }.min() ?? 0
+            expect(lowest >= SettingsLayout.verticalMargin - 0.5 && lowest <= SettingsLayout.verticalMargin + 12, "\(name): no blank band under the last control (it ends \(lowest) pt from the bottom; the margin is \(SettingsLayout.verticalMargin))")
+            for control in controls {
                 let box = frame(of: control, in: tabView)
-                expect(tabView.bounds.insetBy(dx: -0.5, dy: -0.5).contains(box), "\(controller.tabItems[index].label): \(control.className) at \(box) is outside the \(tabView.bounds) tab")
+                expect(tabView.bounds.insetBy(dx: -0.5, dy: -0.5).contains(box), "\(name): \(control.className) at \(box) is outside the \(tabView.bounds) tab")
             }
         }
-        // F-J2-012: the window never changes height when a tab is chosen.
-        expect(Set(heights.map { $0.rounded() }).count == 1, "every tab has the same window height: \(heights)")
-        let tallest = controller.tabItems.map(\.viewController.fittingHeight).max() ?? 0
-        expect(abs(controller.contentHeight - tallest) <= 60, "the one height is the tallest tab's (plus room for a wrapped message), not a guess: \(controller.contentHeight) vs \(tallest)")
-        // A tab switch is not a resize, so there is nothing to animate and nothing to jump.
+        expect(heights[0] < heights[3] && heights[1] < heights[2] && heights[0] < heights[2] && Set(heights.map { $0.rounded() }).count >= 3,
+               "the tabs are different heights, each its own: \(heights)")
+        // The window follows the tab with an animation, its top edge fixed the whole way.
         controller.reduceMotion = { false }; controller.animatesWhenHidden = true
-        controller.select(0); spin(0.3)
-        let settled = window.frame
-        for index in [2, 3, 1, 0] {
-            controller.select(index); spin(0.05)
-            expect(window.frame == settled, "choosing \(controller.tabItems[index].label) moved or resized the window: \(window.frame) vs \(settled)")
+        controller.select(0); spin(0.4)
+        let top = window.frame.maxY, startHeight = window.frame.height
+        let targetHeight = controller.windowHeight(forTabAt: 3)
+        controller.select(3)
+        var sawBetween = false
+        for _ in 0..<8 {
+            spin(0.02)
+            expect(abs(window.frame.maxY - top) < 0.5, "the title bar stays put while the window resizes (top \(window.frame.maxY) vs \(top))")
+            if window.frame.height > startHeight + 1 && window.frame.height < targetHeight - 1 { sawBetween = true }
         }
+        spin(0.5)
+        expect(sawBetween, "the resize is animated, not a jump")
+        expect(abs(window.frame.height - targetHeight) < 0.5 && abs(window.frame.maxY - top) < 0.5, "the animation lands on the tab's height with the top where it was")
+        // A tab picked mid-animation replaces the one before it and the last choice wins.
+        controller.select(2); spin(0.03); controller.select(1); spin(0.5)
+        expect(abs(window.frame.height - controller.windowHeight(forTabAt: 1)) < 0.5 && abs(window.frame.maxY - top) < 0.5, "the last tab chosen mid-animation sets the final size")
+        controller.select(0); spin(0.5)
+        // Reduce Motion: the size changes at once.
+        controller.reduceMotion = { true }
+        controller.select(2)
+        expect(abs(window.frame.height - controller.windowHeight(forTabAt: 2)) < 0.5, "under Reduce Motion the window changes size at once")
         controller.reduceMotion = { false }; controller.animatesWhenHidden = false
         // A screen too short for a tab limits the window instead of letting it run off the bottom.
         controller.visibleFrame = { NSRect(x: 0, y: 0, width: 1280, height: 400) }
-        controller.select(2)
+        controller.fit(animated: false)
         expect(window.frame.height <= 400, "a 400 pt screen caps the window at \(window.frame.height)")
         controller.visibleFrame = { fakeVisible }
         controller.fit(animated: false)
+        captureShortcutError()
         shortScreen()
+    }
+
+    // MARK: A wrapped shortcut message
+
+    private static func captureShortcutError() {
+        let (controller, _, manager, _, _, _) = makeController()
+        controller.select(2)
+        let form = controller.capture.hotkeyForm!
+        try? manager.install(globalScreen: {}, globalWindow: {}, globalFullscreen: {}, globalFrame: {}, globalUpload: {}, globalShow: {})
+        let window = controller.window
+        window.setFrameTopLeftPoint(NSPoint(x: 100, y: fakeVisible.maxY - 20)); controller.fit(animated: false)
+        let idle = window.frame.height
+        expect(abs(idle - controller.windowHeight(forTabAt: 2)) < 0.5, "Capture at idle is its own fitted height")
+        let top = window.frame.maxY
+        let k = GlobalHotkeyKeys.choices.firstIndex { $0.name == "K" }! + 1
+        let popup = form.keyPopup(for: .screen)
+        popup.selectItem(at: k); _ = popup.target?.perform(popup.action, with: popup)
+        spin(0.3) { abs(window.frame.height - idle) > 0.5 }
+        window.contentView?.layoutSubtreeIfNeeded()
+        let withError = form.statusField.stringValue
+        expect(withError.hasPrefix("Error: "), "the refused key shows an error: '\(withError)'")
+        let wanted = window.frameRect(forContentRect: NSRect(x: 0, y: 0, width: SettingsLayout.contentWidth, height: SettingsContentView.chromeHeight + controller.capture.fittingHeight)).height
+        expect(abs(window.frame.height - wanted) < 0.5 && abs(window.frame.maxY - top) < 0.5, "the Capture tab refits when the error appears (\(window.frame.height) vs \(wanted)), top fixed")
+        expect(controller.content.scrollableExtent < 0.5, "the error is not clipped: nothing scrolls")
+        let field = form.statusField
+        let box = field.convert(field.bounds, to: controller.capture.view)
+        expect(controller.capture.view.bounds.insetBy(dx: -0.5, dy: -0.5).contains(box) && box.height >= field.intrinsicContentSize.height - 0.5,
+               "the whole wrapped message sits inside the tab: \(box) in \(controller.capture.view.bounds)")
+        // Choosing None again clears the error and the window gives the room back.
+        popup.selectItem(at: 0); _ = popup.target?.perform(popup.action, with: popup)
+        spin(0.3) { abs(window.frame.height - wanted) > 0.5 || field.stringValue == GlobalHotkeyForm.idleLiveStatus }
+        spin(0.1)
+        expect(abs(window.frame.height - controller.windowHeight(forTabAt: 2)) < 0.5, "the Capture tab refits when the error goes: \(window.frame.height)")
     }
 
     // MARK: A screen shorter than the tab
@@ -725,14 +776,58 @@ private enum SettingsWindowTests {
         many.0.select(3); _ = many.0.upload.view; many.0.upload.refresh()
         expect(many.0.upload.listedNames.count == UploadSettingsTab.visibleRows && many.0.upload.summaryText == "and 3 more in Manage Destinations…", "a long list is summarised, not scrolled: \(String(describing: many.0.upload.summaryText))")
         expect(many.0.windowHeight(forTabAt: 3) <= fakeVisible.height, "even a long list fits the fake screen")
-        // F-J2-012: the Upload tab is the same height empty and full, and its caption is never below the fold.
-        expect(abs(many.0.windowHeight(forTabAt: 3) - empty.0.windowHeight(forTabAt: 3)) < 0.5 && abs(many.0.windowHeight(forTabAt: 3) - many.0.windowHeight(forTabAt: 0)) < 0.5,
-               "Upload with a full list is the window every other tab has")
+        // F-J2-012: the Upload tab grows with its rows, and its caption is never below the fold.
+        let emptyHeight = empty.0.windowHeight(forTabAt: 3), fullHeight = many.0.windowHeight(forTabAt: 3)
+        expect(fullHeight > emptyHeight + 20 && abs(many.0.window.frame.height - fullHeight) < 0.5, "the Upload window grows with its list: empty \(emptyHeight), full \(fullHeight)")
         many.0.window.contentView?.layoutSubtreeIfNeeded()
-        let caption = descendants(many.0.upload.view).compactMap { $0 as? NSTextField }.first { $0.stringValue == "Uploads go to the default destination." }
-        let captionBox = caption.map { frame(of: $0, in: many.0.upload.view) }
-        expect(many.0.content.scrollableExtent < 0.5 && captionBox.map { many.0.upload.view.bounds.insetBy(dx: -0.5, dy: -0.5).contains($0) } == true && many.0.upload.fittingHeight <= many.0.contentHeight + 0.5,
-               "the caption under a full list is on screen without scrolling (\(String(describing: captionBox)), extent \(many.0.content.scrollableExtent))")
+        expect(many.0.content.scrollableExtent < 0.5 && captionInside(many.0.upload), "the caption under a full list is on screen without scrolling")
+        expect(many.0.upload.listScroll.documentView.map { $0.frame.height <= many.0.upload.listScroll.contentView.bounds.height + 0.5 } == true, "a list that fits its screen does not scroll inside")
+        uploadOnShortScreens()
+    }
+
+    private static func captionInside(_ tab: UploadSettingsTab) -> Bool {
+        tab.view.layoutSubtreeIfNeeded()
+        guard let caption = descendants(tab.view).compactMap({ $0 as? NSTextField }).first(where: { $0.stringValue == "Uploads go to the default destination." }) else { return false }
+        let box = frame(of: caption, in: tab.view)
+        return !caption.isHidden && box.height >= caption.intrinsicContentSize.height - 0.5 && tab.view.bounds.insetBy(dx: -0.5, dy: -0.5).contains(box)
+    }
+
+    /// The list is capped by the screen: 640 pt tall screens (with and without a Dock) and a very short one. The list scrolls inside
+    /// its frame; the window stays on the screen and the caption stays visible.
+    private static func uploadOnShortScreens() {
+        let (controller, _, _, _, _, _) = makeController(destinations: sampleDestinations(count: 12))
+        let window = controller.window, tab = controller.upload
+        controller.select(3)
+        window.setFrameTopLeftPoint(NSPoint(x: 100, y: fakeVisible.maxY - 20))
+        let natural = controller.windowHeight(forTabAt: 3)
+        var capped: [CGFloat] = []
+        for (label, screen) in [("640 pt screen, Dock hidden", NSRect(x: 0, y: 0, width: 1136, height: 616)), ("640 pt screen with a Dock", NSRect(x: 0, y: 70, width: 1136, height: 546)),
+                                ("a 420 pt screen", NSRect(x: 0, y: 0, width: 1136, height: 420))] {
+            controller.visibleFrame = { screen }
+            window.setFrameTopLeftPoint(NSPoint(x: 100, y: screen.maxY - 20))
+            controller.fit(animated: false)
+            window.contentView?.layoutSubtreeIfNeeded()
+            expect(window.frame.height <= screen.height + 0.5 && window.frame.maxY <= screen.maxY + 0.5 && window.frame.minY >= screen.minY - 0.5, "\(label): the window stays on the screen (\(window.frame) in \(screen))")
+            expect(controller.content.scrollableExtent < 0.5, "\(label): the tab does not scroll as a whole (\(controller.content.scrollableExtent))")
+            expect(captionInside(tab), "\(label): the caption 'Uploads go to the default destination.' is visible")
+            let manage = tab.manageButton.convert(tab.manageButton.bounds, to: tab.view)
+            expect(tab.view.bounds.contains(manage), "\(label): the Manage button is visible")
+            let overflow = tab.listScroll.documentView!.frame.height - tab.listScroll.contentView.bounds.height
+            if natural > screen.height + 0.5 {
+                expect(overflow > 1, "\(label): the list scrolls inside its frame (\(overflow) pt past it)")
+                expect(tab.listHeight >= 2 * SettingsDestinationRow.height - 0.5, "\(label): the list keeps at least two rows (\(tab.listHeight))")
+            } else {
+                expect(overflow < 0.5, "\(label): the list fits without scrolling")
+            }
+            capped.append(tab.listHeight)
+        }
+        expect(capped[2] < capped[1] + 0.5 && capped[1] <= capped[0] + 0.5, "a shorter screen gives the list less room: \(capped)")
+        // The list opens at its first row, and the screen growing gives the list its room back.
+        controller.visibleFrame = { fakeVisible }
+        window.setFrameTopLeftPoint(NSPoint(x: 100, y: fakeVisible.maxY - 20))
+        controller.fit(animated: false)
+        window.contentView?.layoutSubtreeIfNeeded()
+        expect(abs(window.frame.height - natural) < 0.5 && tab.listScroll.contentView.bounds.origin.y < 0.5, "a taller screen shows the whole list again")
     }
 
     /// The real coordinator: the sheet attaches to the Settings window, the list refreshes when it ends, and the shutdown barrier still runs.

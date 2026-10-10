@@ -340,21 +340,43 @@ final class CaptureSettingsTab: SettingsTabViewController {
     }
 }
 
-/// The framed surface the destination rows sit on: content colour, a hairline border, a medium radius.
+/// The framed surface the destination rows sit on: content colour, a hairline border, a medium radius. The rows sit in a scroll view
+/// so a list taller than `maximumHeight` scrolls inside the frame instead of pushing the rest of the tab off the screen.
 @MainActor
 final class SettingsListSurface: NSView {
     let stack = NSStackView()
+    let scroll = NSScrollView()
+    private lazy var heightConstraint = heightAnchor.constraint(equalToConstant: 0)
+    /// The tallest the frame grows; the rows scroll past it.
+    var maximumHeight: CGFloat = .greatestFiniteMagnitude { didSet { updateHeight() } }
+
     override init(frame: NSRect) {
         super.init(frame: frame)
         wantsLayer = true; layer?.cornerRadius = DesignTokens.Radius.md; layer?.borderWidth = 1; layer?.masksToBounds = true
         stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = 0
         stack.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(stack)
+        scroll.contentView = SettingsClipView()
+        scroll.drawsBackground = false; scroll.borderType = .noBorder; scroll.scrollerStyle = .overlay
+        scroll.hasVerticalScroller = true; scroll.hasHorizontalScroller = false; scroll.autohidesScrollers = true
+        scroll.automaticallyAdjustsContentInsets = false
+        scroll.translatesAutoresizingMaskIntoConstraints = false
+        scroll.documentView = stack
+        addSubview(scroll)
+        let clip = scroll.contentView
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: leadingAnchor), stack.trailingAnchor.constraint(equalTo: trailingAnchor),
-            stack.topAnchor.constraint(equalTo: topAnchor), stack.bottomAnchor.constraint(equalTo: bottomAnchor)])
+            scroll.leadingAnchor.constraint(equalTo: leadingAnchor), scroll.trailingAnchor.constraint(equalTo: trailingAnchor),
+            scroll.topAnchor.constraint(equalTo: topAnchor), scroll.bottomAnchor.constraint(equalTo: bottomAnchor),
+            stack.topAnchor.constraint(equalTo: clip.topAnchor), stack.leadingAnchor.constraint(equalTo: clip.leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: clip.trailingAnchor), heightConstraint])
+        updateHeight()
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+
+    /// The height the rows ask for, however tall the frame is allowed to be.
+    var contentHeight: CGFloat { stack.layoutSubtreeIfNeeded(); return ceil(stack.fittingSize.height) }
+    /// The frame is as tall as its rows, up to the maximum.
+    func updateHeight() { heightConstraint.constant = min(contentHeight, maximumHeight) }
+
     override var wantsUpdateLayer: Bool { true }
     override func updateLayer() {
         effectiveAppearance.performAsCurrentDrawingAppearance {
@@ -456,21 +478,15 @@ final class UploadSettingsTab: SettingsTabViewController {
         render(destinations())
     }
 
-    /// The height of the form with the longest list it shows: `visibleRows` rows and the "and N more" line. The window is sized to it, so
-    /// the Upload tab never grows past the window however many destinations are saved.
-    func worstCaseFittingHeight() -> CGFloat {
-        guard manageButton != nil else { return fittingHeight }
-        let shown = destinations()
-        let crowded = PublishingDestinationList(defaultID: nil, destinations: (0...Self.visibleRows).map {
-            PublishingDestination(id: "worst-case-\($0)", name: "Destination \($0)", settings: PublishingSettings())
-        })
-        render(crowded, notify: false)
-        let height = fittingHeight
-        render(shown, notify: false)
-        return height
-    }
+    /// The tallest the destination list grows before it scrolls inside its frame. The window sets it from the screen it has.
+    var listMaximumHeight: CGFloat = .greatestFiniteMagnitude { didSet { listSurface.maximumHeight = listMaximumHeight } }
+    /// The height the list asks for, and the height it takes now.
+    var listContentHeight: CGFloat { listSurface.contentHeight }
+    var listHeight: CGFloat { listSurface.frame.height }
+    /// The list's scroll view, so a test can see whether it has something to scroll.
+    var listScroll: NSScrollView { listSurface.scroll }
 
-    private func render(_ list: PublishingDestinationList, notify: Bool = true) {
+    private func render(_ list: PublishingDestinationList) {
         let defaultID = list.defaultDestination?.id
         for view in listStack.arrangedSubviews { listStack.removeArrangedSubview(view); view.removeFromSuperview() }
         rows = []
@@ -511,7 +527,8 @@ final class UploadSettingsTab: SettingsTabViewController {
                 wrapper.widthAnchor.constraint(equalToConstant: SettingsLayout.controlColumnWidth)])
             listStack.addArrangedSubview(wrapper)
         }
-        if isViewLoaded, notify { contentChanged() }
+        listSurface.updateHeight()
+        if isViewLoaded { contentChanged() }
     }
 
     @objc private func manageTapped() { manage() }
@@ -919,17 +936,29 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
 
     // MARK: Sizing
 
-    /// One content height for all four tabs, so the window never changes size when a tab is chosen (OSN F-J2-012): the tallest tab at its
-    /// worst (Upload with a full list, Capture with a two-line shortcut message). A tab that is still taller scrolls inside the window.
-    private(set) lazy var contentHeight: CGFloat = {
-        let capture = tabItems[2].viewController.fittingHeight + ceil(NSLayoutManager().defaultLineHeight(for: DesignTokens.Typography.font(.body)))
-        return ceil(max(general.fittingHeight, drawing.fittingHeight, capture, upload.worstCaseFittingHeight()))
-    }()
+    /// The content height one tab asks for: its form plus the standard margins, so every tab is as tall as it needs and no taller (OSN
+    /// F-J2-012). The window follows the tab it shows, top edge fixed.
+    func contentHeight(forTabAt index: Int) -> CGFloat {
+        if tabItems[index].viewController === upload { fitUploadList() }
+        return tabItems[index].viewController.fittingHeight
+    }
 
-    /// The window frame every tab asks for: 640 wide, the strip plus the one content height, the top edge kept where it is.
+    /// Lets the destination list grow with its rows, up to what the screen leaves once the rest of the tab (margins, the Manage button,
+    /// the caption) and the window's own title bar and strip are paid for. A longer list scrolls inside its frame, so the caption
+    /// is never below the fold.
+    private func fitUploadList() {
+        upload.listMaximumHeight = .greatestFiniteMagnitude
+        let others = upload.fittingHeight - upload.listHeight
+        let chrome = window.frameRect(forContentRect: NSRect(x: 0, y: 0, width: SettingsLayout.contentWidth, height: SettingsContentView.chromeHeight)).height
+        upload.listMaximumHeight = max(Self.minimumListHeight, visibleFrame().height - chrome - others)
+    }
+    /// Two destination rows: a screen too small for even that falls back to scrolling the whole tab.
+    private static let minimumListHeight = 2 * SettingsDestinationRow.height
+
+    /// The window frame a tab asks for: 640 wide, the strip plus the tab's own height, the top edge kept where it is.
     func frame(forTabAt index: Int, keepingTopOf current: NSRect) -> NSRect {
         let size = window.frameRect(forContentRect: NSRect(x: 0, y: 0, width: SettingsLayout.contentWidth,
-                                                           height: SettingsContentView.chromeHeight + contentHeight)).size
+                                                           height: SettingsContentView.chromeHeight + contentHeight(forTabAt: index))).size
         return NSRect(x: current.minX, y: current.maxY - size.height, width: size.width, height: size.height)
     }
 

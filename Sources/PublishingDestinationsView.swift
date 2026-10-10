@@ -56,7 +56,7 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
     let scrollView = NSScrollView()
     private let listPage = NSStackView(), formPage = NSStackView()
     private let listStatus: DestinationStatusRow
-    /// The inline Test / Save result: a glyph and text together, never colour alone. It sits in a reserved band above the buttons.
+    /// The inline Test / Save result: a glyph and text together, never colour alone. It sits above the buttons and is as tall as its text.
     let formResult: DestinationStatusRow
 
     // Form controls (internal so tests can fill them in like a user would).
@@ -84,11 +84,6 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         let image = ChromeIcons.resolve(icon, family: .solid, pointSize: pointSize).image
         image?.accessibilityDescription = description
         return image
-    }
-
-    /// Room for a three-line error, or a one-line result with a two-line detail.
-    static var resultBandHeight: CGFloat {
-        ceil(NSLayoutManager().defaultLineHeight(for: Typography.font(.body))) * 3 + 2 * 2
     }
 
     // Footer buttons: pinned below the scroll view so Return and Escape always have a visible target.
@@ -163,16 +158,12 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         listFooter.setViews([spacer, doneButton], in: .trailing)
         let flexible = NSView(); flexible.setContentHuggingPriority(.init(1), for: .horizontal)
         let buttons = NSStackView(views: [testButton, flexible, cancelButton, saveButton]); buttons.spacing = Space.s4
-        // The result has a band of its own above the buttons, always the same height: a long Test error never grows over the form, and
-        // the form above it never changes size when a result arrives.
-        let band = NSView(); band.translatesAutoresizingMaskIntoConstraints = false
-        formResult.translatesAutoresizingMaskIntoConstraints = false; band.addSubview(formResult)
-        NSLayoutConstraint.activate([band.heightAnchor.constraint(equalToConstant: Self.resultBandHeight),
-                                     formResult.topAnchor.constraint(equalTo: band.topAnchor), formResult.leadingAnchor.constraint(equalTo: band.leadingAnchor),
-                                     formResult.trailingAnchor.constraint(equalTo: band.trailingAnchor), formResult.bottomAnchor.constraint(lessThanOrEqualTo: band.bottomAnchor)])
-        let column = NSStackView(views: [band, buttons]); column.orientation = .vertical; column.alignment = .leading; column.spacing = Space.s2
+        // The result band is as tall as what it says: one line for the idle hint, up to three for a Test error. The footer grows by the
+        // difference and the form above it shrinks and scrolls, so a result never covers a field and an idle form keeps its room.
+        formResult.translatesAutoresizingMaskIntoConstraints = false
+        let column = NSStackView(views: [formResult, buttons]); column.orientation = .vertical; column.alignment = .leading; column.spacing = Space.s2
         buttons.widthAnchor.constraint(equalTo: column.widthAnchor).isActive = true
-        band.widthAnchor.constraint(equalTo: column.widthAnchor).isActive = true
+        formResult.widthAnchor.constraint(equalTo: column.widthAnchor).isActive = true
         formFooter.addArrangedSubview(column)
         column.widthAnchor.constraint(equalTo: formFooter.widthAnchor).isActive = true
     }

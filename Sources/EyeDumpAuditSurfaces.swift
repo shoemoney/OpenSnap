@@ -1221,6 +1221,25 @@ extension AuditRun {
         destinations = PublishingDestinationList()
         controller.refresh()
         capture(3, "upload-empty", "Upload tab, no destination saved")
+        // Eight destinations: the list shows five and says so, the window grows to hold them and the caption stays in view.
+        let extra = ["Backup WebDAV", "Team SFTP", "Archive S3", "Staging WebDAV", "Press kit SFTP"].map { PublishingDestination(name: $0, settings: $0.contains("S3") ? s3 : ($0.contains("SFTP") ? sftp : dav)) }
+        destinations = PublishingDestinationList(defaultID: items[0].id, destinations: items + extra)
+        controller.refresh()
+        capture(3, "upload-many", "Upload tab, eight saved destinations: five listed, then 'and 3 more', the caption and Manage button in view")
+        // A 640 pt tall screen: the list gives up room and scrolls inside its frame, so the window still fits and the caption is still seen.
+        let short = NSRect(x: screen.minX, y: screen.maxY - 616, width: 1136, height: 616)
+        controller.select(3)
+        place(short)
+        controller.window.contentView?.layoutSubtreeIfNeeded()
+        shoot("S17", "settings-upload-many-640", surface: "Settings: Upload", state: "Upload tab, eight destinations on a 640 pt tall screen (616 pt visible): same window, list capped",
+              windows: [controller.window], refs: refs, settle: 0.5,
+              extra: ["fakeScreen": "1136x640", "fakeVisibleHeight": 616.0, "windowHeight": Double(controller.window.frame.height), "fitsVisibleHeight": controller.window.frame.height <= 616])
+        let compact = NSRect(x: screen.minX, y: screen.maxY - 440, width: 1136, height: 440)
+        place(compact)
+        controller.window.contentView?.layoutSubtreeIfNeeded()
+        shoot("S17", "settings-upload-many-440", surface: "Settings: Upload", state: "Upload tab, eight destinations on a very short 440 pt visible height: the list scrolls inside, the caption stays in view",
+              windows: [controller.window], refs: refs, settle: 0.5,
+              extra: ["fakeScreen": "1136x440", "fakeVisibleHeight": 440.0, "windowHeight": Double(controller.window.frame.height), "fitsVisibleHeight": controller.window.frame.height <= 440])
         controller.window.orderOut(nil)
     }
 
@@ -1292,12 +1311,12 @@ extension AuditRun {
             for transport in PublishingProtocol.allCases {
                 formView.protocolPopup.selectItem(withTitle: transport.title); formView.formChanged()
                 pump(0.4)
-                shootSheet("S19", "destinations-form-\(transport.rawValue.lowercased())", surface: "Destinations / Publishing", state: "new \(transport.title) destination: its own endpoint scheme, placeholders and help, and the Test note in the reserved result band", refs: ["PublishingDestinationsView.swift|static func formCopy", "PublishingDestinationsView.swift|private func refreshForm"], host: window, sheet: formPanel)
+                shootSheet("S19", "destinations-form-\(transport.rawValue.lowercased())", surface: "Destinations / Publishing", state: "new \(transport.title) destination: its own endpoint scheme, placeholders and help, and the Test note in the one-line result band", refs: ["PublishingDestinationsView.swift|static func formCopy", "PublishingDestinationsView.swift|private func refreshForm"], host: window, sheet: formPanel)
             }
             formView.protocolPopup.selectItem(withTitle: PublishingProtocol.webDAV.title); formView.formChanged()
             formView.showTestResult(ok: false, message: "The server rejected the user name or password (HTTP 401).")
             pump(0.4)
-            shootSheet("S19", "destinations-test-error-webdav", surface: "Destinations / Publishing", state: "WebDAV form after a synthetic failed Test (HTTP 401): the same band, the form above it unchanged", refs: ["Publishing.swift|enum PublishingConnectionTest", "PublishingDestinationsView.swift|func showTestResult"], host: window, sheet: formPanel)
+            shootSheet("S19", "destinations-test-error-webdav", surface: "Destinations / Publishing", state: "WebDAV form after a synthetic failed Test (HTTP 401): the band grows to its lines and the form above it shrinks to make room", refs: ["Publishing.swift|enum PublishingConnectionTest", "PublishingDestinationsView.swift|func showTestResult"], host: window, sheet: formPanel)
             closeHarnessSheet(formPanel)
             let (narrowPanel, narrowView) = try app.publishing.buildSettings(hostWidth: SettingsLayout.contentWidth)
             window.beginSheet(narrowPanel); pump(0.8)

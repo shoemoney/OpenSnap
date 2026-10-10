@@ -457,27 +457,36 @@ enum PublishingDestinationsTests {
         }
         narrowView.cancelFormTapped()
 
-        // The result band: same height idle, with a one-line result, and with a six-line error; the form above it does not move.
+        // The result band is as tall as its text: one line at idle, up to three for an error. The form above shrinks and scrolls by the
+        // difference, the band never runs over the buttons or the form, and the idle form keeps the room an empty band would waste.
         let (panel, view) = try publisher.buildSettings(visibleFrame: screen, hostWidth: 900)
         defer { panel.orderOut(nil) }
         view.addTapped(); view.protocolPopup.selectItem(withTitle: PublishingProtocol.s3.title); view.formChanged()
         panel.contentView?.layoutSubtreeIfNeeded()
-        let scrollHeight = view.scrollView.frame.height, buttonsTop = view.saveButton.convert(view.saveButton.bounds, to: view).maxY
-        let idleBottom = view.formResult.convert(view.formResult.bounds, to: view).minY
+        let lineHeight = ceil(NSLayoutManager().defaultLineHeight(for: DesignTokens.Typography.font(.body)))
+        func box(_ row: NSView) -> NSRect { row.convert(row.bounds, to: view) }
+        func buttonsTop() -> CGFloat { min(box(view.testButton).maxY, box(view.saveButton).maxY) }
+        let scrollHeight = view.scrollView.frame.height, idle = box(view.formResult)
+        try expect(view.formResult.kind == .hint && idle.height < 1.6 * lineHeight, "at idle the band is one line (\(idle.height) pt), not three")
+        try expect(idle.minY >= buttonsTop() - 0.5 && abs(box(view.scrollView).minY - (idle.maxY + DesignTokens.Space.s3)) < 12, "the idle hint sits between the form and the buttons: \(idle) vs scroll \(box(view.scrollView))")
         let longError = "The bucket could not be reached (curl 7).\ncurl: (7) Failed to connect to a-rather-long-host-name.example.test port 443 after 54 ms: Couldn't connect to server and then went on to say a good deal more than one sheet can show"
         view.showTestResult(ok: false, message: longError)
         panel.contentView?.layoutSubtreeIfNeeded()
-        try expect(abs(view.scrollView.frame.height - scrollHeight) < 0.5, "a long Test error shrank the form (\(scrollHeight) to \(view.scrollView.frame.height))")
-        let errorFrame = view.formResult.convert(view.formResult.bounds, to: view)
-        try expect(errorFrame.minY >= buttonsTop - 0.5 || errorFrame.minY >= view.saveButton.convert(view.saveButton.bounds, to: view).maxY - 0.5,
-                   "the error runs over the button bar: \(errorFrame) vs buttons top \(buttonsTop)")
+        let errorFrame = box(view.formResult)
+        try expect(errorFrame.height > idle.height + lineHeight && errorFrame.height <= 3 * lineHeight + 2 * 2 + 4, "the error band grows to its lines, three at most: \(errorFrame.height) pt")
+        try expect(view.scrollView.frame.height < scrollHeight - lineHeight, "the form above shrinks to make room (\(scrollHeight) to \(view.scrollView.frame.height))")
+        try expect(errorFrame.minY >= buttonsTop() - 0.5 && errorFrame.maxY <= box(view.scrollView).minY + 0.5 + DesignTokens.Space.s3 + 1,
+                   "the error sits between the form and the buttons and covers neither: \(errorFrame) buttons top \(buttonsTop()) form bottom \(box(view.scrollView).minY)")
         try expect(view.formResult.text.stringValue.hasPrefix("Error: ") && view.formResult.accessibilityLabel()?.contains("went on") == true, "the whole message stays available to VoiceOver")
-        try expect(view.formResult.text.maximumNumberOfLines == 3, "a Test error is capped at three lines inside its band")
+        try expect(view.formResult.text.maximumNumberOfLines == 3, "a Test error is capped at three lines")
         view.showTestResult(ok: true, message: "Reached the server (HTTP 200) and the folder was not refused. Nothing was uploaded.")
         panel.contentView?.layoutSubtreeIfNeeded()
-        let successFrame = view.formResult.convert(view.formResult.bounds, to: view)
-        try expect(abs(view.scrollView.frame.height - scrollHeight) < 0.5 && successFrame.minY >= buttonsTop - 0.5, "a success moved the form or ran over the buttons: \(successFrame)")
-        try expect(idleBottom >= buttonsTop - 0.5, "the idle hint sits above the buttons")
+        let successFrame = box(view.formResult)
+        try expect(successFrame.minY >= buttonsTop() - 0.5 && successFrame.height < errorFrame.height, "a success is shorter than the error and still clear of the buttons: \(successFrame)")
+        // A result for a form is gone with the form: the band returns to its one idle line and the form its room.
+        view.cancelFormTapped(); view.addTapped(); view.protocolPopup.selectItem(withTitle: PublishingProtocol.s3.title); view.formChanged()
+        panel.contentView?.layoutSubtreeIfNeeded()
+        try expect(abs(view.scrollView.frame.height - scrollHeight) < 0.5 && box(view.formResult).height < 1.6 * lineHeight, "a fresh form is back to the idle band (\(view.scrollView.frame.height) vs \(scrollHeight))")
     }
 
     // MARK: Test for every protocol, against local stubs only
