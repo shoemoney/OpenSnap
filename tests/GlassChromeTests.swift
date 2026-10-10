@@ -554,8 +554,13 @@ private enum GlassChromeTests {
         begins = 0; ends = 0
         panel.presetButtons[3].performClick(nil)
         expect(slider.doubleValue == 9.375 && begins == 1 && ends == 1 && panel.presetButtons.map(\.isSelectedPreset) == [false, false, false, true, false], "A preset click is one group: \(groups())")
-        panel.presetButtons[0].performClick(nil)
-        expect(slider.doubleValue == 1.5 && begins == 2 && ends == 2 && panel.readout.stringValue == "2", "Another preset: \(groups())")
+        expect(!slider.isPopoverShown && slider.popoverContent == nil, "A preset pick closes the popover, as a colour pick closes the colour popover (F-J1-019)")
+        // Reopened, another preset is another group (the detached panel above keeps its track for the drag below).
+        slider.showPopover()
+        guard let reopened = slider.popoverContent else { expect(false, "The popover reopens"); return }
+        reopened.presetButtons[0].performClick(nil)
+        expect(slider.doubleValue == 1.5 && begins == 2 && ends == 2 && reopened.readout.stringValue == "2" && !slider.isPopoverShown, "Another preset: \(groups())")
+        slider.showPopover()
         // Dismissing mid-drag closes the group, and the late mouse-up cannot close it twice.
         begins = 0; ends = 0
         track.mouseDown(with: pointer(.leftMouseDown, fraction: 1))

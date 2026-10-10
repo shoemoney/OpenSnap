@@ -408,7 +408,8 @@ final class PhotoBrowserCoordinator: NSObject, NSTableViewDataSource, NSTableVie
     private func buildEmptyState() {
         let icon = NSImageView(image: ChromeIcons.resolve(.images, family: .regular, pointSize: 56).image ?? NSImage())
         icon.contentTintColor = DesignTokens.Palette.Text.secondary
-        icon.setAccessibilityElement(false)
+        icon.image?.accessibilityDescription = "Photos"
+        icon.setAccessibilityLabel("Photos")
         let heading = NSTextField(labelWithString: "Choose where your photos are")
         heading.font = DesignTokens.Typography.font(.headline)
         let body = NSTextField(wrappingLabelWithString: "Pick your Pictures folder or any folder of images, or choose a photo from your Photos library. Only what you choose is browsed. Double-click a thumbnail to open the original image.")

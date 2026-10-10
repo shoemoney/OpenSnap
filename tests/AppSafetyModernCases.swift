@@ -889,7 +889,7 @@ extension AppSafetyTests {
             let state = dirty ? "Unsaved changes" : "Saved"
             let full = AppToolTip.text(for: app.status) ?? ""
             let parts = full.components(separatedBy: " · ")
-            try expect(parts.count == 4 && parts[1] == state && parts[2].contains("×") && parts[3].hasSuffix("B"), "The full status has tool, state, size and bytes: \(full)")
+            try expect(parts.count == 5 && parts[1] == state && parts[2].contains("×") && parts[3] == "PNG" && parts[4].hasSuffix("B"), "The full status has tool, state, size, format and bytes: \(full)")
             let expected = [full, parts[0...2].joined(separator: " · "), parts[1...2].joined(separator: " · "), state]
             for width in stride(from: app.window.minSize.width, through: 1440, by: 20) {
                 app.setWindowFrame(CGRect(origin: origin, size: CGSize(width: width, height: app.window.frame.height)))
@@ -1591,7 +1591,7 @@ extension AppSafetyTests {
         app.dragPreviewTimer?.invalidate(); app.dragPreviewTimer = nil
         app.updateDragPreview()
         let text = app.status.stringValue
-        try expect(text.hasPrefix("Arrow · ") && text.contains("×") && text.components(separatedBy: " · ").count == 4 && text.hasSuffix("KB"), "The status reads tool, state and export size in one line: \(text)")
+        try expect(text.hasPrefix("Arrow · ") && text.contains("×") && text.components(separatedBy: " · ").count == 5 && text.contains(" · PNG · ") && text.hasSuffix("KB"), "The status reads tool, state, export size and format in one line: \(text)")
         try expect(app.dragSizeLabel.superview == nil && AppToolTip.text(for: app.status) == text && (app.status.accessibilityValue() as? String) == text, "The full text is the tooltip and the spoken value; no separate size label exists on screen")
         try expect(app.status.lineBreakMode == .byTruncatingTail, "A narrow status truncates its tail")
         try expect(app.dragPreviewTimer == nil, "Writing the size into the status does not re-arm the one-second drag-preview timer")
