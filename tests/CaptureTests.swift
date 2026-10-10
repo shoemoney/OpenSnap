@@ -335,6 +335,7 @@ private enum CaptureTests {
             try captureFlashTimingRamp()
             try await captureFlashControllerTimeline()
             try captureFlashPeakAndReduceMotion()
+            try captureFlashFollowsDisplayOptions()
             try await queuedShutdown()
             try await delayedCancellation()
             try await nativeSelectionAndTiming()
@@ -667,6 +668,35 @@ private enum CaptureTests {
             try expect(made == 0 && timers == 0 && !skipped.isRunning,
                        "preference off (Reduce Motion \(reduce)) creates no window and no timer")
         }
+    }
+
+    /// A flash built with NO reduceMotion seam reads `DisplayOptions.current`: the injected value picks the ramp or the single frame.
+    static func captureFlashFollowsDisplayOptions() throws {
+        let saved = DisplayOptions.override
+        defer { DisplayOptions.override = saved }
+        func run(_ options: DisplayOptions) -> (alphas: [Float32], intervals: [TimeInterval]) {
+            DisplayOptions.override = options
+            var now: TimeInterval = 0
+            var intervals: [TimeInterval] = []
+            var ticks: [@MainActor () -> Void] = []
+            let window = FakeFlashWindow()
+            let flash = OriginalCaptureFlashController(clock: { now }, windowFactory: { _ in window },
+                                                       timerFactory: { interval, tick in intervals.append(interval); ticks.append(tick); return {} },
+                                                       showFlash: { true })
+            flash.play(frame: NSRect(x: 0, y: 0, width: 50, height: 50), deflashDuration: 0.1)
+            for step in 1...30 { now = Double(step) * 0.01; ticks.last?() }
+            return (window.alphas, intervals)
+        }
+        let reduced = run(DisplayOptions(reduceMotion: true))
+        try expect(Array(reduced.alphas.prefix(1)) == [0.7] && reduced.intervals == [0.05],
+                   "injected Reduce Motion: one frame at the peak for 0.05 s, got \(reduced.alphas) \(reduced.intervals)")
+        let moving = run(DisplayOptions.none)
+        try expect(moving.alphas.count > 3 && moving.intervals.first == 0.02 && Set(moving.alphas).count > 2,
+                   "no Reduce Motion: the ramp, got \(moving.alphas.prefix(5)) \(moving.intervals)")
+        let other = run(DisplayOptions(reduceTransparency: true, increaseContrast: true, differentiateWithoutColor: true))
+        try expect(other.alphas.count > 3 && other.intervals.first == 0.02, "the other three options do not change the flash")
+        DisplayOptions.override = DisplayOptions(reduceMotion: true)
+        try expect(OriginalCaptureFlashTiming.systemReduceMotion(), "the flash timing helper reads the shared options")
     }
 
     /// What a test needs to watch a coordinator's trip through the Screen Recording gate.

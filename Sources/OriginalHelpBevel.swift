@@ -135,6 +135,7 @@ final class OriginalHelpBevel {
     private let makePanel: () -> NSPanel
     private let scheduler: any OriginalHelpBevelScheduling
     private let reduceMotion: ReduceMotion
+    private var displayObservation: DisplayOptions.Observation?
     private let screenFrame: ScreenFrame
     private let bands: Bands
     /// Where the pointer is when a hint starts; the harness points it at a bar to show each placement.
@@ -152,15 +153,15 @@ final class OriginalHelpBevel {
     private var fadingIn = false
     private var stopped = false
 
-    /// `reduceMotion` defaults to the system setting, `screenFrame` to the host's visible screen area, `bands` to the host's
+    /// `reduceMotion` defaults to `DisplayOptions.current`, `screenFrame` to the host's visible screen area, `bands` to the host's
     /// title bar and chrome bars found by identifier, and `pointer` to the mouse; tests force all four.
-    /// OSN-061 replaces the Reduce Motion closure with the shared display options.
+    /// Reduce Motion turning on while the plate is fading ends the fade at once (see `displayOptionsChanged`).
     init(host: NSWindow, makePanel: (() -> NSPanel)? = nil,
          scheduler: (any OriginalHelpBevelScheduling)? = nil,
          reduceMotion: ReduceMotion? = nil, screenFrame: ScreenFrame? = nil,
          bands: Bands? = nil, pointer: Pointer? = nil) {
         self.host = host
-        self.reduceMotion = reduceMotion ?? { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
+        self.reduceMotion = reduceMotion ?? { DisplayOptions.current.reduceMotion }
         self.screenFrame = screenFrame ?? { $0.screen?.visibleFrame }
         self.bands = bands ?? { Self.discoverBands(in: $0) }
         self.pointer = pointer ?? { NSEvent.mouseLocation }
@@ -169,6 +170,15 @@ final class OriginalHelpBevel {
                               backing: .buffered, defer: true)
         }
         self.scheduler = scheduler ?? NativeHelpBevelScheduler()
+        displayObservation = DisplayOptions.observe { [weak self] _ in self?.displayOptionsChanged() }
+    }
+
+    /// A fade already under way follows a Reduce Motion change instead of finishing its ramp: the plate lands on its end state.
+    private func displayOptionsChanged() {
+        guard fadeTimer != nil, reduceMotion() else { return }
+        let showing = fadingIn
+        cancelFade()
+        if showing { panel?.alphaValue = 1 } else { hidePanel() }
     }
 
     private var canRender: Bool {
@@ -235,6 +245,8 @@ final class OriginalHelpBevel {
     }
 
     func shutdown() {
+        displayObservation?.invalidate()
+        displayObservation = nil
         stopped = true
         enabled = false
         clear()

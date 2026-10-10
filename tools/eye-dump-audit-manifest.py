@@ -3,7 +3,8 @@
 
   python3 -I tools/eye-dump-audit-manifest.py OUTDIR --sha SHA --bundle-id ID
 
-Every capture entry carries sourceSha, surface id, appearance, window size and icon mode. Icon modes that could not run
+Every capture entry carries sourceSha, surface id, appearance, window size, icon mode and the display options the app resolved
+(injected by --display, or the system's own state; "injected" says which). Icon modes that could not run
 (Font Awesome not bundled) are listed under "unavailable" with the reason, never captured as something else.
 """
 import argparse, json, pathlib, sys
@@ -27,13 +28,15 @@ def main():
             captures.append({
                 "id": meta["id"], "slug": meta["slug"], "surface": meta["surface"], "state": meta["state"],
                 "appearance": meta["appearance"], "iconMode": meta.get("iconMode", icon_mode),
-                "windowSize": meta.get("windowSize"), "pixelSize": meta["pixelSize"], "pointSize": meta["pointSize"], "scale": meta["scale"],
+                "displayOptions": meta.get("displayOptions"), "windowSize": meta.get("windowSize"), "pixelSize": meta["pixelSize"], "pointSize": meta["pointSize"], "scale": meta["scale"],
                 "sourceSha": meta.get("sourceSha", args.sha), "method": meta["method"], "sourceRefs": meta["sourceRefs"],
                 "file": f"{raw.name}/{meta['file']}",
             })
         for gap_file in sorted((raw / "gapsraw").glob("*.json")):
             gaps.extend(json.loads(gap_file.read_text()))
-    manifest = {"sourceSha": args.sha, "bundleId": args.bundle_id, "captureCount": len(captures), "captures": captures,
+    injected = sorted({tuple(c["displayOptions"]["active"]) for c in captures if (c.get("displayOptions") or {}).get("injected")})
+    manifest = {"sourceSha": args.sha, "bundleId": args.bundle_id, "injectedDisplayOptions": [list(group) for group in injected],
+                "captureCount": len(captures), "captures": captures,
                 "unavailable": unavailable, "gaps": gaps}
     (out / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n")
     print(f"{len(captures)} captures, {len(unavailable)} unavailable icon modes, {len(gaps)} gap records")
