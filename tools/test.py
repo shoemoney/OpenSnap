@@ -157,7 +157,7 @@ suites = [
     ("migration-tests", ["SVGPath.swift", "LegacyReader.swift", "DocumentModel.swift", "VectorGeometry.swift", "StrokeFitting.swift", "ImageExport.swift", "Canvas.swift", "OpenSnapFile.swift", "HistoryStore.swift", "Migration.swift"], "MigrationTests.swift", "MIGRATION_TESTS", (), {"CFFIXED_USER_HOME": "@temp-home"}),
     ("capture-tests", ["DisplayOptions.swift", "OriginalCaptureTiming.swift", "OriginalCaptureMagnifier.swift", "OriginalCapturePicker.swift", "OriginalCaptureCountdown.swift", "OriginalCaptureFlash.swift", "Capture.swift"], "CaptureTests.swift", "CAPTURE_TESTS", ()),
     ("photo-browser-tests", ["PhotoBrowser.swift"], "PhotoBrowserTests.swift", None, ()),
-    ("display-options-tests", ["DisplayOptions.swift", "DisplayOptions+ChromeAccessibility.swift", "OriginalActionButton.swift", "FontAwesomeIcons.swift", "ChromeIcons.swift", "AppToolTip.swift", "GlassChrome.swift"], "DisplayOptionsTests.swift", "DISPLAY_OPTIONS_TESTS", ()),
+    ("display-options-tests", ["DisplayOptions.swift", "DisplayOptions+ChromeAccessibility.swift", "OriginalActionButton.swift", *ICONS, "AppToolTip.swift", "GlassChrome.swift"], "DisplayOptionsTests.swift", "DISPLAY_OPTIONS_TESTS", ()),
     ("typography-tests", [], "TypographyTests.swift", "TYPOGRAPHY_TESTS", ()),
     ("palette-tests", [], "PaletteTests.swift", "PALETTE_TESTS", ()),
     ("status-item-tests", ["StatusItemSupport.swift"], "StatusItemSupportTests.swift", "STATUS_ITEM_TESTS", ()),
