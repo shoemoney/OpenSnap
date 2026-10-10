@@ -701,9 +701,9 @@ extension AppSafetyTests {
             "tool.text.id": "text",
             "tool.text.label": "Text tool",
             "tool.text.tip": "Text tool",
-            "toolbox.items": "Toolbox|About OpenSnap|Settings…|Quit OpenSnap||New|Open…|Photos…|Save to History|Export…|Save As…|Print…||Cut|Copy|Paste|Delete|Select All|Duplicate|Text Style…||Crosshair Snapshot|Fullscreen Snapshot|Frame Snapshot|Re-snap (Keep Pen)||Set Snap to Normal Size|Flip Horizontal|Rotate Clockwise|Transparent Background|Crop Snap at Current Edges|Wipe Snap Only||More Commands|Filled Shapes|Shadow",
+            "toolbox.items": "Toolbox|Save to History|Export…||Copy|Paste|Duplicate|Delete|Select All||Crosshair Snapshot|Fullscreen Snapshot|Frame Snapshot|Re-snap (Keep Pen)||Rotate Clockwise|Flip Horizontal|Crop Snap at Current Edges|Remove Snap Picture||Filled Shapes|Shadow|Text Style…",
             "toolbox.label": "Toolbox menu",
-            "toolbox.tip": "Common drawing and capture commands; additional actions are in More Commands",
+            "toolbox.tip": "Drawing, edit and capture commands; everything else is in the menu bar",
             "zoom.label": "Canvas zoom"
         ]
         let differing = expectedFacts.keys.sorted().filter { expectedFacts[$0] != modern[$0] }
@@ -889,7 +889,7 @@ extension AppSafetyTests {
             let state = dirty ? "Unsaved changes" : "Saved"
             let full = AppToolTip.text(for: app.status) ?? ""
             let parts = full.components(separatedBy: " · ")
-            try expect(parts.count == 4 && parts[1] == state && parts[2].contains("×") && parts[3].hasSuffix("B"), "The full status has tool, state, size and bytes: \(full)")
+            try expect(parts.count == 5 && parts[1] == state && parts[2].contains("×") && parts[3] == "PNG" && parts[4].hasSuffix("B"), "The full status has tool, state, size, format and bytes: \(full)")
             let expected = [full, parts[0...2].joined(separator: " · "), parts[1...2].joined(separator: " · "), state]
             for width in stride(from: app.window.minSize.width, through: 1440, by: 20) {
                 app.setWindowFrame(CGRect(origin: origin, size: CGSize(width: width, height: app.window.frame.height)))
@@ -1432,7 +1432,7 @@ extension AppSafetyTests {
         app.canvas.setBackgroundColor(.yellow)
         try expect(app.validateMenuItem(undo), "Undo becomes available after an edit")
         let toolbox = collect(NSPopUpButton.self, in: app.window.contentView!).first { $0.accessibilityLabel() == "Toolbox menu" }
-        try expect(toolbox?.menu?.items.contains { $0.title == "More Commands" } == true, "The Toolbox menu keeps its More Commands entry")
+        try expect(toolbox?.menu?.items.contains { $0.action == #selector(AppDelegate.saveHistory) } == true, "The Toolbox menu keeps Save to History")
     }
 
     // MARK: T15 cases
@@ -1591,7 +1591,7 @@ extension AppSafetyTests {
         app.dragPreviewTimer?.invalidate(); app.dragPreviewTimer = nil
         app.updateDragPreview()
         let text = app.status.stringValue
-        try expect(text.hasPrefix("Arrow · ") && text.contains("×") && text.components(separatedBy: " · ").count == 4 && text.hasSuffix("KB"), "The status reads tool, state and export size in one line: \(text)")
+        try expect(text.hasPrefix("Arrow · ") && text.contains("×") && text.components(separatedBy: " · ").count == 5 && text.contains(" · PNG · ") && text.hasSuffix("KB"), "The status reads tool, state, export size and format in one line: \(text)")
         try expect(app.dragSizeLabel.superview == nil && AppToolTip.text(for: app.status) == text && (app.status.accessibilityValue() as? String) == text, "The full text is the tooltip and the spoken value; no separate size label exists on screen")
         try expect(app.status.lineBreakMode == .byTruncatingTail, "A narrow status truncates its tail")
         try expect(app.dragPreviewTimer == nil, "Writing the size into the status does not re-arm the one-second drag-preview timer")

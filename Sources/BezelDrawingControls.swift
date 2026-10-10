@@ -656,7 +656,8 @@ final class SizePresetButton: NSButton {
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    @objc private func choose() { slider?.performValueChange(presetSize, continuous: false) }
+    /// A preset is a discrete pick, so it closes the popover as a colour pick does; dragging the track is continuous and keeps it open.
+    @objc private func choose() { slider?.performValueChange(presetSize, continuous: false); slider?.dismissPopover() }
     override func isAccessibilitySelected() -> Bool { isSelectedPreset }
 
     override func draw(_ dirtyRect: NSRect) {

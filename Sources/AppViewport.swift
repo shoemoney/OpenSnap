@@ -296,6 +296,7 @@ extension AppDelegate {
 
     func windowDidResize(_ notification: Notification) {
         guard (notification.object as? NSWindow) === window, !adjustingWindowFrame else { return }
+        refitForFullScreenResize()
         updateViewportChrome()
         helpBevel?.reposition()
     }

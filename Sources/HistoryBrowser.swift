@@ -206,22 +206,27 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         switch action {
         case .open,.copy,.deleteFiles: return selected.allSatisfy { !$0.missing }
         case .copyLink,.openLink: return selected.allSatisfy { $0.link != nil }
-        case .deleteRemote: return selected.allSatisfy { $0.link != nil && $0.canDeleteFromWeb }
+        case .deleteRemote: return selected.count == 1 && selected.allSatisfy { $0.link != nil && $0.canDeleteFromWeb }
         case .remove: return true
         }
     }
     func perform(_ action: Action) {
-        guard canPerform(action) else { return }
+        // Delete from Web is the one action that explains itself: when it is off, the app answers an attempt with a sheet saying why.
+        let explains = action == .deleteRemote && !selectedItems.isEmpty && callback(action) != nil
+        guard canPerform(action) || explains else { return }
         let ids = selectedIDs // Capture UUIDs before a callback changes the catalog.
         let before = pasteboardChangeCount()
         callback(action)?(ids)
         if let message = Self.confirmation(for:action), pasteboardChangeCount() != before { confirm(message) }
     }
-    /// The tooltip of Delete from Web: its name, or the reason it is off for a published entry the app has no destination record for.
+    /// The tooltip of Delete from Web: its name, or the reason it is off.
     nonisolated static func deleteRemoteHelp(for selected: [Item]) -> String {
-        let unrecorded = !selected.isEmpty && selected.allSatisfy { $0.link != nil } && selected.contains { !$0.canDeleteFromWeb }
-        return unrecorded ? "Delete from Web is unavailable: this was published before the app recorded where it went, so it can only be removed on the server."
-                          : Action.deleteRemote.title
+        guard !selected.isEmpty else { return Action.deleteRemote.title }
+        if selected.count > 1 { return "Delete from Web is unavailable: it removes one post at a time. Select a single entry." }
+        guard let item = selected.first else { return Action.deleteRemote.title }
+        if item.link == nil { return "Delete from Web is unavailable: this was never uploaded." }
+        return item.canDeleteFromWeb ? Action.deleteRemote.title
+            : "Delete from Web is unavailable: this was published before the app recorded where it went, so it can only be removed on the server."
     }
     /// What the footer says once a clipboard action has written to the pasteboard.
     nonisolated static func confirmation(for action: Action) -> String? {

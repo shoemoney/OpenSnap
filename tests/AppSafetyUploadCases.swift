@@ -147,7 +147,7 @@ extension AppSafetyTests {
             AppSafetyAlert.holdAnswers = true
             chrome.uploadControls.detailsButton.performClick(nil)
             try expect(AppSafetyAlert.pending.count == 1 && AppSafetyAlert.pending[0].alert.title == "Upload failed"
-                       && AppSafetyAlert.pending[0].alert.message == "Error: Server said no.\nThe second line has the detail.", "Details opens an alert with the whole error (\(AppSafetyAlert.pending.map { $0.alert.message }))")
+                       && AppSafetyAlert.pending[0].alert.message == "Server said no.\nThe second line has the detail.", "Details opens an alert with the whole error, without a second Error: under the Upload failed title (\(AppSafetyAlert.pending.map { $0.alert.message }))")
             AppSafetyAlert.pending.removeFirst().reply(.alertFirstButtonReturn)
             AppSafetyAlert.holdAnswers = false
             try expect(app.uploadState.isFailure, "Closing Details leaves the error in place")
@@ -306,7 +306,7 @@ extension AppSafetyTests {
                    "The full URL stays on the tooltip and in the VoiceOver help, whatever the status shows")
         try expect(status.accessibilityValue() == (status.stringValue == status.variants.first ? status.stringValue : status.variants.first), "VoiceOver is told the whole sentence")
         // Four seconds in production: the countdown is untouched by the longer text.
-        try expect(productionDuration == 4 && app.uploadSuccessTimer != nil, "The expiry timer is running, and the production expiry is still four seconds (\(productionDuration))")
+        try expect(productionDuration == UploadState.successDuration && productionDuration >= 10 && app.uploadSuccessTimer != nil, "The expiry timer is running, and the production expiry is the long one, at least ten seconds (\(productionDuration))")
         app.expireUploadSuccess()
         try expect(app.uploadState == .idle, "and the state still ends")
     }

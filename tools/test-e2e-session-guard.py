@@ -584,7 +584,7 @@ def test_inventory(base):
     mutants["a new FAIcon case the inventory does not list"] = t
     t = inventory_tree(base, "inv-new-menu")
     app = t / "Sources/App.swift"
-    text = app.read_text().replace('("Wipe Snap Only", #selector(wipeSnap), "")', '("Wipe Snap Only", #selector(wipeSnap), ""), ("Brand New Command", #selector(brandNew), "")', 1)
+    text = app.read_text().replace('("Remove Snap Picture", #selector(wipeSnap), "")', '("Remove Snap Picture", #selector(wipeSnap), ""), ("Brand New Command", #selector(brandNew), "")', 1)
     check(text != app.read_text(), "inventory (can fail): the new-menu mutation applied")
     app.write_text(text)
     mutants["a new menu item nobody classified"] = t

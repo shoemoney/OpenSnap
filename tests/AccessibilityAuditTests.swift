@@ -336,6 +336,11 @@ private enum AccessibilityAuditTests {
         if let photoPanel {
             photoPanel.contentView?.layoutSubtreeIfNeeded()
             record("Photos (empty)", Audit.audit(photoPanel, surface: "Photos (empty)"))
+            if let empty: NSView = private_(photos, "emptyState"), let folderButton: NSButton = private_(photos, "folderButton"), let libraryButton: NSButton = private_(photos, "libraryButton") {
+                expect(!empty.isHidden && folderButton.isDescendant(of: empty) && libraryButton.isDescendant(of: empty),
+                       "Photos: with nothing chosen the grid itself holds the explanation and both source buttons (F-J1-013)")
+                expect(folderButton.title == "Choose Pictures Folder…" && libraryButton.title == "Choose from Photos Library…", "Photos: the buttons say what they do")
+            } else { expect(false, "Photos: the empty state and its buttons were found") }
         }
         photos.shutdown()
 
@@ -474,6 +479,7 @@ private enum AccessibilityAuditTests {
                 }
                 return search(content)
             }
+            resize.setPresetManagementShown(true) // preset naming is folded away until asked for
             guard let width = field("Width in pixels"), let preset = field("Preset name") else { expect(false, "Resize fields exist"); continue }
             expect(panel.defaultButtonCell !== button(titled: "Apply", in: panel)?.cell && panel.defaultButtonCell === button(titled: "OK", in: panel)?.cell,
                    "Resize: Apply is the plain preview button and OK is the default")
@@ -509,6 +515,9 @@ private enum AccessibilityAuditTests {
                 photos.loadFolder(folder)
                 spin(until: { table.numberOfRows == 1 })
                 expect(table.numberOfRows == 1, "Photos: the fixture folder loaded one photo")
+                if let empty: NSView = private_(photos, "emptyState"), let folderButton: NSButton = private_(photos, "folderButton") {
+                    expect(empty.isHidden && !folderButton.isDescendant(of: empty), "Photos: once photos load, the empty state gives way and the source buttons move to the row above the grid")
+                }
                 table.selectRowIndexes([0], byExtendingSelection: false)
             }
             expect(press(code, on: panel), "Photos: \(name) is handled")
