@@ -60,7 +60,7 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
     let table = NSTableView()
     let scrollView = NSScrollView()
     private let listPage = NSStackView(), formPage = NSStackView()
-    private let listStatus: DestinationStatusRow
+    let listStatus: DestinationStatusRow
     /// The inline Test / Save result: a glyph and text together, never colour alone. It sits above the buttons and is as tall as its text.
     let formResult: DestinationStatusRow
 
