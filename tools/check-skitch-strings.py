@@ -24,6 +24,7 @@ ALLOWED = [
     "Sources/Migration.swift",
     "Sources/LegacyReader.swift",
     "tools/real_store_guard.py",
+    "tools/migration-dry-run.py",
     "tests/MigrationTests.swift",
     "tests/AppSafetyRetiredFormatCases.swift",
     "tests/fixtures/legacy-sample*",
