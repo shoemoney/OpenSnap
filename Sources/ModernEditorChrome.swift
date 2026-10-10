@@ -129,6 +129,7 @@ final class ModernEditorChrome: NSView {
     private let hideAction: Selector, undoAction: Selector
     private let toolOrder: [String]
     private let accessibilityProvider: @MainActor () -> ChromeAccessibility
+    private var displayOptionsObservation: DisplayOptions.Observation?
     private var surfaceList: [GlassSurfaceView] = []
     private var fillList: [ChromeFillable] = []
 
@@ -170,9 +171,10 @@ final class ModernEditorChrome: NSView {
         AppToolTip.setText("Upload", for: shareButton)
         super.init(frame: .zero)
         build(actions: actions)
-        NSWorkspace.shared.notificationCenter.addObserver(
-            self, selector: #selector(displayOptionsChanged(_:)),
-            name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
+        displayOptionsObservation = DisplayOptions.observe { [weak self] _ in
+            guard let self else { return }
+            self.accessibility = self.accessibilityProvider()
+        }
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -201,10 +203,6 @@ final class ModernEditorChrome: NSView {
     func refreshShortcutHints() {
         hideButton.shortcutHint = Self.menuShortcut(for: hideAction)
         undoButton.shortcutHint = Self.menuShortcut(for: undoAction)
-    }
-
-    @objc private func displayOptionsChanged(_ notification: Notification) {
-        accessibility = accessibilityProvider()
     }
 
     /// The glass plate a control sits on, found by walking up from it; nil for controls that sit outside any glass.

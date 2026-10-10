@@ -627,14 +627,11 @@ enum GlassChrome {
     }
 }
 
-/// The three system display options the chrome adapts to, as a value so tests can inject them.
+/// The three display options the glass chrome adapts to, as a value so tests can inject them. The live value is
+/// `DisplayOptions.current` (injection, then the system), so the screenshot harness can simulate them too; this value is the
+/// chrome's view of it (`DisplayOptions.chrome`), and Differentiate Without Color is picked up by the state styles of OSN-044.
 struct ChromeAccessibility: Equatable, Sendable {
     var reduceTransparency: Bool, increaseContrast: Bool, reduceMotion: Bool
     static let none = ChromeAccessibility(reduceTransparency: false, increaseContrast: false, reduceMotion: false)
-    @MainActor static var live: ChromeAccessibility { reading(.shared) }
-    @MainActor static func reading(_ workspace: NSWorkspace) -> ChromeAccessibility {
-        ChromeAccessibility(reduceTransparency: workspace.accessibilityDisplayShouldReduceTransparency,
-                            increaseContrast: workspace.accessibilityDisplayShouldIncreaseContrast,
-                            reduceMotion: workspace.accessibilityDisplayShouldReduceMotion)
-    }
+    @MainActor static var live: ChromeAccessibility { DisplayOptions.current.chrome }
 }

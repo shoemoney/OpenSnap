@@ -216,7 +216,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     var windowZoom: WindowZoomAnimation?
     var windowZoomID: UUID?
     var visibilityZoomOrigin: CGRect?
-    var animatesWindowZoom: Bool { !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
+    var animatesWindowZoom: Bool { !DisplayOptions.current.reduceMotion }
     var resizeButton: NSButton?
     let navigator = CanvasNavigator(frame: NSRect(x: 0, y: 0, width: 180, height: 170))
     var navigatorWindow: NSPanel?

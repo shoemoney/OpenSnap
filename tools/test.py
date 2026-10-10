@@ -169,7 +169,7 @@ suites = [
 modern_suites = [
     ("fontawesome-icons-tests", ["FontAwesomeIcons.swift", "ChromeIcons.swift"], "FontAwesomeIconsTests.swift", "FONTAWESOME_ICONS_TESTS", (), font_environment),
     ("menu-symbols-tests", ["FontAwesomeIcons.swift", "ChromeIcons.swift", "MenuSymbols.swift"], "MenuSymbolsTests.swift", "MENU_SYMBOLS_TESTS", ()),
-    ("glass-chrome-tests", ["OriginalActionButton.swift", "FontAwesomeIcons.swift", "ChromeIcons.swift", "BezelDrawingControls.swift", "SVGPath.swift", "DocumentModel.swift", "GlassChrome.swift", "ModernEditorChrome.swift", "AppToolTip.swift"], "GlassChromeTests.swift", "GLASS_CHROME_TESTS", ()),
+    ("glass-chrome-tests", ["DisplayOptions.swift", "DisplayOptions+ChromeAccessibility.swift", "OriginalActionButton.swift", "FontAwesomeIcons.swift", "ChromeIcons.swift", "BezelDrawingControls.swift", "SVGPath.swift", "DocumentModel.swift", "GlassChrome.swift", "ModernEditorChrome.swift", "AppToolTip.swift"], "GlassChromeTests.swift", "GLASS_CHROME_TESTS", ()),
 ]
 with ThreadPoolExecutor(max_workers=len(suites) + len(modern_suites)) as executor:
     futures = [executor.submit(suite, *args) for args in suites]
