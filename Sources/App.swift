@@ -19,9 +19,79 @@ final class FrameChromeView: NSView {
     override func layout() { super.layout(); if showsCanvasHole { needsDisplay = true } }
 }
 
+/// The drag well. Dragging it hands the drawing to another app; it is also a keyboard-reachable button: Space or Return (and VoiceOver's
+/// press) run `onActivate`, which opens the Export panel, the alternative to dragging. Hover shows an open hand and a held press a closed one.
 final class DragExportView: NSView, NSDraggingSource, NSFilePromiseProviderDelegate {
     struct Payload { let data: Data; let name: String; var format: String = "png"; let delivered: (URL) -> Void }
+    static let accessibilityName = "Drag image to another app"
     var prepare: (() -> Payload?)?
+    /// The keyboard and assistive alternative to dragging.
+    var onActivate: (() -> Void)?
+    /// Hover and press changes, so the cell the well sits in can draw its plate fill for the same state.
+    var onInteractionChange: (() -> Void)?
+    private(set) var isHovered = false, isPressed = false
+    private var hoverArea: NSTrackingArea?
+    override var acceptsFirstResponder: Bool { true }
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        focusRingType = .exterior
+        setAccessibilityElement(true)
+        setAccessibilityRole(.button)
+        setAccessibilityLabel(Self.accessibilityName)
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    func setHovered(_ hovered: Bool) {
+        guard isHovered != hovered else { return }
+        isHovered = hovered
+        onInteractionChange?()
+    }
+    func setPressed(_ pressed: Bool) {
+        guard isPressed != pressed else { return }
+        isPressed = pressed
+        window?.invalidateCursorRects(for: self)
+        onInteractionChange?()
+    }
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let hoverArea { removeTrackingArea(hoverArea) }
+        let area = NSTrackingArea(rect: .zero, options: [.mouseEnteredAndExited, .activeInActiveApp, .inVisibleRect], owner: self, userInfo: nil)
+        addTrackingArea(area)
+        hoverArea = area
+    }
+    override func mouseEntered(with event: NSEvent) { setHovered(true) }
+    override func mouseExited(with event: NSEvent) { setHovered(false) }
+    override func viewDidHide() { super.viewDidHide(); setHovered(false); setPressed(false) }
+    override func viewWillMove(toWindow newWindow: NSWindow?) {
+        if newWindow == nil { setHovered(false); setPressed(false) }
+        super.viewWillMove(toWindow: newWindow)
+    }
+    /// What the pointer shows over the well: an open hand, closed while it is held.
+    var wellCursor: NSCursor { isPressed ? .closedHand : .openHand }
+    override func resetCursorRects() { addCursorRect(bounds, cursor: wellCursor) }
+    override func mouseDown(with event: NSEvent) { setPressed(true) }
+    override func mouseUp(with event: NSEvent) { setPressed(false) }
+
+    /// Runs the keyboard alternative to dragging; false when nothing is wired.
+    @discardableResult func activate() -> Bool {
+        guard let onActivate else { return false }
+        onActivate()
+        return true
+    }
+    override func accessibilityPerformPress() -> Bool { activate() }
+    override func keyDown(with event: NSEvent) {
+        switch event.keyCode {
+        case 49, 36, 76: if !activate() { super.keyDown(with: event) }
+        default: super.keyDown(with: event)
+        }
+    }
+    private var focusBounds: NSRect { bounds.insetBy(dx: 1, dy: 1) }
+    override var focusRingMaskBounds: NSRect { focusBounds.isEmpty ? .zero : focusBounds }
+    override func drawFocusRingMask() {
+        guard !focusBounds.isEmpty else { return }
+        NSColor.black.setFill()
+        NSBezierPath(roundedRect: focusBounds, xRadius: StatePlate.radius, yRadius: StatePlate.radius).fill()
+    }
     var overview: NSImage? { didSet { needsDisplay = true } }
     var onBegin: ((UUID) -> Void)?
     var onLeaveControl: ((UUID) -> Void)?
@@ -77,6 +147,7 @@ final class DragExportView: NSView, NSDraggingSource, NSFilePromiseProviderDeleg
         moveExport(to: screenPoint)
     }
     func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
+        setPressed(false)
         if let provider = sessions.removeValue(forKey: ObjectIdentifier(session)) { endExport(provider: provider, succeeded: !operation.isEmpty) }
     }
     @discardableResult
@@ -204,7 +275,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     var sizeUndoGrouping = false
     var customDrawingColor = NSColor(calibratedRed: 0, green: 1, blue: 1, alpha: 1) // token-exempt: drawing colour data, not chrome
     let zoomControl = ZoomPopUpButton(frame: .zero, pullsDown: false)
-    let dragFormatToggle = NSSegmentedControl(labels: FormatToggle.titles, trackingMode: .selectOne, target: nil, action: nil)
+    let dragFormatToggle = SegmentedToggle(titles: FormatToggle.titles)
     let dragOriginalControl = NSButton(checkboxWithTitle: "Export at original size", target: nil, action: nil)
     let dragSizeLabel = NSTextField(labelWithString: "")
     var dragExportView: DragExportView?
@@ -734,7 +805,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             if self.activeDragID == id { self.activeDragID = nil }
             self.restoreDragThumbnail(id)
         }
-        drag.setAccessibilityElement(true); drag.setAccessibilityLabel("Drag Me"); AppToolTip.setText("Drag the drawing into Finder or another application", for: drag)
+        drag.onActivate = { [weak self] in
+            guard let self, !self.terminationStarted, !self.frameCaptureInProgress, self.window.attachedSheet == nil else { return }
+            self.exportFile()
+        }
+        AppToolTip.setText("Drag the drawing into Finder or another application", for: drag)
         trackHint(drag, owner: "drag-me") { OriginalHintMessages.hover(actionTag: 40) }
     }
     func wireEditorChrome(scroll: NSScrollView) {
@@ -862,6 +937,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         return true
     }
     func updateToolButtons(_ tool: SketchTool) {
+        // The crop tool is the one that works the borders, so only it keeps their handles showing at rest.
+        canvasBorder.showsHandles = tool == .crop
         for (choice, button) in toolButtons {
             let selected = choice == tool
             button.state = selected ? .on : .off

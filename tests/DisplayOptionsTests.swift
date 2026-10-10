@@ -196,17 +196,16 @@ private enum DisplayOptionsTests {
 
     private static func bridge() throws {
         try expect(DisplayOptions(ChromeAccessibility.none) == .none && DisplayOptions.none.chrome == ChromeAccessibility.none, "none maps to none both ways")
-        for bits in 0..<8 {
-            let chrome = ChromeAccessibility(reduceTransparency: bits & 1 != 0, increaseContrast: bits & 2 != 0, reduceMotion: bits & 4 != 0)
+        for bits in 0..<16 {
+            let chrome = ChromeAccessibility(reduceTransparency: bits & 1 != 0, increaseContrast: bits & 2 != 0, reduceMotion: bits & 4 != 0, differentiateWithoutColor: bits & 8 != 0)
             let options = DisplayOptions(chrome)
-            try expect(options.reduceTransparency == chrome.reduceTransparency && options.increaseContrast == chrome.increaseContrast && options.reduceMotion == chrome.reduceMotion,
-                       "chrome -> options keeps every field (case \(bits))")
-            try expect(!options.differentiateWithoutColor, "chrome has no Differentiate Without Color, so it is off (case \(bits))")
+            try expect(options.reduceTransparency == chrome.reduceTransparency && options.increaseContrast == chrome.increaseContrast && options.reduceMotion == chrome.reduceMotion
+                       && options.differentiateWithoutColor == chrome.differentiateWithoutColor, "chrome -> options keeps every field (case \(bits))")
             try expect(options.chrome == chrome, "chrome -> options -> chrome is the identity (case \(bits))")
         }
         let all = DisplayOptions(reduceMotion: true, reduceTransparency: true, increaseContrast: true, differentiateWithoutColor: true)
-        try expect(all.chrome == ChromeAccessibility(reduceTransparency: true, increaseContrast: true, reduceMotion: true), "options -> chrome drops only Differentiate Without Color")
-        try expect(dwc.chrome == ChromeAccessibility.none, "Differentiate Without Color alone has no chrome effect yet")
+        try expect(all.chrome == ChromeAccessibility(reduceTransparency: true, increaseContrast: true, reduceMotion: true, differentiateWithoutColor: true), "options -> chrome carries all four options")
+        try expect(dwc.chrome == ChromeAccessibility(reduceTransparency: false, increaseContrast: false, reduceMotion: false, differentiateWithoutColor: true), "Differentiate Without Color alone reaches the chrome and nothing else")
         try expect(rt.chrome.reduceTransparency && !rt.chrome.increaseContrast && !rt.chrome.reduceMotion, "reduceTransparency maps to the matching chrome field only")
         try expect(!ic.chrome.reduceTransparency && ic.chrome.increaseContrast && !ic.chrome.reduceMotion, "increaseContrast maps to the matching chrome field only")
         try expect(!rm.chrome.reduceTransparency && !rm.chrome.increaseContrast && rm.chrome.reduceMotion, "reduceMotion maps to the matching chrome field only")

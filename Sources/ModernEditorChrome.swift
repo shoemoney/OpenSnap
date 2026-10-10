@@ -124,9 +124,9 @@ final class ModernEditorChrome: NSView {
     let scrollView = NSScrollView()
     let header = NSView()
     let footer = NSView()
-    private(set) var toolButtons: [String: GlassChromeButton] = [:]
+    private(set) var toolButtons: [String: CommandButton] = [:]
     let hideButton, photosButton, saveButton, historyButton, snapButton, cancelFrameButton,
-        fontButton, undoButton, wipeButton, resizeButton, shareButton: GlassChromeButton
+        fontButton, undoButton, wipeButton, resizeButton, shareButton: CommandButton
     /// The canvas well is the solid `surface.canvasWell` colour, drawn by the scroll view and its clip view (corner included).
     var wellIsSolid: Bool { scrollView.drawsBackground && scrollView.contentView.drawsBackground }
 
@@ -160,8 +160,8 @@ final class ModernEditorChrome: NSView {
         self.accessibility = accessibility()
         // Every command is icon-only: the old title survives as the VoiceOver label and (with the shortcut) the native tooltip.
         func make(_ name: String, _ icon: FAIcon, _ action: Selector, shortcut: String? = nil, toolTip: String? = nil,
-                  pointSize: CGFloat = GlassChrome.Metrics.iconPointSize) -> GlassChromeButton {
-            let button = GlassChromeButton(title: "", target: actions.target, action: action)
+                  pointSize: CGFloat = GlassChrome.Metrics.iconPointSize) -> CommandButton {
+            let button = CommandButton(title: "", target: actions.target, action: action)
             GlassChrome.useExtraLarge(button)
             button.iconPointSize = pointSize
             button.icon = icon
@@ -180,7 +180,7 @@ final class ModernEditorChrome: NSView {
         wipeButton = make("Wipe", .broom, actions.wipe)
         resizeButton = make("Resize…", .rulerCombined, actions.resize)
         // Icon-only upload command: the semantic Upload icon, no title, so nothing but the explicit label is read aloud.
-        shareButton = GlassChromeButton(title: "", target: actions.target, action: actions.share)
+        shareButton = CommandButton(title: "", target: actions.target, action: actions.share)
         GlassChrome.useExtraLarge(shareButton)
         shareButton.image = ChromeIcons.resolve(.upload, family: .regular, pointSize: GlassChrome.Metrics.iconPointSize).image
         shareButton.image?.accessibilityDescription = "Upload"
@@ -259,7 +259,7 @@ final class ModernEditorChrome: NSView {
     }
 
     /// A button on a plate: fixed size, state fill registered for display-option updates.
-    private func fixed(_ button: GlassChromeButton, _ size: NSSize = GlassChrome.Metrics.iconButton) -> GlassChromeButton {
+    private func fixed(_ button: CommandButton, _ size: NSSize = GlassChrome.Metrics.iconButton) -> CommandButton {
         GlassChrome.fix(button, size)
         fillList.append(button)
         return button
@@ -269,6 +269,13 @@ final class ModernEditorChrome: NSView {
     private func cell(_ control: NSView, size: NSSize = GlassChrome.Metrics.iconButton, fit: ChromeFillCell.Fit = .fill) -> ChromeFillCell {
         let cell = ChromeFillCell(control, size: size, fit: fit)
         cell.focusTarget = control as? NSControl
+        // The Size pill draws its own glyph; the cell behind it fills for its press and disabled state.
+        if let slider = control as? BezelSizeSlider {
+            slider.onInteractionChange = { [weak cell, weak slider] in
+                guard let cell, let slider else { return }
+                cell.setPressed(slider.isPressed, disabled: !slider.isEnabled)
+            }
+        }
         fillList.append(cell)
         return cell
     }
@@ -330,7 +337,7 @@ final class ModernEditorChrome: NSView {
         var toolViews: [NSView] = []
         for id in toolOrder {
             guard let icon = Self.toolIcons[id] else { continue }
-            let button = GlassChromeButton(title: "", target: actions.target, action: actions.chooseTool)
+            let button = CommandButton(title: "", target: actions.target, action: actions.chooseTool)
             button.identifier = NSUserInterfaceItemIdentifier(id)
             button.setButtonType(.toggle)
             button.iconPointSize = Metrics.iconPointSize
@@ -382,8 +389,8 @@ final class ModernEditorChrome: NSView {
         // The PNG | JPG control sits on the footer plate itself: no plate or cell of its own behind it.
         let formatControl = controls.dragFormatControl
         (formatControl as? NSPopUpButton)?.isBordered = false
-        // Only Snap is saturated at rest: the selected segment takes the selected-fill rule (accent at 0.20) instead of the system's full accent.
-        (formatControl as? NSSegmentedControl)?.selectedSegmentBezelColor = DesignTokens.Palette.State.selectedFill
+        // Only Snap is saturated at rest: the toggle draws its selected segment from the same state styles as the commands.
+        if let toggle = formatControl as? ChromeFillable { fillList.append(toggle) }
         let formatWidth: CGFloat
         if let popup = formatControl as? NSPopUpButton {
             // A popup sizes to its selected title, so measure every title and size it once for the widest: it hugs the content and never jumps.

@@ -73,12 +73,59 @@ enum OriginalDrawingControls {
     }
 }
 
+/// A preset colour swatch in the Drawing colours popover. Rest is a 1 pt separator outline, hover strengthens it, a press fills it, and
+/// the selected swatch gets a 3 pt accent outline plus a check glyph, so the choice is never colour alone (`StateStyles.swatch`).
+@MainActor
 final class BezelColorButton: NSButton {
+    static let checkPointSize: CGFloat = 16
     var drawingColor: NSColor = .red { didSet { needsDisplay = true } }
+    private(set) var isHovered = false
+    private var hoverArea: NSTrackingArea?
+
+    var controlState: ControlState {
+        if !isEnabled { return .disabled }
+        if state == .on { return .selected }
+        if isHighlighted { return .pressed }
+        return isHovered ? .hover : .rest
+    }
+
+    /// What this swatch draws right now, under the live display options.
+    var swatchStyle: SwatchStyle {
+        StateStyles.swatch(controlState, highContrast: DisplayOptions.current.increaseContrast, appearance: effectiveAppearance)
+    }
+
+    /// Hover entry point for the tracking area; tests drive it directly.
+    func setHovered(_ hovered: Bool) {
+        guard isHovered != hovered else { return }
+        isHovered = hovered
+        needsDisplay = true
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let hoverArea { removeTrackingArea(hoverArea) }
+        let area = NSTrackingArea(rect: .zero, options: [.mouseEnteredAndExited, .activeInActiveApp, .inVisibleRect], owner: self, userInfo: nil)
+        addTrackingArea(area)
+        hoverArea = area
+    }
+    override func mouseEntered(with event: NSEvent) { setHovered(true) }
+    override func mouseExited(with event: NSEvent) { setHovered(false) }
+    override func viewDidHide() { super.viewDidHide(); setHovered(false) }
+    override func viewWillMove(toWindow newWindow: NSWindow?) {
+        if newWindow == nil { setHovered(false) }
+        super.viewWillMove(toWindow: newWindow)
+    }
+    override var isEnabled: Bool { didSet { needsDisplay = true } }
+    override var state: NSControl.StateValue { didSet { needsDisplay = true } }
+
     override func draw(_ dirtyRect: NSRect) {
+        let style = swatchStyle
         let rect = bounds.insetBy(dx: 3, dy: 3)
+        let shape = NSBezierPath(roundedRect: rect, xRadius: 5, yRadius: 5)
         NSGraphicsContext.saveGraphicsState()
-        NSBezierPath(roundedRect: rect, xRadius: 5, yRadius: 5).addClip()
+        if style.alpha < 1 { NSGraphicsContext.current?.cgContext.setAlpha(style.alpha) }
+        NSGraphicsContext.saveGraphicsState()
+        shape.addClip()
         for row in 0..<Int(ceil(rect.height/6)) {
             for column in 0..<Int(ceil(rect.width/6)) {
                 ((row+column)%2 == 0 ? NSColor.white : NSColor(white: 0.72, alpha: 1)).setFill() // token-exempt: transparency checkerboard behind a document colour
@@ -86,15 +133,30 @@ final class BezelColorButton: NSButton {
             }
         }
         drawingColor.setFill(); rect.fill()
+        if let fill = style.fill { fill.setFill(); rect.fill() }
         NSGraphicsContext.restoreGraphicsState()
-        let outline = NSBezierPath(roundedRect: rect, xRadius: 5, yRadius: 5)
-        (state == .on ? DesignTokens.Palette.accent : DesignTokens.Palette.SwatchOutline.rest).setStroke()
-        outline.lineWidth = state == .on ? 3 : 1; outline.stroke()
+        style.outline.setStroke()
+        shape.lineWidth = style.outlineWidth; shape.stroke()
+        if style.check, let glyph = ChromeIcons.resolve(.check, family: .solid, pointSize: Self.checkPointSize).image {
+            Self.drawTinted(glyph, color: StateStyles.checkColor(on: drawingColor), centeredIn: rect)
+        }
+        NSGraphicsContext.restoreGraphicsState()
         if window?.firstResponder === self {
             DesignTokens.Palette.focusRing.setStroke()
             let focus = NSBezierPath(roundedRect: bounds.insetBy(dx: 1, dy: 1), xRadius: 6, yRadius: 6)
             focus.lineWidth = 2; focus.stroke()
         }
+    }
+
+    /// A template glyph filled with one colour, centred in `rect`.
+    static func drawTinted(_ image: NSImage, color: NSColor, centeredIn rect: NSRect) {
+        let tinted = NSImage(size: image.size, flipped: false) { bounds in
+            image.draw(in: bounds)
+            color.setFill()
+            bounds.fill(using: .sourceAtop)
+            return true
+        }
+        tinted.draw(in: NSRect(x: rect.midX - image.size.width / 2, y: rect.midY - image.size.height / 2, width: image.size.width, height: image.size.height))
     }
 }
 
@@ -102,6 +164,7 @@ final class BezelColorButton: NSButton {
 /// with a track and five presets. The pill stays the one model object: the value, the target/action, the undo
 /// grouping and the "Size N" tooltip all live here, and the popover drives them through the same gesture API.
 /// Five ordinary steps from the recovered control; Shift gives continuous values throughout.
+@MainActor
 final class BezelSizeSlider: NSControl, NSPopoverDelegate {
     static let pillSize = NSSize(width: 48, height: 36)
     static let glyphLength: CGFloat = 24
@@ -117,7 +180,48 @@ final class BezelSizeSlider: NSControl, NSPopoverDelegate {
     private var tracking = false
     private var value = OriginalDrawingControls.initialSize
     private var lastPopoverClose: TimeInterval = -.infinity
-    override var acceptsFirstResponder: Bool { true }
+    /// Hover, press and enabled changes, so the cell the pill sits in can draw its plate fill for the same state.
+    var onInteractionChange: (() -> Void)?
+    private(set) var isPressed = false
+    private(set) var isHovered = false
+    private var hoverArea: NSTrackingArea?
+    override var acceptsFirstResponder: Bool { isEnabled }
+    override var isEnabled: Bool {
+        didSet {
+            guard isEnabled != oldValue else { return }
+            if !isEnabled { dismissPopover(); isPressed = false; isHovered = false }
+            needsDisplay = true
+            popoverContent?.sync()
+            onInteractionChange?()
+        }
+    }
+    var controlState: ControlState {
+        if !isEnabled { return .disabled }
+        return isPressed ? .pressed : (isHovered ? .hover : .rest)
+    }
+    func setHovered(_ hovered: Bool) {
+        guard isHovered != hovered else { return }
+        isHovered = hovered
+        needsDisplay = true
+        onInteractionChange?()
+    }
+    func setPressed(_ pressed: Bool) {
+        guard isPressed != pressed else { return }
+        isPressed = pressed
+        needsDisplay = true
+        onInteractionChange?()
+    }
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let hoverArea { removeTrackingArea(hoverArea) }
+        let area = NSTrackingArea(rect: .zero, options: [.mouseEnteredAndExited, .activeInActiveApp, .inVisibleRect], owner: self, userInfo: nil)
+        addTrackingArea(area)
+        hoverArea = area
+    }
+    override func mouseEntered(with event: NSEvent) { setHovered(true) }
+    override func mouseExited(with event: NSEvent) { setHovered(false) }
+    override func mouseUp(with event: NSEvent) { setPressed(false) }
+    override func viewDidHide() { super.viewDidHide(); setHovered(false); setPressed(false) }
     override var doubleValue: Double {
         get { value }
         set { value = OriginalDrawingControls.size(newValue, continuous: true); needsDisplay = true; popoverContent?.sync() }
@@ -147,10 +251,19 @@ final class BezelSizeSlider: NSControl, NSPopoverDelegate {
         return true
     }
 
+    /// The stroke the pill draws: the command content colour, 0.96 shorter while pressed, dimmed to 0.38 when disabled.
+    var pillStyle: StateStyle {
+        let options = DisplayOptions.current
+        return StateStyles.command(controlState, primary: false, focused: false, highContrast: options.increaseContrast,
+                                   differentiate: options.differentiateWithoutColor, appearance: effectiveAppearance)
+    }
+
     override func draw(_ dirtyRect: NSRect) {
+        let style = pillStyle
         let thickness = CGFloat(value)
-        let line = NSRect(x: (bounds.width - Self.glyphLength) / 2, y: (bounds.height - thickness) / 2, width: Self.glyphLength, height: thickness)
-        (isEnabled ? NSColor.labelColor : NSColor.disabledControlTextColor).setFill()
+        let length = Self.glyphLength * (DisplayOptions.current.reduceMotion ? 1 : style.glyphScale)
+        let line = NSRect(x: (bounds.width - length) / 2, y: (bounds.height - thickness) / 2, width: length, height: thickness)
+        style.content.withAlphaComponent(style.contentAlpha).setFill()
         NSBezierPath(roundedRect: line, xRadius: thickness / 2, yRadius: thickness / 2).fill()
     }
 
@@ -218,6 +331,7 @@ final class BezelSizeSlider: NSControl, NSPopoverDelegate {
         popover?.performClose(nil)
     }
     func popoverWillClose(_ notification: Notification) {
+        setPressed(false)
         endTracking()
         lastPopoverClose = ProcessInfo.processInfo.systemUptime
     }
@@ -227,6 +341,7 @@ final class BezelSizeSlider: NSControl, NSPopoverDelegate {
 
     override func mouseDown(with event: NSEvent) {
         guard isEnabled else { return }
+        setPressed(true)
         // The original slider does not end native annotation typing. Keep that editor's focus.
         if !(window?.firstResponder is NSTextView) { window?.makeFirstResponder(self) }
         if isPopoverShown { dismissPopover() }
@@ -312,11 +427,44 @@ final class SizePopoverContent: NSView {
 }
 
 /// The horizontal track in the popover: drag anywhere. A plain drag snaps to the five sizes, Shift keeps it continuous.
+/// The knob grows to 1.15 on hover and 1.25 while held, the track takes an accent wash while held, and a disabled pill
+/// dims the whole track to 0.38 and ignores the pointer (`StateStyles.track`).
+@MainActor
 final class SizeTrackView: NSControl {
     static let size = NSSize(width: 288, height: 36)
     static let knobDiameter: CGFloat = 20
     private weak var slider: BezelSizeSlider?
-    override var acceptsFirstResponder: Bool { true }
+    private(set) var isHovered = false, isPressed = false
+    private var hoverArea: NSTrackingArea?
+    override var acceptsFirstResponder: Bool { isEnabled }
+    override var isEnabled: Bool {
+        get { slider?.isEnabled ?? false }
+        set { }
+    }
+
+    var controlState: ControlState {
+        if !isEnabled { return .disabled }
+        return isPressed ? .pressed : (isHovered ? .hover : .rest)
+    }
+    var trackStyle: TrackStyle { StateStyles.track(controlState, highContrast: DisplayOptions.current.increaseContrast, appearance: effectiveAppearance) }
+    func setHovered(_ hovered: Bool) {
+        guard isHovered != hovered else { return }
+        isHovered = hovered; needsDisplay = true
+    }
+    func setPressed(_ pressed: Bool) {
+        guard isPressed != pressed else { return }
+        isPressed = pressed; needsDisplay = true
+    }
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let hoverArea { removeTrackingArea(hoverArea) }
+        let area = NSTrackingArea(rect: .zero, options: [.mouseEnteredAndExited, .activeInActiveApp, .inVisibleRect], owner: self, userInfo: nil)
+        addTrackingArea(area)
+        hoverArea = area
+    }
+    override func mouseEntered(with event: NSEvent) { setHovered(true) }
+    override func mouseExited(with event: NSEvent) { setHovered(false) }
+    override func viewDidHide() { super.viewDidHide(); setHovered(false); setPressed(false) }
 
     init(slider: BezelSizeSlider) {
         self.slider = slider
@@ -338,19 +486,32 @@ final class SizeTrackView: NSControl {
     override func accessibilityPerformIncrement() -> Bool { slider?.accessibilityPerformIncrement() ?? false }
     override func accessibilityPerformDecrement() -> Bool { slider?.accessibilityPerformDecrement() ?? false }
 
+    /// The knob as drawn now: its rest diameter times the state's scale, centred on the value.
+    var knobRect: NSRect {
+        guard let slider else { return .zero }
+        let diameter = Self.knobDiameter * trackStyle.knobScale
+        let knobX = x(forFraction: slider.fraction(forSize: slider.doubleValue))
+        return NSRect(x: knobX - diameter / 2, y: bounds.midY - diameter / 2, width: diameter, height: diameter)
+    }
+
     override func draw(_ dirtyRect: NSRect) {
         guard let slider else { return }
-        let midY = bounds.midY
-        NSColor.quaternaryLabelColor.setFill()
-        NSBezierPath(roundedRect: NSRect(x: Self.knobDiameter / 2, y: midY - 4, width: travel, height: 8), xRadius: 4, yRadius: 4).fill()
-        NSColor.secondaryLabelColor.setFill()
+        let style = trackStyle, midY = bounds.midY
+        NSGraphicsContext.saveGraphicsState()
+        defer { NSGraphicsContext.restoreGraphicsState() }
+        if style.alpha < 1 { NSGraphicsContext.current?.cgContext.setAlpha(style.alpha) }
+        let track = NSRect(x: Self.knobDiameter / 2, y: midY - 4, width: travel, height: 8)
+        style.track.setFill()
+        NSBezierPath(roundedRect: track, xRadius: 4, yRadius: 4).fill()
+        if let highlight = style.highlight { highlight.setFill(); NSBezierPath(roundedRect: track, xRadius: 4, yRadius: 4).fill() }
+        style.dots.setFill()
         for step in OriginalDrawingControls.sizeSteps {
             let x = self.x(forFraction: slider.fraction(forSize: step))
             NSBezierPath(ovalIn: NSRect(x: x - 2, y: midY - 2, width: 4, height: 4)).fill()
         }
-        let knobX = x(forFraction: slider.fraction(forSize: slider.doubleValue))
-        NSColor.controlAccentColor.setFill()
-        NSBezierPath(ovalIn: NSRect(x: knobX - Self.knobDiameter / 2, y: midY - Self.knobDiameter / 2, width: Self.knobDiameter, height: Self.knobDiameter)).fill()
+        let knob = NSBezierPath(ovalIn: knobRect)
+        style.knob.setFill(); knob.fill()
+        if let border = style.knobBorder { border.setStroke(); knob.lineWidth = 1.5; knob.stroke() }
     }
     override var focusRingMaskBounds: NSRect { bounds.insetBy(dx: 1, dy: 1) }
     override func drawFocusRingMask() {
@@ -363,11 +524,12 @@ final class SizeTrackView: NSControl {
     }
     override func mouseDown(with event: NSEvent) {
         guard let slider, slider.beginGesture() else { return }
+        setPressed(true)
         window?.makeFirstResponder(self)
         if event.clickCount > 1 { slider.resetValue() } else { track(event) }
     }
     override func mouseDragged(with event: NSEvent) { track(event) }
-    override func mouseUp(with event: NSEvent) { slider?.endTracking() }
+    override func mouseUp(with event: NSEvent) { setPressed(false); slider?.endTracking() }
     override func keyDown(with event: NSEvent) {
         let shift = event.modifierFlags.contains(.shift), step = shift ? 0.1 : BezelSizeSlider.stepSize
         guard let slider else { return super.keyDown(with: event) }
@@ -379,12 +541,43 @@ final class SizeTrackView: NSControl {
     }
 }
 
-/// One of the five sizes. The selected one is marked by a thicker accent border and a tinted fill, never by colour alone.
+/// One of the five sizes. It draws the command states (`StateStyles.command`); the selected one is marked by a thicker accent border
+/// and a tinted fill, never by colour alone.
+@MainActor
 final class SizePresetButton: NSButton {
     static let size = NSSize(width: 48, height: 36)
     let presetSize: Double
     private weak var slider: BezelSizeSlider?
+    private(set) var isHovered = false
+    private var hoverArea: NSTrackingArea?
     var isSelectedPreset: Bool { slider.map { abs($0.doubleValue - presetSize) < 0.01 } ?? false }
+
+    var controlState: ControlState {
+        if slider?.isEnabled == false { return .disabled }
+        if isHighlighted { return .pressed }
+        if isSelectedPreset { return .selected }
+        return isHovered ? .hover : .rest
+    }
+    /// The command style this preset draws right now, under the live display options.
+    var commandStyle: StateStyle {
+        let options = DisplayOptions.current
+        return StateStyles.command(controlState, primary: false, focused: false, highContrast: options.increaseContrast,
+                                   differentiate: options.differentiateWithoutColor, selected: isSelectedPreset, appearance: effectiveAppearance)
+    }
+    func setHovered(_ hovered: Bool) {
+        guard isHovered != hovered else { return }
+        isHovered = hovered; needsDisplay = true
+    }
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let hoverArea { removeTrackingArea(hoverArea) }
+        let area = NSTrackingArea(rect: .zero, options: [.mouseEnteredAndExited, .activeInActiveApp, .inVisibleRect], owner: self, userInfo: nil)
+        addTrackingArea(area)
+        hoverArea = area
+    }
+    override func mouseEntered(with event: NSEvent) { setHovered(true) }
+    override func mouseExited(with event: NSEvent) { setHovered(false) }
+    override func viewDidHide() { super.viewDidHide(); setHovered(false) }
 
     init(size: Double, slider: BezelSizeSlider) {
         presetSize = size
@@ -404,19 +597,21 @@ final class SizePresetButton: NSButton {
     override func isAccessibilitySelected() -> Bool { isSelectedPreset }
 
     override func draw(_ dirtyRect: NSRect) {
+        let style = commandStyle
         let frame = bounds.insetBy(dx: 1, dy: 1)
         let outline = NSBezierPath(roundedRect: frame, xRadius: 8, yRadius: 8)
-        if isSelectedPreset {
-            NSColor.controlAccentColor.withAlphaComponent(0.20).setFill(); outline.fill()
-            NSColor.controlAccentColor.setStroke(); outline.lineWidth = 2
-        } else {
-            if isHighlighted { NSColor.labelColor.withAlphaComponent(0.10).setFill(); outline.fill() }
-            NSColor.separatorColor.setStroke(); outline.lineWidth = 1
-        }
+        NSGraphicsContext.saveGraphicsState()
+        defer { NSGraphicsContext.restoreGraphicsState() }
+        if style.contentAlpha < 1 { NSGraphicsContext.current?.cgContext.setAlpha(style.contentAlpha) }
+        if let fill = style.fill { fill.setFill(); outline.fill() }
+        // A preset is a discrete option, so it keeps a hairline outline at rest; the selected one doubles it in the accent.
+        (style.border ?? DesignTokens.Palette.separator).setStroke()
+        outline.lineWidth = style.border == nil ? 1 : 2
         outline.stroke()
         let thickness = CGFloat(presetSize)
-        let line = NSRect(x: (bounds.width - BezelSizeSlider.glyphLength) / 2, y: (bounds.height - thickness) / 2, width: BezelSizeSlider.glyphLength, height: thickness)
-        NSColor.labelColor.setFill()
+        let length = BezelSizeSlider.glyphLength * (DisplayOptions.current.reduceMotion ? 1 : style.glyphScale)
+        let line = NSRect(x: (bounds.width - length) / 2, y: (bounds.height - thickness) / 2, width: length, height: thickness)
+        style.content.setFill()
         NSBezierPath(roundedRect: line, xRadius: thickness / 2, yRadius: thickness / 2).fill()
     }
     override var focusRingMaskBounds: NSRect { bounds.insetBy(dx: 1, dy: 1) }

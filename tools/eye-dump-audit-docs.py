@@ -31,7 +31,7 @@ STATIC_GAPS = [
     ("Non-Retina 1x display", "Only the built-in 2x Retina display exists on this machine; 1x rendering (hairlines, glyph hinting) was not captured."),
     ("Multi-display", "A single display is attached; active-display capture and cross-display window placement were not exercised."),
     ("Live screen capture / real crosshair over real pixels", "No Screen Recording grant and capturing the screen is forbidden for this audit. The picker lens is shown grey (what renders without a grant) and with synthetic pixels."),
-    ("Native tooltips / hover-only affordances", "AppKit tooltips are window-server drawn on real pointer dwell; they cannot be forced. Tooltip strings are recorded in metrics/*.json (toolTip). Hover/pressed states were forced through GlassChromeButton.setHovered/highlight only."),
+    ("Native tooltips / hover-only affordances", "AppKit tooltips are window-server drawn on real pointer dwell; they cannot be forced. Tooltip strings are recorded in metrics/*.json (toolTip). Hover/pressed states were forced through CommandButton.setHovered/highlight only."),
     ("NSSharingServicePicker / system share sheet", "Out-of-process and lists the user's real accounts; not opened."),
     ("Photo browser (S22)", "Reads the user's Photos library and Desktop with no synthetic-content seam; not opened (privacy)."),
     ("Real drag-and-drop to Finder", "A real drag session needs a real pointer and writes files; only the drag thumbnail panel states were driven."),
@@ -164,7 +164,7 @@ def write_text_size(out):
             for node, _ in tree_nodes(window["views"]):
                 if node.get("effectivelyHidden"):
                     continue
-                if node["class"] in ("GlassChromeButton", "BezelHoverButton") and node.get("imagePosition") == 1:
+                if node["class"] in ("CommandButton", "GlassChromeButton", "BezelHoverButton") and node.get("imagePosition") == 1:
                     continue  # icon-only: the title is an accessibility name, never drawn
                 font, text = node.get("font"), node.get("string")
                 if not font or not text or font["pointSize"] >= 20:

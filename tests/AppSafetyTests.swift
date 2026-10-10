@@ -2270,7 +2270,7 @@ enum AppSafetyTests {
         }
         // Webpost… deliberately carries its destination menu (webpostMenu covers it).
         let others = actionButtons(app.window.contentView!).filter { $0 !== snap && $0 !== app.webpostButton }
-        try expect(others.contains { $0 is GlassChromeButton } && others.contains { $0 === app.cancelFrameButton },
+        try expect(others.contains { $0 is CommandButton } && others.contains { $0 === app.cancelFrameButton },
                    "No-alternate checks cover actual tool and Cancel controls rather than fabricated buttons")
         try expect(!actionButtons(app.window.contentView!).contains { $0.title.lowercased().contains("cam") || $0.action == NSSelectorFromString("cameraSnap") } &&
                    !app.responds(to: NSSelectorFromString("cameraSnap")),
@@ -3717,7 +3717,7 @@ enum AppSafetyTests {
                     for child in view.subviews { collect(child) }
                 }
                 collect(content)
-                let ordered = controls.compactMap { $0 as? GlassChromeButton }.compactMap { $0.identifier?.rawValue }.filter { SketchTool(rawValue: $0) != nil }
+                let ordered = controls.compactMap { $0 as? CommandButton }.compactMap { $0.identifier?.rawValue }.filter { SketchTool(rawValue: $0) != nil }
                 try expect(Set(ordered) == Set(["select", "brush", "line", "ellipse", "rectangle", "fill", "eraser", "text", "arrow", "crop"]) && ordered.count == 10,
                            "Original nine drawing tools and the additional Crop command are all present as glass buttons")
                 try expect(!controls.contains { ($0 as? NSButton)?.action == #selector(AppDelegate.frameSnap) },
@@ -3802,7 +3802,7 @@ enum AppSafetyTests {
                     NSColor(srgbRed: 0.5, green: 0.5, blue: 0.5, alpha: 1),
                     NSColor(srgbRed: 0.25, green: 0.45, blue: 0.9, alpha: 1)]
                 for background in colors {
-                    let foreground = GlassChromeButton.textColor(on: background)
+                    let foreground = CommandButton.textColor(on: background)
                     let rgb = background.usingColorSpace(.deviceRGB)!
                     let channels = [rgb.redComponent, rgb.greenComponent, rgb.blueComponent].map { c in
                         c <= 0.04045 ? Double(c) / 12.92 : pow((Double(c) + 0.055) / 1.055, 2.4)
@@ -3811,8 +3811,8 @@ enum AppSafetyTests {
                     let contrast = foreground == .black ? (brightness + 0.05) / 0.05 : 1.05 / (brightness + 0.05)
                     try expect(contrast >= 4.5, "Selected tool label contrast is too low: \(contrast)")
                 }
-                try expect(GlassChromeButton.textColor(on: .yellow) == .black, "Yellow needs a dark selected label")
-                try expect(GlassChromeButton.textColor(on: .blue) == .white, "Dark blue needs a light selected label")
+                try expect(CommandButton.textColor(on: .yellow) == .black, "Yellow needs a dark selected label")
+                try expect(CommandButton.textColor(on: .blue) == .white, "Dark blue needs a light selected label")
             })
         ]
         // Development aid: APP_SAFETY_FILTER=<text> runs only the cases whose title contains it. Unset, every case runs.

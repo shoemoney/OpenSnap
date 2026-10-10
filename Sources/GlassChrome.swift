@@ -11,11 +11,11 @@ enum GlassShape: Equatable {
     }
 }
 
-/// The look of one control on a group plate: a fill on a rounded layer, never a nested glass surface. Hover, press and
-/// selection are fills (`Palette.State`), Snap is the one saturated accent, and a selected control also gets a 1 pt accent
-/// border so selection is never colour alone. Pure style resolution is separate from the layer so tests can read both.
+/// The look of one control on a group plate: a fill on a rounded layer, never a nested glass surface. What each state draws is
+/// `StateStyles.command`; this paints the result onto the control's own layer, so tests can read the style and the layer.
 @MainActor
 final class StatePlate {
+    /// The paint on the layer: fill and border. The full style (content colour, alpha, indicator) is `stateStyle`.
     struct Style: Equatable {
         var fill: NSColor?
         var border: NSColor?
@@ -29,8 +29,9 @@ final class StatePlate {
 
     private weak var view: NSView?
     var accessibility: ChromeAccessibility = .none { didSet { apply() } }
-    private(set) var isHovered = false, isPressed = false, isSelected = false, isPrimary = false, isDisabled = false
+    private(set) var isHovered = false, isPressed = false, isSelected = false, isPrimary = false, isDisabled = false, isFocused = false
     private(set) var style = Style.none
+    private(set) var stateStyle = StateStyles.command(.rest, primary: false, focused: false, highContrast: false, differentiate: false)
     private(set) var lastAnimationDuration: TimeInterval = 0
     /// Called after every repaint; lets a test watch the press bracket without a real event loop.
     var onApply: ((StatePlate) -> Void)?
@@ -43,53 +44,33 @@ final class StatePlate {
         view.layer?.masksToBounds = false
     }
 
-    /// The arm of each role this appearance and these options select. Increase Contrast can be injected, so the
-    /// appearance alone cannot be trusted to carry it.
-    static func arm(for appearance: NSAppearance, options: ChromeAccessibility) -> DesignTokens.Palette.Arm {
-        let arm = DesignTokens.Palette.arm(for: appearance)
-        guard options.increaseContrast else { return arm }
-        return arm == .darkAqua ? .highContrastDarkAqua : (arm == .aqua ? .highContrastAqua : arm)
-    }
-
-    static func resolveStyle(hovered: Bool, pressed: Bool, selected: Bool, primary: Bool, disabled: Bool,
-                             options: ChromeAccessibility, appearance: NSAppearance) -> Style {
-        typealias Palette = DesignTokens.Palette
-        let arm = arm(for: appearance, options: options)
-        let accent = Palette.resolve(Palette.accent, arm: arm)
-        if primary {
-            var fill = Palette.resolve(Palette.State.primaryFill, arm: arm)
-            if pressed && !disabled { fill = fill.blended(withFraction: 0.12, of: .black) ?? fill }
-            else if hovered && !disabled { fill = fill.blended(withFraction: 0.08, of: .white) ?? fill }
-            return Style(fill: fill, border: nil, borderWidth: 0)
-        }
-        if selected {
-            // Pressing a selected control deepens it to the high-contrast strength; hover never washes it out.
-            let base = Palette.resolve(Palette.State.selectedFill, arm: arm)
-            let fill = pressed && !disabled ? accent.withAlphaComponent(max(base.alphaComponent, 0.32)) : base
-            return Style(fill: fill, border: accent, borderWidth: 1)
-        }
-        if disabled { return .none }
-        if pressed { return Style(fill: Palette.resolve(Palette.State.pressed, arm: arm), border: nil, borderWidth: 0) }
-        if hovered { return Style(fill: Palette.resolve(Palette.State.hover, arm: arm), border: nil, borderWidth: 0) }
-        return .none
+    /// The state to resolve: disabled beats everything, a press beats a hover, and a selected control keeps its selection under both.
+    static func controlState(hovered: Bool, pressed: Bool, selected: Bool, disabled: Bool) -> ControlState {
+        if disabled { return .disabled }
+        if pressed { return .pressed }
+        if hovered { return .hover }
+        return selected ? .selected : .rest
     }
 
     /// Changes several flags with one repaint.
-    func update(hovered: Bool? = nil, pressed: Bool? = nil, selected: Bool? = nil, primary: Bool? = nil, disabled: Bool? = nil) {
+    func update(hovered: Bool? = nil, pressed: Bool? = nil, selected: Bool? = nil, primary: Bool? = nil, disabled: Bool? = nil, focused: Bool? = nil) {
         batching = true
         if let hovered { isHovered = hovered }
         if let pressed { isPressed = pressed }
         if let selected { isSelected = selected }
         if let primary { isPrimary = primary }
         if let disabled { isDisabled = disabled }
+        if let focused { isFocused = focused }
         batching = false
         apply()
     }
 
     func apply() {
         guard !batching, let view, let layer = view.layer else { return }
-        let next = Self.resolveStyle(hovered: isHovered, pressed: isPressed, selected: isSelected, primary: isPrimary,
-                                     disabled: isDisabled, options: accessibility, appearance: view.effectiveAppearance)
+        let state = Self.controlState(hovered: isHovered, pressed: isPressed, selected: isSelected, disabled: isDisabled)
+        let resolved = StateStyles.command(state, primary: isPrimary, focused: isFocused, highContrast: accessibility.increaseContrast,
+                                           differentiate: accessibility.differentiateWithoutColor, selected: isSelected, appearance: view.effectiveAppearance)
+        let next = Style(fill: resolved.fill, border: resolved.border, borderWidth: resolved.borderWidth)
         let duration = accessibility.reduceMotion ? 0 : Self.animationDuration
         lastAnimationDuration = duration
         let changed = next.fill?.cgColor != style.fill?.cgColor
@@ -100,6 +81,7 @@ final class StatePlate {
             layer.add(fade, forKey: "plateFill")
         }
         style = next
+        stateStyle = resolved
         layer.cornerRadius = Self.radius
         layer.backgroundColor = next.fill?.cgColor
         layer.borderWidth = next.borderWidth
@@ -114,11 +96,12 @@ protocol ChromeFillable: AnyObject {
     var accessibility: ChromeAccessibility { get set }
 }
 
-/// A command button that sits on its group's glass plate: borderless, icon from the Font Awesome / SF Symbol chain, and its own
-/// hover, pressed and selected state drawn as a fill on a rounded layer (`StatePlate`), never as another glass surface.
-/// Available on macOS 13 so the unit tests run anywhere. Click, Control-click and menu handling stay OriginalActionButton's.
+/// The one command button of the chrome (T6): borderless, icon from the Font Awesome / SF Symbol chain, and its own rest, hover,
+/// pressed, selected, disabled and focus state resolved by `StateStyles.command` and drawn as a fill on a rounded layer
+/// (`StatePlate`), never as another glass surface. Available on macOS 13 so the unit tests run anywhere. Click, Control-click and
+/// menu handling stay OriginalActionButton's.
 @MainActor
-class GlassChromeButton: OriginalActionButton, ChromeFillable {
+class CommandButton: OriginalActionButton, ChromeFillable {
     var icon: FAIcon? { didSet { refreshIcon() } }
     /// Glyph shown while `state == .on` (Actual Size swaps maximize for minimize); falls back to `icon`.
     var selectedIcon: FAIcon? { didSet { refreshIcon() } }
@@ -126,20 +109,26 @@ class GlassChromeButton: OriginalActionButton, ChromeFillable {
     var selectedFamily: FAFamily = .solid { didSet { refreshIcon() } }
     var iconPointSize: CGFloat = 22 { didSet { refreshIcon() } }
     /// The single saturated command (Snap): its fill is the accent and its icon takes the contrasting color.
-    var isPrimary = false { didSet { applyForeground(); syncPlate() } }
+    var isPrimary = false { didSet { syncPlate() } }
     /// False for toggles that only change glyph (Actual Size): `.on` neither fills the button nor flips the label color.
-    var selectionTints = true { didSet { applyForeground(); syncPlate() } }
+    var selectionTints = true { didSet { syncPlate() } }
     /// The focus ring follows the state fill's rounded rectangle.
     var focusShape: GlassShape = .rounded(StatePlate.radius) { didSet { noteFocusRingMaskChanged() } }
     private(set) lazy var plate = StatePlate(view: self)
     var accessibility: ChromeAccessibility {
         get { plate.accessibility }
-        set { plate.accessibility = newValue; applyForeground() }
+        set { plate.accessibility = newValue; syncPlate() }
     }
     private(set) var isHovered = false
     private var hoverArea: NSTrackingArea?
     private(set) var iconSource: ChromeIconSource = .none
     private(set) var activeFamily: FAFamily = .regular
+    /// The capsule under the glyph that marks a selected command when Differentiate Without Color is on.
+    let indicatorLayer = CALayer()
+    private(set) var showsIndicator = false
+    /// The glyph scale currently rendered (0.96 while pressed, none under Reduce Motion).
+    private(set) var glyphScale: CGFloat = 1
+    private var hasKeyboardFocus = false
     /// Whether the button presents as selected. Assigning `state` always counts; AppKit's own flips count only for
     /// two-state button types, because a momentary button reads `.on` while it is merely being clicked.
     private(set) var showsSelection = false
@@ -163,7 +152,6 @@ class GlassChromeButton: OriginalActionButton, ChromeFillable {
         imageHugsTitle = true
         imageScaling = .scaleProportionallyDown
         if (font?.pointSize ?? 0) < DesignTokens.Typography.readableMinimum { font = DesignTokens.Typography.font(.body) }
-        applyForeground()
         syncPlate()
     }
 
@@ -242,7 +230,6 @@ class GlassChromeButton: OriginalActionButton, ChromeFillable {
 
     override var isEnabled: Bool {
         didSet {
-            applyForeground()
             noteFocusRingMaskChanged()
             syncPlate()
         }
@@ -262,7 +249,7 @@ class GlassChromeButton: OriginalActionButton, ChromeFillable {
             updatePresentation()
             return
         }
-        let resolved = ChromeIcons.resolve(glyph, family: activeFamily, pointSize: iconPointSize)
+        let resolved = ChromeIcons.resolve(glyph, family: activeFamily, pointSize: iconPointSize * glyphScale)
         iconSource = resolved.source
         image = resolved.image
         updatePresentation()
@@ -270,39 +257,57 @@ class GlassChromeButton: OriginalActionButton, ChromeFillable {
 
     private func updatePresentation() {
         imagePosition = image == nil ? .noImage : (visibleTitle.isEmpty ? .imageOnly : .imageLeading)
-        applyForeground()
+        syncPlate()
     }
 
     private var isShownSelected: Bool { selectionTints && showsSelection }
 
-    /// The primary button sits on a saturated accent fill and takes the contrasting color. A selected button's fill is only
-    /// accent at 0.20, so its glyph is the accent itself (the label color under Increase Contrast); the rest follow the label color.
-    private func applyForeground() {
-        var color = NSColor.labelColor
-        if !isEnabled {
-            color = .disabledControlTextColor
-        } else if isPrimary {
-            effectiveAppearance.performAsCurrentDrawingAppearance { color = Self.textColor(on: .controlAccentColor) }
-        } else if isShownSelected && !accessibility.increaseContrast {
-            color = .controlAccentColor
-        }
-        if contentTintColor != color { contentTintColor = color }
-    }
-
+    /// Black or white for text on `background`, whichever reaches the WCAG 4.5:1 floor (white first), else the stronger.
     static func textColor(on background: NSColor) -> NSColor {
-        guard let rgb = background.usingColorSpace(.deviceRGB) else { return .labelColor }
-        func linear(_ value: CGFloat) -> Double {
-            let channel = Double(value)
-            return channel <= 0.04045 ? channel / 12.92 : pow((channel + 0.055) / 1.055, 2.4)
-        }
-        let luminance = 0.2126 * linear(rgb.redComponent) + 0.7152 * linear(rgb.greenComponent) + 0.0722 * linear(rgb.blueComponent)
-        return luminance > 0.179 ? .black : .white
+        DesignTokens.Palette.onAccent(fill: background, alpha: 1, over: .white)
     }
 
-    /// Pushes this button's own state into its fill; the group plate behind it never changes.
+    /// Pushes this button's own state into its fill, glyph colour, glyph size, alpha and indicator; the group plate behind it never changes.
     private func syncPlate() {
-        plate.update(hovered: isHovered, pressed: isPressing, selected: isShownSelected, primary: isPrimary, disabled: !isEnabled)
-        alphaValue = isEnabled ? 1 : 0.5
+        plate.update(hovered: isHovered, pressed: isPressing, selected: isShownSelected, primary: isPrimary, disabled: !isEnabled, focused: hasKeyboardFocus)
+        let style = plate.stateStyle
+        if contentTintColor != style.content { contentTintColor = style.content }
+        alphaValue = style.contentAlpha
+        showIndicator(style)
+        let scale = accessibility.reduceMotion ? 1 : style.glyphScale
+        if scale != glyphScale {
+            glyphScale = scale
+            refreshIcon()
+        }
+    }
+
+    private func showIndicator(_ style: StateStyle) {
+        showsIndicator = style.indicator
+        guard let layer else { return }
+        guard style.indicator else { indicatorLayer.isHidden = true; return }
+        let size = StateStyles.indicatorSize(highContrast: accessibility.increaseContrast)
+        if indicatorLayer.superlayer !== layer { layer.addSublayer(indicatorLayer) }
+        indicatorLayer.isHidden = false
+        indicatorLayer.cornerRadius = size.height / 2
+        indicatorLayer.backgroundColor = style.content.cgColor
+        indicatorLayer.frame = NSRect(x: (bounds.width - size.width) / 2, y: StateStyles.indicatorInset, width: size.width, height: size.height)
+    }
+
+    override func layout() {
+        super.layout()
+        if showsIndicator { showIndicator(plate.stateStyle) }
+    }
+
+    override func becomeFirstResponder() -> Bool {
+        let accepted = super.becomeFirstResponder()
+        if accepted { hasKeyboardFocus = true; syncPlate() }
+        return accepted
+    }
+
+    override func resignFirstResponder() -> Bool {
+        let resigned = super.resignFirstResponder()
+        if resigned { hasKeyboardFocus = false; syncPlate() }
+        return resigned
     }
 
     /// Hover state entry point for the tracking area; tests drive it directly.
@@ -364,14 +369,12 @@ class GlassChromeButton: OriginalActionButton, ChromeFillable {
 
     override func viewDidChangeEffectiveAppearance() {
         super.viewDidChangeEffectiveAppearance()
-        applyForeground()
-        plate.apply()
+        syncPlate()
     }
 
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
-        applyForeground()
-        plate.apply()
+        syncPlate()
     }
 
     private var focusBounds: NSRect { bounds.insetBy(dx: 1, dy: 1) }
@@ -437,6 +440,11 @@ final class ChromeFillCell: NSView, ChromeFillable {
         guard isHovered != hovered else { return }
         isHovered = hovered
         plate.update(hovered: hovered)
+    }
+
+    /// A control that is a plain view or draws its own press (the Size pill, the drag well) reports it here so the cell fills for it too.
+    func setPressed(_ pressed: Bool, disabled: Bool = false) {
+        plate.update(pressed: pressed, disabled: disabled)
     }
 
     override func mouseDown(with event: NSEvent) {
@@ -627,11 +635,255 @@ enum GlassChrome {
     }
 }
 
-/// The three display options the glass chrome adapts to, as a value so tests can inject them. The live value is
+/// The display options the glass chrome adapts to, as a value so tests can inject them. The live value is
 /// `DisplayOptions.current` (injection, then the system), so the screenshot harness can simulate them too; this value is the
-/// chrome's view of it (`DisplayOptions.chrome`), and Differentiate Without Color is picked up by the state styles of OSN-044.
+/// chrome's view of it (`DisplayOptions.chrome`). Differentiate Without Color feeds the selected indicator of the state styles.
 struct ChromeAccessibility: Equatable, Sendable {
     var reduceTransparency: Bool, increaseContrast: Bool, reduceMotion: Bool
+    var differentiateWithoutColor = false
     static let none = ChromeAccessibility(reduceTransparency: false, increaseContrast: false, reduceMotion: false)
     @MainActor static var live: ChromeAccessibility { DisplayOptions.current.chrome }
+}
+
+/// One VoiceOver child of the format toggle: a radio button named after its segment that presses through the toggle.
+@MainActor
+final class SegmentedToggleElement: NSAccessibilityElement {
+    private weak var toggle: SegmentedToggle?
+    let index: Int
+
+    init(toggle: SegmentedToggle, index: Int) {
+        self.toggle = toggle
+        self.index = index
+        super.init()
+        setAccessibilityRole(.radioButton)
+        setAccessibilityLabel(toggle.label(forSegment: index))
+        setAccessibilityParent(toggle)
+    }
+
+    override func accessibilityValue() -> Any? { NSNumber(value: toggle?.selectedSegment == index ? 1 : 0) }
+    override func isAccessibilityEnabled() -> Bool { toggle?.isEnabled ?? false }
+    override func accessibilityPerformPress() -> Bool {
+        guard let toggle, toggle.isEnabled else { return false }
+        toggle.choose(index)
+        return true
+    }
+}
+
+/// The footer's PNG | JPG toggle, drawn from `StateStyles.toggleSegment` instead of the system capsule track: two 12 pt rounded
+/// segments on faint plates, the selected one an accent tint with `bodyStrong` text, so selection is also a weight. It is one tab stop;
+/// Left and Right move the selection, Space switches to the other segment. It sends its action on every change, like the control
+/// it replaces, and exposes two radio-button children ("PNG", "JPG") under the group "Image format".
+@MainActor
+final class SegmentedToggle: NSControl, ChromeFillable {
+    static let segmentGap: CGFloat = 2, segmentPadding: CGFloat = 12
+
+    let titles: [String]
+    var segmentCount: Int { titles.count }
+    func label(forSegment index: Int) -> String { titles[index] }
+    /// Assigning moves the selection without sending the action, like NSSegmentedControl.
+    var selectedSegment = 0 {
+        didSet {
+            selectedSegment = min(max(0, selectedSegment), titles.count - 1)
+            guard selectedSegment != oldValue else { return }
+            needsDisplay = true
+            NSAccessibility.post(element: self, notification: .valueChanged)
+        }
+    }
+    var accessibility: ChromeAccessibility = .none { didSet { needsDisplay = true } }
+    private(set) var hoveredSegment: Int?, pressedSegment: Int?
+    private var hasKeyboardFocus = false
+    private var hoverArea: NSTrackingArea?
+    private(set) lazy var elements: [SegmentedToggleElement] = titles.indices.map { SegmentedToggleElement(toggle: self, index: $0) }
+
+    init(titles: [String]) {
+        self.titles = titles
+        super.init(frame: .zero)
+        cell = NSActionCell()
+        isEnabled = true
+        focusRingType = .exterior
+        setAccessibilityElement(true)
+        setAccessibilityRole(.radioGroup)
+        setAccessibilityLabel("Image format")
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override var acceptsFirstResponder: Bool { isEnabled }
+    override var isFlipped: Bool { false }
+    override var isEnabled: Bool { didSet { needsDisplay = true; noteFocusRingMaskChanged() } }
+
+    // MARK: geometry
+
+    /// Both segments share the width of the wider title set in the strong weight, so choosing one never moves the other.
+    private var segmentWidth: CGFloat {
+        let strong = DesignTokens.Typography.font(.bodyStrong)
+        return ceil(titles.map { ($0 as NSString).size(withAttributes: [.font: strong]).width }.max() ?? 0) + 2 * Self.segmentPadding
+    }
+
+    override var intrinsicContentSize: NSSize {
+        NSSize(width: segmentWidth * CGFloat(titles.count) + Self.segmentGap * CGFloat(titles.count - 1), height: GlassChrome.Metrics.commandHeight)
+    }
+
+    func segmentRect(_ index: Int) -> NSRect {
+        let width = (bounds.width - Self.segmentGap * CGFloat(titles.count - 1)) / CGFloat(titles.count)
+        return NSRect(x: CGFloat(index) * (width + Self.segmentGap), y: 0, width: width, height: bounds.height)
+    }
+
+    func segment(at point: NSPoint) -> Int? { titles.indices.first { segmentRect($0).contains(point) } }
+
+    // MARK: state
+
+    func state(ofSegment index: Int) -> ControlState {
+        if !isEnabled { return .disabled }
+        if selectedSegment == index { return .selected }
+        if pressedSegment == index { return .pressed }
+        return hoveredSegment == index ? .hover : .rest
+    }
+
+    /// The face a segment's title is drawn in: 20 pt, semibold while the segment is selected.
+    func textFont(forSegment index: Int) -> NSFont {
+        DesignTokens.Typography.font(style(ofSegment: index).strongText ? .bodyStrong : .body)
+    }
+
+    func style(ofSegment index: Int) -> StateStyle {
+        StateStyles.toggleSegment(state(ofSegment: index), focused: hasKeyboardFocus, highContrast: accessibility.increaseContrast,
+                                  differentiate: accessibility.differentiateWithoutColor, appearance: effectiveAppearance)
+    }
+
+    /// Hover entry point for the tracking area; tests drive it directly.
+    func setHoveredSegment(_ index: Int?) {
+        guard hoveredSegment != index else { return }
+        hoveredSegment = index
+        needsDisplay = true
+    }
+
+    /// Press entry point for mouseDown and mouseDragged; tests drive it directly.
+    func setPressedSegment(_ index: Int?) {
+        guard pressedSegment != index else { return }
+        pressedSegment = index
+        needsDisplay = true
+    }
+
+    /// Selects a segment and sends the action; choosing the selected segment does nothing.
+    func choose(_ index: Int) {
+        guard isEnabled, titles.indices.contains(index), index != selectedSegment else { return }
+        selectedSegment = index
+        _ = sendAction(action, to: target)
+    }
+
+    // MARK: drawing
+
+    override func draw(_ dirtyRect: NSRect) {
+        for index in titles.indices {
+            let style = style(ofSegment: index), rect = segmentRect(index)
+            let radius = StatePlate.radius
+            let shape = NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius)
+            NSGraphicsContext.saveGraphicsState()
+            if style.contentAlpha < 1 { NSGraphicsContext.current?.cgContext.setAlpha(style.contentAlpha) }
+            if let fill = style.fill { fill.setFill(); shape.fill() }
+            if let border = style.border, style.borderWidth > 0 {
+                let inset = NSBezierPath(roundedRect: rect.insetBy(dx: style.borderWidth / 2, dy: style.borderWidth / 2), xRadius: radius - style.borderWidth / 2, yRadius: radius - style.borderWidth / 2)
+                border.setStroke(); inset.lineWidth = style.borderWidth; inset.stroke()
+            }
+            let font = textFont(forSegment: index)
+            let attributes: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: style.content]
+            let size = (titles[index] as NSString).size(withAttributes: attributes)
+            (titles[index] as NSString).draw(at: NSPoint(x: rect.midX - size.width / 2, y: rect.midY - size.height / 2), withAttributes: attributes)
+            NSGraphicsContext.restoreGraphicsState()
+        }
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        needsDisplay = true
+    }
+
+    // MARK: mouse
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let hoverArea { removeTrackingArea(hoverArea) }
+        let area = NSTrackingArea(rect: .zero, options: [.mouseEnteredAndExited, .mouseMoved, .activeInActiveApp, .inVisibleRect], owner: self, userInfo: nil)
+        addTrackingArea(area)
+        hoverArea = area
+    }
+
+    override func mouseEntered(with event: NSEvent) { setHoveredSegment(segment(at: convert(event.locationInWindow, from: nil))) }
+    override func mouseMoved(with event: NSEvent) { setHoveredSegment(segment(at: convert(event.locationInWindow, from: nil))) }
+    override func mouseExited(with event: NSEvent) { setHoveredSegment(nil) }
+
+    override func mouseDown(with event: NSEvent) {
+        guard isEnabled else { return }
+        setPressedSegment(segment(at: convert(event.locationInWindow, from: nil)))
+    }
+
+    // A press that slides off its segment is cancelled, like a button.
+    override func mouseDragged(with event: NSEvent) {
+        guard let pressed = pressedSegment else { return }
+        let inside = segment(at: convert(event.locationInWindow, from: nil)) == pressed
+        if !inside { setPressedSegment(nil); pressedOutside = pressed }
+        else if pressedOutside == pressed { setPressedSegment(pressed); pressedOutside = nil }
+    }
+
+    private var pressedOutside: Int?
+
+    override func mouseUp(with event: NSEvent) {
+        let pressed = pressedSegment ?? pressedOutside
+        let released = segment(at: convert(event.locationInWindow, from: nil))
+        setPressedSegment(nil)
+        pressedOutside = nil
+        if let pressed, pressed == released { choose(pressed) }
+    }
+
+    override func viewDidHide() {
+        super.viewDidHide()
+        setHoveredSegment(nil); setPressedSegment(nil)
+    }
+
+    override func viewWillMove(toWindow newWindow: NSWindow?) {
+        if newWindow == nil { setHoveredSegment(nil); setPressedSegment(nil) }
+        super.viewWillMove(toWindow: newWindow)
+    }
+
+    // MARK: keyboard
+
+    override func keyDown(with event: NSEvent) {
+        guard isEnabled else { return super.keyDown(with: event) }
+        switch event.keyCode {
+        case 123: choose(selectedSegment - 1)
+        case 124: choose(selectedSegment + 1)
+        case 49: choose(selectedSegment == 0 ? 1 : 0)
+        default: super.keyDown(with: event)
+        }
+    }
+
+    override func becomeFirstResponder() -> Bool {
+        let accepted = super.becomeFirstResponder()
+        if accepted { hasKeyboardFocus = true; needsDisplay = true }
+        return accepted
+    }
+
+    override func resignFirstResponder() -> Bool {
+        let resigned = super.resignFirstResponder()
+        if resigned { hasKeyboardFocus = false; needsDisplay = true }
+        return resigned
+    }
+
+    override var focusRingMaskBounds: NSRect { isEnabled && !bounds.isEmpty ? bounds.insetBy(dx: 1, dy: 1) : .zero }
+
+    override func drawFocusRingMask() {
+        guard isEnabled, !bounds.isEmpty else { return }
+        NSColor.black.setFill()
+        NSBezierPath(roundedRect: bounds.insetBy(dx: 1, dy: 1), xRadius: StatePlate.radius, yRadius: StatePlate.radius).fill()
+    }
+
+    // MARK: accessibility
+
+    override func accessibilityChildren() -> [Any]? {
+        for element in elements { element.setAccessibilityFrameInParentSpace(segmentRect(element.index)) }
+        return elements
+    }
+
+    override func accessibilityValue() -> Any? { titles[selectedSegment] }
+    override func isAccessibilitySelected() -> Bool { false }
 }

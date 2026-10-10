@@ -488,17 +488,17 @@ extension AuditRun {
         for tool in SketchTool.allCases {
             app.setTool(tool)
             shoot("S04", "tool-\(tool.rawValue)", surface: "tool states", state: "\(tool.rawValue) tool selected", crop: headerCrop(),
-                  refs: ["App.swift|func updateToolButtons", "GlassChrome.swift|static func resolveStyle"], settle: 0.3)
+                  refs: ["App.swift|func updateToolButtons", "StateStyles.swift|static func command"], settle: 0.3)
         }
         app.setTool(.brush)
         guard #available(macOS 26, *), let chrome = app.modernChrome as? ModernEditorChrome else { return }
         if let tool = chrome.toolButtons["rectangle"] {
             tool.setHovered(true)
-            shoot("S04", "tool-hover", surface: "tool states", state: "Rectangle tool hovered (GlassChromeButton.setHovered: a 0.08 fill on the group plate), Brush selected", crop: headerCrop(),
+            shoot("S04", "tool-hover", surface: "tool states", state: "Rectangle tool hovered (CommandButton.setHovered: a 0.08 fill on the group plate), Brush selected", crop: headerCrop(),
                   refs: ["GlassChrome.swift|func setHovered"], settle: 0.4)
             tool.setHovered(false)
             tool.highlight(true)
-            shoot("S04", "tool-pressed", surface: "tool states", state: "Rectangle tool pressed (GlassChromeButton.highlight: a 0.16 fill on the group plate), Brush selected", crop: headerCrop(),
+            shoot("S04", "tool-pressed", surface: "tool states", state: "Rectangle tool pressed (CommandButton.highlight: a 0.16 fill on the group plate), Brush selected", crop: headerCrop(),
                   refs: ["GlassChrome.swift|override func highlight"], settle: 0.4)
             tool.highlight(false)
         }
@@ -621,7 +621,7 @@ extension AuditRun {
                 app.changeDragOptions(toggle)
                 app.updateDragPreview()
                 shoot("S09", "format-toggle-\(name.lowercased())", surface: "footer", state: "PNG | JPG segmented toggle with \(name) selected", crop: footerCrop(),
-                      refs: ["App+ModernChrome.swift|dragFormatToggle.segmentStyle", "ImageExport.swift|enum FormatToggle"], settle: 0.5)
+                      refs: ["GlassChrome.swift|final class SegmentedToggle", "ImageExport.swift|enum FormatToggle"], settle: 0.5)
             }
             toggle.selectedSegment = 0; app.changeDragOptions(toggle)
         }
@@ -1198,7 +1198,7 @@ extension AuditRun {
             shoot("S28", "focus-footer-format", surface: "keyboard focus", state: "Format popup is first responder", crop: footerCrop(), refs: ["ModernEditorChrome.swift|let formatHolder"], settle: 0.3)
         }
         window.makeFirstResponder(chrome.shareButton)
-        shoot("S28", "focus-footer-upload", surface: "keyboard focus", state: "Upload button is first responder", crop: footerCrop(), refs: ["ModernEditorChrome.swift|shareButton = GlassChromeButton"], settle: 0.3)
+        shoot("S28", "focus-footer-upload", surface: "keyboard focus", state: "Upload button is first responder", crop: footerCrop(), refs: ["ModernEditorChrome.swift|shareButton = CommandButton"], settle: 0.3)
         window.makeFirstResponder(canvas)
     }
 

@@ -5,9 +5,22 @@ enum CanvasBorderHandle: Equatable {
     case edge(CanvasEdge)
 }
 
-/// The center passes mouse events through to the editable canvas.
+/// The center passes mouse events through to the editable canvas. At rest it is a quiet separator hairline around the image; the accent
+/// outline and the four corner handles appear when the pointer is over a border or while the crop tool is active.
 final class CanvasBorderView: NSView {
     static let border: CGFloat = 8
+    /// The crop tool keeps the handles showing; the app sets this from the active tool.
+    var showsHandles = false { didSet { needsDisplay = true } }
+    private(set) var isHovered = false
+    /// Whether the outline and handles are drawn right now.
+    var revealsHandles: Bool { showsHandles || isHovered }
+    private var hoverArea: NSTrackingArea?
+    /// Hover state entry point for the tracking area; tests drive it directly.
+    func setHovered(_ hovered: Bool) {
+        guard isHovered != hovered else { return }
+        isHovered = hovered
+        needsDisplay = true
+    }
     var onBegin: ((CanvasBorderHandle, NSEvent.ModifierFlags) -> Bool)?
     var onDrag: ((CGPoint, NSEvent.ModifierFlags) -> Void)?
     var onEnd: ((Bool) -> Void)?
@@ -42,9 +55,29 @@ final class CanvasBorderView: NSView {
         let local = convert(point, from: superview)
         return handle(at: local) == nil ? nil : self
     }
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let hoverArea { removeTrackingArea(hoverArea) }
+        let area = NSTrackingArea(rect: .zero, options: [.mouseEnteredAndExited, .mouseMoved, .activeInActiveApp, .inVisibleRect], owner: self, userInfo: nil)
+        addTrackingArea(area)
+        hoverArea = area
+    }
+    override func mouseEntered(with event: NSEvent) { setHovered(handle(at: convert(event.locationInWindow, from: nil)) != nil) }
+    override func mouseMoved(with event: NSEvent) { setHovered(handle(at: convert(event.locationInWindow, from: nil)) != nil) }
+    override func mouseExited(with event: NSEvent) { setHovered(false) }
+    override func viewDidHide() { super.viewDidHide(); setHovered(false) }
+    override func viewWillMove(toWindow newWindow: NSWindow?) {
+        if newWindow == nil { setHovered(false) }
+        super.viewWillMove(toWindow: newWindow)
+    }
     override func draw(_ dirtyRect: NSRect) {
-        NSColor.controlAccentColor.withAlphaComponent(0.65).setStroke()
         let rect = bounds.insetBy(dx: Self.border/2, dy: Self.border/2)
+        guard revealsHandles else {
+            DesignTokens.Palette.separator.setStroke()
+            let hairline = NSBezierPath(rect: rect); hairline.lineWidth = 1; hairline.stroke()
+            return
+        }
+        NSColor.controlAccentColor.withAlphaComponent(0.65).setStroke()
         let outline = NSBezierPath(rect: rect); outline.lineWidth = 1; outline.stroke()
         NSColor.controlAccentColor.setFill()
         for point in [CGPoint(x: rect.minX,y:rect.minY),CGPoint(x:rect.maxX,y:rect.minY),

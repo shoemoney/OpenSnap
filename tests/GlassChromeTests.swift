@@ -26,6 +26,7 @@ private final class ActionTarget: NSObject {
     @objc func share(_ sender: Any?) { hits.append("share") }
     @objc func alternate(_ sender: Any?) { hits.append("alternate") }
     @objc func sizeChanged(_ sender: Any?) { hits.append("size") }
+    @objc func formatChanged(_ sender: Any?) { hits.append("format:" + String((sender as? SegmentedToggle)?.selectedSegment ?? -1)) }
 }
 
 /// A popover that never reaches the screen but still reports its edge, its anchor and its close notifications.
@@ -88,6 +89,7 @@ private enum GlassChromeTests {
     private static let plain = ChromeAccessibility.none
     private static let contrast = ChromeAccessibility(reduceTransparency: false, increaseContrast: true, reduceMotion: false)
     private static let calm = ChromeAccessibility(reduceTransparency: false, increaseContrast: false, reduceMotion: true)
+    private static let differentiate = ChromeAccessibility(reduceTransparency: false, increaseContrast: false, reduceMotion: false, differentiateWithoutColor: true)
 
     static func main() {
         _ = NSApplication.shared
@@ -103,6 +105,13 @@ private enum GlassChromeTests {
         FontAwesomeFont.resetForTesting()
         buttonTests()
         sliderTests()
+        // The state tests pin the display options so the machine's own settings (Reduce Motion, Increase Contrast) cannot change them.
+        DisplayOptions.override = .none
+        commandButtonStateTests()
+        controlStateTests()
+        toggleTests()
+        differentiateTests()
+        DisplayOptions.override = nil
         do {
             surfaceTests()
             let fonts = fontDirectory()
@@ -164,13 +173,13 @@ private enum GlassChromeTests {
                            context: nil, eventNumber: number, clickCount: 1, pressure: 1)!
     }
 
-    // MARK: GlassChromeButton (available on every supported macOS)
+    // MARK: CommandButton (available on every supported macOS)
 
     private static func buttonTests() {
         // Font floor: the title initializer assigns a small system font after init(frame:).
-        let titled = GlassChromeButton(title: "Wipe", target: nil, action: nil)
+        let titled = CommandButton(title: "Wipe", target: nil, action: nil)
         expect((titled.font?.pointSize ?? 0) >= 18, "Title initializer never leaves a font under 18 pt")
-        expect((GlassChromeButton(frame: .zero).font?.pointSize ?? 0) == 20, "Default label size is 20 pt")
+        expect((CommandButton(frame: .zero).font?.pointSize ?? 0) == 20, "Default label size is 20 pt")
         titled.font = .systemFont(ofSize: 9)
         expect(titled.font?.pointSize == 18, "Assigning a small font floors at 18 pt")
         titled.font = nil
@@ -182,7 +191,7 @@ private enum GlassChromeTests {
                "No alignment insets, so the frame equals what the surface constrains")
 
         // Icon family follows the state; Actual Size swaps the glyph as well.
-        let tool = GlassChromeButton(title: "", target: nil, action: nil)
+        let tool = CommandButton(title: "", target: nil, action: nil)
         tool.setButtonType(.toggle)
         tool.icon = .paintbrush
         expect(tool.activeFamily == .regular && tool.iconFamily == .regular && tool.selectedFamily == .solid, "Regular off, solid selected by default")
@@ -199,7 +208,7 @@ private enum GlassChromeTests {
         tool.state = .off
         tool.selectedFamily = .solid
 
-        let actual = GlassChromeButton(title: "Actual Size", target: nil, action: nil)
+        let actual = CommandButton(title: "Actual Size", target: nil, action: nil)
         actual.setButtonType(.toggle)
         actual.icon = .eyeSlash
         actual.selectedIcon = .xmark
@@ -208,20 +217,29 @@ private enum GlassChromeTests {
         actual.state = .on
         if case .fontAwesomeFree(let name) = actual.iconSource { expect(name == FAIcon.xmark.freeSource.name, "On shows the selected icon") }
         expect(actual.activeFamily == .solid, "Actual Size on is the solid family")
-        let blank = GlassChromeButton(title: "Plain", target: nil, action: nil)
+        let blank = CommandButton(title: "Plain", target: nil, action: nil)
         expect(blank.iconSource == .none && blank.image == nil && blank.imagePosition == .noImage, "Without an icon the title stands alone")
 
-        // contentTintColor per state: a selected button is only a 0.20 accent fill, so its glyph is the accent itself;
-        // the one primary button sits on a saturated fill and contrasts with it.
-        let accentContrast = GlassChromeButton.textColor(on: .controlAccentColor)
-        let tinted = GlassChromeButton(title: "Snap", target: nil, action: nil)
+        // contentTintColor per state: a selected button is an accent fill at 0.20 (HC 0.32), so its glyph is black or white, whichever the
+        // blended fill needs (OSN-044: computed against the blend, never the opaque accent); the primary button contrasts with its saturated fill.
+        let tinted = CommandButton(title: "Snap", target: nil, action: nil)
         tinted.setButtonType(.toggle)
         tinted.icon = .crosshairs
+        tinted.appearance = NSAppearance(named: .aqua)
+        let accentContrast = DesignTokens.Palette.onAccent(fill: accentAqua, alpha: 1, over: .white)
         expect(sameColor(tinted.contentTintColor, .labelColor), "Normal content uses the label color")
         tinted.state = .on
-        expect(sameColor(tinted.contentTintColor, .controlAccentColor), "A selected glyph is the accent")
+        for (name, appearance) in [("aqua", NSAppearance.Name.aqua), ("darkAqua", .darkAqua)] {
+            tinted.appearance = NSAppearance(named: appearance)
+            let arm = DesignTokens.Palette.arm(for: tinted.effectiveAppearance)
+            let blended = DesignTokens.Palette.blend(DesignTokens.Palette.resolve(DesignTokens.Palette.accent, arm: arm), alpha: 0.20, over: DesignTokens.Palette.resolve(DesignTokens.Palette.Surface.window, arm: arm))
+            let ratio = DesignTokens.Palette.contrastRatio(DesignTokens.Palette.resolve(tinted.contentTintColor ?? .clear, for: tinted.effectiveAppearance), blended)
+            expect(ratio >= 4.5, "A selected glyph reads at \(ratio):1 on its blended accent fill in \(name)")
+        }
+        tinted.appearance = NSAppearance(named: .aqua)
         tinted.accessibility = contrast
-        expect(sameColor(tinted.contentTintColor, .labelColor), "Increase Contrast keeps the selected glyph in the label color")
+        let hcBlend = DesignTokens.Palette.blend(accentAqua, alpha: 0.32, over: DesignTokens.Palette.resolve(DesignTokens.Palette.Surface.window, arm: .highContrastAqua))
+        expect(DesignTokens.Palette.contrastRatio(DesignTokens.Palette.resolve(tinted.contentTintColor ?? .clear, for: tinted.effectiveAppearance), hcBlend) >= 4.5, "Increase Contrast keeps the selected glyph readable on the stronger fill")
         tinted.accessibility = plain
         tinted.selectionTints = false
         expect(sameColor(tinted.contentTintColor, .labelColor) && tinted.plate.style == .none, "A glyph-only toggle keeps the label color and no fill when on")
@@ -230,13 +248,13 @@ private enum GlassChromeTests {
         tinted.isPrimary = true
         expect(sameColor(tinted.contentTintColor, accentContrast), "Primary content contrasts with the accent")
         tinted.isEnabled = false
-        expect(sameColor(tinted.contentTintColor, .disabledControlTextColor), "Disabled content uses the disabled color")
+        expect(sameColor(tinted.contentTintColor, accentContrast) && tinted.alphaValue == 0.38, "A disabled Snap keeps its glyph colour and dims through alpha 0.38")
         tinted.isEnabled = true
         tinted.isPrimary = false
         expect(sameColor(tinted.contentTintColor, .labelColor), "Re-enabling restores the label color")
 
         // The button draws its own state fill on a rounded layer; no surface is involved.
-        let fill = GlassChromeButton(title: "", target: nil, action: nil)
+        let fill = CommandButton(title: "", target: nil, action: nil)
         fill.setButtonType(.toggle)
         fill.icon = .paintbrush
         fill.appearance = NSAppearance(named: .aqua)
@@ -268,12 +286,12 @@ private enum GlassChromeTests {
         fill.isEnabled = false
         fill.setHovered(true)
         fill.highlight(true)
-        expect(fill.plate.style == .none && fill.alphaValue == 0.5, "Disabled ignores hover and press and dims through alpha")
+        expect(fill.plate.style == .none && fill.alphaValue == 0.38, "Disabled ignores hover and press and dims through alpha 0.38")
         fill.highlight(false)
         fill.setHovered(false)
         fill.isEnabled = true
         expect(fill.alphaValue == 1, "Enabling restores alpha")
-        let animated = GlassChromeButton(title: "", target: nil, action: nil)
+        let animated = CommandButton(title: "", target: nil, action: nil)
         animated.setHovered(true)
         expect(animated.plate.lastAnimationDuration == 0.15, "State changes animate over 0.15 s")
         animated.accessibility = calm
@@ -281,13 +299,13 @@ private enum GlassChromeTests {
         animated.accessibility = ChromeAccessibility(reduceTransparency: true, increaseContrast: false, reduceMotion: false)
         expect(animated.plate.lastAnimationDuration == 0.15, "Reduce Transparency alone keeps the animation")
         animated.setHovered(false)
-        let hidden = GlassChromeButton(title: "", target: nil, action: nil)
+        let hidden = CommandButton(title: "", target: nil, action: nil)
         hidden.setHovered(true)
         hidden.isHidden = true
         expect(!hidden.isHovered, "Hiding a button clears hover")
 
         // Focus ring mask follows the host shape and vanishes while disabled.
-        let ring = GlassChromeButton(title: "", target: nil, action: nil)
+        let ring = CommandButton(title: "", target: nil, action: nil)
         ring.frame = NSRect(x: 0, y: 0, width: 148, height: 40)
         expect(!ring.focusRingMaskBounds.isEmpty, "Enabled button has focus-ring bounds")
         func mask(_ shape: GlassShape) -> NSBitmapImageRep {
@@ -314,7 +332,7 @@ private enum GlassChromeTests {
         // Primary clicks are bracketed because NSButton never calls highlight(_:) for them; the action still fires once.
         let target = ActionTarget()
         let (_, content) = window(NSSize(width: 200, height: 80))
-        let click = GlassChromeButton(title: "Snap", target: target, action: #selector(ActionTarget.snap(_:)))
+        let click = CommandButton(title: "Snap", target: target, action: #selector(ActionTarget.snap(_:)))
         click.frame = NSRect(x: 10, y: 10, width: 120, height: 40)
         content.addSubview(click)
         var pressing: [Bool] = []
@@ -326,7 +344,7 @@ private enum GlassChromeTests {
         expect(target.hits == ["snap"], "The primary action fires exactly once")
 
         // OriginalActionButton's secondary routing is untouched and also reports its press.
-        let secondary = GlassChromeButton(title: "Snap", target: target, action: #selector(ActionTarget.snap(_:)))
+        let secondary = CommandButton(title: "Snap", target: target, action: #selector(ActionTarget.snap(_:)))
         secondary.frame = NSRect(x: 10, y: 10, width: 120, height: 40)
         secondary.alternateTarget = target
         secondary.alternateAction = #selector(ActionTarget.alternate(_:))
@@ -341,7 +359,7 @@ private enum GlassChromeTests {
         expect(secondaryPress.contains(true) && secondaryPress.last == false && !secondary.isPressing, "The secondary press is reported and cleared")
 
         // A momentary click reads .on inside AppKit; that must never look like a selection. Assigning state still does.
-        let momentary = GlassChromeButton(title: "Undo", target: target, action: #selector(ActionTarget.undo(_:)))
+        let momentary = CommandButton(title: "Undo", target: target, action: #selector(ActionTarget.undo(_:)))
         momentary.icon = .arrowRotateLeft
         content.addSubview(momentary)
         target.hits.removeAll()
@@ -356,7 +374,7 @@ private enum GlassChromeTests {
         momentary.state = .off
 
         // Toggles flip state inside the cell, so the glyph syncs when the action is sent.
-        let toggled = GlassChromeButton(title: "", target: target, action: #selector(ActionTarget.chooseTool(_:)))
+        let toggled = CommandButton(title: "", target: target, action: #selector(ActionTarget.chooseTool(_:)))
         toggled.setButtonType(.toggle)
         toggled.identifier = NSUserInterfaceItemIdentifier("brush")
         toggled.icon = .paintbrush
@@ -369,7 +387,7 @@ private enum GlassChromeTests {
 
     @available(macOS 13, *)
     private static func buttonGlyphTests() {
-        let tool = GlassChromeButton(title: "", target: nil, action: nil)
+        let tool = CommandButton(title: "", target: nil, action: nil)
         tool.setButtonType(.toggle)
         tool.icon = .paintbrush
         expect(tool.iconSource == .fontAwesome(.regular), "With the subset registered, off renders Font Awesome Regular")
@@ -548,10 +566,413 @@ private enum GlassChromeTests {
         slider.removeFromSuperview()
     }
 
+
+    // MARK: component states (OSN-044)
+
+    private static func srgb(_ color: CGColor?) -> NSColor? { color.flatMap { NSColor(cgColor: $0)?.usingColorSpace(.sRGB) } }
+
+    /// `color` is `base` at `alpha`, within a rounding error.
+    private static func isFill(_ color: NSColor?, base: NSColor, alpha: CGFloat) -> Bool {
+        guard let x = color?.usingColorSpace(.sRGB), let b = base.usingColorSpace(.sRGB) else { return false }
+        return abs(x.redComponent - b.redComponent) < 0.012 && abs(x.greenComponent - b.greenComponent) < 0.012
+            && abs(x.blueComponent - b.blueComponent) < 0.012 && abs(x.alphaComponent - alpha) < 0.006
+    }
+
+    private static func fill(_ view: NSView) -> NSColor? { srgb(view.layer?.backgroundColor) }
+
+    /// The ratio of a content colour on the fill that is on screen: the layer's fill blended over the window colour.
+    private static func glyphRatio(_ button: CommandButton, arm: DesignTokens.Palette.Arm) -> CGFloat {
+        typealias P = DesignTokens.Palette
+        let window = P.resolve(P.Surface.window, arm: arm)
+        let shown = fill(button).map { P.blend($0, alpha: 1, over: window) } ?? P.rgb(window).rgb
+        return P.contrastRatio(P.resolve(button.contentTintColor ?? .clear, for: button.effectiveAppearance), shown)
+    }
+
+    private static func commandButtonStateTests() {
+        typealias P = DesignTokens.Palette
+        for (name, appearanceName) in [("aqua", NSAppearance.Name.aqua), ("darkAqua", .darkAqua)] {
+            let appearance = NSAppearance(named: appearanceName)!
+            let label = P.resolve(NSColor.labelColor, for: appearance), accent = P.resolve(NSColor.controlAccentColor, for: appearance)
+            for (optionName, options) in [("plain", plain), ("increaseContrast", contrast), ("differentiate", differentiate)] {
+                let hc = options.increaseContrast, dwc = options.differentiateWithoutColor
+                let tag = "\(name)/\(optionName)"
+                let hover: CGFloat = hc ? 0.16 : 0.08, pressed: CGFloat = hc ? 0.28 : 0.16, selected: CGFloat = hc ? 0.32 : 0.20
+                let arm = StateStyles.arm(for: appearance, highContrast: hc)
+
+                let tool = CommandButton(title: "", target: nil, action: nil)
+                tool.setButtonType(.toggle)
+                tool.icon = .paintbrush
+                tool.appearance = appearance
+                tool.accessibility = options
+                expect(tool.layer?.backgroundColor == nil && !tool.showsIndicator && tool.alphaValue == 1, "\(tag): rest has no fill and no indicator")
+                tool.setHovered(true)
+                expect(isFill(fill(tool), base: label, alpha: hover), "\(tag): hover is label@\(hover) on the layer")
+                tool.highlight(true)
+                expect(isFill(fill(tool), base: label, alpha: pressed) && tool.glyphScale == 0.96, "\(tag): pressed is label@\(pressed) with the glyph at 0.96")
+                tool.highlight(false); tool.setHovered(false)
+                expect(tool.layer?.backgroundColor == nil && tool.glyphScale == 1, "\(tag): released returns to rest")
+
+                tool.state = .on
+                expect(isFill(fill(tool), base: accent, alpha: selected) && tool.layer?.borderWidth == 1, "\(tag): selected is accent@\(selected) with a 1 pt border")
+                expect(tool.showsIndicator == dwc && tool.indicatorLayer.isHidden == !dwc, "\(tag): the selected indicator is on exactly when Differentiate Without Color is")
+                if dwc {
+                    let size = StateStyles.indicatorSize(highContrast: hc)
+                    expect(tool.indicatorLayer.superlayer === tool.layer && tool.indicatorLayer.frame.size == size && size == NSSize(width: 16, height: 2)
+                           && abs(tool.indicatorLayer.frame.midX - tool.bounds.midX) < 0.5 && tool.indicatorLayer.frame.minY == StateStyles.indicatorInset,
+                           "\(tag): a 2 x 16 pt capsule under the glyph, centred (\(tool.indicatorLayer.frame))")
+                    expect(tool.indicatorLayer.cornerRadius == 1 && tool.indicatorLayer.backgroundColor != nil, "\(tag): the indicator is a capsule with a fill")
+                }
+                expect(glyphRatio(tool, arm: arm) >= 4.5, "\(tag): the selected glyph reads at \(glyphRatio(tool, arm: arm)):1 on its blended fill")
+                tool.setHovered(true)
+                expect(isFill(fill(tool), base: accent, alpha: selected), "\(tag): hover does not wash out the selection")
+                tool.highlight(true)
+                expect(isFill(fill(tool), base: accent, alpha: selected + 0.12), "\(tag): pressing a selected button deepens it by 0.12")
+                tool.highlight(false); tool.setHovered(false)
+                tool.isEnabled = false
+                expect(tool.layer?.backgroundColor == nil && tool.alphaValue == 0.38 && !tool.showsIndicator, "\(tag): disabled has no fill and no indicator and dims to 0.38")
+                tool.setHovered(true); tool.highlight(true)
+                expect(tool.layer?.backgroundColor == nil && tool.glyphScale == 1, "\(tag): disabled ignores hover and press")
+                tool.highlight(false); tool.setHovered(false)
+                tool.isEnabled = true
+                tool.state = .off
+                expect(tool.layer?.backgroundColor == nil && !tool.showsIndicator, "\(tag): deselected returns to bare")
+
+                let snap = CommandButton(title: "", target: nil, action: nil)
+                snap.icon = .crosshairs
+                snap.isPrimary = true
+                snap.appearance = appearance
+                snap.accessibility = options
+                expect(isFill(fill(snap), base: accent, alpha: 1) && glyphRatio(snap, arm: arm) >= 4.5, "\(tag): Snap rests on the opaque accent and its glyph reads at \(glyphRatio(snap, arm: arm)):1")
+                let restFill = fill(snap)!
+                snap.setHovered(true)
+                let hoverFill = fill(snap)!
+                expect(hoverFill.redComponent + hoverFill.greenComponent + hoverFill.blueComponent > restFill.redComponent + restFill.greenComponent + restFill.blueComponent
+                       && glyphRatio(snap, arm: arm) >= 4.5, "\(tag): Snap brightens on hover and keeps its contrast")
+                snap.highlight(true)
+                let pressedFill = fill(snap)!
+                expect(pressedFill.redComponent + pressedFill.greenComponent + pressedFill.blueComponent < restFill.redComponent + restFill.greenComponent + restFill.blueComponent
+                       && glyphRatio(snap, arm: arm) >= 4.5, "\(tag): Snap darkens on press and keeps its contrast")
+                snap.highlight(false); snap.setHovered(false)
+                snap.isEnabled = false
+                expect(isFill(fill(snap), base: accent, alpha: 1) && snap.alphaValue == 0.38, "\(tag): a disabled Snap is the accent dimmed to 0.38 through alpha")
+            }
+        }
+
+        // The glyph scale is a real re-render, and Reduce Motion removes it.
+        let scaled = CommandButton(title: "", target: nil, action: nil)
+        scaled.icon = .paintbrush
+        let restImage = scaled.image
+        scaled.highlight(true)
+        expect(scaled.glyphScale == 0.96 && scaled.image !== restImage, "A pressed button re-renders its glyph at 0.96")
+        scaled.highlight(false)
+        expect(scaled.glyphScale == 1, "The glyph returns to full size")
+        scaled.accessibility = calm
+        scaled.highlight(true)
+        expect(scaled.glyphScale == 1, "No glyph scale under Reduce Motion")
+        scaled.highlight(false)
+
+        // Keyboard focus is carried into the style; the ring itself stays AppKit's, drawn from the mask.
+        let (focusWindow, focusContent) = window(NSSize(width: 120, height: 60))
+        let focus = CommandButton(title: "", target: nil, action: nil)
+        focus.icon = .paintbrush
+        focus.frame = NSRect(x: 10, y: 10, width: 48, height: 36)
+        focusContent.addSubview(focus)
+        expect(!focus.plate.stateStyle.focusRing, "No ring while unfocused")
+        expect(focusWindow.makeFirstResponder(focus) && focus.plate.stateStyle.focusRing && focus.focusRingType == .exterior && !focus.focusRingMaskBounds.isEmpty, "Focus puts the ring in the style and keeps the mask")
+        focus.isEnabled = false
+        expect(!focus.plate.stateStyle.focusRing && focus.focusRingMaskBounds.isEmpty, "A disabled button shows no ring")
+        focus.isEnabled = true
+        focusWindow.makeFirstResponder(nil)
+        expect(!focus.plate.stateStyle.focusRing, "Resigning focus clears it")
+    }
+
+    private static func controlStateTests() {
+        typealias P = DesignTokens.Palette
+        let aqua = NSAppearance(named: .aqua)!
+        let (window, content) = window(NSSize(width: 420, height: 240))
+        window.appearance = aqua
+
+        // MARK: the Size pill
+        let slider = BezelSizeSlider(frame: NSRect(x: 16, y: 12, width: 48, height: 36))
+        content.addSubview(slider)
+        slider.popoverProvider = { TestPopover() }
+        let cell = ChromeFillCell(BezelSizeSlider(frame: .zero), size: GlassChrome.Metrics.iconButton)
+        let cellSlider = cell.control as! BezelSizeSlider
+        cellSlider.onInteractionChange = { [weak cell, weak cellSlider] in
+            guard let cell, let cellSlider else { return }
+            cell.setPressed(cellSlider.isPressed, disabled: !cellSlider.isEnabled)
+        }
+        expect(slider.controlState == .rest && slider.pillStyle.contentAlpha == 1 && slider.pillStyle.glyphScale == 1, "The pill rests")
+        slider.setPressed(true)
+        expect(slider.controlState == .pressed && slider.pillStyle.glyphScale == 0.96, "A pressed pill draws its stroke at 0.96")
+        slider.setPressed(false)
+        func centreAlpha() -> CGFloat {
+            let rep = slider.bitmapImageRepForCachingDisplay(in: slider.bounds)!
+            slider.cacheDisplay(in: slider.bounds, to: rep)
+            return rep.colorAt(x: rep.pixelsWide / 2, y: rep.pixelsHigh / 2)?.alphaComponent ?? -1
+        }
+        let restAlpha = centreAlpha()
+        slider.isEnabled = false
+        expect(slider.controlState == .disabled && slider.pillStyle.contentAlpha == 0.38 && !slider.acceptsFirstResponder, "A disabled pill is dimmed to 0.38 and leaves the key loop")
+        expect(abs(centreAlpha() / max(restAlpha, 0.001) - 0.38) < 0.05, "The disabled stroke is drawn at 0.38 of the rest alpha (\(centreAlpha()) vs \(restAlpha))")
+        expect(!slider.beginGesture(), "A disabled pill is not draggable")
+        slider.isEnabled = true
+        cellSlider.setPressed(true)
+        expect(cell.plate.isPressed && abs((cell.plate.style.fill?.alphaComponent ?? 0) - 0.16) < 0.001, "The cell behind the pill fills while the pill is pressed")
+        cellSlider.setPressed(false)
+        cellSlider.isEnabled = false
+        expect(cell.plate.isDisabled && cell.plate.style.fill == nil, "The cell behind a disabled pill draws no fill")
+
+        // MARK: the popover track and the presets
+        slider.showPopover()
+        guard let panel = slider.popoverContent else { expect(false, "The popover opens"); return }
+        let (panelWindow, panelContent) = Self.window(NSSize(width: 320, height: 156))
+        panelWindow.appearance = aqua
+        panelContent.addSubview(panel)
+        panelContent.layoutSubtreeIfNeeded()
+        let track = panel.trackView
+        let rest = track.knobRect
+        expect(abs(rest.width - 20) < 0.001 && track.controlState == .rest, "The knob rests at 20 pt")
+        track.setHovered(true)
+        expect(abs(track.knobRect.width - 20 * 1.15) < 0.001 && abs(track.knobRect.midX - rest.midX) < 0.001 && abs(track.knobRect.midY - rest.midY) < 0.001, "Hover grows the knob to 1.15 around the same centre")
+        track.setPressed(true)
+        expect(abs(track.knobRect.width - 20 * 1.25) < 0.001 && track.controlState == .pressed, "A held knob is 1.25")
+        func trackRaster() -> NSBitmapImageRep {
+            let rep = track.bitmapImageRepForCachingDisplay(in: track.bounds)!
+            track.cacheDisplay(in: track.bounds, to: rep)
+            return rep
+        }
+        func alphaAt(_ rep: NSBitmapImageRep, x: CGFloat, y: CGFloat) -> CGFloat {
+            let scale = CGFloat(rep.pixelsWide) / track.bounds.width
+            return rep.colorAt(x: Int(x * scale), y: Int((track.bounds.height - y) * scale))?.alphaComponent ?? -1
+        }
+        // Pixels, not just geometry: the point 10.8 pt right of the knob centre is outside the rest knob and inside the held one.
+        let probe = NSPoint(x: rest.midX + 10.8, y: rest.midY)
+        let heldRaster = trackRaster(), heldTrack = alphaAt(heldRaster, x: 24, y: rest.midY)
+        track.setPressed(false); track.setHovered(false)
+        let restRaster = trackRaster()
+        expect(alphaAt(heldRaster, x: probe.x, y: probe.y) > 0.9 && alphaAt(restRaster, x: probe.x, y: probe.y) < 0.5, "The held knob really paints wider than the resting one")
+        expect(heldTrack > alphaAt(restRaster, x: 24, y: rest.midY) + 0.1, "A held knob washes the track with the accent (\(heldTrack) vs \(alphaAt(restRaster, x: 24, y: rest.midY)))")
+        expect(track.trackStyle.highlight == nil && track.trackStyle.alpha == 1, "Released, the track is plain")
+
+        let presets = panel.presetButtons
+        expect(presets[2].controlState == .selected && presets[0].controlState == .rest, "The current preset is selected, the others rest")
+        presets[0].setHovered(true)
+        expect(presets[0].controlState == .hover && abs((presets[0].commandStyle.fill?.alphaComponent ?? 0) - 0.08) < 0.004, "A hovered preset takes the command hover fill")
+        presets[0].highlight(true)
+        expect(presets[0].controlState == .pressed && abs((presets[0].commandStyle.fill?.alphaComponent ?? 0) - 0.16) < 0.004, "A pressed preset takes the command pressed fill")
+        presets[0].highlight(false); presets[0].setHovered(false)
+        expect(abs((presets[2].commandStyle.fill?.alphaComponent ?? 0) - 0.20) < 0.004 && presets[2].commandStyle.border != nil, "The selected preset takes the command selected fill and border")
+        slider.dismissPopover()
+
+        // A disabled slider's track is dimmed and ignores the pointer.
+        let offSlider = BezelSizeSlider(frame: NSRect(x: 0, y: 0, width: 48, height: 36))
+        var begins = 0
+        offSlider.onBegin = { begins += 1; return true }
+        offSlider.isEnabled = false
+        let offTrack = SizeTrackView(slider: offSlider)
+        expect(offTrack.controlState == .disabled && offTrack.trackStyle.alpha == 0.38 && !offTrack.isEnabled && !offTrack.acceptsFirstResponder, "A disabled slider's track is dimmed to 0.38")
+        offTrack.setHovered(true)
+        expect(offTrack.controlState == .disabled && offTrack.trackStyle.knobScale == 1, "A disabled track never grows its knob")
+        let down = NSEvent.mouseEvent(with: .leftMouseDown, location: NSPoint(x: 100, y: 18), modifierFlags: [], timestamp: 0, windowNumber: panelWindow.windowNumber,
+                                      context: nil, eventNumber: 1, clickCount: 1, pressure: 1)!
+        offTrack.mouseDown(with: down)
+        expect(begins == 0 && offSlider.doubleValue == OriginalDrawingControls.initialSize && !offTrack.isPressed, "A disabled track is not draggable")
+
+        // MARK: the colour swatch
+        let swatch = BezelColorButton(frame: NSRect(x: 100, y: 100, width: 42, height: 32))
+        swatch.title = ""; swatch.isBordered = false; swatch.setButtonType(.toggle)
+        swatch.drawingColor = NSColor(deviceRed: 1, green: 0, blue: 0, alpha: 1) // token-exempt: a test swatch colour
+        content.addSubview(swatch)
+        func swatchRaster() -> NSBitmapImageRep {
+            let rep = swatch.bitmapImageRepForCachingDisplay(in: swatch.bounds)!
+            swatch.cacheDisplay(in: swatch.bounds, to: rep)
+            return rep
+        }
+        func darkPixels(_ rep: NSBitmapImageRep) -> Int {
+            let scale = rep.pixelsWide / Int(swatch.bounds.width)
+            var count = 0
+            for x in (13 * scale)..<(29 * scale) {
+                for y in (8 * scale)..<(24 * scale) {
+                    guard let color = rep.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB) else { continue }
+                    if color.redComponent < 0.3 && color.alphaComponent > 0.9 { count += 1 }
+                }
+            }
+            return count
+        }
+        func outlineAlpha(_ rep: NSBitmapImageRep) -> CGFloat {
+            let scale = CGFloat(rep.pixelsWide) / swatch.bounds.width
+            return rep.colorAt(x: Int(2.75 * scale), y: Int(16 * scale))?.alphaComponent ?? -1
+        }
+        let restSwatch = swatchRaster()
+        expect(swatch.controlState == .rest && !swatch.swatchStyle.check && darkPixels(restSwatch) == 0, "A resting swatch has no check glyph")
+        swatch.setHovered(true)
+        expect(swatch.controlState == .hover && swatch.swatchStyle.outlineWidth == 1 && abs(swatch.swatchStyle.outline.alphaComponent - 0.5) < 0.004, "Hover outlines the swatch with label@0.5")
+        expect(outlineAlpha(swatchRaster()) > outlineAlpha(restSwatch) + 0.1, "The hover outline paints stronger than the rest outline")
+        swatch.highlight(true)
+        expect(swatch.controlState == .pressed && abs((swatch.swatchStyle.fill?.alphaComponent ?? 0) - 0.16) < 0.004, "A pressed swatch takes a label@0.16 fill")
+        let pressedPixel = swatchRaster().colorAt(x: Int(21 * CGFloat(restSwatch.pixelsWide) / swatch.bounds.width), y: Int(5 * CGFloat(restSwatch.pixelsWide) / swatch.bounds.width))?.usingColorSpace(.deviceRGB)
+        let restPixel = restSwatch.colorAt(x: Int(21 * CGFloat(restSwatch.pixelsWide) / swatch.bounds.width), y: Int(5 * CGFloat(restSwatch.pixelsWide) / swatch.bounds.width))?.usingColorSpace(.deviceRGB)
+        expect((pressedPixel?.redComponent ?? 1) < (restPixel?.redComponent ?? 0) - 0.05, "The pressed fill darkens the swatch")
+        swatch.highlight(false); swatch.setHovered(false)
+        swatch.state = .on
+        let selectedSwatch = swatchRaster()
+        expect(swatch.controlState == .selected && swatch.swatchStyle.check && swatch.swatchStyle.outlineWidth == 3, "The selected swatch is a 3 pt accent outline plus a check")
+        expect(darkPixels(selectedSwatch) >= 8, "The check glyph is drawn on the selected swatch (\(darkPixels(selectedSwatch)) glyph pixels)")
+        expect(outlineAlpha(selectedSwatch) > 0.9, "The 3 pt accent outline is opaque")
+        swatch.state = .off
+        expect(darkPixels(swatchRaster()) == 0, "Deselecting removes the check")
+        swatch.isEnabled = false
+        expect(swatch.swatchStyle.alpha == 0.38 && swatch.controlState == .disabled, "A disabled swatch dims to 0.38")
+        swatch.isEnabled = true
+        DisplayOptions.override = DisplayOptions(increaseContrast: true)
+        expect(swatch.swatchStyle.outline.alphaComponent > StateStyles.swatch(.rest, highContrast: false, appearance: aqua).outline.alphaComponent, "Increase Contrast strengthens the rest outline")
+        DisplayOptions.override = .none
+        swatch.removeFromSuperview(); slider.removeFromSuperview()
+    }
+
+    private static func toggleTests() {
+        typealias P = DesignTokens.Palette
+        let aqua = NSAppearance(named: .aqua)!
+        let (window, content) = window(NSSize(width: 300, height: 100))
+        window.appearance = aqua
+        let target = ActionTarget()
+        let toggle = SegmentedToggle(titles: ["PNG", "JPG"])
+        toggle.target = target; toggle.action = #selector(ActionTarget.formatChanged(_:))
+        GlassChrome.fix(toggle, NSSize(width: ceil(toggle.intrinsicContentSize.width), height: 36))
+        content.addSubview(toggle)
+        toggle.frame.origin = NSPoint(x: 20, y: 20)
+        content.layoutSubtreeIfNeeded()
+
+        // Size: it must be no wider than the system capsule it replaces (149 pt measured in the same rig) and exactly one command high.
+        expect(toggle.frame.height == 36 && toggle.frame.width <= 149 && toggle.frame.width > 100, "The toggle is 36 pt tall and no wider than the capsule it replaces (\(toggle.frame.width) pt)")
+        expect(abs(toggle.segmentRect(0).width - toggle.segmentRect(1).width) < 0.001 && toggle.segmentRect(1).minX - toggle.segmentRect(0).maxX == SegmentedToggle.segmentGap, "Two equal segments, 2 pt apart")
+        expect(toggle.segmentCount == 2 && toggle.label(forSegment: 0) == "PNG" && toggle.label(forSegment: 1) == "JPG" && toggle.selectedSegment == 0, "PNG | JPG with PNG selected")
+
+        // Accessibility: a group "Image format" with two radio-button children.
+        expect(toggle.isAccessibilityElement() && toggle.accessibilityRole() == .radioGroup && toggle.accessibilityLabel() == "Image format", "The toggle is the group Image format")
+        let kids = (toggle.accessibilityChildren() as? [NSAccessibilityElement]) ?? []
+        expect(kids.map { $0.accessibilityLabel() ?? "" } == ["PNG", "JPG"] && kids.allSatisfy { $0.accessibilityRole() == .radioButton && ($0.accessibilityParent() as AnyObject?) === toggle }, "Two children, PNG and JPG, radio buttons parented to the group")
+        expect(kids.map { ($0.accessibilityValue() as? NSNumber)?.intValue ?? -1 } == [1, 0], "The selected child reads 1 and the other 0")
+        expect(kids.allSatisfy { toggle.bounds.contains($0.accessibilityFrameInParentSpace()) } && kids[1].accessibilityFrameInParentSpace().minX > kids[0].accessibilityFrameInParentSpace().maxX - 0.5, "Each child's frame is its own segment")
+        target.hits.removeAll()
+        expect(kids[1].accessibilityPerformPress() && toggle.selectedSegment == 1 && target.hits == ["format:1"], "Pressing the JPG child selects it and sends the action once")
+        expect((kids[0].accessibilityValue() as? NSNumber)?.intValue == 0 && (kids[1].accessibilityValue() as? NSNumber)?.intValue == 1, "The children follow the selection")
+        toggle.selectedSegment = 0
+        expect(target.hits == ["format:1"], "Assigning the selection does not send the action")
+        toggle.selectedSegment = 9
+        expect(toggle.selectedSegment == 1, "The selection clamps to a real segment")
+        toggle.selectedSegment = 0
+
+        // Keyboard: one tab stop; Left and Right move, Space switches.
+        expect(toggle.acceptsFirstResponder && window.makeFirstResponder(toggle) && window.firstResponder === toggle, "The toggle takes keyboard focus")
+        expect(toggle.style(ofSegment: 0).focusRing && !toggle.focusRingMaskBounds.isEmpty && toggle.focusRingType == .exterior, "Focus rings the control")
+        target.hits.removeAll()
+        toggle.keyDown(with: keyEvent(124, in: window))
+        expect(toggle.selectedSegment == 1 && target.hits == ["format:1"], "Right selects JPG")
+        toggle.keyDown(with: keyEvent(124, in: window))
+        expect(toggle.selectedSegment == 1 && target.hits == ["format:1"], "Right at the end does nothing")
+        toggle.keyDown(with: keyEvent(123, in: window))
+        expect(toggle.selectedSegment == 0 && target.hits == ["format:1", "format:0"], "Left selects PNG")
+        toggle.keyDown(with: keyEvent(123, in: window))
+        expect(toggle.selectedSegment == 0 && target.hits.count == 2, "Left at the start does nothing")
+        toggle.keyDown(with: keyEvent(49, in: window))
+        expect(toggle.selectedSegment == 1 && target.hits.last == "format:1", "Space switches to the other segment")
+        toggle.keyDown(with: keyEvent(49, in: window))
+        expect(toggle.selectedSegment == 0 && target.hits.last == "format:0", "Space switches back")
+
+        // Mouse: a click on a segment selects it; a press that slides off cancels.
+        func point(_ segment: Int, dx: CGFloat = 0) -> (NSEvent.EventType) -> NSEvent {
+            let centre = toggle.convert(NSPoint(x: toggle.segmentRect(segment).midX + dx, y: 18), to: nil)
+            return { type in NSEvent.mouseEvent(with: type, location: centre, modifierFlags: [], timestamp: 0, windowNumber: window.windowNumber, context: nil, eventNumber: 1, clickCount: 1, pressure: 1)! }
+        }
+        target.hits.removeAll()
+        toggle.mouseDown(with: point(1)(.leftMouseDown))
+        expect(toggle.pressedSegment == 1 && toggle.state(ofSegment: 1) == .pressed && toggle.selectedSegment == 0, "Pressing JPG shows it pressed without selecting yet")
+        expect(abs(toggle.style(ofSegment: 1).fill!.alphaComponent - 0.16) < 0.004, "A pressed segment is label@0.16")
+        toggle.mouseUp(with: point(1)(.leftMouseUp))
+        expect(toggle.selectedSegment == 1 && toggle.pressedSegment == nil && target.hits == ["format:1"], "Releasing on it selects JPG")
+        toggle.mouseDown(with: point(0)(.leftMouseDown))
+        toggle.mouseDragged(with: point(1)(.leftMouseDragged))
+        expect(toggle.pressedSegment == nil, "Sliding off cancels the press")
+        toggle.mouseUp(with: point(1)(.leftMouseUp))
+        expect(toggle.selectedSegment == 1 && target.hits == ["format:1"], "Releasing elsewhere changes nothing")
+        toggle.mouseDown(with: point(1)(.leftMouseDown)); toggle.mouseUp(with: point(1)(.leftMouseUp))
+        expect(target.hits == ["format:1"], "Choosing the selected segment sends nothing")
+        toggle.selectedSegment = 0
+
+        // States and styles.
+        toggle.setHoveredSegment(1)
+        expect(toggle.state(ofSegment: 1) == .hover && toggle.state(ofSegment: 0) == .selected && abs(toggle.style(ofSegment: 1).fill!.alphaComponent - 0.08) < 0.004, "A hovered segment is label@0.08")
+        toggle.setHoveredSegment(nil)
+        expect(toggle.state(ofSegment: 1) == .rest && abs(toggle.style(ofSegment: 1).fill!.alphaComponent - 0.06) < 0.004, "An unselected segment rests on label@0.06")
+        expect(abs(toggle.style(ofSegment: 0).fill!.alphaComponent - 0.20) < 0.004 && toggle.style(ofSegment: 0).strongText, "The selected segment is accent@0.20")
+        expect(toggle.textFont(forSegment: 0).pointSize == 20 && toggle.textFont(forSegment: 1).pointSize == 20, "Both titles are 20 pt")
+        let selectedWeight = (toggle.textFont(forSegment: 0).fontDescriptor.object(forKey: .traits) as? [NSFontDescriptor.TraitKey: Any])?[.weight] as? CGFloat ?? 0
+        let restWeight = (toggle.textFont(forSegment: 1).fontDescriptor.object(forKey: .traits) as? [NSFontDescriptor.TraitKey: Any])?[.weight] as? CGFloat ?? 0
+        expect(selectedWeight > restWeight, "The selected title is heavier (bodyStrong), not just tinted")
+        func raster() -> NSBitmapImageRep {
+            let rep = toggle.bitmapImageRepForCachingDisplay(in: toggle.bounds)!
+            toggle.cacheDisplay(in: toggle.bounds, to: rep)
+            return rep
+        }
+        let scale = CGFloat(raster().pixelsWide) / toggle.bounds.width
+        func plateAlpha(_ rep: NSBitmapImageRep, segment: Int) -> CGFloat {
+            let rect = toggle.segmentRect(segment)
+            return rep.colorAt(x: Int((rect.minX + 6) * scale), y: Int(18 * scale))?.alphaComponent ?? -1
+        }
+        let drawn = raster()
+        expect(plateAlpha(drawn, segment: 0) > plateAlpha(drawn, segment: 1) + 0.08, "The selected segment's plate is visibly stronger than the unselected one's (\(plateAlpha(drawn, segment: 0)) vs \(plateAlpha(drawn, segment: 1)))")
+        expect(plateAlpha(drawn, segment: 1) > 0.02, "The unselected segment still rests on a faint plate")
+
+        // Display options.
+        toggle.accessibility = contrast
+        expect(abs(toggle.style(ofSegment: 1).fill!.alphaComponent - 0.12) < 0.004 && abs(toggle.style(ofSegment: 0).fill!.alphaComponent - 0.32) < 0.004, "Increase Contrast strengthens both plates")
+        toggle.accessibility = differentiate
+        expect(toggle.style(ofSegment: 0).strongText && !toggle.style(ofSegment: 0).indicator, "Differentiate Without Color keeps the weight cue and adds no capsule")
+        toggle.accessibility = .none
+
+        // Disabled.
+        toggle.isEnabled = false
+        target.hits.removeAll()
+        toggle.keyDown(with: keyEvent(124, in: window))
+        toggle.mouseDown(with: point(1)(.leftMouseDown)); toggle.mouseUp(with: point(1)(.leftMouseUp))
+        expect(toggle.selectedSegment == 0 && target.hits.isEmpty && toggle.state(ofSegment: 1) == .disabled && !toggle.acceptsFirstResponder, "A disabled toggle ignores keys and clicks")
+        expect(toggle.style(ofSegment: 1).contentAlpha == 0.38 && !kids[1].accessibilityPerformPress() && !kids[1].isAccessibilityEnabled(), "A disabled toggle dims its content and refuses VoiceOver presses")
+        toggle.isEnabled = true
+        toggle.removeFromSuperview()
+    }
+
+    private static func differentiateTests() {
+        DisplayOptions.override = DisplayOptions(differentiateWithoutColor: true)
+        defer { DisplayOptions.override = .none }
+        expect(ChromeAccessibility.live.differentiateWithoutColor && !ChromeAccessibility.live.increaseContrast, "The live chrome options read the injected Differentiate Without Color")
+        let rig = makeRig(NSSize(width: 980, height: 640))
+        let brush = rig.chrome.toolButtons["brush"]!
+        brush.state = .on
+        expect(!brush.showsIndicator, "Before the options are observed the chrome still has the old ones")
+        rig.box.value = .live
+        NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
+        expect(brush.showsIndicator && brush.indicatorLayer.superlayer === brush.layer && !brush.indicatorLayer.isHidden, "Observing Differentiate Without Color shows the capsule under the selected tool")
+        expect(rig.chrome.toolButtons.filter { $0.value.showsIndicator }.keys.sorted() == ["brush"], "Only the selected tool carries it")
+        rig.chrome.toolButtons["line"]!.state = .on
+        brush.state = .off
+        expect(!brush.showsIndicator && rig.chrome.toolButtons["line"]!.showsIndicator, "The capsule follows the selection")
+        DisplayOptions.override = .none
+        rig.box.value = .live
+        NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
+        expect(!rig.chrome.toolButtons["line"]!.showsIndicator, "Switching it off removes the capsule")
+        expect(rig.chrome.snapButton.isPrimary && !rig.chrome.snapButton.showsIndicator, "Snap never carries the capsule")
+        DisplayOptions.override = DisplayOptions(differentiateWithoutColor: true)
+        rig.box.value = .live
+        NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
+        expect(!rig.chrome.snapButton.showsIndicator, "Not even under Differentiate Without Color")
+    }
+
     // MARK: GlassSurfaceView (one plate per group) and ChromeFillCell
 
-    private static func button(_ title: String = "", size: NSSize = GlassChrome.Metrics.iconButton) -> GlassChromeButton {
-        let button = GlassChromeButton(title: title, target: nil, action: nil)
+    private static func button(_ title: String = "", size: NSSize = GlassChrome.Metrics.iconButton) -> CommandButton {
+        let button = CommandButton(title: title, target: nil, action: nil)
         button.setButtonType(.toggle)
         button.icon = .crosshairs
         GlassChrome.fix(button, size)
@@ -685,10 +1106,7 @@ private enum GlassChromeTests {
         zoom.addItems(withTitles: ["25%", "50%", "75%", "100%", "150%", "200%"])
         zoom.font = DesignTokens.Typography.font(.body)
         zoom.setAccessibilityLabel("Canvas zoom")
-        let format = NSSegmentedControl(labels: ["PNG", "JPG"], trackingMode: .selectOne, target: nil, action: nil)
-        format.selectedSegment = 0
-        format.font = .systemFont(ofSize: 20)
-        format.setAccessibilityLabel("Image format")
+        let format = SegmentedToggle(titles: ["PNG", "JPG"])
         let toolbox = NSPopUpButton(frame: .zero, pullsDown: true)
         toolbox.addItems(withTitles: ["Toolbox", "About OpenSnap", "Quit OpenSnap"])
         toolbox.font = .systemFont(ofSize: 20)
@@ -786,7 +1204,7 @@ private enum GlassChromeTests {
             if !(control is NSImageView) {
                 expect((control.font?.pointSize ?? 0) >= 18, "\(label): \(describe(control)) is at least 18 pt (\(control.font?.pointSize ?? 0))")
             }
-            if let button = control as? GlassChromeButton, !button.visibleTitle.isEmpty {
+            if let button = control as? CommandButton, !button.visibleTitle.isEmpty {
                 expect(button.fittingSize.width <= button.frame.width + 0.5, "\(label): \(describe(button)) title fits its surface (\(button.fittingSize.width) in \(button.frame.width))")
             }
         }
@@ -1136,7 +1554,7 @@ private enum GlassChromeTests {
         expect(rig.target.hits == ["share"], "\(label): the upload button sends its action")
         expect(AppToolTip.text(for: chrome.snapButton) == snapToolTip, "\(label): Snap keeps its classic tooltip")
         expect(chrome.snapButton.isPrimary, "\(label): Snap is the primary command")
-        let primaries = allButtons(in: chrome).compactMap { $0 as? GlassChromeButton }.filter { $0.isPrimary }
+        let primaries = allButtons(in: chrome).compactMap { $0 as? CommandButton }.filter { $0.isPrimary }
         expect(primaries.count == 1 && primaries[0] === chrome.snapButton, "\(label): exactly one primary control")
         expect(chrome.cancelFrameButton.isHidden, "\(label): Cancel starts hidden")
         expect(!chrome.frameMode, "\(label): starts outside Frame mode")
@@ -1190,7 +1608,8 @@ private enum GlassChromeTests {
         brush.state = .on
         expect(brush.plate.isSelected && abs((brush.plate.style.fill?.alphaComponent ?? 0) - 0.20) < 0.001 && brush.layer?.borderWidth == 1, "\(label): the selected tool has a 0.20 accent fill and a 1 pt border")
         expect(brush.activeFamily == .solid, "\(label): the selected tool uses the solid family (not colour alone)")
-        expect(sameColor(brush.contentTintColor, .controlAccentColor), "\(label): the selected glyph is the accent")
+        let selectedBlend = DesignTokens.Palette.blend(accentAqua, alpha: 0.20, over: DesignTokens.Palette.resolve(DesignTokens.Palette.Surface.window, arm: .aqua))
+        expect(DesignTokens.Palette.contrastRatio(DesignTokens.Palette.resolve(brush.contentTintColor ?? .clear, for: brush.effectiveAppearance), selectedBlend) >= 4.5, "\(label): the selected glyph reads at 4.5:1 on its blended fill")
         expect(toolOrder.filter { $0 != "brush" }.allSatisfy { !(chrome.toolButtons[$0]!.plate.isSelected) }, "\(label): other tools stay unfilled")
         brush.state = .off
         expect(!brush.plate.isSelected && brush.plate.style == .none, "\(label): deselecting clears the fill")
@@ -1215,7 +1634,7 @@ private enum GlassChromeTests {
             (chrome.shareButton, "Upload to destination", "Upload")]
         for (button, name, tip) in expected {
             expect(button.imagePosition == .imageOnly, "\(label): \(name) draws only its icon")
-            expect((button as? GlassChromeButton).map { $0.visibleTitle.isEmpty } ?? button.title.isEmpty, "\(label): \(name) shows no title text")
+            expect((button as? CommandButton).map { $0.visibleTitle.isEmpty } ?? button.title.isEmpty, "\(label): \(name) shows no title text")
             expect(AppToolTip.text(for: button) == tip, "\(label): \(name) tooltip is '\(tip)' (is '\(AppToolTip.text(for: button) ?? "nil")')")
             expect(button.accessibilityLabel() == name, "\(label): \(name) accessibility label (is '\(button.accessibilityLabel() ?? "nil")')")
         }
@@ -1251,10 +1670,10 @@ private enum GlassChromeTests {
     }
 
     private static func fillOwners(in view: NSView) -> [NSView] {
-        (view is GlassChromeButton || view is ChromeFillCell ? [view] : []) + view.subviews.flatMap { fillOwners(in: $0) }
+        (view is CommandButton || view is ChromeFillCell ? [view] : []) + view.subviews.flatMap { fillOwners(in: $0) }
     }
 
-    private static func plateOf(_ view: NSView) -> StatePlate? { (view as? GlassChromeButton)?.plate ?? (view as? ChromeFillCell)?.plate }
+    private static func plateOf(_ view: NSView) -> StatePlate? { (view as? CommandButton)?.plate ?? (view as? ChromeFillCell)?.plate }
 
     /// (1) depth, (2) budget, (3) no overlap with the canvas well. Run in every window state.
     private static func glassDepthChecks(_ rig: Rig, _ label: String) {
@@ -1292,7 +1711,7 @@ private enum GlassChromeTests {
     private static func tintChecks(_ rig: Rig, _ label: String) {
         let chrome = rig.chrome
         let owners = fillOwners(in: chrome)
-        for view in owners { (view as? ChromeFillCell)?.setHovered(false); (view as? GlassChromeButton)?.setHovered(false) }
+        for view in owners { (view as? ChromeFillCell)?.setHovered(false); (view as? CommandButton)?.setHovered(false) }
         for button in chrome.toolButtons.values { button.state = .off }
         func saturated() -> [NSView] { owners.filter { ($0.isHiddenOrHasHiddenAncestor == false) && (plateOf($0)?.style.fill?.alphaComponent ?? 0) > 0.5 } }
         expect(saturated().count == 1 && saturated()[0] === chrome.snapButton, "\(label): at rest exactly one saturated accent exists: Snap (\(saturated().map(describe)))")
@@ -1305,9 +1724,9 @@ private enum GlassChromeTests {
         let tool = chrome.toolButtons["ellipse"]!
         expect(abs((tool.plate.style.fill?.alphaComponent ?? 0) - 0.20) < 0.001 && tool.layer?.borderWidth == 1 && sameColor(tool.plate.style.border, accentAqua), "\(label): the selected tool is accent 0.20 with a 1 pt accent border")
         expect(saturated().count == 1, "\(label): selecting a tool adds no second saturated element")
-        for view in owners { (view as? GlassChromeButton)?.setHovered(true); (view as? ChromeFillCell)?.setHovered(true) }
+        for view in owners { (view as? CommandButton)?.setHovered(true); (view as? ChromeFillCell)?.setHovered(true) }
         expect(saturated().count == 1 && owners.filter { plateOf($0)?.style.fill != nil }.count == owners.count, "\(label): hovering everything fills everything faintly but adds no saturated accent")
-        for view in owners { (view as? GlassChromeButton)?.setHovered(false); (view as? ChromeFillCell)?.setHovered(false) }
+        for view in owners { (view as? CommandButton)?.setHovered(false); (view as? ChromeFillCell)?.setHovered(false) }
         tool.state = .off
     }
 

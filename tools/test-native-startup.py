@@ -136,7 +136,7 @@ try:
             # A window built from anything but the glass chrome must not pass.
             built = json.loads((folder / "smoke-appearance.json").read_text())
             result["appearance"] = built
-            assert built["modernChrome"] and built["toolButtonClass"] == "GlassChromeButton" and built["glassSurfaces"] > 0, \
+            assert built["modernChrome"] and built["toolButtonClass"] == "CommandButton" and built["glassSurfaces"] > 0, \
                 "The window is not the glass chrome: %s" % built
             result.update(passed=True, png_bytes=len(png), editable_bytes=len(native),
                           editable_sha256=hashlib.sha256(native).hexdigest())
