@@ -26,9 +26,70 @@ private final class ControlHolderView: NSView {
 
 /// The status line. When its visible text is a shortened hint, `spokenValue` carries the full sentence for VoiceOver
 /// (NSTextField would otherwise always speak its string value).
+///
+/// `setVariants` hands it the same status from longest to shortest; it shows the first one that fits whole in its
+/// current width, so a narrow window drops the low-priority parts (bytes, then tool) instead of tail-cutting the state.
+/// If even the last variant does not fit, plain tail truncation applies to it. Any direct `stringValue` write is a single
+/// fixed text and clears the variants.
 final class StatusTextField: NSTextField {
     var spokenValue: String?
+    private(set) var variants: [String] = []
+    private var settingVariant = false
+
+    override var stringValue: String {
+        get { super.stringValue }
+        set {
+            if !settingVariant { variants = [] }
+            super.stringValue = newValue
+        }
+    }
+
+    func setVariants(_ texts: [String]) {
+        var unique: [String] = []
+        for text in texts where unique.last != text { unique.append(text) }
+        variants = unique
+        // Show the whole text until the next layout pass has decided how much room it really gets.
+        settingVariant = true
+        super.stringValue = unique.first ?? ""
+        settingVariant = false
+        spokenValue = nil
+        invalidateIntrinsicContentSize()
+        needsLayout = true
+    }
+
     override func accessibilityValue() -> String? { spokenValue ?? super.accessibilityValue() }
+
+    /// The width the longest variant wants, whichever one is showing, so the label grows back when room returns.
+    override var intrinsicContentSize: NSSize {
+        var size = super.intrinsicContentSize
+        if let full = variants.first { size.width = cellWidth(of: full) }
+        return size
+    }
+
+    override func setFrameSize(_ newSize: NSSize) {
+        super.setFrameSize(newSize)
+        fitVariant()
+    }
+
+    override func layout() {
+        super.layout()
+        fitVariant()
+    }
+
+    private func cellWidth(of text: String) -> CGFloat {
+        guard let probe = cell?.copy() as? NSCell else { return 0 }
+        probe.stringValue = text
+        return ceil(probe.cellSize.width)
+    }
+
+    private func fitVariant() {
+        guard let full = variants.first else { return }
+        let width = bounds.width
+        let shown = width <= 0 ? full : (variants.first { cellWidth(of: $0) <= width + 0.5 } ?? variants[variants.count - 1])
+        settingVariant = true; defer { settingVariant = false }
+        if super.stringValue != shown { super.stringValue = shown }
+        spokenValue = shown == full ? nil : full
+    }
 }
 
 /// The zoom popup. Its face shows only the percentage, so the mode word of a computed zoom (Fit, Frame, Normal, ...)
@@ -446,6 +507,11 @@ final class CenteringClipView: NSClipView {
         if frame.width < rect.width { rect.origin.x = frame.minX - (rect.width - frame.width) / 2 }
         if frame.height < rect.height { rect.origin.y = frame.minY - (rect.height - frame.height) / 2 }
         return rect
+    }
+
+    /// Programmatic scrolls (a new snap scrolls to the origin) go through the same constraint a drag does.
+    override func scroll(to newOrigin: NSPoint) {
+        super.scroll(to: constrainBoundsRect(NSRect(origin: newOrigin, size: bounds.size)).origin)
     }
 
     override func setFrameSize(_ newSize: NSSize) {

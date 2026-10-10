@@ -1023,18 +1023,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         refreshStatusText()
         updateViewportChrome(); scheduleDragPreview() }
     /// The one status line: tool, saved state and the export size and bytes the drag preview last measured.
-    /// It truncates in a narrow window, so the full text is also the tooltip. Frame mode keeps its own hint.
+    /// A narrow window shows the longest of these that fits whole (bytes go first, then the tool, never the state);
+    /// the tooltip and the spoken value always carry the full text. Frame mode keeps its own hint.
     func refreshStatusText() {
         guard !frameMode else { return }
-        let text: String
-        if let uploadStatus, publishing.isBusy { text = uploadStatus }
+        let variants: [String]
+        if let uploadStatus, publishing.isBusy { variants = [uploadStatus] }
         else {
-            let base = "\(canvas.tool.rawValue.capitalized) · \(dirty ? "Unsaved changes" : "Saved")"
-            text = dragSizeLabel.stringValue.isEmpty ? base : base + " · " + dragSizeLabel.stringValue
+            let tool = canvas.tool.rawValue.capitalized, state = dirty ? "Unsaved changes" : "Saved"
+            let detail = dragSizeLabel.stringValue
+            if detail.isEmpty { variants = ["\(tool) · \(state)", state] }
+            else {
+                let dimensions = detail.components(separatedBy: " · ")[0]
+                variants = ["\(tool) · \(state) · \(detail)", "\(tool) · \(state) · \(dimensions)", "\(state) · \(dimensions)", state]
+            }
         }
-        status.stringValue = text
-        status.toolTip = text
-        status.spokenValue = nil; status.setAccessibilityHelp(nil)
+        status.setVariants(variants)
+        status.toolTip = variants[0]
+        status.setAccessibilityHelp(nil)
     }
     var dragFormat: String {
         FormatToggle.payload(forSegment: dragFormatToggle.selectedSegment).format
@@ -1720,6 +1726,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         snapButton.toolTip = "Capture the area inside the frame; hold Shift for a six-second timer"
         cancelFrameButton.isHidden = false
         setModernFrameMode(true)
+        updateViewportChrome()
         let fullStatus = keepingAnnotations ? "Frame preview · Snap Frame replaces the picture and keeps your drawing" : "Frame: position the window, then Snap"
         status.stringValue = keepingAnnotations ? "Frame: Snap keeps your drawing" : "Frame: position, then Snap"
         status.toolTip = fullStatus
@@ -1749,8 +1756,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         setModernFrameMode(false)
         updateStatus()
     }
-    /// The part of the canvas on screen, in global bottom-left coordinates: the whole viewport for a canvas at least as
-    /// large as it, the centred canvas for a smaller one. Always inside the Frame hole.
+    /// The visible area of the canvas view, in global bottom-left coordinates. For a canvas at least as large as the
+    /// viewport that is the part of it on screen; for a smaller, centred canvas it is still the whole viewport (the margin
+    /// around the canvas included), because that is the hole the user sees and positions. Always inside the Frame hole.
     var frameViewportScreenRect: NSRect { window.convertToScreen(canvas.convert(canvas.visibleRect, to: nil)) }
     func performFrameSnap(delay: Double = 0) {
         guard !terminationStarted, frameMode, !frameCaptureInProgress else { return }

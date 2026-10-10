@@ -20,9 +20,13 @@ extension AppSafetyTests {
             ("Main menu items carry symbols in Modern only and keep validating", modernMenus),
             ("Color popover follows the system appearance", modernPalettePopover),
             ("Modern centres a small canvas in the editor area at default and minimum size and leaves larger and wide documents panning unconstrained", modernCanvasCentred),
+            ("A small canvas is centred when only the document or zoom changes, with no window resize", modernCanvasCentresWithoutWindowResize),
             ("Hide and Undo tooltips read their shortcuts from the real menu items", modernShortcutHintsFollowMenu),
             ("Rename is unavailable during Frame capture and termination", modernRenameAvailability),
             ("The short Frame status hint fits whole at 980 and 1024 and the full sentence is its tooltip and accessibility value", modernFrameStatusFits),
+            ("The Frame keyline outlines the canvas: four edges when it fits, the visible left and top when it overflows the hole", modernFrameKeylineFollowsCanvasEdges),
+            ("Frame mode hides the Original size checkbox for a large shot and leaving Frame restores it", modernFrameHidesOriginalSize),
+            ("The status drops bytes then tool, never the saved state, at every width with and without the Original size checkbox, and keeps the full text as tooltip and spoken value", modernStatusKeepsStateWhenNarrow),
             ("The zoom popup offers the main menu's Actual Size command, keeps a percentage face and follows the command's availability", modernZoomActualSize),
             ("A click at the visual centre of the centred canvas selects the element at the document centre", modernCanvasCentredHitTest),
             ("Modern puts capture, tools and annotation in the top bar, document and output in the bottom bar, and no rail", modernTopBarLayout),
@@ -239,6 +243,96 @@ extension AppSafetyTests {
         try expect(constrained.x == 120 && abs(constrained.y - centredY) < 0.5, "A wide document pans on x and centres on y: \(constrained) vs y \(centredY)")
         app.canvas.scroll(CGPoint(x: 120, y: 0)); chrome.scrollView.reflectScrolledClipView(clip)
         try expect(clip.bounds.origin.x == 120 && abs(clip.bounds.origin.y - centredY) < 0.5, "Panning a wide document keeps x and the y centre: \(clip.bounds.origin)")
+    }
+
+    /// The document changing under a window that is not resized (new snap, open, crop, zoom) must centre too.
+    private static func modernCanvasCentresWithoutWindowResize() throws {
+        let (fixture, chrome) = try modernFixture()
+        let app = fixture.app, content = try (app.window.contentView).unwrap("content view")
+        let defaultFrame = app.window.frame
+        for (name, frame) in [("minimum", CGRect(origin: defaultFrame.origin, size: app.window.minSize)), ("default", defaultFrame)] {
+            app.setWindowFrame(frame)
+            app.canvas.newBlank(size: CGSize(width: 3000, height: 2000))
+            app.setCanvasDisplayZoom(1, label: "Test")
+            content.layoutSubtreeIfNeeded(); app.updateViewportChrome()
+            // From a canvas that fills the view to a small one: nothing resizes the window in between.
+            try viewportFixture(app)
+            content.layoutSubtreeIfNeeded(); app.updateViewportChrome()
+            var m = canvasMargins(app, chrome)
+            try expect(app.canvas.frame.width < chrome.scrollView.contentView.frame.width - 100 && app.canvas.frame.height < chrome.scrollView.contentView.frame.height - 100,
+                       "The new document is smaller than the \(name) editor area")
+            try expect(abs(m.left - m.right) <= 1 && abs(m.top - m.bottom) <= 1 && m.left > 20 && m.top > 20,
+                       "A small document replaces a large one at \(name) size and is centred without a window resize: \(m)")
+            // Zooming in and out re-centres the same way.
+            for zoom: CGFloat in [2, 0.5, 1] {
+                app.setCanvasDisplayZoom(zoom, label: "Test")
+                content.layoutSubtreeIfNeeded(); app.updateViewportChrome()
+                m = canvasMargins(app, chrome)
+                try expect(abs(m.left - m.right) <= 1 && abs(m.top - m.bottom) <= 1 && m.left > 20 && m.top > 20,
+                           "At \(name) size and zoom \(zoom) the canvas is centred: \(m)")
+            }
+            // A new snap: the window is already as small as a small shot allows, so adopting the picture resizes nothing.
+            app.receiveCapture(.success(try image(size: CGSize(width: 300, height: 180))), discardAlreadyApproved: true)
+            content.layoutSubtreeIfNeeded(); app.updateViewportChrome()
+            m = canvasMargins(app, chrome)
+            try expect(abs(m.left - m.right) <= 1 && abs(m.top - m.bottom) <= 1 && m.left > 20 && m.top > 20,
+                       "A new small snap at \(name) size is centred without a window resize: \(m)")
+            // A crop or Resize changes only the document frame.
+            app.canvas.newBlank(size: CGSize(width: 150, height: 90))
+            app.setCanvasDisplayZoom(1, label: "Test")
+            content.layoutSubtreeIfNeeded()
+            m = canvasMargins(app, chrome)
+            try expect(abs(m.left - m.right) <= 1 && abs(m.top - m.bottom) <= 1 && m.left > 20 && m.top > 20,
+                       "A smaller replacement document at \(name) size is centred: \(m)")
+        }
+        // Frame mode sizes the window to the canvas plus a margin: the canvas sits in the middle of the hole.
+        try viewportFixture(app)
+        app.setWindowFrame(CGRect(origin: defaultFrame.origin, size: app.window.minSize))
+        content.layoutSubtreeIfNeeded()
+        app.enterFrame(keepingAnnotations: false, manualFlags: [])
+        defer { app.cancelFrame() }
+        content.layoutSubtreeIfNeeded()
+        let m = canvasMargins(app, chrome)
+        try expect(abs(m.left - m.right) <= 1 && abs(m.top - m.bottom) <= 1, "In Frame mode the small canvas is centred in the hole: \(m)")
+    }
+
+    /// The Frame keyline is the canvas's own outline: all four edges for a canvas that fits, only the edges on screen for a larger one.
+    private static func modernFrameKeylineFollowsCanvasEdges() throws {
+        let (fixture, chrome) = try modernFixture()
+        let app = fixture.app, content = try (app.window.contentView).unwrap("content view")
+        func alphaAt(_ rep: NSBitmapImageRep, _ x: CGFloat, _ y: CGFloat) -> CGFloat {
+            let scale = CGFloat(rep.pixelsWide) / rep.size.width
+            return rep.colorAt(x: Int(x * scale), y: Int(y * scale))?.alphaComponent ?? -1
+        }
+        func render(_ rect: NSRect) throws -> NSBitmapImageRep {
+            let rep = try app.canvas.bitmapImageRepForCachingDisplay(in: rect).unwrap("bitmap")
+            app.canvas.cacheDisplay(in: rect, to: rep)
+            return rep
+        }
+        app.setWindowFrame(CGRect(origin: app.window.frame.origin, size: app.window.minSize))
+        app.canvas.newBlank(size: CGSize(width: 300, height: 180)); app.setCanvasDisplayZoom(1, label: "Test")
+        content.layoutSubtreeIfNeeded()
+        app.enterFrame(keepingAnnotations: false, manualFlags: [])
+        defer { app.cancelFrame() }
+        content.layoutSubtreeIfNeeded()
+        let small = try render(app.canvas.visibleRect.intersection(app.canvas.bounds)), size = small.size
+        for (name, x, y) in [("left", 1.0, size.height / 2), ("right", size.width - 1, size.height / 2), ("top", size.width / 2, 1.0), ("bottom", size.width / 2, size.height - 1)] {
+            try expect(alphaAt(small, x, y) > 0.9, "A canvas that fits has its keyline on the \(name) edge")
+        }
+        try expect(alphaAt(small, size.width / 2, size.height / 2) < 0.1, "The canvas interior stays clear")
+        // A canvas larger than the hole: the clip view shows the left and top edges, and the others are off screen.
+        app.cancelFrame()
+        app.canvas.newBlank(size: CGSize(width: 3000, height: 2000)); app.setCanvasDisplayZoom(1, label: "Test")
+        content.layoutSubtreeIfNeeded()
+        app.enterFrame(keepingAnnotations: false, manualFlags: [])
+        content.layoutSubtreeIfNeeded()
+        let visible = app.canvas.visibleRect
+        let big = try render(visible), shown = big.size
+        try expect(visible.minX == 0 && visible.minY == 0 && visible.width < 3000 && visible.height < 2000, "The large canvas overflows the hole on the right and bottom: \(visible)")
+        try expect(alphaAt(big, 1, shown.height / 2) > 0.9 && alphaAt(big, shown.width / 2, 1) > 0.9, "The visible left and top edges carry the keyline")
+        try expect(alphaAt(big, shown.width - 1, shown.height / 2) < 0.1 && alphaAt(big, shown.width / 2, shown.height - 1) < 0.1,
+                   "The right and bottom keyline are off screen, not clipped by the margin")
+        _ = chrome
     }
 
     private static func modernCanvasCentredHitTest() throws {
@@ -594,10 +688,99 @@ extension AppSafetyTests {
             try expect(app.status.stringValue == shortHint, "The Frame status shows the short hint: \(app.status.stringValue)")
             try expect(app.status.toolTip == fullHint, "The full sentence is the Frame status tooltip: \(app.status.toolTip ?? "nil")")
             try expect(app.status.accessibilityValue() == fullHint && app.status.accessibilityHelp() == fullHint,
-                       "The full sentence is the Frame status accessibility value and help")
+                       "The full sentence is the Frame status accessibility value and help: \(String(describing: app.status.accessibilityValue())) / \(String(describing: app.status.accessibilityHelp())) / \(fullHint)")
         }
         try expect(app.status.accessibilityValue() == app.status.stringValue && app.status.accessibilityHelp() == nil,
                    "Leaving Frame hands the status its own accessibility value back")
+        _ = chrome
+    }
+
+    /// The Original size checkbox is meaningless while framing: a large shot hides it so the hint has the room.
+    private static func modernFrameHidesOriginalSize() throws {
+        let (fixture, chrome) = try modernFixture()
+        let app = fixture.app, content = try (app.window.contentView).unwrap("content view")
+        try largeShot(app)
+        app.setWindowFrame(CGRect(origin: app.window.frame.origin, size: app.window.minSize))
+        app.updateViewportChrome(); content.layoutSubtreeIfNeeded()
+        try expect(app.isLargeShot && !app.dragOriginalControl.isHidden, "A large shot shows the Original size checkbox before Frame")
+        for keeping in [false, true] {
+            app.enterFrame(keepingAnnotations: keeping, manualFlags: [])
+            content.layoutSubtreeIfNeeded()
+            try expect(app.isLargeShot && app.dragOriginalControl.isHidden, "Frame mode (keeping: \(keeping)) hides the Original size checkbox for a large shot")
+            let hint = app.status.stringValue
+            try expect(hint.hasPrefix("Frame: ") && !hint.contains("…"), "The Frame hint is the short sentence: \(hint)")
+            let measured = app.status.cell?.cellSize.width ?? .infinity
+            try expect(measured <= app.status.frame.width + 0.5, "At 980 the Frame hint '\(hint)' fits whole beside no checkbox (\(measured) vs \(app.status.frame.width))")
+            app.cancelFrame()
+            content.layoutSubtreeIfNeeded()
+            try expect(!app.dragOriginalControl.isHidden, "Leaving Frame brings the Original size checkbox back for a large shot")
+        }
+        // A small shot never had the checkbox, in Frame or out of it.
+        try viewportFixture(app)
+        app.updateViewportChrome()
+        try expect(app.dragOriginalControl.isHidden, "A small shot has no checkbox")
+        app.enterFrame(keepingAnnotations: false, manualFlags: [])
+        try expect(app.dragOriginalControl.isHidden, "A small shot has no checkbox in Frame")
+        app.cancelFrame()
+        try expect(app.dragOriginalControl.isHidden, "A small shot has no checkbox after Frame")
+        _ = chrome
+    }
+
+    /// At every width the status shows the longest variant that fits whole, and the saved state is never the part cut.
+    private static func modernStatusKeepsStateWhenNarrow() throws {
+        let (fixture, chrome) = try modernFixture()
+        let app = fixture.app, content = try (app.window.contentView).unwrap("content view")
+        try largeShot(app)
+        app.dragPreviewTimer?.invalidate(); app.dragPreviewTimer = nil
+        let origin = app.window.frame.origin
+        var sawShortened = false, sawWhole = false
+        for (tool, dirty) in [(SketchTool.arrow, true), (.brush, false)] {
+            app.setTool(tool); app.dirty = dirty
+            app.dragPreviewTimer?.invalidate(); app.dragPreviewTimer = nil
+            app.updateDragPreview()
+            let state = dirty ? "Unsaved changes" : "Saved"
+            let full = app.status.toolTip ?? ""
+            let parts = full.components(separatedBy: " · ")
+            try expect(parts.count == 4 && parts[1] == state && parts[2].contains("×") && parts[3].hasSuffix("B"), "The full status has tool, state, size and bytes: \(full)")
+            let expected = [full, parts[0...2].joined(separator: " · "), parts[1...2].joined(separator: " · "), state]
+            for width in stride(from: app.window.minSize.width, through: 1440, by: 20) {
+                app.setWindowFrame(CGRect(origin: origin, size: CGSize(width: width, height: app.window.frame.height)))
+                app.updateViewportChrome(); content.layoutSubtreeIfNeeded()
+                let label = "\(tool.rawValue) \(state) at \(Int(width)) wide with\(app.dragOriginalControl.isHidden ? "out" : "") the checkbox"
+                let shown = app.status.stringValue, room = app.status.frame.width
+                func need(_ text: String) -> CGFloat { let probe = app.status.cell!.copy() as! NSCell; probe.stringValue = text; return probe.cellSize.width }
+                try expect(expected.contains(shown), "\(label): the status is one of the four variants, got '\(shown)'")
+                try expect(shown.contains(state), "\(label): the state '\(state)' is whole in '\(shown)'")
+                try expect(need(shown) <= room + 0.5 || shown == state, "\(label): '\(shown)' fits whole in \(room) pt")
+                let index = expected.firstIndex(of: shown) ?? 0
+                try expect(expected[..<index].allSatisfy { need($0) > room + 0.5 }, "\(label): every longer variant really is too wide for \(room) pt")
+                try expect(app.status.toolTip == full && (app.status.accessibilityValue() as? String) == full, "\(label): the tooltip and spoken value are the full text: tip=\(app.status.toolTip ?? "nil") ax=\(String(describing: app.status.accessibilityValue())) spoken=\(app.status.spokenValue ?? "nil") shown=\(shown) full=\(full)")
+                try expect(!shown.contains("…"), "\(label): no ellipsis was typed into the text")
+                if index > 0 { sawShortened = true } else { sawWhole = true }
+            }
+        }
+        try expect(sawShortened && sawWhole, "The sweep covered both a shortened and a whole status")
+        // The reported case: 980 wide with the checkbox, an unsaved Arrow.
+        app.setTool(.arrow); app.dirty = true; app.updateDragPreview()
+        app.setWindowFrame(CGRect(origin: origin, size: CGSize(width: app.window.minSize.width, height: app.window.frame.height)))
+        app.updateViewportChrome(); content.layoutSubtreeIfNeeded()
+        try expect(!app.dragOriginalControl.isHidden && app.status.stringValue.contains("Unsaved changes"), "At 980 with the checkbox the unsaved state is whole: \(app.status.stringValue)")
+        // A window that grows gives the longer text back; the label's width does not depend on what it shows.
+        app.setWindowFrame(CGRect(origin: origin, size: CGSize(width: 1440, height: app.window.frame.height)))
+        content.layoutSubtreeIfNeeded()
+        try expect(app.status.stringValue == app.status.toolTip, "A wide window shows the whole status again: \(app.status.stringValue)")
+
+        // An upload message is one text: it keeps its priority and is cut only at its tail. A plain write is one fixed text too.
+        let field = StatusTextField(labelWithString: "")
+        field.font = .systemFont(ofSize: 18); field.lineBreakMode = .byTruncatingTail
+        field.frame = NSRect(x: 0, y: 0, width: 120, height: 24)
+        let upload = "Uploading 2 of 3 to the bucket, please wait for the last part"
+        field.setVariants([upload])
+        try expect(field.stringValue == upload && field.lineBreakMode == .byTruncatingTail, "A one-text status keeps all its text and truncates at the tail")
+        field.setVariants(["Arrow · Saved · 100 × 80 · 1 KB", "Saved"]); field.frame.size.width = 20
+        try expect(field.stringValue == "Saved", "When nothing fits the last variant stays and truncates at its tail: \(field.stringValue)")
+        field.stringValue = "Frame: hint"; field.frame.size.width = 400
+        try expect(field.stringValue == "Frame: hint" && field.variants.isEmpty, "A direct write replaces the variants")
         _ = chrome
     }
 
@@ -1202,7 +1385,7 @@ extension AppSafetyTests {
         app.updateDragPreview(); app.updateViewportChrome()
         content.layoutSubtreeIfNeeded()
         try expect(!app.dragOriginalControl.isHidden && app.isLargeShot, "A large shot shows the Original size checkbox")
-        let full = app.status.attributedStringValue.size().width
+        let full = (app.status.cell?.copy() as? NSCell).map { $0.stringValue = app.status.toolTip ?? ""; return $0.cellSize.width } ?? 0
         try expect(app.status.frame.width >= 120 && app.status.frame.width <= full + 0.5, "At the minimum width with the checkbox the status keeps \(app.status.frame.width) pt (needs 120)")
         // A label's frame reaches 2 pt past the alignment rect layout places; the 12 pt group gap is measured on the alignment rect.
         let placed = app.status.superview!.convert(app.status.alignmentRect(forFrame: app.status.frame), to: nil)
