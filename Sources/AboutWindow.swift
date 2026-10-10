@@ -22,6 +22,22 @@ class DismissibleWindow: NSWindow {
 final class LicenseWindow: DismissibleWindow {
     let textView = NSTextView()
 
+    /// The file wraps its paragraphs at about 80 columns; the window wraps them at its own width. Lines of one paragraph are joined with
+    /// a space. Blank lines, indented lines (a block that is laid out on purpose), underlines of a title and the title above one all stay.
+    nonisolated static func reflowed(_ text: String) -> String {
+        let lines = text.replacingOccurrences(of: "\r\n", with: "\n").components(separatedBy: "\n")
+        func isRule(_ line: String) -> Bool { line.count >= 3 && line.allSatisfy { $0 == "-" || $0 == "=" } }
+        func isProse(_ line: String) -> Bool { !line.isEmpty && !(line.first?.isWhitespace ?? true) && !isRule(line) }
+        var result: [String] = []
+        var takesContinuation = false // the last line written is prose and is not a title, so the next prose line belongs to it
+        for (index, line) in lines.enumerated() {
+            let next = index + 1 < lines.count ? lines[index + 1] : ""
+            if takesContinuation, isProse(line) { result[result.count - 1] += " " + line } else { result.append(line) }
+            takesContinuation = isProse(line) && !isRule(next)
+        }
+        return result.joined(separator: "\n")
+    }
+
     init(text: String, title: String = "MIT License") {
         super.init(contentRect: NSRect(x: 0, y: 0, width: 620, height: 560), styleMask: [.titled, .closable, .resizable],
                    backing: .buffered, defer: true)
@@ -34,7 +50,7 @@ final class LicenseWindow: DismissibleWindow {
         textView.textContainerInset = NSSize(width: 16, height: 16)
         textView.isVerticallyResizable = true; textView.isHorizontallyResizable = false
         textView.autoresizingMask = [.width]
-        textView.string = text
+        textView.string = Self.reflowed(text)
         textView.setAccessibilityLabel(title + " text")
         let scroll = NSScrollView(frame: contentRect(forFrameRect: frame))
         scroll.hasVerticalScroller = true; scroll.drawsBackground = false
@@ -98,7 +114,8 @@ final class AboutWindow: DismissibleWindow {
         noticesButton = NSButton(title: "", target: nil, action: nil)
         super.init(contentRect: NSRect(x: 0, y: 0, width: 360, height: 340), styleMask: [.titled, .closable], backing: .buffered, defer: true)
         title = "About " + DesignTokens.Brand.name
-        titleVisibility = .hidden; titlebarAppearsTransparent = true
+        // The title stays visible: a window with no title text has no name for a person to find it by (Window menu, Mission Control).
+        titlebarAppearsTransparent = true
         isReleasedWhenClosed = false
         for button in [.miniaturizeButton, .zoomButton] as [NSWindow.ButtonType] { standardWindowButton(button)?.isHidden = true }
 

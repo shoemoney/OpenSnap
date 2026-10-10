@@ -6,7 +6,7 @@ import CryptoKit
 /// drawing readable. The JSON index contains no publishing credentials.
 final class HistoryStore {
     enum Action: String, Codable { case archived, exported, shared
-        var title: String { switch self { case .archived: return "Saved"; case .exported: return "Exported/Dragged"; case .shared: return "Shared" } }
+        var title: String { switch self { case .archived: return "Saved"; case .exported: return "Exported"; case .shared: return "Shared" } }
     }
     struct Snapshot {
         let native: Data

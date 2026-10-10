@@ -117,6 +117,7 @@ private enum GlassChromeTests {
             let fonts = fontDirectory()
             chromeTests(glyphs: false)
             uploadVariantChecks()
+            uploadOutcomeChecks()
             if let fonts {
                 for family in FAFamily.allCases {
                     expect(FontAwesomeFont.register(url: fonts.appendingPathComponent(family.resourceName + ".ttf"), family: family), "Subset font \(family) registers")
@@ -1405,6 +1406,51 @@ private enum GlassChromeTests {
         expect(mid != variants.first && mid != "Link copied" && mid.hasPrefix("Link copied · ") && mid.contains("…"), "A narrower slot cuts the middle of the link (\(mid))")
         expect(shown(150) == variants.first && !shown(150).dropFirst(11).contains("……") && field.spokenValue == nil, "A slot too narrow for any step shows the whole sentence and lets the cell cut its tail, so Link copied leads and no second ellipsis appears")
         expect(field.cell?.cellSize.width ?? 0 > 150 && field.lineBreakMode == .byTruncatingTail, "...that cut is the status line's own tail truncation")
+    }
+
+    /// Audit batch 3b (F-J2-021, F-J2-022): a long error keeps both ends, the Details text has no second "Error:", a retry is named, the success line
+    /// lasts, and "Upload cancelled" is a notice that outlives the next status refresh.
+    private static func uploadOutcomeChecks() {
+        let long = "The publishing password could not be read from macOS Keychain (-25300).\nSecond line."
+        let failure = UploadState.failure(message: long)
+        let variants = failure.statusVariants
+        expect(variants.first == "Error: The publishing password could not be read from macOS Keychain (-25300).", "The longest variant is the whole first line (\(variants.first ?? ""))")
+        expect(variants.count > 5 && variants.last == "Error: Upload failed", "There are middle-cut steps and a sentence that always fits (\(variants.count))")
+        expect(zip(variants.dropLast(), variants.dropLast().dropFirst()).allSatisfy { $0.count >= $1.count } && variants.allSatisfy { $0.hasPrefix("Error: ") }, "Steps only get shorter and every one leads with Error:")
+        expect(variants.dropFirst().dropLast().allSatisfy { $0.contains("…") && $0.hasSuffix(")") || $0.hasSuffix(".") }, "A cut keeps the end of the line, where the code is (\(variants.dropFirst().first ?? ""))")
+        expect(UploadState.failure(message: "No.").statusVariants == ["Error: No."] && UploadState.failure(message: "Error: Prefixed.\nMore").statusVariants == ["Error: Prefixed."], "A short error is one sentence, and an Error: prefix is not doubled")
+        let field = StatusTextField(labelWithString: "")
+        field.font = DesignTokens.Typography.font(.body); field.lineBreakMode = .byTruncatingTail
+        field.setVariants(variants)
+        func shown(_ width: CGFloat) -> String { field.setFrameSize(NSSize(width: width, height: 24)); return field.stringValue }
+        expect(shown(2000) == variants.first, "A wide slot shows the whole error")
+        let narrow = shown(420)
+        expect(narrow != variants.first && narrow.hasPrefix("Error: ") && narrow.contains("…") && narrow.hasSuffix("(-25300)."), "A narrower slot cuts the middle and keeps the code, not just a truncated head (\(narrow))")
+        // The Details sheet's text drops the prefix its title makes redundant; the tooltip and VoiceOver help keep it.
+        expect(failure.failureBody == long && UploadState.failure(message: "Error: Twice.").failureBody == "Twice.", "The Details text has no leading Error:")
+        expect(failure.failureDetail == "Error: " + long && UploadState.idle.failureBody == nil, "The tooltip text still leads with Error:")
+        // A retry is named.
+        UploadState.retryingName = nil
+        expect(UploadState.uploading(name: "Shot").statusVariants == ["Uploading Shot…"], "A first attempt says Uploading")
+        UploadState.retryingName = "Shot"
+        expect(UploadState.uploading(name: "Shot").statusVariants == ["Retrying Shot…"] && UploadState.uploading(name: "Other").statusVariants == ["Uploading Other…"], "A retry says Retrying, only for its own file")
+        UploadState.retryingName = nil
+        // The success line lasts long enough to read.
+        expect(UploadState.successDuration >= 10, "Link copied stays at least ten seconds (\(UploadState.successDuration))")
+        // The cancelled notice.
+        var changes = 0
+        UploadNotice.onChange = { changes += 1 }
+        defer { UploadNotice.onChange = nil; UploadNotice.clear() }
+        UploadNotice.post("Upload cancelled")
+        expect(UploadNotice.text == "Upload cancelled" && changes == 1 && UploadNotice.duration >= 8, "Cancelling posts a notice that lasts (\(UploadNotice.duration) s)")
+        UploadNotice.clear()
+        expect(UploadNotice.text == nil && changes == 2, "A new upload clears it")
+        UploadNotice.clear()
+        expect(changes == 2, "Clearing nothing changes nothing")
+        UploadNotice.post("Upload cancelled", duration: 0.05)
+        let end = Date().addingTimeInterval(1)
+        while UploadNotice.text != nil && Date() < end { _ = RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.02)) }
+        expect(UploadNotice.text == nil, "The notice expires by itself")
     }
 
     // MARK: T15 regression tests (each fails if the rail, its blank column or an overflow comes back)

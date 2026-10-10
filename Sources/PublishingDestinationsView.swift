@@ -19,9 +19,15 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
     /// The removal question that is on screen now, so closing the destinations sheet can answer it first.
     private(set) var pendingRemoval: AppAlert?
 
-    /// The sheet is 720 wide and at most 720 tall; on a short screen it shrinks and the form scrolls instead of clipping.
-    static let sheetWidth: CGFloat = 720, sheetMaxHeight: CGFloat = 720, sheetScreenMargin: CGFloat = 120, sheetMinHeight: CGFloat = 360
+    /// The sheet is 720 wide and at most 760 tall; on a short screen it shrinks and the form scrolls instead of clipping. Under a narrower
+    /// window (Settings is 640) it is as wide as that window, never narrower than `sheetMinWidth`, so it never overhangs its parent.
+    static let sheetWidth: CGFloat = 720, sheetMinWidth: CGFloat = 560, sheetMaxHeight: CGFloat = 760, sheetScreenMargin: CGFloat = 120, sheetMinHeight: CGFloat = 360
     static var contentWidth: CGFloat { sheetWidth - 2 * Space.s5 }
+    /// The width of the sheet that hangs from a window `hostWidth` wide.
+    static func sheetWidth(forHostWidth hostWidth: CGFloat) -> CGFloat { min(sheetWidth, max(sheetMinWidth, hostWidth)) }
+    /// Width of the form's content, and of every control row in it.
+    let width: CGFloat
+    var contentWidth: CGFloat { width - 2 * Space.s5 }
     /// The list page shows between `minListRows` and `maxListRows` rows, so a short list does not leave the sheet mostly blank.
     static let minListRows = 4, maxListRows = 8
     static func sheetSize(visibleFrame: NSRect) -> NSSize {
@@ -49,9 +55,9 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
     let table = NSTableView()
     let scrollView = NSScrollView()
     private let listPage = NSStackView(), formPage = NSStackView()
-    private let listStatus = DestinationStatusRow()
-    /// The inline Test / Save result: a glyph and text together, never colour alone.
-    let formResult = DestinationStatusRow()
+    private let listStatus: DestinationStatusRow
+    /// The inline Test / Save result: a glyph and text together, never colour alone. It sits above the buttons and is as tall as its text.
+    let formResult: DestinationStatusRow
 
     // Form controls (internal so tests can fill them in like a user would).
     let nameField = NSTextField(), endpointField = NSTextField(), usernameField = NSTextField()
@@ -93,8 +99,9 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
     private(set) lazy var testButton: NSButton = Self.button("Test", self, #selector(testTapped))
     private let listFooter = NSStackView(), formFooter = NSStackView()
 
-    init(list: PublishingDestinationList) {
-        self.list = list
+    init(list: PublishingDestinationList, width: CGFloat = PublishingDestinationsView.sheetWidth) {
+        self.list = list; self.width = width
+        listStatus = DestinationStatusRow(width: width - 2 * Space.s5); formResult = DestinationStatusRow(width: width - 2 * Space.s5, maxLines: 3)
         super.init(frame: .zero)
         buildList(); buildForm(); buildFooters()
 
@@ -151,6 +158,8 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         listFooter.setViews([spacer, doneButton], in: .trailing)
         let flexible = NSView(); flexible.setContentHuggingPriority(.init(1), for: .horizontal)
         let buttons = NSStackView(views: [testButton, flexible, cancelButton, saveButton]); buttons.spacing = Space.s4
+        // The result band is as tall as what it says: one line for the idle hint, up to three for a Test error. The footer grows by the
+        // difference and the form above it shrinks and scrolls, so a result never covers a field and an idle form keeps its room.
         formResult.translatesAutoresizingMaskIntoConstraints = false
         let column = NSStackView(views: [formResult, buttons]); column.orientation = .vertical; column.alignment = .leading; column.spacing = Space.s2
         buttons.widthAnchor.constraint(equalTo: column.widthAnchor).isActive = true
@@ -164,9 +173,9 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
     private func buildList() {
         listPage.orientation = .vertical; listPage.alignment = .leading; listPage.spacing = Space.s4
         let title = label("Upload destinations. The one marked Default receives an Upload click; right-click Upload to switch.")
-        title.preferredMaxLayoutWidth = Self.contentWidth
+        title.preferredMaxLayoutWidth = contentWidth
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("destination"))
-        column.resizingMask = .autoresizingMask; column.minWidth = 200; column.width = Self.contentWidth - 24
+        column.resizingMask = .autoresizingMask; column.minWidth = 200; column.width = contentWidth - 24
         table.addTableColumn(column); table.headerView = nil; table.rowHeight = DesignTokens.Size.row
         table.columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle
         table.dataSource = self; table.delegate = self; table.allowsEmptySelection = true
@@ -176,7 +185,7 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         scroll.translatesAutoresizingMaskIntoConstraints = false
         let tableHeight = scroll.heightAnchor.constraint(equalToConstant: 0); tableHeight.isActive = true
         self.tableHeight = tableHeight; fitTable()
-        scroll.widthAnchor.constraint(equalToConstant: Self.contentWidth).isActive = true
+        scroll.widthAnchor.constraint(equalToConstant: contentWidth).isActive = true
         let add = Self.button("Add…", self, #selector(addTapped))
         let edit = Self.button("Edit…", self, #selector(editTapped))
         let remove = Self.button("Remove", self, #selector(removeTapped))
@@ -184,7 +193,7 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         let actions = NSStackView(views: [add, edit, remove, makeDefault]); actions.spacing = Space.s4
         listStatus.translatesAutoresizingMaskIntoConstraints = false
         listPage.setViews([title, scroll, actions, listStatus], in: .leading)
-        listStatus.widthAnchor.constraint(equalToConstant: Self.contentWidth).isActive = true
+        listStatus.widthAnchor.constraint(equalToConstant: contentWidth).isActive = true
         listButtons = (edit, remove, makeDefault)
     }
     private var listButtons: (edit: NSButton, remove: NSButton, makeDefault: NSButton)?
@@ -279,14 +288,15 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         return ("Remove “\(destination.name)”?", detail)
     }
 
-    /// "Remove “name”?" with the destructive Remove (Return) and Cancel (Escape), as a sheet on the destinations sheet.
+    /// "Remove “name”?" as a sheet on the destinations sheet. Cancel is the default (Return and Escape both leave it), and Remove is the
+    /// destructive second button, so a stray Return never deletes a destination.
     private func askToRemove(_ title: String, _ detail: String, _ answer: @escaping (Bool) -> Void) {
         guard pendingRemoval == nil else { return }
-        let alert = AppAlert(title: title, message: detail, buttons: [.init(title: "Remove", role: .destructive), .init(title: "Cancel", role: .cancel)])
+        let alert = AppAlert(title: title, message: detail, buttons: [.init(title: "Cancel", role: .cancel), .init(title: "Remove", role: .destructive)])
         pendingRemoval = alert
         alert.present(on: window) { [weak self] response in
             self?.pendingRemoval = nil
-            answer(response == .alertFirstButtonReturn)
+            answer(response == .alertSecondButtonReturn)
         }
     }
     @objc func makeDefaultTapped() { if let selected = selectedDestination { onMakeDefault?(selected.id) } }
@@ -305,7 +315,7 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
 
     private let formHelp = NSTextField(wrappingLabelWithString: "")
 
-    private static let captionWidth: CGFloat = 200
+    private static let captionWidth: CGFloat = 190
 
     private func styled(_ field: NSTextField, _ placeholder: String) -> NSTextField {
         Typography.apply(.body, to: field); field.placeholderString = placeholder
@@ -328,11 +338,57 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         caption.widthAnchor.constraint(equalToConstant: Self.captionWidth).isActive = true
         caption.preferredMaxLayoutWidth = Self.captionWidth
         control.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        stack.widthAnchor.constraint(equalToConstant: Self.contentWidth).isActive = true
+        stack.widthAnchor.constraint(equalToConstant: contentWidth).isActive = true
         control.setAccessibilityLabel(title)
         rows[id] = Row(label: caption, stack: stack, visible: visible)
         formPage.addArrangedSubview(stack)
     }
+
+    /// Everything on the form that reads differently per protocol: captions, placeholders, the help under the form and what Test does.
+    struct FormCopy: Equatable {
+        var endpointCaption = "Endpoint URL", endpointPlaceholder = ""
+        var folderCaption = "Remote folder", folderPlaceholder = ""
+        var usernameCaption = "Username", usernamePlaceholder = ""
+        var passwordCaption = "Password", passwordPlaceholder = "Saved in the macOS Keychain"
+        var help = "", testNote = ""
+    }
+    static func formCopy(for transport: PublishingProtocol) -> FormCopy {
+        var copy = FormCopy()
+        switch transport {
+        case .webDAV:
+            copy.endpointPlaceholder = "https://example.com/uploads"; copy.folderPlaceholder = "screenshots (under the endpoint)"
+            copy.usernamePlaceholder = "Blank for anonymous access"
+            copy.help = "WebDAV, or any server that accepts an HTTP PUT. The endpoint starts with http:// or https://. Folders must exist. Public base URL maps to the remote folder; only the file name is appended."
+            copy.testNote = "Test asks the server about the folder and checks the login. It never uploads."
+        case .ftp:
+            copy.endpointPlaceholder = "ftp://ftp.example.com/uploads"; copy.folderPlaceholder = "screenshots (under the endpoint)"
+            copy.usernamePlaceholder = "Blank for anonymous access"
+            copy.help = "Plain FTP: the endpoint starts with ftp:// and the password travels unencrypted, so use FTPS or SFTP where the server offers them. Folders must exist. Public base URL maps to the upload folder; only the file name is appended."
+            copy.testNote = "Test logs in and lists the folder. It never uploads."
+        case .ftps:
+            copy.endpointPlaceholder = "ftps://ftp.example.com/uploads"; copy.folderPlaceholder = "screenshots (under the endpoint)"
+            copy.usernamePlaceholder = "Blank for anonymous access"
+            copy.help = "FTPS: ftp:// starts explicit TLS and ftps:// implicit TLS; TLS is required either way. Folders must exist. Public base URL maps to the upload folder; only the file name is appended."
+            copy.testNote = "Test logs in over TLS and lists the folder. It never uploads."
+        case .sftp:
+            copy.endpointPlaceholder = "sftp://host.example.com/uploads"; copy.folderPlaceholder = "screenshots (under the remote root)"
+            copy.usernamePlaceholder = "Blank to use the SSH configuration"
+            copy.help = "SFTP uses keys from your SSH configuration or agent, with strict known-host checks, and needs no password. Give the SSH host (an alias from ~/.ssh/config or a host name) and an absolute remote root; leave username and port empty to use the alias settings. Folders must exist."
+            copy.testNote = "Test connects over SSH and lists the folder. It never uploads."
+        case .s3:
+            copy.endpointCaption = "Endpoint"; copy.endpointPlaceholder = "Blank for AWS, or https://s3.example.com"
+            copy.folderCaption = "Key prefix"; copy.folderPlaceholder = "screenshots (optional)"
+            copy.usernameCaption = "Access key ID"; copy.usernamePlaceholder = "AKIAIOSFODNN7EXAMPLE"
+            copy.passwordCaption = "Secret access key"
+            copy.help = "Path-style S3 over system curl, for AWS, Cloudflare R2, Backblaze B2, DigitalOcean Spaces, Wasabi and MinIO. Public base URL maps to the key prefix; the uploaded file is downloaded from it to verify the exact bytes. Leave public-read off when the bucket disables ACLs."
+            copy.testNote = "Test lists the bucket with these credentials. It never uploads."
+        }
+        return copy
+    }
+
+    /// True while an SFTP destination that was saved with an sftp:// endpoint is open: its Endpoint row stays so the value can be seen and
+    /// cleared. A new SFTP destination has none; the SSH host row says it all.
+    private var showsLegacySFTPEndpoint = false
 
     private func buildForm() {
         formPage.orientation = .vertical; formPage.alignment = .leading; formPage.spacing = Space.s3
@@ -348,25 +404,25 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         formPage.addArrangedSubview(sectionHeader("Connection"))
         addRow("name", "Name", styled(nameField, "Shown in the Upload right-click menu"), visible: all)
         addRow("protocol", "Protocol", protocolPopup, visible: all)
-        addRow("endpoint", "Endpoint URL", styled(endpointField, "https://example.com/uploads"), visible: all)
-        addRow("region", "Region", styled(regionField, "us-east-1 (auto for Cloudflare R2)"), visible: { p, _ in p == .s3 })
-        addRow("bucket", "Bucket", styled(bucketField, "cdn.example.com"), visible: { p, _ in p == .s3 })
-        addRow("folder", "Remote folder", styled(folderField, "screenshots (relative to endpoint)"), visible: all)
-        addRow("public", "Public base URL", styled(publicField, "https://example.com/screenshots (optional)"), visible: all)
-        addRow("alias", "SSH host alias", styled(aliasField, "myserver (from ~/.ssh/config)"), visible: { p, _ in p == .sftp })
+        addRow("endpoint", "Endpoint URL", styled(endpointField, ""), visible: { [unowned self] p, _ in p != .sftp || self.showsLegacySFTPEndpoint })
+        addRow("region", "Region", styled(regionField, "us-east-1, or auto for R2"), visible: { p, _ in p == .s3 })
+        addRow("bucket", "Bucket", styled(bucketField, "my-bucket"), visible: { p, _ in p == .s3 })
+        addRow("folder", "Remote folder", styled(folderField, ""), visible: all)
+        addRow("public", "Public base URL", styled(publicField, "https://cdn.example.com/screenshots (optional)"), visible: all)
+        addRow("alias", "SSH host alias", styled(aliasField, "myserver or host.example.com"), visible: { p, _ in p == .sftp })
         addRow("root", "SFTP remote root", styled(remoteRootField, "/var/www/site/uploads"), visible: { p, _ in p == .sftp })
-        addRow("port", "SFTP port", styled(portField, "Use SSH configuration (optional)"), visible: { p, _ in p == .sftp })
+        addRow("port", "SFTP port", styled(portField, "Blank to use SSH configuration"), visible: { p, _ in p == .sftp })
         addRow("acl", "", aclCheckbox, visible: { p, _ in p == .s3 })
         if let last = rows["acl"]?.stack { formPage.setCustomSpacing(Space.s5, after: last) }
         formPage.addArrangedSubview(sectionHeader("Credentials"))
         addRow("source", "Source", sourcePopup, visible: { p, _ in p == .s3 })
-        addRow("profile", "AWS profile", styled(profileField, "default (from ~/.aws/credentials)"), visible: { p, keychain in p == .s3 && !keychain })
-        addRow("username", "Username", styled(usernameField, "Optional for anonymous destinations"),
+        addRow("profile", "AWS profile", styled(profileField, "default (~/.aws/credentials)"), visible: { p, keychain in p == .s3 && !keychain })
+        addRow("username", "Username", styled(usernameField, ""),
                visible: { p, keychain in p == .s3 ? keychain : true })
-        addRow("password", "Password", { passwordField.placeholderString = "Password stored in macOS Keychain"; return passwordField }(),
+        addRow("password", "Password", passwordField,
                visible: { p, keychain in p == .s3 ? keychain : p != .sftp })
         Typography.apply(.caption, to: formHelp); formHelp.textColor = DesignTokens.Palette.Text.secondary
-        formHelp.maximumNumberOfLines = 0; formHelp.preferredMaxLayoutWidth = Self.contentWidth
+        formHelp.maximumNumberOfLines = 0; formHelp.preferredMaxLayoutWidth = contentWidth
         formPage.addArrangedSubview(formHelp)
         formPage.setCustomSpacing(Space.s4, after: rows["password"]!.stack)
         formPage.isHidden = true
@@ -380,26 +436,18 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
 
     @objc func formChanged() { refreshForm() }
     private func refreshForm() {
-        let transport = selectedProtocol, keychain = keychainSource
+        let transport = selectedProtocol, keychain = keychainSource, copy = Self.formCopy(for: transport)
         for row in rows.values { row.stack.isHidden = !row.visible(transport, keychain) }
-        let endpointExample = "https://example.com/uploads"
-        func caption(_ id: String, _ text: String) { rows[id]?.label.stringValue = text; rows[id]?.stack.arrangedSubviews.last?.setAccessibilityLabel(text) }
-        switch transport {
-        case .s3:
-            caption("endpoint", "Endpoint"); caption("folder", "Key prefix")
-            endpointField.placeholderString = "Leave blank for AWS, or https://s3.example.com"
-            caption("username", "Access key ID"); caption("password", "Secret access key")
-            formHelp.stringValue = "Path-style S3 over system curl, for AWS, Cloudflare R2, Backblaze B2, DigitalOcean Spaces, Wasabi and MinIO. Public base URL maps to the key prefix; the uploaded file is downloaded from it to verify the exact bytes. Test lists the bucket without uploading. Leave public-read off when the bucket disables ACLs."
-        case .sftp:
-            caption("endpoint", "Endpoint URL"); caption("folder", "Remote folder"); caption("username", "Username"); caption("password", "Password")
-            endpointField.placeholderString = endpointExample
-            formHelp.stringValue = "SFTP uses keys from SSH configuration or your agent, with strict known-host checks. Leave username and port empty to use the alias settings. Folders must exist."
-        default:
-            caption("endpoint", "Endpoint URL"); caption("folder", "Remote folder"); caption("username", "Username"); caption("password", "Password")
-            endpointField.placeholderString = endpointExample
-            formHelp.stringValue = "FTPS: ftp:// is explicit TLS, ftps:// is implicit TLS. Folders must exist. Public base URL maps to the upload folder; only the filename is appended."
+        func caption(_ id: String, _ text: String) {
+            rows[id]?.label.stringValue = text
+            rows[id]?.stack.arrangedSubviews.last?.setAccessibilityLabel(text)
         }
-        testButton.isHidden = transport != .s3
+        caption("endpoint", copy.endpointCaption); caption("folder", copy.folderCaption)
+        caption("username", copy.usernameCaption); caption("password", copy.passwordCaption)
+        endpointField.placeholderString = copy.endpointPlaceholder; folderField.placeholderString = copy.folderPlaceholder
+        usernameField.placeholderString = copy.usernamePlaceholder; passwordField.placeholderString = copy.passwordPlaceholder
+        formHelp.stringValue = copy.help
+        if formResult.kind == .idle || formResult.kind == .hint { formResult.show(.hint, copy.testNote) }
     }
 
     /// Disables protocols the system tools cannot run.
@@ -422,6 +470,7 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         sourcePopup.selectItem(at: destination != nil && options.credentialsProfile.isEmpty && settings.transport == .s3 ? 1 : 0)
         aclCheckbox.state = options.publicReadACL ? .on : .off
         passwordField.stringValue = destination.map { settings.storesSecretInKeychain ? passwordFor($0) : "" } ?? ""
+        showsLegacySFTPEndpoint = settings.transport == .sftp && !settings.endpoint.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         formResult.show(.idle, "")
         listPage.isHidden = true; formPage.isHidden = false
         listFooter.isHidden = true; formFooter.isHidden = false
@@ -433,7 +482,9 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         var settings = editing?.settings ?? PublishingSettings()
         let transport = selectedProtocol
         settings.transport = transport
-        settings.endpoint = endpointField.stringValue; settings.remoteFolder = folderField.stringValue
+        // An SFTP destination names its host in the SSH host row; the Endpoint row only exists to show a value saved by an older build.
+        settings.endpoint = transport == .sftp && !showsLegacySFTPEndpoint ? "" : endpointField.stringValue
+        settings.remoteFolder = folderField.stringValue
         settings.publicBaseURL = publicField.stringValue
         settings.username = usernameField.stringValue
         settings.sshAlias = aliasField.stringValue; settings.sftpRemoteRoot = remoteRootField.stringValue
@@ -501,23 +552,27 @@ final class DestinationFlippedView: NSView {
 
 /// One line of feedback: a glyph and words together, so the meaning never rests on colour alone.
 final class DestinationStatusRow: NSStackView {
-    enum Kind { case idle, working, info, success, failure }
+    /// `hint` is a quiet line in the secondary colour (what Test will do); the others report something that happened.
+    enum Kind { case idle, hint, working, info, success, failure }
     private(set) var kind: Kind = .idle
     let glyph = NSImageView()
     let text = NSTextField(wrappingLabelWithString: "")
     let detail = NSTextField(wrappingLabelWithString: "")
     private typealias Palette = DesignTokens.Palette
 
-    override init(frame: NSRect) {
-        super.init(frame: frame)
+    init(width: CGFloat = PublishingDestinationsView.contentWidth, maxLines: Int = 0) {
+        super.init(frame: .zero)
         orientation = .horizontal; alignment = .top; spacing = DesignTokens.Space.s2
         glyph.imageScaling = .scaleProportionallyDown
         glyph.widthAnchor.constraint(equalToConstant: DesignTokens.Typography.iconRegular).isActive = true
         glyph.heightAnchor.constraint(equalToConstant: DesignTokens.Typography.iconRegular).isActive = true
         DesignTokens.Typography.apply(.body, to: text); DesignTokens.Typography.apply(.caption, to: detail)
-        let textWidth = PublishingDestinationsView.contentWidth - DesignTokens.Typography.iconRegular - DesignTokens.Space.s2
+        let textWidth = width - DesignTokens.Typography.iconRegular - DesignTokens.Space.s2
         text.preferredMaxLayoutWidth = textWidth; detail.preferredMaxLayoutWidth = textWidth
-        text.maximumNumberOfLines = 0; detail.maximumNumberOfLines = 0
+        // A bounded row cuts its last line with an ellipsis; the whole message stays in the accessibility label and the field's text.
+        text.maximumNumberOfLines = maxLines; detail.maximumNumberOfLines = maxLines == 0 ? 0 : 2
+        text.lineBreakMode = .byWordWrapping; (text.cell as? NSTextFieldCell)?.truncatesLastVisibleLine = true
+        (detail.cell as? NSTextFieldCell)?.truncatesLastVisibleLine = true
         detail.textColor = Palette.Text.secondary
         let column = NSStackView(views: [text, detail]); column.orientation = .vertical; column.alignment = .leading; column.spacing = 2
         addArrangedSubview(glyph); addArrangedSubview(column)
@@ -532,12 +587,13 @@ final class DestinationStatusRow: NSStackView {
         switch kind {
         case .success: icon = .circleCheck
         case .failure: icon = .xmarkCircle
-        case .idle, .working, .info: icon = nil
+        case .idle, .hint, .working, .info: icon = nil
         }
         glyph.image = icon.flatMap { PublishingDestinationsView.icon($0, pointSize: DesignTokens.Typography.iconInline, description: kind == .success ? "Connected" : "Error") }
         glyph.isHidden = glyph.image == nil
-        let color = kind == .failure ? Palette.feedbackError : Palette.Text.primary
+        let color = kind == .failure ? Palette.feedbackError : (kind == .hint ? Palette.Text.secondary : Palette.Text.primary)
         text.textColor = color; glyph.contentTintColor = color
+        DesignTokens.Typography.apply(kind == .hint ? .caption : .body, to: text)
         isHidden = kind == .idle || message.isEmpty
         setAccessibilityElement(!isHidden); setAccessibilityRole(.staticText)
         setAccessibilityLabel(message + (extra.isEmpty ? "" : ". " + extra))

@@ -149,7 +149,7 @@ suites = [
     ("stroke-fitting-tests", ["SVGPath.swift", "StrokeFitting.swift"], "StrokeFittingTests.swift", "STROKE_FITTING_TESTS", ()),
     ("canvas-tests", ["SVGPath.swift", "DocumentModel.swift", "VectorGeometry.swift", "StrokeFitting.swift", "ImageExport.swift", "Canvas.swift"], "CanvasTests.swift", "CANVAS_TESTS", ()),
     ("history-store-tests", ["SVGPath.swift", "DocumentModel.swift", "VectorGeometry.swift", "StrokeFitting.swift", "ImageExport.swift", "Canvas.swift", "OpenSnapFile.swift", "HistoryStore.swift"], "HistoryStoreTests.swift", "HISTORY_STORE_TESTS", ()),
-    ("history-browser-tests", ["HistoryBrowser.swift", "TestDefaults.swift", *ICONS], "HistoryBrowserTests.swift", "HISTORY_BROWSER_TESTS", ()),
+    ("history-browser-tests", ["HistoryBrowser.swift", "TestDefaults.swift", "AppToolTip.swift", *ICONS], "HistoryBrowserTests.swift", "HISTORY_BROWSER_TESTS", ()),
     ("history-remote-deletion-tests", ["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift", "AppAlert.swift", "HistoryRemoteDeletion.swift", *ICONS], "HistoryRemoteDeletionTests.swift", None, ("--test",)),
     ("publishing-tests", ["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift", "AppAlert.swift", *ICONS], "PublishingTests.swift", None, ("--test",)),
     ("publishing-shutdown-tests", ["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift", "AppAlert.swift", *ICONS], "PublishingShutdownTests.swift", None, ("--test",)),

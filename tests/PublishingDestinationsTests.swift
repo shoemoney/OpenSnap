@@ -34,6 +34,9 @@ enum PublishingDestinationsTests {
         try storeOperations()
         try MainActor.assumeIsolated { try destinationsSheet() }
         try MainActor.assumeIsolated { try removalSheet() }
+        try MainActor.assumeIsolated { try formCopyAndLabels() }
+        try MainActor.assumeIsolated { try resultBandAndSheetWidth() }
+        try connectionTests()
         print("Destination and S3 self-checks passed: \(checks). No uploads were executed.")
     }
 
@@ -352,6 +355,266 @@ enum PublishingDestinationsTests {
 
     // MARK: Live check
 
+    // MARK: Audit batch 3b: per-protocol copy, accessible names, reserved result band, sheet width, Test for every protocol
+
+    /// F-J2-015, 016, 017: each protocol's form speaks for itself, S3 keys are not "optional", and every field keeps its name once filled.
+    @MainActor static func formCopyAndLabels() throws {
+        _ = NSApplication.shared
+        NSApp.setActivationPolicy(.prohibited)
+        let publisher = try coordinator(destinations: fixtureDestinations())
+        let (panel, view) = try publisher.buildSettings(visibleFrame: NSRect(x: 0, y: 0, width: 1280, height: 800))
+        defer { panel.orderOut(nil) }
+        typealias View = PublishingDestinationsView
+        let copies = Dictionary(uniqueKeysWithValues: PublishingProtocol.allCases.map { ($0, View.formCopy(for: $0)) })
+        try expect(copies[.webDAV]?.endpointPlaceholder.hasPrefix("http") == true && copies[.ftp]?.endpointPlaceholder.hasPrefix("ftp://") == true
+                   && copies[.ftps]?.endpointPlaceholder.hasPrefix("ftps://") == true && copies[.sftp]?.endpointPlaceholder.hasPrefix("sftp://") == true,
+                   "the endpoint placeholder names each protocol's own scheme")
+        try expect(Set(copies.values.map(\.endpointPlaceholder)).count == 5 && Set(copies.values.map(\.help)).count == 5, "no two protocols share an endpoint placeholder or a help paragraph")
+        try expect(!(copies[.webDAV]?.help.contains("FTPS") ?? true) && copies[.ftps]?.help.contains("explicit TLS") == true && copies[.ftp]?.help.contains("unencrypted") == true,
+                   "the WebDAV form no longer carries the FTPS help")
+        for (transport, copy) in copies {
+            try expect(copy.testNote.hasSuffix("never uploads.") && !copy.help.isEmpty, "\(transport) says what Test does and never uploads")
+        }
+        try expect(copies[.s3]?.usernameCaption == "Access key ID" && copies[.s3]?.usernamePlaceholder.lowercased().contains("optional") == false
+                   && copies[.s3]?.usernamePlaceholder.hasPrefix("AKIA") == true, "S3 keys are not offered as optional: \(copies[.s3]?.usernamePlaceholder ?? "")")
+        try expect(copies[.s3]?.passwordPlaceholder == "Saved in the macOS Keychain" && copies[.s3]?.passwordCaption == "Secret access key", "the S3 secret placeholder fits a secret key")
+        try expect(copies[.webDAV]?.usernamePlaceholder.contains("anonymous") == true, "WebDAV may be anonymous, and its placeholder says so")
+
+        // SFTP: one place for the host. The Endpoint row is gone for a new destination and present only to show an older saved URL.
+        view.addTapped()
+        view.protocolPopup.selectItem(withTitle: PublishingProtocol.sftp.title); view.formChanged(); panel.contentView?.layoutSubtreeIfNeeded()
+        try expect(view.endpointField.isHiddenOrHasHiddenAncestor && !view.aliasField.isHiddenOrHasHiddenAncestor, "a new SFTP destination asks for the SSH host, not an endpoint as well")
+        view.endpointField.stringValue = "https://stale.example.com"; view.nameField.stringValue = "S"; view.aliasField.stringValue = "myserver"; view.remoteRootField.stringValue = "/srv/up"
+        try expect(try view.makeDraft().destination.settings.endpoint.isEmpty, "a stale hidden endpoint never reaches an SFTP destination")
+        view.cancelFormTapped()
+        var legacy = PublishingSettings(); legacy.transport = .sftp; legacy.endpoint = "sftp://old.example.com/uploads"
+        publisher.store = PublishingDestinationStore(directory: try temporaryDirectory(), secrets: PublishingMemorySecrets())
+        try publisher.store.save(PublishingDestination(name: "Old SFTP", settings: legacy), password: "")
+        view.reload(try publisher.store.load()); view.select(id: try publisher.store.load().destinations[0].id); view.editTapped()
+        try expect(!view.endpointField.isHiddenOrHasHiddenAncestor && view.endpointField.stringValue == "sftp://old.example.com/uploads", "an SFTP destination saved with an sftp:// endpoint still shows it")
+        view.cancelFormTapped()
+
+        // Every protocol and credential source: the form shows its own copy, and every filled field still has its caption as its name.
+        view.addTapped()
+        for transport in PublishingProtocol.allCases {
+            for source in 0...1 {
+                view.protocolPopup.selectItem(withTitle: transport.title); view.sourcePopup.selectItem(at: source); view.formChanged()
+                panel.contentView?.layoutSubtreeIfNeeded()
+                let copy = View.formCopy(for: transport)
+                try expect(view.folderField.placeholderString == copy.folderPlaceholder && view.usernameField.placeholderString == copy.usernamePlaceholder
+                           && view.passwordField.placeholderString == copy.passwordPlaceholder, "\(transport) form shows its own placeholders")
+                try expect(!view.testButton.isHidden && !view.testButton.isHiddenOrHasHiddenAncestor, "\(transport) has a Test button")
+                try expect(view.formResult.kind == .hint && view.formResult.text.stringValue == copy.testNote, "\(transport) says what Test does before it is pressed: \(view.formResult.text.stringValue)")
+                // Fill every visible text field, as a person would, then ask for its name.
+                let fields = descendants(view).compactMap { $0 as? NSTextField }.filter { $0.isEditable && !$0.isHiddenOrHasHiddenAncestor }
+                try expect(fields.count >= 4, "\(transport)/\(source): only \(fields.count) editable fields")
+                for field in fields { field.stringValue = "filled in" }
+                let captions = Set(view.visibleFormCaptions.map(\.stringValue))
+                for field in fields {
+                    let name = field.accessibilityLabel() ?? ""
+                    try expect(captions.contains(name), "\(transport)/\(source): a filled field is named “\(name)”, not one of \(captions.sorted())")
+                }
+                for popup in [view.protocolPopup, view.sourcePopup] where !popup.isHiddenOrHasHiddenAncestor {
+                    try expect(captions.contains(popup.accessibilityLabel() ?? ""), "\(transport)/\(source): a pop-up has no caption as its name")
+                }
+                for field in fields { field.stringValue = "" }
+            }
+        }
+        view.cancelFormTapped()
+
+        // The expected scheme is in the error, for the endpoint and for the public base URL.
+        func message(_ text: String, _ schemes: Set<String>) -> String {
+            do { _ = try PublishingPlan.baseURL(text, schemes: schemes); return "" } catch { return error.localizedDescription }
+        }
+        try expect(message("ftp.example.com", PublishingProtocol.ftps.schemes).contains("ftp:// or ftps://"), "an FTPS endpoint error names ftp:// or ftps://")
+        try expect(message("http://x.example.com", PublishingProtocol.ftp.schemes).contains("ftp://") && !message("http://x.example.com", PublishingProtocol.ftp.schemes).contains("http://"), "an FTP endpoint error names ftp://")
+        try expect(message("sftp://x", PublishingProtocol.webDAV.schemes).contains("http:// or https://"), "a WebDAV endpoint error names http:// or https://")
+        try expect(!message("ftp://x.example.com", ["http", "https"]).contains("matching scheme"), "the vague wording is gone")
+    }
+
+    /// F-J2-013 and 018: the sheet never overhangs its parent, and a result has a band of its own that nothing grows into.
+    @MainActor static func resultBandAndSheetWidth() throws {
+        _ = NSApplication.shared
+        NSApp.setActivationPolicy(.prohibited)
+        typealias View = PublishingDestinationsView
+        try expect(View.sheetWidth(forHostWidth: 640) == 640 && View.sheetWidth(forHostWidth: 1200) == 720 && View.sheetWidth(forHostWidth: 300) == View.sheetMinWidth,
+                   "the sheet is as wide as its parent, between \(View.sheetMinWidth) and 720")
+        let publisher = try coordinator(destinations: fixtureDestinations())
+        let screen = NSRect(x: 0, y: 0, width: 1440, height: 900)
+        let (narrow, narrowView) = try publisher.buildSettings(visibleFrame: screen, hostWidth: 640)
+        defer { narrow.orderOut(nil) }
+        narrow.contentView?.layoutSubtreeIfNeeded()
+        try expect(narrow.contentRect(forFrameRect: narrow.frame).width == 640 && narrowView.width == 640, "under the 640 pt Settings window the sheet is 640 wide, not 720")
+        narrowView.addTapped(); narrow.contentView?.layoutSubtreeIfNeeded()
+        for transport in PublishingProtocol.allCases {
+            narrowView.protocolPopup.selectItem(withTitle: transport.title); narrowView.formChanged(); narrow.contentView?.layoutSubtreeIfNeeded()
+            for caption in narrowView.visibleFormCaptions {
+                let natural = try unwrap(caption.cell).cellSize(forBounds: NSRect(x: 0, y: 0, width: 10_000, height: 1_000))
+                try expect(natural.width <= caption.frame.width + 0.5 && caption.frame.height <= natural.height + 0.5, "“\(caption.stringValue)” does not fit its column in the 640 pt sheet (\(transport.title))")
+            }
+            let document = try unwrap(narrowView.scrollView.documentView)
+            try expect(document.frame.width <= narrowView.scrollView.contentView.bounds.width + 0.5, "the \(transport.title) form is wider than the 640 pt sheet")
+        }
+        narrowView.cancelFormTapped()
+
+        // The result band is as tall as its text: one line at idle, up to three for an error. The form above shrinks and scrolls by the
+        // difference, the band never runs over the buttons or the form, and the idle form keeps the room an empty band would waste.
+        let (panel, view) = try publisher.buildSettings(visibleFrame: screen, hostWidth: 900)
+        defer { panel.orderOut(nil) }
+        view.addTapped(); view.protocolPopup.selectItem(withTitle: PublishingProtocol.s3.title); view.formChanged()
+        panel.contentView?.layoutSubtreeIfNeeded()
+        let lineHeight = ceil(NSLayoutManager().defaultLineHeight(for: DesignTokens.Typography.font(.body)))
+        func box(_ row: NSView) -> NSRect { row.convert(row.bounds, to: view) }
+        func buttonsTop() -> CGFloat { min(box(view.testButton).maxY, box(view.saveButton).maxY) }
+        let scrollHeight = view.scrollView.frame.height, idle = box(view.formResult)
+        try expect(view.formResult.kind == .hint && idle.height < 1.6 * lineHeight, "at idle the band is one line (\(idle.height) pt), not three")
+        try expect(idle.minY >= buttonsTop() - 0.5 && abs(box(view.scrollView).minY - (idle.maxY + DesignTokens.Space.s3)) < 12, "the idle hint sits between the form and the buttons: \(idle) vs scroll \(box(view.scrollView))")
+        let longError = "The bucket could not be reached (curl 7).\ncurl: (7) Failed to connect to a-rather-long-host-name.example.test port 443 after 54 ms: Couldn't connect to server and then went on to say a good deal more than one sheet can show"
+        view.showTestResult(ok: false, message: longError)
+        panel.contentView?.layoutSubtreeIfNeeded()
+        let errorFrame = box(view.formResult)
+        try expect(errorFrame.height > idle.height + lineHeight && errorFrame.height <= 3 * lineHeight + 2 * 2 + 4, "the error band grows to its lines, three at most: \(errorFrame.height) pt")
+        try expect(view.scrollView.frame.height < scrollHeight - lineHeight, "the form above shrinks to make room (\(scrollHeight) to \(view.scrollView.frame.height))")
+        try expect(errorFrame.minY >= buttonsTop() - 0.5 && errorFrame.maxY <= box(view.scrollView).minY + 0.5 + DesignTokens.Space.s3 + 1,
+                   "the error sits between the form and the buttons and covers neither: \(errorFrame) buttons top \(buttonsTop()) form bottom \(box(view.scrollView).minY)")
+        try expect(view.formResult.text.stringValue.hasPrefix("Error: ") && view.formResult.accessibilityLabel()?.contains("went on") == true, "the whole message stays available to VoiceOver")
+        try expect(view.formResult.text.maximumNumberOfLines == 3, "a Test error is capped at three lines")
+        view.showTestResult(ok: true, message: "Reached the server (HTTP 200) and the folder was not refused. Nothing was uploaded.")
+        panel.contentView?.layoutSubtreeIfNeeded()
+        let successFrame = box(view.formResult)
+        try expect(successFrame.minY >= buttonsTop() - 0.5 && successFrame.height < errorFrame.height, "a success is shorter than the error and still clear of the buttons: \(successFrame)")
+        // A result for a form is gone with the form: the band returns to its one idle line and the form its room.
+        view.cancelFormTapped(); view.addTapped(); view.protocolPopup.selectItem(withTitle: PublishingProtocol.s3.title); view.formChanged()
+        panel.contentView?.layoutSubtreeIfNeeded()
+        try expect(abs(view.scrollView.frame.height - scrollHeight) < 0.5 && box(view.formResult).height < 1.6 * lineHeight, "a fresh form is back to the idle band (\(view.scrollView.frame.height) vs \(scrollHeight))")
+    }
+
+    // MARK: Test for every protocol, against local stubs only
+
+    /// A loopback HTTP server on 127.0.0.1 that answers by a rule and records what it was asked.
+    final class LoopbackHTTP: @unchecked Sendable {
+        let port: UInt16
+        private let listener: Int32
+        private let lock = NSLock()
+        private var seen: [(line: String, auth: String?, length: Int)] = []
+        var requests: [(line: String, auth: String?, length: Int)] { lock.lock(); defer { lock.unlock() }; return seen }
+        init(respond: @escaping @Sendable (String, String?) -> Int) throws {
+            let fd = socket(AF_INET, SOCK_STREAM, 0)
+            var yes: Int32 = 1
+            setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, socklen_t(MemoryLayout<Int32>.size))
+            var address = sockaddr_in(); address.sin_family = sa_family_t(AF_INET); address.sin_addr.s_addr = inet_addr("127.0.0.1"); address.sin_port = 0
+            let bound = withUnsafePointer(to: &address) { $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { bind(fd, $0, socklen_t(MemoryLayout<sockaddr_in>.size)) } }
+            guard bound == 0, listen(fd, 8) == 0 else { throw PublishingFailure("loopback server could not start") }
+            var assigned = sockaddr_in(); var size = socklen_t(MemoryLayout<sockaddr_in>.size)
+            _ = withUnsafeMutablePointer(to: &assigned) { $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { getsockname(fd, $0, &size) } }
+            var timeout = timeval(tv_sec: 15, tv_usec: 0)
+            setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, socklen_t(MemoryLayout<timeval>.size))
+            listener = fd; port = UInt16(bigEndian: assigned.sin_port)
+            Thread.detachNewThread { [self] in
+                while true {
+                    let client = accept(fd, nil, nil)
+                    if client < 0 { return }
+                    var data = Data(), buffer = [UInt8](repeating: 0, count: 4096)
+                    while !data.contains(Data("\r\n\r\n".utf8)) {
+                        let count = read(client, &buffer, buffer.count)
+                        if count <= 0 { break }
+                        data.append(contentsOf: buffer[0..<count])
+                    }
+                    let head = String(decoding: data, as: UTF8.self), lines = head.components(separatedBy: "\r\n")
+                    let auth = lines.first { $0.lowercased().hasPrefix("authorization:") }
+                    let length = lines.first { $0.lowercased().hasPrefix("content-length:") }.flatMap { Int($0.split(separator: ":")[1].trimmingCharacters(in: .whitespaces)) } ?? 0
+                    lock.lock(); seen.append((lines.first ?? "", auth, length)); lock.unlock()
+                    let code = respond(lines.first ?? "", auth)
+                    let reply = "HTTP/1.1 \(code) Stub\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+                    _ = reply.withCString { write(client, $0, strlen($0)) }
+                    close(client)
+                }
+            }
+        }
+        func stop() { close(listener) }
+    }
+
+    static func connectionTests() throws {
+        typealias Test = PublishingConnectionTest
+        func settings(_ transport: PublishingProtocol, endpoint: String, folder: String = "shots") -> PublishingSettings {
+            var value = PublishingSettings(); value.transport = transport; value.endpoint = endpoint; value.remoteFolder = folder; return value
+        }
+        func plan(_ value: PublishingSettings) throws -> PublishingPlan { try PublishingPlan(settings: value, fileName: "check.png", capabilities: capabilities, sftpAvailable: true) }
+        func text(_ data: Data) -> String { String(decoding: data, as: UTF8.self) }
+
+        // The requests are questions: no upload-file, no PUT, no body, a folder URL.
+        let dav = try plan(settings(.webDAV, endpoint: "https://dav.example.com/files"))
+        let davConfig = text(try Test.curlConfig(plan: dav, username: "me", password: "pw"))
+        try expect(davConfig.contains("request = \"OPTIONS\"") && davConfig.contains("url = \"https://dav.example.com/files/shots/\"") && !davConfig.contains("upload-file") && !davConfig.contains("PUT"),
+                   "the WebDAV test is an OPTIONS on the folder: \(davConfig)")
+        let ftp = try plan(settings(.ftp, endpoint: "ftp://ftp.example.com/up"))
+        let ftpConfig = text(try Test.curlConfig(plan: ftp, username: "me", password: "pw"))
+        try expect(ftpConfig.contains("list-only") && ftpConfig.contains("url = \"ftp://ftp.example.com/up/shots/\"") && !ftpConfig.contains("upload-file") && !ftpConfig.contains("ssl-reqd"), "the FTP test lists the folder: \(ftpConfig)")
+        let ftps = try plan(settings(.ftps, endpoint: "ftp://ftp.example.com/up"))
+        try expect(text(try Test.curlConfig(plan: ftps, username: "", password: "")).contains("ssl-reqd") && !text(try Test.curlConfig(plan: ftps, username: "", password: "")).contains("user ="), "the FTPS test requires TLS, and an anonymous test sends no login")
+        try rejects("a password without a username") { _ = try Test.curlConfig(plan: dav, username: "", password: "pw") }
+        try rejects("the curl config for SFTP") { _ = try Test.curlConfig(plan: try plan(settings(.sftp, endpoint: "")), username: "", password: "") }
+        var sftpSettings = settings(.sftp, endpoint: ""); sftpSettings.sshAlias = "myserver"; sftpSettings.sftpRemoteRoot = "/var/www/up"
+        let sftp = try unwrap(plan(sftpSettings).keyedSFTP)
+        let batch = text(try sftp.listBatch())
+        try expect(batch == "@ls \"/var/www/up/shots\"\n@bye\n" && !batch.contains("put") && !batch.contains("mkdir") && !batch.contains("rm") && !batch.contains("chmod"), "the SFTP test only lists: \(batch)")
+
+        // What the answers mean.
+        func web(_ code: String, exit: Int32 = 0, stderr: String = "") -> PublishingS3Plan.CheckResult { Test.webDAVOutcome(stdout: code + "\n", exitCode: exit, stderr: stderr, username: "me", password: "hunter2") }
+        try expect(web("200").ok && web("207").ok && web("301").ok && web("405").ok && web("501").ok, "any answer that does not refuse the login or the folder is a connection")
+        try expect(!web("401").ok && web("401").message.contains("user name or password"), "401 is a login problem")
+        try expect(!web("403").ok && !web("404").ok && web("404").message.contains("Create it first") && !web("500").ok, "403, 404 and 500 are failures with a reason")
+        try expect(!Test.webDAVOutcome(stdout: "", exitCode: 0, stderr: "", username: "", password: "").ok, "no status line is not a success")
+        let refused = web("000", exit: 7, stderr: "curl: (7) Failed to connect to dav.example.com port 443 as me:hunter2")
+        try expect(!refused.ok && refused.message.hasPrefix("Could not connect to the server (curl 7).") && !refused.message.contains("hunter2"), "a refused connection is named and the secret is redacted: \(refused.message)")
+        try expect(Test.ftpOutcome(exitCode: 67, stderr: "", username: "", password: "").message.contains("user name or password") && Test.ftpOutcome(exitCode: 9, stderr: "", username: "", password: "").message.contains("folder does not exist")
+                   && Test.ftpOutcome(exitCode: 0, stderr: "", username: "", password: "").ok && Test.ftpOutcome(exitCode: 60, stderr: "", username: "", password: "").message.hasPrefix("The secure connection"), "FTP exit codes read as causes")
+        try expect(Test.sftpOutcome(exitCode: 0, stderr: "", username: "").ok && Test.sftpOutcome(exitCode: 255, stderr: "Host key verification failed.", username: "").message.contains("Host key verification failed."), "SFTP answers")
+
+        // Stubbed tool runs: the right tool, the right arguments, the batch on stdin; no network.
+        let original = Test.processRunner
+        defer { Test.processRunner = original }
+        nonisolated(unsafe) var ran: [(String, [String], String, Bool)] = []
+        nonisolated(unsafe) var answer = PublishingProcess.Output(stdout: "", stderr: "", code: 0)
+        Test.processRunner = { executable, arguments, input, agent, _ in ran.append((executable, arguments, String(decoding: input, as: UTF8.self), agent)); return answer }
+        let sftpResult = try Test.run(plan: plan(sftpSettings), username: "", password: "", cancellation: PublishingCancellation())
+        try expect(sftpResult.ok && ran.last?.0 == "/usr/bin/sftp" && ran.last?.2 == batch && ran.last?.3 == true && ran.last?.1.contains("BatchMode=yes") == true, "SFTP Test runs /usr/bin/sftp with the list batch and the agent")
+        answer = PublishingProcess.Output(stdout: "", stderr: "curl: (67) Access denied: 530", code: 67)
+        let ftpResult = try Test.run(plan: ftp, username: "me", password: "pw", cancellation: PublishingCancellation())
+        try expect(!ftpResult.ok && ran.last?.0 == "/usr/bin/curl" && ran.last?.1 == ["--disable", "--config", "-"] && ran.last?.2.contains("list-only") == true && ran.last?.3 == false
+                   && ftpResult.message.contains("user name or password"), "FTP Test runs curl on stdin config and reports the refused login")
+        Test.processRunner = original
+
+        // The real curl against a loopback server: OPTIONS, with and without the right login. Nothing leaves the machine.
+        let server = try LoopbackHTTP { line, auth in
+            guard line.hasPrefix("OPTIONS ") else { return 400 }
+            if line.contains("/missing/") { return 404 }
+            return auth?.contains(Data("me:pw".utf8).base64EncodedString()) == true ? 200 : 401
+        }
+        defer { server.stop() }
+        let base = "http://127.0.0.1:\(server.port)/dav"
+        func live(_ folder: String, user: String, password: String) throws -> PublishingS3Plan.CheckResult {
+            let live = try plan(settings(.webDAV, endpoint: base, folder: folder))
+            nonisolated(unsafe) var outcome: Result<PublishingS3Plan.CheckResult, Error>?
+            let done = DispatchSemaphore(value: 0)
+            DispatchQueue.global().async {
+                outcome = Result { try Test.run(plan: live, username: user, password: password, cancellation: PublishingCancellation()) }
+                done.signal()
+            }
+            guard done.wait(timeout: .now() + 40) == .success else { throw PublishingFailure("SELF-CHECK FAILED: the loopback test hung") }
+            return try outcome!.get()
+        }
+        let good = try live("shots", user: "me", password: "pw")
+        try expect(good.ok && good.message.contains("HTTP 200") && good.message.contains("Nothing was uploaded"), "a right login reaches the stub: \(good.message)")
+        let bad = try live("shots", user: "me", password: "wrong")
+        try expect(!bad.ok && bad.message.contains("HTTP 401") && !bad.message.contains("wrong"), "a wrong password is a 401: \(bad.message)")
+        let missing = try live("missing", user: "me", password: "pw")
+        try expect(!missing.ok && missing.message.contains("HTTP 404"), "a missing folder is a 404: \(missing.message)")
+        let asked = server.requests
+        try expect(asked.count == 3 && asked.allSatisfy { $0.line.hasPrefix("OPTIONS /dav/") && $0.length == 0 }, "the stub saw three OPTIONS and no body: \(asked.map(\.line))")
+        try expect(asked.allSatisfy { !$0.line.hasPrefix("PUT ") && !$0.line.hasPrefix("POST ") && !$0.line.hasPrefix("DELETE ") && !$0.line.hasPrefix("MKCOL ") }, "no request wrote anything")
+    }
+
     /// --live-s3 "<destination name>": upload a tiny PNG, verify its public URL, print it, then DELETE the object.
     /// Reads the saved destination (and AWS profile or Keychain secret) exactly as the app would.
     // MARK: Destinations sheet (OSN-052): size, scrolling, keys, result row, Default pill, placeholders, message sheets, shutdown barrier
@@ -401,15 +664,20 @@ enum PublishingDestinationsTests {
         let alert = shown[0].alert
         try expect(alert.title == "Remove “\(target.name)”?" && alert.message == PublishingDestinationsView.removalPrompt(for: target, in: view.list).detail,
                    "the title names the destination and the message is the removal prompt (\(alert.title))")
-        try expect(alert.buttons == [.init(title: "Remove", role: .destructive), .init(title: "Cancel", role: .cancel)], "buttons are a destructive Remove and a Cancel")
-        try expect(alert.buttonViews[0].keyEquivalent == "\r" && alert.buttonViews[0].hasDestructiveAction && alert.buttonViews[1].keyEquivalent == "\u{1b}", "Return removes, it is marked destructive, and Escape cancels")
+        try expect(alert.buttons == [.init(title: "Cancel", role: .cancel), .init(title: "Remove", role: .destructive)], "buttons are Cancel first and a destructive Remove second")
+        // F-J2-019: a stray Return must never delete a destination. Cancel is the default; Remove is not focused and is drawn in the warning colour.
+        try expect(alert.buttonViews[0].keyEquivalent == "\r" && alert.panel.defaultButtonCell === alert.buttonViews[0].cell && alert.panel.initialFirstResponder === alert.buttonViews[0],
+                   "Return and the first focus belong to Cancel")
+        try expect(alert.buttonViews[1].keyEquivalent.isEmpty && alert.buttonViews[1].hasDestructiveAction && alert.buttonViews[1].contentTintColor == DesignTokens.Palette.feedbackError,
+                   "Remove has no key equivalent, is marked destructive and takes the warning colour")
+        try expect(alert.unansweredResponse == .alertFirstButtonReturn, "an alert ended without an answer is Cancel")
         try expect((alert.titleLabel.font?.pointSize ?? 0) >= 18 && (alert.messageLabel.font?.pointSize ?? 0) >= 18 && alert.buttonViews.allSatisfy { ($0.font?.pointSize ?? 0) >= 18 },
                    "the text is the app's size, not the system alert's")
         try expect(shown[0].host === panel, "the question hangs from the destinations sheet")
         try expect(view.list.destinations.count == 2 && (try publisher.store.load().destinations.count) == 2, "nothing is removed before the answer")
         view.removeTapped()
         try expect(shown.count == 1, "a second Remove while the question is open does not stack another")
-        alert.dismiss(withButton: 1)
+        alert.dismiss(withButton: 0)
         try expect(view.pendingRemoval == nil && view.list.destinations.count == 2 && (try publisher.store.load().destinations.count) == 2, "Cancel removes nothing and frees the view")
         // Escape is Cancel.
         view.removeTapped(); shown.last?.alert.cancel()
@@ -418,14 +686,14 @@ enum PublishingDestinationsTests {
         view.removeTapped()
         try expect(shown.count == 3 && view.pendingRemoval === shown[2].alert, "the question is open again")
         publisher.cancelSettings()
-        try expect(view.pendingRemoval == nil && shown[2].alert.response == .alertSecondButtonReturn && (try publisher.store.load().destinations.count) == 2,
+        try expect(view.pendingRemoval == nil && shown[2].alert.response == .alertFirstButtonReturn && (try publisher.store.load().destinations.count) == 2,
                    "closing the sheet answers the open question as Cancel and removes nothing")
         // Remove removes.
         let (panel2, view2) = try publisher.buildSettings(visibleFrame: NSRect(x: 0, y: 0, width: 1280, height: 800))
         defer { panel2.orderOut(nil) }
         view2.select(id: target.id); view2.removeTapped()
         try expect(shown.count == 4, "a fresh sheet asks again")
-        shown[3].alert.dismiss(withButton: 0)
+        shown[3].alert.dismiss(withButton: 1)
         try expect(view2.list.destinations.map(\.id) == [destinations[1].id] && (try publisher.store.load().destinations.map(\.id)) == [destinations[1].id], "Remove removes the destination from the sheet and from storage")
     }
 
@@ -437,7 +705,7 @@ enum PublishingDestinationsTests {
         // Size: 720 wide, min(720, visible height - 120), never taller than the screen.
         let size = PublishingDestinationsView.sheetSize(visibleFrame: fake)
         try expect(size.width == 720 && size.height == 680, "1280 x 800 gives a 720 x 680 sheet, got \(size)")
-        try expect(PublishingDestinationsView.sheetSize(visibleFrame: NSRect(x: 0, y: 0, width: 1920, height: 1200)).height == 720, "a tall screen caps the sheet at 720")
+        try expect(PublishingDestinationsView.sheetSize(visibleFrame: NSRect(x: 0, y: 0, width: 1920, height: 1200)).height == 760, "a tall screen caps the sheet at 760")
         let short = NSRect(x: 0, y: 0, width: 1280, height: 500)
         try expect(PublishingDestinationsView.sheetSize(visibleFrame: short).height == 380 && PublishingDestinationsView.sheetSize(visibleFrame: short).height <= 500, "a short screen shrinks the sheet")
         try expect(PublishingDestinationsView.sheetSize(visibleFrame: NSRect(x: 0, y: 0, width: 800, height: 300)).height <= 300, "the sheet never exceeds a tiny screen")
@@ -518,7 +786,7 @@ enum PublishingDestinationsTests {
         // Placeholders are neutral.
         let fields = descendants(view).compactMap { $0 as? NSTextField }.compactMap(\.placeholderString)
         try expect(!fields.isEmpty && !fields.contains { $0.lowercased().contains("shoemoney") }, "a placeholder names the owner: \(fields.filter { $0.lowercased().contains("shoemoney") })")
-        try expect(view.aliasField.placeholderString == "myserver (from ~/.ssh/config)" && view.remoteRootField.placeholderString == "/var/www/site/uploads"
+        try expect(view.aliasField.placeholderString == "myserver or host.example.com" && view.remoteRootField.placeholderString == "/var/www/site/uploads"
                    && view.endpointField.placeholderString == "https://example.com/uploads" && view.folderField.placeholderString?.hasPrefix("screenshots") == true,
                    "neutral SSH alias, SFTP root, endpoint and folder placeholders")
 
@@ -566,7 +834,7 @@ enum PublishingDestinationsTests {
             }
         }
         view.protocolPopup.selectItem(withTitle: PublishingProtocol.s3.title); view.formChanged()
-        try expect(view.visibleFormCaptions.contains { $0.stringValue == "Endpoint" } && view.endpointField.placeholderString?.contains("blank for AWS") == true,
+        try expect(view.visibleFormCaptions.contains { $0.stringValue == "Endpoint" } && view.endpointField.placeholderString?.contains("Blank for AWS") == true,
                    "the S3 endpoint row is labelled Endpoint with the AWS hint as its placeholder")
         panel.contentView?.layoutSubtreeIfNeeded()
         let popupFont = try unwrap(view.protocolPopup.font)

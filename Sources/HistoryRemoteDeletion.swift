@@ -51,8 +51,8 @@ struct HistoryRemoteDeletionPlan {
               binding.destinationFingerprint == (try Self.fingerprint(settings)) else {
             throw PublishingFailure("The publishing destination changed or this history item has no valid destination binding. Remote deletion was refused.")
         }
-        guard settings.transport == .sftp || settings.transport == .webDAV else {
-            throw PublishingFailure("Remote history deletion supports keyed SFTP and WebDAV only. This destination is unsupported.")
+        guard settings.transport == .sftp || settings.transport == .webDAV || settings.transport == .s3 else {
+            throw PublishingFailure("Remote history deletion supports keyed SFTP, WebDAV and S3 only. This destination is unsupported.")
         }
         let base = try PublishingPlan.baseURL(settings.publicBaseURL, schemes: ["http", "https"])
         guard let parts = URLComponents(url: url, resolvingAgainstBaseURL: false),
@@ -93,6 +93,17 @@ struct HistoryRemoteDeletionPlan {
                      "write-out = \"%{response_code}\\n%{url_effective}\\n\""]
         if !username.isEmpty { lines.append("user = " + (try PublishingPlan.configQuote(username + ":" + password))) }
         return Data((lines.joined(separator: "\n") + "\n").utf8)
+    }
+
+    /// S3 answers 204 (200 from some compatible servers) to a signed DELETE; anything else leaves the remote state unconfirmed.
+    func verifyS3(_ output: PublishingProcess.Output, response: URL, credentials: S3Credentials) throws {
+        let code = output.stdout.components(separatedBy: "\n").first.flatMap { Int($0) }
+        guard output.code == 0, let code, [200, 204].contains(code) else {
+            let body = (try? Data(contentsOf: response, options: .mappedIfSafe)).map { String(decoding: $0.prefix(8192), as: UTF8.self) } ?? ""
+            let detail = PublishingS3Plan.errorSummary(body)
+                ?? PublishingPlan.sanitized(output.stderr, username: credentials.accessKeyID, password: credentials.secretAccessKey, sessionToken: credentials.sessionToken)
+            throw PublishingFailure("The S3 object could not be deleted." + (detail.isEmpty ? "" : "\n" + detail))
+        }
     }
 
     func verifyWebDAV(_ output: PublishingProcess.Output, username: String, password: String) throws {
@@ -303,6 +314,8 @@ protocol HistoryRemoteDeletionAdapter {
     func capabilities(cancellation: PublishingCancellation) throws -> PublishingCapabilities
     func inspectSSH(_ plan: PublishingSFTPPlan, cancellation: PublishingCancellation) throws -> HistoryDeletionSSHConfiguration
     func password(credentialID: String) throws -> String
+    /// The S3 key pair for the destination: from its AWS profile, or the access key ID and the Keychain secret.
+    func s3Credentials(settings: PublishingSettings) throws -> S3Credentials
     func execute(_ command: HistoryRemoteDeletionCommand, cancellation: PublishingCancellation) throws -> PublishingProcess.Output
 }
 
@@ -333,6 +346,13 @@ private struct HistorySystemRemoteDeletionAdapter: HistoryRemoteDeletionAdapter 
         }
         return password
     }
+    func s3Credentials(settings: PublishingSettings) throws -> S3Credentials {
+        do {
+            return try PublishingS3Credentials.resolve(settings: settings, secrets: store.secrets,
+                                                       credentialsFile: AWSSharedCredentials.defaultFile(environment: ProcessInfo.processInfo.environment,
+                                                                                                         home: URL(fileURLWithPath: NSHomeDirectory())))
+        } catch { throw PublishingFailure("The S3 credentials are unavailable. Remote deletion was refused.") }
+    }
     func execute(_ command: HistoryRemoteDeletionCommand, cancellation: PublishingCancellation) throws -> PublishingProcess.Output {
         try PublishingProcess.run(executable: command.executable, arguments: command.arguments, input: command.input,
                                   timeout: command.timeout, allowSSHAgent: command.allowsSSHAgent, cancellation: cancellation)
@@ -360,9 +380,13 @@ public final class HistoryRemoteDeletionCoordinator: NSObject {
 
     /// Capture the intended public URL before publishing, then compare captureBinding(for:) after
     /// success. This is a configuration snapshot, not proof of immutable config or server identity.
+    /// Capture checks the URL mapping only. It carries a curl version because S3 mapping asks for one that can sign requests (7.86 or newer);
+    /// without it every S3 destination failed capture, so its uploads were saved with no binding and could never be deleted (F-J2-002).
+    static let mappingCapabilities = try! PublishingCapabilities(versionOutput: "curl 8.7.1 mapping-validator\nProtocols: http https\nFeatures: SSL\n")
+
     public func captureBinding(fileName: String) throws -> [String: String] {
         let settings = try adapter.loadSettings()
-        let mappingOnly = try PublishingCapabilities(versionOutput: "curl mapping-validator\nProtocols: http https\nFeatures: SSL\n")
+        let mappingOnly = Self.mappingCapabilities
         let plan = try PublishingPlan(settings: settings, fileName: fileName, capabilities: mappingOnly,
                                       sftpAvailable: PublishingTransfer.sftpAvailable)
         guard let url = plan.publicURL else { throw PublishingFailure("A configured public URL is required for remote-deletion binding.") }
@@ -384,7 +408,7 @@ public final class HistoryRemoteDeletionCoordinator: NSObject {
                                                      sshFingerprint: ssh, publicURL: url.absoluteString)
         // Capture validates mapping without asserting any installed curl capability. Actual deletion
         // inspects the system tool's protocols before executing a mutation.
-        let mappingOnly = try PublishingCapabilities(versionOutput: "curl mapping-validator\nProtocols: http https\nFeatures: SSL\n")
+        let mappingOnly = Self.mappingCapabilities
         _ = try HistoryRemoteDeletionPlan(url: url, binding: binding, settings: settings,
                                          capabilities: mappingOnly, sftpAvailable: PublishingTransfer.sftpAvailable)
         guard settings == (try adapter.loadSettings()) else {
@@ -425,7 +449,19 @@ public final class HistoryRemoteDeletionCoordinator: NSObject {
             let plan = try HistoryRemoteDeletionPlan(url: url, binding: binding, settings: settings, capabilities: capabilities, sftpAvailable: PublishingTransfer.sftpAvailable)
             let command: HistoryRemoteDeletionCommand
             var password = ""
-            if let sftp = plan.publishing.keyedSFTP {
+            var s3Delete: (credentials: S3Credentials, response: URL)?
+            if let s3 = plan.publishing.s3 {
+                guard binding.sshFingerprint == nil else { throw PublishingFailure("This binding is not an S3 destination.") }
+                let credentials = try self.adapter.s3Credentials(settings: settings)
+                let directory: URL
+                do { directory = try context.makeTemporaryDirectory(prefix: "OpenSnapS3Delete-") }
+                catch { throw PublishingFailure("A private temporary folder could not be created. Nothing was deleted.") }
+                let response = directory.appendingPathComponent("response")
+                s3Delete = (credentials, response)
+                // One signed DELETE of the one object the plan derives from the current, fingerprint-matched settings.
+                command = HistoryRemoteDeletionCommand(executable: "/usr/bin/curl", arguments: PublishingS3Operations.curlArguments,
+                                                      input: try s3.deleteConfig(credentials: credentials, responseFile: response), timeout: 40, allowsSSHAgent: false)
+            } else if let sftp = plan.publishing.keyedSFTP {
                 guard binding.sshFingerprint == (try self.adapter.sshSourceFingerprint()) else { throw PublishingFailure("The SSH destination configuration changed. Remote deletion was refused.") }
                 let ssh = try self.adapter.inspectSSH(sftp, cancellation: context)
                 let quoted = try PublishingSFTPPlan.batchQuote(sftp.remotePath)
@@ -449,7 +485,9 @@ public final class HistoryRemoteDeletionCoordinator: NSObject {
             do { output = try self.adapter.execute(command, cancellation: context) }
             catch { try context.check(); throw PublishingFailure("Remote deletion could not be completed within its bounded process lifetime. Its remote state is unknown.") }
             try context.check()
-            if plan.publishing.transport == .sftp {
+            if let s3Delete {
+                try plan.verifyS3(output, response: s3Delete.response, credentials: s3Delete.credentials)
+            } else if plan.publishing.transport == .sftp {
                 guard output.code == 0,
                       output.stdout.components(separatedBy: "\n").contains(where: {
                           $0.hasPrefix("Remote working directory: /") && !PublishingPlan.hasControls($0)
