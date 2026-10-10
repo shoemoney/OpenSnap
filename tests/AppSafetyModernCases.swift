@@ -15,18 +15,29 @@ extension AppSafetyTests {
             ("updateDragPreview feeds the canvas bleed, and Frame mode and Reduce Transparency hide it", modernCanvasBleed),
             ("Injected display options reach every glass surface and clear again", modernAccessibilityInjection),
             ("Header and footer buttons reach the real AppDelegate actions", modernActionRouting),
-            ("Modern rail Wipe presses follow the Blank/Clear/Wipe stages with the dimmed glass and the stage spoken", modernWipeStages),
+            ("Modern Wipe presses follow the Blank/Clear/Wipe stages with the dimmed glass and the stage spoken", modernWipeStages),
             ("writeLayoutEvidence reports the Modern style and finds the header and brand one level deeper", modernLayoutEvidence),
             ("Main menu items carry symbols in Modern only and keep validating", modernMenus),
             ("Color popover follows the system appearance", modernPalettePopover),
             ("Modern centres a small canvas in the editor area at default and minimum size and leaves larger and wide documents panning unconstrained", modernCanvasCentred),
+            ("A small canvas is centred when only the document or zoom changes, with no window resize", modernCanvasCentresWithoutWindowResize),
             ("Hide and Undo tooltips read their shortcuts from the real menu items", modernShortcutHintsFollowMenu),
             ("Rename is unavailable during Frame capture and termination", modernRenameAvailability),
-            ("The Frame status hint fits at the default width and carries the full text as a tooltip", modernFrameStatusFits),
+            ("The short Frame status hint fits whole at 980 and 1024 and the full sentence is its tooltip and accessibility value", modernFrameStatusFits),
+            ("The Frame keyline outlines the canvas: four edges when it fits, the visible left and top when it overflows the hole", modernFrameKeylineFollowsCanvasEdges),
+            ("Frame mode hides the Original size checkbox for a large shot and leaving Frame restores it", modernFrameHidesOriginalSize),
+            ("The status drops bytes then tool, never the saved state, at every width with and without the Original size checkbox, and keeps the full text as tooltip and spoken value", modernStatusKeepsStateWhenNarrow),
+            ("The zoom popup offers the main menu's Actual Size command, keeps a percentage face and follows the command's availability", modernZoomActualSize),
             ("A click at the visual centre of the centred canvas selects the element at the document centre", modernCanvasCentredHitTest),
-            ("Modern puts every tool and Resize in the top bar, drops the left rail, and keeps Undo and Wipe under the slider", modernTopBarLayout),
+            ("Modern puts capture, tools and annotation in the top bar, document and output in the bottom bar, and no rail", modernTopBarLayout),
             ("Modern has one footer row and no file-name field; the window title is the document name and Rename changes the export name", modernDocumentNameInTitle),
             ("Modern canvas border corner and edge mouse drags resize and crop with one Undo each, and Escape cancels", modernBorderGestures),
+            ("The Size pill opens its popover below and every gesture, preset, key and assistive step is exactly one undo step, even when the popover is dismissed mid-drag", modernSizePopoverUndo),
+            ("Frame mode snaps exactly the viewport (or the centred canvas inside the hole), hides the scrollers and restores them", modernFrameCaptureRect),
+            ("The status carries the export size once, truncates with the full text as tooltip, and the drag-preview timer is not re-armed by it", modernStatusMergesDragSize),
+            ("The zoom face is the percentage alone while VoiceOver and the tooltip carry the mode word", modernZoomFace),
+            ("Every relocated control keeps its target and action, and the top and bottom bars run in reading order", modernRelocatedOwnership),
+            ("The two bars render in light and dark, normal and Frame mode, with the Size popover, and the bitmaps land in the evidence folder", modernLayoutBitmaps),
             ("Modern footer is a [PNG | JPG] toggle: PNG on a fresh install, JPG encodes drag, export and upload at 0.75, and a stored JPEG row reads as JPG", modernFormatToggle)
         ]
     }
@@ -124,29 +135,37 @@ extension AppSafetyTests {
             app.setWindowFrame(frame)
             content.layoutSubtreeIfNeeded(); app.updateViewportChrome()
             let bar = chrome.header.convert(chrome.header.bounds, to: content)
-            for (id, button) in Array(chrome.toolButtons) + [("resize", chrome.resizeButton)] {
-                let frame = button.convert(button.bounds, to: content)
+            let footer = try descendant(chrome, identifier: "OpenSnapFooter").unwrap("bottom bar")
+            let bottom = footer.convert(footer.bounds, to: content)
+            let topControls: [(String, NSView)] = Array(chrome.toolButtons).map { ($0.key, $0.value) } + [("snap", chrome.snapButton), ("color", app.paletteButton), ("size", app.widthControl),
+                ("font", chrome.fontButton), ("hide", chrome.hideButton), ("photos", chrome.photosButton)]
+            for (id, view) in topControls {
+                let frame = view.convert(view.bounds, to: content)
                 try expect(bar.insetBy(dx: -0.5, dy: -0.5).contains(frame) && content.bounds.contains(frame), "\(name): \(id) sits unclipped in the top bar")
             }
-            for pair in zip(chrome.header.subviews.sorted { $0.frame.minX < $1.frame.minX }, chrome.header.subviews.sorted { $0.frame.minX < $1.frame.minX }.dropFirst()) {
+            let bottomControls: [(String, NSView)] = [("undo", chrome.undoButton), ("wipe", chrome.wipeButton), ("resize", chrome.resizeButton), ("zoom", app.zoomControl), ("status", app.status),
+                ("save", chrome.saveButton), ("history", chrome.historyButton), ("format", app.dragFormatToggle), ("drag", try (app.dragExportView).unwrap("drag")), ("upload", chrome.shareButton)]
+            for (id, view) in bottomControls {
+                let frame = view.convert(view.bounds, to: content)
+                try expect(bottom.insetBy(dx: -0.5, dy: -0.5).contains(frame) && content.bounds.contains(frame), "\(name): \(id) sits unclipped in the bottom bar")
+            }
+            try expect(!chrome.resizeButton.isDescendant(of: chrome.header), "\(name): Resize left the tool row for the bottom bar")
+            let ordered = chrome.header.subviews.sorted { $0.frame.minX < $1.frame.minX }
+            for pair in zip(ordered, ordered.dropFirst()) {
                 try expect(pair.0.frame.maxX <= pair.1.frame.minX + 0.5, "\(name): top bar groups do not overlap")
             }
-            if let crop = chrome.toolButtons["crop"] {
-                let separation = chrome.resizeButton.convert(chrome.resizeButton.bounds, to: content).minX - crop.convert(crop.bounds, to: content).maxX
-                try expect(separation >= 28, "\(name): Resize is set apart from the tool row (\(separation) pt after Crop)")
-            }
-            try expect(chrome.header.subviews.count == 3, "\(name): the top bar is Hide/Toolbox/Photos, the tools with Resize, and Save/History")
+            try expect(chrome.header.subviews.count == 4, "\(name): the top bar is [Hide/Toolbox/Photos], [Snap/Cancel], the tools and [Color/Size/Font]")
             var all: [NSView] = []
             func walk(_ view: NSView) { all.append(view); view.subviews.forEach(walk) }
             walk(chrome)
-            try expect(!all.contains { $0.identifier?.rawValue == "GlassToolRail" }, "\(name): no left rail")
+            let ids = Set(all.compactMap { $0.identifier?.rawValue })
+            try expect(ids.isDisjoint(with: ["GlassToolRail", "GlassDrawingGroup", "GlassHistoryGroup", "GlassHeaderTrailing"]), "\(name): no rail or vertical group (\(ids.sorted()))")
             let area = chrome.scrollView.convert(chrome.scrollView.bounds, to: content)
             try expect(abs(area.minX - 12) < 0.5, "\(name): the canvas viewport starts at the left margin (\(area.minX))")
-            let railLeft = content.bounds.width - 12 - GlassChrome.Metrics.rightRailWidth
-            try expect(abs(area.maxX - (railLeft - 8)) < 0.5, "\(name): the viewport ends at the right rail's spacing (\(area.maxX) vs \(railLeft - 8))")
-            let slider = try (chrome.surface(for: app.widthControl)).unwrap("slider surface"), undo = try (chrome.surface(for: chrome.undoButton)).unwrap("undo surface")
-            let gap = slider.convert(slider.bounds, to: content).minY - undo.convert(undo.bounds, to: content).maxY
-            try expect(gap >= 0 && gap <= GlassChrome.Metrics.groupSpacing + 0.5, "\(name): Undo is directly under the slider (gap \(gap))")
+            try expect(abs(area.maxX - (content.bounds.width - 12)) < 0.5, "\(name): the viewport runs to the right margin (\(area.maxX) vs \(content.bounds.width - 12))")
+            try expect(area.maxY <= bar.minY - 7.5 && area.minY >= bottom.maxY + 7.5, "\(name): the viewport sits between the bars with 8 pt gaps")
+            let undo = chrome.undoButton.convert(chrome.undoButton.bounds, to: content), wipe = chrome.wipeButton.convert(chrome.wipeButton.bounds, to: content)
+            try expect(undo.maxX < wipe.minX && abs(undo.midY - wipe.midY) < 0.5, "\(name): Wipe sits beside Undo")
         }
     }
 
@@ -161,11 +180,12 @@ extension AppSafetyTests {
         try expect(!all.contains { ($0 as? NSButton)?.title == "Actual Size" }, "Modern has no Actual Size button")
         let footer = try all.first { $0.identifier?.rawValue == "OpenSnapFooter" }.unwrap("footer row")
         let row = footer.convert(footer.bounds, to: content)
-        for part in [app.zoomControl, app.status, app.dragFormatToggle, try (app.dragExportView).unwrap("drag"), chrome.shareButton] as [NSView] {
+        for part in [chrome.undoButton, chrome.wipeButton, app.zoomControl, chrome.resizeButton, app.status, chrome.saveButton, chrome.historyButton,
+                     app.dragFormatToggle, try (app.dragExportView).unwrap("drag"), chrome.shareButton] as [NSView] {
             let frame = part.convert(part.bounds, to: content)
             try expect(row.insetBy(dx: -0.5, dy: -0.5).contains(frame) && abs(frame.midY - row.midY) <= 6, "The footer row holds \(part)")
         }
-        try expect(footer.subviews.count == 2, "The footer is one row")
+        try expect(footer.subviews.count == 5, "The footer is one row of four glass groups and the status")
         try expect(app.window.title == app.nameField.stringValue, "The window title shows the document name: \(app.window.title)")
         let file = try NSApp.mainMenu.unwrap("main menu").items.compactMap(\.submenu).first { $0.title == "File" }.unwrap("File menu")
         try expect(file.items.contains { $0.action == #selector(AppDelegate.renameDocument) && $0.title == "Rename…" }, "File has a Rename… command")
@@ -223,6 +243,96 @@ extension AppSafetyTests {
         try expect(constrained.x == 120 && abs(constrained.y - centredY) < 0.5, "A wide document pans on x and centres on y: \(constrained) vs y \(centredY)")
         app.canvas.scroll(CGPoint(x: 120, y: 0)); chrome.scrollView.reflectScrolledClipView(clip)
         try expect(clip.bounds.origin.x == 120 && abs(clip.bounds.origin.y - centredY) < 0.5, "Panning a wide document keeps x and the y centre: \(clip.bounds.origin)")
+    }
+
+    /// The document changing under a window that is not resized (new snap, open, crop, zoom) must centre too.
+    private static func modernCanvasCentresWithoutWindowResize() throws {
+        let (fixture, chrome) = try modernFixture()
+        let app = fixture.app, content = try (app.window.contentView).unwrap("content view")
+        let defaultFrame = app.window.frame
+        for (name, frame) in [("minimum", CGRect(origin: defaultFrame.origin, size: app.window.minSize)), ("default", defaultFrame)] {
+            app.setWindowFrame(frame)
+            app.canvas.newBlank(size: CGSize(width: 3000, height: 2000))
+            app.setCanvasDisplayZoom(1, label: "Test")
+            content.layoutSubtreeIfNeeded(); app.updateViewportChrome()
+            // From a canvas that fills the view to a small one: nothing resizes the window in between.
+            try viewportFixture(app)
+            content.layoutSubtreeIfNeeded(); app.updateViewportChrome()
+            var m = canvasMargins(app, chrome)
+            try expect(app.canvas.frame.width < chrome.scrollView.contentView.frame.width - 100 && app.canvas.frame.height < chrome.scrollView.contentView.frame.height - 100,
+                       "The new document is smaller than the \(name) editor area")
+            try expect(abs(m.left - m.right) <= 1 && abs(m.top - m.bottom) <= 1 && m.left > 20 && m.top > 20,
+                       "A small document replaces a large one at \(name) size and is centred without a window resize: \(m)")
+            // Zooming in and out re-centres the same way.
+            for zoom: CGFloat in [2, 0.5, 1] {
+                app.setCanvasDisplayZoom(zoom, label: "Test")
+                content.layoutSubtreeIfNeeded(); app.updateViewportChrome()
+                m = canvasMargins(app, chrome)
+                try expect(abs(m.left - m.right) <= 1 && abs(m.top - m.bottom) <= 1 && m.left > 20 && m.top > 20,
+                           "At \(name) size and zoom \(zoom) the canvas is centred: \(m)")
+            }
+            // A new snap: the window is already as small as a small shot allows, so adopting the picture resizes nothing.
+            app.receiveCapture(.success(try image(size: CGSize(width: 300, height: 180))), discardAlreadyApproved: true)
+            content.layoutSubtreeIfNeeded(); app.updateViewportChrome()
+            m = canvasMargins(app, chrome)
+            try expect(abs(m.left - m.right) <= 1 && abs(m.top - m.bottom) <= 1 && m.left > 20 && m.top > 20,
+                       "A new small snap at \(name) size is centred without a window resize: \(m)")
+            // A crop or Resize changes only the document frame.
+            app.canvas.newBlank(size: CGSize(width: 150, height: 90))
+            app.setCanvasDisplayZoom(1, label: "Test")
+            content.layoutSubtreeIfNeeded()
+            m = canvasMargins(app, chrome)
+            try expect(abs(m.left - m.right) <= 1 && abs(m.top - m.bottom) <= 1 && m.left > 20 && m.top > 20,
+                       "A smaller replacement document at \(name) size is centred: \(m)")
+        }
+        // Frame mode sizes the window to the canvas plus a margin: the canvas sits in the middle of the hole.
+        try viewportFixture(app)
+        app.setWindowFrame(CGRect(origin: defaultFrame.origin, size: app.window.minSize))
+        content.layoutSubtreeIfNeeded()
+        app.enterFrame(keepingAnnotations: false, manualFlags: [])
+        defer { app.cancelFrame() }
+        content.layoutSubtreeIfNeeded()
+        let m = canvasMargins(app, chrome)
+        try expect(abs(m.left - m.right) <= 1 && abs(m.top - m.bottom) <= 1, "In Frame mode the small canvas is centred in the hole: \(m)")
+    }
+
+    /// The Frame keyline is the canvas's own outline: all four edges for a canvas that fits, only the edges on screen for a larger one.
+    private static func modernFrameKeylineFollowsCanvasEdges() throws {
+        let (fixture, chrome) = try modernFixture()
+        let app = fixture.app, content = try (app.window.contentView).unwrap("content view")
+        func alphaAt(_ rep: NSBitmapImageRep, _ x: CGFloat, _ y: CGFloat) -> CGFloat {
+            let scale = CGFloat(rep.pixelsWide) / rep.size.width
+            return rep.colorAt(x: Int(x * scale), y: Int(y * scale))?.alphaComponent ?? -1
+        }
+        func render(_ rect: NSRect) throws -> NSBitmapImageRep {
+            let rep = try app.canvas.bitmapImageRepForCachingDisplay(in: rect).unwrap("bitmap")
+            app.canvas.cacheDisplay(in: rect, to: rep)
+            return rep
+        }
+        app.setWindowFrame(CGRect(origin: app.window.frame.origin, size: app.window.minSize))
+        app.canvas.newBlank(size: CGSize(width: 300, height: 180)); app.setCanvasDisplayZoom(1, label: "Test")
+        content.layoutSubtreeIfNeeded()
+        app.enterFrame(keepingAnnotations: false, manualFlags: [])
+        defer { app.cancelFrame() }
+        content.layoutSubtreeIfNeeded()
+        let small = try render(app.canvas.visibleRect.intersection(app.canvas.bounds)), size = small.size
+        for (name, x, y) in [("left", 1.0, size.height / 2), ("right", size.width - 1, size.height / 2), ("top", size.width / 2, 1.0), ("bottom", size.width / 2, size.height - 1)] {
+            try expect(alphaAt(small, x, y) > 0.9, "A canvas that fits has its keyline on the \(name) edge")
+        }
+        try expect(alphaAt(small, size.width / 2, size.height / 2) < 0.1, "The canvas interior stays clear")
+        // A canvas larger than the hole: the clip view shows the left and top edges, and the others are off screen.
+        app.cancelFrame()
+        app.canvas.newBlank(size: CGSize(width: 3000, height: 2000)); app.setCanvasDisplayZoom(1, label: "Test")
+        content.layoutSubtreeIfNeeded()
+        app.enterFrame(keepingAnnotations: false, manualFlags: [])
+        content.layoutSubtreeIfNeeded()
+        let visible = app.canvas.visibleRect
+        let big = try render(visible), shown = big.size
+        try expect(visible.minX == 0 && visible.minY == 0 && visible.width < 3000 && visible.height < 2000, "The large canvas overflows the hole on the right and bottom: \(visible)")
+        try expect(alphaAt(big, 1, shown.height / 2) > 0.9 && alphaAt(big, shown.width / 2, 1) > 0.9, "The visible left and top edges carry the keyline")
+        try expect(alphaAt(big, shown.width - 1, shown.height / 2) < 0.1 && alphaAt(big, shown.width / 2, shown.height - 1) < 0.1,
+                   "The right and bottom keyline are off screen, not clipped by the margin")
+        _ = chrome
     }
 
     private static func modernCanvasCentredHitTest() throws {
@@ -366,10 +476,11 @@ extension AppSafetyTests {
                    "Drag Me is a compact 48x36 capsule like the other icon buttons")
         try expect(try surface(chrome, app.paletteButton).fixedSize == NSSize(width: 48, height: 36)
                    && chrome.surface(for: app.dragFormatToggle)?.shape == .capsule, "Color and the format popup have their glass")
-        try expect(chrome.surface(for: app.zoomControl) == nil && chrome.surface(for: app.status) == nil && chrome.surface(for: app.canvas) == nil, "Zoom, status and the canvas stay outside glass")
+        try expect(chrome.surface(for: app.zoomControl)?.shape == .capsule && chrome.surface(for: app.status) == nil && chrome.surface(for: app.canvas) == nil, "Zoom has its glass capsule; status and the canvas stay outside glass")
         try expect((app.status.font?.pointSize ?? 0) >= 18 && (app.zoomControl.font?.pointSize ?? 0) >= 18, "Text stays at its readable sizes")
-        try expect(app.widthControl.target === app && app.widthControl.action == #selector(AppDelegate.changeWidth(_:)) && app.widthControl.onBegin != nil && app.widthControl.onEnd != nil,
-                   "The size slider keeps its undo-grouping callbacks")
+        try expect(app.widthControl.target === app && app.widthControl.action == #selector(AppDelegate.changeWidth(_:)) && app.widthControl.onBegin != nil && app.widthControl.onEnd != nil
+                   && (try surface(chrome, app.widthControl)).shape == .capsule && app.widthControl.frame.size == BezelSizeSlider.pillSize,
+                   "The size pill keeps its undo-grouping callbacks and is a 48x36 capsule")
         try expect(app.zoomControl.target === app && app.zoomControl.action == #selector(AppDelegate.changeZoom(_:)) && app.zoomControl.titleOfSelectedItem == "100%", "Zoom keeps its action and 100% default")
         try expect(app.dragFormatToggle.target === app && app.dragFormatToggle.segmentCount == 2 && app.dragOriginalControl.target === app, "Drag format and original-size controls keep their actions")
         try expect(app.paletteButton.target === app && app.paletteButton.action == #selector(AppDelegate.showDrawingColors(_:)) && app.paletteButton.onHover != nil, "Color keeps its click and hover routes")
@@ -452,7 +563,7 @@ extension AppSafetyTests {
         try expect(differing.isEmpty && modern.count == expectedFacts.count, "Control strings differ from the recovered ones (\(modern.count) vs \(expectedFacts.count) facts): " + differing.joined(separator: "; "))
         try expect(modern["tool.arrow.label"] == "Arrow" && modern["tool.crop.tip"] == "Crop tool"
                    && modern["toolbox.label"] == "Toolbox" && modern["drag.label"] == "Drag Me" && modern["format.label"] == "Image format", "The strings are the recovered ones, not merely equal to each other")
-        // At launch the rail Wipe reads its Blank stage; every other command reads its title (the icon-only upload button is checked on its own).
+        // At launch Wipe reads its Blank stage; every other command reads its title (the icon-only upload button is checked on its own).
         let spoken = ["hide": "Hide", "photos": "Photos", "save": "Save", "history": "History", "snap": "Snap", "cancel": "Cancel", "font": "Font",
                       "undo": "Undo", "wipe": "Blank", "resize": "Resize…"]
         let misread = spoken.keys.sorted().filter { modern["axLabel.\($0)"] != spoken[$0] }
@@ -469,7 +580,7 @@ extension AppSafetyTests {
         let (fixture, chrome) = try modernFixture()
         let app = fixture.app
         let content = try (app.window.contentView).unwrap("content view")
-        let wipe = try collect(NSButton.self, in: content).first { $0.action == #selector(AppDelegate.wipe) }.unwrap("rail Wipe")
+        let wipe = try collect(NSButton.self, in: content).first { $0.action == #selector(AppDelegate.wipe) }.unwrap("Wipe")
         // action -> (VoiceOver label, tooltip); shortcuts come from the real menu key equivalents (Minimize is vanish, Undo is Edit > Undo).
         let expected: [(Selector, String, String)] = [
             (#selector(AppDelegate.vanish), "Hide", "Hide (⌘M)"), (#selector(AppDelegate.showPhotos), "Photos", "Photos"),
@@ -564,14 +675,146 @@ extension AppSafetyTests {
     private static func modernFrameStatusFits() throws {
         let (fixture, chrome) = try modernFixture()
         let app = fixture.app
-        app.setWindowFrame(CGRect(origin: app.window.frame.origin, size: CGSize(width: 1024, height: app.window.frame.height)))
+        let shortHint = "Frame: position, then Snap", fullHint = "Frame: position the window, then Snap"
+        let minimum = app.window.minSize
+        for (width, height) in [(minimum.width, minimum.height), (1024, app.window.frame.height)] {
+            app.setWindowFrame(CGRect(origin: app.window.frame.origin, size: CGSize(width: width, height: height)))
+            app.enterFrame(keepingAnnotations: false, manualFlags: [])
+            defer { app.cancelFrame() }
+            app.window.contentView?.layoutSubtreeIfNeeded()
+            let measured = app.status.attributedStringValue.size().width
+            try expect(measured <= app.status.frame.width + 0.5,
+                       "The Frame hint '\(app.status.stringValue)' fits whole at \(Int(width)) wide (\(measured) vs \(app.status.frame.width))")
+            try expect(app.status.stringValue == shortHint, "The Frame status shows the short hint: \(app.status.stringValue)")
+            try expect(app.status.toolTip == fullHint, "The full sentence is the Frame status tooltip: \(app.status.toolTip ?? "nil")")
+            try expect(app.status.accessibilityValue() == fullHint && app.status.accessibilityHelp() == fullHint,
+                       "The full sentence is the Frame status accessibility value and help: \(String(describing: app.status.accessibilityValue())) / \(String(describing: app.status.accessibilityHelp())) / \(fullHint)")
+        }
+        try expect(app.status.accessibilityValue() == app.status.stringValue && app.status.accessibilityHelp() == nil,
+                   "Leaving Frame hands the status its own accessibility value back")
+        _ = chrome
+    }
+
+    /// The Original size checkbox is meaningless while framing: a large shot hides it so the hint has the room.
+    private static func modernFrameHidesOriginalSize() throws {
+        let (fixture, chrome) = try modernFixture()
+        let app = fixture.app, content = try (app.window.contentView).unwrap("content view")
+        try largeShot(app)
+        app.setWindowFrame(CGRect(origin: app.window.frame.origin, size: app.window.minSize))
+        app.updateViewportChrome(); content.layoutSubtreeIfNeeded()
+        try expect(app.isLargeShot && !app.dragOriginalControl.isHidden, "A large shot shows the Original size checkbox before Frame")
+        for keeping in [false, true] {
+            app.enterFrame(keepingAnnotations: keeping, manualFlags: [])
+            content.layoutSubtreeIfNeeded()
+            try expect(app.isLargeShot && app.dragOriginalControl.isHidden, "Frame mode (keeping: \(keeping)) hides the Original size checkbox for a large shot")
+            let hint = app.status.stringValue
+            try expect(hint.hasPrefix("Frame: ") && !hint.contains("…"), "The Frame hint is the short sentence: \(hint)")
+            let measured = app.status.cell?.cellSize.width ?? .infinity
+            try expect(measured <= app.status.frame.width + 0.5, "At 980 the Frame hint '\(hint)' fits whole beside no checkbox (\(measured) vs \(app.status.frame.width))")
+            app.cancelFrame()
+            content.layoutSubtreeIfNeeded()
+            try expect(!app.dragOriginalControl.isHidden, "Leaving Frame brings the Original size checkbox back for a large shot")
+        }
+        // A small shot never had the checkbox, in Frame or out of it.
+        try viewportFixture(app)
+        app.updateViewportChrome()
+        try expect(app.dragOriginalControl.isHidden, "A small shot has no checkbox")
         app.enterFrame(keepingAnnotations: false, manualFlags: [])
-        defer { app.cancelFrame() }
-        app.window.contentView?.layoutSubtreeIfNeeded()
-        let full = app.status.attributedStringValue.size().width
-        try expect(app.status.stringValue == "Frame: position the window, then Snap" && (app.status.toolTip ?? "").contains("Position the window, then choose Snap Frame"),
-                   "Frame status is the short hint with the full text as its tooltip: \(app.status.stringValue) / \(app.status.toolTip ?? "nil")")
-        try expect(full <= app.status.frame.width + 0.5, "The Frame hint fits at 1024 wide (\(full) vs \(app.status.frame.width))")
+        try expect(app.dragOriginalControl.isHidden, "A small shot has no checkbox in Frame")
+        app.cancelFrame()
+        try expect(app.dragOriginalControl.isHidden, "A small shot has no checkbox after Frame")
+        _ = chrome
+    }
+
+    /// At every width the status shows the longest variant that fits whole, and the saved state is never the part cut.
+    private static func modernStatusKeepsStateWhenNarrow() throws {
+        let (fixture, chrome) = try modernFixture()
+        let app = fixture.app, content = try (app.window.contentView).unwrap("content view")
+        try largeShot(app)
+        app.dragPreviewTimer?.invalidate(); app.dragPreviewTimer = nil
+        let origin = app.window.frame.origin
+        var sawShortened = false, sawWhole = false
+        for (tool, dirty) in [(SketchTool.arrow, true), (.brush, false)] {
+            app.setTool(tool); app.dirty = dirty
+            app.dragPreviewTimer?.invalidate(); app.dragPreviewTimer = nil
+            app.updateDragPreview()
+            let state = dirty ? "Unsaved changes" : "Saved"
+            let full = app.status.toolTip ?? ""
+            let parts = full.components(separatedBy: " · ")
+            try expect(parts.count == 4 && parts[1] == state && parts[2].contains("×") && parts[3].hasSuffix("B"), "The full status has tool, state, size and bytes: \(full)")
+            let expected = [full, parts[0...2].joined(separator: " · "), parts[1...2].joined(separator: " · "), state]
+            for width in stride(from: app.window.minSize.width, through: 1440, by: 20) {
+                app.setWindowFrame(CGRect(origin: origin, size: CGSize(width: width, height: app.window.frame.height)))
+                app.updateViewportChrome(); content.layoutSubtreeIfNeeded()
+                let label = "\(tool.rawValue) \(state) at \(Int(width)) wide with\(app.dragOriginalControl.isHidden ? "out" : "") the checkbox"
+                let shown = app.status.stringValue, room = app.status.frame.width
+                func need(_ text: String) -> CGFloat { let probe = app.status.cell!.copy() as! NSCell; probe.stringValue = text; return probe.cellSize.width }
+                try expect(expected.contains(shown), "\(label): the status is one of the four variants, got '\(shown)'")
+                try expect(shown.contains(state), "\(label): the state '\(state)' is whole in '\(shown)'")
+                try expect(need(shown) <= room + 0.5 || shown == state, "\(label): '\(shown)' fits whole in \(room) pt")
+                let index = expected.firstIndex(of: shown) ?? 0
+                try expect(expected[..<index].allSatisfy { need($0) > room + 0.5 }, "\(label): every longer variant really is too wide for \(room) pt")
+                try expect(app.status.toolTip == full && (app.status.accessibilityValue() as? String) == full, "\(label): the tooltip and spoken value are the full text: tip=\(app.status.toolTip ?? "nil") ax=\(String(describing: app.status.accessibilityValue())) spoken=\(app.status.spokenValue ?? "nil") shown=\(shown) full=\(full)")
+                try expect(!shown.contains("…"), "\(label): no ellipsis was typed into the text")
+                if index > 0 { sawShortened = true } else { sawWhole = true }
+            }
+        }
+        try expect(sawShortened && sawWhole, "The sweep covered both a shortened and a whole status")
+        // The reported case: 980 wide with the checkbox, an unsaved Arrow.
+        app.setTool(.arrow); app.dirty = true; app.updateDragPreview()
+        app.setWindowFrame(CGRect(origin: origin, size: CGSize(width: app.window.minSize.width, height: app.window.frame.height)))
+        app.updateViewportChrome(); content.layoutSubtreeIfNeeded()
+        try expect(!app.dragOriginalControl.isHidden && app.status.stringValue.contains("Unsaved changes"), "At 980 with the checkbox the unsaved state is whole: \(app.status.stringValue)")
+        // A window that grows gives the longer text back; the label's width does not depend on what it shows.
+        app.setWindowFrame(CGRect(origin: origin, size: CGSize(width: 1440, height: app.window.frame.height)))
+        content.layoutSubtreeIfNeeded()
+        try expect(app.status.stringValue == app.status.toolTip, "A wide window shows the whole status again: \(app.status.stringValue)")
+
+        // An upload message is one text: it keeps its priority and is cut only at its tail. A plain write is one fixed text too.
+        let field = StatusTextField(labelWithString: "")
+        field.font = .systemFont(ofSize: 18); field.lineBreakMode = .byTruncatingTail
+        field.frame = NSRect(x: 0, y: 0, width: 120, height: 24)
+        let upload = "Uploading 2 of 3 to the bucket, please wait for the last part"
+        field.setVariants([upload])
+        try expect(field.stringValue == upload && field.lineBreakMode == .byTruncatingTail, "A one-text status keeps all its text and truncates at the tail")
+        field.setVariants(["Arrow · Saved · 100 × 80 · 1 KB", "Saved"]); field.frame.size.width = 20
+        try expect(field.stringValue == "Saved", "When nothing fits the last variant stays and truncates at its tail: \(field.stringValue)")
+        field.stringValue = "Frame: hint"; field.frame.size.width = 400
+        try expect(field.stringValue == "Frame: hint" && field.variants.isEmpty, "A direct write replaces the variants")
+        _ = chrome
+    }
+
+    private static func modernZoomActualSize() throws {
+        let (fixture, chrome) = try modernFixture()
+        let app = fixture.app
+        try viewportFixture(app)
+        func live(_ menu: NSMenu) -> NSMenuItem? {
+            for item in menu.items {
+                if item.action == #selector(AppDelegate.toggleActualSize) { return item }
+                if let submenu = item.submenu, let found = live(submenu) { return found }
+            }
+            return nil
+        }
+        guard let main = NSApp.mainMenu.flatMap(live) else { throw Failure(description: "The main menu has no Actual Size command") }
+        guard let menu = app.zoomControl.menu, let index = (0..<menu.numberOfItems).first(where: { menu.item(at: $0)?.tag == ZoomPopUpButton.actualSizeTag }),
+              let item = menu.item(at: index) else { throw Failure(description: "The zoom menu has no Actual Size item") }
+        try expect(item.title == main.title && item.action == main.action && item.target === main.target && item.target === app,
+                   "The zoom item is the main-menu Actual Size command (\(item.title), \(String(describing: item.action)))")
+        try expect(item.keyEquivalent == main.keyEquivalent && item.keyEquivalentModifierMask == main.keyEquivalentModifierMask,
+                   "The zoom item carries exactly the key equivalent the main menu has ('\(main.keyEquivalent)')")
+        try expect(app.validateMenuItem(item) == app.canToggleActualSize && app.canToggleActualSize, "The zoom item is enabled when Actual Size is available")
+        app.terminationStarted = true
+        try expect(!app.validateMenuItem(item), "The zoom item follows the command's disabled state")
+        app.terminationStarted = false
+        try expect(app.zoomControl.titleOfSelectedItem?.hasSuffix("%") == true, "The popup face is a percentage before the choice: \(app.zoomControl.titleOfSelectedItem ?? "nil")")
+        // A popup selects the chosen item first and then sends its action; do the same.
+        app.zoomControl.select(item)
+        menu.performActionForItem(at: index)
+        defer { if app.isActualSize { app.leaveActualSize() } }
+        try expect(app.isActualSize && app.canvas.zoom == 1 && app.canvas.outputSize == app.canvas.fullResolutionOutputSize,
+                   "Choosing the zoom item puts the canvas at Actual Size (zoom \(app.canvas.zoom), output \(app.canvas.outputSize))")
+        try expect(app.zoomControl.titleOfSelectedItem == "100%" && app.zoomControl.selectedItem?.tag != ZoomPopUpButton.actualSizeTag,
+                   "The popup face stays a percentage after the choice: \(app.zoomControl.titleOfSelectedItem ?? "nil")")
         _ = chrome
     }
 
@@ -806,7 +1049,7 @@ extension AppSafetyTests {
         let (fixture, chrome) = try modernFixture()
         let app = fixture.app
         let surfaces = collect(GlassSurfaceView.self, in: app.window.contentView!)
-        try expect(surfaces.count >= 26, "Header, rails and footer have their glass surfaces (\(surfaces.count))")
+        try expect(surfaces.count >= 26, "Both bars have their glass surfaces (\(surfaces.count))")
         let snap = try surface(chrome, chrome.snapButton), arrow = try surface(chrome, app.toolButtons[.arrow]), undo = try surface(chrome, chrome.undoButton)
         undo.setHovered(true)
         try expect(surfaces.allSatisfy { $0.accessibility == .none && $0.lastAnimationDuration == GlassSurfaceView.animationDuration }, "Surfaces start with no display options and animate")
@@ -863,8 +1106,8 @@ extension AppSafetyTests {
         let (fixture, chrome) = try modernFixture()
         let app = fixture.app, canvas = app.canvas
         let button = chrome.wipeButton
-        guard app.wipeRailButton === button, button.action == #selector(AppDelegate.wipe), button.target === app else {
-            throw Failure(description: "The rail Wipe button must be the chrome's, located by its action")
+        guard app.wipeButton === button, button.action == #selector(AppDelegate.wipe), button.target === app else {
+            throw Failure(description: "The Wipe button must be the chrome's, located by its action")
         }
         let glass = try surface(chrome, button)
         func reads(_ title: String, _ enabled: Bool) -> Bool {
@@ -966,6 +1209,288 @@ extension AppSafetyTests {
         try expect(toolbox?.menu?.items.contains { $0.title == "More Commands" } == true, "The Toolbox menu keeps its More Commands entry")
     }
 
+    // MARK: T15 cases
+
+    /// The Size popover hosted in the app window, so real mouse events reach its track and presets.
+    private static func hostSizePopover(_ app: AppDelegate) throws -> (AppSafetySizePopover, SizePopoverContent, remove: () -> Void) {
+        let slider = app.widthControl
+        slider.showPopover()
+        guard let popover = slider.popover as? AppSafetySizePopover, let panel = slider.popoverContent else { throw Failure(description: "The Size popover did not open") }
+        let content = try (app.window.contentView).unwrap("content view")
+        panel.frame.origin = NSPoint(x: 40, y: 40)
+        content.addSubview(panel)
+        content.layoutSubtreeIfNeeded()
+        return (popover, panel, { panel.removeFromSuperview() })
+    }
+
+    private static func sizeKey(_ code: UInt16, in app: AppDelegate, flags: NSEvent.ModifierFlags = []) throws -> NSEvent {
+        guard let event = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: flags, timestamp: 0, windowNumber: app.window.windowNumber, context: nil,
+                                           characters: "", charactersIgnoringModifiers: "", isARepeat: false, keyCode: code) else { throw Failure(description: "Key event") }
+        return event
+    }
+
+    private static func modernSizePopoverUndo() throws {
+        let (fixture, chrome) = try modernFixture()
+        let app = fixture.app, slider = app.widthControl
+        guard let window = app.window as? AppSafetyWindow else { throw Failure(description: "Isolated window") }
+        var text = SketchElement(kind: .text); text.text = "Size proof"; text.fontName = "Courier"; text.fontSize = 26; text.outlined = false; text.shadowed = false
+        let undo = app.canvas.editingUndoManager
+        func fresh() {
+            app.canvas.document.elements = [text]; app.canvas.selection = [text.id]
+            app.canvas.strokeWidth = 6.75; app.syncDrawingControls()
+            undo.removeAllActions()
+        }
+        func oneStep(_ label: String, _ gesture: () throws -> Void) throws {
+            fresh()
+            let before = app.canvas.document.elements
+            try gesture()
+            try expect(undo.groupingLevel == 0 && !app.sizeUndoGrouping, "\(label): no undo group is left open (level \(undo.groupingLevel))")
+            try expect(app.canvas.document.elements != before && app.canvas.document.elements[0].fontSize != 26, "\(label): the selected text changed size")
+            app.undo()
+            try expect(app.canvas.document.elements == before && !undo.canUndo, "\(label): one Undo restored the original size and nothing else was recorded")
+            app.redo()
+            try expect(app.canvas.document.elements != before, "\(label): Redo reapplies the whole gesture")
+        }
+
+        // The pill opens its popover below itself, in the top bar.
+        fresh()
+        let (popover, panel, remove) = try hostSizePopover(app)
+        defer { slider.dismissPopover(); remove() }
+        try expect(popover.edge == .minY && popover.anchor === slider && slider.isDescendant(of: chrome.header) && popover.behavior == .transient,
+                   "The Size popover opens below the pill in the top bar and dismisses on an outside click")
+        func pointer(_ type: NSEvent.EventType, _ fraction: CGFloat, flags: NSEvent.ModifierFlags = []) throws -> NSEvent {
+            let track = panel.trackView
+            let location = track.convert(NSPoint(x: track.x(forFraction: fraction), y: 18), to: nil)
+            guard let event = NSEvent.mouseEvent(with: type, location: location, modifierFlags: flags, timestamp: 0, windowNumber: app.window.windowNumber,
+                                                 context: nil, eventNumber: 1, clickCount: 1, pressure: 1) else { throw Failure(description: "Mouse event") }
+            return event
+        }
+        try oneStep("A pointer drag across the track") {
+            try panel.trackView.mouseDown(with: pointer(.leftMouseDown, 1))
+            try expect(undo.groupingLevel == 1 && app.sizeUndoGrouping, "Mouse down opens exactly one undo group")
+            for fraction in [0.9, 0.75, 0.5, 1.0] { try panel.trackView.mouseDragged(with: pointer(.leftMouseDragged, CGFloat(fraction))) }
+            try panel.trackView.mouseUp(with: pointer(.leftMouseUp, 1))
+        }
+        try expect(app.canvas.strokeWidth == 12, "The drag ended on the largest size")
+        try oneStep("A preset click") { panel.presetButtons[4].performClick(nil) }
+        try oneStep("An arrow key on the pill") { try slider.keyDown(with: sizeKey(124, in: app)) }
+        try oneStep("An assistive increment") { _ = slider.accessibilityPerformIncrement() }
+        try oneStep("A Shift arrow") { try slider.keyDown(with: sizeKey(124, in: app, flags: [.shift])) }
+        // Dismissing the popover in the middle of a drag closes the group; the late mouse-up cannot close it twice.
+        try oneStep("A popover dismissed mid-drag") {
+            try panel.trackView.mouseDown(with: pointer(.leftMouseDown, 1))
+            try panel.trackView.mouseDragged(with: pointer(.leftMouseDragged, 0.75))
+            try expect(undo.groupingLevel == 1, "The drag is open")
+            slider.dismissPopover()
+            try expect(undo.groupingLevel == 0 && !app.sizeUndoGrouping && !slider.isPopoverShown, "Dismissal closed the group")
+            try panel.trackView.mouseUp(with: pointer(.leftMouseUp, 0.75))
+        }
+        // The hide and terminate paths close the popover and any open group too.
+        window.simulatesVisibility = true; window.shown = true
+        fresh()
+        slider.showPopover()
+        try expect(slider.beginGesture() && undo.groupingLevel == 1, "A gesture is open")
+        app.vanish()
+        try expect(!slider.isPopoverShown && undo.groupingLevel == 0 && !app.sizeUndoGrouping, "Hiding the window dismisses the popover and ends the group")
+        window.shown = true
+        fresh()
+        slider.showPopover()
+        try expect(slider.beginGesture(), "A gesture is open again")
+        app.canvas.strokeWidth = 12; app.syncDrawingControls()
+        answer(.alertSecondButtonReturn)
+        try expect(app.applicationShouldTerminate(NSApp) == .terminateCancel, "Cancel keeps the app running")
+        try expect(!slider.isPopoverShown && undo.groupingLevel == 0 && !app.sizeUndoGrouping, "Quit dismisses the popover and ends the group before it decides")
+        // The pill toggles with Space and Escape and never opens while disabled.
+        try expect(!slider.isPopoverShown, "Closed")
+        try slider.keyDown(with: sizeKey(49, in: app)); try expect(slider.isPopoverShown, "Space opens the popover")
+        try slider.keyDown(with: sizeKey(53, in: app)); try expect(!slider.isPopoverShown, "Escape closes it")
+    }
+
+    private static func modernFrameCaptureRect() throws {
+        let (fixture, chrome) = try modernFixture()
+        let app = fixture.app
+        guard let content = app.window.contentView as? FrameChromeView else { throw Failure(description: "Frame content view") }
+        defer { AppSafetyCaptureCoordinator.holdCapture = false; AppSafetyCaptureCoordinator.captureCallbacks = []; AppSafetyCaptureCoordinator.requests = [] }
+        let scroll = chrome.scrollView
+        try expect(scroll.hasHorizontalScroller && scroll.hasVerticalScroller, "The editor scrolls normally outside Frame mode")
+        let defaultFrame = app.window.frame
+        for (name, frame) in [("minimum", CGRect(origin: defaultFrame.origin, size: app.window.minSize)), ("default", defaultFrame)] {
+            for canvas in [CGSize(width: 3000, height: 2000), CGSize(width: 220, height: 100)] {
+                app.setWindowFrame(frame)
+                app.canvas.newBlank(size: canvas)
+                app.setCanvasDisplayZoom(1, label: "Test")
+                content.layoutSubtreeIfNeeded()
+                app.enterFrame(keepingAnnotations: false, manualFlags: [])
+                content.layoutSubtreeIfNeeded(); app.updateViewportChrome()
+                let label = "\(name) \(Int(canvas.width))x\(Int(canvas.height))"
+                let hole = scroll.convert(scroll.bounds, to: content)
+                try expect(abs(hole.minX - 12) < 0.5 && abs(hole.maxX - (content.bounds.width - 12)) < 0.5, "\(label): the Frame hole spans margin to margin (\(hole.minX) to \(hole.maxX))")
+                try expect(!scroll.hasHorizontalScroller && !scroll.hasVerticalScroller && scroll.contentView.frame == scroll.bounds, "\(label): no scroller can sit in the hole")
+                let holeOnScreen = app.window.convertToScreen(scroll.convert(scroll.bounds, to: nil))
+                let rect = app.frameViewportScreenRect
+                // What the user sees through the hole is what is captured: the whole viewport, with a smaller canvas centred inside it.
+                try expect(abs(rect.minX - holeOnScreen.minX) < 0.5 && abs(rect.maxX - holeOnScreen.maxX) < 0.5 && abs(rect.minY - holeOnScreen.minY) < 0.5 && abs(rect.maxY - holeOnScreen.maxY) < 0.5,
+                           "\(label): the snap rect is the whole hole (\(rect) vs \(holeOnScreen))")
+                let canvasOnScreen = app.window.convertToScreen(app.canvas.convert(app.canvas.bounds, to: nil))
+                if canvas.width < scroll.contentView.frame.width {
+                    try expect(rect.insetBy(dx: -0.5, dy: -0.5).contains(canvasOnScreen) && abs(canvasOnScreen.midX - holeOnScreen.midX) < 1 && abs(canvasOnScreen.midY - holeOnScreen.midY) < 1,
+                               "\(label): a small canvas sits centred inside the snapped hole (\(canvasOnScreen) in \(rect))")
+                }
+                AppSafetyCaptureCoordinator.holdCapture = true
+                app.performFrameSnap()
+                try expect(AppSafetyCaptureCoordinator.captureCallbacks.count == 1, "\(label): the Frame snap reached the capture")
+                let top = NSScreen.screens.first?.frame.maxY ?? rect.maxY
+                let sent = try (app.capture.frameRect).unwrap("capture rect")
+                try expect(sent == NSRect(x: rect.minX, y: top - rect.maxY, width: rect.width, height: rect.height), "\(label): the capture is sent exactly the viewport rect (\(sent))")
+                try expect(!scroll.hasHorizontalScroller && !scroll.hasVerticalScroller, "\(label): the scrollers stay hidden during the snap")
+                AppSafetyCaptureCoordinator.captureCallbacks.removeFirst()(.failure(AppSafetyCaptureCoordinator.cancellation))
+                AppSafetyCaptureCoordinator.holdCapture = false
+                app.cancelFrame()
+                try expect(scroll.hasHorizontalScroller && scroll.hasVerticalScroller, "\(label): leaving Frame mode restores the scrollers")
+            }
+        }
+    }
+
+    /// A capture larger than the screen allows: the Original size checkbox appears for it.
+    private static func largeShot(_ app: AppDelegate) throws {
+        let capacity = try app.maximumNormalCanvas.unwrap("screen capacity")
+        app.receiveCapture(.success(try image(size: CGSize(width: ceil(capacity.width + 300), height: ceil(capacity.height + 150)))), discardAlreadyApproved: true)
+        app.dirty = false
+    }
+
+    private static func modernStatusMergesDragSize() throws {
+        let (fixture, chrome) = try modernFixture()
+        let app = fixture.app
+        guard let content = app.window.contentView else { throw Failure(description: "content") }
+        app.dragPreviewTimer?.invalidate(); app.dragPreviewTimer = nil
+        app.updateDragPreview()
+        let text = app.status.stringValue
+        try expect(text.hasPrefix("Arrow · ") && text.contains("×") && text.components(separatedBy: " · ").count == 4 && text.hasSuffix("KB"), "The status reads tool, state and export size in one line: \(text)")
+        try expect(app.dragSizeLabel.superview == nil && app.status.toolTip == text && (app.status.accessibilityValue() as? String) == text, "The full text is the tooltip and the spoken value; no separate size label exists on screen")
+        try expect(app.status.lineBreakMode == .byTruncatingTail, "A narrow status truncates its tail")
+        try expect(app.dragPreviewTimer == nil, "Writing the size into the status does not re-arm the one-second drag-preview timer")
+        app.updateStatus()
+        try expect(app.dragPreviewTimer != nil, "An ordinary status update still schedules the preview")
+        app.dragPreviewTimer?.invalidate(); app.dragPreviewTimer = nil
+        app.enterFrame(keepingAnnotations: false, manualFlags: [])
+        let hint = app.status.stringValue
+        app.updateDragPreview(); app.updateStatus()
+        try expect(app.status.stringValue == hint && app.status.stringValue.hasPrefix("Frame"), "Frame mode keeps its own hint when the status refreshes")
+        app.cancelFrame()
+        try expect(app.status.stringValue.hasPrefix("Arrow · ") && app.status.stringValue.contains("×"), "Leaving Frame brings the merged status back")
+        app.dragPreviewTimer?.invalidate(); app.dragPreviewTimer = nil
+        // A large shot shows the Original size checkbox; at the minimum width the status still keeps 120 pt next to it.
+        try largeShot(app)
+        app.setWindowFrame(CGRect(origin: app.window.frame.origin, size: app.window.minSize))
+        app.updateDragPreview(); app.updateViewportChrome()
+        content.layoutSubtreeIfNeeded()
+        try expect(!app.dragOriginalControl.isHidden && app.isLargeShot, "A large shot shows the Original size checkbox")
+        let full = (app.status.cell?.copy() as? NSCell).map { $0.stringValue = app.status.toolTip ?? ""; return $0.cellSize.width } ?? 0
+        try expect(app.status.frame.width >= 120 && app.status.frame.width <= full + 0.5, "At the minimum width with the checkbox the status keeps \(app.status.frame.width) pt (needs 120)")
+        // A label's frame reaches 2 pt past the alignment rect layout places; the 12 pt group gap is measured on the alignment rect.
+        let placed = app.status.superview!.convert(app.status.alignmentRect(forFrame: app.status.frame), to: nil)
+        try expect(placed.maxX <= chrome.saveButton.convert(chrome.saveButton.bounds, to: nil).minX - 12 + 0.5, "The status keeps its 12 pt gap before Save")
+    }
+
+    private static func modernZoomFace() throws {
+        let (fixture, chrome) = try modernFixture()
+        let app = fixture.app, zoom = app.zoomControl
+        app.setCanvasDisplayZoom(0.83, label: "Fit")
+        try expect(zoom.titleOfSelectedItem == "83%" && zoom.selectedItem?.toolTip == "Fit, 83%" && (zoom.accessibilityValue() as? String) == "Fit, 83%",
+                   "The face is the percentage; the mode word travels on the tooltip and the spoken value (\(zoom.titleOfSelectedItem ?? "nil"))")
+        app.setCanvasDisplayZoom(1, label: "Normal")
+        try expect(zoom.titleOfSelectedItem == "100%" && (zoom.accessibilityValue() as? String) == "Normal, 100%", "Normal reads 100%")
+        let index = try (zoom.itemArray.firstIndex { $0.title == "150%" }).unwrap("150% item")
+        zoom.selectItem(at: index); app.changeZoom(zoom)
+        try expect((zoom.accessibilityValue() as? String) == "150%" && abs(app.canvas.zoom - 1.5) < 0.001, "Picking a plain zoom speaks only its percentage, never the previous mode word")
+        // The capsule is sized once for the widest face, so no title is ever clipped. The menu-only Actual Size command is never a face.
+        let surface = try surface(chrome, zoom)
+        for item in zoom.itemArray where item.tag != ZoomPopUpButton.actualSizeTag && !item.isSeparatorItem {
+            let title = item.title
+            zoom.select(item)
+            try expect(zoom.fittingSize.width <= surface.frame.width - 8 + 0.5, "\(title) fits the zoom capsule (\(zoom.fittingSize.width) in \(surface.frame.width))")
+        }
+        try expect(zoom.toolTip == nil || zoom.toolTip == "Canvas zoom", "Zoom keeps its tooltip")
+    }
+
+    private static func modernRelocatedOwnership() throws {
+        let (fixture, chrome) = try modernFixture()
+        let app = fixture.app
+        let content = try (app.window.contentView).unwrap("content view")
+        let routes: [(String, NSControl, Selector)] = [
+            ("Color", app.paletteButton, #selector(AppDelegate.showDrawingColors(_:))), ("Size", app.widthControl, #selector(AppDelegate.changeWidth(_:))),
+            ("Zoom", app.zoomControl, #selector(AppDelegate.changeZoom(_:))), ("Original size", app.dragOriginalControl, #selector(AppDelegate.changeDragOptions(_:))),
+            ("PNG | JPG", app.dragFormatToggle, #selector(AppDelegate.changeDragOptions(_:))),
+            ("Snap", chrome.snapButton, #selector(AppDelegate.snapButtonPressed)), ("Cancel", chrome.cancelFrameButton, #selector(AppDelegate.cancelFrame)),
+            ("Font", chrome.fontButton, #selector(AppDelegate.chooseFont)), ("Undo", chrome.undoButton, #selector(AppDelegate.undo)), ("Wipe", chrome.wipeButton, #selector(AppDelegate.wipe)),
+            ("Resize…", chrome.resizeButton, #selector(AppDelegate.resize)), ("Save", chrome.saveButton, #selector(AppDelegate.saveHistory)),
+            ("History", chrome.historyButton, #selector(AppDelegate.showHistory)), ("Upload", chrome.shareButton, #selector(AppDelegate.share(_:)))
+        ]
+        for (name, control, action) in routes {
+            try expect(control.target === app && control.action == action, "\(name) still sends its action to the AppDelegate after the move")
+        }
+        func minX(_ view: NSView) -> CGFloat { view.convert(view.bounds, to: content).minX }
+        let toolbox = try collect(NSPopUpButton.self, in: content).first { $0.accessibilityLabel() == "Toolbox" }.unwrap("Toolbox")
+        let tools = toolOrder.compactMap { app.toolButtons[SketchTool(rawValue: $0)!] as NSView? }
+        let top: [NSView] = [chrome.hideButton, toolbox, chrome.photosButton, chrome.snapButton] + tools + [app.paletteButton, app.widthControl, chrome.fontButton]
+        let topX = top.map(minX)
+        try expect(topX == topX.sorted(), "The top bar reads Hide, Toolbox, Photos, Snap, ten tools, Color, Size, Font from left to right")
+        let bottom: [NSView] = [chrome.undoButton, chrome.wipeButton, app.zoomControl, chrome.resizeButton, app.status, chrome.saveButton, chrome.historyButton,
+                                app.dragFormatToggle, try (app.dragExportView).unwrap("drag"), chrome.shareButton]
+        let bottomX = bottom.map(minX)
+        try expect(bottomX == bottomX.sorted(), "The bottom bar reads Undo, Wipe, Zoom, Resize, status, Save, History, format, Drag, Upload from left to right")
+        let canvasTop = chrome.scrollView.convert(chrome.scrollView.bounds, to: content).maxY, headerBottom = chrome.header.convert(chrome.header.bounds, to: content).minY
+        try expect(canvasTop <= headerBottom, "The canvas sits between the two bars")
+    }
+
+    /// Renders the offscreen window (never ordered) to PNGs for a human to look at; asserts only that they are not blank.
+    private static func modernLayoutBitmaps() throws {
+        guard let folder = ProcessInfo.processInfo.environment["OPENSNAP_EVIDENCE_DIR"] else { return }
+        let directory = URL(fileURLWithPath: folder).appendingPathComponent("t15-bitmaps")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let (fixture, chrome) = try modernFixture()
+        let app = fixture.app
+        let content = try (app.window.contentView).unwrap("content view")
+        func write(_ view: NSView, _ name: String) throws {
+            guard let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { throw Failure(description: "No bitmap for \(name)") }
+            view.cacheDisplay(in: view.bounds, to: rep)
+            var colours = Set<UInt32>()
+            for y in stride(from: 0, to: rep.pixelsHigh, by: 7) {
+                for x in stride(from: 0, to: rep.pixelsWide, by: 7) {
+                    let c = rep.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB)
+                    colours.insert(UInt32((c?.redComponent ?? 0) * 255) << 16 | UInt32((c?.greenComponent ?? 0) * 255) << 8 | UInt32((c?.blueComponent ?? 0) * 255))
+                }
+            }
+            try expect(colours.count > 8, "\(name) is not a blank bitmap (\(colours.count) distinct colours)")
+            try (rep.representation(using: .png, properties: [:])).unwrap("PNG for \(name)").write(to: directory.appendingPathComponent(name + ".png"))
+        }
+        let minimum = app.window.minSize
+        for (appearance, tag) in [(NSAppearance.Name.aqua, "light"), (.darkAqua, "dark")] {
+            app.window.appearance = NSAppearance(named: appearance)
+            for (width, height, size) in [(minimum.width, minimum.height, "980"), (1280, 800, "1280")] {
+                app.setWindowFrame(CGRect(origin: app.window.frame.origin, size: CGSize(width: width, height: height)))
+                try viewportFixture(app)
+                content.layoutSubtreeIfNeeded(); app.updateViewportChrome()
+                try write(content, "normal-\(size)-\(tag)")
+                try largeShot(app)
+                app.setWindowFrame(CGRect(origin: app.window.frame.origin, size: CGSize(width: width, height: height)))
+                app.updateDragPreview(); app.updateViewportChrome(); content.layoutSubtreeIfNeeded()
+                try write(content, "largeshot-\(size)-\(tag)")
+                try viewportFixture(app)
+                app.enterFrame(keepingAnnotations: false, manualFlags: [])
+                content.layoutSubtreeIfNeeded()
+                try write(content, "frame-\(size)-\(tag)")
+                app.cancelFrame()
+            }
+            let (_, panel, remove) = try hostSizePopover(app)
+            panel.appearance = app.window.appearance
+            try write(panel, "size-popover-\(tag)")
+            app.widthControl.dismissPopover(); remove()
+        }
+        app.window.appearance = nil
+        _ = chrome
+    }
+
     private static func modernPalettePopover() throws {
         let (fixture, chrome) = try modernFixture()
         let app = fixture.app
@@ -973,6 +1498,8 @@ extension AppSafetyTests {
         window.simulatesVisibility = true; window.shown = true
         app.showDrawingColors(chrome.surface(for: app.paletteButton)?.contentView as? NSButton ?? app.paletteButton)
         try expect(app.colorPopover?.isShown == true, "The Modern Color popover opens")
+        try expect(app.colorPopover?.preferredEdge == .minY && app.colorPopover?.anchor === app.paletteButton && app.paletteButton.isDescendant(of: chrome.header),
+                   "Color sits in the top bar, so its popover opens below it")
         try expect(app.colorPopover?.appearance == nil && app.colorPopover?.contentViewController?.view.appearance == nil, "Modern leaves the popover on the system appearance")
         try expect(app.presetColorButtons.count == OriginalDrawingControls.presets.count, "The presets are all there")
         app.closeDrawingColors()

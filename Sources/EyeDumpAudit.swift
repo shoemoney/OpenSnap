@@ -77,6 +77,11 @@ final class AuditRun {
     func grab(_ windows: [NSWindow]) -> (CGImage, String)? {
         let numbers = windows.map(\.windowNumber).filter { $0 > 0 }.map { CGWindowID($0) }
         let options: CGWindowImageOption = [.boundsIgnoreFraming, .bestResolution]
+        // A popover sits above its window in the window server's own order, but a joint capture draws the window over it and loses
+        // the overlap. Image each window on its own and stack them in the order given.
+        if windows.count > 1, windows.contains(where: { String(describing: type(of: $0)).contains("Popover") }), let stacked = stackedImage(windows) {
+            return (stacked, "CGWindowListCreateImage per window, stacked in order (\(windows.count) own windows; popover above its window)")
+        }
         var image: CGImage?
         if numbers.count == 1 {
             image = Self.windowImage(numbers[0], options)
@@ -96,6 +101,25 @@ final class AuditRun {
         view.cacheDisplay(in: view.bounds, to: rep)
         guard let cg = rep.cgImage else { return nil }
         return (cg, "cacheDisplay (CGWindowList image was blank)")
+    }
+
+    func stackedImage(_ windows: [NSWindow]) -> CGImage? {
+        let options: CGWindowImageOption = [.boundsIgnoreFraming, .bestResolution]
+        var parts: [(frame: CGRect, image: CGImage)] = []
+        for target in windows {
+            guard target.windowNumber > 0, let image = Self.windowImage(CGWindowID(target.windowNumber), options), image.width > 1, image.height > 1 else { return nil }
+            parts.append((target.frame, image))
+        }
+        let union = parts.map(\.frame).reduce(CGRect.null) { $0.union($1) }
+        guard let first = parts.first, first.frame.width > 0 else { return nil }
+        let scale = CGFloat(first.image.width) / first.frame.width
+        guard let context = CGContext(data: nil, width: Int((union.width * scale).rounded()), height: Int((union.height * scale).rounded()), bitsPerComponent: 8, bytesPerRow: 0,
+                                      space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        for part in parts {
+            context.draw(part.image, in: CGRect(x: (part.frame.minX - union.minX) * scale, y: (part.frame.minY - union.minY) * scale,
+                                                width: CGFloat(part.image.width), height: CGFloat(part.image.height)))
+        }
+        return context.makeImage()
     }
 
     // Since macOS 15 the SDK marks CGWindowListCreateImage unavailable, but the symbol is still in CoreGraphics and still images this
@@ -167,6 +191,11 @@ final class AuditRun {
         let windowsInfo = targets.map { windowMetrics($0) }
         write(["sourceSha": sourceSha, "id": id, "appearance": appearance, "iconMode": iconMode, "windows": windowsInfo], to: "metrics/\(stem).json")
         write(["sourceSha": sourceSha, "id": id, "appearance": appearance, "iconMode": iconMode, "windows": targets.map { accessibilityDump($0) }], to: "ax/\(stem).json")
+        if targets.first === window, app.modernChrome != nil {
+            var layout = chromeMetrics()
+            for (key, item) in ["sourceSha": sourceSha, "id": id, "stem": stem, "appearance": appearance, "iconMode": iconMode] { layout[key] = item }
+            write(layout, to: "layout/\(stem).json")
+        }
 
         var meta: [String: Any] = [
             "id": id, "slug": slug, "surface": surface, "state": state, "appearance": appearance, "file": stem + ".png",

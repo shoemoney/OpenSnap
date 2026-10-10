@@ -43,6 +43,173 @@ extension AuditRun {
         return Double(ceil(field.fittingSize.width))
     }
 
+    // MARK: post-rail chrome metrics
+
+    static let topBarGroupIDs = ["GlassHeaderLeading", "GlassCaptureGroup", "GlassToolBar", "GlassAnnotationGroup"]
+    static let bottomBarGroupIDs = ["GlassUndoWipeGroup", "GlassViewGroup", "GlassSaveGroup", "GlassFooterRow"]
+    /// The two groups the permanent right rail used to hold. Either one existing again means the rail came back.
+    static let retiredRailGroupIDs = ["GlassDrawingGroup", "GlassHistoryGroup"]
+    static let viewportMargin = 12.0
+
+    /// A view's rectangle in window points, top-left origin.
+    func windowRect(_ view: NSView) -> CGRect {
+        let r = view.convert(view.bounds, to: nil)
+        return CGRect(x: r.minX, y: window.frame.height - r.maxY, width: r.width, height: r.height)
+    }
+
+    func visibleRects(_ ids: [String]) -> [(id: String, rect: CGRect)] {
+        ids.compactMap { id in find(id).flatMap { $0.isHidden ? nil : (id, windowRect($0)) } }
+    }
+
+    /// Gaps between consecutive visible groups of one bar, left to right, plus the free space the row has left.
+    func barSlack(_ ids: [String], row: CGRect?) -> [String: Any] {
+        let groups = visibleRects(ids).sorted { $0.rect.minX < $1.rect.minX }
+        var out: [String: Any] = [:]
+        var gaps: [String: Double] = [:]
+        for (a, b) in zip(groups, groups.dropFirst()) { gaps["\(a.id)->\(b.id)"] = Double(b.rect.minX - a.rect.maxX) }
+        out["gaps"] = gaps
+        out["minGap"] = gaps.values.min() ?? 0
+        let sum = groups.reduce(0) { $0 + $1.rect.width }
+        out["sumOfGroupWidths"] = Double(sum)
+        if let row {
+            out["rowWidth"] = Double(row.width)
+            out["freeHorizontal"] = Double(row.width - sum)
+            if let first = groups.first, let last = groups.last {
+                out["leftInset"] = Double(first.rect.minX - row.minX); out["rightInset"] = Double(row.maxX - last.rect.maxX)
+            }
+        }
+        var overlaps: [String] = []
+        for (index, a) in groups.enumerated() { for b in groups.dropFirst(index + 1) where a.rect.intersects(b.rect) && !a.rect.intersection(b.rect).isEmpty { overlaps.append("\(a.id)&\(b.id)") } }
+        out["overlaps"] = overlaps
+        return out
+    }
+
+    /// Status width in the bottom bar with the Original-size checkbox forced visible and forced hidden, then restored.
+    func statusWidthVariants() -> [String: Any] {
+        let checkbox = app.dragOriginalControl, wasHidden = checkbox.isHidden
+        func measure(hidden: Bool) -> [String: Double] {
+            checkbox.isHidden = hidden
+            window.contentView?.layoutSubtreeIfNeeded()
+            return ["statusLabel": Double(app.status.frame.width), "statusRow": find("OpenSnapStatusRow").map { Double(windowRect($0).width) } ?? 0,
+                    "checkbox": hidden ? 0 : Double(checkbox.frame.width)]
+        }
+        let with = measure(hidden: false), without = measure(hidden: true)
+        checkbox.isHidden = wasHidden
+        window.contentView?.layoutSubtreeIfNeeded()
+        return ["withCheckbox": with, "withoutCheckbox": without, "checkboxShownNow": !wasHidden,
+                "statusNeedsAt18pt": textWidth(app.status.toolTip ?? app.status.stringValue, size: 18), "statusString": app.status.stringValue,
+                "statusFullText": app.status.toolTip ?? app.status.stringValue]
+    }
+
+    /// Everything the rail-removal acceptance cares about, read from the live window as it is right now: per-group frames for
+    /// both bars, slack, status width, the viewport and its trailing margin, canvas centring, Frame-mode hole and capture rect,
+    /// and the `rail` assertion. Frames are window points with a top-left origin.
+    func chromeMetrics() -> [String: Any] {
+        window.contentView?.layoutSubtreeIfNeeded()
+        let contentWidth = Double(window.contentView?.bounds.width ?? window.frame.width)
+        var result: [String: Any] = ["windowSize": [Double(window.frame.width), Double(window.frame.height)], "contentWidth": contentWidth,
+                                     "frameMode": app.frameMode, "status": app.status.stringValue,
+                                     // The drag-size label is an off-screen model now; the status line shows its text.
+                                     "dragSizeLabelModel": app.dragSizeLabel.stringValue]
+        var top: [String: Any] = [:]
+        var topGroups: [String: Any] = [:]
+        for id in AuditRun.topBarGroupIDs { topGroups[id] = describeGroup(id) as Any }
+        top["groups"] = topGroups
+        if let header = find("OpenSnapHeader") {
+            top["row"] = box(header)
+            top["slack"] = barSlack(AuditRun.topBarGroupIDs, row: windowRect(header))
+            if let tools = find("GlassToolBar"), !tools.isHidden {
+                let t = windowRect(tools), h = windowRect(header)
+                top["toolsCentreOffsetFromRow"] = Double(t.midX - h.midX)
+            }
+        }
+        top["snapTitle"] = app.snapButton.title
+        top["cancelHidden"] = app.cancelFrameButton.isHidden
+        result["topBar"] = top
+
+        var bottom: [String: Any] = [:]
+        var bottomGroups: [String: Any] = [:]
+        for id in AuditRun.bottomBarGroupIDs { bottomGroups[id] = describeGroup(id) as Any }
+        bottom["groups"] = bottomGroups
+        if let footer = find("OpenSnapFooter") {
+            bottom["row"] = box(footer)
+            var ids = AuditRun.bottomBarGroupIDs; ids.insert("OpenSnapStatusRow", at: 2)
+            bottom["slack"] = barSlack(ids, row: windowRect(footer))
+        }
+        bottom["zoomPopup"] = box(app.zoomControl)
+        bottom["zoomTitle"] = app.zoomControl.titleOfSelectedItem ?? ""
+        bottom["originalSizeCheckbox"] = box(app.dragOriginalControl)
+        bottom["status"] = box(app.status)
+        if let statusRow = find("OpenSnapStatusRow") { bottom["statusRow"] = box(statusRow) }
+        bottom["statusWidths"] = statusWidthVariants()
+        bottom["statusTruncated"] = Double(app.status.frame.width) + 0.5 < textWidth(app.status.stringValue, size: 18)
+        bottom["formatSegments"] = app.dragFormatToggle.selectedSegment
+        result["bottomBar"] = bottom
+
+        let retired = AuditRun.retiredRailGroupIDs.filter { find($0) != nil }
+        guard #available(macOS 26, *), let chrome = app.modernChrome as? ModernEditorChrome else {
+            result["rail"] = "unknown: no Modern chrome"
+            return result
+        }
+        let scroll = windowRect(chrome.scrollView)
+        let header = find("OpenSnapHeader").map(windowRect), footer = find("OpenSnapFooter").map(windowRect)
+        var viewport: [String: Any] = ["rect": rectJSON(scroll), "trailingMargin": contentWidth - Double(scroll.maxX), "leadingMargin": Double(scroll.minX),
+                                       "contentSize": [Double(chrome.scrollView.contentView.bounds.width), Double(chrome.scrollView.contentView.bounds.height)]]
+        if let header { viewport["gapBelowTopBar"] = Double(scroll.minY - header.maxY) }
+        if let footer { viewport["gapAboveBottomBar"] = Double(footer.minY - scroll.maxY) }
+        // Centring and filling are judged against the clip view (legacy scrollers take a 15-17 pt gutter out of the scroll view's own frame)
+        // and the canvas view's own frame, per axis: a canvas smaller than the clip must have equal margins, a larger one must cover it.
+        let clip = windowRect(chrome.scrollView.contentView)
+        let canvasRect = windowRect(app.canvas)
+        let gapLeft = Double(canvasRect.minX - clip.minX), gapRight = Double(clip.maxX - canvasRect.maxX)
+        let gapTop = Double(canvasRect.minY - clip.minY), gapBottom = Double(clip.maxY - canvasRect.maxY)
+        let smallerX = canvasRect.width < clip.width - 0.5, smallerY = canvasRect.height < clip.height - 0.5
+        viewport["clipRect"] = rectJSON(clip)
+        viewport["scrollerGutter"] = [Double(scroll.width - clip.width), Double(scroll.height - clip.height)]
+        viewport["scrollerStyle"] = chrome.scrollView.scrollerStyle == .legacy ? "legacy" : "overlay"
+        // The document view's own frame, bounds and visibleRect, and the clip bounds origin (negative when AppKit has centred a small canvas).
+        viewport["canvasViewFrame"] = rectJSON(app.canvas.frame)
+        viewport["canvasViewBounds"] = rectJSON(app.canvas.bounds)
+        viewport["canvasVisibleRectRaw"] = rectJSON(app.canvas.visibleRect)
+        viewport["clipBounds"] = rectJSON(chrome.scrollView.contentView.bounds)
+        viewport["canvas"] = ["frameInWindow": rectJSON(canvasRect), "canvasSize": [Double(app.canvas.canvasSize.width), Double(app.canvas.canvasSize.height)],
+                              "zoom": Double(app.canvas.zoom), "gapLeft": gapLeft, "gapRight": gapRight, "gapTop": gapTop, "gapBottom": gapBottom,
+                              "smallerThanViewportX": smallerX, "smallerThanViewportY": smallerY,
+                              "fillsWidth": !smallerX, "fillsHeight": !smallerY,
+                              "centredHorizontally": smallerX ? abs(gapLeft - gapRight) <= 1 : NSNull(), "centredVertically": smallerY ? abs(gapTop - gapBottom) <= 1 : NSNull()] as [String: Any]
+        result["viewport"] = viewport
+
+        // Rail assertion: neither retired group exists, the viewport reaches the 12-pt margin, and nothing narrow is parked on the trailing edge.
+        let known: Set<String> = ["OpenSnapHeader", "OpenSnapFooter"]
+        let strays = chrome.subviews.filter { sub in
+            guard !sub.isHidden, sub !== chrome.scrollView, !known.contains(sub.identifier?.rawValue ?? "") else { return false }
+            let r = windowRect(sub)
+            return r.width < Double(contentWidth) * 0.2 && r.height > 100 && r.maxX >= CGFloat(contentWidth) - 0.5
+        }.map { String(describing: type(of: $0)) }
+        let marginOK = abs((viewport["trailingMargin"] as? Double ?? -1) - AuditRun.viewportMargin) <= 0.5
+        let absent = retired.isEmpty && marginOK && strays.isEmpty
+        result["rail"] = absent ? "absent" : "PRESENT"
+        result["railChecks"] = ["retiredGroupsFound": retired, "trailingMarginIs12": marginOK, "trailingStrayViews": strays]
+
+        if app.frameMode {
+            let capture = windowRectFromBottomLeft(app.window.convertFromScreen(app.frameViewportScreenRect))
+            let hole = scroll.intersection(CGRect(x: 0, y: 0, width: CGFloat(contentWidth), height: window.frame.height))
+            var overlapping: [String] = []
+            for (id, rect) in visibleRects(AuditRun.topBarGroupIDs + AuditRun.bottomBarGroupIDs + ["OpenSnapStatusRow"]) where rect.intersects(hole) && !rect.intersection(hole).isEmpty { overlapping.append(id) }
+            result["frameHole"] = ["hole": rectJSON(hole), "holeMaxXToMargin": contentWidth - AuditRun.viewportMargin - Double(hole.maxX),
+                                   "captureRect": rectJSON(capture), "captureEqualsHole": [abs(capture.minX - hole.minX), abs(capture.minY - hole.minY), abs(capture.maxX - hole.maxX), abs(capture.maxY - hole.maxY)].allSatisfy { $0 <= 1 },
+                                   "captureInsideHole": hole.insetBy(dx: -1, dy: -1).contains(capture), "controlsOverlappingHole": overlapping,
+                                   "canvasRectInWindow": rectJSON(canvasRect), "captureEqualsCanvasClippedToHole": canvasRect.intersection(hole).insetBy(dx: -1, dy: -1).contains(capture) && capture.insetBy(dx: -1, dy: -1).contains(canvasRect.intersection(hole)),
+                                   "photosHidden": find("GlassHeaderLeading").map { $0.isHidden } ?? true]
+        }
+        return result
+    }
+
+    /// `rect` is in window coordinates with a bottom-left origin (what `convert(_, to: nil)` and `convertFromScreen` return).
+    func windowRectFromBottomLeft(_ rect: CGRect) -> CGRect {
+        CGRect(x: rect.minX, y: window.frame.height - rect.maxY, width: rect.width, height: rect.height)
+    }
+
     func measureLayout(width: CGFloat, frameMode: Bool, scenario: String) -> [String: Any] {
         var f = window.frame; f.size.width = width; f.size.height = 772
         window.setFrame(f, display: true)
@@ -52,72 +219,9 @@ extension AuditRun {
         window.contentView?.layoutSubtreeIfNeeded()
         app.updateDragPreview()
         window.contentView?.layoutSubtreeIfNeeded()
-        var result: [String: Any] = ["windowWidth": Double(window.frame.width), "windowHeight": Double(window.frame.height), "requestedWidth": Double(width),
-                                     "frameMode": frameMode, "scenario": scenario, "status": app.status.stringValue, "dragSizeLabel": app.dragSizeLabel.stringValue]
-        let content = window.contentView
-        result["contentSize"] = [Double(content?.bounds.width ?? 0), Double(content?.bounds.height ?? 0)]
-        var headerGroups: [String: Any] = [:]
-        for id in ["GlassHeaderLeading", "GlassToolBar", "GlassHeaderTrailing"] { headerGroups[id] = describeGroup(id) as Any }
-        result["header"] = headerGroups
-        if let header = find("OpenSnapHeader") {
-            result["headerRow"] = box(header)
-            var slack: [String: Any] = [:]
-            func frameOf(_ id: String) -> CGRect? { find(id).map { $0.convert($0.bounds, to: nil) } }
-            if let a = frameOf("GlassHeaderLeading"), let b = frameOf("GlassToolBar"), let c = frameOf("GlassHeaderTrailing"), let row = Optional(header.convert(header.bounds, to: nil)) {
-                slack["leadingToTools"] = Double(b.minX - a.maxX)
-                slack["toolsToTrailing"] = Double(c.minX - b.maxX)
-                slack["rowWidth"] = Double(row.width)
-                slack["sumOfGroupWidths"] = Double(a.width + b.width + c.width)
-                slack["totalFreeHorizontal"] = Double(row.width - (a.width + b.width + c.width))
-                slack["leftInset"] = Double(a.minX - row.minX); slack["rightInset"] = Double(row.maxX - c.maxX)
-            }
-            result["headerSlack"] = slack
-        }
-        var railGroups: [String: Any] = [:]
-        var rects: [CGRect] = []
-        for id in ["GlassCaptureGroup", "GlassDrawingGroup", "GlassHistoryGroup"] {
-            railGroups[id] = describeGroup(id) as Any
-            if let view = find(id), !view.isHidden { rects.append(view.convert(view.bounds, to: nil)) }
-        }
-        result["rail"] = railGroups
-        if let rail = find("GlassCaptureGroup")?.superview {
-            let r = rail.convert(rail.bounds, to: nil)
-            let groupArea = rects.reduce(0) { $0 + $1.width * $1.height }
-            let union = rects.reduce(CGRect.null) { $0.union($1) }
-            let windowArea = window.frame.width * window.frame.height
-            let contentArea = (content?.bounds.width ?? 1) * (content?.bounds.height ?? 1)
-            result["railColumn"] = ["frame": rectJSON(CGRect(x: r.minX, y: window.frame.height - r.maxY, width: r.width, height: r.height)),
-                                    "areaPt2": Double(r.width * r.height), "groupsAreaPt2": Double(groupArea),
-                                    "blankAreaPt2": Double(r.width * r.height - groupArea),
-                                    "blankPctOfWindow": Double((r.width * r.height - groupArea) / windowArea * 100),
-                                    "blankPctOfContent": Double((r.width * r.height - groupArea) / contentArea * 100),
-                                    "groupsBoundingBox": rectJSON(union.isNull ? .zero : union), "railWidth": Double(r.width)]
-        }
-        var footer: [String: Any] = [:]
-        footer["zoomPopup"] = box(app.zoomControl)
-        footer["originalSizeCheckbox"] = box(app.dragOriginalControl)
-        footer["dragSizeLabel"] = box(app.dragSizeLabel)
-        footer["status"] = box(app.status)
-        footer["statusStringWidthAt18pt"] = textWidth(app.status.stringValue, size: 18)
-        footer["dragSizeLabelStringWidthAt18pt"] = textWidth(app.dragSizeLabel.stringValue, size: 18)
-        footer["footerRowGroup"] = describeGroup("GlassFooterRow") as Any
-        if let statusRow = find("OpenSnapStatusRow") { footer["statusRow"] = box(statusRow) }
-        if let foot = find("OpenSnapFooter"), let statusRow = find("OpenSnapStatusRow"), let group = find("GlassFooterRow") {
-            let row = foot.convert(foot.bounds, to: nil), s = statusRow.convert(statusRow.bounds, to: nil), g = group.convert(group.bounds, to: nil)
-            footer["footerRow"] = box(foot)
-            footer["slack"] = ["rowWidth": Double(row.width), "statusRowWidth": Double(s.width), "groupWidth": Double(g.width),
-                               "gapBetweenStatusRowAndGroup": Double(g.minX - s.maxX), "totalFree": Double(row.width - s.width - g.width),
-                               "statusLabelFrameWidth": Double(app.status.frame.width), "statusLabelNeedsAt18pt": footer["statusStringWidthAt18pt"] as Any,
-                               "statusTruncated": Double(app.status.frame.width) + 0.5 < (footer["statusStringWidthAt18pt"] as? Double ?? 0)]
-        }
-        result["footer"] = footer
-        if #available(macOS 26, *), let chrome = app.modernChrome as? ModernEditorChrome {
-            result["scrollView"] = box(chrome.scrollView)
-            result["scrollViewContentSize"] = [Double(chrome.scrollView.contentView.bounds.width), Double(chrome.scrollView.contentView.bounds.height)]
-            result["canvasFrame"] = box(app.canvas)
-            result["canvasBorder"] = box(app.canvasBorder)
-            result["scrollTrailingGapToWindowEdge"] = Double(window.frame.width - chrome.scrollView.convert(chrome.scrollView.bounds, to: nil).maxX)
-        }
+        var result = chromeMetrics()
+        result["windowWidth"] = Double(window.frame.width); result["windowHeight"] = Double(window.frame.height)
+        result["requestedWidth"] = Double(width); result["scenario"] = scenario
         return result
     }
 
@@ -140,12 +244,28 @@ extension AuditRun {
                 }
             }
         }
+        // Top-bar slack in normal and Frame mode, bottom-bar status width with and without the checkbox, per scenario and width.
+        func number(_ sample: [String: Any], _ path: [String]) -> Double? {
+            var node: Any? = sample
+            for key in path { node = (node as? [String: Any])?[key] }
+            return node as? Double
+        }
+        let summary: [[String: Any]] = samples.map { sample in
+            ["scenario": sample["scenario"] as Any, "windowWidth": sample["windowWidth"] as Any, "frameMode": sample["frameMode"] as Any, "rail": sample["rail"] as Any,
+             "topBarFreeHorizontal": number(sample, ["topBar", "slack", "freeHorizontal"]) as Any, "topBarMinGap": number(sample, ["topBar", "slack", "minGap"]) as Any,
+             "bottomBarFreeHorizontal": number(sample, ["bottomBar", "slack", "freeHorizontal"]) as Any,
+             "statusRowWithCheckbox": number(sample, ["bottomBar", "statusWidths", "withCheckbox", "statusRow"]) as Any,
+             "statusRowWithoutCheckbox": number(sample, ["bottomBar", "statusWidths", "withoutCheckbox", "statusRow"]) as Any,
+             "statusLabelWithCheckbox": number(sample, ["bottomBar", "statusWidths", "withCheckbox", "statusLabel"]) as Any,
+             "statusLabelWithoutCheckbox": number(sample, ["bottomBar", "statusWidths", "withoutCheckbox", "statusLabel"]) as Any,
+             "viewportTrailingMargin": number(sample, ["viewport", "trailingMargin"]) as Any]
+        }
         var typical: [String: Any] = [:]
-        for text in ["Brush · Unsaved changes", "Brush · Saved", "Select · Unsaved changes", "Frame: position the window, then Snap", "Frame: Snap keeps your drawing",
-                     "Link copied: https://cdn.example.com/pics/Quarterly-mockup-0000.png", "800 × 600 · 10 KB", "2400 × 1500 · 610 KB"] {
+        for text in ["Brush · Unsaved changes", "Brush · Saved", "Select · Unsaved changes", "Frame: position, then Snap", "Frame: Snap keeps your drawing",
+                     "Link copied: https://cdn.example.com/pics/Quarterly-mockup-0000.png", "Brush · Unsaved changes · 2400 × 1500 · 610 KB"] {
             typical[text] = textWidth(text, size: 18)
         }
-        write(["sourceSha": sha, "iconMode": iconMode, "appearance": appearance, "widths": widths.map { Double($0) }, "samples": samples, "statusTextWidthsAt18pt": typical,
+        write(["sourceSha": sha, "iconMode": iconMode, "appearance": appearance, "widths": widths.map { Double($0) }, "samples": samples, "summary": summary, "statusTextWidthsAt18pt": typical,
                "note": "frames are window points, top-left origin; fitting = NSView.fittingSize; hidden = isHidden or alpha 0"], to: "layout/budget-\(sha)\(iconMode == "sf" ? "" : "-" + iconMode).json")
     }
 }

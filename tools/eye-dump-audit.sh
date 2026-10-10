@@ -5,10 +5,11 @@
 # cacheDisplay); it never captures the screen. build/OpenSnap.app is never run in place, so the owner's defaults domain,
 # support folder and Keychain are never reachable; the real stores are hashed before and after and any change fails the run.
 #
-#   sh tools/eye-dump-audit.sh OUTDIR [--groups main,more,overlays,sizes,fullscreen] [--appearances light,dark]
+#   sh tools/eye-dump-audit.sh OUTDIR [--groups main,more,overlays,sizes,fullscreen,states] [--appearances light,dark]
 #                                     [--icons sf|fa|both] [--sizes 980xmin,1024x740,1280x800,1440x900,full]
 #
-# Other groups: layout (width budget), delta (a short regression subset). --surfaces IDS runs exactly those surface ids.
+# Other groups: pairs (the S01/S02/S03/S12 captures that have a pre-rail twin), states (rail-removal state captures S30-S37: popovers, Frame at 980/1280, large shot, centring, selection, PNG|JPG),
+# layout (width budget), delta (a short regression subset). sizes runs the populated (S11M) and empty (S11E) matrix. --surfaces IDS runs exactly those surface ids.
 # --app APP uses a pre-built bundle instead of build/OpenSnap.app; --sha / --suffix tag the captures; --guard-home DIR points
 # the store guard at another home (tests only; recorded in safety.txt); --no-wait-gui skips waiting for other agents' GUI tests.
 #
@@ -207,8 +208,10 @@ for mode in $ICON_MODES; do
                 main) run_one "$mode" "$appearance" "ENV,S01,S11,S02,S03,S04,S05,S06,S07,S08,S09,S10" main ;;
                 more) run_one "$mode" "$appearance" "S12,S16,S17,S18,S19,S20,S21,S22,S23,S24,S25,S26,S28,S29" more ;;
                 overlays) run_one "$mode" "$appearance" "S13,S14,S15" overlays ;;
-                sizes) run_one "$mode" "$appearance" "S11M" sizes ;;
-                fullscreen) run_one "$mode" "$appearance" "S11F" fullscreen ;;
+                sizes) run_one "$mode" "$appearance" "S11M,S11E" sizes ;;
+                fullscreen) run_one "$mode" "$appearance" "S11F,S11FP" fullscreen ;;
+                pairs) run_one "$mode" "$appearance" "ENV,S01,S02,S03,S12" pairs ;;
+                states) run_one "$mode" "$appearance" "S30,S31,S32,S33,S34,S35,S36,S37" states ;;
                 layout) run_one "$mode" "$appearance" "LAYOUT" layout ;;
                 delta) run_one "$mode" "$appearance" "ENV,S01,S02,S03,S05,S07,S09,S11,S12,S14,S17,S24,S25,S29" delta ;;
                 *) echo "unknown group $group" >&2 ;;

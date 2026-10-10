@@ -173,7 +173,7 @@ extension AppDelegate {
     func updateViewportChrome() {
         resizeButton?.isEnabled = !isActualSize && !frameMode
         zoomControl.isEnabled = !isActualSize
-        dragOriginalControl.isHidden = isActualSize || !isLargeShot
+        dragOriginalControl.isHidden = isActualSize || frameMode || !isLargeShot
         guard let content = window?.contentView, canvas.enclosingScrollView != nil else {
             canvasBorder.isHidden = true; return
         }
