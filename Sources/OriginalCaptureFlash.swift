@@ -7,10 +7,18 @@ enum OriginalCaptureFlashTiming {
     static let timerInterval: TimeInterval = 0.02
     /// 0x3dcccccd: flash-up duration, also used by the screen capture path.
     static let captureDuration = Float32(bitPattern: 0x3dcccccd)
+    /// The flash is a cue, not a blinding event: the white panel never gets brighter than this window alpha.
+    static let peakAlpha: Float32 = 0.7
+    /// Reduce Motion: no ramp, one frame at peak alpha for this long.
+    static let reducedMotionDuration: TimeInterval = 0.05
+    /// UserDefaults key for "Show capture flash". Absent means on. It only matters under Reduce Motion: with Reduce Motion on
+    /// and this off the flash is skipped entirely. There is deliberately no Settings row yet.
+    static let showFlashKey = "showCaptureFlash"
 
     enum Phase { case flash, deflash }
 
     /// Flash ramps 0 -> 1, deflash ramps 1 -> 0; both clamp once the duration has elapsed.
+    /// This is the ramp position; the window shows it scaled by `peakAlpha`.
     static func alpha(elapsed: TimeInterval, duration: Float32, phase: Phase) -> Float32 {
         let fraction: Float32 = finished(elapsed: elapsed, duration: duration)
             ? 1 : max(0, Float32(elapsed) / duration)
@@ -20,12 +28,23 @@ enum OriginalCaptureFlashTiming {
     static func finished(elapsed: TimeInterval, duration: Float32) -> Bool {
         Float32(elapsed) >= duration
     }
+
+    /// Whether to flash at all: only the combination Reduce Motion on + "Show capture flash" off skips it.
+    static func shouldFlash(reduceMotion: Bool, showFlash: Bool) -> Bool { !reduceMotion || showFlash }
+
+    /// Reads `showFlashKey`; a missing key counts as on.
+    static func showFlash(defaults: UserDefaults = .standard) -> Bool {
+        defaults.object(forKey: showFlashKey) as? Bool ?? true
+    }
+
+    /// Stand-in until the unified display options land: the one place Reduce Motion is read for the flash.
+    static func systemReduceMotion() -> Bool { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
 }
 
-/// pqFlashView: solid white fill.
+/// pqFlashView: solid white fill. The window alpha, capped at `peakAlpha`, makes it a cue instead of a glare.
 final class OriginalCaptureFlashView: NSView {
     override func draw(_ dirtyRect: NSRect) {
-        NSColor.white.set()
+        DesignTokens.Palette.Overlay.hudText.set()
         dirtyRect.fill()
     }
 }
@@ -104,12 +123,15 @@ final class OriginalCaptureFlashController: CaptureFlashPresenting {
     typealias Clock = @MainActor () -> TimeInterval
     typealias WindowFactory = @MainActor (NSRect) -> any CaptureFlashWindowing
     typealias TimerFactory = @MainActor (TimeInterval, @escaping @MainActor () -> Void) -> Invalidate
+    typealias Flag = @MainActor () -> Bool
 
     private let clock: Clock
     private let windowFactory: WindowFactory
     private let timerFactory: TimerFactory
     private var window: (any CaptureFlashWindowing)?
     private var invalidate: Invalidate?
+    private let reduceMotion: Flag
+    private let showFlash: Flag
     private var phase = OriginalCaptureFlashTiming.Phase.flash
     private var start: TimeInterval = 0
     private let flashDuration: Float32
@@ -117,7 +139,10 @@ final class OriginalCaptureFlashController: CaptureFlashPresenting {
     var isRunning: Bool { window != nil }
 
     init(flashDuration: Float32 = OriginalCaptureFlashTiming.captureDuration,
-         clock: Clock? = nil, windowFactory: WindowFactory? = nil, timerFactory: TimerFactory? = nil) {
+         clock: Clock? = nil, windowFactory: WindowFactory? = nil, timerFactory: TimerFactory? = nil,
+         reduceMotion: Flag? = nil, showFlash: Flag? = nil) {
+        self.reduceMotion = reduceMotion ?? { OriginalCaptureFlashTiming.systemReduceMotion() }
+        self.showFlash = showFlash ?? { OriginalCaptureFlashTiming.showFlash() }
         self.flashDuration = flashDuration
         self.deflashDuration = OriginalCaptureFlashTiming.captureDuration
         self.clock = clock ?? { Date.timeIntervalSinceReferenceDate }
@@ -134,15 +159,24 @@ final class OriginalCaptureFlashController: CaptureFlashPresenting {
     }
 
     /// A zero or empty frame covers every screen (original passes NSZeroRect -> totalFrame).
+    /// Under Reduce Motion there is no ramp: one frame at peak alpha for 0.05 s, or nothing when "Show capture flash" is off.
     func play(frame: NSRect, deflashDuration: Float32) {
         guard window == nil else { return }
+        let reduced = reduceMotion()
+        guard OriginalCaptureFlashTiming.shouldFlash(reduceMotion: reduced, showFlash: showFlash()) else { return }
         self.deflashDuration = deflashDuration
         let target = frame.isEmpty ? NSScreen.screens.map(\.frame).reduce(NSRect.null) { $0.union($1) } : frame
         guard !target.isNull, !target.isEmpty else { return }
         let created = windowFactory(target)
         window = created
         created.orderFront()
-        beginPhase(.flash)
+        if reduced {
+            created.setAlpha(OriginalCaptureFlashTiming.peakAlpha)
+            invalidate?()
+            invalidate = timerFactory(OriginalCaptureFlashTiming.reducedMotionDuration) { [weak self] in self?.tearDown() }
+        } else {
+            beginPhase(.flash)
+        }
     }
 
     func cancel() { tearDown() }
@@ -151,7 +185,8 @@ final class OriginalCaptureFlashController: CaptureFlashPresenting {
         guard let window else { return }
         let elapsed = clock() - start
         let duration = phase == .flash ? flashDuration : deflashDuration
-        window.setAlpha(OriginalCaptureFlashTiming.alpha(elapsed: elapsed, duration: duration, phase: phase))
+        window.setAlpha(OriginalCaptureFlashTiming.peakAlpha
+                        * OriginalCaptureFlashTiming.alpha(elapsed: elapsed, duration: duration, phase: phase))
         guard OriginalCaptureFlashTiming.finished(elapsed: elapsed, duration: duration) else { return }
         if phase == .flash { beginPhase(.deflash) } else { tearDown() }
     }

@@ -34,6 +34,9 @@ private final class HelpPanel: NSPanel {
     var fronts = 0
     var outs = 0
     var closes = 0
+    /// Every alpha the bevel assigned, in order (the first 0 is the panel's creation).
+    var alphaLog: [CGFloat] = []
+    override var alphaValue: CGFloat { didSet { alphaLog.append(alphaValue) } }
     override var parent: NSWindow? {
         get { host }
         set { host = newValue as? HelpHost }
@@ -99,7 +102,7 @@ private enum OriginalHelpBevelTests {
         let factoryCalls: NSMutableArray
         var panel: HelpPanel { bevel.panel as! HelpPanel }
     }
-    private static func make() -> Rig {
+    private static func make(reduceMotion: Bool = false, screen: NSRect? = nil) -> Rig {
         let host = HelpHost(contentRect: NSRect(x: -700, y: 100, width: 800, height: 500),
                             styleMask: [.borderless], backing: .buffered, defer: true)
         host.isReleasedWhenClosed = false
@@ -109,7 +112,7 @@ private enum OriginalHelpBevelTests {
             factoryCalls.add(true)
             return HelpPanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel],
                              backing: .buffered, defer: true)
-        }, scheduler: scheduler)
+        }, scheduler: scheduler, reduceMotion: { reduceMotion }, screenFrame: { _ in screen })
         return Rig(host: host, scheduler: scheduler, bevel: bevel, factoryCalls: factoryCalls)
     }
 
@@ -119,6 +122,10 @@ private enum OriginalHelpBevelTests {
         slotsAndStaleEvents()
         fadesAndReversal()
         layoutAndRendering()
+        reduceMotionSkipsFade()
+        plateFitsText()
+        tokensOnly()
+        staysOnScreen()
         teardownAndReachability()
         nativeRunLoopModes()
         print("PASS OriginalHelpBevelTests (\(checks) checks; injected nonordering panels, no desktop input or permissions)")
@@ -277,8 +284,11 @@ private enum OriginalHelpBevelTests {
         rig.bevel.enabled = true
         rig.bevel.modifiers(message: "Hold Shift to constrain")
         let view = rig.panel.contentView as! OriginalHelpBevelView
-        expect(rig.panel.frame == NSRect(x: -660, y: 600, width: 720, height: 47),
-               "Recovered host +40/top/width-80 and nib44+3 geometry, including negative display coordinates")
+        let singleLine = view.attributedMessage.boundingRect(with: NSSize(width: 714, height: CGFloat.greatestFiniteMagnitude),
+                                                             options: [.usesLineFragmentOrigin, .usesFontLeading])
+        let body = max(44, ceil(singleLine.height) + 16), plateHeight = body + 3
+        expect(rig.panel.frame == NSRect(x: -660, y: 600, width: 720, height: plateHeight),
+               "Host +40/top/width-80, text height plus 8 pt above and below plus the 3 pt allowance, including negative display coordinates")
         expect(view.textRect.minX == 3 && view.textRect.width == 714 && view.bounds.contains(view.textRect),
                "Recovered three-point inner inset and all text within readable body")
         let font = view.attributedMessage.attribute(.font, at: 0, effectiveRange: nil) as! NSFont
@@ -287,7 +297,7 @@ private enum OriginalHelpBevelTests {
                "Readable centered 20-point multiline text replaces original 14-point middle truncation")
         expect(view.accessibilityValue() as? String == "Hold Shift to constrain", "Full message is accessible")
         let path = view.backgroundPath
-        expect(path.bounds == NSRect(x: 1, y: -11, width: 718, height: 57) && path.lineWidth == 2,
+        expect(path.bounds == NSRect(x: 1, y: -11, width: 718, height: plateHeight - 2 + 12) && path.lineWidth == 2,
                "Original inset1/y-12/height+12 stroke2 extends behind host join")
         rig.host.setFrame(NSRect(x: 50, y: -100, width: 440, height: 300), display: false)
         rig.bevel.reposition()
@@ -295,11 +305,11 @@ private enum OriginalHelpBevelTests {
                "Parent move/resize repositions same attachment using original constants")
         let long = String(repeating: "Hold Option to sample a color, then continue drawing. ", count: 8)
         rig.bevel.modifiers(message: long)
-        expect(rig.panel.frame.height > 47 && view.message == long && view.bounds.contains(view.textRect),
+        expect(rig.panel.frame.height > plateHeight && view.message == long && view.bounds.contains(view.textRect),
                "Long message grows vertically without clipping, truncating or shrinking font")
         let measured = view.attributedMessage.boundingRect(with: NSSize(width: view.textRect.width, height: .greatestFiniteMagnitude),
                                                           options: [.usesLineFragmentOrigin, .usesFontLeading])
-        expect(ceil(measured.height) <= view.textRect.height && rig.panel.frame.height == max(44, ceil(measured.height)) + 3,
+        expect(ceil(measured.height) <= view.textRect.height && rig.panel.frame.height == max(44, ceil(measured.height) + 16) + 3,
                "Actual text measurement determines sufficient multiline body height plus original allowance")
         let raster = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(view.bounds.width), pixelsHigh: Int(view.bounds.height),
                                        bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
@@ -321,6 +331,138 @@ private enum OriginalHelpBevelTests {
         rig.bevel.reposition()
         expect(rig.bevel.displayedMessage == nil && rig.host.attachments.isEmpty && rig.scheduler.active == 0,
                "Exhausted original width clears instead of producing an unreadable or resurrected child")
+    }
+
+
+    /// Reduce Motion: no fade at all. The alpha goes straight to its final value, and no 20 ms timer is ever scheduled.
+    private static func reduceMotionSkipsFade() {
+        let rig = make(reduceMotion: true)
+        defer { rig.bevel.shutdown() }
+        rig.bevel.enabled = true
+        rig.bevel.hover(owner: "A", message: "Hover")
+        rig.scheduler.fire(rig.scheduler.latest(0.25))
+        let shown = rig.panel
+        expect(shown.alphaLog.first == 0 && Array(shown.alphaLog.dropFirst()) == [1],
+               "Reduce Motion: the show tick sequence is just the final alpha, got \(shown.alphaLog)")
+        expect(rig.scheduler.entries.allSatisfy { $0.interval != 0.02 }, "Reduce Motion schedules no fade timer")
+        rig.bevel.exit(owner: "A")
+        expect(shown.alphaLog.last == 0 && shown.alphaLog.count == 3 && rig.host.attachments.isEmpty && rig.scheduler.entries.allSatisfy { $0.interval != 0.02 },
+               "Reduce Motion: hiding goes straight to 0 and detaches, got \(shown.alphaLog)")
+        // Switching message while visible keeps the plate at 1 without stepping.
+        rig.bevel.modifiers(message: "One")
+        rig.bevel.modifiers(message: "Two")
+        expect(shown.alphaValue == 1 && Set(shown.alphaLog.dropFirst(3)) == [1], "Replacing the message under Reduce Motion never dips below 1")
+        // The same run with motion allowed is stepped, so the single frame above is the setting's doing.
+        let motion = make()
+        defer { motion.bevel.shutdown() }
+        motion.bevel.enabled = true
+        motion.bevel.modifiers(message: "One")
+        _ = motion.scheduler.finishFade()
+        expect(Array(motion.panel.alphaLog.dropFirst()).count == 7 && motion.panel.alphaLog.last == 1, "Normal motion fades in over seven steps")
+    }
+
+    /// The plate is as tall as its text needs plus air, never less: no line sits on or past an edge.
+    private static func plateFitsText() {
+        let rig = make()
+        defer { rig.bevel.shutdown() }
+        rig.bevel.enabled = true
+        let messages = ["Hold Shift to constrain",
+                        String(repeating: "Hold Option to sample a color, then continue drawing. ", count: 4)]
+        for message in messages {
+            rig.bevel.modifiers(message: message)
+            let view = rig.panel.contentView as! OriginalHelpBevelView
+            let measured = ceil(view.attributedMessage.boundingRect(with: NSSize(width: view.textRect.width, height: .greatestFiniteMagnitude),
+                                                                   options: [.usesLineFragmentOrigin, .usesFontLeading]).height)
+            expect(view.textRect.height >= measured, "Text rect holds every line of '\(message.prefix(12))…'")
+            expect(view.textRect.minY >= OriginalHelpBevelView.verticalPadding && view.bounds.maxY - view.textRect.maxY >= OriginalHelpBevelView.verticalPadding,
+                   "At least 8 pt of plate above and below the text: \(view.textRect) in \(view.bounds)")
+            // Pixels: the lit text never touches the top or bottom edge of the plate.
+            let raster = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(view.bounds.width), pixelsHigh: Int(view.bounds.height),
+                                          bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                                          colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
+            NSGraphicsContext.saveGraphicsState()
+            NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: raster)
+            view.draw(view.bounds)
+            NSGraphicsContext.restoreGraphicsState()
+            var firstRow = Int.max, lastRow = -1
+            for y in 0..<raster.pixelsHigh { for x in 20..<(raster.pixelsWide - 20) {
+                guard let c = raster.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB), c.alphaComponent > 0.9, c.redComponent > 0.9 else { continue }
+                // Skip the 2 pt outline: only rows inside the plate by more than the stroke count as text.
+                if y > 3 && y < raster.pixelsHigh - 3 { firstRow = min(firstRow, y); lastRow = max(lastRow, y) }
+            } }
+            expect(lastRow >= 0 && firstRow >= 8 && raster.pixelsHigh - 1 - lastRow >= 8,
+                   "Rendered text keeps 8 px clear of the plate's top and bottom: rows \(firstRow)...\(lastRow) of \(raster.pixelsHigh)")
+        }
+    }
+
+    /// Only token values: HUD type, HUD text colour, HUD fill, HUD stroke, the lg radius.
+    private static func tokensOnly() {
+        typealias T = DesignTokens
+        let rig = make()
+        defer { rig.bevel.shutdown() }
+        rig.bevel.enabled = true
+        rig.bevel.modifiers(message: "Tokens")
+        let view = rig.panel.contentView as! OriginalHelpBevelView
+        expect(OriginalHelpBevelView.font == T.Typography.font(.hud), "Hint type is the HUD token (20 pt medium)")
+        let attributes = view.attributedMessage.attributes(at: 0, effectiveRange: nil)
+        expect((attributes[.font] as! NSFont) == T.Typography.font(.hud), "Message drawn in the HUD font")
+        expect((attributes[.foregroundColor] as! NSColor) == T.Palette.Overlay.hudText, "Message drawn in the HUD text colour")
+        expect(attributes[.shadow] == nil, "No text shadow on a solid plate")
+        // The outline's corner is the lg radius: a point on the 12 pt arc is on the path, one outside it is not.
+        view.joinsHost = false
+        let path = view.backgroundPath
+        let inset = view.bounds.insetBy(dx: 1, dy: 1)
+        let lg = T.Radius.lg
+        expect(lg == 12 && !path.contains(NSPoint(x: inset.minX + 0.5, y: inset.minY + 0.5)), "Plate corner is cut with the lg radius (12)")
+        expect(path.contains(NSPoint(x: inset.minX + lg, y: inset.minY + lg)), "Plate is solid just inside the corner arc")
+        view.joinsHost = true
+        let fill = T.Palette.resolve(T.Palette.Overlay.hudFill, arm: .aqua), stroke = T.Palette.resolve(T.Palette.Overlay.hudStroke, arm: .aqua)
+        expect(abs(fill.alphaComponent - 0.85) < 0.001 && fill.redComponent == 0, "Fill token is black at 0.85")
+        expect(abs(stroke.alphaComponent - 0.95) < 0.001 && stroke.redComponent == 1, "Stroke token is white at 0.95")
+    }
+
+    /// A host at the very top of the screen leaves no room above it: the plate then sits inside the host's top edge, in front of
+    /// it, rounded on all four corners, and is never cut off by the screen edge.
+    private static func staysOnScreen() {
+        let screen = NSRect(x: -700, y: 0, width: 1400, height: 700)
+        // Roomy: host top at 600 leaves 100 pt, plate hangs above, behind the host.
+        let roomy = make(screen: screen)
+        defer { roomy.bevel.shutdown() }
+        roomy.bevel.enabled = true
+        roomy.bevel.modifiers(message: "Hold Shift to constrain")
+        let view = roomy.panel.contentView as! OriginalHelpBevelView
+        expect(roomy.panel.frame.minY == 600 && view.joinsHost && roomy.host.attachments.first?.1 == .below,
+               "With room above, the plate hangs from the host's top, behind it")
+        expect(screen.contains(roomy.panel.frame), "Plate fully on screen when there is room")
+        // Tight: host top at the screen top.
+        let tight = make(screen: NSRect(x: -700, y: 0, width: 1400, height: 600))
+        defer { tight.bevel.shutdown() }
+        tight.bevel.enabled = true
+        tight.bevel.modifiers(message: "Hold Shift to constrain")
+        let tightView = tight.panel.contentView as! OriginalHelpBevelView
+        let visible = NSRect(x: -700, y: 0, width: 1400, height: 600)
+        expect(visible.contains(tight.panel.frame), "Plate stays inside the visible screen: \(tight.panel.frame) in \(visible)")
+        expect(!tightView.joinsHost && tight.host.attachments.first?.1 == .above,
+               "Pushed inside the host: rounded on all corners and ordered in front of it")
+        expect(abs(tight.panel.frame.maxY - 600) < 0.001, "Sits flush under the screen's top edge")
+        // Growing taller than the room still keeps the whole plate on screen.
+        tight.bevel.modifiers(message: String(repeating: "Hold Option to sample a color, then continue drawing. ", count: 8))
+        expect(visible.contains(tight.panel.frame) && tight.host.attachments.count == 1, "A long message stays on screen too, with one attachment")
+        // Moving the host (reposition, not a new message) re-attaches on the other side too.
+        tight.bevel.modifiers(message: "Hold Shift to constrain")
+        tight.host.setFrame(NSRect(x: -700, y: 100, width: 800, height: 400), display: false)
+        tight.bevel.reposition()
+        expect((tight.panel.contentView as! OriginalHelpBevelView).joinsHost && tight.host.attachments.count == 1 && tight.host.attachments[0].1 == .below,
+               "Host moved away from the top edge: reposition re-attaches the plate below it")
+        tight.host.setFrame(NSRect(x: -700, y: 300, width: 800, height: 300), display: false)
+        tight.bevel.reposition()
+        expect(!(tight.panel.contentView as! OriginalHelpBevelView).joinsHost && tight.host.attachments.count == 1 && tight.host.attachments[0].1 == .above
+               && visible.contains(tight.panel.frame), "Host moved to the top edge: reposition brings the plate inside, in front of it, on screen")
+        // Moving the host down makes room again: the plate goes back above it.
+        tight.host.setFrame(NSRect(x: -700, y: 100, width: 800, height: 400), display: false)
+        tight.bevel.modifiers(message: "Hold Shift to constrain")
+        expect((tight.panel.contentView as! OriginalHelpBevelView).joinsHost && tight.host.attachments.first?.1 == .below && tight.host.attachments.count == 1,
+               "With room again the plate returns to hanging from the host, re-attached once")
     }
 
     private static func teardownAndReachability() {

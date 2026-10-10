@@ -152,10 +152,7 @@ public final class CanvasNavigator: NSView {
                             y: bounds.minY + NavigatorGeometry.padding,
                             width: max(0, bounds.width - 2 * NavigatorGeometry.padding),
                             height: NavigatorGeometry.headerHeight)
-        ("Overview" as NSString).draw(in: header, withAttributes: [
-            .font: NSFont.systemFont(ofSize: 20, weight: .semibold),
-            .foregroundColor: NSColor.labelColor
-        ])
+        ("Overview" as NSString).draw(in: header, withAttributes: DesignTokens.Typography.attributes(.bodyStrong, color: .labelColor))
         guard let rect = thumbnailRect else { return }
         NSGraphicsContext.saveGraphicsState()
         defer { NSGraphicsContext.restoreGraphicsState() }

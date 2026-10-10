@@ -29,10 +29,16 @@ private final class OriginalHelpPanel: NSPanel {
 
 @MainActor
 final class OriginalHelpBevelView: NSView {
-    static let font = NSFont(name: "LucidaGrande", size: 20) ?? .systemFont(ofSize: 20)
+    static var font: NSFont { DesignTokens.Typography.font(.hud) }
     static let originalBodyHeight: CGFloat = 44
     static let heightAllowance: CGFloat = 3
     static let horizontalInset: CGFloat = 3
+    /// Air above and below the text block: the line box of a 1.5x line height is exactly as tall as the measured text, so
+    /// without it the first line sits on the plate edge and reads as clipped.
+    static let verticalPadding = DesignTokens.Space.s2
+    /// The plate hangs from the top of the host and its bottom corners join it; false when it has to sit inside the host
+    /// instead, where all four corners are rounded.
+    var joinsHost = true { didSet { needsDisplay = true } }
     private(set) var message = ""
     private(set) var attributedMessage = NSAttributedString(string: "")
     private(set) var textRect = NSRect.zero
@@ -50,19 +56,15 @@ final class OriginalHelpBevelView: NSView {
         paragraph.alignment = .center
         paragraph.lineBreakMode = .byWordWrapping
         paragraph.lineHeightMultiple = 1.5
-        let shadow = NSShadow()
-        shadow.shadowBlurRadius = 1
-        shadow.shadowColor = .black
-        shadow.shadowOffset = NSSize(width: 0, height: -1)
         attributedMessage = NSAttributedString(string: message, attributes: [
-            .font: Self.font, .foregroundColor: NSColor.white,
-            .paragraphStyle: paragraph, .shadow: shadow
+            .font: Self.font, .foregroundColor: DesignTokens.Palette.Overlay.hudText,
+            .paragraphStyle: paragraph
         ])
         let textWidth = max(1, width - 2 * Self.horizontalInset)
         let measured = attributedMessage.boundingRect(
             with: NSSize(width: textWidth, height: .greatestFiniteMagnitude),
             options: [.usesLineFragmentOrigin, .usesFontLeading])
-        let bodyHeight = max(Self.originalBodyHeight, ceil(measured.height))
+        let bodyHeight = max(Self.originalBodyHeight, ceil(measured.height) + 2 * Self.verticalPadding)
         let height = bodyHeight + Self.heightAllowance
         frame = NSRect(x: 0, y: 0, width: width, height: height)
         textRect = NSRect(x: Self.horizontalInset, y: (height - ceil(measured.height)) / 2,
@@ -76,9 +78,11 @@ final class OriginalHelpBevelView: NSView {
         // SKTopBevelAttachmentBackgroundView_drawRect:. Mach-O floats at
         // 0x2609e0 / 0x260aec are -12 / +12: bottom corners join the host.
         var rect = bounds.insetBy(dx: 1, dy: 1)
-        rect.origin.y -= 12
-        rect.size.height += 12
-        let path = NSBezierPath(roundedRect: rect, xRadius: 12, yRadius: 12)
+        if joinsHost {
+            rect.origin.y -= DesignTokens.Radius.lg
+            rect.size.height += DesignTokens.Radius.lg
+        }
+        let path = NSBezierPath(roundedRect: rect, xRadius: DesignTokens.Radius.lg, yRadius: DesignTokens.Radius.lg)
         path.lineWidth = 2
         return path
     }
@@ -87,9 +91,9 @@ final class OriginalHelpBevelView: NSView {
         NSColor.clear.setFill()
         bounds.fill(using: .copy)
         let path = backgroundPath
-        NSColor(calibratedWhite: 0, alpha: 0.85).setFill()
+        DesignTokens.Palette.Overlay.hudFill.setFill()
         path.fill()
-        NSColor(calibratedWhite: 0.95, alpha: 1).setStroke()
+        DesignTokens.Palette.Overlay.hudStroke.setStroke()
         path.stroke()
         attributedMessage.draw(with: textRect, options: [.usesLineFragmentOrigin, .usesFontLeading])
     }
@@ -104,12 +108,18 @@ final class OriginalHelpBevel {
     static let showStep: CGFloat = 0.15 // Mach-O double DAT_00260af8.
     static let hideStep: CGFloat = 0.1 // Negated DAT_00260b00.
 
+    typealias ReduceMotion = () -> Bool
+    typealias ScreenFrame = @MainActor (NSWindow) -> NSRect?
+
     var enabled = false { didSet { if !enabled { clear() } } }
     private(set) var displayedMessage: String?
     private(set) var panel: NSPanel?
     private weak var host: NSWindow?
     private let makePanel: () -> NSPanel
     private let scheduler: any OriginalHelpBevelScheduling
+    private let reduceMotion: ReduceMotion
+    private let screenFrame: ScreenFrame
+    private var attachedAbove = false
     private var hoverOwner: String?
     private var hoverMessage: String?
     private var hoverReady = false
@@ -121,9 +131,14 @@ final class OriginalHelpBevel {
     private var fadingIn = false
     private var stopped = false
 
+    /// `reduceMotion` defaults to the system setting and `screenFrame` to the host's visible screen area; tests force both.
+    /// OSN-061 replaces the Reduce Motion closure with the shared display options.
     init(host: NSWindow, makePanel: (() -> NSPanel)? = nil,
-         scheduler: (any OriginalHelpBevelScheduling)? = nil) {
+         scheduler: (any OriginalHelpBevelScheduling)? = nil,
+         reduceMotion: ReduceMotion? = nil, screenFrame: ScreenFrame? = nil) {
         self.host = host
+        self.reduceMotion = reduceMotion ?? { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
+        self.screenFrame = screenFrame ?? { $0.screen?.visibleFrame }
         self.makePanel = makePanel ?? {
             OriginalHelpPanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel],
                               backing: .buffered, defer: true)
@@ -188,8 +203,8 @@ final class OriginalHelpBevel {
 
     func reposition() {
         guard canRender else { clear(); return }
-        guard let message = displayedMessage else { return }
-        _ = layout(message)
+        guard let message = displayedMessage, layout(message) else { return }
+        syncAttachment()
     }
 
     func shutdown() {
@@ -216,12 +231,21 @@ final class OriginalHelpBevel {
         }
         displayedMessage = message
         guard layout(message) else { return }
-        guard let panel, let host else { return }
-        if panel.parent == nil {
-            panel.orderFront(nil)
-            host.addChildWindow(panel, ordered: .below)
-        }
+        syncAttachment()
         fade(show: true)
+    }
+
+    /// Attached below the host while the plate hangs above it, in front of it while it had to move inside; re-attached whenever
+    /// a move or resize of the host flips that.
+    private func syncAttachment() {
+        guard let panel, let host else { return }
+        let inside = (panel.contentView as? OriginalHelpBevelView)?.joinsHost == false
+        if panel.parent != nil, attachedAbove != inside { host.removeChildWindow(panel) }
+        if panel.parent == nil {
+            attachedAbove = inside
+            panel.orderFront(nil)
+            host.addChildWindow(panel, ordered: inside ? .above : .below)
+        }
     }
 
     private func layout(_ message: String) -> Bool {
@@ -247,8 +271,15 @@ final class OriginalHelpBevel {
         }
         guard let panel, let view = panel.contentView as? OriginalHelpBevelView else { return false }
         let height = view.update(message: message, width: width)
-        panel.setFrame(NSRect(x: host.frame.minX + 40, y: host.frame.maxY,
-                              width: width, height: height), display: false)
+        // Hangs from the host's top edge. A host at the top of the screen leaves no room above it, and the plate would be
+        // cut off by the screen edge; then it sits inside the host's top edge, in front of it, fully rounded.
+        var top = host.frame.maxY
+        view.joinsHost = true
+        if let visible = screenFrame(host), top + height > visible.maxY {
+            top = visible.maxY - height
+            view.joinsHost = false
+        }
+        panel.setFrame(NSRect(x: host.frame.minX + 40, y: top, width: width, height: height), display: false)
         return true
     }
 
@@ -256,6 +287,11 @@ final class OriginalHelpBevel {
         cancelFade()
         guard let panel else { return }
         fadingIn = show
+        // Reduce Motion: no ramp, the plate is simply there or gone.
+        if reduceMotion() {
+            if show { panel.alphaValue = 1 } else { hidePanel() }
+            return
+        }
         if show && panel.alphaValue >= 1 { return }
         if !show && panel.alphaValue <= 0 { hidePanel(); return }
         let generation = fadeGeneration

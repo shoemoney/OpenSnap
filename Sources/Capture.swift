@@ -323,6 +323,131 @@ private func captureCleanupError(_ errors: [Error]) -> Error? {
 /// (3072), so callers can suppress an error alert without suppressing real errors.
 /// Screen modes: crosshair = rectangle; fullscreen = main display; window =
 /// system window picker; frame = the supplied repeatable screen rectangle.
+// MARK: Screen Recording permission
+
+/// App-owned explanation shown when macOS has not granted Screen Recording: what to do, and a button that goes there.
+/// Presented over the editor as a sheet (or on its own when no window is up). It never starts a capture and never asks macOS
+/// for anything itself; opening System Settings goes through an injected opener so tests cannot leave the app.
+@MainActor
+final class ScreenRecordingPermissionSheet: NSObject {
+    static let settingsURL = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")!
+    static let title = "OpenSnap needs Screen Recording"
+    static let message = "Allow OpenSnap in System Settings \u{203A} Privacy & Security \u{203A} Screen & System Audio Recording, then reopen it."
+    static let settingsButtonTitle = "Open System Settings"
+    static let cancelButtonTitle = "Cancel"
+
+    let panel: NSPanel
+    let titleLabel: NSTextField
+    let messageLabel: NSTextField
+    let settingsButton: NSButton
+    let cancelButton: NSButton
+    private let openURL: @MainActor (URL) -> Void
+    private let onFinish: @MainActor () -> Void
+    private weak var host: NSWindow?
+    private var finished = false
+
+    init(openURL: @escaping @MainActor (URL) -> Void, onFinish: @escaping @MainActor () -> Void = {}) {
+        typealias Typography = DesignTokens.Typography
+        self.openURL = openURL
+        self.onFinish = onFinish
+        let width: CGFloat = 560, inset = DesignTokens.Space.s5, gap = DesignTokens.Space.s4
+        let inner = width - 2 * inset
+        func label(_ text: String, _ style: Typography.Style) -> NSTextField {
+            let field = NSTextField(wrappingLabelWithString: text)
+            field.font = Typography.font(style)
+            field.textColor = DesignTokens.Palette.Text.primary
+            field.preferredMaxLayoutWidth = inner
+            return field
+        }
+        titleLabel = label(Self.title, .title)
+        messageLabel = label(Self.message, .body)
+        settingsButton = NSButton(title: Self.settingsButtonTitle, target: nil, action: nil)
+        cancelButton = NSButton(title: Self.cancelButtonTitle, target: nil, action: nil)
+        panel = NSPanel(contentRect: .zero, styleMask: [.titled], backing: .buffered, defer: true)
+        super.init()
+        for button in [settingsButton, cancelButton] {
+            button.bezelStyle = .push
+            button.target = self
+            Typography.apply(.body, to: button)
+            button.sizeToFit()
+            button.frame.size.height = max(button.frame.height, DesignTokens.Size.control)
+        }
+        settingsButton.action = #selector(openSettings)
+        settingsButton.keyEquivalent = "\r"
+        cancelButton.action = #selector(cancel)
+        cancelButton.keyEquivalent = "\u{1b}"
+        settingsButton.setAccessibilityLabel(Self.settingsButtonTitle)
+        cancelButton.setAccessibilityLabel(Self.cancelButtonTitle)
+
+        func height(_ field: NSTextField) -> CGFloat {
+            ceil(field.cell?.cellSize(forBounds: NSRect(x: 0, y: 0, width: inner, height: .greatestFiniteMagnitude)).height ?? 0)
+        }
+        let buttonHeight = max(settingsButton.frame.height, cancelButton.frame.height)
+        let total = inset + height(titleLabel) + gap + height(messageLabel) + gap + buttonHeight + inset
+        let content = NSView(frame: NSRect(x: 0, y: 0, width: width, height: total))
+        // Top-down layout in AppKit's bottom-up coordinates.
+        var y = total - inset - height(titleLabel)
+        titleLabel.frame = NSRect(x: inset, y: y, width: inner, height: height(titleLabel))
+        y -= gap + height(messageLabel)
+        messageLabel.frame = NSRect(x: inset, y: y, width: inner, height: height(messageLabel))
+        settingsButton.frame.origin = NSPoint(x: width - inset - settingsButton.frame.width, y: inset)
+        cancelButton.frame.origin = NSPoint(x: settingsButton.frame.minX - DesignTokens.Space.s3 - cancelButton.frame.width, y: inset)
+        for view in [titleLabel, messageLabel, settingsButton, cancelButton] { content.addSubview(view) }
+        panel.title = "Screen Recording"
+        panel.isReleasedWhenClosed = false
+        let size = content.frame.size // Assigning the content view resizes it to the (still empty) window.
+        panel.contentView = content
+        panel.setContentSize(size)
+        panel.defaultButtonCell = settingsButton.cell as? NSButtonCell
+        panel.initialFirstResponder = settingsButton
+    }
+
+    /// As a sheet over `host` when there is a window to hang it from, else as a window of its own.
+    func present(on host: NSWindow?) {
+        if let host, host.isVisible, host.attachedSheet == nil {
+            self.host = host
+            host.beginSheet(panel)
+        } else {
+            panel.center()
+            panel.makeKeyAndOrderFront(nil)
+        }
+    }
+
+    @objc func openSettings() {
+        guard !finished else { return }
+        openURL(Self.settingsURL)
+        end()
+    }
+
+    @objc func cancel() { end() }
+
+    private func end() {
+        guard !finished else { return }
+        finished = true
+        if let host, host.attachedSheet === panel { host.endSheet(panel) }
+        panel.orderOut(nil)
+        onFinish()
+    }
+}
+
+/// Everything the coordinator needs from macOS to decide whether it may capture, so tests can answer for it.
+/// Production values talk to TCC; none of them is ever called by a test.
+struct ScreenRecordingGate {
+    var preflight: @MainActor () -> Bool = { CGPreflightScreenCaptureAccess() }
+    /// Prompts once per bundle id and registers the app in the Screen Recording list. Only reached on the first denied attempt.
+    var request: @MainActor () -> Bool = { CGRequestScreenCaptureAccess() }
+    var hasRequested: @MainActor () -> Bool = { UserDefaults.standard.bool(forKey: ScreenRecordingGate.requestedKey) }
+    var markRequested: @MainActor () -> Void = { UserDefaults.standard.set(true, forKey: ScreenRecordingGate.requestedKey) }
+    var openURL: @MainActor (URL) -> Void = { NSWorkspace.shared.open($0) }
+    var hostWindow: @MainActor () -> NSWindow? = {
+        NSApp?.keyWindow ?? NSApp?.mainWindow ?? NSApp?.windows.first { $0.isVisible && $0.canBecomeMain }
+    }
+    /// Replaces showing the sheet; tests use it to inspect the sheet without ordering a window.
+    var present: (@MainActor (ScreenRecordingPermissionSheet) -> Void)?
+
+    static let requestedKey = "screenRecordingRequested"
+}
+
 /// The original see-through frame preview belongs to the parent UI and
 /// is not implemented here.
 @MainActor
@@ -365,6 +490,9 @@ final class CaptureCoordinator: NSObject, WKNavigationDelegate {
     private let nativeSelection: Bool
     private let nativeCountdown: Bool
     private var nativeFlash = false
+    /// nil only for test coordinators with injected displays, which have no TCC to ask.
+    private var permission: ScreenRecordingGate?
+    private var permissionSheet: ScreenRecordingPermissionSheet?
     var isCapturing: Bool { operationID != nil || cleaningUp }
     private var hidApplication = false
     private var wasActive = false
@@ -379,6 +507,7 @@ final class CaptureCoordinator: NSObject, WKNavigationDelegate {
         environment = CaptureEnvironment()
         nativeSelection = true; nativeCountdown = true
         nativeFlash = true
+        permission = ScreenRecordingGate()
         applicationVisibility = NativeCaptureApplicationVisibility()
         super.init()
     }
@@ -393,7 +522,9 @@ final class CaptureCoordinator: NSObject, WKNavigationDelegate {
                      applicationVisibility: (any CaptureApplicationVisibility)? = nil,
                      selectionPicker: (any CaptureSelectionPicking)? = nil,
                      countdown: (any CaptureCountdownPresenting)? = nil,
-                     captureFlash: (any CaptureFlashPresenting)? = nil) {
+                     captureFlash: (any CaptureFlashPresenting)? = nil,
+                     permission: ScreenRecordingGate? = nil) {
+        self.permission = permission
         environment = CaptureEnvironment(executable: testHelper, arguments: arguments,
                                          temporaryRoot: temporaryRoot, testDisplays: displays,
                                          testMouseLocation: mouseLocation,
@@ -681,9 +812,11 @@ final class CaptureCoordinator: NSObject, WKNavigationDelegate {
             requestedFrame = rect
             capturedFrame = rect.integral
         }
-        // Preflight prevents permission denial being confused with picker Esc.
-        guard environment.testDisplays != nil || CGPreflightScreenCaptureAccess() || CGRequestScreenCaptureAccess() else {
-            finish(.failure(captureFailure(6, "Screen Recording access is not granted. Enable this app in System Settings > Privacy & Security > Screen Recording, then reopen it if macOS requests that.")), id: id)
+        // Preflight prevents permission denial being confused with picker Esc, and runs before any picker or overlay exists.
+        // The explanation is our own sheet; the capture ends as a silent cancel so the caller does not add a raw error alert.
+        if let gate = permission, !hasScreenRecording(gate) {
+            presentPermissionSheet(gate)
+            finish(.failure(captureCancellation()), id: id)
             return
         }
         // A native permission dialog may pump a nested run loop and allow a stop.
@@ -754,6 +887,22 @@ final class CaptureCoordinator: NSObject, WKNavigationDelegate {
         }
     }
 
+    /// Granted, or granted just now. The first denied attempt asks macOS once (that registers OpenSnap in the Screen Recording list,
+    /// which the sheet's instructions rely on); every later denied attempt goes straight to the sheet.
+    private func hasScreenRecording(_ gate: ScreenRecordingGate) -> Bool {
+        if gate.preflight() { return true }
+        guard !gate.hasRequested() else { return false }
+        gate.markRequested()
+        return gate.request()
+    }
+
+    private func presentPermissionSheet(_ gate: ScreenRecordingGate) {
+        guard permissionSheet == nil else { return }
+        let sheet = ScreenRecordingPermissionSheet(openURL: gate.openURL, onFinish: { [weak self] in self?.permissionSheet = nil })
+        permissionSheet = sheet
+        if let present = gate.present { present(sheet) } else { sheet.present(on: gate.hostWindow()) }
+    }
+
     private func prepareScreenshot(_ request: ScreenshotProcess, arguments: [String], delay: Double,
                                    rect: NSRect, interactive: Bool, id: UUID) {
         guard operationID == id else { return }
@@ -774,6 +923,12 @@ final class CaptureCoordinator: NSObject, WKNavigationDelegate {
                     Task { @MainActor [weak self, request] in
                         let outcome = await request.exited()
                         guard let self, self.operationID == id else { return }
+                        // A helper that fails because Screen Recording was revoked gets the same explanation, not a raw error.
+                        if case .failure = outcome.result, let gate = self.permission, !gate.preflight() {
+                            self.presentPermissionSheet(gate)
+                            self.finish(.failure(captureCancellation()), id: id)
+                            return
+                        }
                         self.finish(self.decode(outcome.result, frame: self.capturedFrame), id: id)
                     }
                 } catch { self.finish(.failure(error), id: id) }
