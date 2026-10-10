@@ -31,7 +31,7 @@
   "HARN": "Seen by the harness, not accounted for by a source table"
  },
  "counts": {
-  "total": 607,
+  "total": 589,
   "byArea": {
    "A11Y": 6,
    "ALERT": 7,
@@ -39,24 +39,25 @@
    "CANVAS": 14,
    "CAP": 11,
    "DEST": 37,
+   "HARN": 2,
    "HIST": 42,
    "HOT": 40,
    "ICON": 105,
    "KEY": 35,
-   "MENU": 88,
+   "MENU": 87,
    "SET": 24,
    "SHEET": 52,
    "STAT": 5,
    "STATE": 23,
    "TOOL": 29,
-   "TOOLBOX": 38
+   "TOOLBOX": 19
   },
   "byType": {
    "alert": 6,
-   "control": 149,
+   "control": 151,
    "gesture": 28,
    "icon": 105,
-   "menu item": 148,
+   "menu item": 128,
    "popover": 2,
    "preference": 18,
    "sheet": 15,
@@ -66,24 +67,24 @@
    "window": 3
   },
   "byExercise": {
-   "e2e": 526,
-   "e2e-partial": 55,
-   "gap": 26
+   "e2e": 511,
+   "e2e-partial": 53,
+   "gap": 25
   },
   "byGap": {
    "display-hardware": 3,
    "global-hotkey-background": 6,
-   "none": 526,
-   "os-panel": 40,
+   "none": 511,
+   "os-panel": 38,
    "photos-library": 1,
-   "printer": 3,
+   "printer": 2,
    "screen-recording": 21,
    "system-setting": 6,
    "voiceover": 1
   },
   "byOwner": {
-   "app": 588,
-   "os": 19
+   "app": 571,
+   "os": 18
   }
  },
  "harnessSurfaces": [
@@ -944,56 +945,6 @@
   },
   {
    "area": "MENU",
-   "surface": "Menu bar › Edit",
-   "name": "Wipe Snap Only",
-   "type": "menu item",
-   "icon": "rectangle.slash",
-   "entryPath": "Menu bar › Edit › Wipe Snap Only",
-   "prerequisite": "A drawing with a background picture",
-   "expected": "Removes only the snap picture, keeps annotations",
-   "owner": "app",
-   "exercise": "e2e",
-   "gap": null,
-   "note": null,
-   "shortcut": null,
-   "proof": [],
-   "rendered": [
-    "S12",
-    "S16",
-    "S17"
-   ],
-   "sources": [
-    "source"
-   ],
-   "id": "E2E-MENU-027"
-  },
-  {
-   "area": "MENU",
-   "surface": "Menu bar › Edit",
-   "name": "Clear Annotations",
-   "type": "menu item",
-   "icon": "pencil.slash",
-   "entryPath": "Menu bar › Edit › Clear Annotations",
-   "prerequisite": "A drawing with annotations",
-   "expected": "Clears annotations, keeps the snap picture",
-   "owner": "app",
-   "exercise": "e2e",
-   "gap": null,
-   "note": null,
-   "shortcut": null,
-   "proof": [],
-   "rendered": [
-    "S12",
-    "S16",
-    "S17"
-   ],
-   "sources": [
-    "source"
-   ],
-   "id": "E2E-MENU-028"
-  },
-  {
-   "area": "MENU",
    "surface": "Menu bar › Image",
    "name": "Actual Size",
    "type": "menu item",
@@ -1316,106 +1267,6 @@
     "source"
    ],
    "id": "E2E-MENU-041"
-  },
-  {
-   "area": "MENU",
-   "surface": "Menu bar › Image",
-   "name": "Bring to Front",
-   "type": "menu item",
-   "icon": "square.3.layers.3d.top.filled",
-   "entryPath": "Menu bar › Image › Bring to Front",
-   "prerequisite": "A selected element",
-   "expected": "Brings it to the front of the stack",
-   "owner": "app",
-   "exercise": "e2e",
-   "gap": null,
-   "note": null,
-   "shortcut": null,
-   "proof": [],
-   "rendered": [
-    "S12",
-    "S16",
-    "S17"
-   ],
-   "sources": [
-    "source"
-   ],
-   "id": "E2E-MENU-042"
-  },
-  {
-   "area": "MENU",
-   "surface": "Menu bar › Image",
-   "name": "Send to Back",
-   "type": "menu item",
-   "icon": "square.3.layers.3d.bottom.filled",
-   "entryPath": "Menu bar › Image › Send to Back",
-   "prerequisite": "A selected element",
-   "expected": "Sends it to the back of the stack",
-   "owner": "app",
-   "exercise": "e2e",
-   "gap": null,
-   "note": null,
-   "shortcut": null,
-   "proof": [],
-   "rendered": [
-    "S12",
-    "S16",
-    "S17"
-   ],
-   "sources": [
-    "source"
-   ],
-   "id": "E2E-MENU-043"
-  },
-  {
-   "area": "MENU",
-   "surface": "Menu bar › Image",
-   "name": "Group",
-   "type": "menu item",
-   "icon": "rectangle.3.group",
-   "entryPath": "Menu bar › Image › Group",
-   "prerequisite": "Two or more selected elements",
-   "expected": "Groups them so they move together",
-   "owner": "app",
-   "exercise": "e2e",
-   "gap": null,
-   "note": null,
-   "shortcut": null,
-   "proof": [],
-   "rendered": [
-    "S12",
-    "S16",
-    "S17"
-   ],
-   "sources": [
-    "source"
-   ],
-   "id": "E2E-MENU-044"
-  },
-  {
-   "area": "MENU",
-   "surface": "Menu bar › Image",
-   "name": "Ungroup",
-   "type": "menu item",
-   "icon": "square.on.square.dashed",
-   "entryPath": "Menu bar › Image › Ungroup",
-   "prerequisite": "A selected group",
-   "expected": "Splits the group",
-   "owner": "app",
-   "exercise": "e2e",
-   "gap": null,
-   "note": null,
-   "shortcut": null,
-   "proof": [],
-   "rendered": [
-    "S12",
-    "S16",
-    "S17"
-   ],
-   "sources": [
-    "source"
-   ],
-   "id": "E2E-MENU-045"
   },
   {
    "area": "MENU",
@@ -2494,6 +2345,131 @@
    "id": "E2E-MENU-089"
   },
   {
+   "area": "MENU",
+   "surface": "Menu bar › Edit",
+   "name": "Remove Snap Picture",
+   "type": "menu item",
+   "icon": "rectangle.slash",
+   "entryPath": "Menu bar › Edit › Remove Snap Picture",
+   "prerequisite": "A drawing with a background picture",
+   "expected": "Removes only the snap picture, keeps annotations",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": null,
+   "shortcut": null,
+   "proof": [],
+   "rendered": [
+    "S12",
+    "S16",
+    "S17"
+   ],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-MENU-090"
+  },
+  {
+   "area": "MENU",
+   "surface": "Menu bar › Arrange",
+   "name": "Bring to Front",
+   "type": "menu item",
+   "icon": "square.3.layers.3d.top.filled",
+   "entryPath": "Menu bar › Arrange › Bring to Front",
+   "prerequisite": "A selected element",
+   "expected": "Brings it to the front of the stack",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": null,
+   "shortcut": null,
+   "proof": [],
+   "rendered": [
+    "S12",
+    "S16",
+    "S17"
+   ],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-MENU-091"
+  },
+  {
+   "area": "MENU",
+   "surface": "Menu bar › Arrange",
+   "name": "Send to Back",
+   "type": "menu item",
+   "icon": "square.3.layers.3d.bottom.filled",
+   "entryPath": "Menu bar › Arrange › Send to Back",
+   "prerequisite": "A selected element",
+   "expected": "Sends it to the back of the stack",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": null,
+   "shortcut": null,
+   "proof": [],
+   "rendered": [
+    "S12",
+    "S16",
+    "S17"
+   ],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-MENU-092"
+  },
+  {
+   "area": "MENU",
+   "surface": "Menu bar › Arrange",
+   "name": "Group",
+   "type": "menu item",
+   "icon": "rectangle.3.group",
+   "entryPath": "Menu bar › Arrange › Group",
+   "prerequisite": "Two or more selected elements",
+   "expected": "Groups them so they move together",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": null,
+   "shortcut": null,
+   "proof": [],
+   "rendered": [
+    "S12",
+    "S16",
+    "S17"
+   ],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-MENU-093"
+  },
+  {
+   "area": "MENU",
+   "surface": "Menu bar › Arrange",
+   "name": "Ungroup",
+   "type": "menu item",
+   "icon": "square.on.square.dashed",
+   "entryPath": "Menu bar › Arrange › Ungroup",
+   "prerequisite": "A selected group",
+   "expected": "Splits the group",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": null,
+   "shortcut": null,
+   "proof": [],
+   "rendered": [
+    "S12",
+    "S16",
+    "S17"
+   ],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-MENU-094"
+  },
+  {
    "area": "TOOLBOX",
    "surface": "Toolbar › Toolbox",
    "name": "Toolbox",
@@ -2501,7 +2477,7 @@
    "icon": "toolbox",
    "entryPath": "Top bar › Toolbox (icon-only pull-down)",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Pull-down opens: five command groups, More Commands, Filled Shapes, Shadow",
+   "expected": "Pull-down opens: five groups of drawing-session commands (keep, edit, capture, adjust the picture, pen settings); no app or file plumbing",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
@@ -2520,174 +2496,6 @@
   {
    "area": "TOOLBOX",
    "surface": "Toolbar › Toolbox › group 1",
-   "name": "About OpenSnap",
-   "type": "menu item",
-   "icon": "info.circle",
-   "entryPath": "Top bar › Toolbox › About OpenSnap",
-   "prerequisite": "Fresh launch, empty document",
-   "expected": "Runs the same command as the menu-bar item About OpenSnap (the Toolbox row is a copy: title, key and symbol match)",
-   "owner": "app",
-   "exercise": "e2e",
-   "gap": null,
-   "note": null,
-   "shortcut": null,
-   "proof": [
-    {
-     "file": "AppSafetyMenuCases.swift",
-     "test": "Toolbox rows are copies of main-menu rows: subset by action, same titles"
-    }
-   ],
-   "rendered": [
-    "S12"
-   ],
-   "sources": [
-    "source"
-   ],
-   "id": "E2E-TOOLBOX-002"
-  },
-  {
-   "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox › group 1",
-   "name": "Settings…",
-   "type": "menu item",
-   "icon": "gearshape",
-   "entryPath": "Top bar › Toolbox › Settings…",
-   "prerequisite": "No sheet attached, not mid Frame capture",
-   "expected": "Runs the same command as the menu-bar item Settings… (the Toolbox row is a copy: title, key and symbol match)",
-   "owner": "app",
-   "exercise": "e2e",
-   "gap": null,
-   "note": null,
-   "shortcut": null,
-   "proof": [
-    {
-     "file": "AppSafetyMenuCases.swift",
-     "test": "Toolbox rows are copies of main-menu rows: subset by action, same titles"
-    }
-   ],
-   "rendered": [
-    "S12"
-   ],
-   "sources": [
-    "source"
-   ],
-   "id": "E2E-TOOLBOX-003"
-  },
-  {
-   "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox › group 1",
-   "name": "Quit OpenSnap",
-   "type": "menu item",
-   "icon": "power",
-   "entryPath": "Top bar › Toolbox › Quit OpenSnap",
-   "prerequisite": "Clean document; repeat with a dirty document",
-   "expected": "Runs the same command as the menu-bar item Quit OpenSnap (the Toolbox row is a copy: title, key and symbol match)",
-   "owner": "app",
-   "exercise": "e2e",
-   "gap": null,
-   "note": null,
-   "shortcut": null,
-   "proof": [
-    {
-     "file": "AppSafetyMenuCases.swift",
-     "test": "Toolbox rows are copies of main-menu rows: subset by action, same titles"
-    }
-   ],
-   "rendered": [
-    "S12"
-   ],
-   "sources": [
-    "source"
-   ],
-   "id": "E2E-TOOLBOX-004"
-  },
-  {
-   "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox › group 2",
-   "name": "New",
-   "type": "menu item",
-   "icon": "doc",
-   "entryPath": "Top bar › Toolbox › New",
-   "prerequisite": "Dirty document for the confirm path",
-   "expected": "Runs the same command as the menu-bar item New (the Toolbox row is a copy: title, key and symbol match)",
-   "owner": "app",
-   "exercise": "e2e",
-   "gap": null,
-   "note": null,
-   "shortcut": null,
-   "proof": [
-    {
-     "file": "AppSafetyMenuCases.swift",
-     "test": "Toolbox rows are copies of main-menu rows: subset by action, same titles"
-    }
-   ],
-   "rendered": [
-    "S12"
-   ],
-   "sources": [
-    "source"
-   ],
-   "id": "E2E-TOOLBOX-005"
-  },
-  {
-   "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox › group 2",
-   "name": "Open…",
-   "type": "menu item",
-   "icon": "folder",
-   "entryPath": "Top bar › Toolbox › Open…",
-   "prerequisite": "Fresh launch, empty document",
-   "expected": "Runs the same command as the menu-bar item Open… (the Toolbox row is a copy: title, key and symbol match)",
-   "owner": "app",
-   "exercise": "e2e-partial",
-   "gap": "os-panel",
-   "note": null,
-   "shortcut": null,
-   "proof": [
-    {
-     "file": "AppSafetyMenuCases.swift",
-     "test": "Toolbox rows are copies of main-menu rows: subset by action, same titles"
-    }
-   ],
-   "rendered": [
-    "S12"
-   ],
-   "sources": [
-    "source"
-   ],
-   "id": "E2E-TOOLBOX-006"
-  },
-  {
-   "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox › group 2",
-   "name": "Photos…",
-   "type": "menu item",
-   "icon": "photo.on.rectangle",
-   "entryPath": "Top bar › Toolbox › Photos…",
-   "prerequisite": "Fresh launch, empty document",
-   "expected": "Runs the same command as the menu-bar item Photos… (the Toolbox row is a copy: title, key and symbol match)",
-   "owner": "app",
-   "exercise": "e2e",
-   "gap": null,
-   "note": null,
-   "shortcut": null,
-   "proof": [
-    {
-     "file": "AppSafetyMenuCases.swift",
-     "test": "Toolbox rows are copies of main-menu rows: subset by action, same titles"
-    }
-   ],
-   "rendered": [
-    "S12"
-   ],
-   "sources": [
-    "source"
-   ],
-   "id": "E2E-TOOLBOX-007"
-  },
-  {
-   "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox › group 2",
    "name": "Save to History",
    "type": "menu item",
    "icon": "tray.and.arrow.down",
@@ -2711,11 +2519,11 @@
    "sources": [
     "source"
    ],
-   "id": "E2E-TOOLBOX-008"
+   "id": "E2E-TOOLBOX-039"
   },
   {
    "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox › group 2",
+   "surface": "Toolbar › Toolbox › group 1",
    "name": "Export…",
    "type": "menu item",
    "icon": "square.and.arrow.up",
@@ -2739,95 +2547,11 @@
    "sources": [
     "source"
    ],
-   "id": "E2E-TOOLBOX-009"
+   "id": "E2E-TOOLBOX-040"
   },
   {
    "area": "TOOLBOX",
    "surface": "Toolbar › Toolbox › group 2",
-   "name": "Save As…",
-   "type": "menu item",
-   "icon": "square.and.arrow.down.on.square",
-   "entryPath": "Top bar › Toolbox › Save As…",
-   "prerequisite": "Any document",
-   "expected": "Runs the same command as the menu-bar item Save As… (the Toolbox row is a copy: title, key and symbol match)",
-   "owner": "app",
-   "exercise": "e2e-partial",
-   "gap": "os-panel",
-   "note": null,
-   "shortcut": null,
-   "proof": [
-    {
-     "file": "AppSafetyMenuCases.swift",
-     "test": "Toolbox rows are copies of main-menu rows: subset by action, same titles"
-    }
-   ],
-   "rendered": [
-    "S12"
-   ],
-   "sources": [
-    "source"
-   ],
-   "id": "E2E-TOOLBOX-010"
-  },
-  {
-   "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox › group 2",
-   "name": "Print…",
-   "type": "menu item",
-   "icon": "printer",
-   "entryPath": "Top bar › Toolbox › Print…",
-   "prerequisite": "A drawing on the canvas",
-   "expected": "Runs the same command as the menu-bar item Print… (the Toolbox row is a copy: title, key and symbol match)",
-   "owner": "os",
-   "exercise": "gap",
-   "gap": "printer",
-   "note": null,
-   "shortcut": null,
-   "proof": [
-    {
-     "file": "AppSafetyMenuCases.swift",
-     "test": "Toolbox rows are copies of main-menu rows: subset by action, same titles"
-    }
-   ],
-   "rendered": [
-    "S12"
-   ],
-   "sources": [
-    "source"
-   ],
-   "id": "E2E-TOOLBOX-011"
-  },
-  {
-   "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox › group 3",
-   "name": "Cut",
-   "type": "menu item",
-   "icon": "scissors",
-   "entryPath": "Top bar › Toolbox › Cut",
-   "prerequisite": "A selected element",
-   "expected": "Runs the same command as the menu-bar item Cut (the Toolbox row is a copy: title, key and symbol match)",
-   "owner": "app",
-   "exercise": "e2e",
-   "gap": null,
-   "note": null,
-   "shortcut": null,
-   "proof": [
-    {
-     "file": "AppSafetyMenuCases.swift",
-     "test": "Toolbox rows are copies of main-menu rows: subset by action, same titles"
-    }
-   ],
-   "rendered": [
-    "S12"
-   ],
-   "sources": [
-    "source"
-   ],
-   "id": "E2E-TOOLBOX-012"
-  },
-  {
-   "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox › group 3",
    "name": "Copy",
    "type": "menu item",
    "icon": "doc.on.doc",
@@ -2851,11 +2575,11 @@
    "sources": [
     "source"
    ],
-   "id": "E2E-TOOLBOX-013"
+   "id": "E2E-TOOLBOX-041"
   },
   {
    "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox › group 3",
+   "surface": "Toolbar › Toolbox › group 2",
    "name": "Paste",
    "type": "menu item",
    "icon": "clipboard",
@@ -2879,67 +2603,11 @@
    "sources": [
     "source"
    ],
-   "id": "E2E-TOOLBOX-014"
+   "id": "E2E-TOOLBOX-042"
   },
   {
    "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox › group 3",
-   "name": "Delete",
-   "type": "menu item",
-   "icon": "trash",
-   "entryPath": "Top bar › Toolbox › Delete",
-   "prerequisite": "A selected element",
-   "expected": "Runs the same command as the menu-bar item Delete (the Toolbox row is a copy: title, key and symbol match)",
-   "owner": "app",
-   "exercise": "e2e",
-   "gap": null,
-   "note": null,
-   "shortcut": null,
-   "proof": [
-    {
-     "file": "AppSafetyMenuCases.swift",
-     "test": "Toolbox rows are copies of main-menu rows: subset by action, same titles"
-    }
-   ],
-   "rendered": [
-    "S12"
-   ],
-   "sources": [
-    "source"
-   ],
-   "id": "E2E-TOOLBOX-015"
-  },
-  {
-   "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox › group 3",
-   "name": "Select All",
-   "type": "menu item",
-   "icon": "square.dashed",
-   "entryPath": "Top bar › Toolbox › Select All",
-   "prerequisite": "Elements on the canvas",
-   "expected": "Runs the same command as the menu-bar item Select All (the Toolbox row is a copy: title, key and symbol match)",
-   "owner": "app",
-   "exercise": "e2e",
-   "gap": null,
-   "note": null,
-   "shortcut": null,
-   "proof": [
-    {
-     "file": "AppSafetyMenuCases.swift",
-     "test": "Toolbox rows are copies of main-menu rows: subset by action, same titles"
-    }
-   ],
-   "rendered": [
-    "S12"
-   ],
-   "sources": [
-    "source"
-   ],
-   "id": "E2E-TOOLBOX-016"
-  },
-  {
-   "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox › group 3",
+   "surface": "Toolbar › Toolbox › group 2",
    "name": "Duplicate",
    "type": "menu item",
    "icon": "plus.square.on.square",
@@ -2963,20 +2631,20 @@
    "sources": [
     "source"
    ],
-   "id": "E2E-TOOLBOX-017"
+   "id": "E2E-TOOLBOX-043"
   },
   {
    "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox › group 3",
-   "name": "Text Style…",
+   "surface": "Toolbar › Toolbox › group 2",
+   "name": "Delete",
    "type": "menu item",
-   "icon": "textformat",
-   "entryPath": "Top bar › Toolbox › Text Style…",
-   "prerequisite": "None, or a selected text element",
-   "expected": "Runs the same command as the menu-bar item Text Style… (the Toolbox row is a copy: title, key and symbol match)",
+   "icon": "trash",
+   "entryPath": "Top bar › Toolbox › Delete",
+   "prerequisite": "A selected element",
+   "expected": "Runs the same command as the menu-bar item Delete (the Toolbox row is a copy: title, key and symbol match)",
    "owner": "app",
-   "exercise": "e2e-partial",
-   "gap": "os-panel",
+   "exercise": "e2e",
+   "gap": null,
    "note": null,
    "shortcut": null,
    "proof": [
@@ -2991,11 +2659,39 @@
    "sources": [
     "source"
    ],
-   "id": "E2E-TOOLBOX-018"
+   "id": "E2E-TOOLBOX-044"
   },
   {
    "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox › group 4",
+   "surface": "Toolbar › Toolbox › group 2",
+   "name": "Select All",
+   "type": "menu item",
+   "icon": "square.dashed",
+   "entryPath": "Top bar › Toolbox › Select All",
+   "prerequisite": "Elements on the canvas",
+   "expected": "Runs the same command as the menu-bar item Select All (the Toolbox row is a copy: title, key and symbol match)",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": null,
+   "shortcut": null,
+   "proof": [
+    {
+     "file": "AppSafetyMenuCases.swift",
+     "test": "Toolbox rows are copies of main-menu rows: subset by action, same titles"
+    }
+   ],
+   "rendered": [
+    "S12"
+   ],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-TOOLBOX-045"
+  },
+  {
+   "area": "TOOLBOX",
+   "surface": "Toolbar › Toolbox › group 3",
    "name": "Crosshair Snapshot",
    "type": "menu item",
    "icon": "scope",
@@ -3019,11 +2715,11 @@
    "sources": [
     "source"
    ],
-   "id": "E2E-TOOLBOX-019"
+   "id": "E2E-TOOLBOX-046"
   },
   {
    "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox › group 4",
+   "surface": "Toolbar › Toolbox › group 3",
    "name": "Fullscreen Snapshot",
    "type": "menu item",
    "icon": "rectangle.inset.filled",
@@ -3047,11 +2743,11 @@
    "sources": [
     "source"
    ],
-   "id": "E2E-TOOLBOX-020"
+   "id": "E2E-TOOLBOX-047"
   },
   {
    "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox › group 4",
+   "surface": "Toolbar › Toolbox › group 3",
    "name": "Frame Snapshot",
    "type": "menu item",
    "icon": "viewfinder",
@@ -3075,11 +2771,11 @@
    "sources": [
     "source"
    ],
-   "id": "E2E-TOOLBOX-021"
+   "id": "E2E-TOOLBOX-048"
   },
   {
    "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox › group 4",
+   "surface": "Toolbar › Toolbox › group 3",
    "name": "Re-snap (Keep Pen)",
    "type": "menu item",
    "icon": "arrow.triangle.2.circlepath",
@@ -3103,67 +2799,11 @@
    "sources": [
     "source"
    ],
-   "id": "E2E-TOOLBOX-022"
+   "id": "E2E-TOOLBOX-049"
   },
   {
    "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox › group 5",
-   "name": "Set Snap to Normal Size",
-   "type": "menu item",
-   "icon": "1.magnifyingglass",
-   "entryPath": "Top bar › Toolbox › Set Snap to Normal Size",
-   "prerequisite": "A snap picture that was scaled",
-   "expected": "Runs the same command as the menu-bar item Set Snap to Normal Size (the Toolbox row is a copy: title, key and symbol match)",
-   "owner": "app",
-   "exercise": "e2e",
-   "gap": null,
-   "note": null,
-   "shortcut": null,
-   "proof": [
-    {
-     "file": "AppSafetyMenuCases.swift",
-     "test": "Toolbox rows are copies of main-menu rows: subset by action, same titles"
-    }
-   ],
-   "rendered": [
-    "S12"
-   ],
-   "sources": [
-    "source"
-   ],
-   "id": "E2E-TOOLBOX-023"
-  },
-  {
-   "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox › group 5",
-   "name": "Flip Horizontal",
-   "type": "menu item",
-   "icon": "arrow.left.and.right.righttriangle.left.righttriangle.right",
-   "entryPath": "Top bar › Toolbox › Flip Horizontal",
-   "prerequisite": "A drawing",
-   "expected": "Runs the same command as the menu-bar item Flip Horizontal (the Toolbox row is a copy: title, key and symbol match)",
-   "owner": "app",
-   "exercise": "e2e",
-   "gap": null,
-   "note": null,
-   "shortcut": null,
-   "proof": [
-    {
-     "file": "AppSafetyMenuCases.swift",
-     "test": "Toolbox rows are copies of main-menu rows: subset by action, same titles"
-    }
-   ],
-   "rendered": [
-    "S12"
-   ],
-   "sources": [
-    "source"
-   ],
-   "id": "E2E-TOOLBOX-024"
-  },
-  {
-   "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox › group 5",
+   "surface": "Toolbar › Toolbox › group 4",
    "name": "Rotate Clockwise",
    "type": "menu item",
    "icon": "rotate.right",
@@ -3187,17 +2827,17 @@
    "sources": [
     "source"
    ],
-   "id": "E2E-TOOLBOX-025"
+   "id": "E2E-TOOLBOX-050"
   },
   {
    "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox › group 5",
-   "name": "Transparent Background",
+   "surface": "Toolbar › Toolbox › group 4",
+   "name": "Flip Horizontal",
    "type": "menu item",
-   "icon": "checkerboard.rectangle",
-   "entryPath": "Top bar › Toolbox › Transparent Background",
+   "icon": "arrow.left.and.right.righttriangle.left.righttriangle.right",
+   "entryPath": "Top bar › Toolbox › Flip Horizontal",
    "prerequisite": "A drawing",
-   "expected": "Runs the same command as the menu-bar item Transparent Background (the Toolbox row is a copy: title, key and symbol match)",
+   "expected": "Runs the same command as the menu-bar item Flip Horizontal (the Toolbox row is a copy: title, key and symbol match)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
@@ -3215,11 +2855,11 @@
    "sources": [
     "source"
    ],
-   "id": "E2E-TOOLBOX-026"
+   "id": "E2E-TOOLBOX-051"
   },
   {
    "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox › group 5",
+   "surface": "Toolbar › Toolbox › group 4",
    "name": "Crop Snap at Current Edges",
    "type": "menu item",
    "icon": "rectangle.compress.vertical",
@@ -3243,17 +2883,17 @@
    "sources": [
     "source"
    ],
-   "id": "E2E-TOOLBOX-027"
+   "id": "E2E-TOOLBOX-052"
   },
   {
    "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox › group 5",
-   "name": "Wipe Snap Only",
+   "surface": "Toolbar › Toolbox › group 4",
+   "name": "Remove Snap Picture",
    "type": "menu item",
    "icon": "rectangle.slash",
-   "entryPath": "Top bar › Toolbox › Wipe Snap Only",
+   "entryPath": "Top bar › Toolbox › Remove Snap Picture",
    "prerequisite": "A drawing with a background picture",
-   "expected": "Runs the same command as the menu-bar item Wipe Snap Only (the Toolbox row is a copy: title, key and symbol match)",
+   "expected": "Runs the same command as the menu-bar item Remove Snap Picture (the Toolbox row is a copy: title, key and symbol match)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
@@ -3271,217 +2911,91 @@
    "sources": [
     "source"
    ],
-   "id": "E2E-TOOLBOX-028"
+   "id": "E2E-TOOLBOX-053"
   },
   {
    "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox",
-   "name": "More Commands",
-   "type": "menu item",
-   "icon": null,
-   "entryPath": "Top bar › Toolbox › More Commands",
-   "prerequisite": "Fresh launch, empty document",
-   "expected": "Submenu with File, Image, Drawing, Text, Capture, Sharing Settings…, Capture Shortcuts…",
-   "owner": "app",
-   "exercise": "e2e",
-   "gap": null,
-   "note": null,
-   "shortcut": null,
-   "proof": [],
-   "rendered": [],
-   "sources": [
-    "source"
-   ],
-   "id": "E2E-TOOLBOX-029"
-  },
-  {
-   "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox › More Commands",
-   "name": "File",
-   "type": "menu item",
-   "icon": null,
-   "entryPath": "Top bar › Toolbox › More Commands › File",
-   "prerequisite": "Fresh launch, empty document",
-   "expected": "Full copy of the File menu; every row mirrors the menu-bar item",
-   "owner": "app",
-   "exercise": "e2e",
-   "gap": null,
-   "note": null,
-   "shortcut": null,
-   "proof": [],
-   "rendered": [],
-   "sources": [
-    "source"
-   ],
-   "id": "E2E-TOOLBOX-030"
-  },
-  {
-   "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox › More Commands",
-   "name": "Image",
-   "type": "menu item",
-   "icon": null,
-   "entryPath": "Top bar › Toolbox › More Commands › Image",
-   "prerequisite": "Fresh launch, empty document",
-   "expected": "Full copy of the Image menu; every row mirrors the menu-bar item",
-   "owner": "app",
-   "exercise": "e2e",
-   "gap": null,
-   "note": null,
-   "shortcut": null,
-   "proof": [],
-   "rendered": [],
-   "sources": [
-    "source"
-   ],
-   "id": "E2E-TOOLBOX-031"
-  },
-  {
-   "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox › More Commands",
-   "name": "Drawing",
-   "type": "menu item",
-   "icon": null,
-   "entryPath": "Top bar › Toolbox › More Commands › Drawing",
-   "prerequisite": "Fresh launch, empty document",
-   "expected": "Full copy of the Drawing menu; every row mirrors the menu-bar item",
-   "owner": "app",
-   "exercise": "e2e",
-   "gap": null,
-   "note": null,
-   "shortcut": null,
-   "proof": [],
-   "rendered": [],
-   "sources": [
-    "source"
-   ],
-   "id": "E2E-TOOLBOX-032"
-  },
-  {
-   "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox › More Commands",
-   "name": "Text",
-   "type": "menu item",
-   "icon": null,
-   "entryPath": "Top bar › Toolbox › More Commands › Text",
-   "prerequisite": "Fresh launch, empty document",
-   "expected": "Full copy of the Text menu; every row mirrors the menu-bar item",
-   "owner": "app",
-   "exercise": "e2e",
-   "gap": null,
-   "note": null,
-   "shortcut": null,
-   "proof": [],
-   "rendered": [],
-   "sources": [
-    "source"
-   ],
-   "id": "E2E-TOOLBOX-033"
-  },
-  {
-   "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox › More Commands",
-   "name": "Capture",
-   "type": "menu item",
-   "icon": null,
-   "entryPath": "Top bar › Toolbox › More Commands › Capture",
-   "prerequisite": "Fresh launch, empty document",
-   "expected": "Full copy of the Capture menu; every row mirrors the menu-bar item",
-   "owner": "app",
-   "exercise": "e2e",
-   "gap": null,
-   "note": null,
-   "shortcut": null,
-   "proof": [],
-   "rendered": [],
-   "sources": [
-    "source"
-   ],
-   "id": "E2E-TOOLBOX-034"
-  },
-  {
-   "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox › More Commands",
-   "name": "Sharing Settings…",
-   "type": "menu item",
-   "icon": "network",
-   "entryPath": "Top bar › Toolbox › More Commands › Sharing Settings…",
-   "prerequisite": "Fresh launch, empty document",
-   "expected": "Destinations sheet opens over the main window",
-   "owner": "app",
-   "exercise": "e2e",
-   "gap": null,
-   "note": null,
-   "shortcut": null,
-   "proof": [],
-   "rendered": [],
-   "sources": [
-    "source"
-   ],
-   "id": "E2E-TOOLBOX-035"
-  },
-  {
-   "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox › More Commands",
-   "name": "Capture Shortcuts…",
-   "type": "menu item",
-   "icon": "keyboard",
-   "entryPath": "Top bar › Toolbox › More Commands › Capture Shortcuts…",
-   "prerequisite": "Fresh launch, empty document",
-   "expected": "Capture Shortcuts sheet opens (Cancel / Save)",
-   "owner": "app",
-   "exercise": "e2e",
-   "gap": null,
-   "note": null,
-   "shortcut": null,
-   "proof": [],
-   "rendered": [],
-   "sources": [
-    "source"
-   ],
-   "id": "E2E-TOOLBOX-036"
-  },
-  {
-   "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox",
+   "surface": "Toolbar › Toolbox › group 5",
    "name": "Filled Shapes",
    "type": "menu item",
    "icon": null,
    "entryPath": "Top bar › Toolbox › Filled Shapes",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Toggles Filled Shapes; checkmark follows",
+   "expected": "Runs the same command as the menu-bar item Filled Shapes (the Toolbox row is a copy: title, key and symbol match)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
    "note": null,
    "shortcut": null,
-   "proof": [],
-   "rendered": [],
+   "proof": [
+    {
+     "file": "AppSafetyMenuCases.swift",
+     "test": "Toolbox rows are copies of main-menu rows: subset by action, same titles"
+    }
+   ],
+   "rendered": [
+    "S12"
+   ],
    "sources": [
     "source"
    ],
-   "id": "E2E-TOOLBOX-037"
+   "id": "E2E-TOOLBOX-054"
   },
   {
    "area": "TOOLBOX",
-   "surface": "Toolbar › Toolbox",
+   "surface": "Toolbar › Toolbox › group 5",
    "name": "Shadow",
    "type": "menu item",
    "icon": null,
    "entryPath": "Top bar › Toolbox › Shadow",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Toggles Shadow for shapes; checkmark follows",
+   "expected": "Runs the same command as the menu-bar item Shadow (the Toolbox row is a copy: title, key and symbol match)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
    "note": null,
    "shortcut": null,
-   "proof": [],
-   "rendered": [],
+   "proof": [
+    {
+     "file": "AppSafetyMenuCases.swift",
+     "test": "Toolbox rows are copies of main-menu rows: subset by action, same titles"
+    }
+   ],
+   "rendered": [
+    "S12"
+   ],
    "sources": [
     "source"
    ],
-   "id": "E2E-TOOLBOX-038"
+   "id": "E2E-TOOLBOX-055"
+  },
+  {
+   "area": "TOOLBOX",
+   "surface": "Toolbar › Toolbox › group 5",
+   "name": "Text Style…",
+   "type": "menu item",
+   "icon": "textformat",
+   "entryPath": "Top bar › Toolbox › Text Style…",
+   "prerequisite": "None, or a selected text element",
+   "expected": "Runs the same command as the menu-bar item Text Style… (the Toolbox row is a copy: title, key and symbol match)",
+   "owner": "app",
+   "exercise": "e2e-partial",
+   "gap": "os-panel",
+   "note": null,
+   "shortcut": null,
+   "proof": [
+    {
+     "file": "AppSafetyMenuCases.swift",
+     "test": "Toolbox rows are copies of main-menu rows: subset by action, same titles"
+    }
+   ],
+   "rendered": [
+    "S12"
+   ],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-TOOLBOX-056"
   },
   {
    "area": "STAT",
@@ -15346,6 +14860,52 @@
     "source"
    ],
    "id": "E2E-A11Y-006"
+  },
+  {
+   "area": "HARN",
+   "surface": "Harness S23",
+   "name": "More Commands",
+   "type": "control",
+   "icon": null,
+   "entryPath": "Seen in S23 (AXMenuItem)",
+   "prerequisite": "See the surface",
+   "expected": "Exercise it and record what it does; add it to a source table",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": null,
+   "shortcut": null,
+   "proof": [],
+   "rendered": [
+    "S23"
+   ],
+   "sources": [
+    "harness:S23"
+   ],
+   "id": "E2E-HARN-001"
+  },
+  {
+   "area": "HARN",
+   "surface": "Harness S23",
+   "name": "Wipe Snap Only",
+   "type": "control",
+   "icon": null,
+   "entryPath": "Seen in S23 (AXMenuItem)",
+   "prerequisite": "See the surface",
+   "expected": "Exercise it and record what it does; add it to a source table",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": null,
+   "shortcut": null,
+   "proof": [],
+   "rendered": [
+    "S23"
+   ],
+   "sources": [
+    "harness:S23"
+   ],
+   "id": "E2E-HARN-002"
   }
  ]
 }

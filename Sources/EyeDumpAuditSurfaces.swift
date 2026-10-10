@@ -366,6 +366,7 @@ extension AuditRun {
             step("S39", "titled window and alert sheets") { s39() }
             step("S40", "component states") { s40() }
             step("S41", "audit batch 3a: what the J1 fixes change") { s41() }
+            step("S42", "audit batch 3c: App-side J1 and J2 fixes") { s42() }
             step("S13", "capture picker") { s13() }
             step("S14", "countdown") { s14() }
             step("S15", "capture flash") { s15() }

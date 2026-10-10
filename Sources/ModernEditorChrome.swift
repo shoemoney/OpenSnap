@@ -492,15 +492,24 @@ final class ModernEditorChrome: NSView {
     /// instead of drifting to the corners of the screen; below it the bar spans the window less the margins, as before.
     static let maximumBarWidth: CGFloat = 1440
 
+    /// The bars' width is a constant the chrome keeps in step with its own width in `layout()`, so the cap never becomes a relationship that
+    /// limits how wide the window itself may grow.
+    private var barWidthConstraints: [NSLayoutConstraint] = []
+
     private func constrainBarWidth(_ bar: NSView, margin: CGFloat) {
-        let fill = bar.widthAnchor.constraint(equalTo: widthAnchor, constant: -2 * margin)
-        fill.priority = .defaultHigh
-        NSLayoutConstraint.activate([
-            fill,
-            bar.widthAnchor.constraint(lessThanOrEqualToConstant: Self.maximumBarWidth),
-            bar.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: margin),
-            bar.centerXAnchor.constraint(equalTo: centerXAnchor)
-        ])
+        let width = bar.widthAnchor.constraint(equalToConstant: Self.minimumWindowWidth - 2 * margin)
+        width.priority = NSLayoutConstraint.Priority(rawValue: 999)
+        barWidthConstraints.append(width)
+        NSLayoutConstraint.activate([width, bar.centerXAnchor.constraint(equalTo: centerXAnchor)])
+    }
+
+    /// The width a bar takes at the chrome's current width.
+    var barWidth: CGFloat { min(Self.maximumBarWidth, max(0, bounds.width - 2 * DesignTokens.Layout.margin)) }
+
+    override func layout() {
+        let target = barWidth
+        if target > 0 { for constraint in barWidthConstraints where constraint.constant != target { constraint.constant = target } }
+        super.layout()
     }
 }
 

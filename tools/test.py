@@ -142,6 +142,7 @@ suites = [
     ("canvas-navigator-tests", ["CanvasNavigator.swift"], "CanvasNavigatorTests.swift", "CANVAS_NAVIGATOR_TESTS", ()),
     ("canvas-border-tests", ["WindowSizing.swift", "CanvasBorderView.swift"], "CanvasBorderTests.swift", "CANVAS_BORDER_TESTS", ()),
     ("resize-panel-tests", ["ResizePresets.swift", "ResizePanel.swift"], "ResizePanelTests.swift", "RESIZE_PANEL_TESTS", ()),
+    ("resize-panel-layout-tests", ["ResizePresets.swift", "ResizePanel.swift", "TestDefaults.swift"], "ResizePanelLayoutTests.swift", "RESIZE_PANEL_LAYOUT_TESTS", ()),
     ("export-accessory-tests", ["ExportAccessory.swift"], "ExportAccessoryTests.swift", "EXPORT_ACCESSORY_TESTS", ()),
     ("image-export-tests", ["SVGPath.swift", "DocumentModel.swift", "VectorGeometry.swift", "ImageExport.swift"], "ImageExportTests.swift", "IMAGE_EXPORT_TESTS", ()),
     ("vector-geometry-tests", ["SVGPath.swift", "DocumentModel.swift", "VectorGeometry.swift"], "VectorGeometryTests.swift", "VECTOR_GEOMETRY_TESTS", ()),

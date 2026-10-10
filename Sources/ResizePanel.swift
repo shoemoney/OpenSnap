@@ -557,7 +557,7 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         let grid = ResizeAnchorGrid()
         grid.onChange = { [weak self] anchor in self?.chooseAnchor(anchor) }
         anchorGrid = grid
-        let anchorCaption = NSTextField(wrappingLabelWithString: "Part of the image to keep when the crop is smaller than the picture.")
+        let anchorCaption = NSTextField(wrappingLabelWithString: "The marked cell is the part of the image that stays.")
         anchorCaption.font = DesignTokens.Typography.font(.body)
         anchorCaption.textColor = DesignTokens.Palette.Text.secondary
         anchorCaption.preferredMaxLayoutWidth = 300

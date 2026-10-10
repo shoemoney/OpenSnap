@@ -413,6 +413,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         buildMenus(); buildWindow()
+        for (name, handler) in [(NSWindow.willEnterFullScreenNotification, windowWillEnterFullScreen), (NSWindow.didEnterFullScreenNotification, windowDidEnterFullScreen), (NSWindow.didExitFullScreenNotification, windowDidExitFullScreen)] {
+            NotificationCenter.default.addObserver(forName: name, object: window, queue: .main) { note in MainActor.assumeIsolated { handler(note) } }
+        }
         installMenuPresence()
         applyPresencePolicy()
         installHintMonitoring()
@@ -522,6 +525,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     func windowDidEnterFullScreen(_ notification: Notification) {
         guard (notification.object as? NSWindow) === window else { return }
         fitDrawingForFullScreen()
+        DispatchQueue.main.async { [weak self] in self?.refitForFullScreenResize() }
     }
     func windowDidExitFullScreen(_ notification: Notification) {
         guard (notification.object as? NSWindow) === window else { return }
@@ -1303,7 +1307,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         let original = dragAtOriginalSize
         let size = original && canvas.document.backgroundPNG != nil ? canvas.canvasSize : canvas.outputSize
         if let data = try? exportData(format: dragFormat, originalSize: original, jpegQuality: dragQuality) {
-            dragSizeLabel.stringValue = "\(Int(size.width)) × \(Int(size.height)) · " + ByteCountFormatter.string(fromByteCount: Int64(data.count), countStyle: .file)
+            dragSizeLabel.stringValue = "\(Int(size.width)) × \(Int(size.height)) · " + (dragFormat == "jpeg" ? "JPG" : "PNG") + " · " + ByteCountFormatter.string(fromByteCount: Int64(data.count), countStyle: .file)
             window?.subtitle = dragSizeLabel.stringValue
         } else { dragSizeLabel.stringValue = "Preview unavailable"; window?.subtitle = "" }
         refreshStatusText()

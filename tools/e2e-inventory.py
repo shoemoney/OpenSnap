@@ -113,7 +113,7 @@ def parse_menus():
 
 def parse_toolbox_groups():
     text = read("App.swift")
-    block = text[text.index("let groups: [[Selector]] = ["):text.index("for (index, group) in groups.enumerated()")]
+    block = text[text.index("static let toolboxGroups: [[Selector]] = ["):text.index("func bezelToolbox()")]
     return [re.findall(r"#selector\((\w+)", line) for line in block.splitlines()[1:] if "#selector" in line]
 
 
@@ -263,7 +263,7 @@ def build_toolbox(parsed):
     titles = {sel: name for _, name, sel, _ in parsed if sel}
     titles.update({"toggleVisible": "Hide OpenSnap"})
     symbols = dict(parse_menu_symbols())
-    add("TOOLBOX", "Toolbar › Toolbox", "Toolbox", "toolbar button", "Top bar › Toolbox (icon-only pull-down)", "Pull-down opens: five command groups, More Commands, Filled Shapes, Shadow",
+    add("TOOLBOX", "Toolbar › Toolbox", "Toolbox", "toolbar button", "Top bar › Toolbox (icon-only pull-down)", "Pull-down opens: five groups of drawing-session commands (keep, edit, capture, adjust the picture, pen settings); no app or file plumbing",
         icon="toolbox", rendered=["S04", "S12"])
     for index, group in enumerate(parse_toolbox_groups(), start=1):
         for selector in group:
@@ -273,14 +273,6 @@ def build_toolbox(parsed):
                 prereq=SEM.get(selector, (D,))[0], ex=SEM[selector][2] if selector in SEM else "e2e", gap=SEM[selector][3] if selector in SEM else None,
                 owner=SEM[selector][4] if selector in SEM else "app", rendered=["S12"],
                 proof=proof("AppSafetyMenuCases.swift", "Toolbox rows are copies of main-menu rows: subset by action, same titles"))
-    add("TOOLBOX", "Toolbar › Toolbox", "More Commands", "menu item", "Top bar › Toolbox › More Commands", "Submenu with File, Image, Drawing, Text, Capture, Sharing Settings…, Capture Shortcuts…")
-    for sub in ("File", "Image", "Drawing", "Text", "Capture"):
-        add("TOOLBOX", "Toolbar › Toolbox › More Commands", sub, "menu item", f"Top bar › Toolbox › More Commands › {sub}", f"Full copy of the {sub} menu; every row mirrors the menu-bar item")
-    for selector in ("sharingSettings", "shortcutSettings"):
-        add("TOOLBOX", "Toolbar › Toolbox › More Commands", titles[selector], "menu item", f"Top bar › Toolbox › More Commands › {titles[selector]}",
-            SEM[selector][1], icon=symbols.get(selector))
-    for selector in ("toggleBezelFill", "toggleBezelShadow"):
-        add("TOOLBOX", "Toolbar › Toolbox", titles[selector], "menu item", f"Top bar › Toolbox › {titles[selector]}", SEM[selector][1])
 
 
 # ------------------------------------------------------------------------------------------------------------------- icons

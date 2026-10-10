@@ -7,10 +7,20 @@ extension AppDelegate {
 
     func fitDrawingForFullScreen() {
         guard !isActualSize, activeResizeSession == nil, windowGesture == nil else { return }
-        let before = canvas.zoom
+        let before = fullScreenZoom?.before ?? canvas.zoom
         fitCanvasToWindow(maximumScale: Self.fullScreenMaximumScale)
         fullScreenZoom = (documentGeneration, before, canvas.zoom)
         updateViewportChrome()
+    }
+
+    /// Full screen is a run of window resizes (the Space's size is reached over several), and AppKit's did-enter and did-exit notices come
+    /// after them or not at all in a headless run, so the resizes drive the zoom: while the window is in full screen the drawing is fitted
+    /// to whatever room it has (as long as the zoom is still the one full screen chose), and the first resize back out puts the zoom back.
+    func refitForFullScreenResize() {
+        if isFullScreen {
+            if fullScreenZoom == nil { fitDrawingForFullScreen() }
+            else if let saved = fullScreenZoom, saved.generation == documentGeneration, abs(canvas.zoom - saved.applied) < 0.0005 { fitDrawingForFullScreen() }
+        } else if fullScreenZoom != nil { restoreZoomAfterFullScreen() }
     }
 
     func restoreZoomAfterFullScreen() {
