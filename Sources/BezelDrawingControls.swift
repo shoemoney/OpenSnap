@@ -98,22 +98,35 @@ final class BezelColorButton: NSButton {
     }
 }
 
-/// The recovered vertical Size control: native artwork and point mapping,
-/// five ordinary steps, and Shift-continuous updates throughout a drag.
-final class BezelSizeSlider: NSControl {
+/// The Size control: a 48 x 36 pill that draws the current stroke thickness as a horizontal line and opens a popover
+/// with a track and five presets. The pill stays the one model object: the value, the target/action, the undo
+/// grouping and the "Size N" tooltip all live here, and the popover drives them through the same gesture API.
+/// Five ordinary steps from the recovered control; Shift gives continuous values throughout.
+final class BezelSizeSlider: NSControl, NSPopoverDelegate {
+    static let pillSize = NSSize(width: 48, height: 36)
+    static let glyphLength: CGFloat = 24
+    /// One preset step, the distance between neighbouring sizes.
+    static let stepSize = 2.625
     var onBegin: (() -> Bool)?
     var onEnd: (() -> Void)?
+    /// Tests hand in a popover that never reaches the screen.
+    var popoverProvider: () -> NSPopover = { NSPopover() }
+    private(set) var popover: NSPopover?
+    private(set) var popoverContent: SizePopoverContent?
+    var isPopoverShown: Bool { popover?.isShown == true }
     private var tracking = false
     private var value = OriginalDrawingControls.initialSize
+    private var lastPopoverClose: TimeInterval = -.infinity
     override var acceptsFirstResponder: Bool { true }
     override var doubleValue: Double {
         get { value }
-        set { value = OriginalDrawingControls.size(newValue, continuous: true); needsDisplay = true }
+        set { value = OriginalDrawingControls.size(newValue, continuous: true); needsDisplay = true; popoverContent?.sync() }
     }
     override init(frame: NSRect) {
         super.init(frame: frame)
         cell = NSActionCell(); isEnabled = true
         font = .systemFont(ofSize: 18)
+        focusRingType = .exterior
         setAccessibilityElement(true); setAccessibilityRole(.slider)
         setAccessibilityLabel("Drawing size")
         toolTip = "Five drawing sizes; hold Shift for continuous adjustment"
@@ -126,74 +139,289 @@ final class BezelSizeSlider: NSControl {
         guard let number = value as? NSNumber else { return }
         performValueChange(number.doubleValue, continuous: true)
     }
-    override func accessibilityPerformIncrement() -> Bool { performValueChange(value+2.625, continuous: false); return isEnabled }
-    override func accessibilityPerformDecrement() -> Bool { performValueChange(value-2.625, continuous: false); return isEnabled }
-    func pointForValue(_ size: Double) -> NSPoint {
-        NSPoint(x: (bounds.width-14)/2, y: 64*(12-size)/10.5)
+    override func accessibilityPerformIncrement() -> Bool { performValueChange(value + Self.stepSize, continuous: false); return isEnabled }
+    override func accessibilityPerformDecrement() -> Bool { performValueChange(value - Self.stepSize, continuous: false); return isEnabled }
+    override func accessibilityPerformPress() -> Bool {
+        guard isEnabled else { return false }
+        if isPopoverShown { dismissPopover() } else { showPopover() }
+        return true
     }
-    private func drawModern() {
-        NSColor.quaternaryLabelColor.setFill()
-        NSBezierPath(roundedRect: NSRect(x: (bounds.width-10)/2, y: 7, width: 10, height: 63), xRadius: 5, yRadius: 5).fill()
-        NSColor.secondaryLabelColor.setFill()
-        for step in OriginalDrawingControls.sizeSteps {
-            let dot = pointForValue(step)
-            NSBezierPath(ovalIn: NSRect(x: dot.x+5.5, y: dot.y+5.5, width: 3, height: 3)).fill()
-        }
-        NSColor.controlAccentColor.setFill()
-        NSBezierPath(ovalIn: NSRect(origin: pointForValue(value), size: NSSize(width: 14, height: 14))).fill()
-    }
+
     override func draw(_ dirtyRect: NSRect) {
-        drawModern()
-        if window?.firstResponder === self {
-            NSColor.keyboardFocusIndicatorColor.setStroke()
-            let focus = NSBezierPath(roundedRect: bounds.insetBy(dx: 1, dy: 1), xRadius: 4, yRadius: 4)
-            focus.lineWidth = 2; focus.stroke()
-        }
+        let thickness = CGFloat(value)
+        let line = NSRect(x: (bounds.width - Self.glyphLength) / 2, y: (bounds.height - thickness) / 2, width: Self.glyphLength, height: thickness)
+        (isEnabled ? NSColor.labelColor : NSColor.disabledControlTextColor).setFill()
+        NSBezierPath(roundedRect: line, xRadius: thickness / 2, yRadius: thickness / 2).fill()
     }
-    private func begin() -> Bool {
+
+    private var focusBounds: NSRect { bounds.insetBy(dx: 1, dy: 1) }
+    override var focusRingMaskBounds: NSRect { isEnabled && !focusBounds.isEmpty ? focusBounds : .zero }
+    override func drawFocusRingMask() {
+        guard isEnabled, !focusBounds.isEmpty else { return }
+        NSColor.black.setFill()
+        NSBezierPath(roundedRect: focusBounds, xRadius: focusBounds.height / 2, yRadius: focusBounds.height / 2).fill()
+    }
+
+    // MARK: gesture API shared by the pill and the popover
+
+    /// Opens the undo group for one gesture; false when the app declines (terminating, capturing, a sheet is up).
+    @discardableResult func beginGesture() -> Bool {
         guard isEnabled else { return false }
         if tracking { return true }
         guard onBegin?() ?? true else { return false }
         tracking = true; return true
     }
     func endTracking() { guard tracking else { return }; tracking = false; onEnd?() }
-    func setValueForPoint(_ point: NSPoint, modifiers: NSEvent.ModifierFlags) {
-        guard point.y.isFinite else { return }
-        update(12-point.y/64*10.5, continuous: modifiers.contains(.shift))
+    /// A position along the track (0 is the smallest size). Plain values snap to the five steps; Shift keeps them continuous.
+    func trackValue(fraction: CGFloat, modifiers: NSEvent.ModifierFlags) {
+        guard tracking, fraction.isFinite else { return }
+        let span = OriginalDrawingControls.maximum - OriginalDrawingControls.minimum
+        update(OriginalDrawingControls.minimum + Double(min(1, max(0, fraction))) * span, continuous: modifiers.contains(.shift))
+    }
+    func resetValue() {
+        guard tracking else { return }
+        update(OriginalDrawingControls.initialSize, continuous: true)
+    }
+    func fraction(forSize size: Double) -> CGFloat {
+        CGFloat((size - OriginalDrawingControls.minimum) / (OriginalDrawingControls.maximum - OriginalDrawingControls.minimum))
     }
     private func update(_ raw: Double, continuous: Bool) {
         let chosen = OriginalDrawingControls.size(raw, continuous: continuous)
         guard chosen != value else { return }
         doubleValue = chosen; _ = sendAction(action, to: target)
     }
+    /// One complete change: begin, update, end. A preset click, a keypress and an assistive increment are each one undo step.
     func performValueChange(_ raw: Double, continuous: Bool) {
-        guard raw.isFinite, begin() else { return }
+        guard raw.isFinite, beginGesture() else { return }
         update(raw, continuous: continuous); endTracking()
     }
+
+    // MARK: popover
+
+    func showPopover() {
+        guard isEnabled, let window, window.attachedSheet == nil, !isPopoverShown else { return }
+        let content = SizePopoverContent(slider: self)
+        let controller = NSViewController()
+        controller.view = content
+        let popover = popoverProvider()
+        popover.behavior = .transient
+        popover.contentViewController = controller
+        popover.delegate = self
+        self.popover = popover; popoverContent = content
+        content.sync()
+        popover.show(relativeTo: bounds, of: self, preferredEdge: .minY)
+    }
+    /// Closes the popover and ends any gesture it still has open, so a dismissal mid-drag cannot leave an undo group behind.
+    func dismissPopover() {
+        endTracking()
+        popover?.performClose(nil)
+    }
+    func popoverWillClose(_ notification: Notification) {
+        endTracking()
+        lastPopoverClose = ProcessInfo.processInfo.systemUptime
+    }
+    func popoverDidClose(_ notification: Notification) {
+        popover = nil; popoverContent = nil
+    }
+
     override func mouseDown(with event: NSEvent) {
-        guard begin() else { return }
-        // The original slider does not end native annotation typing. Keep that
-        // editor's focus; keyboard access to Size remains available via Tab/AX.
+        guard isEnabled else { return }
+        // The original slider does not end native annotation typing. Keep that editor's focus.
         if !(window?.firstResponder is NSTextView) { window?.makeFirstResponder(self) }
-        if event.clickCount > 1 { update(6.75, continuous: true) }
-        else { setValueForPoint(convert(event.locationInWindow, from: nil), modifiers: event.modifierFlags) }
+        if isPopoverShown { dismissPopover() }
+        // A transient popover already closed on this very click; reopening it would make the pill unable to toggle.
+        else if event.timestamp - lastPopoverClose > 0.3 || event.timestamp < lastPopoverClose { showPopover() }
     }
-    override func mouseDragged(with event: NSEvent) {
-        guard tracking else { return }
-        setValueForPoint(convert(event.locationInWindow, from: nil), modifiers: event.modifierFlags)
-    }
-    override func mouseUp(with event: NSEvent) { endTracking() }
     override func keyDown(with event: NSEvent) {
+        let shift = event.modifierFlags.contains(.shift), step = shift ? 0.1 : Self.stepSize
         switch event.keyCode {
-        case 125: performValueChange(value+(event.modifierFlags.contains(.shift) ? 0.1 : 2.625), continuous: event.modifierFlags.contains(.shift))
-        case 126: performValueChange(value-(event.modifierFlags.contains(.shift) ? 0.1 : 2.625), continuous: event.modifierFlags.contains(.shift))
-        case 53: endTracking()
+        case 124, 126: performValueChange(value + step, continuous: shift)
+        case 123, 125: performValueChange(value - step, continuous: shift)
+        case 49, 36, 76: if isPopoverShown { dismissPopover() } else { showPopover() }
+        case 53: if isPopoverShown { dismissPopover() } else { endTracking() }
         default: super.keyDown(with: event)
         }
     }
     override func viewWillMove(toWindow newWindow: NSWindow?) {
-        if newWindow == nil { endTracking() }
+        if newWindow == nil { dismissPopover() }
         super.viewWillMove(toWindow: newWindow)
+    }
+}
+
+/// The solid (non-glass) content of the Size popover: a title and a numeric readout, a horizontal track and the five presets.
+final class SizePopoverContent: NSView {
+    static let size = NSSize(width: 320, height: 156)
+    private weak var slider: BezelSizeSlider?
+    let titleLabel = NSTextField(labelWithString: "Size")
+    let readout = NSTextField(labelWithString: "")
+    let trackView: SizeTrackView
+    let presetButtons: [SizePresetButton]
+
+    init(slider: BezelSizeSlider) {
+        self.slider = slider
+        trackView = SizeTrackView(slider: slider)
+        presetButtons = OriginalDrawingControls.sizeSteps.map { SizePresetButton(size: $0, slider: slider) }
+        super.init(frame: NSRect(origin: .zero, size: Self.size))
+        wantsLayer = true
+        titleLabel.font = .systemFont(ofSize: 20, weight: .semibold)
+        readout.font = .monospacedDigitSystemFont(ofSize: 20, weight: .regular)
+        readout.alignment = .right
+        readout.setAccessibilityLabel("Size value")
+        for view in [titleLabel, readout, trackView] + presetButtons {
+            view.translatesAutoresizingMaskIntoConstraints = false
+            addSubview(view)
+        }
+        var constraints = [
+            widthAnchor.constraint(equalToConstant: Self.size.width), heightAnchor.constraint(equalToConstant: Self.size.height),
+            titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16), titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 16),
+            titleLabel.heightAnchor.constraint(equalToConstant: 28),
+            readout.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16), readout.topAnchor.constraint(equalTo: topAnchor, constant: 16),
+            readout.heightAnchor.constraint(equalToConstant: 28), readout.leadingAnchor.constraint(greaterThanOrEqualTo: titleLabel.trailingAnchor, constant: 8),
+            trackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16), trackView.topAnchor.constraint(equalTo: topAnchor, constant: 56),
+            trackView.widthAnchor.constraint(equalToConstant: SizeTrackView.size.width), trackView.heightAnchor.constraint(equalToConstant: SizeTrackView.size.height)
+        ]
+        let gap = (SizeTrackView.size.width - 5 * SizePresetButton.size.width) / 4
+        for (index, button) in presetButtons.enumerated() {
+            constraints += [
+                button.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16 + CGFloat(index) * (SizePresetButton.size.width + gap)),
+                button.topAnchor.constraint(equalTo: topAnchor, constant: 104),
+                button.widthAnchor.constraint(equalToConstant: SizePresetButton.size.width), button.heightAnchor.constraint(equalToConstant: SizePresetButton.size.height)
+            ]
+        }
+        NSLayoutConstraint.activate(constraints)
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override var wantsUpdateLayer: Bool { true }
+    override func updateLayer() {
+        effectiveAppearance.performAsCurrentDrawingAppearance { layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor }
+    }
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        needsDisplay = true
+    }
+
+    /// Re-reads the slider: readout, knob and the selected preset.
+    func sync() {
+        guard let slider else { return }
+        readout.stringValue = String(format: "%.0f", slider.doubleValue.rounded())
+        trackView.needsDisplay = true
+        for button in presetButtons { button.needsDisplay = true }
+    }
+}
+
+/// The horizontal track in the popover: drag anywhere. A plain drag snaps to the five sizes, Shift keeps it continuous.
+final class SizeTrackView: NSControl {
+    static let size = NSSize(width: 288, height: 36)
+    static let knobDiameter: CGFloat = 20
+    private weak var slider: BezelSizeSlider?
+    override var acceptsFirstResponder: Bool { true }
+
+    init(slider: BezelSizeSlider) {
+        self.slider = slider
+        super.init(frame: NSRect(origin: .zero, size: Self.size))
+        font = .systemFont(ofSize: 18)
+        focusRingType = .exterior
+        setAccessibilityElement(true); setAccessibilityRole(.slider)
+        setAccessibilityLabel("Size")
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    private var travel: CGFloat { bounds.width - Self.knobDiameter }
+    func fraction(forX x: CGFloat) -> CGFloat { travel > 0 ? (x - Self.knobDiameter / 2) / travel : 0 }
+    func x(forFraction fraction: CGFloat) -> CGFloat { Self.knobDiameter / 2 + fraction * travel }
+
+    override func accessibilityValue() -> Any? { slider.map { NSNumber(value: $0.doubleValue) } }
+    override func accessibilityMinValue() -> Any? { NSNumber(value: OriginalDrawingControls.minimum) }
+    override func accessibilityMaxValue() -> Any? { NSNumber(value: OriginalDrawingControls.maximum) }
+    override func accessibilityPerformIncrement() -> Bool { slider?.accessibilityPerformIncrement() ?? false }
+    override func accessibilityPerformDecrement() -> Bool { slider?.accessibilityPerformDecrement() ?? false }
+
+    override func draw(_ dirtyRect: NSRect) {
+        guard let slider else { return }
+        let midY = bounds.midY
+        NSColor.quaternaryLabelColor.setFill()
+        NSBezierPath(roundedRect: NSRect(x: Self.knobDiameter / 2, y: midY - 4, width: travel, height: 8), xRadius: 4, yRadius: 4).fill()
+        NSColor.secondaryLabelColor.setFill()
+        for step in OriginalDrawingControls.sizeSteps {
+            let x = self.x(forFraction: slider.fraction(forSize: step))
+            NSBezierPath(ovalIn: NSRect(x: x - 2, y: midY - 2, width: 4, height: 4)).fill()
+        }
+        let knobX = x(forFraction: slider.fraction(forSize: slider.doubleValue))
+        NSColor.controlAccentColor.setFill()
+        NSBezierPath(ovalIn: NSRect(x: knobX - Self.knobDiameter / 2, y: midY - Self.knobDiameter / 2, width: Self.knobDiameter, height: Self.knobDiameter)).fill()
+    }
+    override var focusRingMaskBounds: NSRect { bounds.insetBy(dx: 1, dy: 1) }
+    override func drawFocusRingMask() {
+        NSColor.black.setFill()
+        NSBezierPath(roundedRect: bounds.insetBy(dx: 1, dy: 1), xRadius: 8, yRadius: 8).fill()
+    }
+
+    private func track(_ event: NSEvent) {
+        slider?.trackValue(fraction: fraction(forX: convert(event.locationInWindow, from: nil).x), modifiers: event.modifierFlags)
+    }
+    override func mouseDown(with event: NSEvent) {
+        guard let slider, slider.beginGesture() else { return }
+        window?.makeFirstResponder(self)
+        if event.clickCount > 1 { slider.resetValue() } else { track(event) }
+    }
+    override func mouseDragged(with event: NSEvent) { track(event) }
+    override func mouseUp(with event: NSEvent) { slider?.endTracking() }
+    override func keyDown(with event: NSEvent) {
+        let shift = event.modifierFlags.contains(.shift), step = shift ? 0.1 : BezelSizeSlider.stepSize
+        guard let slider else { return super.keyDown(with: event) }
+        switch event.keyCode {
+        case 124, 126: slider.performValueChange(slider.doubleValue + step, continuous: shift)
+        case 123, 125: slider.performValueChange(slider.doubleValue - step, continuous: shift)
+        default: super.keyDown(with: event)
+        }
+    }
+}
+
+/// One of the five sizes. The selected one is marked by a thicker accent border and a tinted fill, never by colour alone.
+final class SizePresetButton: NSButton {
+    static let size = NSSize(width: 48, height: 36)
+    let presetSize: Double
+    private weak var slider: BezelSizeSlider?
+    var isSelectedPreset: Bool { slider.map { abs($0.doubleValue - presetSize) < 0.01 } ?? false }
+
+    init(size: Double, slider: BezelSizeSlider) {
+        presetSize = size
+        self.slider = slider
+        super.init(frame: NSRect(origin: .zero, size: Self.size))
+        isBordered = false
+        title = ""
+        font = .systemFont(ofSize: 18)
+        focusRingType = .exterior
+        target = self; action = #selector(choose)
+        let name = "Size " + String(format: "%.0f", size.rounded())
+        setAccessibilityLabel(name); toolTip = name
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    @objc private func choose() { slider?.performValueChange(presetSize, continuous: false) }
+    override func isAccessibilitySelected() -> Bool { isSelectedPreset }
+
+    override func draw(_ dirtyRect: NSRect) {
+        let frame = bounds.insetBy(dx: 1, dy: 1)
+        let outline = NSBezierPath(roundedRect: frame, xRadius: 8, yRadius: 8)
+        if isSelectedPreset {
+            NSColor.controlAccentColor.withAlphaComponent(0.20).setFill(); outline.fill()
+            NSColor.controlAccentColor.setStroke(); outline.lineWidth = 2
+        } else {
+            if isHighlighted { NSColor.labelColor.withAlphaComponent(0.10).setFill(); outline.fill() }
+            NSColor.separatorColor.setStroke(); outline.lineWidth = 1
+        }
+        outline.stroke()
+        let thickness = CGFloat(presetSize)
+        let line = NSRect(x: (bounds.width - BezelSizeSlider.glyphLength) / 2, y: (bounds.height - thickness) / 2, width: BezelSizeSlider.glyphLength, height: thickness)
+        NSColor.labelColor.setFill()
+        NSBezierPath(roundedRect: line, xRadius: thickness / 2, yRadius: thickness / 2).fill()
+    }
+    override var focusRingMaskBounds: NSRect { bounds.insetBy(dx: 1, dy: 1) }
+    override func drawFocusRingMask() {
+        NSColor.black.setFill()
+        NSBezierPath(roundedRect: bounds.insetBy(dx: 1, dy: 1), xRadius: 8, yRadius: 8).fill()
     }
 }
 

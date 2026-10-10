@@ -409,22 +409,22 @@ final class GlassSurfaceView: NSGlassEffectView {
 @MainActor
 enum GlassChrome {
     enum Metrics {
-        static let toolButton = NSSize(width: 48, height: 40)
+        /// 44 pt wide so the ten tools, the capture group and the annotation group fit one row at the 980 pt minimum window.
+        static let toolButton = NSSize(width: 44, height: 40)
         /// Every icon-only command shares this glass; Snap, the primary one, is the larger `primaryButton`.
         static let iconButton = NSSize(width: 48, height: 36)
         /// The Toolbox glyph plus its chevron needs more room than a plain icon.
         static let toolboxButton = NSSize(width: 60, height: 36)
-        /// Resize is an image command, not a drawing tool: it sits well apart from the tool row.
-        static let resizeSeparation: CGFloat = 28
         static let primaryButton = NSSize(width: 56, height: 44)
         static let commandHeight: CGFloat = 36
-        static let railWidth: CGFloat = 64, rightRailWidth: CGFloat = 64, headerHeight: CGFloat = 44
+        static let headerHeight: CGFloat = 44
         static let iconPointSize: CGFloat = 22, primaryIconPointSize: CGFloat = 26, labelPointSize: CGFloat = 20
-        static let groupSpacing: CGFloat = 10, surfaceSpacing: CGFloat = 6, containerSpacing: CGFloat = 2
+        static let surfaceSpacing: CGFloat = 6, containerSpacing: CGFloat = 2
+        /// The smallest gap between two glass groups in one bar.
+        static let groupGap: CGFloat = 12
         /// Icon beside a 20-point label is drawn at 20 points; icon-only controls use `iconPointSize`.
         static let labeledIconPointSize: CGFloat = 20
         static let pillPadding: CGFloat = 12
-        static let railPillWidth: CGFloat = 148
         static let toolSpacing: CGFloat = 4
         // NSGlassEffectContainerView fuses glass shapes closer than its spacing, so it must stay below every stack gap (smallest: toolSpacing).
         static let toolRadius: CGFloat = 12, dragRadius: CGFloat = 14
@@ -438,7 +438,7 @@ enum GlassChrome {
         if let font { control.font = font }
     }
 
-    /// Experimental canvas bleed under the rails; off falls back to the plain window backdrop.
+    /// Experimental canvas bleed under the bars; off falls back to the plain window backdrop.
     static var usesCanvasBleed = false
 
     /// Wraps `control` in a glass surface. Without an explicit size the surface is a command-height pill that

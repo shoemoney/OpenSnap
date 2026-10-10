@@ -25,6 +25,26 @@ private final class ActionTarget: NSObject {
     @objc func resize(_ sender: Any?) { hits.append("resize") }
     @objc func share(_ sender: Any?) { hits.append("share") }
     @objc func alternate(_ sender: Any?) { hits.append("alternate") }
+    @objc func sizeChanged(_ sender: Any?) { hits.append("size") }
+}
+
+/// A popover that never reaches the screen but still reports its edge, its anchor and its close notifications.
+@MainActor
+private final class TestPopover: NSPopover {
+    var open = false
+    private(set) var edge: NSRectEdge?
+    private(set) weak var anchor: NSView?
+    override var isShown: Bool { open }
+    override func show(relativeTo positioningRect: NSRect, of positioningView: NSView, preferredEdge: NSRectEdge) {
+        open = true; edge = preferredEdge; anchor = positioningView
+    }
+    override func performClose(_ sender: Any?) { close() }
+    override func close() {
+        guard open else { return }
+        delegate?.popoverWillClose?(Notification(name: NSPopover.willCloseNotification, object: self))
+        open = false
+        delegate?.popoverDidClose?(Notification(name: NSPopover.didCloseNotification, object: self))
+    }
 }
 
 @MainActor
@@ -323,68 +343,169 @@ private enum GlassChromeTests {
 
     // MARK: BezelSizeSlider
 
+    private static func keyEvent(_ code: UInt16, in window: NSWindow, flags: NSEvent.ModifierFlags = []) -> NSEvent {
+        NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: flags, timestamp: 0, windowNumber: window.windowNumber, context: nil,
+                         characters: "", charactersIgnoringModifiers: "", isARepeat: false, keyCode: code)!
+    }
+
     private static func sliderTests() {
-        let slider = BezelSizeSlider(frame: NSRect(x: 0, y: 0, width: 40, height: 82))
-        let (window, content) = window(NSSize(width: 60, height: 100))
+        let slider = BezelSizeSlider(frame: NSRect(origin: .zero, size: BezelSizeSlider.pillSize))
+        let (window, content) = window(NSSize(width: 80, height: 60))
         window.appearance = NSAppearance(named: .aqua)
         content.addSubview(slider)
-        slider.frame = NSRect(x: 10, y: 9, width: 40, height: 82)
+        slider.frame = NSRect(x: 16, y: 12, width: 48, height: 36)
+        let target = ActionTarget()
+        slider.target = target; slider.action = #selector(ActionTarget.sizeChanged(_:))
+        var begins = 0, ends = 0
+        slider.onBegin = { begins += 1; return true }
+        slider.onEnd = { ends += 1 }
+        slider.popoverProvider = { TestPopover() }
+        func groups() -> String { "begin \(begins) end \(ends)" }
 
+        // Semantics: a real slider to assistive technology, with the five original steps.
+        expect(OriginalDrawingControls.sizeSteps == [1.5, 4.125, 6.75, 9.375, 12], "There are five steps")
+        expect(slider.accessibilityRole() == .slider && slider.accessibilityLabel() == "Drawing size" && slider.isAccessibilityElement(), "The pill is an accessible slider")
+        expect((slider.accessibilityMinValue() as? NSNumber)?.doubleValue == 1.5 && (slider.accessibilityMaxValue() as? NSNumber)?.doubleValue == 12
+               && (slider.accessibilityValue() as? NSNumber)?.doubleValue == 6.75, "Min, max and value are exposed")
+        expect(slider.acceptsFirstResponder && slider.frame.height >= 36, "The pill takes the keyboard and is at least 36 pt tall")
+
+        // Pixels: the glyph is a horizontal line whose thickness is the value.
         func raster() -> NSBitmapImageRep {
             let rep = slider.bitmapImageRepForCachingDisplay(in: slider.bounds)!
             slider.cacheDisplay(in: slider.bounds, to: rep)
             return rep
         }
-        func opaquePixels(_ rep: NSBitmapImageRep) -> Int {
-            var count = 0
-            for y in 0..<rep.pixelsHigh { for x in 0..<rep.pixelsWide where (rep.colorAt(x: x, y: y)?.alphaComponent ?? 0) > 0.05 { count += 1 } }
-            return count
-        }
-        func pixel(_ rep: NSBitmapImageRep, at point: NSPoint) -> NSColor? {
+        func inkedRun(_ rep: NSBitmapImageRep, column: Int? = nil) -> Int {
             let scale = CGFloat(rep.pixelsWide) / slider.bounds.width
-            return rep.colorAt(x: Int(point.x * scale), y: Int((slider.bounds.height - point.y) * scale))?.usingColorSpace(.deviceRGB)
+            let x = column ?? rep.pixelsWide / 2
+            var count = 0
+            for y in 0..<rep.pixelsHigh where (rep.colorAt(x: x, y: y)?.alphaComponent ?? 0) > 0.5 { count += 1 }
+            return Int((CGFloat(count) / scale).rounded())
         }
-        // Wide-gamut accents come back from a bitmap tone-mapped, so the reference goes through the same raster path.
-        let swatch = SwatchView(frame: NSRect(x: 0, y: 0, width: 20, height: 20), color: .controlAccentColor)
-        content.addSubview(swatch)
-        let swatchRep = swatch.bitmapImageRepForCachingDisplay(in: swatch.bounds)!
-        swatch.cacheDisplay(in: swatch.bounds, to: swatchRep)
-        let accent = swatchRep.colorAt(x: swatchRep.pixelsWide / 2, y: swatchRep.pixelsHigh / 2)?.usingColorSpace(.deviceRGB) ?? .black
-        swatch.removeFromSuperview()
-
-        let modern = raster()
-        expect(opaquePixels(modern) > 200, "Modern paints a vector track, ticks and knob")
-        let knob = slider.pointForValue(slider.doubleValue)
-        expect(sameColor(pixel(modern, at: NSPoint(x: knob.x + 7, y: knob.y + 7)), accent, tolerance: 0.05), "The knob is the accent color at pointForValue")
-        let track = pixel(modern, at: NSPoint(x: slider.bounds.midX, y: 20))
-        expect((track?.alphaComponent ?? 0) > 0.03 && !sameColor(track, accent, tolerance: 0.1), "The track is a quiet fill, not the accent")
-        let beside = pixel(modern, at: NSPoint(x: slider.bounds.midX + 12, y: 20))
-        expect((beside?.alphaComponent ?? 1) < 0.02, "Nothing is painted beside the track")
-        expect(OriginalDrawingControls.sizeSteps.count == 5, "There are five steps")
-        for step in OriginalDrawingControls.sizeSteps where step != OriginalDrawingControls.initialSize {
-            let center = slider.pointForValue(step)
-            let dot = pixel(modern, at: NSPoint(x: center.x + 7, y: center.y + 7))
-            expect((dot?.alphaComponent ?? 0) > (track?.alphaComponent ?? 1) + 0.25, "Step \(step) carries a tick dot darker than the bare track")
+        func inkedWidth(_ rep: NSBitmapImageRep) -> Int {
+            let row = rep.pixelsHigh / 2
+            var count = 0
+            for x in 0..<rep.pixelsWide where (rep.colorAt(x: x, y: row)?.alphaComponent ?? 0) > 0.5 { count += 1 }
+            return Int((CGFloat(count) / (CGFloat(rep.pixelsWide) / slider.bounds.width)).rounded())
         }
+        slider.doubleValue = 1.5
+        let thin = raster()
         slider.doubleValue = 12
-        let moved = raster()
-        let top = slider.pointForValue(12)
-        expect(sameColor(pixel(moved, at: NSPoint(x: top.x + 7, y: top.y + 7)), accent, tolerance: 0.05), "The knob follows the value")
-        let old = pixel(moved, at: NSPoint(x: knob.x + 7, y: knob.y + 7))
-        expect(!sameColor(old, accent, tolerance: 0.1), "The knob left its previous position")
+        let thick = raster()
+        expect(inkedRun(thin) >= 1 && inkedRun(thin) <= 3, "The thinnest size draws a hairline (\(inkedRun(thin)) pt)")
+        expect(inkedRun(thick) >= 11 && inkedRun(thick) <= 13, "The thickest size draws a 12 pt bar (\(inkedRun(thick)) pt)")
+        expect(inkedWidth(thin) >= 23 && inkedWidth(thin) <= 28 && inkedWidth(thick) >= 23, "Both glyphs are a 24 pt long horizontal line")
+        slider.doubleValue = 6.75
 
-        do {
-            expect(slider.pointForValue(12).y == 0 && abs(slider.pointForValue(1.5).y - 64) < 0.0001 && slider.pointForValue(6.75).x == 13, "Slider geometry is fixed")
-            slider.doubleValue = 6.75
-            var changes = 0
-            slider.target = nil
-            slider.performValueChange(12, continuous: false)
-            changes += slider.doubleValue == 12 ? 1 : 0
-            slider.performValueChange(1.5, continuous: false)
-            changes += slider.doubleValue == 1.5 ? 1 : 0
-            expect(changes == 2, "Value changes behave")
-            slider.doubleValue = 6.75
+        // Every route that changes the value is exactly one begin/end pair.
+        target.hits.removeAll()
+        expect(slider.accessibilityPerformIncrement() && slider.doubleValue == 9.375 && begins == 1 && ends == 1, "Increment steps +2.625 in one group: \(groups())")
+        expect(slider.accessibilityPerformDecrement() && slider.accessibilityPerformDecrement() && slider.doubleValue == 4.125 && begins == 3 && ends == 3, "Decrement steps -2.625: \(groups())")
+        expect(target.hits == ["size", "size", "size"], "Every change reaches the action once")
+        slider.doubleValue = 6.75; begins = 0; ends = 0
+        slider.keyDown(with: keyEvent(124, in: window))
+        expect(slider.doubleValue == 9.375 && begins == 1 && ends == 1, "Right is larger by one preset: \(slider.doubleValue)")
+        slider.keyDown(with: keyEvent(126, in: window))
+        expect(slider.doubleValue == 12 && begins == 2 && ends == 2, "Up is larger too, clamped at the maximum")
+        slider.keyDown(with: keyEvent(123, in: window))
+        expect(slider.doubleValue == 9.375, "Left is smaller")
+        slider.keyDown(with: keyEvent(125, in: window))
+        expect(slider.doubleValue == 6.75 && begins == 4 && ends == 4, "Down is smaller: each key is one group \(groups())")
+        slider.keyDown(with: keyEvent(124, in: window, flags: [.shift]))
+        expect(abs(slider.doubleValue - 6.85) < 0.0001 && !OriginalDrawingControls.sizeSteps.contains(slider.doubleValue), "Shift steps 0.1, a non-preset value: \(slider.doubleValue)")
+        slider.performValueChange(.nan, continuous: true)
+        expect(slider.doubleValue.isFinite && begins == 5, "A non-finite value is ignored")
+        slider.doubleValue = 6.75
+        slider.performValueChange(12, continuous: false)
+        slider.performValueChange(1.5, continuous: false)
+        expect(slider.doubleValue == 1.5, "Value changes behave")
+        slider.doubleValue = 6.75
+
+        // The popover: opens below the pill, solid, with the readout, the track and five presets.
+        begins = 0; ends = 0
+        expect(!slider.isPopoverShown, "The popover starts closed")
+        slider.keyDown(with: keyEvent(49, in: window))
+        guard slider.isPopoverShown, let popover = slider.popover as? TestPopover, let panel = slider.popoverContent else { expect(false, "Space opens the popover"); return }
+        expect(popover.edge == .minY && popover.anchor === slider && popover.behavior == .transient, "It opens below the pill and closes on an outside click")
+        expect(panel.frame.size == NSSize(width: 320, height: 156), "The popover is 320 x 156")
+        let (panelWindow, panelContent) = Self.window(NSSize(width: 320, height: 156))
+        panelContent.addSubview(panel)
+        panelContent.layoutSubtreeIfNeeded()
+        var glass = 0
+        func countGlass(_ view: NSView) { if view is NSGlassEffectView || view is NSGlassEffectContainerView { glass += 1 }; view.subviews.forEach(countGlass) }
+        countGlass(panel)
+        expect(glass == 0 && panel.wantsUpdateLayer, "The popover content is solid, never glass")
+        panel.appearance = NSAppearance(named: .aqua)
+        panel.updateLayer()
+        expect((panel.layer?.backgroundColor?.alpha ?? 0) == 1, "The popover surface is opaque")
+        let lightBackground = panel.layer?.backgroundColor
+        panel.appearance = NSAppearance(named: .darkAqua)
+        panel.updateLayer()
+        expect(panel.layer?.backgroundColor != lightBackground, "The popover surface follows light and dark")
+        panel.appearance = nil
+        expect(panel.titleLabel.stringValue == "Size" && panel.titleLabel.font?.pointSize == 20 && panel.readout.font?.pointSize == 20, "Title and readout are 20 pt")
+        expect(panel.readout.stringValue == "7", "The readout shows the rounded size")
+        slider.doubleValue = 9.375
+        expect(panel.readout.stringValue == "9", "The readout follows the value")
+        slider.doubleValue = 6.75
+        let track = panel.trackView
+        expect(track.frame.size == NSSize(width: 288, height: 36) && panel.presetButtons.count == 5 && panel.presetButtons.allSatisfy { $0.frame.size == NSSize(width: 48, height: 36) },
+               "A 288 x 36 track and five 48 x 36 presets")
+        expect(panel.presetButtons.map { $0.accessibilityLabel() ?? "" } == ["Size 2", "Size 4", "Size 7", "Size 9", "Size 12"], "Presets are spoken Size 2/4/7/9/12")
+        expect(panel.presetButtons.map(\.isSelectedPreset) == [false, false, true, false, false], "Only the current preset is selected")
+        func pointer(_ type: NSEvent.EventType, fraction: CGFloat, flags: NSEvent.ModifierFlags = [], clicks: Int = 1) -> NSEvent {
+            let location = track.convert(NSPoint(x: track.x(forFraction: fraction), y: 18), to: nil)
+            return NSEvent.mouseEvent(with: type, location: location, modifierFlags: flags, timestamp: 0, windowNumber: panelWindow.windowNumber,
+                                      context: nil, eventNumber: 1, clickCount: clicks, pressure: 1)!
         }
+        // One drag is one group, whatever it passes through; a plain drag only returns the five steps.
+        begins = 0; ends = 0; target.hits.removeAll()
+        track.mouseDown(with: pointer(.leftMouseDown, fraction: 0.75))
+        expect(slider.doubleValue == 9.375 && begins == 1 && ends == 0, "Mouse down starts the group on the clicked step: \(groups())")
+        var seen = Set<Double>()
+        for fraction in stride(from: 0.75, through: 0.0, by: -0.07) {
+            track.mouseDragged(with: pointer(.leftMouseDragged, fraction: CGFloat(fraction)))
+            seen.insert(slider.doubleValue)
+        }
+        expect(seen.isSubset(of: Set(OriginalDrawingControls.sizeSteps)) && seen.count >= 3, "A plain drag snaps to the five steps: \(seen.sorted())")
+        track.mouseDragged(with: pointer(.leftMouseDragged, fraction: 0.6, flags: [.shift]))
+        expect(abs(slider.doubleValue - 7.8) < 0.0001, "Shift keeps the drag continuous: \(slider.doubleValue)")
+        track.mouseUp(with: pointer(.leftMouseUp, fraction: 0.6))
+        expect(begins == 1 && ends == 1, "The whole drag is one begin/end pair: \(groups())")
+        expect(Set(target.hits) == ["size"], "Dragging reaches the action")
+        track.mouseDown(with: pointer(.leftMouseDown, fraction: 0.2, clicks: 2))
+        track.mouseUp(with: pointer(.leftMouseUp, fraction: 0.2))
+        expect(slider.doubleValue == 6.75, "A double-click resets to the default size: \(slider.doubleValue)")
+        // A preset click is one group; the selection moves with it.
+        begins = 0; ends = 0
+        panel.presetButtons[3].performClick(nil)
+        expect(slider.doubleValue == 9.375 && begins == 1 && ends == 1 && panel.presetButtons.map(\.isSelectedPreset) == [false, false, false, true, false], "A preset click is one group: \(groups())")
+        panel.presetButtons[0].performClick(nil)
+        expect(slider.doubleValue == 1.5 && begins == 2 && ends == 2 && panel.readout.stringValue == "2", "Another preset: \(groups())")
+        // Dismissing mid-drag closes the group, and the late mouse-up cannot close it twice.
+        begins = 0; ends = 0
+        track.mouseDown(with: pointer(.leftMouseDown, fraction: 1))
+        track.mouseDragged(with: pointer(.leftMouseDragged, fraction: 0.5))
+        expect(begins == 1 && ends == 0, "A drag is open: \(groups())")
+        slider.dismissPopover()
+        expect(ends == 1 && !slider.isPopoverShown && slider.popoverContent == nil, "Dismissing mid-drag ends the group and releases the popover: \(groups())")
+        track.mouseUp(with: pointer(.leftMouseUp, fraction: 0.5))
+        expect(begins == 1 && ends == 1, "The stale mouse-up adds nothing: \(groups())")
+        // Escape closes the popover; leaving the window closes it too.
+        slider.doubleValue = 6.75
+        slider.showPopover()
+        expect(slider.isPopoverShown, "It opens again")
+        slider.keyDown(with: keyEvent(53, in: window))
+        expect(!slider.isPopoverShown, "Escape closes the popover")
+        slider.showPopover()
+        slider.removeFromSuperview()
+        expect(!slider.isPopoverShown, "Leaving the window closes the popover")
+        content.addSubview(slider)
+        slider.isEnabled = false
+        slider.showPopover()
+        expect(!slider.isPopoverShown && !slider.accessibilityPerformPress() && slider.beginGesture() == false, "A disabled pill neither opens nor tracks")
+        slider.isEnabled = true
+        slider.removeFromSuperview()
     }
 
     // MARK: GlassSurfaceView
@@ -550,8 +671,8 @@ private enum GlassChromeTests {
         let stack = group.contentView as? NSStackView
         expect(stack?.arrangedSubviews.count == 2 && stack?.spacing == GlassChrome.Metrics.surfaceSpacing && stack?.orientation == .horizontal, "Group stacks its surfaces")
         let metrics = GlassChrome.Metrics.self
-        expect(metrics.toolButton == NSSize(width: 48, height: 40) && metrics.commandHeight == 36 && metrics.railWidth == 64 && metrics.rightRailWidth == 64 && metrics.headerHeight == 44, "Metrics match the plan with Apple's 36 pt Extra Large commands")
-        expect(metrics.iconPointSize == 22 && metrics.labelPointSize == 20 && metrics.groupSpacing == 10 && metrics.surfaceSpacing == 6 && metrics.containerSpacing == 2, "Spacing and type metrics match the plan")
+        expect(metrics.toolButton == NSSize(width: 44, height: 40) && metrics.commandHeight == 36 && metrics.headerHeight == 44 && metrics.groupGap == 12, "Metrics match the plan with Apple's 36 pt Extra Large commands and 44 pt tool tiles")
+        expect(metrics.iconPointSize == 22 && metrics.labelPointSize == 20 && metrics.surfaceSpacing == 6 && metrics.containerSpacing == 2, "Spacing and type metrics match the plan")
     }
 
     // MARK: ModernEditorChrome
@@ -561,7 +682,9 @@ private enum GlassChromeTests {
         let target: ActionTarget, box: AccessibilityBox, size: NSSize
     }
 
-    private static func makeRig(_ size: NSSize) -> Rig {
+    private static let longStatus = "Brush · Unsaved changes · 1000 × 700 · 48 KB and then some more words so it can never fit"
+
+    private static func makeRig(_ size: NSSize, status: String? = nil) -> Rig {
         let target = ActionTarget(), box = AccessibilityBox()
         let (window, content) = window(size)
         func label(_ text: String) -> NSTextField {
@@ -569,7 +692,7 @@ private enum GlassChromeTests {
             field.font = .systemFont(ofSize: 12)
             return field
         }
-        let zoom = NSPopUpButton(frame: .zero, pullsDown: false)
+        let zoom = ZoomPopUpButton(frame: .zero, pullsDown: false)
         zoom.addItems(withTitles: ["25%", "50%", "75%", "100%", "150%", "200%"])
         zoom.font = .systemFont(ofSize: 13)
         zoom.setAccessibilityLabel("Canvas zoom")
@@ -589,9 +712,9 @@ private enum GlassChromeTests {
         original.font = .systemFont(ofSize: 11)
         let controls = ModernEditorChrome.SharedControls(
             canvas: NSView(frame: NSRect(x: 0, y: 0, width: 1000, height: 700)), canvasBorder: NSView(),
-            status: label("Ready"), sizeLabel: label("Size · 6.75"),
+            status: label(status ?? longStatus), sizeLabel: label("Size · 6.75"),
             widthControl: BezelSizeSlider(frame: .zero), paletteButton: palette, zoomControl: zoom, dragFormatControl: format,
-            dragOriginalControl: original, dragSizeLabel: label("1000 × 700 · 48 KB"), dragExportView: NSView(), toolbox: toolbox)
+            dragOriginalControl: original, dragExportView: NSView(), toolbox: toolbox)
         let actions = ModernEditorChrome.Actions(
             target: target, hide: #selector(ActionTarget.hide(_:)), photos: #selector(ActionTarget.photos(_:)), saveHistory: #selector(ActionTarget.saveHistory(_:)),
             showHistory: #selector(ActionTarget.showHistory(_:)), chooseTool: #selector(ActionTarget.chooseTool(_:)), snap: #selector(ActionTarget.snap(_:)),
@@ -636,6 +759,8 @@ private enum GlassChromeTests {
         let own: [NSButton] = (view as? NSButton).map { [$0] } ?? []
         return own + view.subviews.flatMap { allButtons(in: $0) }
     }
+
+    private static func descendantsOf(_ view: NSView) -> [NSView] { view.subviews + view.subviews.flatMap(descendantsOf) }
 
     private static func surfaces(_ rig: Rig) -> [GlassSurfaceView] {
         var found: [GlassSurfaceView] = []
@@ -694,7 +819,7 @@ private enum GlassChromeTests {
         let scroll = rect(chrome.scrollView, in: rig)
         expect(scroll.width > 300 && scroll.height > 300, "\(label): the canvas keeps room \(scroll.size)")
         let glassContainers = containers(rig)
-        expect(glassContainers.count >= 7, "\(label): glass groups exist (\(glassContainers.count))")
+        expect(glassContainers.count >= 8, "\(label): glass groups exist (\(glassContainers.count))")
         for container in glassContainers {
             let frame = rect(container, in: rig)
             let overlap = frame.intersection(scroll)
@@ -706,32 +831,33 @@ private enum GlassChromeTests {
                 expect(overlap.isNull || overlap.width <= 0.5 || overlap.height <= 0.5, "\(label): glass groups \(describe(a)) and \(describe(b)) are disjoint")
             }
         }
-        // Order: header left to right, tools top to bottom in archive order, footer left to right.
+        // Order: top bar left to right (capture, tools, annotation), then bottom bar left to right (document, view, output).
         expect(!chrome.header.subviews.contains { $0.identifier?.rawValue == "OpenSnapBrand" }, "\(label): the logo is not in the header (no room at minimum width)")
-        let headerOrder = [chrome.hideButton, rig.controls.toolbox, chrome.photosButton].map { rect($0, in: rig).minX }
-        expect(headerOrder == headerOrder.sorted(), "\(label): Hide, Toolbox, Photos run left to right")
-        expect(rect(chrome.saveButton, in: rig).minX < rect(chrome.historyButton, in: rig).minX, "\(label): Save precedes History")
         let toolsAcross = chrome.toolButtons.values.sorted { rect($0, in: rig).minX < rect($1, in: rig).minX }
         expect(toolsAcross.map { $0.identifier?.rawValue ?? "" } == toolOrder, "\(label): tools run left to right in archive order, crop last")
+        let topOrder: [NSView] = [chrome.hideButton, rig.controls.toolbox, chrome.photosButton, chrome.snapButton] + toolsAcross
+            + [rig.controls.paletteButton, rig.controls.widthControl, chrome.fontButton]
+        let topX = topOrder.map { rect($0, in: rig).minX }
+        expect(topX == topX.sorted() && Set(topX).count == topX.count, "\(label): top bar order is Hide, Toolbox, Photos, Snap, ten tools, Color, Size, Font (\(topX))")
         let toolbar = rect(chrome.header, in: rig)
-        for button in toolsAcross + [chrome.resizeButton] {
-            let frame = rect(button, in: rig)
-            expect(toolbar.contains(frame.insetBy(dx: 0.5, dy: 0.5)), "\(label): \(describe(button)) sits inside the top bar")
+        for view in topOrder {
+            expect(toolbar.contains(rect(view, in: rig).insetBy(dx: 0.5, dy: 0.5)), "\(label): \(describe(view)) sits inside the top bar")
         }
-        expect(rect(toolsAcross.last!, in: rig).maxX < rect(chrome.resizeButton, in: rig).minX && rect(chrome.photosButton, in: rig).maxX < rect(toolsAcross[0], in: rig).minX
-               && rect(chrome.resizeButton, in: rig).maxX < rect(chrome.saveButton, in: rig).minX, "\(label): top bar order is Hide, Toolbox, Photos, tools, Resize, Save, History")
-        let footerOrder = [rig.controls.zoomControl, rig.controls.status, rig.controls.dragFormatControl, rig.controls.dragExportView, chrome.shareButton].map { rect($0, in: rig).minX }
-        expect(footerOrder == footerOrder.sorted(), "\(label): the one footer row runs zoom, status, format, drag, upload")
+        let original = rig.controls.dragOriginalControl
+        let bottomOrder: [NSView] = [chrome.undoButton, chrome.wipeButton, rig.controls.zoomControl, chrome.resizeButton] + (original.isHidden ? [] : [original])
+            + [rig.controls.status, chrome.saveButton, chrome.historyButton, rig.controls.dragFormatControl, rig.controls.dragExportView, chrome.shareButton]
+        let bottomX = bottomOrder.map { rect($0, in: rig).minX }
+        expect(bottomX == bottomX.sorted() && Set(bottomX).count == bottomX.count,
+               "\(label): bottom bar order is Undo, Wipe, Zoom, Resize, Original size, status, Save, History, format, Drag, Upload (\(bottomX))")
+        let bottomBar = rect(descendantsOf(chrome).first { $0.identifier?.rawValue == "OpenSnapFooter" }!, in: rig)
+        for view in bottomOrder {
+            expect(bottomBar.contains(rect(view, in: rig).insetBy(dx: 0.5, dy: 0.5)), "\(label): \(describe(view)) sits inside the bottom bar")
+        }
         let formatControl = rig.controls.dragFormatControl, formatFit = formatControl.fittingSize.width
         let formatWidth = rect(chrome.surface(for: formatControl)!, in: rig).width
         expect(formatWidth >= formatFit && formatWidth <= formatFit + 12, "\(label): the format toggle hugs its segments (\(formatWidth) pt for a \(formatFit) pt popup)")
         let footerY = rect(chrome.shareButton, in: rig).midY
         expect(abs(footerY - rect(rig.controls.dragExportView, in: rig).midY) < 0.5 && abs(footerY - rect(rig.controls.zoomControl, in: rig).midY) < 3, "\(label): footer controls share a baseline")
-        let sliderBottom = rect(chrome.surface(for: rig.controls.widthControl)!, in: rig).minY, undoTop = rect(chrome.surface(for: chrome.undoButton)!, in: rig).maxY
-        expect(sliderBottom - undoTop >= 0 && sliderBottom - undoTop <= GlassChrome.Metrics.groupSpacing + 0.5, "\(label): Undo sits directly under the slider (gap \(sliderBottom - undoTop))")
-        expect(rect(chrome.undoButton, in: rig).maxY < rect(chrome.wipeButton, in: rig).maxY + 60 && rect(chrome.wipeButton, in: rig).minY < rect(chrome.undoButton, in: rig).minY, "\(label): Wipe is stacked beneath Undo")
-        let rightEdge = [chrome.snapButton, chrome.fontButton, chrome.undoButton].map { rect($0, in: rig).midX.rounded() }
-        expect(Set(rightEdge).count == 1 && rightEdge[0] < rig.content.bounds.maxX, "\(label): the right rail is one aligned column")
         // The canvas border lives where classic puts it, beside the scroll view and above everything.
         expect(rig.controls.canvasBorder.superview === chrome.scrollView.superview && chrome.subviews.last === rig.controls.canvasBorder, "\(label): the canvas border is a topmost sibling of the scroll view")
         expect(chrome.scrollView.documentView === rig.controls.canvas && !chrome.scrollView.drawsBackground && !chrome.scrollView.contentView.drawsBackground, "\(label): the scroll view hosts the canvas without a background")
@@ -747,51 +873,206 @@ private enum GlassChromeTests {
             semantics(rig, label)
             glassNeckChecks(rig, label)
             redesignChecks(rig, label)
+            noRailChecks(rig, label)
+            relocatedControlChecks(rig, label, frame: false)
             rig.chrome.frameMode = true
             verifyLayout(rig, label + " frame mode")
             frameModeChecks(rig, label)
+            relocatedControlChecks(rig, label + " frame mode", frame: true)
             rig.chrome.frameMode = false
             verifyLayout(rig, label + " after frame mode")
+            toolGroupBalanceChecks(rig, label)
+            canvasCentreChecks(rig, label)
             if size == minimum {
+                widthBudgetChecks(rig, label)
                 bleedChecks(rig, label)
                 accessibilityChecks(rig, label)
             }
         }
+        canvasReachesMarginChecks(tag, minimum: minimum)
     }
 
-    /// The owner redesign: every tool in the top bar, no left rail, Undo/Wipe under the slider, one footer row, no name field.
+    // MARK: T15 regression tests (each fails if the rail, its blank column or an overflow comes back)
+
+    private static func group(_ rig: Rig, _ id: String) -> NSGlassEffectContainerView {
+        guard let found = containers(rig).first(where: { $0.identifier?.rawValue == id }) else { preconditionFailure("No glass group " + id); }
+        return found
+    }
+
+    /// No permanent right column: no rail view, no 64 pt strip against the trailing margin, and the canvas is tied to the chrome alone.
+    private static func noRailChecks(_ rig: Rig, _ label: String) {
+        let chrome = rig.chrome
+        let names = Set(descendantsOf(chrome).compactMap { $0.identifier?.rawValue })
+        expect(names.isDisjoint(with: ["GlassDrawingGroup", "GlassHistoryGroup", "GlassToolRail", "GlassHeaderTrailing"]), "\(label): no rail or vertical group exists (\(names.sorted()))")
+        expect(chrome.subviews.count == 6, "\(label): the chrome holds backdrop, bleed, canvas, top bar, bottom bar and border only (\(chrome.subviews.count))")
+        for view in chrome.subviews {
+            let frame = view.frame
+            expect(!(abs(frame.width - 64) < 0.5 && abs(frame.maxX - (chrome.bounds.width - 12)) < 0.5), "\(label): \(describe(view)) is not a 64 pt strip against the trailing margin")
+        }
+        let tie = chrome.constraints.filter { $0.firstItem === chrome.scrollView && $0.firstAttribute == .trailing }
+        expect(tie.count == 1 && tie[0].secondItem === chrome && tie[0].constant == -12 && tie[0].relation == .equal, "\(label): the canvas trailing edge is tied to the chrome's margin alone")
+    }
+
+    /// At each width the canvas viewport runs to the 12 pt margin and sits between the two bars.
+    private static func canvasReachesMarginChecks(_ tag: String, minimum: NSSize) {
+        for width in [980, 1024, 1280, 1440] as [CGFloat] {
+            let rig = makeRig(NSSize(width: width, height: width == 980 ? minimum.height : 740))
+            let scroll = rect(rig.chrome.scrollView, in: rig)
+            let label = "\(tag) \(Int(width)) wide"
+            expect(abs(scroll.maxX - (width - 12)) < 0.5 && abs(scroll.minX - 12) < 0.5, "\(label): the viewport spans margin to margin (\(scroll.minX) to \(scroll.maxX))")
+            let header = rect(rig.chrome.header, in: rig), footer = rect(descendantsOf(rig.chrome).first { $0.identifier?.rawValue == "OpenSnapFooter" }!, in: rig)
+            expect(abs(scroll.width - (width - 24)) < 0.5, "\(label): the viewport is \(width - 24) pt wide, nothing reserved at the side (\(scroll.width))")
+            expect(abs((header.minY - scroll.maxY) - 8) < 0.5 && abs((scroll.minY - footer.maxY) - 8) < 0.5, "\(label): 8 pt between the viewport and each bar")
+        }
+    }
+
+    /// Every relocated control is visible, fully inside its bar and clear of every other control, with the Original size checkbox shown.
+    private static func relocatedControlChecks(_ rig: Rig, _ label: String, frame: Bool) {
+        let chrome = rig.chrome, shared = rig.controls
+        rig.content.layoutSubtreeIfNeeded()
+        let top = rect(chrome.header, in: rig)
+        let bottom = rect(descendantsOf(chrome).first { $0.identifier?.rawValue == "OpenSnapFooter" }!, in: rig)
+        var topControls: [(String, NSView)] = [("Snap", chrome.snapButton), ("Color", shared.paletteButton), ("Size", shared.widthControl), ("Font", chrome.fontButton),
+                                               ("Hide", chrome.hideButton), ("Toolbox", shared.toolbox), ("Photos", chrome.photosButton)] + chrome.toolButtons.map { ($0.key, $0.value) }
+        if frame { topControls.append(("Cancel", chrome.cancelFrameButton)) }
+        let bottomControls: [(String, NSView)] = [("Undo", chrome.undoButton), ("Wipe", chrome.wipeButton), ("Resize…", chrome.resizeButton), ("Save", chrome.saveButton),
+                                                  ("History", chrome.historyButton), ("Zoom", shared.zoomControl), ("PNG | JPG", shared.dragFormatControl), ("Drag", shared.dragExportView),
+                                                  ("Upload", chrome.shareButton), ("Original size", shared.dragOriginalControl), ("Status", shared.status)]
+        for (name, view) in topControls {
+            expect(!view.isHiddenOrHasHiddenAncestor, "\(label): \(name) is visible")
+            expect(top.insetBy(dx: -0.5, dy: -0.5).contains(rect(view, in: rig)), "\(label): \(name) lies inside the top bar \(rect(view, in: rig)) vs \(top)")
+        }
+        for (name, view) in bottomControls {
+            expect(!view.isHiddenOrHasHiddenAncestor, "\(label): \(name) is visible")
+            expect(bottom.insetBy(dx: -0.5, dy: -0.5).contains(rect(view, in: rig)), "\(label): \(name) lies inside the bottom bar \(rect(view, in: rig)) vs \(bottom)")
+        }
+        expect(frame || chrome.cancelFrameButton.isHidden, "\(label): Cancel exists only in Frame mode")
+        let everything = topControls + bottomControls
+        for (index, a) in everything.enumerated() {
+            for b in everything[(index + 1)...] {
+                let overlap = rect(a.1, in: rig).intersection(rect(b.1, in: rig))
+                expect(overlap.isNull || overlap.width <= 0.5 || overlap.height <= 0.5, "\(label): \(a.0) overlaps \(b.0) by \(overlap)")
+            }
+        }
+        for (name, view) in everything where view !== shared.dragOriginalControl && view !== shared.status {
+            // A popup or segmented control sits centred in its glass capsule; the capsule is the 36 pt target.
+            let target = chrome.surface(for: view).map { rect($0, in: rig) } ?? rect(view, in: rig)
+            expect(target.height >= 36, "\(label): \(name) has a hit target at least 36 pt tall (\(target.height))")
+        }
+        if rig.size.width <= ModernEditorChrome.minimumWindowWidth + 0.5 {
+            expect(rect(shared.status, in: rig).width >= 120, "\(label): the status keeps 120 pt beside the Original size checkbox (\(rect(shared.status, in: rig).width))")
+        }
+    }
+
+    /// The sums of the width budget, from live Metrics and from the real laid-out groups; the minimum window width must cover the worst case.
+    private static func widthBudgetChecks(_ rig: Rig, _ label: String) {
+        typealias M = GlassChrome.Metrics
+        let chrome = rig.chrome, shared = rig.controls
+        let tools = CGFloat(toolOrder.count)
+        let leading = 2 * M.iconButton.width + M.toolboxButton.width + 2 * M.surfaceSpacing
+        let capture = M.primaryButton.width, captureFrame = capture + M.surfaceSpacing + M.iconButton.width
+        let toolRow = tools * M.toolButton.width + (tools - 1) * M.toolSpacing
+        let annotation = 3 * M.iconButton.width + 2 * M.surfaceSpacing
+        let usable = ModernEditorChrome.minimumWindowWidth - 24
+        let normal = leading + capture + toolRow + annotation + 3 * M.groupGap, frame = leading + captureFrame + toolRow + annotation + 3 * M.groupGap
+        expect(normal <= usable && frame <= usable, "\(label): the top bar needs \(normal) (Frame \(frame)) of \(usable) usable points")
+        // The real groups match the arithmetic, so a metric changed without the oracle cannot slip through.
+        let measured = ["GlassHeaderLeading": leading, "GlassCaptureGroup": capture, "GlassToolBar": toolRow, "GlassAnnotationGroup": annotation].mapValues { $0 }
+        for (id, expected) in measured {
+            expect(abs(rect(group(rig, id), in: rig).width - expected) < 0.5, "\(label): \(id) is \(expected) pt wide (is \(rect(group(rig, id), in: rig).width))")
+        }
+        chrome.frameMode = true
+        rig.content.layoutSubtreeIfNeeded()
+        expect(abs(rect(group(rig, "GlassCaptureGroup"), in: rig).width - captureFrame) < 0.5, "\(label): Snap and Cancel are \(captureFrame) pt wide")
+        let topFrameSlack = rect(chrome.header, in: rig).width - frame
+        chrome.frameMode = false
+        rig.content.layoutSubtreeIfNeeded()
+        expect(topFrameSlack >= -0.5, "\(label): the Frame-mode top bar fits at the minimum with \(topFrameSlack) pt to spare")
+        // Bottom bar, measured: the checkbox and a 120 pt status are the worst case.
+        let zoomWidth = rect(chrome.surface(for: shared.zoomControl)!, in: rig).width
+        let formatWidth = rect(chrome.surface(for: shared.dragFormatControl)!, in: rig).width
+        let checkbox = shared.dragOriginalControl.fittingSize.width
+        let icons = 2 * M.iconButton.width + M.surfaceSpacing
+        let bottom = icons + (zoomWidth + M.surfaceSpacing + M.iconButton.width) + icons + (formatWidth + 2 * M.surfaceSpacing + 2 * M.iconButton.width)
+            + 4 * M.groupGap + checkbox + 12 + 120
+        expect(bottom <= usable, "\(label): the bottom bar with the checkbox and a 120 pt status needs \(bottom) of \(usable) (zoom \(zoomWidth), format \(formatWidth), checkbox \(checkbox))")
+        expect(ModernEditorChrome.minimumWindowWidth >= max(frame, bottom) + 24, "\(label): the minimum window width \(ModernEditorChrome.minimumWindowWidth) covers the worst case \(max(frame, bottom) + 24)")
+        print("  width budget @980: top \(normal)/\(frame) Frame of \(usable) (slack \(usable - normal)/\(usable - frame)); bottom \(bottom) of \(usable) (slack \(usable - bottom)); zoom \(zoomWidth), format \(formatWidth), checkbox \(checkbox), status \(rect(shared.status, in: rig).width)")
+    }
+
+    /// The tool row is centred between the capture and annotation groups, and Snap does not move when Cancel appears.
+    private static func toolGroupBalanceChecks(_ rig: Rig, _ label: String) {
+        let chrome = rig.chrome
+        func gaps() -> (before: CGFloat, after: CGFloat) {
+            let capture = rect(group(rig, "GlassCaptureGroup"), in: rig), tools = rect(group(rig, "GlassToolBar"), in: rig), annotation = rect(group(rig, "GlassAnnotationGroup"), in: rig)
+            return (tools.minX - capture.maxX, annotation.minX - tools.maxX)
+        }
+        rig.content.layoutSubtreeIfNeeded()
+        let normal = gaps(), snapBefore = rect(chrome.snapButton, in: rig).minX, toolsBefore = rect(group(rig, "GlassToolBar"), in: rig).minX
+        expect(abs(normal.before - normal.after) <= 0.5 && normal.before >= GlassChrome.Metrics.groupGap, "\(label): the tool row is balanced between its neighbours (\(normal))")
+        chrome.frameMode = true
+        rig.content.layoutSubtreeIfNeeded()
+        let frame = gaps(), shift = rect(group(rig, "GlassToolBar"), in: rig).minX - toolsBefore
+        expect(abs(rect(chrome.snapButton, in: rig).minX - snapBefore) < 0.5, "\(label): Snap does not move when Cancel appears")
+        expect(abs(frame.before - frame.after) <= 0.5 && frame.before >= GlassChrome.Metrics.groupGap, "\(label): still balanced in Frame mode (\(frame))")
+        let half = (GlassChrome.Metrics.iconButton.width + GlassChrome.Metrics.surfaceSpacing) / 2
+        expect(abs(shift - half) < 0.5, "\(label): the tool row shifts by half of Cancel's slot (\(shift) vs \(half))")
+        chrome.frameMode = false
+        rig.content.layoutSubtreeIfNeeded()
+    }
+
+    /// A canvas smaller than the viewport sits in the middle of it, and a click at the centre of the viewport lands on it.
+    private static func canvasCentreChecks(_ rig: Rig, _ label: String) {
+        let canvas = rig.controls.canvas, scroll = rig.chrome.scrollView
+        let original = canvas.frame
+        defer { canvas.frame = original; rig.content.layoutSubtreeIfNeeded() }
+        canvas.setFrameSize(NSSize(width: 200, height: 100))
+        scroll.reflectScrolledClipView(scroll.contentView)
+        rig.content.layoutSubtreeIfNeeded()
+        scroll.contentView.layoutSubtreeIfNeeded()
+        let area = scroll.contentView.frame, doc = scroll.convert(canvas.bounds, from: canvas)
+        let margins = (left: doc.minX - area.minX, right: area.maxX - doc.maxX, top: doc.minY - area.minY, bottom: area.maxY - doc.maxY)
+        expect(margins.left > 100 && abs(margins.left - margins.right) <= 1 && margins.top > 100 && abs(margins.top - margins.bottom) <= 1, "\(label): a small canvas has equal margins \(margins)")
+        let centre = rig.content.convert(NSPoint(x: area.midX, y: area.midY), from: scroll)
+        expect(rig.content.hitTest(centre) === canvas || (rig.content.hitTest(centre)?.isDescendant(of: canvas) ?? false), "\(label): the centre of the viewport hits the centred canvas")
+    }
+
+    /// The owner redesign: capture, tools and annotation in the top bar, document and output in the bottom bar, no rail, one footer row, no name field.
     private static func redesignChecks(_ rig: Rig, _ label: String) {
         let chrome = rig.chrome
         func ancestors(_ view: NSView) -> [NSView] { view.superview.map { [$0] + ancestors($0) } ?? [] }
-        func descendants(_ view: NSView) -> [NSView] { view.subviews + view.subviews.flatMap(descendants) }
+        let descendants = descendantsOf
         for (id, button) in chrome.toolButtons {
             expect(ancestors(button).contains { $0 === chrome.header }, "\(label): tool \(id) lives in the top bar container")
         }
-        expect(ancestors(chrome.resizeButton).contains { $0 === chrome.header }, "\(label): Resize lives in the top bar container")
+        for (name, view) in [("Snap", chrome.snapButton), ("Cancel", chrome.cancelFrameButton), ("Color", rig.controls.paletteButton), ("Size", rig.controls.widthControl), ("Font", chrome.fontButton)] as [(String, NSView)] {
+            expect(ancestors(view).contains { $0 === chrome.header }, "\(label): \(name) lives in the top bar container")
+        }
         expect(!descendants(chrome).contains { $0.identifier?.rawValue == "GlassToolRail" }, "\(label): there is no left tool rail")
         let scroll = rect(chrome.scrollView, in: rig)
         expect(abs(scroll.minX - 12) < 0.5, "\(label): the canvas viewport starts at the left margin (\(scroll.minX))")
-        let railLeft = rig.content.bounds.width - 12 - GlassChrome.Metrics.rightRailWidth
-        expect(abs(scroll.maxX - (railLeft - 8)) < 0.5, "\(label): the viewport meets the right rail's spacing (\(scroll.maxX) vs \(railLeft - 8))")
-        let sliderBottom = rect(chrome.surface(for: rig.controls.widthControl)!, in: rig).minY
-        let undoTop = rect(chrome.surface(for: chrome.undoButton)!, in: rig).maxY
-        expect(sliderBottom - undoTop >= 0 && sliderBottom - undoTop <= GlassChrome.Metrics.groupSpacing + 0.5, "\(label): Undo sits directly under the slider, not pushed to the bottom")
+        expect(abs(scroll.maxX - (rig.content.bounds.width - 12)) < 0.5, "\(label): the viewport ends at the right margin (\(scroll.maxX) vs \(rig.content.bounds.width - 12))")
         let footer = descendants(chrome).first { $0.identifier?.rawValue == "OpenSnapFooter" }
         expect(footer != nil, "\(label): the footer row exists")
         if let footer {
-            let parts = [rig.controls.zoomControl, rig.controls.status, rig.controls.dragFormatControl, rig.controls.dragExportView, chrome.shareButton] as [NSView]
+            let parts = [chrome.undoButton, chrome.wipeButton, rig.controls.zoomControl, chrome.resizeButton, rig.controls.status, chrome.saveButton, chrome.historyButton,
+                         rig.controls.dragFormatControl, rig.controls.dragExportView, chrome.shareButton] as [NSView]
             for part in parts { expect(ancestors(part).contains { $0 === footer }, "\(label): \(describe(part)) is in the single footer row") }
-            expect(footer.subviews.count == 2 && footer.frame.height <= 44.5, "\(label): the footer is one row (\(footer.frame.height) pt)")
-            let known = Set(parts.map(ObjectIdentifier.init) + [ObjectIdentifier(rig.controls.dragOriginalControl), ObjectIdentifier(rig.controls.dragSizeLabel)])
+            expect(footer.subviews.count == 5 && footer.frame.height <= 44.5, "\(label): the footer is one row of four glass groups and the status row (\(footer.frame.height) pt)")
+            let known = Set(parts.map(ObjectIdentifier.init) + [ObjectIdentifier(rig.controls.dragOriginalControl)])
             let leaves = descendants(footer).filter { ($0 is NSControl) && !($0 is NSStackView) && $0.window != nil && !$0.isHidden }
             let strays = leaves.filter { leaf in !known.contains(ObjectIdentifier(leaf)) && !ancestors(leaf).contains { known.contains(ObjectIdentifier($0)) } }
-            expect(strays.isEmpty, "\(label): the footer holds only zoom, status, format, drag and upload (strays: \(strays.map(describe)))")
+            expect(strays.isEmpty, "\(label): the footer holds only its own controls (strays: \(strays.map(describe)))")
         }
         expect(!descendants(chrome).contains { ($0 as? NSTextField)?.isEditable == true }, "\(label): Modern has no editable file-name field")
         expect(!allButtons(in: chrome).contains { $0.title.contains("Actual Size") || $0.title.contains("Normal View") }, "\(label): the Actual Size button is gone")
         let frames = rect(chrome.header, in: rig)
-        let groups = containers(rig).filter { ["GlassHeaderLeading", "GlassToolBar", "GlassHeaderTrailing"].contains($0.identifier?.rawValue ?? "") }
-        expect(groups.count == 3 && groups.allSatisfy { frames.contains(rect($0, in: rig).insetBy(dx: 0.5, dy: 0.5)) }, "\(label): the three top bar groups fit inside the bar with no clipping")
+        let ids = ["GlassHeaderLeading", "GlassCaptureGroup", "GlassToolBar", "GlassAnnotationGroup"]
+        let groups = containers(rig).filter { ids.contains($0.identifier?.rawValue ?? "") }
+        expect(groups.count == 4 && groups.allSatisfy { frames.contains(rect($0, in: rig).insetBy(dx: 0.5, dy: 0.5)) }, "\(label): the four top bar groups fit inside the bar with no clipping")
+        expect(chrome.header.subviews.count == 4, "\(label): the top bar holds exactly its four groups (\(chrome.header.subviews.count))")
+        let bottomIds = ["GlassUndoWipeGroup", "GlassViewGroup", "GlassSaveGroup", "GlassFooterRow"]
+        expect(containers(rig).filter { bottomIds.contains($0.identifier?.rawValue ?? "") }.count == 4, "\(label): the four bottom bar groups exist")
     }
 
     /// Glass shapes fuse into a "neck" when their container's spacing reaches the gap between them.
@@ -825,8 +1106,8 @@ private enum GlassChromeTests {
             expect(button.action == #selector(ActionTarget.chooseTool(_:)) && button.target === rig.target, "\(label): tool \(id) sends chooseTool")
             expect(button.isEnabled && !button.isHidden, "\(label): tool \(id) is live")
             expect(chrome.surface(for: button) != nil && chrome.surface(for: button) === button.superview?.superview, "\(label): tool \(id) has its own surface")
-            expect(chrome.surface(for: button)?.shape == .rounded(12) && chrome.surface(for: button)?.fixedSize == NSSize(width: 48, height: 40), "\(label): tool \(id) surface is 48x40 r=12")
-            expect(abs(rect(button, in: rig).width - 48) < 0.5 && abs(rect(button, in: rig).height - 40) < 0.5, "\(label): tool \(id) button is 48x40")
+            expect(chrome.surface(for: button)?.shape == .rounded(12) && chrome.surface(for: button)?.fixedSize == NSSize(width: 44, height: 40), "\(label): tool \(id) surface is 44x40 r=12")
+            expect(abs(rect(button, in: rig).width - 44) < 0.5 && abs(rect(button, in: rig).height - 40) < 0.5, "\(label): tool \(id) button is 44x40")
         }
         expect(Set(chrome.toolButtons.values.compactMap { chrome.surface(for: $0).map(ObjectIdentifier.init) }).count == 10, "\(label): tool surfaces are distinct")
         for (button, title, hit) in [(chrome.hideButton, "Hide", "hide"), (chrome.photosButton, "Photos", "photos"), (chrome.saveButton, "Save", "saveHistory"),
@@ -868,16 +1149,26 @@ private enum GlassChromeTests {
             expect(control.controlSize == .extraLarge && (control.font?.pointSize ?? 0) >= 18, "\(label): \(describe(control)) is Extra Large and keeps its readable font")
         }
         expect(shared.toolbox.imagePosition == .imageOnly && shared.toolbox.itemArray.first?.image != nil, "\(label): Toolbox shows its icon")
-        expect(shared.sizeLabel.superview == nil && chrome.surface(for: shared.widthControl)?.shape == .rounded(12), "\(label): the slider has a rounded surface and the Size text is not shown")
-        expect(abs(rect(shared.widthControl, in: rig).width - 36) < 0.5 && abs(rect(shared.widthControl, in: rig).height - 96) < 0.5, "\(label): the slider is Apple's 36 pt wide Extra Large slider, 96 pt tall")
+        expect(shared.sizeLabel.superview == nil && chrome.surface(for: shared.widthControl)?.shape == .capsule, "\(label): the Size pill has a capsule surface and the Size text is not shown")
+        expect(abs(rect(shared.widthControl, in: rig).width - 48) < 0.5 && abs(rect(shared.widthControl, in: rig).height - 36) < 0.5, "\(label): the Size pill is 48 x 36, like the other icon pills")
         expect(chrome.surface(for: shared.dragExportView)?.shape == .capsule, "\(label): Drag Me is a compact capsule surface")
         expect(chrome.surface(for: shared.dragFormatControl)?.shape == .capsule, "\(label): the format toggle sits in a glass capsule")
         expect(chrome.surface(for: shared.paletteButton) != nil && chrome.surface(for: chrome.fontButton) != nil, "\(label): Color and Font have surfaces")
-        for plainControl in [shared.zoomControl, shared.dragOriginalControl, shared.dragSizeLabel, shared.status] as [NSControl] {
+        for plainControl in [shared.dragOriginalControl, shared.status] as [NSControl] {
             expect(chrome.surface(for: plainControl) == nil, "\(label): \(describe(plainControl)) stays plain, outside any glass")
             expect(plainControl.superview is NSStackView && !(plainControl.superview?.superview is GlassSurfaceView), "\(label): \(describe(plainControl)) lives in the plain status row")
         }
-        for control in [shared.status, shared.dragSizeLabel] { expect(sameColor(control.textColor, .labelColor), "\(label): status text uses the label color") }
+        expect(chrome.surface(for: shared.zoomControl)?.shape == .capsule && chrome.surface(for: shared.zoomControl)?.fixedSize?.height == 36, "\(label): the zoom popup sits in a glass capsule")
+        if let zoom = shared.zoomControl as? ZoomPopUpButton {
+            let item = NSMenuItem(title: "83%", action: nil, keyEquivalent: "")
+            item.toolTip = "Fit, 83%"
+            zoom.menu?.insertItem(item, at: 0); zoom.select(item)
+            expect(zoom.titleOfSelectedItem == "83%" && (zoom.accessibilityValue() as? String) == "Fit, 83%", "\(label): the zoom face is the percentage; VoiceOver hears the mode too")
+            zoom.selectItem(withTitle: "100%")
+            expect((zoom.accessibilityValue() as? String) == "100%", "\(label): a plain zoom item is spoken as its title")
+            zoom.menu?.removeItem(item)
+        }
+        expect(sameColor(shared.status.textColor, .labelColor), "\(label): status text uses the label color")
         expect(chrome.surface(for: shared.canvas) == nil, "\(label): the canvas never sits in glass")
         var ancestor: NSView? = shared.canvas
         var insideGlass = false
@@ -929,7 +1220,7 @@ private enum GlassChromeTests {
         expect(shared.paletteButton.imagePosition == .imageOnly && shared.paletteButton.image != nil && shared.paletteButton.accessibilityLabel() == "Drawing colors"
                && shared.paletteButton.toolTip?.hasPrefix("Color") == true, "\(label): Color shows only its swatch, with a tooltip and label")
         expect(shared.toolbox.imagePosition == .imageOnly && shared.toolbox.accessibilityLabel() == "Toolbox", "\(label): Toolbox is icon-only")
-        expect(shared.sizeLabel.superview == nil && shared.widthControl.toolTip == "Size", "\(label): the Size text is gone; the slider keeps a tooltip")
+        expect(shared.sizeLabel.superview == nil && shared.widthControl.toolTip == "Size", "\(label): the Size text is gone; the pill keeps a tooltip")
         // Retitles move the tooltip and label, not drawn text.
         chrome.wipeButton.title = "Blank"
         expect(chrome.wipeButton.toolTip == "Blank" && chrome.wipeButton.accessibilityLabel() == "Blank" && chrome.wipeButton.visibleTitle.isEmpty, "\(label): Wipe's staged title becomes its tooltip and label")
@@ -944,7 +1235,7 @@ private enum GlassChromeTests {
         expect(!chrome.cancelFrameButton.isHidden && chrome.surface(for: chrome.cancelFrameButton)?.isHidden == false, "\(label): Cancel appears in Frame mode")
         expect(!chrome.backdropIsVisible && !chrome.bleedIsVisible, "\(label): backdrop and bleed give way to the Frame hole")
         let cancel = rect(chrome.cancelFrameButton, in: rig), snap = rect(chrome.snapButton, in: rig)
-        expect(abs(cancel.width - 48) < 0.5 && abs(cancel.height - 36) < 0.5 && cancel.maxY <= snap.minY, "\(label): Cancel is an icon pill under Snap Frame")
+        expect(abs(cancel.width - 48) < 0.5 && abs(cancel.height - 36) < 0.5 && cancel.minX >= snap.maxX && abs(cancel.midY - snap.midY) < 0.5, "\(label): Cancel is an icon pill to the right of Snap Frame")
         expect(abs(snap.width - 56) < 0.5 && abs(snap.height - 44) < 0.5, "\(label): Snap Frame keeps the larger primary glass")
         expect(chrome.snapButton.accessibilityLabel() == "Snap Frame" && chrome.snapButton.visibleTitle.isEmpty, "\(label): Snap Frame is read aloud, never drawn")
         expect(rig.controls.canvas.window === rig.window && chrome.scrollView.frame.size != .zero, "\(label): the canvas stays in place in Frame mode")

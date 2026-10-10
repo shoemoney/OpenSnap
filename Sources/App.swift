@@ -191,7 +191,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     private var hintEventMonitor: Any?
     let photoBrowser = PhotoBrowserCoordinator()
     let nameField = DocumentNameField(string: "Untitled")
-    let status = NSTextField(labelWithString: "")
+    let status = StatusTextField(labelWithString: "")
     let colorWell = NSColorWell()
     let widthControl = BezelSizeSlider(frame: .zero)
     let sizeLabel = NSTextField(labelWithString: "Size · 6.75")
@@ -202,7 +202,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     var presetColorButtons: [BezelColorButton] = []
     var sizeUndoGrouping = false
     var customDrawingColor = NSColor(calibratedRed: 0, green: 1, blue: 1, alpha: 1)
-    let zoomControl = NSPopUpButton(frame: .zero, pullsDown: false)
+    let zoomControl = ZoomPopUpButton(frame: .zero, pullsDown: false)
     let dragFormatToggle = NSSegmentedControl(labels: FormatToggle.titles, trackingMode: .selectOne, target: nil, action: nil)
     let dragOriginalControl = NSButton(checkboxWithTitle: "Export at original size", target: nil, action: nil)
     let dragSizeLabel = NSTextField(labelWithString: "")
@@ -274,7 +274,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     var snapButton: NSButton!
     var cancelFrameButton: NSButton!
     /// Located by its action on first use, so the window builder needs no extra reference.
-    weak var wipeRailButton: NSButton?
+    weak var wipeButton: NSButton?
     var frameMode = false
     var frameKeepsAnnotations = false
     var frameCaptureInProgress = false
@@ -286,6 +286,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     var frameWindowLevel = NSWindow.Level.normal
     var frameWindowBackground: NSColor?
     var frameScrollDrewBackground = true
+    /// Overlay scrollers fade in over the Frame hole and a screen capture would take them with the picture, so Frame mode hides them.
+    var frameScrollersShown = (horizontal: true, vertical: true)
     var frameTitlebarBackdrop: FrameChromeView?
     let support: URL = {
         if let isolated = ProcessInfo.processInfo.environment["OPENSNAP_APP_SUPPORT"] { return URL(fileURLWithPath: isolated, isDirectory: true) }
@@ -344,7 +346,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         if terminationStarted { return shutdownPending.isEmpty ? .terminateNow : .terminateLater }
-        widthControl.endTracking(); closeDrawingColors()
+        widthControl.dismissPopover(); widthControl.endTracking(); closeDrawingColors()
         if windowZoom != nil { makeVisible() }
         saveRecovery()
         guard allowDiscard(discardingForTermination: true) else { return .terminateCancel }
@@ -450,7 +452,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     }
     @objc func toggleVisible() {
         guard !terminationStarted, !frameCaptureInProgress, window.attachedSheet == nil else { return }
-        widthControl.endTracking(); closeDrawingColors(); helpBevel?.clear()
+        widthControl.dismissPopover(); widthControl.endTracking(); closeDrawingColors(); helpBevel?.clear()
         if windowZoom != nil { makeVisible(); return }
         if dragThumbnailWindow != nil {
             let panel = dragThumbnailWindow!, source = panel.frame
@@ -922,7 +924,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         let controller = NSViewController(); controller.view = view
         let popover = NSPopover(); popover.behavior = .transient; popover.contentViewController = controller
         colorPopover = popover; syncDrawingControls()
-        popover.show(relativeTo: paletteButton.bounds, of: paletteButton, preferredEdge: .minX)
+        popover.show(relativeTo: paletteButton.bounds, of: paletteButton, preferredEdge: .minY)
         writeLayoutEvidence()
     }
     @objc func choosePresetColor(_ sender: NSButton) {
@@ -987,7 +989,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     func setCanvasDisplayZoom(_ scale: CGFloat, label: String) {
         canvas.setZoom(scale)
         for item in zoomControl.itemArray where item.tag == 999 { zoomControl.menu?.removeItem(item) }
-        let item = NSMenuItem(title: "\(label) · \(Int((canvas.zoom*100).rounded()))%", action: nil, keyEquivalent: "")
+        // The face is the percentage alone; the mode word rides on the tooltip and in the spoken value ("Fit, 83%").
+        let percent = "\(Int((canvas.zoom*100).rounded()))%"
+        let item = NSMenuItem(title: percent, action: nil, keyEquivalent: "")
+        item.toolTip = "\(label), \(percent)"
         item.tag = 999; item.representedObject = Double(canvas.zoom); zoomControl.menu?.insertItem(item, at: 0); zoomControl.select(item)
     }
     func changed() {
@@ -1002,8 +1007,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     }
     /// Original updateWipeButton: Blank (disabled) / Clear / Wipe, derived from the canvas.
     func updateWipeButton() {
-        if wipeRailButton == nil { wipeRailButton = findWipeButton(in: window?.contentView) }
-        guard let button = wipeRailButton else { return }
+        if wipeButton == nil { wipeButton = findWipeButton(in: window?.contentView) }
+        guard let button = wipeButton else { return }
         let stage = canvas.wipeStage
         if button.title != stage.title { button.title = stage.title }
         if button.isEnabled != stage.isEnabled { button.isEnabled = stage.isEnabled }
@@ -1015,9 +1020,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         return nil
     }
     func updateStatus() {
-        if let uploadStatus, publishing.isBusy { status.stringValue = uploadStatus }
-        else { status.stringValue = "\(canvas.tool.rawValue.capitalized) · \(dirty ? "Unsaved changes" : "Saved")" }
+        refreshStatusText()
         updateViewportChrome(); scheduleDragPreview() }
+    /// The one status line: tool, saved state and the export size and bytes the drag preview last measured.
+    /// A narrow window shows the longest of these that fits whole (bytes go first, then the tool, never the state);
+    /// the tooltip and the spoken value always carry the full text. Frame mode keeps its own hint.
+    func refreshStatusText() {
+        guard !frameMode else { return }
+        let variants: [String]
+        if let uploadStatus, publishing.isBusy { variants = [uploadStatus] }
+        else {
+            let tool = canvas.tool.rawValue.capitalized, state = dirty ? "Unsaved changes" : "Saved"
+            let detail = dragSizeLabel.stringValue
+            if detail.isEmpty { variants = ["\(tool) · \(state)", state] }
+            else {
+                let dimensions = detail.components(separatedBy: " · ")[0]
+                variants = ["\(tool) · \(state) · \(detail)", "\(tool) · \(state) · \(dimensions)", "\(state) · \(dimensions)", state]
+            }
+        }
+        status.setVariants(variants)
+        status.toolTip = variants[0]
+        status.setAccessibilityHelp(nil)
+    }
     var dragFormat: String {
         FormatToggle.payload(forSegment: dragFormatToggle.selectedSegment).format
     }
@@ -1045,6 +1069,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         if let data = try? exportData(format: dragFormat, originalSize: original, jpegQuality: dragQuality) {
             dragSizeLabel.stringValue = "\(Int(size.width)) × \(Int(size.height)) · " + ByteCountFormatter.string(fromByteCount: Int64(data.count), countStyle: .file)
         } else { dragSizeLabel.stringValue = "Preview unavailable" }
+        refreshStatusText()
         if let raw = try? canvas.snapshotDocumentData(), let document = try? CanvasView.validatedDocumentData(raw) {
             let scale = min(1, 128 / max(document.size.width, document.size.height))
             dragExportView?.overview = ImageExport.image(document: document, size: CGSize(width: max(1, ceil(document.size.width * scale)), height: max(1, ceil(document.size.height * scale))))
@@ -1673,6 +1698,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             frameWindowLevel = window.level
             frameWindowBackground = window.backgroundColor
             frameScrollDrewBackground = canvas.enclosingScrollView?.drawsBackground ?? true
+            frameScrollersShown = (canvas.enclosingScrollView?.hasHorizontalScroller ?? true, canvas.enclosingScrollView?.hasVerticalScroller ?? true)
         }
         frameTimedSnap = frameTimedSnap || (manualFlags ?? NSApp.currentEvent?.modifierFlags ?? []).contains(.shift)
         frameMode = true; frameKeepsAnnotations = keepingAnnotations
@@ -1692,6 +1718,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         }
         (window.contentView as? FrameChromeView)?.showsCanvasHole = true
         canvas.enclosingScrollView?.drawsBackground = false
+        canvas.enclosingScrollView?.hasHorizontalScroller = false; canvas.enclosingScrollView?.hasVerticalScroller = false
         canvas.framePreview = true
         snapButton.cancelOperation(nil)
         snapButton.title = "Snap Frame"
@@ -1699,9 +1726,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         snapButton.toolTip = "Capture the area inside the frame; hold Shift for a six-second timer"
         cancelFrameButton.isHidden = false
         setModernFrameMode(true)
-        let fullStatus = keepingAnnotations ? "Frame preview · Snap Frame replaces the picture and keeps your drawing" : "Frame preview · Position the window, then choose Snap Frame"
-        status.stringValue = keepingAnnotations ? "Frame: Snap keeps your drawing" : "Frame: position the window, then Snap"
+        updateViewportChrome()
+        let fullStatus = keepingAnnotations ? "Frame preview · Snap Frame replaces the picture and keeps your drawing" : "Frame: position the window, then Snap"
+        status.stringValue = keepingAnnotations ? "Frame: Snap keeps your drawing" : "Frame: position, then Snap"
         status.toolTip = fullStatus
+        status.spokenValue = fullStatus; status.setAccessibilityHelp(fullStatus)
     }
     @objc func cancelFrame() {
         guard !frameCaptureInProgress else { return }
@@ -1719,6 +1748,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         window.level = frameWindowLevel
         window.backgroundColor = frameWindowBackground
         canvas.enclosingScrollView?.drawsBackground = frameScrollDrewBackground
+        canvas.enclosingScrollView?.hasHorizontalScroller = frameScrollersShown.horizontal; canvas.enclosingScrollView?.hasVerticalScroller = frameScrollersShown.vertical
         snapButton.title = "Snap"
         (snapButton as? OriginalActionButton)?.alternateAction = #selector(fullscreenSnap)
         snapButton.toolTip = "Drag an area or click a window; right-click or Control-click for Fullscreen"
@@ -1726,14 +1756,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         setModernFrameMode(false)
         updateStatus()
     }
+    /// The visible area of the canvas view, in global bottom-left coordinates. For a canvas at least as large as the
+    /// viewport that is the part of it on screen; for a smaller, centred canvas it is still the whole viewport (the margin
+    /// around the canvas included), because that is the hole the user sees and positions. Always inside the Frame hole.
+    var frameViewportScreenRect: NSRect { window.convertToScreen(canvas.convert(canvas.visibleRect, to: nil)) }
     func performFrameSnap(delay: Double = 0) {
         guard !terminationStarted, frameMode, !frameCaptureInProgress else { return }
         if frameKeepsAnnotations, !canvasIsFullyVisible {
             status.stringValue = "Re-Snap needs the whole drawing visible. Reduce zoom or enlarge the window, then try again."
             return
         }
-        let visible = canvas.convert(canvas.visibleRect, to: nil)
-        let global = window.convertToScreen(visible)
+        let global = frameViewportScreenRect
         let top = NSScreen.screens.first?.frame.maxY ?? global.maxY
         capture.frameRect = NSRect(x: global.minX, y: top-global.maxY, width: global.width, height: global.height)
         activeFrameScreenSize = capture.frameRect?.integral.size
