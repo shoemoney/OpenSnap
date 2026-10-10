@@ -1,6 +1,6 @@
 # E2E audit findings: lane J1 (editor core)
 
-Source revision `15d5ec2` (main `7c8bdb1` + tooltip crash fix + E2E infra). Driver: J1 lane, real clicks and keys through kimi-cu on an isolated session copy. Screenshots live in `docs/design/evidence/e2e-2026-10-10/j1/`.
+Source revision `15d5ec2` (main `7c8bdb1` + tooltip crash fix + E2E infra). Driver: J1 lane, real clicks and keys through the computer-use driver on an isolated session copy. Screenshots live in `docs/design/evidence/e2e-2026-10-10/j1/`.
 
 Severity: P0 crash or data loss, P1 broken or confusing, P2 visual or space, P3 polish.
 
@@ -129,7 +129,7 @@ Harness notes that affect how to read the evidence (not app defects):
 - **Suggested fix:** check `validateMenuItem`/`vanish` for the Minimize item.
 
 ### F-J1-023 · P3 · Text editor exposes no AX selection
-- **Observed:** `AXSelectedTextRange` cannot be set on the in-place text editor (kimi-cu `select_text` returns -25205 although the replace worked through events).
+- **Observed:** `AXSelectedTextRange` cannot be set on the in-place text editor (the driver's `select_text` returns -25205 although the replace worked through events).
 - **Suggested fix:** make the editor's text view an `NSTextView` with standard accessibility.
 
 ### F-J1-024 · P3 · Option-Return then typing starts a second text box on top of the first
@@ -154,7 +154,7 @@ Harness notes that affect how to read the evidence (not app defects):
 
 # E2E audit findings: lane J2 (History, Destinations, Settings, uploads, About, status item)
 
-Source revision `10040ba` (main after J1 and audit fix batch 1). Driver: J2 lane, real clicks through kimi-cu on two isolated session copies (pids 39783 and 90314). Screenshots live in `docs/design/evidence/e2e-2026-10-10/j2/` (names below are relative to it). History's glass/text-button polish request is deferred by the owner and is not a finding here.
+Source revision `10040ba` (main after J1 and audit fix batch 1). Driver: J2 lane, real clicks through the computer-use driver on two isolated session copies (pids 39783 and 90314). Screenshots live in `docs/design/evidence/e2e-2026-10-10/j2/` (names below are relative to it). History's glass/text-button polish request is deferred by the owner and is not a finding here.
 
 How to read the evidence: windows are captured one at a time, so menus, pop-up lists and context menus never appear in a screenshot; those were driven through AX presses and read back, and are labelled as such in the matrix.
 
@@ -449,7 +449,7 @@ Method note: an automated per-field contrast sweep over the metrics was tried an
 
 # E2E audit findings: lane J4 (real-click retest of audit batches 3a, 3b and 3c)
 
-Source revision `94b7aa5` (main after merge of batch 3c). Driver: J4 lane, real clicks and keys through kimi-cu on two isolated session copies: pid 62733 (`com.shoemoney.opensnap.e2e-62694`, `--seed all`) and pid 70107 (`com.shoemoney.opensnap.e2e-70088`, `--seed history --aws`). Both stopped with "stores unchanged". Screenshots are in `docs/design/evidence/e2e-2026-10-10/j4/` (names below are relative to it, shortened to their number). The live AWS check is logged in `j4-aws-log.md`.
+Source revision `94b7aa5` (main after merge of batch 3c). Driver: J4 lane, real clicks and keys through the computer-use driver on two isolated session copies: pid 62733 (`com.shoemoney.opensnap.e2e-62694`, `--seed all`) and pid 70107 (`com.shoemoney.opensnap.e2e-70088`, `--seed history --aws`). Both stopped with "stores unchanged". Screenshots are in `docs/design/evidence/e2e-2026-10-10/j4/` (names below are relative to it, shortened to their number). The live AWS check is logged in `j4-aws-log.md`.
 
 ## J4 retest
 

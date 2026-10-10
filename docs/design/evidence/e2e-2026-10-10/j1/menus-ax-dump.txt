@@ -1,4 +1,4 @@
-AX dumps of the open menus (kimi-cu get_app_state, source 15d5ec2). Class: rendered (the item list and enabled state), not an interaction.
+AX dumps of the open menus (computer-use driver app-state read, source 15d5ec2). Class: rendered (the item list and enabled state), not an interaction.
 Menu item height 29 pt, system menu font.
 
 File (14):      New, Open…, Photos…, Close, Save, Save As…, Rename…, Save to History, History, Export…, Publish…, Share…, Page Setup…, Print…   (all enabled)
