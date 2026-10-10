@@ -35,6 +35,7 @@ GAPS = {
     "voiceover": "needs real VoiceOver speech (AX data is not proof of speech)",
     "global-hotkey-background": "global hotkeys firing while the app is in the background need system-level key events",
     "printer": "needs a real printer",
+    "replaced": "retired: replaced by Settings › Upload in audit batch 5 (one destinations surface); kept only so the audit IDs and their evidence stay stable",
     "removed": "retired: removed in d9ed8b7 (one capture-shortcut surface, Settings › Capture); kept only so the audit IDs and their evidence stay stable",
     "system-setting": "a system appearance or display option cannot be changed in an E2E session (no global accessibility/appearance changes); only harness-injected rendered evidence exists",
 }
@@ -108,6 +109,9 @@ def parse_menus():
             name = item.group(1) + ("OpenSnap" if item.group(2) else "")
             if name == "-" or item.group(4) == "NSApplication":   # system selectors are listed in SYSTEM_MENU
                 continue
+            # The Edit item is retitled live by the wipe stage (Remove Annotations first, Clear Image once only the picture is left).
+            if item.group(4) == "wipe":
+                name = "Remove Annotations / Clear Image"
             found.append((title, name, item.group(4), item.group(5)))
     return found
 
@@ -146,7 +150,7 @@ D = "Fresh launch, empty document"
 SEM = {
     "about": (D, "About window opens: name, version, credit, MIT License and Third-party notices links", "e2e", None, "app"),
     "showPreferences": ("No sheet attached, not mid Frame capture", "Settings window opens on its last tab", "e2e", None, "app"),
-    "sharingSettings": (D, "Destinations sheet opens over the main window", "e2e", None, "app"),
+    "sharingSettings": (D, "Settings opens on the Upload tab, where the destinations are listed and edited", "e2e", None, "app"),
     "shortcutSettings": (D, "Settings opens on the Capture tab (the Capture Shortcuts sheet was removed in d9ed8b7)", "e2e", None, "app"),
     "quit": ("Clean document; repeat with a dirty document", "App quits; a dirty document asks Save your drawing? first", "e2e", None, "app"),
     "toggleVisible": (D, "Editor hides; status item (if shown) reads Show OpenSnap", "e2e", None, "app"),
@@ -160,7 +164,7 @@ SEM = {
     "saveHistory": ("A drawing on the canvas", "Archived into History; status line confirms; the entry appears in the History window", "e2e", None, "app"),
     "showHistory": (D, "History window opens (1000 x 720, minimum 880 x 600)", "e2e", None, "app"),
     "exportFile": ("A drawing on the canvas", "Save panel with the Export options accessory (format, JPEG quality, original size, dimensions, bytes)", "e2e-partial", "os-panel", "app"),
-    "publishImage": ("A drawing; a default destination (seeded) or none", "Uploads to the default destination and copies the link; with none, opens the Destinations sheet", "e2e", None, "app"),
+    "publishImage": ("A drawing; a default destination (seeded) or none", "Uploads to the default destination and copies the link; with none, says so in the status line and opens Settings › Upload (empty list with Add… inside)", "e2e", None, "app"),
     "shareFromMenu": ("A drawing on the canvas", "The macOS sharing picker opens for the image", "e2e-partial", "os-panel", "app"),
     "printImage": ("A drawing on the canvas", "System print panel for the rendered image", "gap", "printer", "os"),
     "pageSetup": (D, "System Page Setup panel; OK keeps the settings", "e2e-partial", "os-panel", "app"),
@@ -264,7 +268,7 @@ def build_toolbox(parsed):
     titles = {sel: name for _, name, sel, _ in parsed if sel}
     titles.update({"toggleVisible": "Hide OpenSnap"})
     symbols = dict(parse_menu_symbols())
-    add("TOOLBOX", "Toolbar › Toolbox", "Toolbox", "toolbar button", "Top bar › Toolbox (icon-only pull-down)", "Pull-down opens: five groups of drawing-session commands (keep, edit, capture, adjust the picture, pen settings); no app or file plumbing",
+    add("TOOLBOX", "Toolbar › Toolbox", "Toolbox", "toolbar button", "Top bar › Toolbox (icon and chevron)", "Menu opens (a selection-style pop-up, because a pull-down draws no row icons): five groups of drawing-session commands (keep, edit, capture, adjust the picture, pen settings); no app or file plumbing",
         icon="toolbox", rendered=["S04", "S12"])
     for index, group in enumerate(parse_toolbox_groups(), start=1):
         for selector in group:
@@ -278,14 +282,14 @@ def build_toolbox(parsed):
 
 # ------------------------------------------------------------------------------------------------------------------- icons
 FA_WHERE = {  # entry path for each icon, kept beside the source-derived "used in" list
-    "eyeSlash": "Top bar › Hide; History › Hide from History", "toolbox": "Top bar › Toolbox", "images": "Top bar › Photos", "boxArchive": "Bottom bar › Save",
+    "eyeSlash": "Top bar › Hide", "folderMinus": "History › Hide (list-only removal)", "chevronDown": "Top bar › Toolbox (face)", "toolbox": "Top bar › Toolbox", "images": "Top bar › Photos", "boxArchive": "Bottom bar › Save",
     "clockRotateLeft": "Bottom bar › History", "arrowPointer": "Top bar › Select tool", "paintbrush": "Top bar › Brush tool; Settings › Drawing tab",
     "slashForward": "Top bar › Line tool", "circle": "Top bar › Ellipse tool", "square": "Top bar › Rectangle tool", "fillDrip": "Top bar › Fill tool",
     "eraser": "Top bar › Eraser tool", "text": "Top bar › Text tool", "arrowUpRight": "Top bar › Arrow tool", "cropSimple": "Top bar › Crop tool",
     "crosshairs": "Top bar › Snap; Settings › Capture tab", "frameViewfinder": "Top bar › Snap Frame (Frame mode)", "xmark": "Top bar › Cancel (Frame mode)",
-    "font": "Top bar › Font", "arrowRotateLeft": "Bottom bar › Undo", "broom": "Bottom bar › Wipe", "resizeDiagonal": "Bottom bar › Resize…",
+    "font": "Top bar › Font", "arrowRotateLeft": "Bottom bar › Undo", "broom": "Bottom bar › Wipe",
     "upload": "Bottom bar › Upload; Settings › Upload tab", "dragHand": "Bottom bar › Drag Me", "check": "Default pill; success results",
-    "warning": "Error results", "xmarkCircle": "Failure results", "openExternal": "History › Open", "copy": "History › Copy", "link": "History › Copy Link",
+    "xmarkCircle": "Failure results", "openExternal": "History › Open", "copy": "History › Copy", "link": "History › Copy Link",
     "globe": "History › Open Link", "trash": "History › Move to Trash", "linkSlash": "History › Delete from Web", "circleCheck": "Connected result; selected tile badge",
     "gear": "Settings › General tab",
 }
@@ -318,7 +322,7 @@ def build_icons():
 def build_chrome():
     top = [
         ("Hide", "Hide the editor (⌘M behaviour via vanish)", "eyeSlash", "Editor minimizes; tooltip Hide (⌘M)"),
-        ("Toolbox", "Common commands pull-down", "toolbox", "Pull-down opens (see Toolbox entries)"),
+        ("Toolbox", "Common commands menu", "toolbox", "Menu opens, rows with icons (see Toolbox entries)"),
         ("Photos", "Open the Photos sheet", "images", "Photos sheet opens"),
         ("Snap", "Primary capture control", "crosshairs", "Starts a crosshair snap (right-click or Control-click for Fullscreen); refusal sheet without Screen Recording"),
     ]
@@ -343,7 +347,7 @@ def build_chrome():
         ("Undo", "toolbar button", "arrow-rotate-left", "Reverts the last edit; disabled with nothing to undo", "S09"),
         ("Wipe", "toolbar button", "broom", "First click clears the drawing; a second erases the background; disabled when empty", "S09"),
         ("Canvas zoom", "control", None, "Pop-up: 25, 50, 75, 100, 150, 200 %, Actual Size; face shows the percentage; Fit adds a computed entry", "S07"),
-        ("Resize…", "toolbar button", "up-right-and-down-left-from-center", "Resize or Crop sheet; disabled in Actual Size and Frame mode", "S08"),
+        ("Resize…", "toolbar button", None, "Text button (20 pt, no glyph); Resize or Crop sheet opens at the size the title shows; disabled in Actual Size and Frame mode", "S08"),
         ("Status line", "control", None, "Names the tool, saved state and size; truncates in the middle only at the minimum width", "S09"),
         ("Save", "toolbar button", "box-archive", "Saves to History (tooltip Save to History); status confirms", "S09"),
         ("History", "toolbar button", "clock-rotate-left", "Opens the History window", "S09"),
@@ -359,7 +363,7 @@ def build_chrome():
                            ("Zoom entry 150%", "150%"), ("Zoom entry 200%", "200%"), ("Zoom entry Actual Size", "Toggles Actual Size (same as Image › Actual Size)")]:
         add("BAR", "Bottom bar › zoom pop-up", name, "menu item", f"Bottom bar › Canvas zoom › {name.replace('Zoom entry ', '')}", expected + "; face updates", rendered=["S07"])
     for name, expected in [("Cancel Upload", "Cancels a running upload; shown only while publishing"), ("Destination row", "Chooses the default destination; checkmark moves"),
-                           ("No destination configured", "Disabled row shown when no destination exists"), ("Destination Settings…", "Opens the Destinations sheet"),
+                           ("No destination configured", "Disabled row shown when no destination exists"), ("Destination Settings…", "Opens Settings on the Upload tab"),
                            ("Share with macOS…", "Opens the macOS sharing picker (OS-owned)")]:
         add("BAR", "Bottom bar › Upload menu", name, "menu item", f"Bottom bar › Upload (right-click) › {name}", expected,
             prereq="Destinations seeded" if name == "Destination row" else D, ex="e2e-partial" if name.startswith("Share") else "e2e", gap="os-panel" if name.startswith("Share") else None,
@@ -467,10 +471,13 @@ def build_settings():
         ("Drawing", "Arrow head: Start", "preference", "Arrow head at the start", ""),
         ("Drawing", "Caption: Holding Option reverses the setting.", "control", "Static caption, 20 pt, wraps within the control column", ""),
         ("Capture", "Flash: Show capture flash", "preference", "Checkbox persists showCaptureFlash", ""),
-        ("Upload", "Destinations list", "control", "Rows with name, transport and a Default pill; at most five, then 'and N more in Manage Destinations…'", ""),
-        ("Upload", "Empty state: No upload destination yet.", "state", "Shown when no destination exists", ""),
-        ("Upload", "Manage Destinations…", "control", "Opens the Destinations sheet", ""),
-        ("Upload", "Caption: Uploads go to the default destination.", "control", "Static caption", ""),
+        ("Upload", "Destinations list", "control", "Every destination as a selectable row with name, transport and a Default pill; the list scrolls past what the screen leaves", ""),
+        ("Upload", "Empty state: No destinations yet", "state", "Shown when no destination exists, with Add… inside the list", ""),
+        ("Upload", "Add…", "control", "Opens the destination editor sheet on the Settings window", ""),
+        ("Upload", "Edit…", "control", "Opens the selected destination in the editor sheet (double-click a row does the same)", ""),
+        ("Upload", "Remove", "control", "Asks Remove “name”? (Cancel first, Remove destructive) as a sheet on Settings, then removes it and its stored secret", ""),
+        ("Upload", "Make Default", "control", "Marks the selected destination as the one Upload uses; the Default pill moves", ""),
+        ("Upload", "Caption: Uploads go to the default destination. Right-click Upload to switch.", "control", "Static caption", ""),
     ]
     for tab, name, kind, expected, extra in rows:
         add("SET", f"Settings › {tab}", name, kind, f"Settings › {tab} › {name.split(':')[0]}", expected + (f" ({extra})" if extra else ""),
@@ -493,14 +500,19 @@ def build_hotkeys():
         for action in ("Screen region", "Window", "Full screen", "Frame", "Upload", "Show OpenSnap"):
             add("HOT", s, f"{action}: key", "control", f"{where} › {action} key", what("Pop-up: None plus the key choices; choosing a key enables its modifier segments"), rendered=["S18"], **retired)
             add("HOT", s, f"{action}: modifiers", "control", f"{where} › {action} modifiers", what("Four selectAny segments ⌘ ⌥ ⌃ ⇧; disabled until a key is chosen"), rendered=["S18"], **retired)
-        add("HOT", s, "Reset Defaults", "control", f"{where} › Reset Defaults", what("Clears every binding (first launch claims no shortcut)"), rendered=["S18"], **retired)
-        add("HOT", s, "Disable All", "control", f"{where} › Disable All", what("Turns global shortcuts off"), rendered=["S18"], **retired)
+        replaced = {"ex": "gap", "gap": "replaced"}
+        add("HOT", s, "Reset Defaults", "control", f"{where} › Reset Defaults", "RETIRED, renamed Clear All in audit batch 5 (it clears every key, it never restored defaults)", rendered=["S18"], **(retired or replaced))
+        add("HOT", s, "Disable All", "control", f"{where} › Disable All", "RETIRED, removed in audit batch 5: unticking Enable global capture shortcuts does the same", rendered=["S18"], **(retired or replaced))
+        if mode == "live":
+            add("HOT", s, "Clear All", "control", f"{where} › Clear All", "Sets every key to None (first launch claims no shortcut) and applies at once", rendered=["S18"])
         add("HOT", s, "Status line", "state", f"{where} › status", what("Idle text, or Error: … beside a rejected draft (conflict with an internal or system binding)"), rendered=["S18"], **retired)
         if mode == "sheet":
             add("HOT", s, "Cancel", "control", f"{where} › Cancel", what("Closes the sheet leaving settings unchanged (Esc)"), shortcut="Esc", rendered=["S18"], **retired)
             add("HOT", s, "Save", "control", f"{where} › Save", what("Applies the draft and closes (Return)"), shortcut="Return", rendered=["S18"], **retired)
     add("HOT", "Capture shortcuts (live)", "Menu entry: Capture Shortcuts…", "menu item", "Menu bar › OpenSnap › Capture Shortcuts…", "Opens the Settings window on the Capture tab (no separate sheet since d9ed8b7)",
         shortcut=None, rendered=["S18"])
+    add("HOT", "Capture shortcuts (live)", "Shortcuts pause while the Capture tab is open", "state", "Settings › Capture", "Saved shortcuts are unregistered while the tab is on screen and registered again when it is left or Settings is closed, so a half-entered chord never goes live",
+        proof=proof("SettingsWindowTests.swift", "opening Settings on Capture pauses every shortcut"))
     for action in ("Screen region", "Window", "Full screen", "Frame", "Upload", "Show OpenSnap"):
         add("HOT", "Global hotkey firing", f"{action} (fires while backgrounded)", "shortcut", "Another app frontmost › the bound chord", "OpenSnap performs the action without being frontmost",
             prereq="A binding saved", ex="gap", gap="global-hotkey-background")
@@ -519,21 +531,21 @@ def build_history():
     add("HIST", "History", "Search history", "control", "History › search field", "One literal case-insensitive OR over name, link and text; filters live", prereq="History seeded",
         rendered=["S20"], proof=proof("HistoryBrowserTests.swift", "Original search is one literal case insensitive OR over name link text"))
     actions = [("Open", "openExternal", "Opens the entry's editable document in the editor"), ("Copy", "copy", "Copies the picture to the pasteboard"), ("Copy Link", "link", "Copies the published URL (Posted entries only)"),
-               ("Open Link", "globe", "Opens the published URL in the default browser"), ("Hide from History", "eyeSlash", "Confirm sheet, then the entry leaves the list (files kept)"),
+               ("Open Link", "globe", "Opens the published URL in the default browser"), ("Hide from History", "folderMinus", "Confirm sheet, then the entry leaves the list (files kept); labelled Hide"),
                ("Move to Trash", "trash", "Confirm sheet, then archive copies move to Trash"), ("Delete from Web", "linkSlash", "Confirm sheet, then the remote object is deleted (verified binding only)")]
     for name, icon, expected in actions:
-        add("HIST", "History › action row", name, "toolbar button", f"History › {name} (icon button)", expected, icon=icon, prereq="An entry selected" + (" with a remote link" if "Link" in name or "Web" in name else ""),
+        add("HIST", "History › action row", name, "toolbar button", f"History › {name} (icon button, labelled while the window is wide enough; Hide, Trash and Delete from Web always)", expected, icon=icon, prereq="An entry selected" + (" with a remote link" if "Link" in name or "Web" in name else ""),
             rendered=["S20"],
             ex="e2e-partial" if name in ("Open Link",) else "e2e", gap="os-panel" if name == "Open Link" else None, note="Opens the default browser (OS-owned)" if name == "Open Link" else None)
         add("HIST", "History › context menu", name, "menu item", f"History › right-click a tile › {name}", expected, prereq="An entry selected", rendered=["S20"],
             ex="e2e-partial" if name == "Open Link" else "e2e", gap="os-panel" if name == "Open Link" else None)
     for fmt in ("PNG", "JPG", "PDF", "TIFF", "SVG", ".opensnap document"):
-        add("HIST", "History › Drag as pop-up", fmt, "control", f"History › Drag as › {fmt}", f"The pop-up offers {fmt}; tiles then drag out as {fmt} and the choice persists independently of the editor", prereq="History seeded", rendered=["S20"],
+        add("HIST", "History › Drag as pop-up", fmt, "control", f"History › Drag as › {fmt}", f"The pop-up (end of the footer line) offers {fmt}; tiles then drag out as {fmt} and the choice persists independently of the editor", prereq="History seeded", rendered=["S20"],
             proof=proof("HistoryBrowserTests.swift", "Drag formats are PNG JPG PDF TIFF SVG and the .opensnap document"))
     for name, expected in [("Tile: select / multi-select", "Click selects with an accent border and check badge; ⌘/⇧-click extends"), ("Tile: double-click", "Opens the entry"),
                            ("Tile: drag out", "Promised file with the frozen format and a sanitised name"), ("Details: Name, Date, Size, Action, Destination", "Shows metadata; multi-selection aggregates"),
                            ("Details preview", "Bounded local preview image of the selection"), ("Day section headings", "Today, Yesterday, then dated headings"),
-                           ("Empty state: No history yet.", "Hint reads the live Save to History shortcut"), ("Empty state: No history items match these filters.", "Shown when filters hide everything"),
+                           ("Empty state: No history yet", "Hint reads the live Save to History shortcut"), ("Empty state: No history items match these filters", "Shown when filters hide everything"),
                            ("Missing-file warning", "Missing local files disable local actions but keep links and Hide"), ("Status line", "N items · M selected"),
                            ("Reflow at 880 x 600", "No horizontal scroller; tiles evenly spaced; details move under the grid below 760 wide")]:
         add("HIST", "History", name, "state" if "Empty" in name or "warning" in name or "Reflow" in name else "control", f"History › {name}", expected, prereq="History seeded" if "Empty state: No history yet" not in name else "No History (--seed empty)",
@@ -544,13 +556,18 @@ def build_history():
 
 # --------------------------------------------------------------------------------------------------------------------- destinations
 def build_destinations():
+    # The Destinations list sheet was replaced by Settings › Upload in audit batch 5; its rows stay (same IDs, same evidence) as retired.
+    gone = {"ex": "gap", "gap": "replaced"}
+    old = lambda text: f"RETIRED, replaced by Settings › Upload in audit batch 5 (the list sheet no longer exists): {text}"
     add("DEST", "Destinations sheet", "Destinations sheet", "sheet", "Menu bar › OpenSnap › Sharing Settings…, Settings › Upload › Manage Destinations…, Upload right-click › Destination Settings…",
-        "Sheet over the main window: list of destinations plus Add…, Edit…, Remove, Make Default, Done", rendered=["S19"])
+        old("Sheet over the main window: list of destinations plus Add…, Edit…, Remove, Make Default, Done"), rendered=["S19"], **gone)
     for name, expected in [("Add…", "Opens the form with the first protocol selected"), ("Edit…", "Opens the form for the selected destination"), ("Remove", "Confirmation alert (Remove / Cancel); removes the destination and its stored secret"),
                            ("Make Default", "Marks the destination used by Upload (Default pill moves)"), ("Done", "Closes the sheet (Return)")]:
-        add("DEST", "Destinations sheet › list", name, "control", f"Destinations › {name}", expected, prereq="Destinations seeded" if name != "Add…" else D, rendered=["S19"])
+        add("DEST", "Destinations sheet › list", name, "control", f"Destinations › {name}", old(expected), prereq="Destinations seeded" if name != "Add…" else D, rendered=["S19"], **gone)
+    add("DEST", "Destination editor", "Destination editor sheet", "sheet", "Settings › Upload › Add… / Edit… (double-click a row)",
+        "Sheet on the Settings window holding one destination's form; sized to its protocol, scrolls on a short screen, Return saves and Esc cancels", rendered=["S19"])
     for protocol in ("WebDAV", "FTP", "FTPS", "SFTP", "S3-compatible"):
-        add("DEST", "Destination form › Protocol", protocol, "control", f"Destinations › Add… › Protocol › {protocol}", f"Form shows the {protocol} field set and help", rendered=["S19", "S21"])
+        add("DEST", "Destination form › Protocol", protocol, "control", f"Settings › Upload › Add… › Protocol › {protocol}", f"Form shows the {protocol} field set and help", rendered=["S19", "S21"])
     fields = [("Name", "all", "Required, up to 80 characters, unique"), ("Endpoint URL", "all", "Validated scheme per protocol (https for S3 unless a private host)"),
               ("Region", "S3", "e.g. us-east-1"), ("Bucket", "S3", "Valid bucket name; dotted buckets use path-style"), ("Remote folder / Key prefix", "all", "Letters, digits, . _ - only for S3"),
               ("Public base URL", "all", "Optional; builds the copied link"), ("SSH host alias", "SFTP", "From ~/.ssh/config"), ("SFTP remote root", "SFTP", "Absolute path"),
@@ -558,21 +575,23 @@ def build_destinations():
               ("AWS profile", "S3 + profile", "Reads the shared credentials file in place"), ("Username / Access key ID", "non-SFTP", "Optional for anonymous"),
               ("Password / Secret access key", "non-SFTP", "Secure field; stored in the Keychain (in memory in an isolated session)"), ("Make uploads public-read", "S3", "Checkbox; off by default (ACLs-off buckets)")]
     for name, scope, expected in fields:
-        add("DEST", "Destination form", name, "control", f"Destinations › Add…/Edit… › {name}", f"{expected} (shown for: {scope})", rendered=["S19", "S21"])
-    for name, expected in [("Test", "Tries the destination; result line shows Connected + detail or Error: …"), ("Save", "Validates and stores; secret goes to the secret store (Return)"), ("Cancel", "Closes the form (Esc)"),
+        add("DEST", "Destination form", name, "control", f"Settings › Upload › Add…/Edit… › {name}", f"{expected} (shown for: {scope})", rendered=["S19", "S21"])
+    for name, expected in [("Test", "Tries the destination; result line shows Connected + detail or Error: …"), ("Save", "Validates and stores; secret goes to the secret store (Return)"), ("Cancel", "Closes the editor sheet (Esc)"),
                            ("Result line: working / success / failure", "Glyph plus words (Saving…, Testing…, Connected, Error: …), never colour alone")]:
-        add("DEST", "Destination form", name, "control", f"Destinations › Add…/Edit… › {name}", expected, rendered=["S19", "S21"])
-    add("DEST", "Destinations sheet", "Remove confirmation (NSAlert)", "alert", "Destinations › Remove", "Alert: Remove “name”? with Remove / Cancel; drawn by NSAlert, not AppAlert",
-        prereq="Destinations seeded", note="Source uses NSAlert, so system-sized text: audit whether body size is honoured", rendered=["S26"])
+        add("DEST", "Destination form", name, "control", f"Settings › Upload › Add…/Edit… › {name}", expected, rendered=["S19", "S21"])
+    add("DEST", "Destinations sheet", "Remove confirmation (NSAlert)", "alert", "Destinations › Remove", old("Alert: Remove “name”? with Remove / Cancel; drawn by NSAlert, not AppAlert"),
+        prereq="Destinations seeded", note="Superseded: the question is an AppAlert sheet on Settings (Settings › Upload › Remove)", rendered=["S26"], **gone)
+    add("DEST", "Destination editor", "Remove confirmation (AppAlert)", "alert", "Settings › Upload › Remove", "AppAlert sheet on the Settings window: Remove “name”? with Cancel first and default, Remove destructive; names who becomes the default",
+        prereq="Destinations seeded", rendered=["S26"], proof=proof("SettingsWindowTests.swift", "Remove opens one app-owned alert hanging from the Settings window"))
     for name, expected, ex, gap in [
             ("Upload to the AWS profile destination (success)", "Synthetic PNG object under pics/, link https://cdn.shoemoney.com/pics/… copied, status confirms, History gets a Shared entry", "e2e", None),
             ("Upload to a fake host (failure)", "Error shown with a glyph; status and History do not claim success", "e2e", None),
-            ("Upload with no destination", "Opens the Destinations sheet / says no destination is configured", "e2e", None),
+            ("Upload with no destination", "Says so in the status line and opens Settings › Upload: empty list, Add… inside it", "e2e", None),
             ("Upload retry after failure", "Second click retries to the same destination", "e2e", None),
             ("Upload cancel while busy", "Cancel Upload stops the transfer", "e2e", None),
             ("Delete from Web (History)", "Confirm alert, then the remote object is removed; History copy kept", "e2e", None),
             ("Test connection (S3)", "Connected with the server's detail, or Error:", "e2e", None)]:
-        add("DEST", "Upload journeys", name, "state", f"Upload (bottom bar) / Destinations › {name}", expected, prereq="--seed destinations (fake hosts) or --aws (real profile, synthetic object, orchestrator-run)", ex=ex, gap=gap)
+        add("DEST", "Upload journeys", name, "state", f"Upload (bottom bar) / Settings › Upload › {name}", expected, prereq="--seed destinations (fake hosts) or --aws (real profile, synthetic object, orchestrator-run)", ex=ex, gap=gap)
 
 
 # --------------------------------------------------------------------------------------------------------------------- sheets etc.
