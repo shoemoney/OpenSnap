@@ -111,6 +111,7 @@ private enum GlassChromeTests {
         controlStateTests()
         toggleTests()
         differentiateTests()
+        glyphContrastTests()
         DisplayOptions.override = nil
         do {
             surfaceTests()
@@ -950,9 +951,26 @@ private enum GlassChromeTests {
 
         // Display options.
         toggle.accessibility = contrast
-        expect(abs(toggle.style(ofSegment: 1).fill!.alphaComponent - 0.12) < 0.004 && abs(toggle.style(ofSegment: 0).fill!.alphaComponent - 0.32) < 0.004, "Increase Contrast strengthens both plates")
+        expect(abs(toggle.style(ofSegment: 1).fill!.alphaComponent - 0.06) < 0.004 && toggle.style(ofSegment: 1).borderWidth == 1 && abs(toggle.style(ofSegment: 0).fill!.alphaComponent - 0.32) < 0.004,
+               "Increase Contrast outlines the unselected plate and strengthens the selected one; the unselected fill stays 0.06 so its label keeps its contrast")
         toggle.accessibility = differentiate
-        expect(toggle.style(ofSegment: 0).strongText && !toggle.style(ofSegment: 0).indicator, "Differentiate Without Color keeps the weight cue and adds no capsule")
+        expect(toggle.style(ofSegment: 0).strongText && toggle.style(ofSegment: 0).indicator && toggle.style(ofSegment: 0).borderWidth == 2 && !toggle.style(ofSegment: 1).indicator,
+               "Differentiate Without Color adds a 2 pt outline and the capsule to the selected segment only")
+        // Pixels: the drawn selected segment differs from the plain drawing by more than hue, and the unselected one is untouched.
+        toggle.accessibility = .none
+        let plainRaster = raster()
+        toggle.accessibility = differentiate
+        let dwcRaster = raster()
+        func changedPixels(_ a: NSBitmapImageRep, _ b: NSBitmapImageRep, segment: Int) -> Int {
+            let rect = toggle.segmentRect(segment); var count = 0
+            for y in 0..<a.pixelsHigh { for x in Int(rect.minX * scale)..<Int(rect.maxX * scale) {
+                guard let p = a.colorAt(x: x, y: y)?.usingColorSpace(.sRGB), let q = b.colorAt(x: x, y: y)?.usingColorSpace(.sRGB) else { continue }
+                if abs(p.redComponent - q.redComponent) + abs(p.greenComponent - q.greenComponent) + abs(p.blueComponent - q.blueComponent) > 0.12 { count += 1 }
+            } }
+            return count
+        }
+        expect(changedPixels(plainRaster, dwcRaster, segment: 0) > 200 && changedPixels(plainRaster, dwcRaster, segment: 1) == 0,
+               "Under Differentiate Without Color the selected segment is drawn differently (\(changedPixels(plainRaster, dwcRaster, segment: 0)) px) and the other is not")
         toggle.accessibility = .none
 
         // Disabled.
@@ -964,6 +982,35 @@ private enum GlassChromeTests {
         expect(toggle.style(ofSegment: 1).contentAlpha == 0.38 && !kids[1].accessibilityPerformPress() && !kids[1].isAccessibilityEnabled(), "A disabled toggle dims its content and refuses VoiceOver presses")
         toggle.isEnabled = true
         toggle.removeFromSuperview()
+    }
+
+    /// Pixels, not tokens: a tool glyph drawn on the window colour, in each of the four appearances, with and without Increase Contrast.
+    private static func glyphContrastTests() {
+        func drawn(_ appearance: NSAppearance, options: ChromeAccessibility, enabled: Bool) -> CGFloat {
+            let host = NSView(frame: NSRect(x: 0, y: 0, width: 100, height: 70))
+            host.wantsLayer = true; host.appearance = appearance
+            appearance.performAsCurrentDrawingAppearance { host.layer?.backgroundColor = DesignTokens.Palette.Surface.window.cgColor }
+            let tool = CommandButton(title: "", target: nil, action: nil)
+            tool.icon = .paintbrush; tool.accessibility = options; tool.isEnabled = enabled
+            GlassChrome.fix(tool, GlassChrome.Metrics.iconButton)
+            tool.frame.origin = NSPoint(x: 28, y: 12)
+            host.addSubview(tool)
+            let window = NSWindow(contentRect: host.frame, styleMask: [.titled], backing: .buffered, defer: true)
+            window.isReleasedWhenClosed = false; window.appearance = appearance; window.contentView = host
+            host.layoutSubtreeIfNeeded(); tool.display()
+            return ContrastProbe.measure(host, appearance: appearance, plateAt: NSPoint(x: 3, y: 3), textFrames: [tool.frame]).textRatios[0]
+        }
+        for (name, appearance) in ContrastProbe.appearances {
+            let high = name.contains("increaseContrast")
+            let options = high ? contrast : plain
+            let enabled = drawn(appearance, options: options, enabled: true), off = drawn(appearance, options: options, enabled: false)
+            expect(enabled >= 7, "An enabled tool glyph is drawn at \(enabled):1 or better on the window colour (\(name))")
+            expect(off > 1.2 && enabled / off >= 4, "A disabled glyph is visibly distinct from an enabled one (\(name): \(off) against \(enabled))")
+        }
+        for (name, appearance) in [("light", ContrastProbe.appearances[0].appearance), ("dark", ContrastProbe.appearances[1].appearance)] {
+            let base = drawn(appearance, options: plain, enabled: true), high = drawn(appearance, options: contrast, enabled: true)
+            expect(high >= base + 1.5 && high >= 14, "Increase Contrast raises a glyph's contrast, not only its outline (\(name): \(base) -> \(high))")
+        }
     }
 
     private static func differentiateTests() {
@@ -1391,7 +1438,10 @@ private enum GlassChromeTests {
         expect(variants.count > 5 && variants.last == variants.first, "There are middle-cut steps, and the whole sentence comes last so the cell cuts it at its tail when nothing fits (\(variants.count))")
         expect(zip(variants.dropLast(), variants.dropLast().dropFirst()).allSatisfy { $0.count > $1.count }, "The steps only get shorter")
         expect(variants.dropFirst().dropLast().allSatisfy { $0.hasPrefix("Link copied · ") && $0.contains("…") }, "Every step after the first keeps Link copied · and cuts the address in its middle")
-        expect(variants.dropFirst().dropLast().allSatisfy { $0.hasPrefix("Link copied · cdn") && $0.hasSuffix("png") }, "The host's start and the file name's end survive the cuts (\(variants[3]))")
+        expect(variants.dropFirst().dropLast().allSatisfy { ($0.hasPrefix("Link copied · cdn") || $0.hasPrefix("Link copied · Sh")) && $0.hasSuffix("png") }, "The host's start (or, narrower, the file name's start) and the file name's end survive the cuts (\(variants[3]))")
+        let nameSteps = variants.dropFirst().dropLast().filter { $0.hasPrefix("Link copied · Sh") }
+        expect(nameSteps.count >= 3 && nameSteps.allSatisfy { !$0.contains("cdn") } && variants.dropLast().last == nameSteps.last && nameSteps.last!.count <= "Link copied · ".count + 10,
+               "At 980 the last steps keep the file name, middle-cut, rather than a host stump (\(nameSteps))")
         expect(UploadState.success(url: url, copied: true).detailText == "Link copied: " + url.absoluteString, "The full URL stays in the tooltip and the VoiceOver help")
         expect(UploadState.success(url: url, copied: false).statusVariants == ["Published image"] && UploadState.idle.statusVariants.isEmpty, "An uncopied link and idle have no link text")
         expect(UploadState.uploading(name: "Shot").statusVariants == ["Uploading Shot…"] && UploadState.failure(message: "No.\nMore").statusVariants == ["Error: No."], "Uploading and error stay one sentence")

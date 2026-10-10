@@ -17,7 +17,7 @@ final class HistoryStore {
         init(canvasData: Data, drawingDefaults: DrawingDefaults, preview: Data?) throws {
             let document = try CanvasView.validatedDocumentData(canvasData)
             native = try OpenSnapFile(document: document, drawingDefaults: drawingDefaults, canvasData: canvasData).encoded()
-            self.preview = preview; size = document.outputSize
+            self.preview = preview; size = document.outputPixels
             isEmpty = document.elements.isEmpty && document.backgroundPNG == nil &&
                 (document.backgroundColor == .white || document.backgroundColor.alpha == 0)
             text = document.elements.filter { $0.kind == .text }.map(\.text).joined(separator: "\n")
@@ -34,6 +34,9 @@ final class HistoryStore {
         var destination: String?
         var remoteURL: URL?
         var remoteBinding: [String: String]?
+        /// The pixel size at the moment of an upload. The entry keeps following the editable drawing, so its own `size` moves on; the
+        /// published image does not.
+        var publishedSize: CGSize?
         var nativeFile: String
         var previewFile: String?
         var digest: String?
@@ -117,7 +120,7 @@ final class HistoryStore {
             let date = prefix.map(Date.init(timeIntervalSince1970:)) ?? values?.creationDate ?? values?.contentModificationDate ?? Date()
             let preview = url.deletingPathExtension().appendingPathExtension("png").lastPathComponent
             next.entries.append(Entry(id: UUID(), name: url.deletingPathExtension().lastPathComponent, date: date, updated: date,
-                size: file.document.outputSize, text: file.document.elements.filter { $0.kind == .text }.map(\.text).joined(separator: "\n"),
+                size: file.document.outputPixels, text: file.document.elements.filter { $0.kind == .text }.map(\.text).joined(separator: "\n"),
                 action: .archived, nativeFile: url.lastPathComponent,
                 previewFile: FileManager.default.fileExists(atPath: directory.appendingPathComponent(preview).path) ? preview : nil,
                 imported: true))
@@ -131,7 +134,7 @@ final class HistoryStore {
         let id = UUID()
         let entry = Entry(id: id, name: name, date: date, updated: date, size: snapshot.size, text: snapshot.text,
                           action: action, destination: destination, remoteURL: remoteURL, remoteBinding: remoteBinding,
-                          nativeFile: "", digest: Self.hash(snapshot.native))
+                          publishedSize: remoteURL == nil ? nil : snapshot.size, nativeFile: "", digest: Self.hash(snapshot.native))
         try writeRevision(snapshot, entry: entry, inserting: true)
         return id
     }

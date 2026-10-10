@@ -207,6 +207,14 @@ struct SketchDocument: Codable, Equatable {
         get { backgroundPNG.flatMap(NSImage.init(data:)) }
         set { backgroundPNG = newValue.flatMap { SketchRenderer.png(image: $0) } }
     }
+    /// A stored or shown pixel size is whole: each side to the nearest pixel, never below 1 (a non-finite side reads as 1).
+    static func wholePixels(_ size: CGSize) -> CGSize {
+        func side(_ value: CGFloat) -> CGFloat { value.isFinite ? max(1, (value + 0.5).rounded(.down)) : 1 }
+        return CGSize(width: side(size.width), height: side(size.height))
+    }
+    /// What History, the title and the status line report for the drawing: `outputSize` in whole pixels, so an older
+    /// document that stored a fractional fit size still reads "1444 × 1011" and never "1,444.285714".
+    var outputPixels: CGSize { Self.wholePixels(outputSize) }
     static func validSize(_ size: CGSize) -> Bool {
         size.width.isFinite && size.height.isFinite && size.width >= 1 && size.height >= 1 &&
         size.width <= maximumDimension && size.height <= maximumDimension &&

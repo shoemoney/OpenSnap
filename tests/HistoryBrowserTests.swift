@@ -443,7 +443,7 @@ struct HistoryBrowserTests {
             }),
             ("Details panel sits beside the grid and collapses below it under 760 wide", {
                 try browser { browser,_ in
-                    laidOut(browser,width:1000,height:720)
+                    browser.update(items:[item("A")]); laidOut(browser,width:1000,height:720)
                     let scroll = try grid(browser).enclosingScrollView.unwrap("grid scroll view"), content = browser.window!.contentView!
                     @MainActor func frame(_ view: NSView) -> NSRect { view.convert(view.bounds,to:content) }
                     try expect(browser.detailsPlacement == .beside && frame(browser.detailsPanel).minX >= frame(scroll).maxX - 0.5,"Wide windows put details beside the grid")
@@ -671,6 +671,65 @@ struct HistoryBrowserTests {
                     try expect(segmented.font?.pointSize == 20,"Tabs are body size")
                     try expect(browser.filterRow.frame.maxX <= content.bounds.width + 0.5 && browser.filterRow.frame.minX >= 0,"The filter row overflows the window at 880 wide: \(browser.filterRow.frame)")
                     try expect(browser.actionRow.frame.maxX <= content.bounds.width + 0.5,"The action row overflows the window at 880 wide")
+                }
+            })
+            ,
+            ("With nothing to show the grid and its message use the whole width, and the details column returns with the first snap (F-J3-002)", {
+                try browser { browser,_ in
+                    laidOut(browser,width:1000,height:640)
+                    let scroll = browser.gridScrollView!, body = scroll.superview!
+                    try expect(browser.detailsCollapsed && browser.detailsPanel.isHidden,"The empty list hides the details panel")
+                    try expect(abs(scroll.frame.maxX-body.bounds.maxX) < 0.5 && abs(scroll.frame.width-body.bounds.width) < 0.5,"The empty list is the full width: \(scroll.frame) in \(body.bounds)")
+                    let message = browser.emptyState.frame
+                    try expect(abs(message.midX-body.bounds.midX) < 1,"The message is centred in the window, not in a shortened well: \(message)")
+                    browser.update(items:[item("A"),item("B",action:"Uploaded")]); laidOut(browser,width:1000,height:640)
+                    try expect(!browser.detailsCollapsed && !browser.detailsPanel.isHidden && scroll.frame.maxX < body.bounds.maxX-200,"With snaps the details column is back beside the grid: \(scroll.frame)")
+                    browser.setFilters(category:.all,query:"nothing matches this"); laidOut(browser,width:1000,height:640)
+                    try expect(browser.detailsCollapsed && abs(scroll.frame.width-body.bounds.width) < 0.5,"No-match collapses it too (it keeps its Clear filters button)")
+                    try expect(!browser.clearFiltersButton.isHidden && !browser.emptyState.isHidden,"The no-match message still offers Clear filters")
+                    browser.clearFilters(); laidOut(browser,width:1000,height:640)
+                    try expect(!browser.detailsCollapsed,"Clear filters brings the column back")
+                    laidOut(browser,width:740,height:640); browser.setFilters(category:.all,query:"zzz")
+                    try expect(browser.detailsPlacement == .below && browser.detailsCollapsed && abs(scroll.frame.height-body.bounds.height) < 0.5,"Below placement collapses to the full body as well")
+                    browser.clearFilters(); laidOut(browser,width:740,height:640)
+                    try expect(scroll.frame.height < body.bounds.height-100,"The strip returns under the grid when narrow")
+                    // Batch 3b: selecting a snap still fills the column and clearing the selection returns the summary.
+                    browser.select(ids:[browser.visibleItems[0].id])
+                    try expect(!browser.detailsPanel.isHidden && browser.visibleItems.count == 2,"Selection keeps working with the column visible")
+                }
+            }),
+            ("A snap's size reads in whole pixels with separators; a stored fraction never shows (F-J3-006)", {
+                try expect(HistoryBrowser.sizeText(for:CGSize(width:1444.285714,height:1011)) == "1,444 × 1,011","Fractional width rounds: \(HistoryBrowser.sizeText(for:CGSize(width:1444.285714,height:1011)))")
+                try expect(HistoryBrowser.sizeText(for:CGSize(width:1516.5,height:1010.49)) == "1,517 × 1,010","Ties round up, below-half rounds down")
+                try expect(HistoryBrowser.sizeText(for:CGSize(width:2400,height:1600)) == "2,400 × 1,600","Whole sizes are unchanged")
+                try expect(HistoryBrowser.sizeText(for:CGSize(width:0.2,height:CGFloat.nan)) == "Unknown size" && HistoryBrowser.sizeText(for:CGSize(width:CGFloat.infinity,height:3)) == "Unknown size","A non-finite side is unknown")
+                try browser { browser,_ in
+                    let fractional = HistoryBrowser.Item(id:UUID(),name:"Seeded",date:day(0),size:CGSize(width:1444.285714,height:1011),action:"Saved",text:"",destination:nil,link:nil,previewURL:nil,missing:false)
+                    browser.update(items:[fractional]); browser.select(ids:[fractional.id]); laidOut(browser,width:1000,height:640)
+                    let size = descendants(browser.window!.contentView!).compactMap { $0 as? NSTextField }.first { $0.accessibilityLabel() == "Size" }
+                    try expect(size?.stringValue == "1,444 × 1,011","The details Size field shows whole pixels: \(size?.stringValue ?? "none")")
+                }
+            })
+            ,
+            ("Details shows a two-digit-day date in full and a shared entry's published size, not the later resized one (F-J4-002, F-J4-004)", {
+                try browser { browser,_ in
+                    let late = calendar.date(from:DateComponents(year:2026,month:10,day:10,hour:18,minute:49))!
+                    var shared = HistoryBrowser.Item(id:UUID(),name:"Untitled",date:late,size:CGSize(width:1011,height:758),action:"Shared",text:"",destination:"https://cdn.example.invalid/a.png",
+                                                     link:URL(string:"https://cdn.example.invalid/a.png"),previewURL:nil,missing:false)
+                    shared.publishedSize = CGSize(width:800,height:600)
+                    browser.update(items:[shared]); browser.select(ids:[shared.id]); laidOut(browser,width:1000,height:640)
+                    let fields = descendants(browser.window!.contentView!).compactMap { $0 as? NSTextField }
+                    let size = fields.first { $0.accessibilityLabel() == "Size" }, date = fields.first { $0.accessibilityLabel() == "Date" }
+                    try expect(size?.stringValue == "800 × 600","A shared entry reports what was published: \(size?.stringValue ?? "none")")
+                    guard let date else { throw Failure("Missing Date field") }
+                    try expect(date.stringValue.hasSuffix("PM"),"The time of day with its AM/PM is in the text: \(date.stringValue)")
+                    date.superview?.layoutSubtreeIfNeeded()
+                    let needed = date.attributedStringValue.boundingRect(with:NSSize(width:10_000,height:100),options:[.usesLineFragmentOrigin]).width
+                    try expect(date.frame.width + 0.5 >= needed || date.frame.height > (date.font?.pointSize ?? 20) * 1.6,"The date fits its field or wraps onto a second line (\(date.frame.width) for \(needed))")
+                    var plain = shared; plain.id = UUID(); plain.publishedSize = nil
+                    browser.update(items:[plain]); browser.select(ids:[plain.id])
+                    let again = descendants(browser.window!.contentView!).compactMap { $0 as? NSTextField }.first { $0.accessibilityLabel() == "Size" }
+                    try expect(again?.stringValue == "1,011 × 758","An entry that was never published reports its own size")
                 }
             })
         ]

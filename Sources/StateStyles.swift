@@ -134,7 +134,8 @@ enum StateStyles {
         case .pressed: fill = restPlate ? label(alpha: resolve(Palette.State.pressed, arm).alphaComponent + restAlpha, arm) : resolve(Palette.State.pressed, arm)
         case .rest, .selected, .disabled: fill = restPlate ? label(alpha: restAlpha, arm) : nil
         }
-        return StateStyle(fill: fill, content: Palette.Text.primary, border: nil, borderWidth: 0, contentAlpha: alpha, indicator: false,
+        // Increase Contrast draws the glyph in the full label colour (labelColor is the 85% one), not just with an outline around it.
+        return StateStyle(fill: fill, content: highContrast ? label(alpha: 1, arm) : Palette.Text.primary, border: nil, borderWidth: 0, contentAlpha: alpha, indicator: false,
                           glyphScale: state == .pressed ? pressedGlyphScale : 1, focusRing: ring, strongText: false)
     }
 
@@ -146,16 +147,23 @@ enum StateStyles {
                               appearance: NSAppearance = .currentDrawing()) -> StateStyle {
         let arm = arm(for: appearance, highContrast: highContrast)
         if state == .selected {
-            return command(.selected, primary: false, focused: focused, highContrast: highContrast, differentiate: false, appearance: appearance)
+            var style = command(.selected, primary: false, focused: focused, highContrast: highContrast, differentiate: false, appearance: appearance)
+            // Differentiate Without Color: the chosen half is also a 2 pt outline in the label colour and the capsule under its text, so
+            // PNG against JPG is a shape and a weight, not a tint alone.
+            if differentiate { style.indicator = true; style.border = label(alpha: 1, arm); style.borderWidth = 2 }
+            return style
         }
         let ring = focused && state != .disabled
         let fill: NSColor
+        // The unselected plate keeps its normal strength under Increase Contrast: a heavier fill would sit under the label and lower its
+        // contrast. The edge is what Increase Contrast adds, as an outline.
         switch state {
         case .hover: fill = resolve(Palette.State.hover, arm)
         case .pressed: fill = resolve(Palette.State.pressed, arm)
-        case .rest, .selected, .disabled: fill = label(alpha: restPlateAlpha(highContrast: highContrast), arm)
+        case .rest, .selected, .disabled: fill = label(alpha: restPlateAlpha(highContrast: false), arm)
         }
-        return StateStyle(fill: fill, content: Palette.Text.primary, border: nil, borderWidth: 0,
+        return StateStyle(fill: fill, content: highContrast ? label(alpha: 1, arm) : Palette.Text.primary,
+                          border: highContrast ? label(alpha: 0.6, arm) : nil, borderWidth: highContrast ? 1 : 0,
                           contentAlpha: state == .disabled ? disabledAlpha : 1, indicator: false,
                           glyphScale: 1, focusRing: ring, strongText: false)
     }

@@ -410,7 +410,6 @@ final class GlobalHotkeyManager: NSObject, GlobalHotkeyEditing {
     private var active: [GlobalHotkeyAction: GlobalHotkeyBinding] = [:]
     private var generation: UInt64 = 0
     private var activationRequested = false
-    private var settingsPanel: GlobalHotkeySettingsPanel?
     private var loadError: Error?
     private(set) var settings: GlobalHotkeySettings
     private(set) var lastError: Error?
@@ -486,11 +485,6 @@ final class GlobalHotkeyManager: NSObject, GlobalHotkeyEditing {
     func disableAll() throws { var candidate = settings; candidate.enabled = false; try apply(candidate) }
     func resetDefaults() throws { try apply(.defaults) }
 
-    func showSettings(attachedTo parent: NSWindow? = nil) {
-        if settingsPanel == nil { settingsPanel = GlobalHotkeySettingsPanel(manager: self) }
-        settingsPanel?.present(attachedTo: parent)
-    }
-
     private func currentReservedBindings(includingSystem: Bool) throws -> Set<GlobalHotkeyBinding> {
         var result = reservedBindings
         if includingSystem { result.formUnion(try backend.systemReservedBindings()) }
@@ -541,7 +535,7 @@ final class GlobalHotkeyManager: NSObject, GlobalHotkeyEditing {
         let expectedGeneration = generation
         DispatchQueue.main.async { [weak self] in
             guard let self, self.isRunning, self.generation == expectedGeneration,
-                  self.active[action] != nil, self.settingsPanel?.window?.isVisible != true,
+                  self.active[action] != nil,
                   NSApp?.modalWindow == nil, NSApp?.keyWindow?.attachedSheet == nil,
                   NSApp?.keyWindow?.sheetParent == nil else { return }
             self.callbacks[action]?()
@@ -558,14 +552,11 @@ protocol GlobalHotkeyEditing: AnyObject {
     func apply(_ candidate: GlobalHotkeySettings) throws
 }
 
-/// The shortcut editor, shared by the capture sheet and the Settings window.
-///
-/// `.sheet` keeps the original transaction: edits stay in the draft until Save (Cancel discards them), and Reset Defaults
-/// and Disable All only change the draft. `.live` is for the Settings window: every edit is applied through the manager at
-/// once, and one the manager rejects stays on screen with an "Error:" line until the next edit that it accepts.
+/// The shortcut editor, the one surface for capture shortcuts (Settings › Capture; the app menu's Capture Shortcuts… opens it there).
+/// Every edit is applied through the manager at once, and one the manager rejects stays on screen with an "Error:" line until the
+/// next edit that it accepts.
 @MainActor
 final class GlobalHotkeyForm: NSView {
-    enum Mode { case sheet, live }
     private typealias Typography = DesignTokens.Typography
     private typealias Space = DesignTokens.Space
 
@@ -573,7 +564,6 @@ final class GlobalHotkeyForm: NSView {
     static let modifierSegments: [(GlobalHotkeyModifiers, String, String)] = [
         (.command, "\u{2318}", "Command"), (.option, "\u{2325}", "Option"), (.control, "\u{2303}", "Control"), (.shift, "\u{21E7}", "Shift")]
     static let idleLiveStatus = "Shortcuts are saved as you change them."
-    static let idleSheetStatus = "Shortcuts pause while this panel or another capture sheet is open. Save applies your changes; Cancel leaves them unchanged."
     static let keyPopupWidth: CGFloat = 120, modifierSegmentWidth: CGFloat = 44
 
     /// The label column is shared with the form it sits in, so its labels line up with the rows around it.
@@ -586,23 +576,19 @@ final class GlobalHotkeyForm: NSView {
         init(key: NSPopUpButton, modifiers: NSSegmentedControl) { self.key = key; self.modifiers = modifiers }
     }
 
-    let mode: Mode
     private weak var manager: (any GlobalHotkeyEditing)?
     private var rows: [GlobalHotkeyAction: Row] = [:]
     let enabledCheckbox = NSButton(checkboxWithTitle: "Enable global capture shortcuts", target: nil, action: nil)
     let statusField = NSTextField(wrappingLabelWithString: "")
     private(set) var resetButton: NSButton!, disableButton: NSButton!
-    private(set) var cancelButton: NSButton?, saveButton: NSButton?
-    /// The sheet asks its panel to close; the live form never calls this.
-    var onFinish: (() -> Void)?
     /// The status line changed height, so the window holding the form may need a new size.
     var onResize: (() -> Void)?
 
     func keyPopup(for action: GlobalHotkeyAction) -> NSPopUpButton { rows[action]!.key }
     func modifierControl(for action: GlobalHotkeyAction) -> NSSegmentedControl { rows[action]!.modifiers }
 
-    init(manager: any GlobalHotkeyEditing, mode: Mode, labelWidth: CGFloat, width: CGFloat) {
-        self.manager = manager; self.mode = mode
+    init(manager: any GlobalHotkeyEditing, labelWidth: CGFloat, width: CGFloat) {
+        self.manager = manager
         super.init(frame: .zero)
         let statusWidth = width - labelWidth - Space.s4
         func label(_ text: String) -> NSTextField {
@@ -640,19 +626,13 @@ final class GlobalHotkeyForm: NSView {
         gridRows.append([NSGridCell.emptyContentView, statusField])
         resetButton = Self.button("Reset Defaults", self, #selector(reset(_:)))
         disableButton = Self.button("Disable All", self, #selector(disable(_:)))
-        var buttons: [NSButton] = [resetButton, disableButton]
-        if mode == .sheet {
-            let cancel = Self.button("Cancel", self, #selector(cancel(_:))); cancel.keyEquivalent = "\u{1b}"
-            let save = Self.button("Save", self, #selector(save(_:))); save.keyEquivalent = "\r"
-            cancelButton = cancel; saveButton = save; buttons += [cancel, save]
-        }
-        let buttonRow = NSStackView(views: buttons); buttonRow.orientation = .horizontal; buttonRow.spacing = Space.s3
+        let buttonRow = NSStackView(views: [resetButton, disableButton]); buttonRow.orientation = .horizontal; buttonRow.spacing = Space.s3
         gridRows.append([NSGridCell.emptyContentView, buttonRow])
 
         let grid = NSGridView(views: gridRows)
         grid.translatesAutoresizingMaskIntoConstraints = false
-        // The Settings tab sits in a window with one height for every tab, so its rows are a little closer than the sheet's.
-        grid.rowSpacing = mode == .live ? Space.s3 : Space.s4; grid.columnSpacing = Space.s4
+        // The Settings tab sits in a window with one height for every tab, so its rows sit close.
+        grid.rowSpacing = Space.s3; grid.columnSpacing = Space.s4
         grid.column(at: 0).xPlacement = .trailing; grid.column(at: 0).width = labelWidth
         grid.column(at: 1).xPlacement = .leading
         for index in 0..<grid.numberOfRows { grid.row(at: index).yPlacement = .center }
@@ -662,7 +642,7 @@ final class GlobalHotkeyForm: NSView {
             grid.topAnchor.constraint(equalTo: topAnchor), grid.bottomAnchor.constraint(equalTo: bottomAnchor)])
         reload()
     }
-    required init?(coder: NSCoder) { fatalError("Use init(manager:mode:labelWidth:width:)") }
+    required init?(coder: NSCoder) { fatalError("Use init(manager:labelWidth:width:)") }
 
     private static func button(_ title: String, _ target: AnyObject, _ action: Selector) -> NSButton {
         let button = NSButton(title: title, target: target, action: action)
@@ -675,7 +655,7 @@ final class GlobalHotkeyForm: NSView {
     func reload() {
         guard let manager else { return }
         fill(manager.settings)
-        setStatus(manager.lastError.map { "Error: " + $0.localizedDescription } ?? (mode == .live ? Self.idleLiveStatus : Self.idleSheetStatus),
+        setStatus(manager.lastError.map { "Error: " + $0.localizedDescription } ?? Self.idleLiveStatus,
                   isError: manager.lastError != nil)
     }
 
@@ -709,14 +689,14 @@ final class GlobalHotkeyForm: NSView {
         return settings
     }
 
-    /// Live mode: apply the draft now. A rejected draft stays on screen beside its error.
+    /// Applies the draft now. A rejected draft stays on screen beside its error.
     private func commit() {
-        guard mode == .live, let manager else { return }
+        guard let manager else { return }
         do { try manager.apply(draft()); setStatus(Self.idleLiveStatus, isError: false) }
         catch { setStatus("Error: " + error.localizedDescription, isError: true) }
     }
 
-    /// Live Disable All: switch off what is saved. A draft the manager had rejected (two actions on one key, say) is dropped with its
+    /// Disable All: switch off what is saved. A draft the manager had rejected (two actions on one key, say) is dropped with its
     /// error instead of being validated again, so the red line does not outlive the command that made it moot.
     private func disableSaved() {
         guard let manager else { return }
@@ -734,114 +714,9 @@ final class GlobalHotkeyForm: NSView {
     }
     @objc private func modifiersChanged(_ sender: NSSegmentedControl) { commit() }
     @objc private func reset(_ sender: Any?) {
-        fill(.defaults)
-        if mode == .live { commit() } else { setStatus("Defaults restored in this panel. Select Save to apply them.", isError: false) }
+        fill(.defaults); commit()
     }
     @objc private func disable(_ sender: Any?) {
-        enabledCheckbox.state = .off
-        if mode == .live { disableSaved() } else { setStatus("All global shortcuts will be disabled when you select Save. Your key choices are kept.", isError: false) }
+        enabledCheckbox.state = .off; disableSaved()
     }
-    @objc private func save(_ sender: Any?) {
-        guard let manager else { return }
-        do { try manager.apply(draft()); onFinish?() }
-        catch { setStatus("Error: " + error.localizedDescription, isError: true) }
-    }
-    @objc private func cancel(_ sender: Any?) { onFinish?() }
-}
-
-@MainActor
-private final class GlobalHotkeyDocumentView: NSView {
-    override var isFlipped: Bool { true }
-}
-
-@MainActor
-final class GlobalHotkeySettingsPanel: NSWindowController, NSWindowDelegate {
-    static let width: CGFloat = 760, margin = DesignTokens.Space.s5
-    private weak var manager: GlobalHotkeyManager?
-    private var form: GlobalHotkeyForm?
-    private var stack: NSStackView?
-
-    init(manager: GlobalHotkeyManager) {
-        self.manager = manager
-        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: Self.width, height: 600),
-                            styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
-        panel.title = "Global Capture Shortcuts"
-        panel.isReleasedWhenClosed = false
-        panel.contentMinSize = NSSize(width: Self.width, height: 440)
-        super.init(window: panel)
-        panel.delegate = self
-        buildContent(panel, manager: manager)
-    }
-    required init?(coder: NSCoder) { nil }
-
-    private func label(_ text: String, heading: Bool = false) -> NSTextField {
-        let label = NSTextField(wrappingLabelWithString: text)
-        label.font = DesignTokens.Typography.font(heading ? .title : .body)
-        return label
-    }
-    private func buildContent(_ panel: NSPanel, manager: GlobalHotkeyManager) {
-        let content = NSView(); panel.contentView = content
-        let scroll = NSScrollView()
-        scroll.hasVerticalScroller = true; scroll.drawsBackground = false
-        scroll.translatesAutoresizingMaskIntoConstraints = false
-        content.addSubview(scroll)
-        NSLayoutConstraint.activate([
-            scroll.leadingAnchor.constraint(equalTo: content.leadingAnchor),
-            scroll.trailingAnchor.constraint(equalTo: content.trailingAnchor),
-            scroll.topAnchor.constraint(equalTo: content.topAnchor),
-            scroll.bottomAnchor.constraint(equalTo: content.bottomAnchor)
-        ])
-        let document = GlobalHotkeyDocumentView(); scroll.documentView = document
-        document.translatesAutoresizingMaskIntoConstraints = false
-        document.widthAnchor.constraint(equalTo: scroll.contentView.widthAnchor).isActive = true
-        let stack = NSStackView()
-        stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = DesignTokens.Space.s4
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        document.addSubview(stack)
-        NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: document.leadingAnchor, constant: Self.margin),
-            stack.trailingAnchor.constraint(equalTo: document.trailingAnchor, constant: -Self.margin),
-            stack.topAnchor.constraint(equalTo: document.topAnchor, constant: Self.margin),
-            stack.bottomAnchor.constraint(equalTo: document.bottomAnchor, constant: -Self.margin)
-        ])
-        self.stack = stack
-        let contentWidth = Self.width - 2 * Self.margin
-        let heading = label("Global Capture Shortcuts", heading: true)
-        let introduction = label("Choose Command or Control with a key. None disables an action. Key names refer to physical US keyboard positions.")
-        let labelWidth = Self.labelWidth()
-        let form = GlobalHotkeyForm(manager: manager, mode: .sheet, labelWidth: labelWidth, width: contentWidth)
-        form.onFinish = { [weak self] in self?.dismiss() }
-        self.form = form
-        let defaults = label("All actions start at None. Original Frame used Command + Shift + 7, but that shortcut may already belong to macOS or another app. Configure and save only the shortcuts you want.")
-        for view in [heading, introduction, form, defaults] { stack.addArrangedSubview(view) }
-        for view in [introduction, defaults] { view.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true }
-        AppToolTip.install(on: content)
-    }
-    /// The widest row label, so the sheet's label column fits every action name on one line.
-    static func labelWidth() -> CGFloat {
-        let font = GlobalHotkeyForm.labelFont()
-        return ceil(GlobalHotkeyForm.labelTexts().map { ($0 as NSString).size(withAttributes: [.font: font]).width }.max() ?? 0)
-    }
-    func present(attachedTo parent: NSWindow?) {
-        guard let window else { return }
-        if window.isVisible { window.makeKeyAndOrderFront(nil); return }
-        form?.reload()
-        fitToContent(visibleHeight: (parent?.screen ?? NSScreen.main)?.visibleFrame.height ?? 800)
-        if let parent, parent.attachedSheet == nil { parent.beginSheet(window) }
-        else { window.center(); showWindow(nil) }
-        NSApplication.shared.activate(ignoringOtherApps: true)
-    }
-    /// The sheet is as tall as its form (so Save is always in view), or as tall as the screen allows and then scrolls.
-    private func fitToContent(visibleHeight: CGFloat) {
-        guard let window, let stack else { return }
-        window.contentView?.layoutSubtreeIfNeeded()
-        let wanted = stack.fittingSize.height + 2 * Self.margin
-        window.setContentSize(NSSize(width: Self.width, height: min(wanted, max(440, visibleHeight - 120))))
-    }
-    private func dismiss() {
-        guard let window else { return }
-        if let parent = window.sheetParent { parent.endSheet(window) }
-        window.orderOut(nil)
-    }
-    func windowShouldClose(_ sender: NSWindow) -> Bool { dismiss(); return false }
 }

@@ -311,7 +311,7 @@ final class CaptureSettingsTab: SettingsTabViewController {
 
     override func makeRows() -> [[NSView]] {
         flashCheckbox = SettingsLayout.checkbox("Show capture flash", identifier: "showCaptureFlash", target: self, action: #selector(changeFlash(_:)))
-        hotkeyForm = GlobalHotkeyForm(manager: hotkeys, mode: .live, labelWidth: SettingsLayout.labelColumnWidth, width: SettingsLayout.gridWidth)
+        hotkeyForm = GlobalHotkeyForm(manager: hotkeys, labelWidth: SettingsLayout.labelColumnWidth, width: SettingsLayout.gridWidth)
         hotkeyForm.translatesAutoresizingMaskIntoConstraints = false
         hotkeyForm.onResize = { [weak self] in
             // The status line wraps to one line or more; the grid has not laid it out yet.
@@ -598,7 +598,9 @@ final class SettingsTabButton: NSButton {
             guard let layer else { return }
             if isCurrent {
                 layer.backgroundColor = (isPressed ? accent.withAlphaComponent(0.32) : Palette.State.selectedFill).cgColor
-                layer.borderColor = accent.cgColor; layer.borderWidth = 1
+                // Differentiate Without Color: the current tab is also a 2 pt outline in the text colour, a shape and not a tint alone.
+                let outline = DisplayOptions.current.differentiateWithoutColor
+                layer.borderColor = (outline ? Palette.Text.primary : accent).cgColor; layer.borderWidth = outline ? 2 : 1
             } else {
                 layer.borderWidth = 0; layer.borderColor = nil
                 layer.backgroundColor = (isPressed ? Palette.State.pressed : (isHovered ? Palette.State.hover : NSColor.clear)).cgColor
@@ -927,7 +929,11 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     /// The parent changed the stored preferences itself (a menu command), so the controls follow.
     func synchronize(_ state: GeneralPreferencesState) { model.synchronize(state) }
 
-    func show() {
+    /// The Capture tab: where the capture shortcuts are edited (the app menu's Capture Shortcuts… lands here).
+    static let captureTabIndex = 2
+
+    func show(tab: Int? = nil) {
+        if let tab { select(tab, animated: false) }
         refresh(); capture.reloadShortcuts()
         fit(animated: false)
         if !hasSavedFrame { window.center(); hasSavedFrame = true }

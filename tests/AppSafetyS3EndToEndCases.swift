@@ -126,7 +126,7 @@ extension AppSafetyTests {
                 .first { $0.accessibilityLabel() == HistoryBrowser.Action.deleteRemote.title }.s3Unwrap("Delete from Web button")
             try expect(browser.canPerform(.deleteRemote) && button.isEnabled, "Delete from Web is enabled for the S3 upload")
 
-            AppSafetyAlert.answers = [.init(title: "Delete this web post?", response: .alertFirstButtonReturn)]
+            AppSafetyAlert.answers = [.init(title: "Delete this web post?", response: .alertSecondButtonReturn)]
             button.performClick(nil)
             try waitForMain("The web post is deleted and its remote fields are cleared") { store.entry(entry.id)?.remoteURL == nil }
             let requests = curl.all
@@ -140,7 +140,7 @@ extension AppSafetyTests {
             let after = try store.entry(entry.id).s3Unwrap("History copy kept")
             try expect(after.remoteURL == nil && after.remoteBinding == nil && after.destination == entry.destination, "The remote fields are cleared and the editable copy stays")
             try expect(!browser.canPerform(.deleteRemote) && !button.isEnabled, "Delete from Web is off once there is no web post")
-            try expect(AppSafetyAlert.seen == ["Delete this web post?"] && app.status.stringValue.contains("Web post deleted"), "One question, then the status confirms (\(AppSafetyAlert.seen), \(app.status.stringValue))")
+            try expect(AppSafetyAlert.seen == ["Delete this web post?"] && browser.statusLine == AppDelegate.deletedFromWebNotice(host: link.host) && browser.statusLine.contains("Cached copies"), "One question, then the History footer says where it was deleted from and that caches may linger (\(AppSafetyAlert.seen), \(browser.statusLine))")
         }
     }
 

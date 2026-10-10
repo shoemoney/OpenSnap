@@ -216,7 +216,7 @@ final class ModernEditorChrome: NSView {
         fontButton = make("Font", .font, actions.font)
         undoButton = make("Undo", .arrowRotateLeft, actions.undo, shortcut: Self.menuShortcut(for: actions.undo))
         wipeButton = make("Clear image", .broom, actions.wipe)
-        resizeButton = make("Resize…", .rulerCombined, actions.resize)
+        resizeButton = make("Resize…", .resizeDiagonal, actions.resize)
         // Icon-only upload command: the semantic Upload icon, no title, so nothing but the explicit label is read aloud.
         shareButton = CommandButton(title: "", target: actions.target, action: actions.share)
         GlassChrome.useExtraLarge(shareButton)

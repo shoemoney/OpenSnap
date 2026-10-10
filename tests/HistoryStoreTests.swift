@@ -35,6 +35,20 @@ enum HistoryStoreTests {
         let link = URL(string: "https://example.invalid/imgs/proof.png")!
         let id = try store.archive(first, name: "Proof", action: .shared, destination: "SFTP", remoteURL: link, remoteBinding: ["destination": "fixture"], date: date)
         try expect(store.entries.count == 1, "Archive creates one item")
+        // F-J4-004: an uploaded entry keeps the size it was published at while its editable copy follows later resizes.
+        do {
+            let published = try HistoryStore(directory: root.appendingPathComponent("Published"))
+            let sent = try HistoryStore.Snapshot(canvasData: SketchDocument(size: CGSize(width: 800, height: 600)).encoded(), drawingDefaults: .init(), preview: nil)
+            let resized = try HistoryStore.Snapshot(canvasData: SketchDocument(size: CGSize(width: 1011, height: 758)).encoded(), drawingDefaults: .init(), preview: nil)
+            let shared = try published.archive(sent, name: "Sent", action: .shared, destination: "S3", remoteURL: link, remoteBinding: ["destination": "fixture"])
+            let kept = try published.archive(sent, name: "Kept", action: .archived)
+            try published.follow(shared, snapshot: resized, name: "Sent resized"); try published.follow(kept, snapshot: resized, name: "Kept resized")
+            try expect(published.entry(shared)?.size == CGSize(width: 1011, height: 758) && published.entry(shared)?.publishedSize == CGSize(width: 800, height: 600), "The shared entry follows the resize but remembers 800 x 600")
+            try expect(published.entry(kept)?.publishedSize == nil, "An entry that was never uploaded has no published size")
+            try expect(try HistoryStore(directory: root.appendingPathComponent("Published")).entry(shared)?.publishedSize == CGSize(width: 800, height: 600), "The published size survives a reload")
+            let whole = try HistoryStore.Snapshot(canvasData: { var d = SketchDocument(size: CGSize(width: 2400, height: 1600)); d.renderSize = CGSize(width: 1444.285714, height: 1011); return try d.encoded() }(), drawingDefaults: .init(), preview: nil)
+            try expect(whole.size == CGSize(width: 1444, height: 1011), "A stored fractional output size is archived as whole pixels (\(whole.size))")
+        }
         try expect(try store.read(id).drawingDefaults.values["customColor"] == "preserved", "Unknown original metadata survives archive")
         try expect(try store.read(id).document.elements.first?.text == "café revised", "Editable text survives archive")
         try expect(store.entries.first?.text == "café revised", "Search text comes from actual drawing")

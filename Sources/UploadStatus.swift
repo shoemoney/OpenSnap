@@ -65,10 +65,20 @@ enum UploadState: Equatable {
             variants.append(base + " · " + middleTruncated(address, to: keep))
             keep -= 3
         }
+        // Narrower still, the host goes and the file name, which tells one upload from the next, is what is cut in the middle.
+        let name = url.lastPathComponent
+        if !name.isEmpty, name != address {
+            var keepName = min(name.count, address.count)
+            while keepName >= minimumNameCharacters {
+                let step = base + " · " + middleTruncated(name, to: keepName)
+                if step.count < (variants.last?.count ?? .max) { variants.append(step) }
+                keepName -= 2
+            }
+        }
         variants.append(variants[0])
         return variants
     }
-    static let minimumAddressCharacters = 14
+    static let minimumAddressCharacters = 14, minimumNameCharacters = 8
 
     /// The link without its scheme, which says nothing the host does not.
     static func displayAddress(of url: URL) -> String {

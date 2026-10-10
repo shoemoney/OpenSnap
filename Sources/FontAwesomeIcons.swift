@@ -14,7 +14,7 @@ enum FAIcon: String, CaseIterable, Sendable {
     case eyeSlash = "eye-slash", toolbox, images, boxArchive = "box-archive", clockRotateLeft = "clock-rotate-left",
          arrowPointer = "arrow-pointer", paintbrush, slashForward = "slash-forward", circle, square, fillDrip = "fill-drip",
          eraser, text, arrowUpRight = "arrow-up-right", cropSimple = "crop-simple", crosshairs, frameViewfinder = "camera-viewfinder",
-         xmark, font, arrowRotateLeft = "arrow-rotate-left", broom, rulerCombined = "ruler-combined",
+         xmark, font, arrowRotateLeft = "arrow-rotate-left", broom, resizeDiagonal = "up-right-and-down-left-from-center",
          upload = "cloud-arrow-up", dragHand = "hand", check, warning = "circle-exclamation", xmarkCircle = "circle-xmark",
          openExternal = "up-right-from-square", copy, link, globe, trash, linkSlash = "link-slash", circleCheck = "circle-check", gear,
          arrowRotateRight = "arrow-rotate-right", circleInfo = "circle-info"
@@ -42,7 +42,7 @@ enum FAIcon: String, CaseIterable, Sendable {
         case .font: return 0xF031
         case .arrowRotateLeft: return 0xF0E2
         case .broom: return 0xF51A
-        case .rulerCombined: return 0xF546
+        case .resizeDiagonal: return 0xF424
         case .upload: return 0xF0EE
         case .dragHand: return 0xF256
         case .check: return 0xF00C
@@ -84,7 +84,7 @@ enum FAIcon: String, CaseIterable, Sendable {
         case .font: return "textformat.size"
         case .arrowRotateLeft: return "arrow.uturn.backward"
         case .broom: return "eraser.line.dashed"
-        case .rulerCombined: return "ruler"
+        case .resizeDiagonal: return "arrow.up.right.and.arrow.down.left"
         case .upload: return "icloud.and.arrow.up"
         case .dragHand: return "hand.raised"
         case .check: return "checkmark"
@@ -165,7 +165,7 @@ enum FontAwesomeIcons {
     }
 
     /// Template image on a square canvas of ceil(pointSize * 1.25), centered on the glyph's own outline bounds
-    /// (not line metrics) so wide and short glyphs like the ruler or the slash sit at the visual center.
+    /// (not line metrics) so wide and short glyphs like the slash sit at the visual center.
     /// The outline's tight box is preferred: CTFontGetBoundingRectsForGlyphs includes curve control points,
     /// which pushes round glyphs such as the undo arrow about a point off center.
     static func image(_ icon: FAIcon, family: FAFamily, pointSize: CGFloat) -> NSImage? {
