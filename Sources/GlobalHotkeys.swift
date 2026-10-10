@@ -580,7 +580,7 @@ final class GlobalHotkeyForm: NSView {
     /// Segment order of the modifier control: symbol, spoken name.
     static let modifierSegments: [(GlobalHotkeyModifiers, String, String)] = [
         (.command, "\u{2318}", "Command"), (.option, "\u{2325}", "Option"), (.control, "\u{2303}", "Control"), (.shift, "\u{21E7}", "Shift")]
-    static let idleLiveStatus = "Shortcuts are saved as you change them. They work again when you leave this tab."
+    static let idleLiveStatus = "Shortcuts are saved as you change them. They pause while this window is in front."
     static let keyPopupWidth: CGFloat = 120, modifierSegmentWidth: CGFloat = 44
 
     /// The label column is shared with the form it sits in, so its labels line up with the rows around it.

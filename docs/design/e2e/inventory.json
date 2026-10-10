@@ -7157,12 +7157,12 @@
   {
    "area": "HOT",
    "surface": "Capture shortcuts (live)",
-   "name": "Shortcuts pause while the Capture tab is open",
+   "name": "Shortcuts pause while the Capture tab is in front",
    "type": "state",
    "icon": null,
    "entryPath": "Settings › Capture",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Saved shortcuts are unregistered while the tab is on screen and registered again when it is left or Settings is closed, so a half-entered chord never goes live",
+   "expected": "Saved shortcuts are unregistered only while Settings is the key window on the Capture tab and the app is active; another window or app in front, another tab, hiding or closing Settings registers them again, so a half-entered chord never goes live",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
@@ -7171,14 +7171,14 @@
    "proof": [
     {
      "file": "SettingsWindowTests.swift",
-     "test": "opening Settings on Capture pauses every shortcut"
+     "test": "Settings key and the app active on Capture pauses every shortcut"
     }
    ],
    "rendered": [],
    "sources": [
     "source"
    ],
-   "id": "E2E-HOT-043"
+   "id": "E2E-HOT-044"
   },
   {
    "area": "HIST",
@@ -9544,7 +9544,7 @@
    "icon": null,
    "entryPath": "Resize or Crop › Apply",
    "prerequisite": "Not in Actual Size or Frame mode",
-   "expected": "Previews the change, keeps the sheet",
+   "expected": "Keeps the change and the sheet; Cancel then undoes only later edits",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,

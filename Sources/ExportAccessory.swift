@@ -88,7 +88,7 @@ struct ExportAccessoryPreview: Equatable {
         guard let size, let width = Int(exactly: size.width), let height = Int(exactly: size.height) else {
             return "Dimensions: Not available"
         }
-        return "Dimensions: \(width) × \(height) pixels"
+        return "Dimensions: " + PixelSizeText.text(width: width, height: height) + " pixels"
     }
 
     var byteCountLabel: String {

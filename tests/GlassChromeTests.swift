@@ -119,6 +119,7 @@ private enum GlassChromeTests {
             chromeTests(glyphs: false)
             uploadVariantChecks()
             uploadOutcomeChecks()
+            formatCompactionChecks()
             if let fonts {
                 for family in FAFamily.allCases {
                     expect(FontAwesomeFont.register(url: fonts.appendingPathComponent(family.resourceName + ".ttf"), family: family), "Subset font \(family) registers")
@@ -1430,6 +1431,32 @@ private enum GlassChromeTests {
         expect(previous, "\(tag): by 1500 pt the checkbox stays beside an error")
     }
 
+    /// R2-014: below 1100 pt the PNG | JPG toggle is one compact button (about 64 pt) that shows the current format and flips on a click; the
+    /// room it frees goes to the status line. Wide windows keep both segments.
+    private static func formatCompactionChecks() {
+        var widths: [CGFloat: CGFloat] = [:]
+        for width in [980.0, 1024, 1099, 1100, 1440] as [CGFloat] {
+            let rig = makeRig(NSSize(width: width, height: 640))
+            rig.chrome.layoutSubtreeIfNeeded()
+            guard let toggle = rig.controls.dragFormatControl as? SegmentedToggle else { expect(false, "the format control is the toggle"); return }
+            let compact = width < 1100
+            widths[width] = toggle.frame.width
+            expect(toggle.isCompact == compact, "\(Int(width)): the toggle is \(compact ? "compact" : "two segments") (\(toggle.frame.width) pt)")
+            if compact { expect(toggle.frame.width < 80 && toggle.frame.width > 50, "\(Int(width)): the compact toggle is about 64 pt (\(toggle.frame.width))") }
+            else { expect(toggle.frame.width > 100, "\(Int(width)): the full toggle keeps both segments (\(toggle.frame.width))") }
+        }
+        let compact = SegmentedToggle(titles: ["PNG", "JPG"]), target = ActionTarget()
+        compact.target = target; compact.action = #selector(ActionTarget.formatChanged(_:))
+        let (window, content) = window(NSSize(width: 300, height: 100))
+        content.addSubview(compact); compact.frame = NSRect(x: 20, y: 20, width: 64, height: 36)
+        compact.isCompact = true
+        expect(compact.segmentRect(0) == compact.bounds && compact.segmentRect(1).isEmpty, "Compact draws only the selected format, filling the control")
+        compact.setPressedSegment(0); compact.choose(compact.isCompact ? 1 : 0)
+        expect(compact.selectedSegment == 1 && target.hits == ["format:1"] && compact.segmentRect(1) == compact.bounds && compact.segmentRect(0).isEmpty, "Choosing switches to the other format, which is then the one shown")
+        expect(compact.accessibilityHelp()?.contains("JPG") == true && compact.accessibilityHelp()?.contains("PNG") == true, "The compact button says what it shows and what pressing does")
+        _ = window
+    }
+
     /// Audit fix 1 (item 2): "Link copied" shows the link itself, cut in the middle as the slot narrows, and gives up the link before itself.
     private static func uploadVariantChecks() {
         let url = URL(string: "https://cdn.shoemoney.com/pics/Shot-20261010-153012.png")!
@@ -1450,7 +1477,7 @@ private enum GlassChromeTests {
         expect(UploadState.minimumNameCharacters == 6 && tailSteps.last == "Copied · …12.png", "the shortest step is 'Copied · …12.png' (\(tailSteps.last ?? "nil"))")
         expect(UploadState.success(url: url, copied: true).detailText == "Link copied: " + url.absoluteString, "The full URL stays in the tooltip and the VoiceOver help")
         expect(UploadState.success(url: url, copied: false).statusVariants == ["Published image"] && UploadState.idle.statusVariants.isEmpty, "An uncopied link and idle have no link text")
-        expect(UploadState.uploading(name: "Shot").statusVariants == ["Uploading Shot…"] && UploadState.failure(message: "No.\nMore").statusVariants == ["Error: No."], "Uploading and error stay one sentence")
+        expect(UploadState.uploading(name: "Shot").statusVariants == ["Uploading Shot…", "Uploading…"] && UploadState.failure(message: "No.\nMore").statusVariants == ["No."], "Uploading gives up the file name before the verb; an error is its first line")
         expect(UploadState.middleTruncated("abcdefghij", to: 6) == "ab…hij" && UploadState.middleTruncated("abc", to: 6) == "abc", "middleTruncated keeps the end a little longer than the start")
         let field = StatusTextField(labelWithString: "")
         field.font = DesignTokens.Typography.font(.body)
@@ -1470,26 +1497,26 @@ private enum GlassChromeTests {
         let long = "The publishing password could not be read from macOS Keychain (-25300).\nSecond line."
         let failure = UploadState.failure(message: long)
         let variants = failure.statusVariants
-        expect(variants.first == "Error: The publishing password could not be read from macOS Keychain (-25300).", "The longest variant is the whole first line (\(variants.first ?? ""))")
-        expect(variants.count > 5 && variants.last == "Error: Upload failed", "There are middle-cut steps and a sentence that always fits (\(variants.count))")
-        expect(zip(variants.dropLast(), variants.dropLast().dropFirst()).allSatisfy { $0.count >= $1.count } && variants.allSatisfy { $0.hasPrefix("Error: ") }, "Steps only get shorter and every one leads with Error:")
+        expect(variants.first == "The publishing password could not be read from macOS Keychain (-25300).", "The longest variant is the whole first line (\(variants.first ?? ""))")
+        expect(variants.count > 5 && variants.last == "Upload failed", "There are middle-cut steps and a sentence that always fits (\(variants.count))")
+        expect(zip(variants.dropLast(), variants.dropLast().dropFirst()).allSatisfy { $0.count >= $1.count } && variants.allSatisfy { !$0.hasPrefix("Error: ") }, "Steps only get shorter and none spends twelve characters on an Error: lead (R2-014)")
         expect(variants.dropFirst().dropLast().allSatisfy { $0.contains("…") && $0.hasSuffix(")") || $0.hasSuffix(".") }, "A cut keeps the end of the line, where the code is (\(variants.dropFirst().first ?? ""))")
-        expect(UploadState.failure(message: "No.").statusVariants == ["Error: No."] && UploadState.failure(message: "Error: Prefixed.\nMore").statusVariants == ["Error: Prefixed."], "A short error is one sentence, and an Error: prefix is not doubled")
+        expect(UploadState.failure(message: "No.").statusVariants == ["No."] && UploadState.failure(message: "Error: Prefixed.\nMore").statusVariants == ["Prefixed."], "A short error is one sentence, and a message that carries Error: loses it from the footer")
         let field = StatusTextField(labelWithString: "")
         field.font = DesignTokens.Typography.font(.body); field.lineBreakMode = .byTruncatingTail
         field.setVariants(variants)
         func shown(_ width: CGFloat) -> String { field.setFrameSize(NSSize(width: width, height: 24)); return field.stringValue }
         expect(shown(2000) == variants.first, "A wide slot shows the whole error")
         let narrow = shown(420)
-        expect(narrow != variants.first && narrow.hasPrefix("Error: ") && narrow.contains("…") && narrow.hasSuffix("(-25300)."), "A narrower slot cuts the middle and keeps the code, not just a truncated head (\(narrow))")
+        expect(narrow != variants.first && narrow.contains("…") && narrow.hasSuffix("(-25300)."), "A narrower slot cuts the middle and keeps the code, not just a truncated head (\(narrow))")
         // The Details sheet's text drops the prefix its title makes redundant; the tooltip and VoiceOver help keep it.
         expect(failure.failureBody == long && UploadState.failure(message: "Error: Twice.").failureBody == "Twice.", "The Details text has no leading Error:")
         expect(failure.failureDetail == "Error: " + long && UploadState.idle.failureBody == nil, "The tooltip text still leads with Error:")
         // A retry is named.
         UploadState.retryingName = nil
-        expect(UploadState.uploading(name: "Shot").statusVariants == ["Uploading Shot…"], "A first attempt says Uploading")
+        expect(UploadState.uploading(name: "Shot").statusVariants == ["Uploading Shot…", "Uploading…"], "A first attempt says Uploading")
         UploadState.retryingName = "Shot"
-        expect(UploadState.uploading(name: "Shot").statusVariants == ["Retrying Shot…"] && UploadState.uploading(name: "Other").statusVariants == ["Uploading Other…"], "A retry says Retrying, only for its own file")
+        expect(UploadState.uploading(name: "Shot").statusVariants == ["Retrying Shot…", "Retrying…"] && UploadState.uploading(name: "Other").statusVariants == ["Uploading Other…", "Uploading…"], "A retry says Retrying, only for its own file")
         UploadState.retryingName = nil
         // The success line lasts long enough to read.
         expect(UploadState.successDuration >= 10, "Link copied stays at least ten seconds (\(UploadState.successDuration))")

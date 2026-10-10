@@ -115,7 +115,7 @@ extension AppSafetyTests {
         let probe = UploadProbe(); probe.failure = PublishingFailure("Server said no."); install(probe, on: app)
         let button = try webpostButton(app)
         button.performClick(nil)
-        try waitForMain("The failure is surfaced inline") { app.status.stringValue == "Error: Server said no." && !app.publishing.isBusy }
+        try waitForMain("The failure is surfaced inline") { app.status.stringValue == "Server said no." && !app.publishing.isBusy }
         try expect(probe.copied.isEmpty && AppSafetyAlert.seen.isEmpty && app.window.attachedSheet == nil, "A failed upload copies nothing and raises no alert (OSN-054 moved the error inline)")
         probe.failure = nil
         button.performClick(nil)

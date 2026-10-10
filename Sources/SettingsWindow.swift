@@ -450,10 +450,11 @@ struct SettingsDestinationActions {
 
 @MainActor
 final class UploadSettingsTab: SettingsTabViewController {
-    /// This tab has one label ("Destinations:"), so its label column is that wide, not as wide as the longest label on any tab: the list and
-    /// its four buttons get the room (Add…, Edit…, Remove and Make Default need about 410 pt at 20 pt).
-    static var labelColumnWidth: CGFloat { SettingsLayout.labelWidth(for: ["Destinations:"]) }
-    static var listWidth: CGFloat { SettingsLayout.availableControlWidth(labelWidth: labelColumnWidth) }
+    /// This tab has no label column: "Destinations" is a heading over a list that takes the whole content width, with its four buttons under
+    /// it (Add…, Edit…, Remove and Make Default need about 410 pt at 20 pt).
+    static var labelColumnWidth: CGFloat { 0 }
+    static var listWidth: CGFloat { SettingsLayout.gridWidth }
+    static let hint = "Uploads go to the default destination. Right-click Upload to switch."
     private let destinations: () -> PublishingDestinationList
     private let listSurface = SettingsListSurface()
     private var listStack: NSStackView { listSurface.stack }
@@ -499,27 +500,28 @@ final class UploadSettingsTab: SettingsTabViewController {
         emptyAddButton = SettingsLayout.pushButton("Add…", identifier: "addFirstDestination", target: self, action: #selector(addTapped))
         buttonRow = NSStackView(views: [addButton, editButton, removeButton, defaultButton])
         buttonRow.orientation = .horizontal; buttonRow.spacing = DesignTokens.Space.s2
-        let caption = SettingsLayout.caption("Uploads go to the default destination. Right-click Upload to switch.", width: Self.listWidth)
+        hintLabel = SettingsLayout.caption(Self.hint, width: Self.listWidth)
         defer { refresh() }
-        // The label sits level with the first destination row, not with the middle of a tall list.
-        let label = SettingsLayout.rowLabel("Destinations:")
-        let labelCell = NSView(); labelCell.translatesAutoresizingMaskIntoConstraints = false
-        label.translatesAutoresizingMaskIntoConstraints = false; labelCell.addSubview(label)
-        NSLayoutConstraint.activate([
-            label.trailingAnchor.constraint(equalTo: labelCell.trailingAnchor), label.leadingAnchor.constraint(greaterThanOrEqualTo: labelCell.leadingAnchor),
-            label.centerYAnchor.constraint(equalTo: labelCell.topAnchor, constant: SettingsDestinationRow.height / 2),
-            labelCell.heightAnchor.constraint(equalToConstant: SettingsDestinationRow.height)])
-        return [[labelCell, listSurface],
+        let heading = NSTextField(labelWithString: "Destinations")
+        heading.font = DesignTokens.Typography.font(.bodyStrong); heading.textColor = DesignTokens.Palette.Text.primary
+        heading.setAccessibilityRole(.staticText)
+        return [[NSGridCell.emptyContentView, heading],
+                [NSGridCell.emptyContentView, listSurface],
                 [NSGridCell.emptyContentView, buttonRow],
-                [NSGridCell.emptyContentView, caption]]
+                [NSGridCell.emptyContentView, hintLabel]]
     }
 
     override func loadView() {
         super.loadView()
-        grid.row(at: 0).rowAlignment = .none
-        grid.row(at: 0).yPlacement = .top
-        grid.row(at: 1).isHidden = listed.isEmpty
+        grid.column(at: 0).isHidden = true
+        grid.row(at: 1).rowAlignment = .none
+        grid.row(at: 1).yPlacement = .top
+        grid.row(at: 2).isHidden = listed.isEmpty
+        grid.row(at: 3).isHidden = listed.isEmpty
     }
+    private var hintLabel: NSTextField!
+    /// Whether the line about switching destinations shows: it only means something once there is one to switch to.
+    var hintIsVisible: Bool { isViewLoaded ? !grid.row(at: 3).isHidden : false }
 
     override func refresh() {
         guard addButton != nil else { return }
@@ -581,7 +583,7 @@ final class UploadSettingsTab: SettingsTabViewController {
             listStack.addArrangedSubview(wrapper)
         }
         // With destinations the four buttons sit under the list; with none the Add… inside the list is the only command.
-        if isViewLoaded { grid.row(at: 1).isHidden = empty }
+        if isViewLoaded { grid.row(at: 2).isHidden = empty; grid.row(at: 3).isHidden = empty }
         let keep = selectedID.flatMap { id in list.destinations.first { $0.id == id }?.id }
         select(id: keep ?? defaultID ?? list.destinations.first?.id)
         listSurface.updateHeight()
@@ -949,6 +951,12 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
 
         window.isReleasedWhenClosed = false
         window.delegate = self
+        // The shortcuts pause only while this window is the one in front: leaving the app puts them back.
+        for name in [NSApplication.didResignActiveNotification, NSApplication.didBecomeActiveNotification] {
+            NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] note in
+                MainActor.assumeIsolated { self?.activityChanged(appActive: note.name == NSApplication.didBecomeActiveNotification) }
+            }
+        }
         window.contentView = content
         for tab in tabs {
             _ = tab.fittingHeight
@@ -974,6 +982,8 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     private let hotkeys: any GlobalHotkeyEditing
     /// Whether the window is on screen, which with the Capture tab selected means the shortcut editor is open.
     private var isShown = false
+    /// Whether this window is key and the app is active: the only time the shortcut editor can be in use.
+    private var isKey = false, appIsActive = false
     /// The removal question on screen now, so a second click cannot stack another.
     private(set) var pendingRemoval: AppAlert?
 
@@ -1043,15 +1053,27 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         fit(animated: false)
         if !hasSavedFrame { window.center(); hasSavedFrame = true }
         window.makeKeyAndOrderFront(nil)
-        isShown = true; updateShortcutEditing()
+        isShown = true
+        isKey = window.isKeyWindow; appIsActive = NSApp?.isActive ?? false
+        updateShortcutEditing()
     }
 
     /// The owner took the window off screen (Escape, Command-W, the close button).
-    func windowHidden() { isShown = false; updateShortcutEditing() }
+    func windowHidden() { isShown = false; isKey = false; updateShortcutEditing() }
 
-    /// While the Capture tab is open the global shortcuts are paused: edits are saved as they are made but go live when the tab is left,
-    /// so a half-entered chord never starts working system-wide and pressing one to try it cannot start a capture.
-    private func updateShortcutEditing() { hotkeys.setEditing(isShown && selectedIndex == Self.captureTabIndex) }
+    /// While the Capture tab is in front the global shortcuts are paused: edits are saved as they are made but go live as soon as the window
+    /// is not the one being used (another window key, another app active, the tab left, the window hidden or closed), so a half-entered chord
+    /// never starts working system-wide and pressing one to try it cannot start a capture. Merely leaving the window open pauses nothing (R2-001).
+    private func updateShortcutEditing() { hotkeys.setEditing(isShown && isKey && appIsActive && selectedIndex == Self.captureTabIndex) }
+
+    /// Window and app activity as the delegate and the application report it; a test drives it directly.
+    func activityChanged(key: Bool? = nil, appActive: Bool? = nil) {
+        if let key { isKey = key }
+        if let appActive { appIsActive = appActive }
+        updateShortcutEditing()
+    }
+    func windowDidBecomeKey(_ notification: Notification) { activityChanged(key: true, appActive: NSApp?.isActive ?? appIsActive) }
+    func windowDidResignKey(_ notification: Notification) { activityChanged(key: false) }
 
     // MARK: Sizing
 

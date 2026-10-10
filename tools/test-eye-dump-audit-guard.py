@@ -512,6 +512,31 @@ def test_input_fence(base):
     check("HarnessInputGuard.install()" not in leaky.read_text()[leaky.read_text().index("func execute()"):][:400], "harness (can fail): a scratch copy without the install call fails the fence-first check")
 
 
+def fence_problems(guard_source, surfaces_source, script_source):
+    """R2-012: the fence covers mouse enter/exit and cursor updates, and the run records how many real events it swallowed."""
+    problems = []
+    mask = guard_source[guard_source.index("blockedEvents"):guard_source.index("]", guard_source.index("blockedEvents"))]
+    for kind in (".mouseEntered", ".mouseExited", ".cursorUpdate", ".mouseMoved", ".keyDown", ".scrollWheel"):
+        if kind not in mask:
+            problems.append(f"the fenced mask lacks {kind}")
+    if "swallowedEvents" not in guard_source or "HarnessInputGuard.record()" not in surfaces_source:
+        problems.append("finish() does not write the swallowed-event record")
+    if "input fence" not in script_source or "input-fence" not in script_source:
+        problems.append("eye-dump-audit.sh does not copy the count into safety.txt")
+    return problems
+
+
+def test_input_fence_record():
+    guard = (root / "Sources" / "EyeDumpAuditInputGuard.swift").read_text()
+    surfaces = (root / "Sources" / "EyeDumpAuditSurfaces.swift").read_text()
+    script = (root / "tools" / "eye-dump-audit.sh").read_text()
+    check(fence_problems(guard, surfaces, script) == [], "harness (R2-012): the fence covers enter/exit/cursor events and its swallowed count reaches safety.txt")
+    check(fence_problems(guard.replace(".mouseEntered, .mouseExited, .cursorUpdate", ".scrollWheel"), surfaces, script) != []
+          and fence_problems(guard, surfaces.replace("HarnessInputGuard.record()", "[:]"), script) != []
+          and fence_problems(guard, surfaces, script.replace("input fence", "")) != [],
+          "harness (can fail): a scratch copy without the extra event kinds, the record or the safety.txt line is detected")
+
+
 def test_runs_were_safe():
     check(len(RUNS) > 0 and all(env_problem(env) is None for env in RUNS),
           f"every one of the {len(RUNS)} script runs used the scratch HOME and the fake defaults recorder")
@@ -528,6 +553,7 @@ with tempfile.TemporaryDirectory(prefix="eyedump-guard-test.") as scratch:
     SAFE.update(home=str(scratch_home), defaults=str(fake_recorder), log=str(fake_log))
     test_script(scratch, scratch_home)
     test_normalized_home(scratch, scratch_home)
+    test_input_fence_record()
     test_cleanup_protection(scratch, scratch_home)
     test_display_injection(scratch, scratch_home)
     test_input_fence(scratch)

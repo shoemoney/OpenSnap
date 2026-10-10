@@ -142,7 +142,7 @@ extension AppSafetyTests {
         try announcing { log in
             try uploadButton(app).performClick(nil)
             try waitForMain("The failure arrives") { app.uploadState.isFailure && !app.publishing.isBusy }
-            try expect(app.status.stringValue == "Error: Server said no.", "The status is Error: and the first line only (\(app.status.stringValue))")
+            try expect(app.status.stringValue == "Server said no.", "The status is the first line only, without an Error: lead (\(app.status.stringValue))")
             try expect(visibleCommands(chrome) == ["retry", "details"], "Failure shows Retry and Details… (\(visibleCommands(chrome)))")
             try expect(AppSafetyAlert.seen.isEmpty && app.window.attachedSheet == nil && stub.copied.isEmpty, "No alert, no sheet, nothing copied")
             try expect(log.items.contains { $0.text == "Error: Server said no." && $0.priority == .high }, "The error is announced at high priority: \(log.items)")
@@ -214,7 +214,7 @@ extension AppSafetyTests {
             let reply = app.applicationShouldTerminate(NSApp)
             try expect(reply == .terminateCancel, "The refused Quit is answered at once (\(reply.rawValue))")
             try waitForMain("The cleanup error is shown") { AppSafetyAlert.seen.contains(cleanup.localizedDescription) }
-            try expect(!app.terminationStarted && app.uploadState == .failure(message: "Refused.") && app.status.stringValue == "Error: Refused.",
+            try expect(!app.terminationStarted && app.uploadState == .failure(message: "Refused.") && app.status.stringValue == "Refused.",
                        "A refused Quit keeps the inline error (\(app.status.stringValue))")
             try expect(visibleCommands(chrome) == ["retry", "details"] && AppSafetyAlert.seen == [cleanup.localizedDescription], "and its Retry and Details…, and raises no alert of its own")
             AppSafetyCaptureCoordinator.shutdownResult = .success(())
@@ -321,7 +321,7 @@ extension AppSafetyTests {
         let address = UploadState.displayAddress(of: url)
         try expect(status.variants.first == "Link copied · " + address && status.variants.last?.hasPrefix("Link copied · ") == true && status.variants.count > 3,
                    "The status carries the link after Link copied, and shorter middle-cut steps (\(status.variants.first ?? ""))")
-        try expect((status.stringValue.hasPrefix("Link copied · ") || status.stringValue.hasPrefix("Copied · …")) && status.frame.width > 100 && status.stringValue.contains(String(url.lastPathComponent.suffix(6))),
+        try expect((status.stringValue.hasPrefix("Link copied · ") || status.stringValue.hasPrefix("Copied · …")) && status.frame.width > 100 && status.stringValue.contains(String(url.lastPathComponent.suffix(5))),
                    "At 980 the \(Int(status.frame.width)) pt slot is used for the link, not left empty (\(status.stringValue))")
         try expect(AppToolTip.text(for: status) == "Link copied: " + url.absoluteString && status.accessibilityHelp() == "Link copied: " + url.absoluteString,
                    "The full URL stays on the tooltip and in the VoiceOver help, whatever the status shows")
@@ -408,7 +408,7 @@ extension AppSafetyTests {
             let tail = String(url.lastPathComponent.suffix(6))
             let text = status.stringValue
             // At the minimum width the slot is small: the narrowest steps keep the end of the name. Wider, a middle-cut name is enough.
-            let keepsName = width == ModernEditorChrome.minimumWindowWidth ? text.contains(tail) : (text.contains(tail) || (text.hasPrefix("Link copied · ") && text.contains("…") && text.hasSuffix("png")))
+            let keepsName = width == ModernEditorChrome.minimumWindowWidth ? (text.contains(tail) || (text.hasPrefix("Link copied · ") && text.hasSuffix(String(tail.suffix(5))))) : (text.contains(tail) || (text.hasPrefix("Link copied · ") && text.contains("…") && text.hasSuffix("png")))
             try expect(keepsName && (text.hasPrefix("Link copied") || text.hasPrefix("Copied")), "\(Int(width)): the status keeps the file name's end (…\(tail)) and leads with Copied (\(text))")
             if width >= 1440 { try expect(text.hasPrefix("Link copied · cdn.example.com") && text.hasSuffix("png"), "1440: a wide slot keeps the host and the end of the name (\(text))") }
             else { try expect(!text.hasSuffix("cdn.exa…") && !text.hasSuffix(String(UploadState.displayAddress(of: url).prefix(6)) + "…"), "\(Int(width)): the line is not the sentence cut off after the host (\(text))") }

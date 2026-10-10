@@ -881,7 +881,7 @@ enum PublishingConnectionTest {
         // 405 and 501 come from a plain PUT-only endpoint that does not know PROPFIND: it is there and did not refuse the request, but it
         // cannot say whether the login is right.
         case 405, 501: return Outcome(ok: true, message: "Reached the server (HTTP \(code)). It does not answer folder questions, so " + (hasLogin ? "the login could not be checked." : "the folder could not be checked.") + " Nothing was uploaded.")
-        case 200..<300: return Outcome(ok: true, message: hasLogin ? "Reached the server (HTTP \(code)); it accepted the login and the folder was not refused. Nothing was uploaded." : "Reached the server (HTTP \(code)) and the folder was not refused. Nothing was uploaded.")
+        case 200..<300: return Outcome(ok: true, message: hasLogin ? "Reached the server (HTTP \(code)); it did not reject the login and the folder was not refused. A server that never asks for a login answers the same way, so this does not prove the login was checked. Nothing was uploaded." : "Reached the server (HTTP \(code)) and the folder was not refused. Nothing was uploaded.")
         default: return Outcome(ok: false, message: "The server answered with HTTP \(code).")
         }
     }

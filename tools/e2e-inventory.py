@@ -512,8 +512,8 @@ def build_hotkeys():
             add("HOT", s, "Save", "control", f"{where} › Save", what("Applies the draft and closes (Return)"), shortcut="Return", rendered=["S18"], **retired)
     add("HOT", "Capture shortcuts (live)", "Menu entry: Capture Shortcuts…", "menu item", "Menu bar › OpenSnap › Capture Shortcuts…", "Opens the Settings window on the Capture tab (no separate sheet since d9ed8b7)",
         shortcut=None, rendered=["S18"])
-    add("HOT", "Capture shortcuts (live)", "Shortcuts pause while the Capture tab is open", "state", "Settings › Capture", "Saved shortcuts are unregistered while the tab is on screen and registered again when it is left or Settings is closed, so a half-entered chord never goes live",
-        proof=proof("SettingsWindowTests.swift", "opening Settings on Capture pauses every shortcut"))
+    add("HOT", "Capture shortcuts (live)", "Shortcuts pause while the Capture tab is in front", "state", "Settings › Capture", "Saved shortcuts are unregistered only while Settings is the key window on the Capture tab and the app is active; another window or app in front, another tab, hiding or closing Settings registers them again, so a half-entered chord never goes live",
+        proof=proof("SettingsWindowTests.swift", "Settings key and the app active on Capture pauses every shortcut"))
     for action in ("Screen region", "Window", "Full screen", "Frame", "Upload", "Show OpenSnap"):
         add("HOT", "Global hotkey firing", f"{action} (fires while backgrounded)", "shortcut", "Another app frontmost › the bound chord", "OpenSnap performs the action without being frontmost",
             prereq="A binding saved", ex="gap", gap="global-hotkey-background")
@@ -603,7 +603,7 @@ def build_sheets():
                            ("Mode: Limit", "Limits the longest side, width or height"), ("Width (pixels)", "Validated integer field"), ("Height (pixels)", "Validated integer field"),
                            ("Lock proportions", "Keeps the aspect ratio while editing"), ("Limit by: Longest side / Width / Height", "Chooses what the limit applies to"), ("Size limit field", "Validated integer"),
                            ("Crop anchor (9 positions)", "Top/Middle/Bottom x Left/Center/Right"), ("Validation message", "Error text with the field name, never colour alone"),
-                           ("Cancel", "Closes without change (Esc)"), ("Apply", "Previews the change, keeps the sheet"), ("OK", "Applies and closes (Return)")]:
+                           ("Cancel", "Closes without change (Esc)"), ("Apply", "Keeps the change and the sheet; Cancel then undoes only later edits"), ("OK", "Applies and closes (Return)")]:
         add("SHEET", "Resize or Crop", name, "control", f"Resize or Crop › {name}", expected, prereq="Not in Actual Size or Frame mode", rendered=["S08"])
     add("SHEET", "Photos", "Photos sheet", "sheet", "Menu bar › File › Photos…, top bar › Photos", "Sheet titled Photos: Open a photo, Pictures / image folder chooser, grid, Close", rendered=["S12"])
     for name, expected, ex, gap, owner in [("Pictures folder", "Browses the Pictures folder (only the chosen folder)", "e2e", None, "app"),

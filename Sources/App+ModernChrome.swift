@@ -100,7 +100,7 @@ extension AppDelegate {
         dragOriginalControl.state = (UserDefaults.standard.object(forKey: "DragOriginalSize") as? Bool ?? true) ? .on : .off
         dragOriginalControl.setAccessibilityLabel("Export at original size")
         // The box sits beside the zoom, so it says what it measures: the size of the dragged-out, exported and uploaded picture.
-        AppToolTip.setText("Drag out, export and upload the picture at its own pixel size, not the size it is shown at", for: dragOriginalControl)
+        AppToolTip.setText("Drag out, copy, export and upload the picture at its own pixel size, not the size it is shown at", for: dragOriginalControl)
         nameField.placeholderString = "Image name"
         zoomControl.addItems(withTitles: ["25%", "50%", "75%", "100%", "150%", "200%"])
         for (index, item) in zoomControl.itemArray.enumerated() { item.representedObject = [0.25, 0.5, 0.75, 1, 1.5, 2][index] }

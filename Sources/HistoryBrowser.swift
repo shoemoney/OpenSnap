@@ -64,12 +64,13 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         default: return format.uppercased()
         }
     }
+    static let formatPopupMaximumWidth: CGFloat = 150
     static let defaultSize = NSSize(width: 1000, height: 720), minimumSize = NSSize(width: 880, height: 600)
     /// Below this content width the details panel moves from beside the grid to under it.
     static let detailsCollapseWidth: CGFloat = 760
     /// The narrowest a tile gets; the preview is `previewAspect` as tall as the tile is wide, so a stretched tile shows a bigger preview
     /// instead of a preview floating in blank space.
-    static let minimumTileWidth: CGFloat = 210, previewAspect: CGFloat = 0.65
+    static let minimumTileWidth: CGFloat = 210, maximumTileWidth: CGFloat = 280, previewAspect: CGFloat = 0.65
     static let tileInset = DesignTokens.Space.s2, tileTextSpacing = DesignTokens.Space.s1
     /// Space between neighbouring tiles, and the grid's side inset.
     static let tileGap = DesignTokens.Space.s4, gridSideInset = DesignTokens.Space.s3
@@ -77,8 +78,13 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
     /// neighbours is always `tileGap` instead of the flow layout spreading fixed tiles to the far edges.
     static func tileWidth(forGridWidth width: CGFloat) -> CGFloat {
         let available = width - 2 * gridSideInset
-        let columns = max(1, ((available + tileGap) / (minimumTileWidth + tileGap)).rounded(.down))
-        return max(1, ((available - (columns - 1) * tileGap) / columns).rounded(.down))
+        // Extra width becomes another column once a tile would pass `maximumTileWidth`, not ever larger tiles (R2-015); never narrower than the minimum.
+        func tile(_ columns: CGFloat) -> CGFloat { ((available - (columns - 1) * tileGap) / columns).rounded(.down) }
+        let widest = max(1, ((available + tileGap) / (minimumTileWidth + tileGap)).rounded(.down))
+        var columns = max(1, ((available + tileGap) / (maximumTileWidth + tileGap)).rounded(.up))
+        while columns > 1 && tile(columns) < minimumTileWidth { columns -= 1 }
+        columns = min(columns, widest)
+        return max(1, tile(columns))
     }
     static func previewHeight(forTileWidth width: CGFloat) -> CGFloat { ((width - 2 * tileInset) * previewAspect).rounded() }
     /// A tile is its preview, the name line and the action line, with nothing under them.
@@ -385,9 +391,13 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         let formatLabel = NSTextField(labelWithString:"Drag as"); Typography.apply(.body,to:formatLabel)
         formatPopup.addItems(withTitles:Self.dragFormats.map(Self.dragFormatTitle)); Typography.apply(.body,to:formatPopup)
         formatPopup.selectItem(at:Self.dragFormats.firstIndex(of:dragFormat) ?? 0)
+        formatPopup.widthAnchor.constraint(lessThanOrEqualToConstant:Self.formatPopupMaximumWidth).isActive = true   // R2-015: a pop-up, not a column
         formatPopup.target = self; formatPopup.action = #selector(formatChanged); formatPopup.setAccessibilityLabel("History drag export format")
         let flexible = NSView(); flexible.setContentHuggingPriority(.init(1),for:.horizontal)
         configure(actionRow,actions+[flexible]); actionRow.spacing = Space.s2
+        // The row is measured (`updateActionLabels`), never allowed to hold the window open: with every label showing it needs 945 pt, and
+        // it would otherwise be the reason the window stopped there instead of reaching its 880 minimum, where the labels collapse (F-J6-006).
+        actionRow.setClippingResistancePriority(.init(1),for:.horizontal)
         root.addArrangedSubview(actionRow)
         // "Drag as" sits at the end of the footer line, not in the action row: with it the row held no labels at 1000 wide, and
         // the three commands that take something away must keep theirs at the 880 minimum.
@@ -551,6 +561,12 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         detailsPanel.isHidden = detailsCollapsed
         window?.contentView?.layoutSubtreeIfNeeded()
     }
+    /// The labels follow the width the window is about to have, not the one it had, so a drag inward is never held open by labels that no
+    /// longer fit (the row measured 945 pt with all seven, and the window used to stop there; R2-005).
+    func windowWillResize(_ sender: NSWindow,to frameSize: NSSize) -> NSSize {
+        updateActionLabels(forContentWidth:sender.contentRect(forFrameRect:NSRect(origin:.zero,size:frameSize)).width)
+        return frameSize
+    }
     func windowDidResize(_ notification: Notification) {
         if let width = window?.contentView?.bounds.width { layoutDetails(forContentWidth:width); updateActionLabels(forContentWidth:width) }
     }
@@ -631,21 +647,20 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
             detailValues["Name"]?.stringValue = "\(selected.count) items selected"
             detailValues["Date"]?.stringValue = "Multiple dates"; detailValues["Size"]?.stringValue = "Multiple sizes"
             detailValues["Action"]?.stringValue = Set(selected.map(\.action)).sorted().joined(separator:", ")
-            detailValues["Destination"]?.stringValue = "Multiple destinations"
+            detailValues["Destination"]?.stringValue = "Multiple destinations"; detailPairs.last?.isHidden = false
         } else {
             let formatter = DateFormatter(); formatter.calendar = calendar; formatter.timeZone = calendar.timeZone; formatter.dateStyle = .medium; formatter.timeStyle = .short
             detailValues["Name"]?.stringValue = value.name; detailValues["Date"]?.stringValue = formatter.string(from:value.date)
             detailValues["Size"]?.stringValue = Self.sizeText(for: value.publishedSize ?? value.size)
             detailValues["Action"]?.stringValue = value.action
-            detailValues["Destination"]?.stringValue = value.destination ?? value.link?.absoluteString ?? "—"
+            let destination = value.destination ?? value.link?.absoluteString
+            detailValues["Destination"]?.stringValue = destination ?? "—"
+            // A snap that was never shared has no destination to show; the row would only say "—" (R2-015).
+            detailPairs.last?.isHidden = destination == nil
         }
     }
-    /// A drawing's size in whole pixels with thousands separators; an older entry that stored a fractional size still reads whole.
-    nonisolated static func sizeText(for size: CGSize) -> String {
-        guard size.width.isFinite, size.height.isFinite, abs(size.width) < 1e9, abs(size.height) < 1e9 else { return "Unknown size" }
-        func whole(_ value: CGFloat) -> Int { max(1, Int((value + 0.5).rounded(.down))) }
-        return "\(whole(size.width).formatted()) × \(whole(size.height).formatted())"
-    }
+    /// A drawing's size in whole pixels, written as everywhere else in the app; an older entry that stored a fractional size still reads whole.
+    nonisolated static func sizeText(for size: CGSize) -> String { PixelSizeText.text(size) }
     /// The headline and one line per kind for the grid's current contents, in the tab order; empty when the grid is empty.
     nonisolated static func summaryLines(for items: [Item]) -> [String] {
         guard !items.isEmpty else { return [] }

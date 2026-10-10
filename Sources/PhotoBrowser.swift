@@ -552,7 +552,7 @@ final class PhotoBrowserCoordinator: NSObject, NSTableViewDataSource, NSTableVie
         let cell = tableView.makeView(withIdentifier: identifier, owner: self) as? PhotoBrowserCell ?? PhotoBrowserCell(frame: .zero)
         cell.identifier = identifier
         let entry = entries[row]; cell.representedURL = entry.url; cell.nameLabel.stringValue = entry.name
-        cell.detailLabel.stringValue = "\(entry.displayWidth) × \(entry.displayHeight) pixels · \(UTType(entry.typeIdentifier)?.localizedDescription ?? "Photo")"
+        cell.detailLabel.stringValue = PixelSizeText.text(width: entry.displayWidth, height: entry.displayHeight) + " pixels · \(UTType(entry.typeIdentifier)?.localizedDescription ?? "Photo")"
         cell.preview.image = thumbnails.object(forKey: entry.url as NSURL)
         cell.setAccessibilityLabel(entry.name + ", " + cell.detailLabel.stringValue)
         guard cell.preview.image == nil else { return cell }

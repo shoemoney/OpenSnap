@@ -11,11 +11,17 @@ enum HarnessInputGuard {
         .keyDown, .keyUp, .flagsChanged,
         .leftMouseDown, .leftMouseUp, .leftMouseDragged, .rightMouseDown, .rightMouseUp, .rightMouseDragged,
         .otherMouseDown, .otherMouseUp, .otherMouseDragged, .mouseMoved, .scrollWheel,
-        .magnify, .rotate, .swipe, .smartMagnify, .pressure
+        .magnify, .rotate, .swipe, .smartMagnify, .pressure,
+        .mouseEntered, .mouseExited, .cursorUpdate
     ]
 
-    /// How many real events were swallowed, written to the run's environment record.
+    /// How many real events were swallowed; `finish()` writes it to `safety/input-fence-*.json` and tools/eye-dump-audit.sh copies it into
+    /// the run's safety.txt, so a run during which somebody touched the machine says so.
     private(set) static var swallowedCount = 0
+    /// The record written beside the captures: how many real events the fence swallowed and which kinds it covers.
+    static func record() -> [String: Any] {
+        ["swallowedEvents": swallowedCount, "fencedEventKinds": ["keyboard", "mouse buttons and drags", "mouse moves", "mouse enter and exit", "cursor updates", "scroll", "gestures"]]
+    }
 
     /// Installs the fence; keep the returned token for the life of the run.
     static func install() -> Any? {

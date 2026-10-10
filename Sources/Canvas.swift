@@ -612,6 +612,58 @@ final class CanvasView: NSView, NSTextViewDelegate {
         return true
     }
 
+    /// A Resize typed in the picture's own pixels (Original size ticked): the picture itself becomes `scaleTo`, so the title, the
+    /// export, Actual Size and History all read the new size. Annotations scale with it; the retained photo keeps its detail and is
+    /// drawn into the new canvas. `crop` then keeps a rectangle of the scaled picture (in its new pixels); `output` is the shown size.
+    @discardableResult
+    func previewViewportPicture(scaleTo: CGSize?, crop: CGRect?, output: CGSize) -> Bool {
+        guard let transaction = viewportEdit, SketchDocument.validSize(output) else { return false }
+        var result = transaction.before
+        if let scaleTo, scaleTo != result.document.size {
+            guard SketchDocument.validSize(scaleTo) else { return false }
+            guard let scaled = scaledState(result, to: scaleTo) else { return false }
+            result = scaled
+        }
+        if let crop {
+            guard let cropped = reframedState(from: result, to: crop, outputSize: integralSize(output)) else { return false }
+            result = cropped
+        } else {
+            result.document.renderSize = output == result.document.size ? nil : integralSize(output)
+        }
+        applyViewportState(result)
+        return true
+    }
+    /// The picture scaled to `size`: its pixels are resampled (a real resize, so the export has exactly these pixels), its annotations
+    /// scale with it, and a retained photo behind a crop scales with it too, keeping what the crop hid.
+    private func scaledState(_ before: EditorState, to size: CGSize) -> EditorState? {
+        var result = before
+        let scale = SketchTransform(a: size.width / before.document.size.width, d: size.height / before.document.size.height)
+        result.cropRect = nil
+        result.document.size = size; result.document.renderSize = nil
+        if var pan = result.panBackground {
+            pan.offset = CGPoint(x: pan.offset.x * scale.a, y: pan.offset.y * scale.d)
+            pan.sourceSize = CGSize(width: pan.sourceSize.width * scale.a, height: pan.sourceSize.height * scale.d)
+            guard SketchDocument.validSize(pan.sourceSize), let image = NSImage(data: pan.sourcePNG),
+                  let source = SketchRenderer.bitmap(size: pan.sourceSize, draw: { SketchRenderer.drawImage(image, in: CGRect(origin: .zero, size: pan.sourceSize)) })?
+                    .representation(using: .png, properties: [:]),
+                  let moved = NSImage(data: source),
+                  let visible = SketchRenderer.bitmap(size: size, draw: { SketchRenderer.drawImage(moved, in: CGRect(origin: pan.offset, size: pan.sourceSize)) })?
+                    .representation(using: .png, properties: [:]) else { return nil }
+            pan.sourcePNG = source
+            result.panBackground = pan
+            result.document.backgroundPNG = visible
+        } else if let png = before.document.backgroundPNG {
+            guard let image = NSImage(data: png),
+                  let resampled = SketchRenderer.bitmap(size: size, draw: { SketchRenderer.drawImage(image, in: CGRect(origin: .zero, size: size)) })?
+                    .representation(using: .png, properties: [:]) else { return nil }
+            result.document.backgroundPNG = resampled
+        }
+        for index in result.document.elements.indices {
+            result.document.elements[index].transform = result.document.elements[index].transform.followed(by: scale)
+        }
+        return result
+    }
+
     /// Rectangles are in the source coordinate system captured at begin, even
     /// after earlier previews have moved the raster and annotations.
     @discardableResult

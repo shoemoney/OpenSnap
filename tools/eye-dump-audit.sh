@@ -245,6 +245,14 @@ done
 
 python3 -I "$ROOT/tools/eye-dump-audit-manifest.py" "$OUT" --sha "$SOURCE_SHA" --bundle-id "$THROWAWAY_ID" >/dev/null || echo "manifest could not be written" >&2
 
+# The input fence's own count: real keyboard or mouse events that arrived during the run and were swallowed (0 for an untouched machine).
+python3 -I - "$OUT" <<'PY' | tee -a "$OUT/safety.txt"
+import json, pathlib, sys
+files = sorted(pathlib.Path(sys.argv[1]).glob("raw-*/safety/input-fence-*.json"))
+counts = [json.loads(f.read_text()).get("swallowedEvents", 0) for f in files]
+print(f"input fence      swallowed {sum(counts)} real input events across {len(files)} runs" + ("" if sum(counts) == 0 else " (somebody used the machine during the run; check the captures)"))
+PY
+
 # All defaults cleanup is finished here, before the compare, so the compare observes whatever cleanup did.
 drop_throwaway_defaults
 DROPPED=yes

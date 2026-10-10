@@ -411,6 +411,24 @@ struct HistoryBrowserTests {
                     try expect(HistoryBrowser.previewHeight(forTileWidth:300) > HistoryBrowser.previewHeight(forTileWidth:210),"A stretched tile keeps a small preview")
                 }
             }),
+            ("Extra width becomes another column, never a tile wider than 280; the Drag as pop-up stays under 150; a never-shared snap has no Destination row (R2-015)", {
+                for grid in stride(from:420.0,through:2600.0,by:20.0) {
+                    let tile = HistoryBrowser.tileWidth(forGridWidth:grid)
+                    let columns = max(1,((grid - 2 * HistoryBrowser.gridSideInset + HistoryBrowser.tileGap) / (tile + HistoryBrowser.tileGap)).rounded(.down))
+                    // A tile is over the cap only where one more column would make every tile narrower than the minimum.
+                    let next = (grid - 2 * HistoryBrowser.gridSideInset - columns * HistoryBrowser.tileGap) / (columns + 1)
+                    try expect(tile <= HistoryBrowser.maximumTileWidth || next < HistoryBrowser.minimumTileWidth,"a \(grid) wide grid keeps its tiles at or under \(HistoryBrowser.maximumTileWidth) unless another column would be too narrow (tile \(tile), \(columns) columns, next \(next))")
+                    if columns > 1 { try expect(tile >= HistoryBrowser.minimumTileWidth,"…and at least \(HistoryBrowser.minimumTileWidth) (tile \(tile))") }
+                }
+                try browser { browser,_ in
+                    let content = try browser.window?.contentView.unwrap("content view") ?? NSView()
+                    browser.update(items:[item("Local",0)]); browser.select(ids:[browser.visibleItems[0].id]); laidOut(browser,width:1000,height:720)
+                    let pop = try descendants(content).compactMap { $0 as? NSPopUpButton }.first { $0.accessibilityLabel() == "History drag export format" }.unwrap("format popup")
+                    try expect(pop.frame.width <= HistoryBrowser.formatPopupMaximumWidth + 0.5,"the format pop-up is \(pop.frame.width) wide")
+                    let destination = try descendants(content).compactMap { $0 as? NSTextField }.first { $0.accessibilityLabel() == "Destination" }.unwrap("Destination value")
+                    try expect(destination.superview?.isHidden == true,"a snap that was never shared has no Destination row")
+                }
+            }),
             ("Tiles in a row are evenly spaced, with no large gap, at 880, 1000 and 1280", {
                 try browser { browser,_ in
                     // Nine snaps on one day so a wide window has full rows, plus three on an earlier day for a short row.
@@ -607,6 +625,13 @@ struct HistoryBrowserTests {
                         try expect(browser.footerRow.arrangedSubviews.contains(formatBox) && content.bounds.contains(formatInFooter) && formatInFooter.maxX <= content.bounds.maxX - DesignTokens.Space.s4 + 0.5,
                                    "\(Int(width)): the drag format sits at the end of the footer line, whole (\(formatInFooter))")
                     }
+                    // F-J6-006/R2-005: with every label showing the row must not hold the window open; its fitting width stays under the 880 minimum.
+                    _ = try show(width:1000)
+                    try expect(browser.actionLabels == .all && content.fittingSize.width <= HistoryBrowser.minimumSize.width, "with every label showing, the window's own minimum is still 880 (fits at \(content.fittingSize.width))")
+                    // A drag inward is decided from the width the window is about to have: 880 is accepted and collapses the labels first.
+                    let proposed = browser.window!.frameRect(forContentRect:NSRect(x:0,y:0,width:880,height:720)).size
+                    try expect(browser.windowWillResize(browser.window!,to:proposed) == proposed && browser.actionLabels == .destructiveOnly && browser.window!.minSize.width == 880,
+                               "a resize to 880 is accepted, with the labels already collapsed (\(browser.actionLabels), min \(browser.window!.minSize))")
                     try expect(labels[HistoryBrowser.minimumSize.width] == .destructiveOnly, "at the 880 minimum only the three destructive ones carry labels (\(String(describing: labels[880])))")
                     try expect(labels[1000] == .all, "the default 1000 pt window labels every action (\(String(describing: labels[1000])))")
                     try expect(labels[1400] == .all, "a wide window labels every action (\(String(describing: labels[1400])))")
@@ -736,16 +761,16 @@ struct HistoryBrowserTests {
                     try expect(!browser.detailsPanel.isHidden && browser.visibleItems.count == 2,"Selection keeps working with the column visible")
                 }
             }),
-            ("A snap's size reads in whole pixels with separators; a stored fraction never shows (F-J3-006)", {
-                try expect(HistoryBrowser.sizeText(for:CGSize(width:1444.285714,height:1011)) == "1,444 × 1,011","Fractional width rounds: \(HistoryBrowser.sizeText(for:CGSize(width:1444.285714,height:1011)))")
-                try expect(HistoryBrowser.sizeText(for:CGSize(width:1516.5,height:1010.49)) == "1,517 × 1,010","Ties round up, below-half rounds down")
-                try expect(HistoryBrowser.sizeText(for:CGSize(width:2400,height:1600)) == "2,400 × 1,600","Whole sizes are unchanged")
+            ("A snap's size reads in whole pixels without separators; a stored fraction never shows (F-J3-006)", {
+                try expect(HistoryBrowser.sizeText(for:CGSize(width:1444.285714,height:1011)) == "1444 × 1011","Fractional width rounds: \(HistoryBrowser.sizeText(for:CGSize(width:1444.285714,height:1011)))")
+                try expect(HistoryBrowser.sizeText(for:CGSize(width:1516.5,height:1010.49)) == "1517 × 1010","Ties round up, below-half rounds down")
+                try expect(HistoryBrowser.sizeText(for:CGSize(width:2400,height:1600)) == "2400 × 1600","Whole sizes are unchanged")
                 try expect(HistoryBrowser.sizeText(for:CGSize(width:0.2,height:CGFloat.nan)) == "Unknown size" && HistoryBrowser.sizeText(for:CGSize(width:CGFloat.infinity,height:3)) == "Unknown size","A non-finite side is unknown")
                 try browser { browser,_ in
                     let fractional = HistoryBrowser.Item(id:UUID(),name:"Seeded",date:day(0),size:CGSize(width:1444.285714,height:1011),action:"Saved",text:"",destination:nil,link:nil,previewURL:nil,missing:false)
                     browser.update(items:[fractional]); browser.select(ids:[fractional.id]); laidOut(browser,width:1000,height:640)
                     let size = descendants(browser.window!.contentView!).compactMap { $0 as? NSTextField }.first { $0.accessibilityLabel() == "Size" }
-                    try expect(size?.stringValue == "1,444 × 1,011","The details Size field shows whole pixels: \(size?.stringValue ?? "none")")
+                    try expect(size?.stringValue == "1444 × 1011","The details Size field shows whole pixels: \(size?.stringValue ?? "none")")
                 }
             })
             ,
@@ -767,7 +792,7 @@ struct HistoryBrowserTests {
                     var plain = shared; plain.id = UUID(); plain.publishedSize = nil
                     browser.update(items:[plain]); browser.select(ids:[plain.id])
                     let again = descendants(browser.window!.contentView!).compactMap { $0 as? NSTextField }.first { $0.accessibilityLabel() == "Size" }
-                    try expect(again?.stringValue == "1,011 × 758","An entry that was never published reports its own size")
+                    try expect(again?.stringValue == "1011 × 758","An entry that was never published reports its own size")
                 }
             })
         ]

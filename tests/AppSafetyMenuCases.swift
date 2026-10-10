@@ -33,7 +33,7 @@ extension AppSafetyTests {
     }
 
     private static func toolboxMenu(_ app: AppDelegate) throws -> NSMenu {
-        try firstView(NSPopUpButton.self, label: "Toolbox menu", in: app.window.contentView).unwrap("Toolbox popup").menu.unwrap("Toolbox menu")
+        try firstView(NSPopUpButton.self, label: "Toolbox", in: app.window.contentView).unwrap("Toolbox popup").menu.unwrap("Toolbox")
     }
 
     private static func menuWording() throws {
@@ -102,7 +102,6 @@ extension AppSafetyTests {
     /// Rows that deliberately carry no symbol, each with the reason. A row appearing here that has a symbol (or no longer exists) fails the test.
     private static let symbolExemptions: [String: String] = [
         "showGuessPanel:": "system spelling row", "checkSpelling:": "system spelling row", "toggleContinuousSpellChecking:": "system spelling row",
-        "toggleBezelFill:": "checkmark row: a symbol would sit beside the check", "toggleBezelShadow:": "checkmark row",
         "changeSmoothing:": "radio row with a checkmark", "changeArrowHead:": "radio row with a checkmark",
     ]
 

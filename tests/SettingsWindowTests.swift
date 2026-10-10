@@ -523,6 +523,14 @@ private enum SettingsWindowTests {
             let tab = controller.tabItems[index].viewController.view
             let name = controller.tabItems[index].label
             let labels = descendants(tab).compactMap { $0 as? NSTextField }.filter { SettingsLayout.rowLabels.contains($0.stringValue) }
+            if index == SettingsWindowController.uploadTabIndex {
+                // R2-016: the list takes the whole width under a heading; there is no label column.
+                let heading = descendants(tab).compactMap { $0 as? NSTextField }.first { $0.stringValue == "Destinations" }
+                expect(heading?.font == DesignTokens.Typography.font(.bodyStrong) && heading?.alignment != .right && labels.isEmpty, "\(name): a 20 pt heading, not a right-aligned row label")
+                let list = controller.upload.listScroll.superview ?? tab
+                expect(controller.upload.labelWidth == 0 && UploadSettingsTab.listWidth == SettingsLayout.gridWidth, "\(name): the list is as wide as the content (\(UploadSettingsTab.listWidth))")
+                _ = list
+            } else {
             expect(!labels.isEmpty, "\(name) has row labels")
             for label in labels {
                 expect(label.alignment == .right, "\(name): '\(label.stringValue)' is right-aligned")
@@ -530,6 +538,7 @@ private enum SettingsWindowTests {
             }
             let edges = Set(labels.map { (frame(of: $0, in: tab).maxX * 2).rounded() })
             expect(edges.count == 1, "\(name): row labels share one right edge (VF-18); edges \(edges)")
+            }
             let controls = descendants(tab).compactMap { $0 as? NSControl }.filter { !($0 is NSTextField) }
             for control in controls {
                 if let font = control.font { expect(font.pointSize >= 20, "\(name): \(control.className) is \(font.pointSize) pt") }
@@ -540,7 +549,7 @@ private enum SettingsWindowTests {
             // Every control starts at the control column, not the label column: one left edge for the whole tab.
             let grid = controller.tabItems[index].viewController
             let gridBox = frame(of: grid.grid, in: tab)
-            let controlColumn = gridBox.minX + grid.labelWidth + SettingsLayout.columnSpacing
+            let controlColumn = gridBox.minX + (grid.labelWidth == 0 ? 0 : grid.labelWidth + SettingsLayout.columnSpacing)   // the Upload tab has no label column
             // The form is centred across the window, with as much room on its left as on its right.
             expect(abs(gridBox.minX - (tab.bounds.maxX - gridBox.maxX)) < 1.5, "\(name): the form grid is centred (left \(gridBox.minX), right \(tab.bounds.maxX - gridBox.maxX))")
             expect(gridBox.width <= SettingsLayout.gridWidth + 0.5, "\(name): the form fits the content width (\(gridBox.width))")
@@ -735,6 +744,11 @@ private enum SettingsWindowTests {
         expect(tab.rows[1].pill != nil && tab.rows[0].pill == nil, "the default destination carries the Default pill")
         expect(tab.rows[0].transportField.stringValue == PublishingProtocol.webDAV.title && tab.rows[1].transportField.stringValue == PublishingProtocol.s3.title, "each row names its transport")
         expect(tab.emptyStateText == nil && tab.emptyAddButton.isHidden, "no empty state while destinations exist")
+        expect(tab.hintIsVisible, "R2-016: the line about switching destinations shows once there are destinations")
+        if let pill = tab.rows.compactMap(\.pill).first {
+            pill.layoutSubtreeIfNeeded(); pill.updateLayer()
+            expect(pill.layer?.backgroundColor == NSColor.clear.cgColor, "R2-016: the Default pill is outlined, not filled with the selection colour")
+        }
         controller.window.contentView?.layoutSubtreeIfNeeded()
         for button in [tab.addButton!, tab.editButton!, tab.removeButton!, tab.defaultButton!] {
             let titleWidth = (button.title as NSString).size(withAttributes: [.font: DesignTokens.Typography.font(.body)]).width
@@ -784,6 +798,7 @@ private enum SettingsWindowTests {
         let empty = makeController()
         empty.0.select(3); _ = empty.0.upload.view; empty.0.upload.refresh()
         expect(empty.0.upload.listedNames.isEmpty && empty.0.upload.emptyStateText == "No destinations yet", "an empty list says so: \(String(describing: empty.0.upload.emptyStateText))")
+        expect(!empty.0.upload.hintIsVisible, "R2-016: with nothing to switch to, the line about right-clicking Upload is not shown")
         expect(!empty.0.upload.emptyAddButton.isHidden && empty.0.upload.emptyAddButton.title == "Add…" && empty.0.upload.emptyAddButton.isDescendant(of: empty.0.upload.listScroll),
                "the empty list carries its own Add… button inside the list")
         expect(empty.0.upload.view.subviews.isEmpty == false && empty.0.upload.addButton.isHiddenOrHasHiddenAncestor && empty.0.upload.removeButton.isHiddenOrHasHiddenAncestor, "the four-button row steps aside while the list is empty, so there is one Add…")
@@ -924,7 +939,18 @@ private enum SettingsWindowTests {
         try? manager.apply(custom)
         expect(backend.bindings[GlobalHotkeyAction.screen.carbonID] != nil && !manager.editing, "a saved shortcut is live while Settings is closed")
         controller.show(tab: SettingsWindowController.captureTabIndex)
-        expect(manager.editing && backend.bindings.isEmpty, "opening Settings on Capture pauses every shortcut")
+        controller.activityChanged(key: false, appActive: false)
+        expect(!manager.editing && backend.bindings[GlobalHotkeyAction.screen.carbonID] != nil, "Settings merely shown on Capture, behind another window or app, pauses nothing (R2-001)")
+        controller.activityChanged(key: true, appActive: true)
+        expect(manager.editing && backend.bindings.isEmpty, "Settings key and the app active on Capture pauses every shortcut")
+        controller.windowDidResignKey(Notification(name: NSWindow.didResignKeyNotification, object: controller.window))
+        expect(!manager.editing && backend.bindings[GlobalHotkeyAction.screen.carbonID] != nil, "another window becoming key puts them back")
+        controller.windowDidBecomeKey(Notification(name: NSWindow.didBecomeKeyNotification, object: controller.window))
+        controller.activityChanged(key: true, appActive: true)
+        expect(manager.editing, "key again pauses again")
+        controller.activityChanged(appActive: false)
+        expect(!manager.editing && backend.bindings[GlobalHotkeyAction.screen.carbonID] != nil, "the app resigning active puts them back")
+        controller.activityChanged(key: true, appActive: true)
         controller.select(0)
         expect(!manager.editing && backend.bindings[GlobalHotkeyAction.screen.carbonID] != nil, "switching to another tab lets them go live again")
         controller.select(SettingsWindowController.captureTabIndex)
