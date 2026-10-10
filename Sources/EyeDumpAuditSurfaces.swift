@@ -110,6 +110,20 @@ extension AuditRun {
         if !fired { gap(id, surface + " / " + state, "the modal call returned before any window could be captured (it did not block; the panel is out-of-process or was refused in this environment)") }
     }
 
+    /// Raises an app-owned alert (a sheet, so `trigger` returns at once), captures the window with the sheet on it, then answers Cancel.
+    func captureAlertSheet(_ id: String, _ slug: String, surface: String, state: String, refs: [String], trigger: () -> Void) {
+        trigger()
+        pump(0.9)
+        guard let alert = AppAlert.presentedAlerts.last else { gap(id, surface + " / " + state, "no app-owned alert was on screen after the trigger"); return }
+        var fonts: [String: Any] = ["title": fontInfo(alert.titleLabel.font) as Any, "message": fontInfo(alert.messageLabel.font) as Any,
+                                    "buttons": alert.buttonViews.map { fontInfo($0.font) as Any }]
+        if let field = alert.accessoryView as? NSTextField { fonts["field"] = fontInfo(field.font) as Any }
+        shoot(id, slug, surface: surface, state: state, windows: [window, alert.panel], refs: refs, settle: 0,
+              extra: ["alertTitle": alert.title, "alertButtons": alert.buttons.map(\.title), "fonts": fonts, "presentedAs": window.attachedSheet === alert.panel ? "sheet on the document window" : "separate panel"])
+        alert.cancel()
+        pump(0.3)
+    }
+
     /// Runs `trigger` (which blocks while a menu tracks), captures the app's windows including the menu, cancels tracking.
     func captureTrackedMenu(_ id: String, _ slug: String, surface: String, state: String, refs: [String],
                             delay: TimeInterval = 0.8, dismiss: @escaping () -> Void, trigger: () -> Void) {
@@ -1107,18 +1121,18 @@ extension AuditRun {
     }
 
     func s26() {
-        captureModal("S26", "rename", surface: "alerts / sheets", state: "Rename… alert with text field", refs: ["App.swift|@objc func renameDocument()", "App.swift|func prompt("]) { app.renameDocument() }
+        captureAlertSheet("S26", "rename", surface: "alerts / sheets", state: "Rename… sheet with text field", refs: ["App.swift|@objc func renameDocument()", "App.swift|func prompt(", "AppAlert.swift|final class AppAlert"]) { app.renameDocument() }
         app.dirty = true
-        captureModal("S26", "close-unsaved", surface: "alerts / sheets", state: "Save your drawing? (Save / Cancel / Discard)", refs: ["App.swift|func allowDiscard("]) { _ = app.allowDiscard() }
+        captureAlertSheet("S26", "close-unsaved", surface: "alerts / sheets", state: "Save your drawing? sheet (Save / Cancel / Don’t Save)", refs: ["App.swift|func confirmDiscard(", "AppAlert.swift|final class AppAlert"]) { app.confirmDiscard { _ in } }
         app.dirty = false
-        captureModal("S26", "error-generic", surface: "alerts / sheets", state: "generic NSAlert(error:) alert", refs: ["App.swift|func error(_ error: Error)"]) {
+        captureAlertSheet("S26", "error-generic", surface: "alerts / sheets", state: "generic error sheet", refs: ["App.swift|func error(_ error: Error)", "AppAlert.swift|convenience init(error: Error)"]) {
             app.error(NSError(domain: "OpenSnap", code: 5, userInfo: [NSLocalizedDescriptionKey: "This capture is too large or cannot be decoded safely."]))
         }
         if let store = try? app.archiveStore() {
             if store.entries.isEmpty, let snapshot = try? app.historySnapshot() { _ = try? store.archive(snapshot, name: "Alert demo", action: .archived) }
             if let id = store.entries.first?.id {
-                captureModal("S26", "history-hide", surface: "alerts / sheets", state: "Hide drawings from History?", refs: ["App.swift|func removeHistory("]) { app.removeHistory([id], deleteFiles: false) }
-                captureModal("S26", "history-trash", surface: "alerts / sheets", state: "Move archived drawings to Trash?", refs: ["App.swift|func removeHistory("]) { app.removeHistory([id], deleteFiles: true) }
+                captureAlertSheet("S26", "history-hide", surface: "alerts / sheets", state: "Hide drawings from History? sheet", refs: ["App.swift|func removeHistory("]) { app.removeHistory([id], deleteFiles: false) }
+                captureAlertSheet("S26", "history-trash", surface: "alerts / sheets", state: "Move archived drawings to Trash? sheet", refs: ["App.swift|func removeHistory("]) { app.removeHistory([id], deleteFiles: true) }
             }
         }
         syntheticDestinations()

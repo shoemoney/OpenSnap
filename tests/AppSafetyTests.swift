@@ -153,7 +153,7 @@ final class AppSafetyFilePanel {
         let response: NSApplication.ModalResponse
         var url: URL? = nil
     }
-    static var answers: [Answer] = []
+    nonisolated(unsafe) static var answers: [Answer] = []
     var title = ""
     var nameFieldLabel = ""
     var prompt = ""
@@ -191,32 +191,44 @@ final class AppSafetyPageLayout {
     }
 }
 
-final class AppSafetyAlert: NSAlert {
-    convenience init(error: Error) {
-        self.init()
-        messageText = error.localizedDescription
-    }
+/// Stands in for the sheet AppAlert would show: answers from `answers` in order, records what was asked and of which window.
+/// Answers arrive at once, as a click on the sheet would; `holdAnswers` keeps them pending so a test can quit while an alert is open.
+enum AppSafetyAlert {
     struct Answer {
         let title: String
         let response: NSApplication.ModalResponse
         var text: String? = nil
     }
+    struct Pending {
+        let alert: AppAlert
+        let host: NSWindow?
+        let reply: @MainActor (NSApplication.ModalResponse) -> Void
+    }
     static var answers: [Answer] = []
-    static var seen: [String] = []
-    static var unexpected: [String] = []
-    static var beforeReply: (() -> Void)?
-    @discardableResult
-    override func runModal() -> NSApplication.ModalResponse {
-        Self.seen.append(messageText)
-        guard !Self.answers.isEmpty else {
-            Self.unexpected.append(messageText)
-            return .alertSecondButtonReturn
+    nonisolated(unsafe) static var seen: [String] = []
+    nonisolated(unsafe) static var hosts: [NSWindow?] = []
+    nonisolated(unsafe) static var unexpected: [String] = []
+    nonisolated(unsafe) static var beforeReply: (() -> Void)?
+    nonisolated(unsafe) static var holdAnswers = false
+    nonisolated(unsafe) static var pending: [Pending] = []
+    @MainActor static func install() {
+        AppAlert.presenter = { alert, host, reply in
+            seen.append(alert.title); hosts.append(host)
+            if holdAnswers { pending.append(Pending(alert: alert, host: host, reply: reply)); return }
+            guard !answers.isEmpty else {
+                unexpected.append(alert.title)
+                reply(.alertSecondButtonReturn)
+                return
+            }
+            let answer = answers.removeFirst()
+            beforeReply?()
+            if answer.title != alert.title { unexpected.append(alert.title) }
+            if let text = answer.text, let field = alert.accessoryView as? NSTextField { field.stringValue = text }
+            reply(answer.response)
         }
-        let answer = Self.answers.removeFirst()
-        Self.beforeReply?()
-        if answer.title != messageText { Self.unexpected.append(messageText) }
-        if let text = answer.text, let field = accessoryView as? NSTextField { field.stringValue = text }
-        return answer.response
+    }
+    static func reset() {
+        answers = []; seen = []; hosts = []; unexpected = []; beforeReply = nil; holdAnswers = false; pending = []
     }
 }
 
@@ -709,7 +721,8 @@ enum AppSafetyTests {
         }
         app.frameSnap(); app.newFile()
         try expect(app.window.hasShadow && app.window.level == .floating && app.window.alphaValue == 0.9, "newFile must restore the pre-Frame window values")
-        // Alerts open at modal level, so the Frame level must not be in force while one is showing.
+        // OSN-043: the Discard prompt is a sheet on the Frame window, so it is a child of that window and needs no level juggling
+        // (only the open and save panels, which open at modal level, still run with the pre-Frame values).
         _ = try editor(app, text: "Dirty so the Discard prompt appears")
         app.frameSnap()
         var seenLevel: NSWindow.Level?, seenAlpha: CGFloat?, seenShadow: Bool?
@@ -717,8 +730,10 @@ enum AppSafetyTests {
         answer(.alertSecondButtonReturn)
         app.receiveFrameCapture(.success(try image()), keepingAnnotations: false)
         AppSafetyAlert.beforeReply = nil
-        try expect(AppSafetyAlert.seen.last == "Save your drawing?" && (seenLevel ?? level) <= .modalPanel && seenLevel == .floating && seenAlpha == 0.9 && seenShadow == true,
-                   "The Frame-completion Discard prompt must show with the pre-Frame level, alpha and shadow, not under the screen-saver window")
+        try expect(AppSafetyAlert.seen.last == "Save your drawing?" && AppSafetyAlert.hosts.last.flatMap { $0 } === app.window,
+                   "The Frame-completion Discard prompt must be a sheet on the Frame window")
+        try expect(seenLevel == level && seenAlpha == alpha && seenShadow == false,
+                   "The sheet hangs from the Frame window, which keeps its Frame level, alpha and shadow while the sheet is up")
         try expect(app.frameMode && !app.window.hasShadow && app.window.level == level && app.window.alphaValue == alpha,
                    "Cancel at the prompt leaves Frame active, so the Frame window values return after the modal")
         app.cancelFrame()
@@ -3791,11 +3806,10 @@ enum AppSafetyTests {
         ]
         // Development aid: APP_SAFETY_FILTER=<text> runs only the cases whose title contains it. Unset, every case runs.
         let filter = ProcessInfo.processInfo.environment["APP_SAFETY_FILTER"]
-        let tests = (sharedCases + Self.modernCases + Self.webpostCases + Self.retiredFormatCases + Self.menuCases).filter { filter.map($0.0.contains) ?? true }
+        let tests = (sharedCases + Self.modernCases + Self.webpostCases + Self.retiredFormatCases + Self.menuCases + Self.windowChromeCases).filter { filter.map($0.0.contains) ?? true }
         var results: [[String: Any]] = [], failures = 0
         for (name, test) in tests {
-            AppSafetyAlert.answers = []; AppSafetyAlert.seen = []; AppSafetyAlert.unexpected = []
-            AppSafetyAlert.beforeReply = nil; AppSafetyEvents.current = nil
+            AppSafetyAlert.reset(); AppSafetyAlert.install(); AppSafetyEvents.current = nil
             AppSafetyPresence.policies = []; AppSafetyPresence.installs = 0
             AppSafetyFilePanel.answers = []
             AppSafetyCaptureCoordinator.requests = []

@@ -1,5 +1,29 @@
 import AppKit
 
+/// The main window's size and memory. The numbers are decisions, not measurements: see OSN-043 in docs/design/progress.md.
+enum MainWindowFrame {
+    /// AppKit stores a window's frame under "NSWindow Frame <autosave name>" in the app's defaults.
+    static let autosaveName = "OpenSnap.Main"
+    static func defaultsKey(_ name: String) -> String { "NSWindow Frame " + name }
+    static func hasSavedFrame(named name: String, in defaults: UserDefaults) -> Bool {
+        defaults.string(forKey: defaultsKey(name))?.isEmpty == false
+    }
+
+    static let untitled = "Untitled"
+    /// A fresh window's content size.
+    static let defaultContentSize = NSSize(width: 1120, height: 780)
+    /// Window height, title bar included: content 608 plus the 32 pt title bar. Every 980 x 640 fit and capture is measured here,
+    /// so the 680 pt of the T8 draft is not adopted.
+    static let minimumHeight: CGFloat = 640
+    /// What Frame says when it is refused in full screen.
+    static let exitFullScreenForFrame = "Exit full screen to use Frame"
+
+    /// The default size, brought down to a small screen: never taller or wider than the visible area leaves room for.
+    static func defaultContentSize(fittingScreen visible: NSSize) -> NSSize {
+        NSSize(width: min(defaultContentSize.width, visible.width), height: min(defaultContentSize.height, visible.height - 32))
+    }
+}
+
 extension AppDelegate {
     /// Frame mode already shows and hides Cancel in AppDelegate; the chrome mirrors it into the glass layer.
     func setModernFrameMode(_ on: Bool) {
@@ -9,10 +33,27 @@ extension AppDelegate {
         if !on { AppToolTip.setText(nil, for: status); status.spokenValue = nil; status.setAccessibilityHelp(nil) }
     }
 
-    /// Modern has no name field: the window title is the document name.
+    /// Modern has no name field: the window title is the document name ("Untitled" for a new one), not the app's name.
     func showDocumentName(_ name: String) {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        window.title = trimmed.isEmpty ? DesignTokens.Brand.name : trimmed
+        window.title = trimmed.isEmpty ? MainWindowFrame.untitled : trimmed
+    }
+
+    /// The title bar reads as part of the chrome: no separator line, the same surface colour as the window below it.
+    /// The title and subtitle text themselves are drawn by the system, at the system's size.
+    func configureWindowChrome() {
+        window.titlebarSeparatorStyle = .none
+        window.backgroundColor = DesignTokens.Palette.Surface.window
+        window.collectionBehavior.insert(.fullScreenPrimary)
+        window.representedURL = currentURL
+    }
+
+    /// Shows the window where it was left. With no saved frame it opens centred at the default size.
+    func restoreWindowFrame() {
+        guard let name = frameAutosaveName else { window.center(); return }
+        let saved = MainWindowFrame.hasSavedFrame(named: name, in: frameDefaults)
+        window.setFrameAutosaveName(name)
+        if !saved { window.center() }
     }
 
     /// What this process's window is built from, so tools/test-native-startup.py can tell the glass chrome really built.
@@ -34,7 +75,6 @@ extension AppDelegate {
     /// The chrome sizes the shared controls and owns the canvas border.
     func buildModernWindowContent() {
         FontAwesomeFont.registerBundledFonts()
-        window.minSize.width = max(window.minSize.width, ModernEditorChrome.minimumWindowWidth)
         let content = FrameChromeView(frame: window.contentView?.bounds ?? .zero)
         window.contentView = content
         let toolbox = bezelToolbox()
@@ -99,6 +139,7 @@ extension AppDelegate {
         ])
         content.canvasScrollView = chrome.scrollView
         modernChrome = chrome
+        window.minSize = NSSize(width: chrome.requiredWindowWidth(), height: MainWindowFrame.minimumHeight)
         nameField.onChange = { [weak self] name in self?.showDocumentName(name) }
         showDocumentName(nameField.stringValue)
         configureWebpostButton(chrome.shareButton)
