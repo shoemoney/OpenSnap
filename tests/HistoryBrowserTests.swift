@@ -188,7 +188,8 @@ struct HistoryBrowserTests {
                     let callback: ([UUID]) -> Void = { calls.append($0) }
                     browser.onOpen = callback; browser.onCopy = callback; browser.onCopyLink = callback; browser.onOpenLink = callback
                     browser.onRemove = callback; browser.onDeleteFiles = callback; browser.onDeleteRemote = callback
-                    for action in HistoryBrowser.Action.allCases { try expect(browser.canPerform(action),"Action not enabled \(action)"); browser.perform(action) }
+                    // Delete from Web removes one post at a time: off for two entries (its tooltip says why), yet an attempt still reaches the app, which explains in a sheet.
+                    for action in HistoryBrowser.Action.allCases { try expect(browser.canPerform(action) != (action == .deleteRemote),"Action not enabled \(action)"); browser.perform(action) }
                     try expect(calls.count == 7 && calls.allSatisfy { $0 == [b.id,a.id] },"Callbacks must use UUIDs in supplied visual order, not file locations")
                     browser.select(ids:[]); browser.perform(.remove); try expect(calls.count == 7,"Empty selection callback")
                 }
