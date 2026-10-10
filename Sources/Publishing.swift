@@ -180,7 +180,7 @@ struct PublishingPlan {
               parts.port == nil || (1...65535).contains(parts.port!),
               let decodedPath = parts.percentEncodedPath.removingPercentEncoding,
               !hasControls(decodedPath), !decodedPath.contains("\\") else {
-            throw PublishingFailure("Enter a complete endpoint URL with the matching scheme and host, without embedded credentials, query, or fragment.")
+            throw PublishingFailure("Enter a complete URL that starts with \(schemeList(schemes)) and names a host, without embedded credentials, query, or fragment.")
         }
         // Decode once, reject hidden separators/traversal, then canonicalize each component.
         guard !parts.percentEncodedPath.lowercased().contains("%2f") else {
@@ -192,6 +192,11 @@ struct PublishingPlan {
         parts.percentEncodedPath = path.isEmpty ? "" : "/" + path.map(escapePathComponent).joined(separator: "/")
         guard let url = parts.url else { throw PublishingFailure("The destination URL is invalid.") }
         return url
+    }
+
+    /// "ftp:// or ftps://", the schemes a destination accepts in the order a person would say them.
+    static func schemeList(_ schemes: Set<String>) -> String {
+        schemes.sorted().map { $0 + "://" }.joined(separator: " or ")
     }
 
     static func escapePathComponent(_ value: String) -> String {
@@ -330,7 +335,7 @@ struct PublishingSFTPPlan {
             target = alias
         } else {
             guard let endpoint, let host = URLComponents(url: endpoint, resolvingAgainstBaseURL: false)?.host else {
-                throw PublishingFailure("Enter an SSH host alias or a complete sftp:// endpoint.")
+                throw PublishingFailure("Enter the SSH host: an alias from ~/.ssh/config, or a host name.")
             }
             guard host.range(of: #"^[A-Za-z0-9.\[\]:_-]+$"#, options: .regularExpression) != nil,
                   !host.hasPrefix("-") else { throw PublishingFailure("The SFTP hostname is invalid.") }
@@ -380,6 +385,14 @@ struct PublishingSFTPPlan {
             throw PublishingFailure("SFTP paths cannot contain quotes, backslashes, control characters, or wildcard characters.")
         }
         return "\"" + path + "\""
+    }
+
+    /// The remote folder uploads go to: the file's location without the file name.
+    var folderPath: String { (remotePath as NSString).deletingLastPathComponent }
+
+    /// The Test batch: list the folder and leave. Nothing is created, changed or removed.
+    func listBatch() throws -> Data {
+        Data(("@ls " + (try Self.batchQuote(folderPath)) + "\n@bye\n").utf8)
     }
 
     func batch(upload: URL, verification: URL, publicURL: URL? = nil) throws -> Data {
@@ -785,6 +798,111 @@ enum PublishingTransfer {
     }
 }
 
+/// The Test button for the transports that are not S3 (WebDAV, FTP, FTPS, SFTP): connect, log in and look at the upload folder.
+/// It asks questions only. WebDAV sends OPTIONS, FTP and FTPS list the folder, SFTP lists it over SSH; no file, folder, header body
+/// or property is ever written, and the same system tools and sanitising as an upload do the work.
+enum PublishingConnectionTest {
+    typealias Outcome = PublishingS3Plan.CheckResult
+
+    /// Runs one system tool. The coordinator uses `PublishingProcess.run`; a test replaces it with a stub, so no test touches a network.
+    static var processRunner: (_ executable: String, _ arguments: [String], _ input: Data, _ allowSSHAgent: Bool,
+                               _ cancellation: PublishingCancellation) throws -> PublishingProcess.Output = { executable, arguments, input, agent, cancellation in
+        try PublishingProcess.run(executable: executable, arguments: arguments, input: input, timeout: 35, allowSSHAgent: agent, cancellation: cancellation)
+    }
+
+    /// The folder uploads go to, with a trailing slash so FTP lists it rather than asks for a file.
+    static func folderURL(of plan: PublishingPlan) throws -> URL {
+        guard var parts = URLComponents(url: plan.remoteURL, resolvingAgainstBaseURL: false) else {
+            throw PublishingFailure("The destination URL is invalid.")
+        }
+        let path = parts.percentEncodedPath
+        if let slash = path.lastIndex(of: "/") { parts.percentEncodedPath = String(path[...slash]) }
+        guard let url = parts.url else { throw PublishingFailure("The destination URL is invalid.") }
+        return url
+    }
+
+    static func curlConfig(plan: PublishingPlan, username: String, password: String) throws -> Data {
+        guard plan.transport != .sftp, plan.transport != .s3 else { throw PublishingFailure("This transport has its own connection test.") }
+        try PublishingPlan.validateUsername(username)
+        guard !username.isEmpty || password.isEmpty else { throw PublishingFailure("A password requires a username.") }
+        let folder = try folderURL(of: plan)
+        var lines = ["silent", "show-error", "globoff", "path-as-is", "connect-timeout = 15", "max-time = 30", "retry = 0",
+                     "output = \"/dev/null\"",
+                     "proto = " + (try PublishingPlan.configQuote("=" + folder.scheme!)),
+                     "url = " + (try PublishingPlan.configQuote(folder.absoluteString)),
+                     "write-out = \"%{response_code}\\n\""]
+        if !username.isEmpty { lines.append("user = " + (try PublishingPlan.configQuote(username + ":" + password))) }
+        switch plan.transport {
+        case .webDAV: lines.append("request = \"OPTIONS\"")
+        case .ftp: lines += ["list-only", "ftp-skip-pasv-ip"]
+        case .ftps: lines += ["list-only", "ftp-skip-pasv-ip", "ssl-reqd"]
+        case .sftp, .s3: break
+        }
+        return Data((lines.joined(separator: "\n") + "\n").utf8)
+    }
+
+    /// What a failed curl run means for a person: the cause first, then curl's own words with every secret removed.
+    static func failure(exitCode: Int32, stderr: String, username: String, password: String) -> Outcome {
+        let cause: String
+        switch exitCode {
+        case 6: cause = "The host name could not be found"
+        case 7: cause = "Could not connect to the server"
+        case 9: cause = "The folder does not exist or cannot be read"
+        case 28: cause = "The connection timed out"
+        case 35, 51, 53, 54, 58, 59, 60, 64, 66, 77, 80, 83, 90, 91: cause = "The secure connection could not be set up"
+        case 67: cause = "The server rejected the user name or password"
+        default: cause = "The connection check failed"
+        }
+        let detail = PublishingPlan.sanitized(stderr, username: username, password: password)
+        return Outcome(ok: false, message: "\(cause) (curl \(exitCode))." + (detail.isEmpty ? "" : "\n" + detail))
+    }
+
+    /// Reads the answer to the WebDAV OPTIONS. Any answer proves the server is there; 401 and 403 are about the login and the folder.
+    static func webDAVOutcome(stdout: String, exitCode: Int32, stderr: String, username: String, password: String) -> Outcome {
+        guard exitCode == 0 else { return failure(exitCode: exitCode, stderr: stderr, username: username, password: password) }
+        guard let code = Int(stdout.trimmingCharacters(in: .whitespacesAndNewlines)), (100...599).contains(code) else {
+            return Outcome(ok: false, message: "The server did not answer with an HTTP status, so the connection could not be checked.")
+        }
+        switch code {
+        case 401: return Outcome(ok: false, message: "The server rejected the user name or password (HTTP 401).")
+        case 403: return Outcome(ok: false, message: "The server refused access to this folder (HTTP 403).")
+        case 404, 410: return Outcome(ok: false, message: "The server answered, but the folder was not found (HTTP \(code)). Create it first.")
+        // 405 and 501 come from a plain PUT-only endpoint that does not know OPTIONS: it is there and did not refuse the login.
+        case 200..<400, 405, 501: return Outcome(ok: true, message: "Reached the server (HTTP \(code)) and the folder was not refused. Nothing was uploaded.")
+        default: return Outcome(ok: false, message: "The server answered with HTTP \(code).")
+        }
+    }
+
+    static func ftpOutcome(exitCode: Int32, stderr: String, username: String, password: String) -> Outcome {
+        guard exitCode == 0 else { return failure(exitCode: exitCode, stderr: stderr, username: username, password: password) }
+        return Outcome(ok: true, message: "Logged in and listed the folder. Nothing was uploaded.")
+    }
+
+    static func sftpOutcome(exitCode: Int32, stderr: String, username: String) -> Outcome {
+        guard exitCode == 0 else {
+            let detail = PublishingPlan.sanitized(stderr, username: username, password: "")
+            return Outcome(ok: false, message: "SFTP could not connect or list the folder (\(exitCode))." + (detail.isEmpty ? "" : "\n" + detail))
+        }
+        return Outcome(ok: true, message: "Connected over SSH and listed the folder. Nothing was uploaded.")
+    }
+
+    /// Runs the check for a plan built from the destination. Off the main thread.
+    static func run(plan: PublishingPlan, username: String, password: String, cancellation: PublishingCancellation) throws -> Outcome {
+        if plan.transport == .sftp {
+            guard PublishingSFTP.available, let sftp = plan.keyedSFTP else { throw PublishingFailure("The keyed SFTP backend is unavailable.") }
+            let output = try processRunner("/usr/bin/sftp", sftp.arguments, try sftp.listBatch(), true, cancellation)
+            return sftpOutcome(exitCode: output.code, stderr: output.stderr, username: sftp.username)
+        }
+        let config = try curlConfig(plan: plan, username: username, password: password)
+        // --disable MUST come first: no ~/.curlrc, .netrc, redirects or verbose tracing.
+        let output = try processRunner("/usr/bin/curl", ["--disable", "--config", "-"], config, false, cancellation)
+        if plan.transport == .webDAV {
+            return webDAVOutcome(stdout: output.stdout, exitCode: output.code, stderr: output.stderr, username: username, password: password)
+        }
+        return ftpOutcome(exitCode: output.code, stderr: output.stderr, username: username, password: password)
+    }
+}
+
 public final class PublishingCoordinator: NSObject {
     private let workController: PublishingWorkController
     var clipboardWriter: (URL) -> Void
@@ -904,7 +1022,7 @@ public final class PublishingCoordinator: NSObject {
         if let panel = settingsPanel { panel.makeKeyAndOrderFront(nil); return }
         guard window.attachedSheet == nil else { return }
         do {
-            let (panel, view) = try buildSettings(visibleFrame: (window.screen ?? NSScreen.main)?.visibleFrame)
+            let (panel, view) = try buildSettings(visibleFrame: (window.screen ?? NSScreen.main)?.visibleFrame, hostWidth: window.frame.width)
             beginSheet(panel, relativeTo: window)
             workController.start(work: { try PublishingCurl.capabilities(cancellation: $0) }) { result in
                 guard self.settingsPanel === panel else { return }
@@ -922,9 +1040,11 @@ public final class PublishingCoordinator: NSObject {
 
     /// Creates the settings panel and wires every list action to storage. Tests drive the returned view directly.
     /// `visibleFrame` is the screen the sheet will appear on; the sheet is 720 wide and shrinks to fit a short screen, scrolling its form.
-    func buildSettings(visibleFrame: NSRect? = nil) throws -> (NSPanel, PublishingDestinationsView) {
-        let size = PublishingDestinationsView.sheetSize(visibleFrame: visibleFrame ?? NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1280, height: 800))
-        let view = PublishingDestinationsView(list: try store.load())
+    func buildSettings(visibleFrame: NSRect? = nil, hostWidth: CGFloat? = nil) throws -> (NSPanel, PublishingDestinationsView) {
+        var size = PublishingDestinationsView.sheetSize(visibleFrame: visibleFrame ?? NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1280, height: 800))
+        // A sheet never overhangs the window it hangs from: under the 640 pt Settings window it is that wide.
+        if let hostWidth { size.width = PublishingDestinationsView.sheetWidth(forHostWidth: hostWidth) }
+        let view = PublishingDestinationsView(list: try store.load(), width: size.width)
         view.maxSheetHeight = size.height
         let panel = makePanel(title: "Upload Destinations", width: size.width, height: view.preferredHeight)
         // The list page hugs its content and the form page fills the sheet, so the panel follows the page (top edge fixed).
@@ -1065,14 +1185,21 @@ public final class PublishingCoordinator: NSObject {
         }
     }
 
-    /// The S3 Test button: a signed bucket listing under the key prefix. It never uploads.
+    /// The Test button. S3 sends a signed bucket listing; WebDAV, FTP, FTPS and SFTP ask the server about the upload folder
+    /// (`PublishingConnectionTest`). None of them uploads anything.
     func testDestination(_ destination: PublishingDestination, password: String, panel: NSPanel?) {
         guard !isShuttingDown, !isCancellationPending else { return }
         let tested = destination.settings, file = awsCredentialsFile()
         workController.start(work: { context -> PublishingS3Plan.CheckResult in
+            if tested.transport == .sftp {
+                let plan = try PublishingPlan(settings: tested, fileName: "check.png", capabilities: nil, sftpAvailable: PublishingSFTP.available)
+                return try PublishingConnectionTest.run(plan: plan, username: tested.username, password: "", cancellation: context)
+            }
             let capabilities = try PublishingCurl.capabilities(cancellation: context)
             let plan = try PublishingPlan(settings: tested, fileName: "check.png", capabilities: capabilities)
-            guard let s3 = plan.s3 else { throw PublishingFailure("Test is available for S3 destinations only.") }
+            guard let s3 = plan.s3 else {
+                return try PublishingConnectionTest.run(plan: plan, username: tested.username, password: password, cancellation: context)
+            }
             let profile = (tested.s3?.credentialsProfile ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             let credentials = profile.isEmpty
                 ? S3Credentials(accessKeyID: tested.username, secretAccessKey: password, sessionToken: "")
