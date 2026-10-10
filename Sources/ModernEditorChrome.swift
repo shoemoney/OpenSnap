@@ -365,6 +365,8 @@ final class ModernEditorChrome: NSView {
         // The PNG | JPG control sits on the footer plate itself: no plate or cell of its own behind it.
         let formatControl = controls.dragFormatControl
         (formatControl as? NSPopUpButton)?.isBordered = false
+        // Only Snap is saturated at rest: the selected segment takes the selected-fill rule (accent at 0.20) instead of the system's full accent.
+        (formatControl as? NSSegmentedControl)?.selectedSegmentBezelColor = DesignTokens.Palette.State.selectedFill
         let formatWidth: CGFloat
         if let popup = formatControl as? NSPopUpButton {
             // A popup sizes to its selected title, so measure every title and size it once for the widest: it hugs the content and never jumps.
