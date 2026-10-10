@@ -261,6 +261,21 @@ struct PublishingPlan {
         return Data((lines.joined(separator: "\n") + "\n").utf8)
     }
 
+    /// The message for a transfer curl refused. An HTTP error (curl 22, from `fail`) leads with the status the server sent, so the footer reads
+    /// "Upload failed · HTTP 403" like every other protocol; any other exit keeps curl's code. `detail` is curl's own words, already redacted.
+    static func transferFailure(exitCode: Int32, stdout: String, stderr: String, detail: String) -> String {
+        let head = httpStatus(exitCode: exitCode, stdout: stdout, stderr: stderr).map { "Upload failed · HTTP \($0)" } ?? "Upload failed (curl \(exitCode))."
+        return head + (detail.isEmpty ? "" : "\n" + detail)
+    }
+
+    /// The HTTP error status behind a curl 22: the write-out line when curl printed one, else the number in "The requested URL returned error: 403".
+    static func httpStatus(exitCode: Int32, stdout: String, stderr: String) -> Int? {
+        guard exitCode == 22 else { return nil }
+        if let first = stdout.components(separatedBy: "\n").first, first.count == 3, let code = Int(first), (400...599).contains(code) { return code }
+        guard let match = stderr.range(of: #"returned error:? ([45]\d\d)(?!\d)"#, options: .regularExpression) else { return nil }
+        return Int(stderr[match].suffix(3))
+    }
+
     static func sanitized(_ stderr: String, username: String, password: String, sessionToken: String = "") -> String {
         // Redact URL userinfo and query/fragment tokens even if returned by a server.
         var text = stderr
@@ -291,7 +306,7 @@ struct PublishingPlan {
                         username: String, password: String) throws -> URL {
         guard exitCode == 0 else {
             let detail = Self.sanitized(stderr, username: username, password: password)
-            throw PublishingFailure("Upload failed (curl \(exitCode))." + (detail.isEmpty ? "" : "\n" + detail))
+            throw PublishingFailure(Self.transferFailure(exitCode: exitCode, stdout: stdout, stderr: stderr, detail: detail))
         }
         let lines = stdout.components(separatedBy: "\n")
         guard lines.count == 4, lines.last == "", lines[0].count == 3,

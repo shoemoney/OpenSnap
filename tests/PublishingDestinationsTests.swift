@@ -687,6 +687,31 @@ enum PublishingDestinationsTests {
         let asked = server.requests
         try expect(asked.count == 4 && asked.allSatisfy { $0.line.hasPrefix("PROPFIND /dav/") && $0.length == 0 }, "the stub saw four PROPFIND and no body, and no OPTIONS: \(asked.map(\.line))")
         try expect(asked.allSatisfy { !$0.line.hasPrefix("PUT ") && !$0.line.hasPrefix("POST ") && !$0.line.hasPrefix("DELETE ") && !$0.line.hasPrefix("MKCOL ") }, "no request wrote anything")
+
+        // F-J7-002: the real upload against a stub that refuses every PUT. The error leads with the status the server sent, not curl's exit
+        // code 22, so the footer can read "Upload failed · HTTP 403"; the password never appears.
+        func refusedUpload(_ status: Int) throws -> String {
+            let refusing = try LoopbackHTTP { line, _ in line.hasPrefix("PUT ") ? status : 400 }
+            defer { refusing.stop() }
+            let upload = try plan(settings(.webDAV, endpoint: "http://127.0.0.1:\(refusing.port)/dav"))
+            nonisolated(unsafe) var outcome: Result<URL, Error>?
+            let done = DispatchSemaphore(value: 0)
+            DispatchQueue.global().async {
+                outcome = Result { try PublishingTransfer.upload(data: Data("synthetic image bytes".utf8), plan: upload, username: "me", password: "hunter2-pw") }
+                done.signal()
+            }
+            guard done.wait(timeout: .now() + 40) == .success else { throw PublishingFailure("SELF-CHECK FAILED: the loopback upload hung") }
+            do { _ = try outcome!.get() } catch { return (error as? PublishingFailure)?.message ?? "\(error)" }
+            throw PublishingFailure("SELF-CHECK FAILED: a refused PUT counted as an upload")
+        }
+        for status in [403, 507] {
+            let message = try refusedUpload(status)
+            try expect(message.components(separatedBy: "\n")[0] == "Upload failed · HTTP \(status)" && !message.contains("hunter2") && !message.hasPrefix("Upload failed (curl"),
+                       "a \(status) from a WebDAV PUT leads with the status, not curl 22: \(message)")
+        }
+        try expect(PublishingPlan.transferFailure(exitCode: 22, stdout: "", stderr: "curl: (22) The requested URL returned error: 404", detail: "x").hasPrefix("Upload failed · HTTP 404\n"), "the status is also read from curl's own words")
+        try expect(PublishingPlan.transferFailure(exitCode: 6, stdout: "403\n", stderr: "curl: (6) Could not resolve host", detail: "").hasPrefix("Upload failed (curl 6)."), "an exit that is not an HTTP error keeps curl's code")
+        try expect(PublishingPlan.transferFailure(exitCode: 22, stdout: "", stderr: "curl: (22) something else", detail: "").hasPrefix("Upload failed (curl 22)."), "a 22 with no status anywhere keeps curl's code")
     }
 
     /// --live-s3 "<destination name>": upload a tiny PNG, verify its public URL, print it, then DELETE the object.

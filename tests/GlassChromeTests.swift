@@ -1504,6 +1504,8 @@ private enum GlassChromeTests {
             ("The server returned HTTP 403 for this request and refused it.", "HTTP 403"),
             ("Upload to the bucket failed: 403 Forbidden", "HTTP 403"),
             ("http/1.1 503 Service Unavailable while sending the file to the destination", "HTTP 503"),
+            ("HTTP PUT returned status 403; a completed upload was not confirmed.", "HTTP 403"),
+            ("S3 returned status 507; the upload was not confirmed.", "HTTP 507"),
             ("curl: (6) Could not resolve host: uploads.example.com and no fallback was set", "curl 6"),
             ("curl exited with status 28 after waiting for the destination to answer", "curl 28"),
             ("The publishing password could not be read from macOS Keychain (-25300).", "-25300"),
@@ -1518,6 +1520,7 @@ private enum GlassChromeTests {
             expect(steps == [message] + (code.map { ["Upload failed · " + $0] } ?? []) + ["Upload failed"] && steps.allSatisfy { !$0.contains("…") }, "\"\(message)\" has the sentence, its code if any, then Upload failed; never an ellipsis (\(steps))")
         }
         expect(UploadState.failure(message: "HTTP 403 Forbidden for the upload").statusVariants == ["HTTP 403 Forbidden for the upload", "Upload failed · HTTP 403", "Upload failed"], "A code already in the sentence is still offered when the sentence no longer fits")
+        expect(UploadState.failure(message: "Upload failed · HTTP 403\ncurl: (22) The requested URL returned error: 403").statusVariants == ["Upload failed · HTTP 403", "Upload failed"], "A transfer refused with an HTTP status reads Upload failed · HTTP 403 in the footer (F-J7-002)")
         expect(UploadState.failure(message: "HTTP 403").statusVariants == ["HTTP 403"] && UploadState.failure(message: "Upload failed").statusVariants == ["Upload failed"], "A line no longer than its fallback is shown alone")
         expect(UploadState.failure(message: "No.").statusVariants == ["No."] && UploadState.failure(message: "Error: Prefixed.\nMore").statusVariants == ["Prefixed."], "A short error is one sentence, and a message that carries Error: loses it from the footer")
         let field = StatusTextField(labelWithString: "")

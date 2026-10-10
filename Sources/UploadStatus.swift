@@ -50,12 +50,13 @@ enum UploadState: Equatable {
         return variants
     }
 
-    /// A short code a person can search for, taken only from a form that cannot be anything else: an HTTP status ("HTTP 403", "403 Forbidden"),
+    /// A short code a person can search for, taken only from a form that cannot be anything else: an HTTP status ("HTTP 403", "403 Forbidden", "returned status 403"),
     /// a curl exit code ("curl: (6)", "curl exit code 6"), or an OSStatus ("(-25300)", "OSStatus -25300"). Nil when the message has none.
     static func errorCode(in line: String) -> String? {
         let patterns: [(String, String)] = [
             (#"\bHTTP[ /]?(?:\d(?:\.\d)? )?([1-5]\d\d)(?!\d)"#, "HTTP "),
             (#"(?<![\d.])([45]\d\d) [A-Z][a-z]+"#, "HTTP "),
+            (#"\bstatus (?:code )?([45]\d\d)(?!\d)"#, "HTTP "),
             (#"\bcurl\b(?::| error| exit(?:ed)?(?: with)?(?: status)?(?: code)?| failed with(?: exit)?(?: code)?)? ?\(?(\d{1,3})(?![\d.])"#, "curl "),
             (#"(?:\(|\bOSStatus:? ?\(?)(-\d{2,6})\)?"#, ""),
         ]
