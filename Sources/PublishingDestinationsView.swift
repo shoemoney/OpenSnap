@@ -13,8 +13,11 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
     var onTest: ((PublishingDestination, String) -> Void)?
     var onDone: (() -> Void)?
     var passwordFor: (PublishingDestination) -> String = { _ in "" }
-    /// Asks before a destination is removed. Tests replace it; the default is a modal alert.
-    var confirmRemoval: (_ title: String, _ detail: String) -> Bool = PublishingDestinationsView.askToRemove
+    /// Asks before a destination is removed and reports the answer once (true: remove). Tests replace it; the default is an app-owned
+    /// alert (`AppAlert`) as a sheet on this sheet, so its text is the app's size and the question never blocks the run loop.
+    var confirmRemoval: ((_ title: String, _ detail: String, _ answer: @escaping (Bool) -> Void) -> Void)?
+    /// The removal question that is on screen now, so closing the destinations sheet can answer it first.
+    private(set) var pendingRemoval: AppAlert?
 
     /// The sheet is 720 wide and at most 720 tall; on a short screen it shrinks and the form scrolls instead of clipping.
     static let sheetWidth: CGFloat = 720, sheetMaxHeight: CGFloat = 720, sheetScreenMargin: CGFloat = 120, sheetMinHeight: CGFloat = 360
@@ -245,9 +248,18 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
     @objc func removeTapped() {
         guard let selected = selectedDestination else { return }
         let prompt = Self.removalPrompt(for: selected, in: list, legacyCredentialID: legacyCredentialID)
-        guard confirmRemoval(prompt.title, prompt.detail) else { return }
-        onRemove?(selected.id)
+        let id = selected.id
+        let removeIfConfirmed: (Bool) -> Void = { [weak self] confirmed in
+            guard confirmed, let self, self.list.destinations.contains(where: { $0.id == id }) else { return }
+            self.onRemove?(id)
+        }
+        if let confirmRemoval { confirmRemoval(prompt.title, prompt.detail, removeIfConfirmed) }
+        else { askToRemove(prompt.title, prompt.detail, removeIfConfirmed) }
     }
+
+    /// Answers a removal question that is still open as Cancel. The coordinator calls it before it ends this sheet (Done, or a shutdown),
+    /// because a sheet cannot be dismissed from under a sheet of its own.
+    func dismissRemovalQuestion() { pendingRemoval?.cancel() }
 
     /// Names the destination, says its saved secret goes with it, and says who becomes the default.
     static func removalPrompt(for destination: PublishingDestination, in list: PublishingDestinationList,
@@ -267,15 +279,15 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         return ("Remove “\(destination.name)”?", detail)
     }
 
-    private static func askToRemove(_ title: String, _ detail: String) -> Bool {
-        let alert = NSAlert()
-        alert.messageText = title; alert.informativeText = detail; alert.alertStyle = .warning
-        let remove = alert.addButton(withTitle: "Remove"), cancel = alert.addButton(withTitle: "Cancel")
-        Typography.apply(.body, to: remove); Typography.apply(.body, to: cancel)
-        for case let field as NSTextField in alert.window.contentView?.subviews ?? [] {
-            field.font = Typography.floored(field.font)
+    /// "Remove “name”?" with the destructive Remove (Return) and Cancel (Escape), as a sheet on the destinations sheet.
+    private func askToRemove(_ title: String, _ detail: String, _ answer: @escaping (Bool) -> Void) {
+        guard pendingRemoval == nil else { return }
+        let alert = AppAlert(title: title, message: detail, buttons: [.init(title: "Remove", role: .destructive), .init(title: "Cancel", role: .cancel)])
+        pendingRemoval = alert
+        alert.present(on: window) { [weak self] response in
+            self?.pendingRemoval = nil
+            answer(response == .alertFirstButtonReturn)
         }
-        return alert.runModal() == .alertFirstButtonReturn
     }
     @objc func makeDefaultTapped() { if let selected = selectedDestination { onMakeDefault?(selected.id) } }
     @objc func doneTapped() { onDone?() }

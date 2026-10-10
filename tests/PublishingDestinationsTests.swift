@@ -33,6 +33,7 @@ enum PublishingDestinationsTests {
         try migration()
         try storeOperations()
         try MainActor.assumeIsolated { try destinationsSheet() }
+        try MainActor.assumeIsolated { try removalSheet() }
         print("Destination and S3 self-checks passed: \(checks). No uploads were executed.")
     }
 
@@ -374,6 +375,58 @@ enum PublishingDestinationsTests {
         var s3 = awsCDN(); s3.s3?.credentialsProfile = "default"
         var dav = PublishingSettings(); dav.endpoint = "https://dav.example.com/files"; dav.publicBaseURL = "https://dav.example.com/files"
         return [PublishingDestination(name: "Example S3", settings: s3), PublishingDestination(name: "Example WebDAV", settings: dav)]
+    }
+
+    /// Audit fix 1 (item 5): removing a destination asks through an app-owned `AppAlert` (a sheet, text at the app's size), not a system
+    /// NSAlert. Title names the destination, Remove is destructive and the default, Cancel answers Escape, nothing is removed until the
+    /// answer, and closing the destinations sheet answers an open question as Cancel first (the shutdown barrier).
+    @MainActor static func removalSheet() throws {
+        _ = NSApplication.shared
+        NSApp.setActivationPolicy(.prohibited)
+        let destinations = fixtureDestinations()
+        let publisher = try coordinator(destinations: destinations)
+        let (panel, view) = try publisher.buildSettings(visibleFrame: NSRect(x: 0, y: 0, width: 1280, height: 800))
+        defer { panel.orderOut(nil) }
+        var shown: [(alert: AppAlert, host: NSWindow?)] = []
+        AppAlert.presenter = { alert, host, completion in
+            shown.append((alert, host))
+            // The presenter owns the answer; the test gives it by pressing a button, as the sheet would.
+            _ = completion
+        }
+        defer { AppAlert.presenter = nil }
+        let target = destinations[0]
+        try expect(view.confirmRemoval == nil, "the view asks through its own AppAlert unless a test replaces the seam")
+        view.select(id: target.id); view.removeTapped()
+        try expect(shown.count == 1 && view.pendingRemoval === shown[0].alert, "Remove opens exactly one app-owned alert")
+        let alert = shown[0].alert
+        try expect(alert.title == "Remove “\(target.name)”?" && alert.message == PublishingDestinationsView.removalPrompt(for: target, in: view.list).detail,
+                   "the title names the destination and the message is the removal prompt (\(alert.title))")
+        try expect(alert.buttons == [.init(title: "Remove", role: .destructive), .init(title: "Cancel", role: .cancel)], "buttons are a destructive Remove and a Cancel")
+        try expect(alert.buttonViews[0].keyEquivalent == "\r" && alert.buttonViews[0].hasDestructiveAction && alert.buttonViews[1].keyEquivalent == "\u{1b}", "Return removes, it is marked destructive, and Escape cancels")
+        try expect((alert.titleLabel.font?.pointSize ?? 0) >= 18 && (alert.messageLabel.font?.pointSize ?? 0) >= 18 && alert.buttonViews.allSatisfy { ($0.font?.pointSize ?? 0) >= 18 },
+                   "the text is the app's size, not the system alert's")
+        try expect(shown[0].host === panel, "the question hangs from the destinations sheet")
+        try expect(view.list.destinations.count == 2 && (try publisher.store.load().destinations.count) == 2, "nothing is removed before the answer")
+        view.removeTapped()
+        try expect(shown.count == 1, "a second Remove while the question is open does not stack another")
+        alert.dismiss(withButton: 1)
+        try expect(view.pendingRemoval == nil && view.list.destinations.count == 2 && (try publisher.store.load().destinations.count) == 2, "Cancel removes nothing and frees the view")
+        // Escape is Cancel.
+        view.removeTapped(); shown.last?.alert.cancel()
+        try expect(shown.count == 2 && view.list.destinations.count == 2, "Escape answers Cancel")
+        // Closing the destinations sheet answers an open question as Cancel before the sheet goes.
+        view.removeTapped()
+        try expect(shown.count == 3 && view.pendingRemoval === shown[2].alert, "the question is open again")
+        publisher.cancelSettings()
+        try expect(view.pendingRemoval == nil && shown[2].alert.response == .alertSecondButtonReturn && (try publisher.store.load().destinations.count) == 2,
+                   "closing the sheet answers the open question as Cancel and removes nothing")
+        // Remove removes.
+        let (panel2, view2) = try publisher.buildSettings(visibleFrame: NSRect(x: 0, y: 0, width: 1280, height: 800))
+        defer { panel2.orderOut(nil) }
+        view2.select(id: target.id); view2.removeTapped()
+        try expect(shown.count == 4, "a fresh sheet asks again")
+        shown[3].alert.dismiss(withButton: 0)
+        try expect(view2.list.destinations.map(\.id) == [destinations[1].id] && (try publisher.store.load().destinations.map(\.id)) == [destinations[1].id], "Remove removes the destination from the sheet and from storage")
     }
 
     @MainActor static func destinationsSheet() throws {
