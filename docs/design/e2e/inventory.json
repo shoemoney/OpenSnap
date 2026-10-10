@@ -11020,7 +11020,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "case .check; Free codepoint 0xF00C; SF fallback checkmark; used in BezelDrawingControls.swift, PublishingDestinationsView.swift, SettingsWindow.swift",
+   "note": "case .check; Free codepoint 0xF00C; SF fallback checkmark; used in BezelDrawingControls.swift, PublishingDestinationsView.swift",
    "shortcut": null,
    "proof": [],
    "rendered": [
