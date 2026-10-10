@@ -26,6 +26,8 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         var missing: Bool
         /// False when the entry has a link but no recorded publication destination, so the app cannot take it down; the icon then says why.
         var canDeleteFromWeb = true
+        /// The size of the image that went to the web; Details reports it for a shared entry, whose editable copy may have been resized since.
+        var publishedSize: CGSize?
     }
     /// The tab names are the tile labels (`HistoryStore.Action.title`): one vocabulary, so a tab holds exactly the tiles it names.
     enum Category: Int, CaseIterable {
@@ -451,6 +453,8 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
             let isLink = name == "Destination"
             value.maximumNumberOfLines = isLink ? 1 : 2; value.lineBreakMode = isLink ? .byTruncatingMiddle : .byTruncatingTail
             value.setContentCompressionResistancePriority(.defaultLow,for:.horizontal)
+            // Beside the grid the column is 248 wide: a value wraps onto its second line there instead of losing its tail.
+            if !isLink { value.preferredMaxLayoutWidth = Self.detailsWidth }
             value.setAccessibilityLabel(name); detailValues[name] = value
             let pair = NSStackView(views:[label,value]); pair.orientation = .vertical; pair.alignment = .leading; pair.spacing = 0
             detailPairs.append(pair); fields.addArrangedSubview(pair)
@@ -494,6 +498,7 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         detailsPanel.alignment = placement == .below ? .top : .leading
         for pair in detailPairs { pair.orientation = placement == .below ? .horizontal : .vertical; pair.spacing = placement == .below ? Space.s2 : 0 }
         for width in detailLabelWidths { width.isActive = placement == .below }
+        for (name,value) in detailValues where name != "Destination" { value.preferredMaxLayoutWidth = placement == .below ? 0 : Self.detailsWidth }
         applyDetailsConstraints()
     }
     /// Exactly one of the beside, below or full-width sets is active; the hidden panel keeps its own constraints out of the way.
@@ -586,9 +591,9 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
             detailValues["Action"]?.stringValue = Set(selected.map(\.action)).sorted().joined(separator:", ")
             detailValues["Destination"]?.stringValue = "Multiple destinations"
         } else {
-            let formatter = DateFormatter(); formatter.calendar = calendar; formatter.timeZone = calendar.timeZone; formatter.dateStyle = .long; formatter.timeStyle = .short
+            let formatter = DateFormatter(); formatter.calendar = calendar; formatter.timeZone = calendar.timeZone; formatter.dateStyle = .medium; formatter.timeStyle = .short
             detailValues["Name"]?.stringValue = value.name; detailValues["Date"]?.stringValue = formatter.string(from:value.date)
-            detailValues["Size"]?.stringValue = Self.sizeText(for: value.size)
+            detailValues["Size"]?.stringValue = Self.sizeText(for: value.publishedSize ?? value.size)
             detailValues["Action"]?.stringValue = value.action
             detailValues["Destination"]?.stringValue = value.destination ?? value.link?.absoluteString ?? "—"
         }
@@ -621,10 +626,10 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
     static let confirmationDuration: TimeInterval = 5
     private var transientStatus: String?
     private var confirmationTimer: Timer?
-    func confirm(_ message: String) {
+    func confirm(_ message: String,duration: TimeInterval? = nil) {
         transientStatus = message
         confirmationTimer?.invalidate()
-        let timer = Timer(timeInterval:Self.confirmationDuration,repeats:false) { [weak self] _ in
+        let timer = Timer(timeInterval:duration ?? Self.confirmationDuration,repeats:false) { [weak self] _ in
             MainActor.assumeIsolated { self?.clearConfirmation() }
         }
         confirmationTimer = timer; RunLoop.main.add(timer,forMode:.common)

@@ -370,10 +370,6 @@ private enum AccessibilityAuditTests {
         expect(accessoryViews.compactMap { $0 as? NSPopUpButton }.first?.itemTitles == ["PNG", "JPG", "PDF", "TIFF", "SVG"], "Export accessory: the format popup lists PNG, JPG, PDF, TIFF, SVG")
         expect(accessoryViews.compactMap { $0 as? NSSlider }.isEmpty, "Export accessory: there is no quality slider")
         expect(accessoryViews.compactMap { $0 as? NSTextField }.contains { $0.stringValue == "JPG quality 75 %" }, "Export accessory: the quality row reads JPG quality 75 %")
-        let hotkeys = GlobalHotkeyManager(defaults: settingsDefaults, backend: InertHotkeyBackend())
-        let hotkeyPanel = GlobalHotkeySettingsPanel(manager: hotkeys)
-        hotkeyPanel.window?.contentView?.layoutSubtreeIfNeeded()
-        record("Hotkeys sheet", Audit.audit(hotkeyPanel.window!, surface: "Hotkeys sheet"))
         let field = NSTextField(string: "6"); field.frame = NSRect(x: 0, y: 0, width: 400, height: 40); field.setAccessibilityLabel("Number of copies")
         let alerts: [(String, AppAlert)] = [
             ("one button", AppAlert(title: "Saved", message: "The drawing was saved.")),
@@ -526,39 +522,6 @@ private enum AccessibilityAuditTests {
             photos.shutdown()
         }
 
-        // Shortcuts sheet: Return is Save (applies the draft), Escape is Cancel (discards it). The panel is built but not attached, so
-        // both are real key events; a second pass proves Escape on the attached sheet too.
-        for (name, code, saves) in [("Return", Key.returnKey, true), ("Escape", Key.escape, false)] {
-            let suite = "OpenSnapAccessibilityAudit.hotkeys." + UUID().uuidString
-            let defaults = TestDefaults(name: suite); defer { TestDefaults.dispose(defaults, name: suite) }
-            let manager = GlobalHotkeyManager(defaults: defaults, backend: InertHotkeyBackend())
-            let panel = GlobalHotkeySettingsPanel(manager: manager)
-            guard let window = panel.window, let sheetForm = Mirror(reflecting: panel).children.first(where: { $0.label == "form" })?.value as? GlobalHotkeyForm else {
-                expect(false, "Hotkeys panel and form exist"); continue
-            }
-            expect(sheetForm.saveButton?.keyEquivalent == "\r" && sheetForm.cancelButton?.keyEquivalent == "\u{1b}", "Hotkeys: Save is Return, Cancel is Escape")
-            var finished = 0
-            let finish = sheetForm.onFinish
-            sheetForm.onFinish = { finished += 1; finish?() }
-            let before = manager.settings
-            sheetForm.keyPopup(for: .screen).selectItem(at: 3)
-            _ = sheetForm.keyPopup(for: .screen).target?.perform(sheetForm.keyPopup(for: .screen).action, with: sheetForm.keyPopup(for: .screen))
-            for segment in [1, 2] { sheetForm.modifierControl(for: .screen).setSelected(true, forSegment: segment) }  // Option and Control
-            expect(window.performKeyEquivalent(with: key(code, in: window)), "Hotkeys: \(name) is handled")
-            expect(finished == 1, "Hotkeys: \(name) closes the sheet once")
-            expect((manager.settings != before) == saves, "Hotkeys: \(name) \(saves ? "saves the draft" : "discards the draft")")
-        }
-        do {
-            let suite = "OpenSnapAccessibilityAudit.hotkeys.attached." + UUID().uuidString
-            let defaults = TestDefaults(name: suite); defer { TestDefaults.dispose(defaults, name: suite) }
-            let panel = GlobalHotkeySettingsPanel(manager: GlobalHotkeyManager(defaults: defaults, backend: InertHotkeyBackend()))
-            let parent = parentWindow()
-            panel.present(attachedTo: parent)
-            guard let window = panel.window else { expect(false, "Hotkeys window exists"); return }
-            expect(window.sheetParent === parent, "Hotkeys: the panel attaches as a sheet")
-            expect(window.performKeyEquivalent(with: key(Key.escape, in: window)) && window.sheetParent == nil, "Hotkeys: Escape ends the attached sheet")
-        }
-
         // Destinations: Return is Done on the list and Save on the form; Escape is Done on the list and Cancel on the form.
         for page in ["list", "form"] {
             for (name, code) in [("Return", Key.returnKey), ("Escape", Key.escape)] {
@@ -689,7 +652,7 @@ private enum AccessibilityAuditTests {
         let hotkeySuite = "OpenSnapAccessibilityAudit.labels.hotkeys." + UUID().uuidString
         let hotkeyDefaults = TestDefaults(name: hotkeySuite); defer { TestDefaults.dispose(hotkeyDefaults, name: hotkeySuite) }
         let manager = GlobalHotkeyManager(defaults: hotkeyDefaults, backend: InertHotkeyBackend())
-        let form = GlobalHotkeyForm(manager: manager, mode: .live, labelWidth: 200, width: 700)
+        let form = GlobalHotkeyForm(manager: manager, labelWidth: 200, width: 700)
         expect(form.statusField.accessibilityRole() == .staticText, "Shortcuts: the status line is a static text")
         form.keyPopup(for: .screen).selectItem(at: 3)
         _ = form.keyPopup(for: .screen).target?.perform(form.keyPopup(for: .screen).action, with: form.keyPopup(for: .screen))

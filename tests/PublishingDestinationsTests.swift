@@ -30,6 +30,7 @@ enum PublishingDestinationsTests {
         try s3Plan()
         try s3Responses()
         try credentialsFile()
+        try memorySecretsMessage()
         try migration()
         try storeOperations()
         try MainActor.assumeIsolated { try destinationsSheet() }
@@ -221,6 +222,17 @@ enum PublishingDestinationsTests {
     }
 
     // MARK: Storage
+
+    /// F-J4 note 7: the in-memory store never touches the Keychain, so its failure must not claim it did.
+    static func memorySecretsMessage() throws {
+        let secrets = PublishingMemorySecrets()
+        do { _ = try secrets.read("missing", allowMissing: false); throw PublishingFailure("SELF-CHECK FAILED: a missing secret was returned") }
+        catch let failure as PublishingFailure {
+            try expect(failure.localizedDescription == "No password is stored for this destination in this session.", "The in-memory store says what is true: \(failure.localizedDescription)")
+            try expect(!failure.localizedDescription.contains("Keychain") && !failure.localizedDescription.contains("-25300"), "It does not blame the Keychain")
+        }
+        try expect(try secrets.read("missing", allowMissing: true) == "", "A missing secret that is allowed still reads empty")
+    }
 
     static func legacyJSON(_ settings: PublishingSettings) throws -> Data { try JSONEncoder().encode(settings) }
 
@@ -736,10 +748,45 @@ enum PublishingDestinationsTests {
         try expect((view.table.enclosingScrollView?.frame.height ?? 0) >= 4 * listRowHeight, "the table shows fewer than four rows")
         let listPanelWidth = panel.contentRect(forFrameRect: panel.frame).width
         try expect(listPanelWidth == 720 && panel.frame.height <= fake.height, "the sheet is 720 wide: \(listPanelWidth)")
-        // Paging to the form grows the sheet to the full height (top edge fixed); Cancel hugs the list again.
+        // Paging to the form sizes the sheet to that protocol's form (top edge fixed); Cancel hugs the list again (F-J3-003).
         let topEdge = panel.frame.maxY
         view.addTapped(); panel.contentView?.layoutSubtreeIfNeeded()
-        try expect(contentHeight(panel) == 680 && panel.frame.maxY == topEdge, "the form page is 720 wide by 680 with the top edge fixed: \(contentHeight(panel)), top \(panel.frame.maxY) vs \(topEdge)")
+        let webDAVHeight = contentHeight(panel)
+        try expect(webDAVHeight < 680 && abs(webDAVHeight - view.preferredHeight) <= 0.5 && panel.frame.maxY == topEdge,
+                   "the new-destination form hugs its rows instead of the 680 maximum: \(webDAVHeight), top \(panel.frame.maxY) vs \(topEdge)")
+        func blankBand(_ p: NSPanel, _ v: PublishingDestinationsView) throws -> CGFloat {
+            p.contentView?.layoutSubtreeIfNeeded()
+            let help = try unwrap(descendants(v).compactMap { $0 as? NSTextField }.first { !$0.isHiddenOrHasHiddenAncestor && $0.stringValue == PublishingDestinationsView.formCopy(for: v.selectedProtocol).help })
+            let helpBottom = help.convert(help.bounds, to: v).minY, footerTop = v.testButton.convert(v.testButton.bounds, to: v).maxY
+            return helpBottom - footerTop
+        }
+        let webDAVBand = try blankBand(panel, view)
+        try expect(webDAVBand < 120, "the WebDAV form leaves \(webDAVBand) pt of blank band above the buttons")
+        var heights: [PublishingProtocol: CGFloat] = [:]
+        for (index, transport) in PublishingProtocol.allCases.enumerated() {
+            view.protocolPopup.selectItem(at: index); view.formChanged(); panel.contentView?.layoutSubtreeIfNeeded()
+            heights[transport] = contentHeight(panel)
+            let help = try unwrap(descendants(view).compactMap { $0 as? NSTextField }.first { !$0.isHiddenOrHasHiddenAncestor && $0.stringValue == PublishingDestinationsView.formCopy(for: transport).help })
+            let needed = ceil(help.cell?.cellSize(forBounds: NSRect(x: 0, y: 0, width: help.frame.width, height: .greatestFiniteMagnitude)).height ?? 0)
+            try expect(help.frame.height + 0.5 >= needed, "\(transport) help is clipped: \(help.frame.height) of \(needed)")
+            try expect(abs(heights[transport]! - view.preferredHeight) <= 0.5 && panel.frame.maxY == topEdge && panel.frame.height <= fake.height, "\(transport) sheet \(heights[transport]!) follows its form")
+            let band = try blankBand(panel, view)
+            try expect(band < 120, "\(transport) leaves \(band) pt of blank band")
+        }
+        try expect(heights[.s3]! > heights[.webDAV]! && heights[.sftp]! != heights[.s3]!, "the sheet height follows the protocol: \(heights)")
+        view.protocolPopup.selectItem(at: 0); view.formChanged()
+        // A Test error grows the result band, the sheet follows it, and Cancel leaves no trace of it on the list.
+        let beforeError = contentHeight(panel)
+        view.showTestResult(ok: false, message: String(repeating: "The server answered with an error that needs a long explanation. ", count: 4))
+        panel.contentView?.layoutSubtreeIfNeeded()
+        try expect(contentHeight(panel) > beforeError && abs(contentHeight(panel) - view.preferredHeight) <= 0.5, "the sheet grows by the result band")
+        view.cancelFormTapped()
+        panel.contentView?.layoutSubtreeIfNeeded()
+        try expect(view.formResult.isHidden && !descendants(view).contains { ($0 as? NSTextField)?.stringValue.hasPrefix("Error:") == true && !$0.isHiddenOrHasHiddenAncestor },
+                   "Cancel clears the form's error: nothing on the list says Error (F-J4-001)")
+        view.addTapped(); view.showStatus("Enter the access key ID and secret"); view.cancelFormTapped(); panel.contentView?.layoutSubtreeIfNeeded()
+        try expect(!descendants(view).contains { ($0 as? NSTextField)?.stringValue.hasPrefix("Error:") == true && !$0.isHiddenOrHasHiddenAncestor },
+                   "a validation error raised on the form does not reappear on the list")
         view.cancelFormTapped()
         let back = try listSlack(panel, view)
         try expect(abs(back.height - hugged.height) <= 0.5 && panel.frame.maxY == topEdge, "Cancel did not return to the hugged list height: \(back.height) vs \(hugged.height)")

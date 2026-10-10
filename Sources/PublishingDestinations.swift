@@ -104,7 +104,7 @@ final class PublishingMemorySecrets: PublishingSecretStore {
         lock.lock(); defer { lock.unlock() }
         if let value = items[id] { return value }
         if allowMissing { return "" }
-        throw PublishingFailure("The publishing password could not be read from macOS Keychain (-25300).")
+        throw PublishingFailure("No password is stored for this destination in this session.")
     }
     func add(_ value: String, id: String) throws { lock.lock(); items[id] = value; lock.unlock() }
     func remove(_ id: String) { lock.lock(); items.removeValue(forKey: id); lock.unlock() }

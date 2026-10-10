@@ -710,6 +710,28 @@ struct HistoryBrowserTests {
                     try expect(size?.stringValue == "1,444 × 1,011","The details Size field shows whole pixels: \(size?.stringValue ?? "none")")
                 }
             })
+            ,
+            ("Details shows a two-digit-day date in full and a shared entry's published size, not the later resized one (F-J4-002, F-J4-004)", {
+                try browser { browser,_ in
+                    let late = calendar.date(from:DateComponents(year:2026,month:10,day:10,hour:18,minute:49))!
+                    var shared = HistoryBrowser.Item(id:UUID(),name:"Untitled",date:late,size:CGSize(width:1011,height:758),action:"Shared",text:"",destination:"https://cdn.example.invalid/a.png",
+                                                     link:URL(string:"https://cdn.example.invalid/a.png"),previewURL:nil,missing:false)
+                    shared.publishedSize = CGSize(width:800,height:600)
+                    browser.update(items:[shared]); browser.select(ids:[shared.id]); laidOut(browser,width:1000,height:640)
+                    let fields = descendants(browser.window!.contentView!).compactMap { $0 as? NSTextField }
+                    let size = fields.first { $0.accessibilityLabel() == "Size" }, date = fields.first { $0.accessibilityLabel() == "Date" }
+                    try expect(size?.stringValue == "800 × 600","A shared entry reports what was published: \(size?.stringValue ?? "none")")
+                    guard let date else { throw Failure("Missing Date field") }
+                    try expect(date.stringValue.hasSuffix("PM"),"The time of day with its AM/PM is in the text: \(date.stringValue)")
+                    date.superview?.layoutSubtreeIfNeeded()
+                    let needed = date.attributedStringValue.boundingRect(with:NSSize(width:10_000,height:100),options:[.usesLineFragmentOrigin]).width
+                    try expect(date.frame.width + 0.5 >= needed || date.frame.height > (date.font?.pointSize ?? 20) * 1.6,"The date fits its field or wraps onto a second line (\(date.frame.width) for \(needed))")
+                    var plain = shared; plain.id = UUID(); plain.publishedSize = nil
+                    browser.update(items:[plain]); browser.select(ids:[plain.id])
+                    let again = descendants(browser.window!.contentView!).compactMap { $0 as? NSTextField }.first { $0.accessibilityLabel() == "Size" }
+                    try expect(again?.stringValue == "1,011 × 758","An entry that was never published reports its own size")
+                }
+            })
         ]
         var failures = 0
         for (name,test) in tests {

@@ -53,7 +53,7 @@ extension AppSafetyTests {
         try expect(AppSafetyAlert.hosts.last.flatMap { $0 } === app.window, "With History off screen the question is on the editor")
         let history = try b3cShowHistory(app)
         AppSafetyAlert.answers = [.init(title: "Hide drawings from History?", response: .alertSecondButtonReturn),
-                                  .init(title: "Move archived drawings to Trash?", response: .alertSecondButtonReturn)]
+                                  .init(title: "Move archived drawings to Trash?", response: .alertFirstButtonReturn)]
         app.removeHistory([id], deleteFiles: false); app.removeHistory([id], deleteFiles: true)
         try expect(AppSafetyAlert.hosts.suffix(2).allSatisfy { $0 === history }, "Hide and Trash are sheets on the History window the click came from")
         try expect(store.entries.contains { $0.id == id }, "Cancel removes nothing")
@@ -63,8 +63,8 @@ extension AppSafetyTests {
         try expect(AppSafetyAlert.pending.count == 1, "A second Hide while its sheet is open raises no second sheet (\(AppSafetyAlert.pending.count))")
         app.removeHistory([id], deleteFiles: true)
         try expect(AppSafetyAlert.pending.count == 2, "A different question is its own sheet")
-        b3cAnswerNext(.alertSecondButtonReturn)
-        b3cAnswerNext(.alertSecondButtonReturn)
+        b3cAnswerNext(.alertSecondButtonReturn)   // Hide: Cancel is second
+        b3cAnswerNext(.alertFirstButtonReturn)    // Trash: Cancel is first
         app.removeHistory([id], deleteFiles: false)
         try expect(AppSafetyAlert.pending.count == 1, "After the answer the same question can be asked again")
         b3cAnswerNext(.alertFirstButtonReturn)
@@ -91,7 +91,7 @@ extension AppSafetyTests {
             b3cAnswerNext(.alertFirstButtonReturn)
         }
         AppSafetyAlert.holdAnswers = false
-        AppSafetyAlert.answers = [.init(title: "Delete this web post?", response: .alertSecondButtonReturn)]
+        AppSafetyAlert.answers = [.init(title: "Delete this web post?", response: .alertFirstButtonReturn)]
         app.deleteHistoryRemote([bound])
         try expect(AppSafetyAlert.hosts.allSatisfy { $0 === history }, "Every Delete from Web answer is on History, never a dead click")
         try expect(AppSafetyAlert.seen == [refusal, refusal, refusal, "Delete this web post?"], "Refused three times (never uploaded, unrecorded, several at once) with a reason, asked once with a binding: \(AppSafetyAlert.seen)")
@@ -202,8 +202,17 @@ extension AppSafetyTests {
         let toolbox = try b3cFind(NSPopUpButton.self, in: app.window.contentView) { $0.accessibilityLabel() == "Toolbox menu" }.b3cUnwrap("Toolbox")
         let rows = (toolbox.menu?.items ?? []).dropFirst().filter { !$0.isSeparatorItem }
         try expect(rows.count == 18 && rows.count < 33, "The Toolbox is \(rows.count) rows, not the old 33")
-        try expect(rows.allSatisfy { $0.image != nil || $0.action == #selector(AppDelegate.toggleBezelFill(_:)) || $0.action == #selector(AppDelegate.toggleBezelShadow(_:)) },
-                   "Every row carries its menu symbol (the two checkmark rows keep the check instead): \(rows.filter { $0.image == nil }.map(\.title))")
+        func hasInlineIcon(_ item: NSMenuItem) -> Bool {
+            var found = false
+            item.attributedTitle?.enumerateAttribute(.attachment, in: NSRange(location: 0, length: item.attributedTitle?.length ?? 0)) { value, _, _ in
+                if let attachment = value as? NSTextAttachment, attachment.image != nil { found = true }
+            }
+            return found
+        }
+        try expect(rows.allSatisfy { hasInlineIcon($0) || $0.action == #selector(AppDelegate.toggleBezelFill(_:)) || $0.action == #selector(AppDelegate.toggleBezelShadow(_:)) },
+                   "Every row draws its menu symbol in its title (a pull-down does not draw item images; the two checkmark rows keep the check instead): \(rows.filter { !hasInlineIcon($0) }.map(\.title))")
+        try expect(rows.filter { hasInlineIcon($0) }.allSatisfy { $0.image == nil && !$0.title.contains("\u{FFFC}") && $0.title == $0.attributedTitle?.string.replacingOccurrences(of: "\u{FFFC}  ", with: "") },
+                   "The icon lives in the attributed title only; the plain title stays the command's name for accessibility")
         let titles = rows.map(\.title)
         try expect(["About OpenSnap", "Settings…", "Quit OpenSnap", "New", "Open…", "Print…"].allSatisfy { !titles.contains($0) }, "No app or file plumbing in the Toolbox: \(titles)")
         let bar = try NSApp.mainMenu.b3cUnwrap("main").items.compactMap(\.submenu).flatMap(\.items)

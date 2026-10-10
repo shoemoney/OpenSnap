@@ -43,8 +43,13 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
     var maxSheetHeight: CGFloat = PublishingDestinationsView.sheetMaxHeight
     /// Called when the page the sheet should hug changes, so the coordinator can resize the panel.
     var onPreferredHeightChange: ((CGFloat) -> Void)?
-    /// The content height the visible page wants: the form page fills the sheet, the list page hugs table, buttons and footer.
-    var preferredHeight: CGFloat { listPage.isHidden ? maxSheetHeight : min(maxSheetHeight, listPageHeight) }
+    /// The content height the visible page wants: either page hugs its content (the form of the selected protocol, with the result band
+    /// it shows now, or the table, buttons and footer), never taller than the screen allows. A form that does not fit scrolls.
+    var preferredHeight: CGFloat { min(maxSheetHeight, listPage.isHidden ? formPageHeight : listPageHeight) }
+    /// The visible form's rows, the separator, the footer with its result band, and the margins around them.
+    var formPageHeight: CGFloat {
+        Space.s5 + formPage.fittingSize.height + Space.s5 + 1 + Space.s3 + formFooter.fittingSize.height + Space.s4
+    }
     /// Page content, the separator, the footer, and the margins around them.
     var listPageHeight: CGFloat {
         Space.s5 + listPage.fittingSize.height + Space.s5 + 1 + Space.s3 + listFooter.fittingSize.height + Space.s4
@@ -240,13 +245,14 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
     /// A failure from storage or a worker. The row says "Error:" and carries a glyph, so it never relies on colour.
     func showStatus(_ text: String) {
         let message = text.hasPrefix("Error:") ? text : "Error: " + text
-        listStatus.show(.failure, message); formResult.show(.failure, message)
+        // The message belongs to the page it was raised on, so a form error never survives Cancel onto the list.
+        if listPage.isHidden { showResult(.failure, message) } else { listStatus.show(.failure, message) }
         notifyPreferredHeight()
     }
     /// The S3 Test result: "Connected" with the server's detail, or "Error: <message>".
     func showTestResult(ok: Bool, message: String) {
-        if ok { formResult.show(.success, "Connected", detail: message) }
-        else { formResult.show(.failure, message.hasPrefix("Error:") ? message : "Error: " + message) }
+        if ok { showResult(.success, "Connected", detail: message) }
+        else { showResult(.failure, message.hasPrefix("Error:") ? message : "Error: " + message) }
     }
 
     /// Set by the coordinator: the credential an older build's destination.json still points at.
@@ -429,7 +435,7 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
     }
 
     private var keychainSource: Bool { sourcePopup.indexOfSelectedItem == 1 }
-    private var selectedProtocol: PublishingProtocol {
+    var selectedProtocol: PublishingProtocol {
         PublishingProtocol.allCases.indices.contains(protocolPopup.indexOfSelectedItem)
             ? PublishingProtocol.allCases[protocolPopup.indexOfSelectedItem] : .webDAV
     }
@@ -448,6 +454,12 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         usernameField.placeholderString = copy.usernamePlaceholder; passwordField.placeholderString = copy.passwordPlaceholder
         formHelp.stringValue = copy.help
         if formResult.kind == .idle || formResult.kind == .hint { formResult.show(.hint, copy.testNote) }
+        notifyPreferredHeight()
+    }
+    /// Shows the form's result band and lets the sheet follow its height.
+    private func showResult(_ kind: DestinationStatusRow.Kind, _ message: String, detail: String = "") {
+        formResult.show(kind, message, detail: detail)
+        notifyPreferredHeight()
     }
 
     /// Disables protocols the system tools cannot run.
@@ -471,7 +483,7 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         aclCheckbox.state = options.publicReadACL ? .on : .off
         passwordField.stringValue = destination.map { settings.storesSecretInKeychain ? passwordFor($0) : "" } ?? ""
         showsLegacySFTPEndpoint = settings.transport == .sftp && !settings.endpoint.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        formResult.show(.idle, "")
+        formResult.show(.idle, ""); listStatus.show(.idle, "")
         listPage.isHidden = true; formPage.isHidden = false
         listFooter.isHidden = true; formFooter.isHidden = false
         refreshForm(); updateDefaultButton(); scrollToTop(); notifyPreferredHeight()
@@ -517,14 +529,14 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
     }
 
     @objc func saveTapped() {
-        do { let draft = try makeDraft(); formResult.show(.working, "Saving…"); onSave?(draft.destination, draft.password) }
+        do { let draft = try makeDraft(); showResult(.working, "Saving…"); onSave?(draft.destination, draft.password) }
         catch { showStatus(error.localizedDescription) }
     }
     @objc func testTapped() {
-        do { let draft = try makeDraft(); formResult.show(.working, "Testing…"); onTest?(draft.destination, draft.password) }
+        do { let draft = try makeDraft(); showResult(.working, "Testing…"); onTest?(draft.destination, draft.password) }
         catch { showStatus(error.localizedDescription) }
     }
-    @objc func cancelFormTapped() { showList() }
+    @objc func cancelFormTapped() { formResult.show(.idle, ""); showList() }
 }
 
 extension PublishingProtocol {

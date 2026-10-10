@@ -806,6 +806,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         [#selector(rotateCW), #selector(flipH), #selector(trimSnap), #selector(wipeSnap)],
         [#selector(toggleBezelFill(_:)), #selector(toggleBezelShadow(_:)), #selector(chooseFont)]
     ]
+    /// A pull-down's rows are drawn without their `image` (the Toolbox showed no icons although every row carried one), so each row's
+    /// symbol is set into its title as a text attachment, in a fixed-width box so every title starts at the same x. The row keeps its
+    /// plain `title` for accessibility; the text colour is left to the menu, so the icon follows highlight and appearance.
+    static func drawIconsInline(in menu: NSMenu) {
+        let font = MenuTypography.font, side = font.pointSize, box = NSSize(width: side * 1.3, height: side)
+        for item in menu.items where !item.isSeparatorItem {
+            guard let symbol = item.image else { continue }
+            let canvas = NSImage(size: box, flipped: false) { rect in
+                let fit = min(rect.width / symbol.size.width, rect.height / symbol.size.height)
+                let size = NSSize(width: symbol.size.width * fit, height: symbol.size.height * fit)
+                symbol.draw(in: NSRect(x: (rect.width - size.width) / 2, y: (rect.height - size.height) / 2, width: size.width, height: size.height))
+                return true
+            }
+            canvas.isTemplate = true
+            let attachment = NSTextAttachment()
+            attachment.image = canvas
+            attachment.bounds = NSRect(x: 0, y: (font.capHeight - side) / 2, width: box.width, height: box.height)
+            let row = NSMutableAttributedString(attachment: attachment)
+            row.append(NSAttributedString(string: "  " + item.title))
+            row.addAttribute(.font, value: font, range: NSRange(location: 0, length: row.length))
+            let title = item.title
+            item.attributedTitle = row; item.title = title; item.image = nil
+        }
+    }
     func bezelToolbox() -> NSPopUpButton {
         let control = ToolboxPopUpButton(frame: .zero, pullsDown: true)
         control.font = DesignTokens.Typography.font(.body)
@@ -818,6 +842,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             }
         }
         MenuTypography.apply(to: choices)
+        Self.drawIconsInline(in: choices)
         control.menu = choices; control.setAccessibilityLabel("Toolbox menu")
         AppToolTip.setText("Drawing, edit and capture commands; everything else is in the menu bar", for: control)
         return control
@@ -1264,6 +1289,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     /// the tooltip and the spoken value always carry the full text. Frame mode keeps its own hint.
     func refreshStatusText() {
         guard !frameMode else { return }
+        syncDragSizeText()
         let variants: [String]
         if let notice = statusNotice { variants = [notice] }
         else if !uploadState.statusVariants.isEmpty { variants = uploadState.statusVariants }
@@ -1304,12 +1330,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         }
         dragPreviewTimer = timer; RunLoop.main.add(timer, forMode: .common)
     }
-    func updateDragPreview() {
-        dragPreviewTimer?.invalidate(); dragPreviewTimer = nil
+    /// "W × H · PNG": the size and format the next export of the live document has, in whole pixels. Bytes are measured later.
+    func dragSizeHead() -> String {
         let original = dragAtOriginalSize
         let size = SketchDocument.wholePixels(original && canvas.document.backgroundPNG != nil ? canvas.canvasSize : canvas.outputSize)
-        if let data = try? exportData(format: dragFormat, originalSize: original, jpegQuality: dragQuality) {
-            dragSizeLabel.stringValue = "\(Int(size.width)) × \(Int(size.height)) · " + (dragFormat == "jpeg" ? "JPG" : "PNG") + " · " + ByteCountFormatter.string(fromByteCount: Int64(data.count), countStyle: .file)
+        return "\(Int(size.width)) × \(Int(size.height)) · " + (dragFormat == "jpeg" ? "JPG" : "PNG")
+    }
+    /// A document that was just opened or resized must not wear the previous one's size while the bytes are measured: the text
+    /// is rewritten to the new dimensions at once (without bytes) and the timer adds them.
+    func syncDragSizeText() {
+        guard dragExportView != nil else { return }
+        let head = dragSizeHead(), current = dragSizeLabel.stringValue
+        guard current != head, !current.hasPrefix(head + " · "), current != "Preview unavailable" else { return }
+        dragSizeLabel.stringValue = head; window?.subtitle = head
+    }
+    func updateDragPreview() {
+        dragPreviewTimer?.invalidate(); dragPreviewTimer = nil
+        if let data = try? exportData(format: dragFormat, originalSize: dragAtOriginalSize, jpegQuality: dragQuality) {
+            dragSizeLabel.stringValue = dragSizeHead() + " · " + ByteCountFormatter.string(fromByteCount: Int64(data.count), countStyle: .file)
             window?.subtitle = dragSizeLabel.stringValue
         } else { dragSizeLabel.stringValue = "Preview unavailable"; window?.subtitle = "" }
         refreshStatusText()
@@ -1506,7 +1544,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             HistoryBrowser.Item(id: entry.id, name: entry.name, date: entry.date, size: entry.size,
                 action: entry.action.title, text: entry.text, destination: entry.destination,
                 link: entry.remoteURL, previewURL: store.previewURL(entry), missing: store.missing(entry.id),
-                canDeleteFromWeb: entry.remoteBinding != nil)
+                canDeleteFromWeb: entry.remoteBinding != nil, publishedSize: entry.publishedSize)
         })
     }
     @objc func showHistory() {
@@ -1621,11 +1659,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         guard openHistoryQuestions.insert(question).inserted else { return }
         let alert = AppAlert(title: deleteFiles ? "Move archived drawings to Trash?" : "Hide drawings from History?",
             message: deleteFiles ? "The selected History copies and previews will move to Trash. Exported originals and web posts are kept." : "The selected drawings will leave the History list. Their archive files and web posts are kept.",
-            buttons: [.init(title: deleteFiles ? "Move to Trash" : "Hide", role: deleteFiles ? .destructive : .normal), .init(title: "Cancel", role: .cancel)])
+            buttons: deleteFiles ? [.init(title: "Cancel", role: .cancel), .init(title: "Move to Trash", role: .destructive)]
+                                 : [.init(title: "Hide"), .init(title: "Cancel", role: .cancel)])
         presentFromHistory(alert) { [weak self] result in
             guard let self else { return }
             self.openHistoryQuestions.remove(question)
-            guard result == .alertFirstButtonReturn else { return }
+            // A destructive question puts Cancel first, so Return and the initial focus never destroy anything.
+            guard result == (deleteFiles ? .alertSecondButtonReturn : .alertFirstButtonReturn) else { return }
             do {
                 if deleteFiles { try self.archiveStore().trash(Set(ids)) } else { try self.archiveStore().remove(Set(ids), deleteFiles: false) }
                 if let id = self.currentArchiveID, ids.contains(id) { self.currentArchiveID = nil }
@@ -1648,24 +1688,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         guard openHistoryQuestions.insert("web").inserted else { return }
         let alert = AppAlert(title: "Delete this web post?",
             message: "This removes the published image at " + url.absoluteString + ". Its editable History copy will be kept.",
-            buttons: [.init(title: "Delete from Web", role: .destructive), .init(title: "Cancel", role: .cancel)])
+            buttons: [.init(title: "Cancel", role: .cancel), .init(title: "Delete from Web", role: .destructive)])
         presentFromHistory(alert) { [weak self] result in
             guard let self else { return }
             self.openHistoryQuestions.remove("web")
-            guard result == .alertFirstButtonReturn, !self.terminationStarted else { return }
+            guard result == .alertSecondButtonReturn, !self.terminationStarted else { return }
             self.postStatusNotice("Deleting web post…")
             self.historyRemoteDeletion.deleteRemote(url: url, binding: binding, presenting: self.historyHost) { [weak self] result in
                 Task { @MainActor in
                     guard let self else { return }
                     switch result {
                     case .success:
-                        do { try self.archiveStore().clearRemote(id); self.refreshHistory(); self.postStatusNotice("Web post deleted; History copy kept") }
+                        do { try self.archiveStore().clearRemote(id); self.refreshHistory(); self.historyBrowser?.confirm(Self.deletedFromWebNotice(host: url.host), duration: 12) }
                         catch { self.presentFromHistory(AppAlert(error: error)) }
                     case .failure(let error): if !self.terminationStarted { self.presentFromHistory(AppAlert(error: error)) }
                     }
                 }
             }
         }
+    }
+    /// The History footer line after a successful Delete from Web: the origin object is gone, but a cache in front of it may still answer.
+    static func deletedFromWebNotice(host: String?) -> String {
+        "Deleted from \(host ?? "the server"). Cached copies of the link can persist for a while."
     }
     /// Why an entry cannot be deleted from the web: it never went to one, or it went before the app recorded where.
     static func deleteFromWebRefusal(for entry: HistoryStore.Entry?) -> String {
@@ -1822,7 +1866,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         sharingSnapshots.removeValue(forKey: ObjectIdentifier(service)); pickerSnapshot = nil
         if !terminationStarted { self.error(error) }
     }
-    @objc func showPreferences() {
+    @objc func showPreferences() { openPreferences(tab: nil) }
+    func openPreferences(tab: Int?) {
         guard !terminationStarted, !frameCaptureInProgress, window?.attachedSheet == nil,
               preferencesWindow?.attachedSheet == nil, NSApp.modalWindow == nil else { return }
         if settingsController == nil {
@@ -1838,7 +1883,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             settings.onClose = { [weak self] in self?.closePreferences() }
             settingsController = settings
         }
-        settingsController?.show()
+        settingsController?.show(tab: tab)
     }
     func applyGeneralPreferences(_ state: GeneralPreferencesState) {
         guard !terminationStarted else { return }
@@ -1864,7 +1909,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         else if let keyWindow, keyWindow !== window { keyWindow.performClose(nil) }
         else { toggleVisible() }
     }
-    @objc func shortcutSettings() { hotkeys.showSettings(attachedTo: window) }
+    /// Capture shortcuts have one surface, Settings › Capture, which applies edits as they are made; this item opens it there.
+    @objc func shortcutSettings() { openPreferences(tab: SettingsWindowController.captureTabIndex) }
     @objc func sharingSettings() { publishing.showSettings(relativeTo: window) }
     /// Uploads use the footer toggle's format.
     var uploadEncoding: (format: String, quality: Double, fileExtension: String) {

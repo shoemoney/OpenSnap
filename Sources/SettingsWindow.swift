@@ -311,7 +311,7 @@ final class CaptureSettingsTab: SettingsTabViewController {
 
     override func makeRows() -> [[NSView]] {
         flashCheckbox = SettingsLayout.checkbox("Show capture flash", identifier: "showCaptureFlash", target: self, action: #selector(changeFlash(_:)))
-        hotkeyForm = GlobalHotkeyForm(manager: hotkeys, mode: .live, labelWidth: SettingsLayout.labelColumnWidth, width: SettingsLayout.gridWidth)
+        hotkeyForm = GlobalHotkeyForm(manager: hotkeys, labelWidth: SettingsLayout.labelColumnWidth, width: SettingsLayout.gridWidth)
         hotkeyForm.translatesAutoresizingMaskIntoConstraints = false
         hotkeyForm.onResize = { [weak self] in
             // The status line wraps to one line or more; the grid has not laid it out yet.
@@ -927,7 +927,11 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     /// The parent changed the stored preferences itself (a menu command), so the controls follow.
     func synchronize(_ state: GeneralPreferencesState) { model.synchronize(state) }
 
-    func show() {
+    /// The Capture tab: where the capture shortcuts are edited (the app menu's Capture Shortcuts… lands here).
+    static let captureTabIndex = 2
+
+    func show(tab: Int? = nil) {
+        if let tab { select(tab, animated: false) }
         refresh(); capture.reloadShortcuts()
         fit(animated: false)
         if !hasSavedFrame { window.center(); hasSavedFrame = true }

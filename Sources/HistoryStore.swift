@@ -34,6 +34,9 @@ final class HistoryStore {
         var destination: String?
         var remoteURL: URL?
         var remoteBinding: [String: String]?
+        /// The pixel size at the moment of an upload. The entry keeps following the editable drawing, so its own `size` moves on; the
+        /// published image does not.
+        var publishedSize: CGSize?
         var nativeFile: String
         var previewFile: String?
         var digest: String?
@@ -131,7 +134,7 @@ final class HistoryStore {
         let id = UUID()
         let entry = Entry(id: id, name: name, date: date, updated: date, size: snapshot.size, text: snapshot.text,
                           action: action, destination: destination, remoteURL: remoteURL, remoteBinding: remoteBinding,
-                          nativeFile: "", digest: Self.hash(snapshot.native))
+                          publishedSize: remoteURL == nil ? nil : snapshot.size, nativeFile: "", digest: Self.hash(snapshot.native))
         try writeRevision(snapshot, entry: entry, inserting: true)
         return id
     }
