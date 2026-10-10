@@ -188,6 +188,8 @@ suites = [
      "AccessibilityAuditTests.swift", "ACCESSIBILITY_AUDIT_TESTS", ()),
     # OSN-062: the VoiceOver announcement helper with an injected poster.
     ("announcer-tests", ["Announcer.swift"], "AnnouncerTests.swift", "ANNOUNCER_TESTS", ()),
+    # F-R-005: the screenshot harness's input fence counts real events per kind; only typing and button presses flag a run.
+    ("eye-dump-input-guard-tests", ["EyeDumpAuditInputGuard.swift"], "EyeDumpInputGuardTests.swift", "EYE_DUMP_INPUT_GUARD_TESTS", ()),
 ]
 # These need the Modern chrome sources; a missing file fails the suite. Only the Font Awesome glyph branch inside them
 # is licence-gated, and it prints "SKIPPED (FA not bundled)" when the Pro subsets are absent.

@@ -245,12 +245,34 @@ done
 
 python3 -I "$ROOT/tools/eye-dump-audit-manifest.py" "$OUT" --sha "$SOURCE_SHA" --bundle-id "$THROWAWAY_ID" >/dev/null || echo "manifest could not be written" >&2
 
-# The input fence's own count: real keyboard or mouse events that arrived during the run and were swallowed (0 for an untouched machine).
+# The input fence's own count, by kind: real events that arrived during the run and were swallowed. Keyboard and button events (and scrolling or
+# gestures) mean somebody used the machine and flag the run; pointer motion (moves, enter and exit, cursor updates) is what a cursor parked on
+# the desktop sends while a menu tracks or the Save panel is up, so it is counted and shown but never flags. A record with no per-kind counts
+# (an older run) is unclassified, and unclassified events flag.
 python3 -I - "$OUT" <<'PY' | tee -a "$OUT/safety.txt"
 import json, pathlib, sys
 files = sorted(pathlib.Path(sys.argv[1]).glob("raw-*/safety/input-fence-*.json"))
-counts = [json.loads(f.read_text()).get("swallowedEvents", 0) for f in files]
-print(f"input fence      swallowed {sum(counts)} real input events across {len(files)} runs" + ("" if sum(counts) == 0 else " (somebody used the machine during the run; check the captures)"))
+total = {"keyboard": 0, "buttons": 0, "pointer": 0, "scrollAndGestures": 0, "unclassified": 0}
+for f in files:
+    record = json.loads(f.read_text())
+    kinds = record.get("byKind")
+    if kinds is None:
+        total["unclassified"] += record.get("swallowedEvents", 0)
+    else:
+        for name in ("keyboard", "buttons", "pointer", "scrollAndGestures"):
+            total[name] += kinds.get(name, 0)
+flagged = total["keyboard"] + total["buttons"] + total["scrollAndGestures"] + total["unclassified"]
+line = f"input fence      keyboard {total['keyboard']}, buttons {total['buttons']}, pointer {total['pointer']}"
+for extra in ("scrollAndGestures", "unclassified"):
+    if total[extra]: line += f", {extra} {total[extra]}"
+line += f" real input events swallowed across {len(files)} runs; "
+if flagged:
+    line += "FLAGGED: keyboard, button or scroll events arrived, so somebody used the machine during the run; check the captures"
+elif total["pointer"]:
+    line += "clean: pointer events only (a parked cursor during menu tracking or the Save panel)"
+else:
+    line += "clean: no real input"
+print(line)
 PY
 
 # All defaults cleanup is finished here, before the compare, so the compare observes whatever cleanup did.

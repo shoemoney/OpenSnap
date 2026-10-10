@@ -14,6 +14,7 @@
 Run: python3 -I tools/test-eye-dump-audit-guard.py
 """
 from pathlib import Path
+import json
 import os
 import re
 import shutil
@@ -130,6 +131,8 @@ BUNDLE=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$(dirname "$0")
 } > "$RAW/launch-$$.txt"
 TAMPER="$(dirname "$0")/../Resources/tamper.txt"
 if [ -f "$TAMPER" ]; then while IFS= read -r target; do printf 'tampered' >> "$target" 2>>"$RAW/tamper-errors-$$.txt" || true; done < "$TAMPER"; fi
+FENCE="$(dirname "$0")/../Resources/fence.json"
+if [ -f "$FENCE" ]; then mkdir -p "$RAW/safety"; cp "$FENCE" "$RAW/safety/input-fence-$$.json"; fi
 """)
     exe.chmod(exe.stat().st_mode | stat.S_IXUSR)
     return app
@@ -171,12 +174,15 @@ def run_harness(script, out, args, extra_env=None):
     return result
 
 
-def run_script(out, app, home, extra_env=None, tamper=None):
+def run_script(out, app, home, extra_env=None, tamper=None, fence=None, script=None):
     (app / "Contents/Resources/tamper.txt").unlink(missing_ok=True)
+    (app / "Contents/Resources/fence.json").unlink(missing_ok=True)
+    if fence is not None:
+        (app / "Contents/Resources/fence.json").write_text(json.dumps(fence))
     if tamper:
         (app / "Contents/Resources/tamper.txt").write_text("\n".join(map(str, tamper)) + "\n")
-    return run_harness(SCRIPT, out, ["--app", str(app), "--guard-home", str(home), "--no-wait-gui", "--sha", "testsha",
-                                     "--groups", "main", "--appearances", "light", "--icons", "both"], extra_env)
+    return run_harness(script or SCRIPT, out, ["--app", str(app), "--guard-home", str(home), "--no-wait-gui", "--sha", "testsha",
+                                               "--groups", "main", "--appearances", "light", "--icons", "both"], extra_env)
 
 
 def read_launches(out):
@@ -519,6 +525,8 @@ def fence_problems(guard_source, surfaces_source, script_source):
     for kind in (".mouseEntered", ".mouseExited", ".cursorUpdate", ".mouseMoved", ".keyDown", ".scrollWheel"):
         if kind not in mask:
             problems.append(f"the fenced mask lacks {kind}")
+    if "byKind" not in guard_source or "func kind(of" not in guard_source:
+        problems.append("the fence records one count, not one per kind")
     if "swallowedEvents" not in guard_source or "HarnessInputGuard.record()" not in surfaces_source:
         problems.append("finish() does not write the swallowed-event record")
     if "input fence" not in script_source or "input-fence" not in script_source:
@@ -535,6 +543,48 @@ def test_input_fence_record():
           and fence_problems(guard, surfaces.replace("HarnessInputGuard.record()", "[:]"), script) != []
           and fence_problems(guard, surfaces, script.replace("input fence", "")) != [],
           "harness (can fail): a scratch copy without the extra event kinds, the record or the safety.txt line is detected")
+
+
+def fence_line(base, home, label, record, script=None):
+    """The `input fence` line the script writes to safety.txt for a run whose app swallowed `record` (a fence JSON the fake app drops)."""
+    out = Path(base) / ("out-fence-" + re.sub(r"\W+", "-", label) + ("-mutant" if script else ""))
+    result = run_script(out, fence_app(base), home, fence=record, script=script)
+    lines = [line for line in (out / "safety.txt").read_text().splitlines() if line.startswith("input fence")]
+    return result.returncode, (lines[0] if lines else "")
+
+
+def fence_app(base):
+    return Path(base) / "Fake.app"
+
+
+def test_input_fence_summary(base, home):
+    """F-R-005: safety.txt reads 'keyboard N, buttons N, pointer N'; only keyboard, button, scroll or unclassified events flag the run."""
+    def record(keyboard=0, buttons=0, pointer=0, other=0):
+        return {"swallowedEvents": keyboard + buttons + pointer + other, "byKind": {"keyboard": keyboard, "buttons": buttons, "pointer": pointer, "scrollAndGestures": other}}
+    code, line = fence_line(base, home, "pointer only", record(pointer=61))
+    check(code == 0 and "keyboard 0, buttons 0, pointer 61" in line and "clean: pointer events only" in line and "FLAGGED" not in line,
+          f"fence summary: a parked pointer's 61 events read 'keyboard 0, buttons 0, pointer 61' and do not flag the run ({line!r})")
+    code, line = fence_line(base, home, "nothing", record())
+    check("keyboard 0, buttons 0, pointer 0" in line and "clean: no real input" in line, f"fence summary: an untouched run is clean ({line!r})")
+    code, line = fence_line(base, home, "typing", record(keyboard=3, pointer=10))
+    check("keyboard 3, buttons 0, pointer 10" in line and "FLAGGED" in line, f"fence summary: typing flags the run ({line!r})")
+    code, line = fence_line(base, home, "clicking", record(buttons=1))
+    check("keyboard 0, buttons 1, pointer 0" in line and "FLAGGED" in line, f"fence summary: a button press flags the run ({line!r})")
+    code, line = fence_line(base, home, "scrolling", record(other=2))
+    check("scrollAndGestures 2" in line and "FLAGGED" in line, f"fence summary: scrolling flags the run ({line!r})")
+    code, line = fence_line(base, home, "old record", {"swallowedEvents": 5})
+    check("unclassified 5" in line and "FLAGGED" in line, f"fence summary: a record with no per-kind counts is unclassified and flags ({line!r})")
+    # can fail: a script copy that lets pointer events flag the run goes red on the pointer-only case
+    text = SCRIPT.read_text()
+    needle = 'flagged = total["keyboard"] + total["buttons"] + total["scrollAndGestures"] + total["unclassified"]'
+    check(needle in text, "fence summary: the flagging rule is where the mutation expects it")
+    mutant = script_copy(base, "fence-mutant", text.replace(needle, needle + ' + total["pointer"]'))
+    code, line = fence_line(base, home, "pointer only", record(pointer=61), script=mutant)
+    check("FLAGGED" in line, f"fence summary (can fail): counting pointer events as input flags the pointer-only run, so the checks above are the rule's doing ({line!r})")
+    # can fail: a script copy that prints the old single number fails the per-kind format
+    plain = script_copy(base, "fence-single", text.replace("keyboard {total['keyboard']}, buttons {total['buttons']}, pointer {total['pointer']}", "swallowed {total['pointer']}"))
+    code, line = fence_line(base, home, "pointer only", record(pointer=61), script=plain)
+    check("keyboard 0, buttons 0, pointer 61" not in line, f"fence summary (can fail): a script that prints one number is detected ({line!r})")
 
 
 def test_runs_were_safe():
@@ -554,6 +604,7 @@ with tempfile.TemporaryDirectory(prefix="eyedump-guard-test.") as scratch:
     test_script(scratch, scratch_home)
     test_normalized_home(scratch, scratch_home)
     test_input_fence_record()
+    test_input_fence_summary(scratch, scratch_home)
     test_cleanup_protection(scratch, scratch_home)
     test_display_injection(scratch, scratch_home)
     test_input_fence(scratch)
