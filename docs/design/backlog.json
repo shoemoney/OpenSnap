@@ -3,7 +3,7 @@
     "project": "OpenSnap",
     "round": 2,
     "generated": "2026-10-09",
-    "statusNote": "All 36 todos are pending, as briefed. Each todo's mainState records what the final audit found on main at dc1eb26. Landed (S) todos (OSN-020, 021, 022, 023) have only verification left. Reconcile each todo against main before starting it. file:line references are 4b2ae0f unless a todo says otherwise.",
+    "statusNote": "Implementation progress at main f3ba77f (baseline bad6617): 20 done, 2 verified, 1 not-a-bug, 1 in-progress, 12 pending, of 36 todos. Each todo's status, mainState and implementation block record main at f3ba77f. Audit findings and priority counts are unchanged.",
     "auditedShas": {
       "briefed": "b9319c4",
       "drift": [
@@ -29,9 +29,10 @@
     ],
     "statusLegend": [
       "pending",
-      "in_progress",
+      "in-progress",
       "done",
-      "blocked"
+      "verified",
+      "not-a-bug"
     ],
     "counts": {
       "todos": 36,
@@ -153,7 +154,9 @@
       "OSN-060",
       "OSN-062",
       "OSN-070"
-    ]
+    ],
+    "implementationBaseline": "bad6617",
+    "implementationMainSha": "f3ba77f"
   },
   "decisions": [
     {
@@ -163,7 +166,8 @@
       "source": "visual-audit section 9 (OSN-002 defaults); technical-spec section 0 Q1",
       "blocks": [
         "OSN-045"
-      ]
+      ],
+      "resolution": "Resolved: SF Symbols in release. Font Awesome Pro is never committed or shipped. Official Free FA vectors may be used where suitable (OSN-045 pending)."
     },
     {
       "id": "Q2",
@@ -172,7 +176,8 @@
       "source": "technical-spec section 0 Q2; visual-audit section 9 (Q2-Q5 as recommended in the spec)",
       "blocks": [
         "OSN-030"
-      ]
+      ],
+      "resolution": "Resolved: .opensnap (done earlier; ADR at docs/adr/0002-opensnap-document-format.md)."
     },
     {
       "id": "Q3",
@@ -182,7 +187,8 @@
       "blocks": [
         "OSN-042",
         "OSN-043"
-      ]
+      ],
+      "resolution": "Open: pending the OSN-042 spike."
     },
     {
       "id": "Q4",
@@ -191,7 +197,8 @@
       "source": "technical-spec section 0 Q4; visual-audit section 9",
       "blocks": [
         "OSN-043"
-      ]
+      ],
+      "resolution": "Resolved as the default: full screen is enabled and is exclusive with Frame mode. Implementation pending in OSN-043."
     },
     {
       "id": "Q5",
@@ -200,7 +207,8 @@
       "source": "technical-spec section 0 Q5; visual-audit section 9",
       "blocks": [
         "OSN-050"
-      ]
+      ],
+      "resolution": "Resolved: flash kept, peak 0.7. Reduce Motion gives a single 0.05 s frame. Show capture flash off means no flash at any time (a deliberate, more intuitive reading of the opt-out)."
     },
     {
       "id": "D-TEXT",
@@ -211,7 +219,8 @@
         "OSN-041",
         "OSN-050",
         "OSN-055"
-      ]
+      ],
+      "resolution": "Resolved: the app owns text wherever it can. Done: About window, 20 pt menus, permission sheet. In progress: app-owned tooltips (OSN-041). OS-owned limitations recorded: menu-bar strip titles, window title-bar text, system tooltips inside system panels, NSAlert text size, Save, Open and Print panels, Fonts and Colors panels."
     },
     {
       "id": "D-HINT",
@@ -220,7 +229,8 @@
       "source": "visual-audit section 9 (OSN-002 defaults; OSN-002 row)",
       "blocks": [
         "OSN-056"
-      ]
+      ],
+      "resolution": "Resolved: kept as opt-in and modernised (done in OSN-056)."
     },
     {
       "id": "D-T15-1",
@@ -229,7 +239,8 @@
       "source": "visual-audit section 8 and section 9 (D-T15-1..3); technical-spec T15 sections b and k",
       "blocks": [
         "OSN-010"
-      ]
+      ],
+      "resolution": "Resolved: accepted and implemented (OSN-010)."
     },
     {
       "id": "D-T15-2",
@@ -238,7 +249,8 @@
       "source": "visual-audit section 8 and section 9 (D-T15-1..3); technical-spec T15 sections d and k",
       "blocks": [
         "OSN-011"
-      ]
+      ],
+      "resolution": "Resolved: accepted and implemented (OSN-011)."
     },
     {
       "id": "D-T15-3",
@@ -247,7 +259,8 @@
       "source": "visual-audit section 8 and section 9 (D-T15-1..3); technical-spec T15 section b",
       "blocks": [
         "OSN-010"
-      ]
+      ],
+      "resolution": "Resolved: accepted and implemented (OSN-010)."
     }
   ],
   "milestones": [
@@ -395,8 +408,8 @@
       "title": "Adopt the safe audit harness as the only screenshot path",
       "priority": "P0",
       "milestone": "M0",
-      "status": "pending",
-      "mainState": "open (harness on unmerged `audit/visual-harness`)",
+      "status": "done",
+      "mainState": "Done: merged in 3431efc, so tools/eye-dump-audit.sh is the only screenshot path and tools/eye-dump.sh is deleted; the legacy --eye-dump hook was retired in 77bad0c.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -446,15 +459,31 @@
         "Can-fail check: the real-store hash guard fails the run when a watched store file changes (shown on a scratch copy).",
         "The harness uses the isolated defaults domain: no write to com.shoemoney.skitch-redux."
       ],
-      "decisions": []
+      "decisions": [],
+      "implementation": {
+        "mergeCommit": "3431efc",
+        "branchCommits": [
+          "0f0db46",
+          "161e191",
+          "b919775",
+          "9e9ec8c",
+          "db973a6"
+        ],
+        "tests": "tools/test-eye-dump-audit-guard.py: 43 can-fail checks",
+        "evidence": null,
+        "openItems": [
+          "Round-1 can-fail proof deleted the owner's real com.shoemoney.opensnap defaults plist (cause fixed in db973a6); the SkitchRedux store and com.shoemoney.skitch-redux.plist hashed unchanged.",
+          "tools/test-native-startup.py launches the real bundle id in place; being fixed in impl/m4-type, do not run it until fixed."
+        ]
+      }
     },
     {
       "id": "OSN-002",
       "title": "Owner decisions: Q1 to Q5, D-TEXT, D-HINT, D-T15-1 to D-T15-3",
       "priority": "P0",
       "milestone": "M0",
-      "status": "pending",
-      "mainState": "open",
+      "status": "done",
+      "mainState": "Done as decisions, not code: the owner accepted the recommended defaults; Q1, Q2, Q4, Q5, D-HINT and D-T15-1 to D-T15-3 are resolved, and Q3 waits on the OSN-042 spike (no single merge; the decisions are reflected in c53155c, 77bad0c and f3ba77f).",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -509,15 +538,25 @@
         "D-T15-1",
         "D-T15-2",
         "D-T15-3"
-      ]
+      ],
+      "implementation": {
+        "mergeCommit": null,
+        "branchCommits": [],
+        "tests": "n/a (decision record)",
+        "evidence": null,
+        "openItems": [
+          "Q3 stays open until the OSN-042 spike.",
+          "Q4 (full screen) is implemented in OSN-043, which is pending."
+        ]
+      }
     },
     {
       "id": "OSN-010",
       "title": "Remove the right rail; relocate its actions per the T15 mapping",
       "priority": "P1",
       "milestone": "M1",
-      "status": "pending",
-      "mainState": "open",
+      "status": "done",
+      "mainState": "Done: the right rail is removed (merged in c53155c); capture and annotation sit on top, the document and output below, and the canvas runs to the 12 pt margin.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -585,15 +624,27 @@
       "decisions": [
         "D-T15-1",
         "D-T15-3"
-      ]
+      ],
+      "implementation": {
+        "mergeCommit": "c53155c",
+        "branchCommits": [
+          "891c197",
+          "ab4373d",
+          "4f164ef",
+          "2189f4a"
+        ],
+        "tests": "app-safety 145/145 at merge; GlassChromeTests (13266 checks); layout suite in b30ee32 (see OSN-012)",
+        "evidence": "docs/design/evidence/impl-2026-10-09/m1-rail/",
+        "openItems": []
+      }
     },
     {
       "id": "OSN-011",
       "title": "Stroke width: horizontal pill and popover replace the vertical rail slider",
       "priority": "P1",
       "milestone": "M1",
-      "status": "pending",
-      "mainState": "open",
+      "status": "done",
+      "mainState": "Done: the vertical rail slider is replaced by a Size pill with a popover in the top bar (de7f511, merged in c53155c); arrow keys follow NSSlider (D-T15-2).",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -648,15 +699,24 @@
       ],
       "decisions": [
         "D-T15-2"
-      ]
+      ],
+      "implementation": {
+        "mergeCommit": "c53155c",
+        "branchCommits": [
+          "de7f511"
+        ],
+        "tests": "covered by the suites run at merge (app-safety 145/145; GlassChromeTests 13266 checks)",
+        "evidence": "docs/design/evidence/impl-2026-10-09/m1-rail/",
+        "openItems": []
+      }
     },
     {
       "id": "OSN-012",
       "title": "Can-fail layout regression tests for the rail removal",
       "priority": "P1",
       "milestone": "M1",
-      "status": "pending",
-      "mainState": "open",
+      "status": "done",
+      "mainState": "Done: the rail-removal regression suite (no rail, canvas to the margin, controls inside their bars in normal and Frame mode, width budget) is merged in c53155c.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -699,15 +759,25 @@
         "7 Frame capture rect: with a larger canvas, frameViewportScreenRect equals the window's scroll viewport in screen coordinates, and the hole's maxX equals chrome.width - 12. With a smaller canvas, the rect equals the centred canvas and lies inside the hole.",
         "8 Stroke popover undo grouping: one undo restores the font size after a drag, a preset click, and a popover dismissed mid-drag (dismissPopover ends the group)."
       ],
-      "decisions": []
+      "decisions": [],
+      "implementation": {
+        "mergeCommit": "c53155c",
+        "branchCommits": [
+          "b30ee32",
+          "356dde5"
+        ],
+        "tests": "b30ee32 suite; app-safety 145/145 and GlassChromeTests 13266 checks at merge",
+        "evidence": null,
+        "openItems": []
+      }
     },
     {
       "id": "OSN-013",
       "title": "Rail-removal visual acceptance capture set and Opus review",
       "priority": "P1",
       "milestone": "M1",
-      "status": "pending",
-      "mainState": "open",
+      "status": "done",
+      "mainState": "Done: 80 rail-removal captures at fef46c7 (light and dark, 980 to full screen, empty and populated, Frame, popovers, PNG and JPG) are in m1-rail, reviewed by Opus, merged in c53155c.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -745,15 +815,33 @@
       "tests": [
         "None new. The layout.json frames from G7 are checked by OSN-012 test 2 and test 3."
       ],
-      "decisions": []
+      "decisions": [],
+      "implementation": {
+        "mergeCommit": "c53155c",
+        "branchCommits": [
+          "f9bc0fc",
+          "1e9d4de",
+          "e65662c",
+          "616c9b0",
+          "4981836",
+          "fef46c7",
+          "e2db58c"
+        ],
+        "tests": "harness matrix; no unit-test count (visual acceptance)",
+        "evidence": "docs/design/evidence/impl-2026-10-09/m1-rail/",
+        "openItems": [
+          "FA icon mode unavailable in this run.",
+          "No live screen capture; the captures are harness-rendered."
+        ]
+      }
     },
     {
       "id": "OSN-014",
       "title": "Frame mode: keep overlay scrollers out of the snapped image (verify live first)",
       "priority": "P1",
       "milestone": "M1",
-      "status": "pending",
-      "mainState": "open (U)",
+      "status": "done",
+      "mainState": "Done: Frame mode hides the Original-size checkbox and the overlay scrollers, so they stay out of the snapped image (ab4373d and 2189f4a, merged in c53155c).",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -794,15 +882,28 @@
         "Frame scroller state (only if captured): scrollers hidden in Frame mode and during performFrameSnap, restored on exit. Fails today.",
         "Frame capture rect unchanged: T15 e test 7 (frameViewportScreenRect equals the viewport) stays green."
       ],
-      "decisions": []
+      "decisions": [],
+      "implementation": {
+        "mergeCommit": "c53155c",
+        "branchCommits": [
+          "ab4373d",
+          "2189f4a",
+          "fef46c7"
+        ],
+        "tests": "Frame captures in the m1-rail matrix; rail-removal suite (b30ee32)",
+        "evidence": "docs/design/evidence/impl-2026-10-09/m1-rail/",
+        "openItems": [
+          "Live verification of the Frame scrollers (VF-27) is not done; the evidence is harness-rendered."
+        ]
+      }
     },
     {
       "id": "OSN-020",
       "title": "WP3 build, runners and gates: clean-clone build and check-no-original",
       "priority": "P0",
       "milestone": "M2",
-      "status": "pending",
-      "mainState": "landed (S), except the `check-skitch-strings` gate (not found); verify with a clean-clone build",
+      "status": "done",
+      "mainState": "Done: the clean-clone gate and skip policy are merged in 77bad0c (the WP3 build changes landed before the baseline, in 6acc21c and 1b065b6); the clean-clone script passed on dbf7461, and check-no-original.py and check-skitch-strings.py are on main.",
       "remainingWork": "Verification of the clean-clone build, plus the check-skitch-strings gate, which is not on main.",
       "openItems": [],
       "findings": [
@@ -850,15 +951,25 @@
         "G2 no-original static and byte-match checks (check-no-original.py).",
         "G3 static (check-skitch-strings.py), known red until M3."
       ],
-      "decisions": []
+      "decisions": [],
+      "implementation": {
+        "mergeCommit": "77bad0c",
+        "branchCommits": [
+          "45dc148",
+          "dbf7461"
+        ],
+        "tests": "tools/check-clean-clone.sh passed on dbf7461",
+        "evidence": null,
+        "openItems": []
+      }
     },
     {
       "id": "OSN-021",
       "title": "WP1: own assets in shared code (drawn digits, system cursor, sounds removed, PNG chain removed)",
       "priority": "P0",
       "milestone": "M2",
-      "status": "pending",
-      "mainState": "landed (S); verify visually (countdown, cursors)",
+      "status": "verified",
+      "mainState": "Verified: own assets landed before the baseline (fc77158, 691b890, 12c6dfa, all in bad6617); source gates are clean and the drawn countdown was re-captured in m5-capture.",
       "remainingWork": "Verification: a visual check against the cited S14 captures, plus the source grep gate.",
       "openItems": [],
       "findings": [
@@ -912,15 +1023,28 @@
         "The 31-tick and 61-tick sequences run against the drawn views (at 4b2ae0f they are skipped without original/).",
         "Source grep (see acceptance) is run by test.py."
       ],
-      "decisions": []
+      "decisions": [],
+      "implementation": {
+        "mergeCommit": null,
+        "branchCommits": [
+          "fc77158",
+          "691b890",
+          "12c6dfa"
+        ],
+        "tests": "source gates clean: no classicArtwork, ToolButton, sounds, Appearance or Relaunch; LSMinimumSystemVersion 26.0",
+        "evidence": "docs/design/evidence/impl-2026-10-09/m5-capture/",
+        "openItems": [
+          "System cursor check is not recorded in the sources."
+        ]
+      }
     },
     {
       "id": "OSN-022",
       "title": "WP2: remove Classic (window branch, Appearance, relaunch, welcome doc), macOS 26 minimum",
       "priority": "P0",
       "milestone": "M2",
-      "status": "pending",
-      "mainState": "landed (S); verify visually (Preferences, first launch)",
+      "status": "verified",
+      "mainState": "Verified: Classic removal landed before the baseline (42c52d8, 6acc21c, in bad6617); source gates are clean and the minimum is macOS 26.0.",
       "remainingWork": "Verification: a visual check against the cited S17 captures and a new first-launch capture, plus the Classic-removal checks.",
       "openItems": [],
       "findings": [
@@ -973,15 +1097,28 @@
         "GeneralPreferencesFormTests: the 15-button count and no appearance cases.",
         "Startup smoke: glassSurfaces > 0 and GlassChromeButton present (test-native-startup.py)."
       ],
-      "decisions": []
+      "decisions": [],
+      "implementation": {
+        "mergeCommit": null,
+        "branchCommits": [
+          "42c52d8",
+          "6acc21c"
+        ],
+        "tests": "source gates clean: no classicArtwork, ToolButton, sounds, Appearance or Relaunch; LSMinimumSystemVersion 26.0",
+        "evidence": null,
+        "openItems": [
+          "Settings capture is not re-shot; it waits for OSN-051.",
+          "Preferences window and first-launch visual check are not recorded."
+        ]
+      }
     },
     {
       "id": "OSN-023",
       "title": "Own drawings for the status-item template icon and the drag-thumbnail overlays",
       "priority": "P0",
       "milestone": "M2",
-      "status": "pending",
-      "mainState": "landed (S) as SF template/badges (allowed by owner D5); verify visually",
+      "status": "done",
+      "mainState": "Done: the status item uses an SF template icon and the drag overlays are drawn SF badges, with an artwork gate (no NSImage(named:), no picture lookups), merged in 77bad0c (45dc148).",
       "remainingWork": "Verification: a visual check against the cited S24 and S29 captures, plus a grep for the original overlay names.",
       "openItems": [],
       "findings": [
@@ -1021,15 +1158,26 @@
         "StatusIconTests (T5 test 3).",
         "Source gate: NSImage(named:) and Bundle.main.url(forResource:...png) anywhere in Sources/ fail (T5 test 5)."
       ],
-      "decisions": []
+      "decisions": [],
+      "implementation": {
+        "mergeCommit": "77bad0c",
+        "branchCommits": [
+          "45dc148"
+        ],
+        "tests": "StatusItemSupportTests artwork gate",
+        "evidence": null,
+        "openItems": [
+          "Manual 1x and 2x menu-bar check is not done."
+        ]
+      }
     },
     {
       "id": "OSN-024",
       "title": "Synthetic test fixtures; delete every original/ probe",
       "priority": "P0",
       "milestone": "M2",
-      "status": "pending",
-      "mainState": "open: 5 test files still reference `original/`",
+      "status": "done",
+      "mainState": "Done: no original/ reference remains in tests or tools, dead skip paths are removed, and the only allowed skip is SKIPPED (FA not bundled); merged in 77bad0c (45dc148).",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -1074,15 +1222,24 @@
         "Format round trip on the synthetic fixture (SVG export, .skitch and JSON readers).",
         "The SKIP-to-FAIL change (a missing fixture now fails the suite)."
       ],
-      "decisions": []
+      "decisions": [],
+      "implementation": {
+        "mergeCommit": "77bad0c",
+        "branchCommits": [
+          "45dc148"
+        ],
+        "tests": "no silent skips and no archive-folder probes (45dc148)",
+        "evidence": null,
+        "openItems": []
+      }
     },
     {
       "id": "OSN-030",
       "title": "WP4: OpenSnap rename, .opensnap container, copy-never-move migration",
       "priority": "P0",
       "milestone": "M3",
-      "status": "pending",
-      "mainState": "in flight (`opensnap/w3-rename`)",
+      "status": "done",
+      "mainState": "Done before this run: the OpenSnap rename and copy-never-move migration merged in f7ff86b and d2dc3c9, both in the baseline bad6617; migration tests are green.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -1140,15 +1297,24 @@
       ],
       "decisions": [
         "Q2"
-      ]
+      ],
+      "implementation": {
+        "mergeCommit": "f7ff86b, d2dc3c9 (in baseline bad6617)",
+        "branchCommits": [],
+        "tests": "migration tests green on synthetic temp stores",
+        "evidence": null,
+        "openItems": [
+          "Verification on a copy of the owner's real store (OSN-072) is not authorized in this run."
+        ]
+      }
     },
     {
       "id": "OSN-031",
       "title": "All user-visible strings to OpenSnap (menus, About, title, export and History format names)",
       "priority": "P0",
       "milestone": "M3",
-      "status": "pending",
-      "mainState": "in flight (`opensnap/w3-rename`)",
+      "status": "done",
+      "mainState": "Done: OpenSnap menus, Toolbox copied from the main menu with parity tests, app-owned About window, DesignTokens.Brand.name and tools/check-brand.py, merged in 77bad0c (51e37a9).",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -1200,15 +1366,26 @@
         "MenuParityTests (T12): Toolbox matches the menu by action; every item has a symbol or an exemption.",
         "String gate (static) over menus, Toolbox, status item, About and Info.plist."
       ],
-      "decisions": []
+      "decisions": [],
+      "implementation": {
+        "mergeCommit": "77bad0c",
+        "branchCommits": [
+          "51e37a9"
+        ],
+        "tests": "menu parity tests; tools/check-brand.py",
+        "evidence": null,
+        "openItems": [
+          "Menu-bar strip titles stay OS-owned (D-TEXT)."
+        ]
+      }
     },
     {
       "id": "OSN-032",
       "title": "WP6 copy and docs: hint copy, Toolbox ellipsis, neutral Destinations placeholders, History tab names, analysis retirement",
       "priority": "P1",
       "milestone": "M3",
-      "status": "pending",
-      "mainState": "partly landed (hint copy done)",
+      "status": "done",
+      "mainState": "Done: Destinations placeholders and History tab names merged in f484d3e, the Toolbox ellipsis merged in 77bad0c, and analysis/ and the decompile tools were already gone.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -1263,15 +1440,22 @@
         "G6 no-decorative-glyph static scan.",
         "Placeholder string gate (T11)."
       ],
-      "decisions": []
+      "decisions": [],
+      "implementation": {
+        "mergeCommit": "f484d3e; 77bad0c (Toolbox ellipsis)",
+        "branchCommits": [],
+        "tests": "no suite count recorded",
+        "evidence": null,
+        "openItems": []
+      }
     },
     {
       "id": "OSN-040",
       "title": "DesignTokens.swift (Typography, Space, Radius, Size, Layout, Palette) and token source gates",
       "priority": "P1",
       "milestone": "M4",
-      "status": "pending",
-      "mainState": "open",
+      "status": "done",
+      "mainState": "Done: DesignTokens.swift (Typography, Space, Radius, Size, Layout with the 12 pt margin, four-arm Palette) is merged in 8df7780, with the G9 literal gate in report mode.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -1314,15 +1498,26 @@
         "TypographyTests, PaletteTests, MetricsTests (T1, T2, T3 tests).",
         "G9 literal guard (tools/check-tokens.py), in report mode until the sweeps land."
       ],
-      "decisions": []
+      "decisions": [],
+      "implementation": {
+        "mergeCommit": "8df7780",
+        "branchCommits": [
+          "eee03d3"
+        ],
+        "tests": "Typography, Palette and Metrics tests; tools/check-tokens.py in report mode",
+        "evidence": null,
+        "openItems": [
+          "tools/check-tokens.py runs in report mode only."
+        ]
+      }
     },
     {
       "id": "OSN-041",
       "title": "Type sweep: body 20, caption 18 only, native-text exceptions per D-TEXT",
       "priority": "P1",
       "milestone": "M4",
-      "status": "pending",
-      "mainState": "open",
+      "status": "in-progress",
+      "mainState": "In progress: the Destinations and History files (f484d3e) and the capture overlay files (75a9ee6) are swept to 0 literals; chrome, App, Resize, Photos, TextStyle, Hotkeys, Export and the 20 pt tooltips remain on impl/m4-type.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -1377,7 +1572,19 @@
       ],
       "decisions": [
         "D-TEXT"
-      ]
+      ],
+      "implementation": {
+        "mergeCommit": null,
+        "branchCommits": [
+          "75a9ee6"
+        ],
+        "tests": "no suite count recorded",
+        "evidence": null,
+        "openItems": [
+          "Remaining: chrome, App, Resize, Photos, TextStyle, Hotkeys, Export and app-owned 20 pt tooltips.",
+          "The worker on impl/m4-type is not merged."
+        ]
+      }
     },
     {
       "id": "OSN-042",
@@ -1385,7 +1592,7 @@
       "priority": "P1",
       "milestone": "M4",
       "status": "pending",
-      "mainState": "open",
+      "mainState": "Open: no glass consolidation has landed, and the Q3 spike has not run.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -1445,7 +1652,17 @@
       ],
       "decisions": [
         "Q3"
-      ]
+      ],
+      "implementation": {
+        "mergeCommit": null,
+        "branchCommits": [],
+        "tests": "none (not started)",
+        "evidence": null,
+        "openItems": [
+          "Q3 spike (NSToolbar or custom bars) first; reconcile the glass budget (5 in spec section 0, 8 in T4).",
+          "Deferred visual defects: phantom capsule under Snap (hidden Cancel glass surface); full-screen salmon tint and accent loss (backdrop vibrancy); legacy-scroller white corner."
+        ]
+      }
     },
     {
       "id": "OSN-043",
@@ -1453,7 +1670,7 @@
       "priority": "P1",
       "milestone": "M4",
       "status": "pending",
-      "mainState": "open",
+      "mainState": "Open: unified window chrome, autosave, representedURL and full screen (Q4) have not landed.",
       "remainingWork": null,
       "openItems": [
         "Minimum height is not decided. T15 sets a 608 pt minimum content height (492 pt viewport). T8 sets a 680 pt window minimum. Decide which governs before the minimum-height captures are taken (technical-spec T8 and T15; not settled in visual-audit section 9)."
@@ -1508,7 +1725,17 @@
       "decisions": [
         "Q3",
         "Q4"
-      ]
+      ],
+      "implementation": {
+        "mergeCommit": null,
+        "branchCommits": [],
+        "tests": "none (not started)",
+        "evidence": null,
+        "openItems": [
+          "Q4 default accepted (full screen on, exclusive with Frame mode); not implemented.",
+          "Minimum height unresolved: 608 pt (T15) against 680 pt (T8)."
+        ]
+      }
     },
     {
       "id": "OSN-044",
@@ -1516,7 +1743,7 @@
       "priority": "P1",
       "milestone": "M4",
       "status": "pending",
-      "mainState": "open",
+      "mainState": "Open: the component state model (StateStyles, CommandButton, slider, swatch, drag well, History tile, canvas border rest) has not landed.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -1571,7 +1798,14 @@
         "CommandButtonStateTests (drive setHovered, mouseDown, state and isEnabled; assert layer backgroundColor).",
         "OriginalActionButtonTests re-run (R09)."
       ],
-      "decisions": []
+      "decisions": [],
+      "implementation": {
+        "mergeCommit": null,
+        "branchCommits": [],
+        "tests": "none (not started)",
+        "evidence": null,
+        "openItems": []
+      }
     },
     {
       "id": "OSN-045",
@@ -1579,7 +1813,7 @@
       "priority": "P1",
       "milestone": "M4",
       "status": "pending",
-      "mainState": "open (the PNG tier is gone; the SF-only Upload and the `trash` fallback remain)",
+      "mainState": "Open: Q1 is answered (SF Symbols in release, Font Awesome Pro never committed or shipped), but the chrome icon pass has not landed and FA mode is unavailable in the harness.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -1632,15 +1866,24 @@
       ],
       "decisions": [
         "Q1"
-      ]
+      ],
+      "implementation": {
+        "mergeCommit": null,
+        "branchCommits": [],
+        "tests": "none (not started)",
+        "evidence": null,
+        "openItems": [
+          "Official Free FA vectors may be used where suitable; not yet applied."
+        ]
+      }
     },
     {
       "id": "OSN-050",
       "title": "Capture surfaces: permission sheet with Open Privacy Settings, drawn countdown, picker and magnifier styling, flash rule",
       "priority": "P1",
       "milestone": "M5",
-      "status": "pending",
-      "mainState": "open",
+      "status": "done",
+      "mainState": "Done: app-owned Screen Recording sheet with a pre-flight gate, drawn countdown with Reduce Motion and VoiceOver numerals, magnifier placeholder and flash at peak 0.7, merged in f3ba77f (75a9ee6 and round-2 commits).",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -1695,7 +1938,24 @@
       "decisions": [
         "Q5",
         "D-TEXT"
-      ]
+      ],
+      "implementation": {
+        "mergeCommit": "f3ba77f",
+        "branchCommits": [
+          "75a9ee6",
+          "08f03e5",
+          "1eead53",
+          "8a9af59",
+          "1e6a089",
+          "8a0e8d9",
+          "b9a0f24"
+        ],
+        "tests": "08f03e5 tightened navigator and read-out checks so their mutations fail; no suite count recorded",
+        "evidence": "docs/design/evidence/impl-2026-10-09/m5-capture/",
+        "openItems": [
+          "Live capture with a granted Screen Recording permission is not run (no grant in the agent environment)."
+        ]
+      }
     },
     {
       "id": "OSN-051",
@@ -1703,7 +1963,7 @@
       "priority": "P1",
       "milestone": "M5",
       "status": "pending",
-      "mainState": "open (Classic rows already gone)",
+      "mainState": "Open: Settings is still titled Preferences; the Classic rows are already gone (OSN-022).",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -1749,15 +2009,24 @@
       "tests": [
         "GeneralPreferencesFormTests re-baselined; new tests: no Appearance or Sounds row; Escape closes; fitting size per tab."
       ],
-      "decisions": []
+      "decisions": [],
+      "implementation": {
+        "mergeCommit": null,
+        "branchCommits": [],
+        "tests": "none (not started)",
+        "evidence": null,
+        "openItems": [
+          "Settings is still titled Preferences; toolbar tabs and the aligned grid are not started."
+        ]
+      }
     },
     {
       "id": "OSN-052",
       "title": "Destinations sheet: scrolling form within the visible height, Return and Escape, 20 pt text",
       "priority": "P1",
       "milestone": "M5",
-      "status": "pending",
-      "mainState": "open",
+      "status": "done",
+      "mainState": "Done: the Destinations sheet scrolls within the visible height, has Return and Escape, a Default pill and Upload wording, merged in f484d3e (3be3870, dd17d50).",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -1801,15 +2070,28 @@
         "Keyboard defaults test per sheet (T7 test 4). Placeholder string gate (OSN-032).",
         "Shutdown barrier with the sheet open (Publishing.swift:868-880, R18)."
       ],
-      "decisions": []
+      "decisions": [],
+      "implementation": {
+        "mergeCommit": "f484d3e",
+        "branchCommits": [
+          "3be3870",
+          "26e2160",
+          "708b6bd",
+          "a2f3843",
+          "dd17d50"
+        ],
+        "tests": "708b6bd adds test-result and short-screen harness variants; no suite count recorded",
+        "evidence": null,
+        "openItems": []
+      }
     },
     {
       "id": "OSN-053",
       "title": "History window: content-first grid, centred empty state, toolbar actions, minimum 880 x 600",
       "priority": "P1",
       "milestone": "M5",
-      "status": "pending",
-      "mainState": "open",
+      "status": "done",
+      "mainState": "Done: History is a content-first grid (16 pt gaps, 2, 3 and 4 columns at 880, 1000 and 1280) with check-badge selection, centred empty state, icon action row and .opensnap drag, merged in f484d3e.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -1852,7 +2134,18 @@
         "HistoryBrowserTests: reflow at the minimum; selection cue; drag-format list.",
         "T8 test 6 (minimum size)."
       ],
-      "decisions": []
+      "decisions": [],
+      "implementation": {
+        "mergeCommit": "f484d3e",
+        "branchCommits": [
+          "3be3870",
+          "26e2160",
+          "708b6bd"
+        ],
+        "tests": "708b6bd adds History size variants to the harness; no suite count recorded",
+        "evidence": null,
+        "openItems": []
+      }
     },
     {
       "id": "OSN-054",
@@ -1860,7 +2153,7 @@
       "priority": "P1",
       "milestone": "M5",
       "status": "pending",
-      "mainState": "open",
+      "mainState": "Open: upload progress, success and error presentation, with announcements, has not landed.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -1909,15 +2202,22 @@
         "UploadStateTests, FooterLayoutTests, and the kept byte-level tests.",
         "Quit during a failed upload (R15)."
       ],
-      "decisions": []
+      "decisions": [],
+      "implementation": {
+        "mergeCommit": null,
+        "branchCommits": [],
+        "tests": "none (not started)",
+        "evidence": null,
+        "openItems": []
+      }
     },
     {
       "id": "OSN-055",
       "title": "Menus, About, status item polish (copy, symbols, About credits)",
       "priority": "P2",
       "milestone": "M5",
-      "status": "pending",
-      "mainState": "open",
+      "status": "done",
+      "mainState": "Done: OpenSnap menu wording, app-owned About window, and a status-item menu (Show or Hide, Snap, Settings, Quit at 20 pt) with the OpenSnap tooltip, merged in 77bad0c (51e37a9).",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -1958,15 +2258,26 @@
       ],
       "decisions": [
         "D-TEXT"
-      ]
+      ],
+      "implementation": {
+        "mergeCommit": "77bad0c",
+        "branchCommits": [
+          "51e37a9"
+        ],
+        "tests": "menu parity tests (Toolbox copied from the main menu)",
+        "evidence": null,
+        "openItems": [
+          "Menu-bar strip titles stay OS-owned (D-TEXT)."
+        ]
+      }
     },
     {
       "id": "OSN-056",
       "title": "Hover-hint bevel: decide retire or modernise, tokenise, Reduce Motion gate",
       "priority": "P2",
       "milestone": "M5",
-      "status": "pending",
-      "mainState": "open (copy already rewritten)",
+      "status": "done",
+      "mainState": "Done: the hover-hint bevel is opt-in and modernised, uses tokens, never covers the title bar or bars, and skips its fade under Reduce Motion (merged in f3ba77f, 8a9af59).",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -2009,15 +2320,24 @@
       ],
       "decisions": [
         "D-HINT"
-      ]
+      ],
+      "implementation": {
+        "mergeCommit": "f3ba77f",
+        "branchCommits": [
+          "8a9af59"
+        ],
+        "tests": "no suite count recorded",
+        "evidence": "docs/design/evidence/impl-2026-10-09/m5-capture/",
+        "openItems": []
+      }
     },
     {
       "id": "OSN-057",
       "title": "Highlighter stroke: no darker start cap",
       "priority": "P2",
       "milestone": "M5",
-      "status": "pending",
-      "mainState": "open",
+      "status": "not-a-bug",
+      "mainState": "Not a bug: the dark start cap is translucent yellow over the blue backdrop; a single composite was verified and a regression test was added (merged in 8df7780, 13c032c).",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -2054,15 +2374,24 @@
         "Canvas rendering test: the first-cap pixel colour and alpha of a highlighter stroke match its body. Fails with the current double composite.",
         "Existing canvas stroke tests stay unchanged."
       ],
-      "decisions": []
+      "decisions": [],
+      "implementation": {
+        "mergeCommit": "8df7780",
+        "branchCommits": [
+          "13c032c"
+        ],
+        "tests": "regression test 13c032c: highlighter strokes composite once",
+        "evidence": null,
+        "openItems": []
+      }
     },
     {
       "id": "OSN-058",
       "title": "Resize panel: whole-pixel size display",
       "priority": "P2",
       "milestone": "M5",
-      "status": "pending",
-      "mainState": "open",
+      "status": "done",
+      "mainState": "Done: Resize fields show whole pixels (half away from zero) and an untouched fractional source submits its displayed value, merged in 8df7780 (0ed44b4, fac0cc7).",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -2097,7 +2426,17 @@
       "tests": [
         "ResizePanelTests: a stored 1516.5 displays as a whole pixel under one fixed rounding rule (the implementer records the rule); the internal value stays 1516.5; a typed value round-trips."
       ],
-      "decisions": []
+      "decisions": [],
+      "implementation": {
+        "mergeCommit": "8df7780",
+        "branchCommits": [
+          "0ed44b4",
+          "fac0cc7"
+        ],
+        "tests": "no suite count recorded",
+        "evidence": null,
+        "openItems": []
+      }
     },
     {
       "id": "OSN-060",
@@ -2105,7 +2444,7 @@
       "priority": "P1",
       "milestone": "M6",
       "status": "pending",
-      "mainState": "open",
+      "mainState": "Open: the keyboard pass (key-view loop, operable drag well, focus rings, Escape and Return in every sheet) has not landed.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -2149,7 +2488,14 @@
         "AccessibilityAuditTests key-loop and Escape and Return tests (T7 tests 3 and 4).",
         "DragExportView: Space and Return invoke press."
       ],
-      "decisions": []
+      "decisions": [],
+      "implementation": {
+        "mergeCommit": null,
+        "branchCommits": [],
+        "tests": "none (not started)",
+        "evidence": null,
+        "openItems": []
+      }
     },
     {
       "id": "OSN-061",
@@ -2157,7 +2503,7 @@
       "priority": "P1",
       "milestone": "M6",
       "status": "pending",
-      "mainState": "open",
+      "mainState": "Open: display-option consumers and the injected DisplayOptions capture mode have not landed.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -2206,7 +2552,14 @@
         "DisplayOptionsTests (T7 test 2).",
         "G5 test 4 (GlassDepthTests)."
       ],
-      "decisions": []
+      "decisions": [],
+      "implementation": {
+        "mergeCommit": null,
+        "branchCommits": [],
+        "tests": "none (not started)",
+        "evidence": null,
+        "openItems": []
+      }
     },
     {
       "id": "OSN-062",
@@ -2214,7 +2567,7 @@
       "priority": "P1",
       "milestone": "M6",
       "status": "pending",
-      "mainState": "open",
+      "mainState": "Open: VoiceOver labels, announcements and the recorded manual VoiceOver pass have not been done.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -2257,7 +2610,14 @@
         "AccessibilityAuditTests (T7 tests 1 and 5).",
         "AppSafetyModernCases string expectations updated for new labels (R12)."
       ],
-      "decisions": []
+      "decisions": [],
+      "implementation": {
+        "mergeCommit": null,
+        "branchCommits": [],
+        "tests": "none (not started)",
+        "evidence": null,
+        "openItems": []
+      }
     },
     {
       "id": "OSN-070",
@@ -2265,7 +2625,7 @@
       "priority": "P0",
       "milestone": "M7",
       "status": "pending",
-      "mainState": "partly (`check-no-original` exists)",
+      "mainState": "Partly: check-no-original.py, check-clean-clone.sh, check-brand.py and check-tokens.py (report mode) are on main; the remaining gates in this todo are not recorded as landed.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -2347,7 +2707,16 @@
         "G1 to G12 as listed in T14. Each gate states what makes it fail today; each must be shown to fail on a seeded violation (can-fail).",
         "ViewTreeAuditTests (G4), GlassDepthTests (G5)."
       ],
-      "decisions": []
+      "decisions": [],
+      "implementation": {
+        "mergeCommit": null,
+        "branchCommits": [],
+        "tests": "none beyond the gates listed in mainState",
+        "evidence": null,
+        "openItems": [
+          "Font-floor walker, glass depth and budget, and layout fit at 980 are not recorded as landed."
+        ]
+      }
     },
     {
       "id": "OSN-071",
@@ -2355,7 +2724,7 @@
       "priority": "P0",
       "milestone": "M7",
       "status": "pending",
-      "mainState": "open",
+      "mainState": "Open: the full visual acceptance gallery and the Opus sign-off have not been run on the implemented surfaces.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -2424,7 +2793,14 @@
       "tests": [
         "Gate results from OSN-070 attached to the sign-off."
       ],
-      "decisions": []
+      "decisions": [],
+      "implementation": {
+        "mergeCommit": null,
+        "branchCommits": [],
+        "tests": "none (not started)",
+        "evidence": null,
+        "openItems": []
+      }
     },
     {
       "id": "OSN-072",
@@ -2432,7 +2808,7 @@
       "priority": "P0",
       "milestone": "M7",
       "status": "pending",
-      "mainState": "open",
+      "mainState": "Open: migration is not verified on a copy of the owner's real store (not authorized in this run), and the release dry run has not been done.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -2476,7 +2852,17 @@
       "tests": [
         "G1 clean-clone build; G2 no-original check on the built bundle; G8 migration on the copy."
       ],
-      "decisions": []
+      "decisions": [],
+      "implementation": {
+        "mergeCommit": null,
+        "branchCommits": [],
+        "tests": "none (not started)",
+        "evidence": null,
+        "openItems": [
+          "Migration on a copy of the owner's real store is not authorized in this run.",
+          "No push or release has been made."
+        ]
+      }
     }
   ],
   "findings": [
