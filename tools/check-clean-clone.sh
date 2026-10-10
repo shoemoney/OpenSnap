@@ -33,7 +33,7 @@ fi
 echo "PASS clone is clean: no $ARCHIVE folder, no build output, no fonts, no registry credentials"
 
 # Nothing from this shell may stand in for a missing token or font directory.
-run() { env -u OPENSNAP_FETCH_FONTAWESOME -u OPENSNAP_FA_FONT_DIR -u OPENSNAP_NO_PRO_FONTS -u OPENSNAP_APP_SUPPORT -u OPENSNAP_FIXTURE "$@"; }
+run() { env -u OPENSNAP_FETCH_FONTAWESOME -u OPENSNAP_FA_FONT_DIR -u OPENSNAP_PRO_FONTS -u OPENSNAP_APP_SUPPORT -u OPENSNAP_FIXTURE "$@"; }
 
 echo "== build (in the clone)"
 (cd "$CLONE" && run sh tools/build.sh >"$TMP/build.log" 2>&1) || { tail -40 "$TMP/build.log" >&2; echo "FAIL: build" >&2; exit 1; }
