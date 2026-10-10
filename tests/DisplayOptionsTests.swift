@@ -155,7 +155,7 @@ private enum DisplayOptionsTests {
         try expect(injection(flagged, isolated.merging([key: "reduceMotion,differentiateWithoutColor,reduceTransparency,increaseContrast"]) { $1 })?.activeNames == DisplayOptions.names, "all four")
 
         try expect(injection(flagged, isolated, "com.shoemoney.opensnap") == nil, "the real bundle id: the variable is ignored")
-        try expect(injection(flagged, isolated, "com.shoemoney.skitch-redux") == nil, "the retired bundle id: ignored")
+        try expect(injection(flagged, isolated, "com.shoemoney") == nil, "a bare vendor prefix: ignored")
         try expect(injection(flagged, isolated, "com.example.other") == nil, "any non-harness bundle id: ignored")
         try expect(injection(flagged, isolated, nil) == nil, "a bare binary without a bundle id: ignored")
         try expect(injection(flagged, isolated, String(HarnessGate.bundlePrefix.dropLast()) + "x") == nil, "a near-miss prefix: ignored")
