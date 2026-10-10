@@ -97,7 +97,8 @@ extension AuditRun {
         checkbox.isHidden = wasHidden
         window.contentView?.layoutSubtreeIfNeeded()
         return ["withCheckbox": with, "withoutCheckbox": without, "checkboxShownNow": !wasHidden,
-                "statusNeedsAt18pt": textWidth(app.status.stringValue, size: 18), "statusString": app.status.stringValue]
+                "statusNeedsAt18pt": textWidth(app.status.toolTip ?? app.status.stringValue, size: 18), "statusString": app.status.stringValue,
+                "statusFullText": app.status.toolTip ?? app.status.stringValue]
     }
 
     /// Everything the rail-removal acceptance cares about, read from the live window as it is right now: per-group frames for

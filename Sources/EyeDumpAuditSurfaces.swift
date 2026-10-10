@@ -748,8 +748,9 @@ extension AuditRun {
             placeWindow(target)
             app.enterFrame(keepingAnnotations: false, manualFlags: [])
             pump(0.9)
-            shoot("S32", "frame-large-\(widthSlug(spec))", surface: "Frame mode, canvas fills the viewport", state: "Frame mode at \(spec): large shot at 100% so the canvas fills the viewport; Snap Frame + Cancel",
-                  refs: ["App.swift|func enterFrame", "App.swift|var frameViewportScreenRect"])
+            shoot("S32", "frame-large-\(widthSlug(spec))", surface: "Frame mode, canvas fills the viewport", state: "Frame mode at \(spec): large shot at 100% so the canvas fills the viewport; Snap Frame + Cancel; no Original size checkbox",
+                  refs: ["App.swift|func enterFrame", "App.swift|var frameViewportScreenRect"],
+                  extra: ["isLargeShot": app.isLargeShot, "originalSizeCheckboxHiddenInFrame": app.dragOriginalControl.isHidden])
             app.leaveFrame()
             pump(0.3)
         }
@@ -776,14 +777,6 @@ extension AuditRun {
             guard loadThenPlace(spec, size: CGSize(width: 150, height: 90), name: "Small canvas", surface: "S34") != nil else { continue }
             shoot("S34", "small-canvas-\(widthSlug(spec))", surface: "Small canvas centred", state: "150x90 canvas at window \(spec): equal margins left/right and top/bottom",
                   refs: ["ModernEditorChrome.swift|final class CenteringClipView"])
-            if spec == "980xmin" {
-                // Diagnostic twin: the same document after the window is nudged taller and back, which fires the clip view's resize path.
-                let landed = window.frame.size
-                placeWindow(CGSize(width: landed.width, height: landed.height + 2))
-                placeWindow(landed)
-                shoot("S34", "small-canvas-w980-after-resize", surface: "Small canvas centred", state: "same 150x90 canvas at 980xmin after the window was resized +2 pt and back (diagnostic: does resizing re-centre it?)",
-                      refs: ["ModernEditorChrome.swift|final class CenteringClipView"])
-            }
         }
     }
 
