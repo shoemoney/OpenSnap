@@ -139,8 +139,8 @@ extension AppSafetyTests {
         }
         let more = try menuItems(try toolboxMenu(app)).first { $0.title == "More Commands" }.unwrap("More Commands")
         try expect(more.submenu?.font.pointSize == 20, "More Commands is 20 pt")
-        // The menus changed size, not the controls that open them.
-        try expect(app.zoomControl.font?.pointSize == 18, "The zoom popup face keeps its 18 pt caption size")
+        // OSN-041: the zoom face is body text now, 20 pt like the menu it opens.
+        try expect(app.zoomControl.font?.pointSize == 20 && app.zoomControl.menu?.font.pointSize == 20, "The zoom popup face and its menu are 20 pt body text")
     }
 
     private static func menuStatusItems() throws {

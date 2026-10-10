@@ -53,18 +53,16 @@ class GlassChromeButton: OriginalActionButton {
         focusRingType = .exterior
         imageHugsTitle = true
         imageScaling = .scaleProportionallyDown
-        if (font?.pointSize ?? 0) < 18 { font = .systemFont(ofSize: 20) }
+        if (font?.pointSize ?? 0) < DesignTokens.Typography.readableMinimum { font = DesignTokens.Typography.font(.body) }
         applyForeground()
     }
 
     // NSButton's title convenience initializer assigns its small standard font after init(frame:);
-    // keep the caller's face but never fall under the 18-point floor.
+    // keep the caller's face but never fall under the readable floor.
     override var font: NSFont? {
         didSet {
-            if let font, font.pointSize < 18 {
-                super.font = NSFont(descriptor: font.fontDescriptor, size: 18) ?? .systemFont(ofSize: 18)
-            } else if font == nil {
-                super.font = .systemFont(ofSize: 20)
+            if font == nil || font!.pointSize < DesignTokens.Typography.readableMinimum {
+                super.font = DesignTokens.Typography.floored(font)
             }
         }
     }
@@ -98,7 +96,7 @@ class GlassChromeButton: OriginalActionButton {
 
     private func refreshDerivedToolTip() {
         guard derivesToolTip, let name = iconOnlyName else { return }
-        toolTip = shortcutHint.map { "\(name) (\($0))" } ?? name
+        AppToolTip.setText(shortcutHint.map { "\(name) (\($0))" } ?? name, for: self)
     }
 
     private var explicitAccessibilityLabel: String?
@@ -418,12 +416,10 @@ enum GlassChrome {
         static let primaryButton = NSSize(width: 56, height: 44)
         static let commandHeight: CGFloat = 36
         static let headerHeight: CGFloat = 44
-        static let iconPointSize: CGFloat = 22, primaryIconPointSize: CGFloat = 26, labelPointSize: CGFloat = 20
+        static let iconPointSize: CGFloat = 22, primaryIconPointSize: CGFloat = 26
         static let surfaceSpacing: CGFloat = 6, containerSpacing: CGFloat = 2
         /// The smallest gap between two glass groups in one bar.
         static let groupGap: CGFloat = 12
-        /// Icon beside a 20-point label is drawn at 20 points; icon-only controls use `iconPointSize`.
-        static let labeledIconPointSize: CGFloat = 20
         static let pillPadding: CGFloat = 12
         static let toolSpacing: CGFloat = 4
         // NSGlassEffectContainerView fuses glass shapes closer than its spacing, so it must stay below every stack gap (smallest: toolSpacing).

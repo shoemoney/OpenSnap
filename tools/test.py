@@ -10,6 +10,7 @@ options = parser.parse_args()
 root = Path(__file__).resolve().parent.parent
 build = root / "build"
 build.mkdir(exist_ok=True)
+SUITE_OUTPUT = []  # every suite binary's output, for the G11 skip budget at the end
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -53,9 +54,25 @@ subprocess.run([sys.executable, str(root / "tools" / "check-brand.py")], cwd=roo
 subprocess.run([sys.executable, str(root / "tools" / "check-brand.py"), "--self-test"], cwd=root, check=True)
 # The screenshot harness's protections (store guard, isolation of the launched copy, sandbox fence) must be able to fail.
 subprocess.run([sys.executable, "-I", str(root / "tools" / "test-eye-dump-audit-guard.py")], cwd=root, check=True)
+# The startup smoke runs a re-identified temp copy and compares the real stores; its protections must be able to fail too.
+subprocess.run([sys.executable, "-I", str(root / "tools" / "test-native-startup-guard.py")], cwd=root, check=True)
 # G9: literal fonts, colours and radii outside the tokens. Report mode until the token sweeps land; the self-test proves --strict can fail.
 subprocess.run([sys.executable, str(root / "tools" / "check-tokens.py")], cwd=root, check=True)
 subprocess.run([sys.executable, str(root / "tools" / "check-tokens.py"), "--self-test"], cwd=root, check=True)
+# D-TEXT: chrome tooltips are app-owned (20 pt); a direct system `toolTip` write fails this gate, and the self-test proves it can.
+subprocess.run([sys.executable, str(root / "tools" / "check-tooltips.py")], cwd=root, check=True)
+subprocess.run([sys.executable, str(root / "tools" / "check-tooltips.py"), "--self-test"], cwd=root, check=True)
+# G6: decorative glyphs and emoji in string literals. Sources are clean, so it runs strict; the self-test proves --strict can fail.
+subprocess.run([sys.executable, str(root / "tools" / "check-glyphs.py"), "--strict"], cwd=root, check=True)
+subprocess.run([sys.executable, str(root / "tools" / "check-glyphs.py"), "--self-test"], cwd=root, check=True)
+# G7: the screenshot-harness output checker. The self-test proves each assertion can fail; then every committed evidence set is checked.
+subprocess.run([sys.executable, str(root / "tools" / "check-eye-dump.py"), "--self-test"], cwd=root, check=True)
+for evidence in sorted((root / "docs/design/evidence/impl-2026-10-09").glob("m*")):
+    subprocess.run([sys.executable, str(root / "tools" / "check-eye-dump.py"), str(evidence)], cwd=root, check=True)
+# G11: the skip-budget gate's own self-test; the log check runs at the end, over the captured suite output.
+subprocess.run([sys.executable, str(root / "tools" / "check-skip-budget.py"), "--self-test"], cwd=root, check=True)
+# OSN-072: the migration on a synthetic old store (58 documents, 2 destinations); never the owner's data.
+subprocess.run([sys.executable, str(root / "tools" / "migration-dry-run.py")], cwd=root, check=True)
 snapshot = Path(tempfile.mkdtemp(prefix="test-snapshot.", dir=build))
 
 def current_inputs():
@@ -91,7 +108,10 @@ def suite(name, sources, test, define=None, arguments=(), environment=None):
         env = dict(os.environ)
         for key, value in environment.items():
             env[key] = tempfile.mkdtemp(prefix="home-", dir=snapshot) if value == "@temp-home" else value
-    subprocess.run([str(binary), *arguments], cwd=root, check=True, env=env)
+    run = subprocess.run([str(binary), *arguments], cwd=root, env=env, capture_output=True, text=True)
+    SUITE_OUTPUT.append(run.stdout + run.stderr)
+    print(run.stdout + run.stderr, end="", flush=True)
+    run.check_returncode()
     return "PASS", name
 
 # Subsets from tools/fetch-fontawesome.sh are exercised when they have been built.
@@ -136,13 +156,19 @@ suites = [
     ("status-item-tests", ["StatusItemSupport.swift"], "StatusItemSupportTests.swift", "STATUS_ITEM_TESTS", ()),
     ("about-window-tests", ["AboutWindow.swift"], "AboutWindowTests.swift", "ABOUT_WINDOW_TESTS", ()),
     ("metrics-tests", [], "MetricsTests.swift", "METRICS_TESTS", ()),
+    ("app-tooltip-tests", ["AppToolTip.swift"], "AppToolTipTests.swift", "APP_TOOLTIP_TESTS", ()),
+    # G4: the font-floor walker over every surface whose sources compile in isolation. The full main window joins via app-safety.
+    ("view-tree-audit-tests", ["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift",
+                               "AboutWindow.swift", "HistoryBrowser.swift", "ResizePresets.swift", "ResizePanel.swift", "SVGPath.swift", "StrokeFitting.swift",
+                               "GeneralPreferencesForm.swift", "TextStyleForm.swift", "ExportAccessory.swift", "TestDefaults.swift", "ViewTreeAudit.swift"],
+     "ViewTreeAuditTests.swift", "VIEW_TREE_AUDIT_TESTS", ()),
 ]
 # These need the Modern chrome sources; a missing file fails the suite. Only the Font Awesome glyph branch inside them
 # is licence-gated, and it prints "SKIPPED (FA not bundled)" when the Pro subsets are absent.
 modern_suites = [
     ("fontawesome-icons-tests", ["FontAwesomeIcons.swift", "ChromeIcons.swift"], "FontAwesomeIconsTests.swift", "FONTAWESOME_ICONS_TESTS", (), font_environment),
     ("menu-symbols-tests", ["FontAwesomeIcons.swift", "ChromeIcons.swift", "MenuSymbols.swift"], "MenuSymbolsTests.swift", "MENU_SYMBOLS_TESTS", ()),
-    ("glass-chrome-tests", ["OriginalActionButton.swift", "FontAwesomeIcons.swift", "ChromeIcons.swift", "BezelDrawingControls.swift", "SVGPath.swift", "DocumentModel.swift", "GlassChrome.swift", "ModernEditorChrome.swift"], "GlassChromeTests.swift", "GLASS_CHROME_TESTS", ()),
+    ("glass-chrome-tests", ["OriginalActionButton.swift", "FontAwesomeIcons.swift", "ChromeIcons.swift", "BezelDrawingControls.swift", "SVGPath.swift", "DocumentModel.swift", "GlassChrome.swift", "ModernEditorChrome.swift", "AppToolTip.swift"], "GlassChromeTests.swift", "GLASS_CHROME_TESTS", ()),
 ]
 with ThreadPoolExecutor(max_workers=len(suites) + len(modern_suites)) as executor:
     futures = [executor.submit(suite, *args) for args in suites]
@@ -160,6 +186,10 @@ if failures:
 print("== build + check-no-original", flush=True)
 subprocess.run(["sh", str(root / "tools" / "build.sh")], cwd=root, check=True, stdout=subprocess.DEVNULL)
 subprocess.run([sys.executable, str(root / "tools" / "check-no-original.py"), str(build / "OpenSnap.app")], cwd=root, check=True)
+# G11: a SKIP in any suite output needs a reason of "macOS < N" or "FA not bundled".
+skips = subprocess.run([sys.executable, str(root / "tools" / "check-skip-budget.py"), "-"], input="".join(SUITE_OUTPUT), text=True)
+if skips.returncode:
+    raise SystemExit("FAIL skip-budget: an unexplained SKIP in the suite output")
 print("== app-safety", flush=True)
 subprocess.run([str(root / "tools" / "test-app-safety.sh"), "--arch", options.arch], cwd=root, check=True)
 check_real_store(real_store_before)

@@ -6,7 +6,7 @@ extension AppDelegate {
         let chrome = modernChrome as? ModernEditorChrome
         chrome?.frameMode = on
         chrome?.syncSnapPresentation()
-        if !on { status.toolTip = nil; status.spokenValue = nil; status.setAccessibilityHelp(nil) }
+        if !on { AppToolTip.setText(nil, for: status); status.spokenValue = nil; status.setAccessibilityHelp(nil) }
     }
 
     /// The Drag Me thumbnail doubles as the canvas bleed under the bars.
@@ -45,25 +45,25 @@ extension AppDelegate {
         let toolbox = bezelToolbox()
 
         colorWell.color = OriginalDrawingControls.presets[0].color; colorWell.target = self; colorWell.action = #selector(changeColor(_:))
-        paletteButton.font = .systemFont(ofSize: 18); paletteButton.target = self; paletteButton.action = #selector(showDrawingColors(_:))
+        paletteButton.font = DesignTokens.Typography.font(.body); paletteButton.target = self; paletteButton.action = #selector(showDrawingColors(_:))
         paletteButton.imagePosition = .imageLeading; paletteButton.setAccessibilityLabel("Drawing colors")
-        paletteButton.toolTip = "Hover for original preset colors; hold Shift to change the canvas background"
+        AppToolTip.setText("Hover for original preset colors; hold Shift to change the canvas background", for: paletteButton)
         paletteButton.onHover = { [weak self] inside in self?.drawingColorHover(inside, palette: false) }
-        sizeLabel.font = .systemFont(ofSize: 18)
+        sizeLabel.font = DesignTokens.Typography.font(.body)
         widthControl.target = self; widthControl.action = #selector(changeWidth(_:))
         widthControl.onBegin = { [weak self] in
             guard let self, !self.terminationStarted, !self.frameCaptureInProgress, self.window.attachedSheet == nil else { return false }
             self.canvas.editingUndoManager.beginUndoGrouping(); self.sizeUndoGrouping = true; return true
         }
         widthControl.onEnd = { [weak self] in self?.endDrawingSizeGesture() }
-        dragOriginalControl.title = "Original size"; dragOriginalControl.font = .systemFont(ofSize: 18)
+        dragOriginalControl.title = "Original size"; dragOriginalControl.font = DesignTokens.Typography.font(.body)
         dragOriginalControl.target = self; dragOriginalControl.action = #selector(changeDragOptions(_:))
         dragOriginalControl.state = (UserDefaults.standard.object(forKey: "DragOriginalSize") as? Bool ?? true) ? .on : .off
         dragOriginalControl.setAccessibilityLabel("Drag out at original size")
         nameField.placeholderString = "Image name"
         zoomControl.addItems(withTitles: ["25%", "50%", "75%", "100%", "150%", "200%"])
         for (index, item) in zoomControl.itemArray.enumerated() { item.representedObject = [0.25, 0.5, 0.75, 1, 1.5, 2][index] }
-        zoomControl.selectItem(withTitle: "100%"); zoomControl.font = .systemFont(ofSize: 18)
+        zoomControl.selectItem(withTitle: "100%"); zoomControl.font = DesignTokens.Typography.font(.body)
         // Actual Size is the live main-menu command (same action, target and key equivalent), copied so the menu stays the source of truth.
         if let actual = copiedMainMenuItem(#selector(toggleActualSize)) {
             actual.tag = ZoomPopUpButton.actualSizeTag
@@ -75,15 +75,15 @@ extension AppDelegate {
         drag.drawsBackground = false
         configureDragExport(drag)
         drag.showsHandIconOnly = true
-        drag.toolTip = "Drag the drawing into Finder or another app"
+        AppToolTip.setText("Drag the drawing into Finder or another app", for: drag)
         dragFormatToggle.segmentStyle = .capsule
-        dragFormatToggle.font = .systemFont(ofSize: 20)
+        dragFormatToggle.font = DesignTokens.Typography.font(.body)
         dragFormatToggle.setAccessibilityLabel("Image format")
-        dragFormatToggle.toolTip = FormatToggle.toolTip
-        for (index, title) in FormatToggle.titles.enumerated() { dragFormatToggle.setLabel(title, forSegment: index); dragFormatToggle.setWidth(0, forSegment: index); dragFormatToggle.setToolTip(FormatToggle.toolTip, forSegment: index) }
+        AppToolTip.setText(FormatToggle.toolTip, for: dragFormatToggle)
+        for (index, title) in FormatToggle.titles.enumerated() { dragFormatToggle.setLabel(title, forSegment: index); dragFormatToggle.setWidth(0, forSegment: index) }
         dragFormatToggle.target = self; dragFormatToggle.action = #selector(changeDragOptions(_:))
         dragFormatToggle.selectedSegment = FormatToggle.segment(forStoredChoice: UserDefaults.standard.integer(forKey: FormatToggle.defaultsKey))
-        status.font = .systemFont(ofSize: 18); status.lineBreakMode = .byTruncatingTail
+        status.font = DesignTokens.Typography.font(.caption); status.lineBreakMode = .byTruncatingTail
 
         let controls = ModernEditorChrome.SharedControls(
             canvas: canvas, canvasBorder: canvasBorder, status: status, sizeLabel: sizeLabel,
@@ -122,5 +122,6 @@ extension AppDelegate {
 
         wireEditorChrome(scroll: chrome.scrollView)
         setTool(.arrow)
+        AppToolTip.install(on: content)
     }
 }

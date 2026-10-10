@@ -275,8 +275,8 @@ private final class PhotoBrowserCell: NSTableCellView {
     override init(frame: NSRect) {
         super.init(frame: frame)
         preview.imageScaling = .scaleProportionallyUpOrDown
-        nameLabel.font = .systemFont(ofSize: 20, weight: .medium)
-        detailLabel.font = .systemFont(ofSize: 18)
+        nameLabel.font = DesignTokens.Typography.font(.bodyStrong)
+        detailLabel.font = DesignTokens.Typography.font(.body)
         nameLabel.lineBreakMode = .byTruncatingMiddle
         detailLabel.lineBreakMode = .byTruncatingTail
         for view in [preview, nameLabel, detailLabel] {
@@ -359,18 +359,18 @@ final class PhotoBrowserCoordinator: NSObject, NSTableViewDataSource, NSTableVie
     private func buildContent(in panel: NSPanel) {
         let content = NSView(); browserContent = content; panel.contentView = content
         let title = NSTextField(labelWithString: "Open a photo")
-        title.font = .systemFont(ofSize: 26, weight: .semibold)
+        title.font = DesignTokens.Typography.font(.title)
         let help = NSTextField(wrappingLabelWithString: "Choose Pictures or another image folder, or select a photo from your Photos library. Double-click a thumbnail to open the original image.")
-        help.font = .systemFont(ofSize: 20)
+        help.font = DesignTokens.Typography.font(.body)
         configure(folderButton, "Pictures Folder…", #selector(chooseFolder))
         configure(libraryButton, "Photos Library…", #selector(chooseLibrary))
         configure(openButton, "Open Selected Photo", #selector(openSelected)); openButton.isEnabled = false
         openButton.keyEquivalent = "\r"
         let close = NSButton(title: "Close", target: self, action: #selector(closeBrowser))
-        close.font = .systemFont(ofSize: 20); close.keyEquivalent = "\u{1b}"
+        close.font = DesignTokens.Typography.font(.body); close.keyEquivalent = "\u{1b}"
         let sources = NSStackView(views: [folderButton, libraryButton]); sources.spacing = 16
         let bottom = NSStackView(views: [close, openButton]); bottom.spacing = 16
-        status.font = .systemFont(ofSize: 18); status.maximumNumberOfLines = 2
+        status.font = DesignTokens.Typography.font(.body); status.maximumNumberOfLines = 2
         status.stringValue = "No folder selected. Only the folder you choose will be browsed."
         table.headerView = nil; table.rowHeight = 140; table.intercellSpacing = NSSize(width: 0, height: 4)
         table.dataSource = self; table.delegate = self; table.target = self
@@ -394,7 +394,7 @@ final class PhotoBrowserCoordinator: NSObject, NSTableViewDataSource, NSTableVie
     }
     private func configure(_ button: NSButton, _ title: String, _ action: Selector) {
         button.title = title; button.target = self; button.action = action
-        button.bezelStyle = .rounded; button.font = .systemFont(ofSize: 20)
+        button.bezelStyle = .rounded; button.font = DesignTokens.Typography.font(.body)
     }
     private func setLoading(_ loading: Bool) {
         folderButton.isEnabled = !loading; libraryButton.isEnabled = !loading
