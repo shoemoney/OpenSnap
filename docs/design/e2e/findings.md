@@ -650,3 +650,79 @@ These rows were tested against the current behaviour and need a second look once
 ### Clipboard
 
 The pasteboard held no text before the run (`pbpaste` returned 0 bytes; any non-text contents could not be saved). ⌘C, ⌘V and ⌘X were used once each on a synthetic rectangle; the clipboard was reset to empty text at the end (`pbpaste` = 0 bytes).
+
+## F-J5-005 investigation
+
+**Question.** Why did the Open/Save panel service (`com.apple.appkit.xpc.openAndSavePanelService`) reach ~66 GB when ⌘E, ⌘O, ⌘S were pressed in the isolated copy? Candidates: (A) the `env -i` / fake-HOME launch from `tools/e2e-session.sh`, (B) OpenSnap's panel configuration, (C) a macOS 27 beta bug.
+
+**Update, same day: reproduced on the real app, see "Controlled live trial" below.** The paragraph that follows is the probe-only conclusion.
+
+**Conclusion: inconclusive, with (A) and (B) ruled out as sufficient causes.** 39 bounded trials on the same machine and OS build (Darwin 27.2) never moved the service off ~85–116 MB, in either environment, with OpenSnap's exact panel configurations, with an Accessibility client attached, and with four panels back to back. The 66 GB case therefore needs something the probe does not have: the real OpenSnap process, or the real-click harness's input and capture path. Confidence that the env and the panel config are not the cause: high. Confidence in any specific cause: low.
+
+### Method
+
+- A throwaway app (`panel-probe/probe.swift`, 64 lines, kept out of the app target) opens one system panel with `runModal`, cancels itself with `cancel(nil)` after 5 s and exits. A failsafe exits at `seconds + 6`.
+- Modes: `open-basic` (`NSOpenPanel()`), `open-opensnap` (`allowedContentTypes = [.image, .pdf, UTType(exportedAs: com.shoemoney.opensnap.document)]`, single selection, App.swift `openFile`), `save-basic` (`NSSavePanel()`), `save-opensnap` (`Untitled.opensnap`, `[document type]`, App.swift `save`), `export-opensnap` (title, label, prompt, `allowsOtherFileTypes = false`, PNG content type, and a 600 pt wide accessory stack with the same controls as `ExportAccessory`: heading, format popup, quality line, checkbox, two wrapped labels with a 60 pt minimum), `sequence` (export, open, save, save-basic in one process, 4 s each).
+- The probe bundle carries the same `CFBundleDocumentTypes` and `UTExportedTypeDeclarations` as `build/OpenSnap.app`, is copied into a fresh directory per trial, gets a throwaway bundle id (`com.shoemoney.panelprobe-<pid>-<n>`) and an ad-hoc signature, and is exec'd directly like the launcher does. It never touches OpenSnap's bundle ids, defaults domains, Application Support or the Keychain.
+- Safety: a watchdog (`ps` every 0.5 s, `kill -9` above 2 GB, log to `watchdog.log`) ran for the whole experiment; the runner also checked `memory_pressure` (free < 30 %) before each trial and had its own 2 GB kill. Conditions ran strictly one at a time, at most 3 trials per mode.
+- Conditions: **normal** (inherited shell environment, real HOME); **isolated** (exactly the launcher's `env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin HOME=$T/home CFFIXED_USER_HOME=$T/home TMPDIR=$T/tmp OPENSNAP_APP_SUPPORT=$T/support`, fresh `$T` per trial, deleted after); **isolated+ax** (isolated, plus a read-only Accessibility walker over the probe and the panel service, depth ≤ 8, ≤ 400 nodes, every 0.4 s, which is what a computer-use harness does); **isolated+ax+esc** (as isolated+ax, with a real Esc key event posted only to the probe's pid every 4.5 s, and the `sequence` mode).
+- Per trial the runner recorded peak service RSS and CPU (`ps`, every 0.25 s), whether a service process and panel windows existed (read-only `CGWindowListCopyWindowInfo`), whether the auto-cancel returned, and whether the service was gone a second after the probe exited.
+
+### Results (39 trials)
+
+| Condition | Mode | Trials | Peak service RSS (MB) | Peak CPU (%) | Service seen | Panel window seen | Auto-cancel returned | Watchdog fired |
+|---|---|---|---|---|---|---|---|---|
+| normal | open-basic | 3 | 88.8–91.2 | 175–182 | 3/3 | 3/3 | 3/3 | 0 |
+| normal | open-opensnap | 3 | 90.3–91.2 | 171–182 | 3/3 | 3/3 | 3/3 | 0 |
+| normal | save-basic | 3 | 85.3–85.5 | 137–160 | 3/3 | 3/3 | 3/3 | 0 |
+| normal | save-opensnap | 3 | 84.2–85.5 | 148–168 | 3/3 | 3/3 | 3/3 | 0 |
+| normal | export-opensnap | 3 | 84.7–86.3 | 145–161 | 3/3 | 3/3 | 3/3 | 0 |
+| isolated | open-basic | 3 | 90.7–90.9 | 161–172 | 3/3 | 3/3 | 3/3 | 0 |
+| isolated | open-opensnap | 3 | 89.5–91.2 | 170–182 | 3/3 | 3/3 | 3/3 | 0 |
+| isolated | save-basic | 3 | 84.6–85.9 | 151–155 | 3/3 | 3/3 | 3/3 | 0 |
+| isolated | save-opensnap | 3 | 84.6–86.6 | 148–156 | 3/3 | 3/3 | 3/3 | 0 |
+| isolated | export-opensnap | 3 | 86.2–86.6 | 149–157 | 3/3 | 3/3 | 3/3 | 0 |
+| isolated+ax | open-opensnap | 3 | 92.3–92.6 | 162–176 | 3/3 | 3/3 | 3/3 | 0 |
+| isolated+ax | export-opensnap | 3 | 87.3–88.0 | 148–168 | 3/3 | 3/3 | 3/3 | 0 |
+| isolated+ax+esc | sequence (4 panels) | 3 | 114.1–116.2 | 150–165 | 3/3 | 3/3 | 3/3 | 0 |
+
+The peak CPU is the panel's first-second launch burst (a few samples), not a sustained load. In every trial the service process was gone within a second of the probe cancelling. The 448 watchdog samples never exceeded 119 MB. Watchdog firings: **0**. No condition was stopped early.
+
+### What the trials do show
+
+- The panels are visible to a window-list query in every condition: an "Open and Save Panel Service" window (layer 8, titled Open or Save) plus the probe's own panel window. So the panel being invisible to the harness in J5 is a property of the harness, not of the isolated environment.
+- With a panel open the probe's AX tree grows from ~91 to ~112 (save, export) or ~391 (open) nodes and the service itself exposes 1 element. That matches the J5 observation that the app's tree "collapses to one element" while a panel is up.
+- The service's `CoreUI ... myDocuments.cannedSearch` faults and the `com.apple.dt.xctest` "test daemon" registration also appear in the healthy probe runs, so they are not the cause. The `FakeForceTouchDevice` registration noted by ops was not reproduced by the probe.
+
+### What the incident log adds (not reproduced)
+
+`log show` for 07:25–07:33 CDT on 2026-10-10 shows service pid 77714 starting 07:26:29 and still alive at 07:30:22 when ops sent SIGTERM; it then logged "Remaining transactions after SIGTERM: 9 (5 os_transaction + 4 xpc_transaction_begin)" 60 times without exiting. Pid 98463 ran 07:31:04–07:31:15. A healthy service exits within a second of the panel closing, so in the J5 session the panel was **not torn down** after the Esc / ⌘. presses even though the lane believed it had dismissed it. The leading explanation is that the panel stayed open and wedged in the ViewBridge / event path while the driver kept sending events, but this is inference from the log, not a measured cause.
+
+### Recommended next steps
+
+1. No change to `tools/e2e-session.sh`'s environment is justified: the launcher's `env -i` set is not the trigger, so adding USER, LOGNAME, SHELL or XPC variables would be a guess. Nothing was implemented there.
+2. Keep the ops watchdog (it worked: it is what ended both runaway services) and have every future lane that opens a system panel start one first. A cheap place for it is `tools/e2e-session.sh start` (a background loop killing any `openAndSavePanelService` above 2 GB, stopped by `stop`), with a test in `tools/test-e2e-session-guard.py`. It is a small, separate change.
+3. To close the gap, run the one experiment this lane was not allowed to run: the real isolated OpenSnap copy, one ⌘O, with the 2 GB watchdog already up, dismissed by `cancel` from a debugger-free timer rather than by the driver. If the service stays small, drive the same panel with the real-click harness; the harness's input path (the `FakeForceTouchDevice` registration is an XCTest signature) is then the remaining suspect. If the service grows without a harness, the cause is in the real process (document state, history, canvas) and the probe should be extended with those.
+4. Until then treat ⌘E, ⌘O, ⌘S, ⇧⌘S as `gap: harness` rows in the matrix, not as an OpenSnap defect: nothing in OpenSnap's panel configuration reproduced the growth.
+
+The probe source is `docs/design/e2e/panel-probe/probe.swift`; build with `swiftc -O probe.swift`, wrap in an `.app` carrying OpenSnap's document-type keys, and run `PanelProbe <mode> [seconds]`.
+
+### Controlled live trial (watchdog up, real OpenSnap, one ⌘O)
+
+The experiment step 3 above asked for, run after the launcher watchdog was implemented. `sh tools/e2e-session.sh start --seed empty` (an isolated copy, so `env -i` and the throwaway HOME as before) with the watchdog (SIGKILL above 2 GB, checked every 0.5 s) running; one ⌘O sent to the app's pid through the real-click driver; panel-service RSS and CPU and the window list sampled (`ps` plus read-only `CGWindowListCopyWindowInfo`, `panel-probe/trials/sampler.py`). Memory free stayed at 80-82 % (hard stop was 30 %). The machine was idle (no other test run) for both trials.
+
+| Trial | Sample step | Baseline | Service appears | RSS over time | CPU | Watchdog | Dismissal | Service gone |
+|---|---|---|---|---|---|---|---|---|
+| 1, ⌘O | 1 s | no service, 1 app window | t+8 s, 88 MB | 88 MB, then 1322 MB one second later, then killed at 2506 MB | 29 %, then 97 % | SIGKILL at 08:12:33 (rss 2,505,616 KB) | none possible: the service was already gone, the Open window disappeared with it | yes, killed |
+| 2, ⌘O (same session) | 0.25 s | no service, 1 app window | t+4.0 s, 33 MB | 33, 291, 625, 923, 1218, 1544, 1820, 2123, 2425 MB at 0.25-0.3 s steps, then killed at 2516 MB | 56 % rising to 100 % | SIGKILL at 08:14:21 (rss 2,515,968 KB) | none possible, as above | yes, killed |
+
+Growth is roughly linear at **1.1-1.2 GB per second** at 100 % CPU, starting the moment the panel appears. The 2 GB threshold is crossed about 2 s after ⌘O, so the watchdog's 0.5 s poll reacts in time and no human or driver dismissal step (Esc, clicking Cancel) can land first: the three dismissal steps in the plan (Esc, Cancel button, `stop`) were not meaningfully testable, because the watchdog had already ended the service each time. After the kill the app stayed responsive (a window "Untitled", the AX tree normal) and `stop` ended it with SIGTERM in 1 s. The session's real-store compare said "stores unchanged" and no preference plist or temp dir was left. ⌘S was not run: the plan only repeated with ⌘S when the first trial stayed under 500 MB, and ⌘O reached 2.5 GB.
+
+### Conclusion
+
+1. **The growth is real and reproduces 2 of 2 on the real isolated OpenSnap process with one ⌘O**, on macOS 27 (Darwin 27.2). The J5 observation (and the ~66 GB figure) is therefore not a one-off.
+2. **It is not the launcher's environment and not OpenSnap's panel configuration alone.** The probe used the same `env -i` environment and the same allowed content types and never left 119 MB in 39 trials. What differs now: the real OpenSnap process (its `runModal` is called inside `withFrameWindowValuesSuspended`, with a document and an editor window behind it) and the real-click driver's key path, which performs the matching menu item through Accessibility instead of posting a key event. These two are not separated yet. A probe with a File > Open… menu item, driven by the same driver, would split them; that is the one remaining experiment and it needs the watchdog first.
+3. **The launcher watchdog is now the mitigation, and it is sufficient for safety.** At 1.1-1.2 GB/s from a 2 GB threshold and a 0.5 s poll the service is killed at about 2.5 GB instead of reaching the ~66 GB seen in J5. It is built into `tools/e2e-session.sh start` (see the script header and `tools/test-e2e-session-guard.py`), logged to the session and printed by `stop`. A lane that opens a system panel without a session started by `start` is still unprotected.
+4. **Matrix.** ⌘E, ⌘O, ⌘S and ⇧⌘S (E2E-KEY-007, -004, -005, -006) are `gap: harness`: an open/save panel cannot be viewed or dismissed through the real-click driver until the cause is found. They are not marked E2E because nothing was viewed. Until an app-side cause is known, do not describe this as an OpenSnap defect or as a macOS defect.
+
+Evidence: `panel-probe/trials/` holds the two sample logs, the sampler and the watchdog's kill log.

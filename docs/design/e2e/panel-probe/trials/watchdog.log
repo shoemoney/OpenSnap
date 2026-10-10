@@ -1,0 +1,2 @@
+2026-10-10T08:12:33-0500 killed pid 26281 rss 2505616KB (threshold 2097152KB) com.apple.appkit.xpc.openAndSavePanelService
+2026-10-10T08:14:21-0500 killed pid 33848 rss 2515968KB (threshold 2097152KB) com.apple.appkit.xpc.openAndSavePanelService

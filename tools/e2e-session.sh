@@ -19,6 +19,13 @@
 # nothing here notices. Do not drive Move to Trash in a session; if it was driven, remove only the files it trashed (the session's
 # own entries) from ~/.Trash by hand. Everything else the app writes stays under the session's temp dir.
 #
+# PANEL WATCHDOG (F-J5-005): start also launches a background watchdog that every E2E_WATCHDOG_INTERVAL seconds (default 0.5) looks at
+# running processes and SIGKILLs any whose executable is exactly com.apple.appkit.xpc.openAndSavePanelService (the system open/save panel
+# service) once its resident size passes E2E_PANEL_WATCHDOG_KB (default 2097152 = 2 GB). That service grew to ~66 GB and ignored SIGTERM
+# during a real-click run; nothing else is ever matched or killed. Kills are timestamped in $STATE/<id>.watchdog.log; status reports the
+# watchdog and stop prints its kills, then ends it AFTER the app cleanup and BEFORE the real-store compare. E2E_WATCHDOG_PS /
+# E2E_WATCHDOG_KILL replace `ps` and `kill` so tests never signal a real process.
+#
 # stop: SIGTERM, SIGKILL after E2E_STOP_TIMEOUT seconds (default 10), drop the throwaway defaults domain (E2E_DEFAULTS, default
 # /usr/bin/defaults), remove the temp dir, THEN compare the real stores. Exit non-zero when any watched real store changed.
 set -eu
@@ -28,6 +35,13 @@ DEFAULTS=${E2E_DEFAULTS:-/usr/bin/defaults}
 STOP_TIMEOUT=${E2E_STOP_TIMEOUT:-10}
 SESSIONS=${E2E_STATE_DIR:-${TMPDIR:-/tmp}/opensnap-e2e-sessions}
 GUARD="python3 -I $ROOT/tools/real_store_guard.py"
+SELF="$ROOT/tools/$(basename -- "$0")"
+PANEL_SERVICE="com.apple.appkit.xpc.openAndSavePanelService"
+WATCHDOG_KB=${E2E_PANEL_WATCHDOG_KB:-2097152}
+case "$WATCHDOG_KB" in ''|*[!0-9]*) WATCHDOG_KB=2097152 ;; esac
+WATCHDOG_INTERVAL=${E2E_WATCHDOG_INTERVAL:-0.5}
+WATCHDOG_PS=${E2E_WATCHDOG_PS:-/bin/ps -axo pid=,rss=,comm=}
+WATCHDOG_KILL=${E2E_WATCHDOG_KILL:-kill}
 
 # Only <real id>.e2e-<digits> passes, so neither real defaults domain (the current id or the retired one) can ever match.
 valid_id() {
@@ -81,6 +95,63 @@ terminate_app() {
     else
         echo "app pid $pid exited after SIGTERM (${waited}s)"
     fi
+}
+
+# ---------------------------------------------------------------------------------------------------------------- watchdog
+# "pid rss" for every process whose executable BASENAME is exactly the panel service and whose rss (KB) is above the threshold.
+panel_over_threshold() {
+    $WATCHDOG_PS 2>/dev/null | awk -v name="$PANEL_SERVICE" -v max="$1" '
+        { pid = $1; rss = $2; $1 = ""; $2 = ""; sub(/^ +/, "", $0); n = split($0, parts, "/")
+          if (parts[n] == name && pid ~ /^[0-9]+$/ && pid + 0 > 1 && rss ~ /^[0-9]+$/ && rss + 0 > max + 0) print pid, rss }'
+}
+
+cmd_watchdog() {
+    id=${1:-}
+    valid_id "$id" || { echo "watchdog: refusing unexpected id '$id'" >&2; exit 2; }
+    session="$SESSIONS/$id.session"; log="$SESSIONS/$id.watchdog.log"; ticks=0
+    # Ends when the session file is gone (stop, or the session dir was wiped); E2E_WATCHDOG_TICKS bounds a test run.
+    while [ -f "$session" ]; do
+        panel_over_threshold "$WATCHDOG_KB" | while read -r wpid wrss; do
+            if $WATCHDOG_KILL -9 "$wpid" 2>/dev/null; then verdict=killed; else verdict="kill failed for"; fi
+            echo "$(date '+%Y-%m-%dT%H:%M:%S%z') $verdict pid $wpid rss ${wrss}KB (threshold ${WATCHDOG_KB}KB) $PANEL_SERVICE" >> "$log"
+        done
+        ticks=$((ticks + 1))
+        [ "${E2E_WATCHDOG_TICKS:-0}" -eq 0 ] || [ "$ticks" -lt "${E2E_WATCHDOG_TICKS:-0}" ] || break
+        sleep "$WATCHDOG_INTERVAL"
+    done
+}
+
+start_watchdog() {
+    id=$1
+    nohup sh "$SELF" watchdog "$id" >/dev/null 2>&1 </dev/null &
+    printf '%s\n' "$!" > "$SESSIONS/$id.watchdog.pid"
+}
+
+watchdog_state() {
+    id=$1
+    wpid=$(head -n 1 "$SESSIONS/$id.watchdog.pid" 2>/dev/null || true)
+    case "$wpid" in ''|*[!0-9]*) echo "none"; return 0 ;; esac
+    if kill -0 "$wpid" 2>/dev/null; then echo "pid $wpid running"; else echo "pid $wpid gone"; fi
+}
+
+watchdog_kills() { n=$(grep -c ' killed pid ' "$SESSIONS/$1.watchdog.log" 2>/dev/null || true); echo "${n:-0}"; }
+
+# Only a process whose command line is this script's watchdog for this very session is signalled.
+stop_watchdog() {
+    id=$1
+    wpid=$(head -n 1 "$SESSIONS/$id.watchdog.pid" 2>/dev/null || true)
+    case "$wpid" in ''|*[!0-9]*) rm -f "$SESSIONS/$id.watchdog.pid"; return 0 ;; esac
+    if kill -0 "$wpid" 2>/dev/null; then
+        wcmd=$(ps -o command= -p "$wpid" 2>/dev/null || true)
+        case "$wcmd" in
+            *" watchdog $id") kill -TERM "$wpid" 2>/dev/null || true ;; # protection:watchdog
+            *) echo "pid $wpid is not this session's watchdog; NOT signalling it" >&2 ;;
+        esac
+    fi
+    kills=$(watchdog_kills "$id")
+    echo "watchdog         stopped; panel-service kills this session: ${kills:-0}"
+    if [ -f "$SESSIONS/$id.watchdog.log" ]; then sed 's/^/  /' "$SESSIONS/$id.watchdog.log"; fi
+    rm -f "$SESSIONS/$id.watchdog.pid" "$SESSIONS/$id.watchdog.log"
 }
 
 # Everything destructive, in one place, so callers can order it relative to the compare.
@@ -280,6 +351,7 @@ cmd_start() {
         echo "started=$(date '+%Y-%m-%dT%H:%M:%S%z')"
     } > "$SESSIONS/$THROWAWAY_ID.session"
     LAUNCHED=yes
+    start_watchdog "$THROWAWAY_ID"
     echo "session          $THROWAWAY_ID"
     echo "pid              $APP_PID   (drive it with mcp__kimi-cu__get_app_state pid=$APP_PID)"
     echo "app copy         $APP (copied from $APP_SRC; the source bundle is never executed)"
@@ -289,6 +361,7 @@ cmd_start() {
     if [ "$AWS" = yes ]; then
         echo "aws              AWS_SHARED_CREDENTIALS_FILE points at the owner's credentials file in place; its content is never read or printed here"
     fi
+    echo "panel watchdog   kills any $PANEL_SERVICE above ${WATCHDOG_KB}KB RSS (E2E_PANEL_WATCHDOG_KB); log $SESSIONS/$THROWAWAY_ID.watchdog.log"
     echo "real stores      before: $(cat "$TMP/guard-before.txt")"
     echo "stop with        sh tools/e2e-session.sh stop"
 }
@@ -304,6 +377,7 @@ cmd_status() {
         case "$pid" in ''|*[!0-9]*) ;; *) kill -0 "$pid" 2>/dev/null && alive=running ;; esac
         echo "session $(field id "$file")  pid $pid ($alive)  seed $(field seed "$file")  aws $(field aws "$file")  started $(field started "$file")"
         echo "  dir $(field dir "$file")"
+        echo "  panel watchdog $(watchdog_state "$(field id "$file")"), threshold ${WATCHDOG_KB}KB, kills $(watchdog_kills "$(field id "$file")")"
     done
     [ "$found" -gt 0 ] || echo "no e2e sessions"
     status=0
@@ -336,6 +410,7 @@ cmd_stop() {
     echo "stopping         $id (pid $pid)"
     cleanup_failed=0
     session_cleanup "$pid" "$dir" "$id" || cleanup_failed=1  # protection:order
+    stop_watchdog "$id"
     rm -f "$target"
     echo "cleanup          app stopped, throwaway defaults ($id) dropped, temp dir removed BEFORE the final compare; the compare below would show any damage cleanup did"
     status=0
@@ -352,5 +427,6 @@ case "${1:-}" in
     start) shift; cmd_start "$@" ;;
     status) cmd_status ;;
     stop) shift; cmd_stop "$@" ;;
+    watchdog) shift; cmd_watchdog "$@" ;;
     *) echo "usage: e2e-session.sh start [--app PATH] [--seed empty|history|destinations|all] [--aws] | status | stop [SESSION_ID|PID]" >&2; exit 2 ;;
 esac
