@@ -172,6 +172,9 @@ final class AppSafetyHotkeyManager: GlobalHotkeyEditing {
         screen = globalScreen; fullscreen = globalFullscreen; frame = globalFrame; upload = globalUpload; show = globalShow
     }
     func unregister() throws { Self.unregistrations += 1 }
+    /// Whether the Settings window is holding the shortcuts paused (the real manager's `editing`).
+    private(set) var editing = false
+    func setEditing(_ value: Bool) { editing = value }
 }
 
 // Unexpected file dialogs fail the test instead of blocking or showing UI.
@@ -549,8 +552,14 @@ enum AppSafetyTests {
         preferences.simulatesVisibility = true; preferences.shown = true
         app.receiveCapture(.failure(AppSafetyCaptureCoordinator.cancellation))
         try expect(preferences.isVisible, "Cancelled capture retains Preferences")
+        // R3-008: Settings in front on Capture has the global shortcuts paused; ordering it out for a capture must put them back.
+        let settings = try app.settingsController.b6Unwrap("the Settings controller")
+        settings.show(tab: SettingsWindowController.captureTabIndex)
+        settings.activityChanged(key: true, appActive: true)
+        try expect(app.hotkeys.editing, "Settings key and active on Capture pauses the shortcuts")
         app.receiveCapture(.success(try image()))
         try expect(!preferences.isVisible, "Accepted Snap dismisses Preferences before showing the replacement drawing")
+        try expect(!app.hotkeys.editing, "…and the shortcuts it paused are live again, not left paused behind a hidden window (R3-008)")
     }
     static func originalMetadataRecovery() throws {
         let brushMetadata = DrawingDefaults(values: ["brushColor": "0.2 0.4 0.6 1", "brushSize": "6"])

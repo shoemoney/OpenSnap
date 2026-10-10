@@ -379,6 +379,7 @@ extension AuditRun {
             step("S43", "audit batch 3c round 2: sheets at the minimum window, handles at 25%, Delete from Web off") { s43() }
             step("S44", "audit batch 6: Original size, Resize Apply, footer at 980, Hide and Trash, Toolbox") { s44() }
             step("S45", "audit batch 8: WebDAV note, footer error with the box, pause note, Details size, Resize unticked") { s45() }
+            step("S46", "audit batch 10: oversized Resize, corner drag, Export accessory, selected Upload row, Capture note error, Details after delete") { s46() }
             step("S13", "capture picker") { s13() }
             step("S14", "countdown") { s14() }
             step("S15", "capture flash") { s15() }
