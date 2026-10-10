@@ -283,6 +283,170 @@ How to read the evidence: windows are captured one at a time, so menus, pop-up l
 
 ---
 
+# E2E audit findings: lane J3 (rendered matrix)
+
+Source revision `3194247` (main after fix batches 3a and 3b). Driver: Sonnet J3, harness captures only (`tools/eye-dump-audit.sh`, throwaway bundle id, isolated HOME and defaults, display options injected inside the throwaway copy). **Nothing here is a real-click E2E result**: a capture proves how a state looks, not that a user can reach it, and the harness cannot prove VoiceOver speech or live screen capture. The 106-capture packed set is `docs/design/evidence/e2e-2026-10-10/j3/` (file names below are relative to it, with `@3194247` dropped); side-by-side composites are in `docs/design/evidence/e2e-2026-10-10/j3-diffs/`. Raw runs stayed in `/tmp/j3/` (not committed, 3,338 PNGs over 18 runs).
+
+Severity: P0 crash or data loss, P1 broken or confusing, P2 visual or space, P3 polish. Surfaces whose fix is still in flight in batch 3c (Resize sheet, Toolbox menu, full-screen layout, History confirmations) are marked **pending 3c** instead of being filed again.
+
+## What was run
+
+All with `--icons sf` (see "Icons" below), all sequential, built from `3194247` with `sh tools/build.sh`.
+
+| Run | Command (after `sh tools/eye-dump-audit.sh /tmp/j3/<name>`) | PNGs |
+|---|---|---|
+| base-a | `--groups main,more,overlays,states,fullscreen,layout --appearances light,dark --icons sf` | 517 |
+| base-sizes | `--groups sizes --sizes 980xmin,1024x740,1280x800,1440x900,full --appearances light,dark --icons sf` | 20 |
+| rt, ic, dwc, rm | `--display reduceTransparency` / `increaseContrast` / `differentiateWithoutColor` / `reduceMotion` `--groups main,states` (ic also `overlays`) `--sizes 980xmin,1440x900 --appearances light,dark` | 262 / 286 / 262 / 262 |
+| combo-rt-ic, combo-all | `--display reduceTransparency,increaseContrast` and all four, `--groups main,states --sizes 980xmin` | 258 / 258 |
+| icons-fa, icons-sf | `--groups main --sizes 1280x800 --appearances light --icons fa` / `sf` | 0 / 53 |
+| rm-overlays(2) | `--display reduceMotion --groups overlays` (run twice) | 24 / 24 |
+| base-more, rt-more, ic-more(2), dwc-more | `[--display …] --surfaces S17,S19,S20,S21,S25,S26,S39[,S31]` | 219 / 204 / 203, 219 / 216 |
+| noise | `--groups main --appearances light --icons sf` (a second baseline, no option) | 51 |
+
+`--sizes` is consumed only by the `sizes` group (populated S11M and empty S11E matrices), so the five sizes exist as a full matrix for the editor alone; every other surface is captured at the size its harness step uses (listed in the matrix footnotes).
+
+Validity checks:
+- **Determinism:** the noise run matches the baseline bit for bit in 49 of 51 captures; the two that differ are `S05-selection-multi-light` (2,670 px) and the system Colors panel `S06-color-panel-light` (5,022 px). Every other difference below is therefore a real signal. Date lines in History details (`4:01AM` vs `4:26AM`) also differ per run and are ignored.
+- **Active-app flag:** each capture records `appActive`. 46 captures in the first `ic-more`/`rm-overlays` runs were taken with the app inactive (yellow default buttons render grey); they were re-run (`ic-more2`, `rm-overlays2`) and only active pairs are used, though S21/S25/S26/S39 stayed inactive in `ic-more2` and `base-more` and are not used for any claim.
+- **Checker:** `python3 tools/check-eye-dump.py` on every raw run reports 0 failures (no clipping, overlap, size or rail violation), except the baseline's `raw-sf/layout/budget-3194247.json` which "has no PNG" by design (the packed set passes: 111 PNGs, 69 layouts, 0 failures).
+- **Real stores:** the guard digest (`dbde037ac2085108`, 122 files + 2 defaults plists) was identical before and after every run. Three runs (`dwc`, `rm-overlays`, `ic-more2`) print `RESULT STORES CHANGED` solely because of throwaway plists left in `~/Library/Preferences` by other sessions: `com.shoemoney.opensnap.eyedump-43695`, `…eyedump-71647` (another worker's harness runs; mine were 10523, 71508, 62036) and `com.shoemoney.opensnap.e2e-62694` (the E2E session launcher). The e2e plist is still there and its pid is no longer running; it was not touched.
+
+## Positive controls (does each display option change the render where it must?)
+
+Pixel diff = pixels whose luma differs by more than 8 between the baseline capture and the same capture with the option, same size and appearance.
+
+| Option | Captures compared (identical) | Where it must change | Measured | Verdict |
+|---|---|---|---|---|
+| Reduce Transparency | 262 (15: system panels, standalone popovers) | glass plates become solid | dark `S11-width-980`: 212,420 px (6.67%); `S03-topbar-dark` crop 24.2%; `S09-footer-dark` 24.5%. Light: only 2,157 px (0.07%), plate edge hairlines. Structure: in `S01` metrics 16 `hidden` flags flip true→false (8 solid fallback views appear), both appearances. | **Pass.** Strong in dark, near invisible in light because the glass already reads as white over white (`j3-diffs/rt-top-light-base-vs-rt.png`, baseline left, option right). |
+| Increase Contrast | 286 (21: system panels, S13 pickers, S14 contrast variant) | stronger borders | every plate gains a hairline border and Snap a black outline: `S11-width-980` 12,298 px light / 24,162 dark; footer 2.8% / 4.7% (`j3-diffs/ic-980-light.png`, `ic-980-dark.png`). | **Pass** for the editor chrome. See F-J3-004 for what it does not touch. |
+| Differentiate Without Color | 262 (60) | a non-colour selection cue | exactly 128 px per capture with a selected tool: a 16 × 2 pt underline under the selected tool (`j3-diffs/dwc-arrow.png`). `S09-format-toggle-png-light-dwc` is **0 px** different. | **Pass, minimal**; see F-J3-001. |
+| Reduce Motion | 262 (240) | no animation | static stills cannot show motion. Pressed tool glyph is no longer scaled down (`S40-tool-pressed-*` 504 px; `j3-diffs/rm-pressed.png`); the S14 countdown state string changes (digit 3 reached at tick 1 instead of 2, digit 1 at tick 41 instead of 42). The S15 flash stills are driven with explicit alpha, so they cannot differ. | **Pass, indirect.** |
+| Reduce Transparency + Increase Contrast | 258 (7) | both effects | additive: dark `S11-width-980` 203,180 px (6.38%), light 13,852 px (0.44%) | Pass |
+| All four | 258 (7) | all four effects, no conflict | versus the two-option run only about 190 px more at 980 light (underline plus press scale); `j3-diffs/combo-all-980.png` shows opaque plates, outlines and the underline together, nothing clipped or overlapping | Pass |
+
+No option shows an absent change where one is required, so no "dead option" finding is filed; the weaknesses are in what the options do (F-J3-001, F-J3-004).
+
+## Icons
+
+- `--icons fa` is **unavailable in this build** (`icon-mode-unavailable.json`: no `FontAwesome7Pro-*-subset.ttf` bundled), so nothing was captured and nothing is claimed for Font Awesome Pro.
+- `--icons sf` removes the Pro subset fonts from the throwaway copy and so exercises the shipped chain Pro → embedded Free vector → SF Symbol; the harness does not record which branch each glyph took. The glyphs are Font Awesome Free shapes (eye-slash, toolbox, images, crosshairs, pointer, brush, bucket, eraser, box-archive, clock-rotate-left, hand, cloud-arrow-up), consistent with `FontAwesomeIconsTests` ("Without Pro the Free vector outranks the SF Symbol", `tests/FontAwesomeIconsTests.swift:171`). The `icons-sf` run is bit-identical to the baseline (0 px on `S11-width-1280-light`, `S03-topbar-light`, `S09-footer-light`, `S04-tool-brush-light`), as it must be.
+- Semantics read correctly at 980: Hide = eye-slash, Toolbox = toolbox, Photos = stacked images, Snap = crosshairs, ten tool glyphs, colour well, stroke bar, Font "A", Undo = counter-clockwise arrow, Clear = broom, Save = box-archive (the floppy-disk of F-J1-021 is gone), History = clock-rotate-left, Drag = hand, Upload = cloud-arrow-up. Only the Resize glyph (stepped ruler, bottom bar next to the zoom pop-up) does not suggest resize (F-J3-011).
+
+## Findings
+
+### F-J3-001 · P2 · Differentiate Without Color adds one 2 pt underline; the PNG | JPG selection stays hue-only
+- **Surface:** editor bottom bar › Image format; any selection pill
+- **Observed:** selected PNG fill `#FEF5DC` against unselected JPG `#F0F0F0` is a 1.04:1 lightness contrast in light and `#61583E` against `#484949` is 1.3:1 in dark; both labels share the same weight (Demi 20). With Differentiate Without Color on, `S09-format-toggle-png-light-dwc` is **0 px** different from `S09-format-toggle-png-light`. The only change in the whole editor is a 16 × 2 pt underline beneath the selected tool (`S11-width-980-light-dwc` vs `S11-width-980-light`, `j3-diffs/dwc-arrow.png`), sitting directly under the glyph inside the pill.
+- **Expected:** every selected state has a non-colour cue (shape, weight, check, outline) when the option is on, and the format toggle is the editor's one two-state control.
+- **Suggested fix:** under the option draw a check or heavier outline on the selected PNG/JPG segment, and give the tool underline more room (4 pt, 2 pt gap).
+
+### F-J3-002 · P2 · History's empty and no-match states leave a blank 260 pt column
+- **Surface:** History › No history yet / No history items match these filters
+- **Observed:** the empty list well ends at x = 724 in a 1000 pt window and at x = 604 in the 880 pt one; the right-hand details column (about 260 pt, 26% and 30% of the window) is empty white in both (`S20-history-empty-light`, `S20-history-no-match-light`), while the same window with items fills it with the "6 snaps in this view" summary (`S20-history-populated-dark`). The seven action icons above stay drawn, all disabled.
+- **Expected:** with nothing to show, the message uses the whole width (or the column holds guidance such as the Save to History hint).
+- **Suggested fix:** collapse the column when there are zero items, or move the empty-state message to the window centre.
+
+### F-J3-003 · P2 · WebDAV, FTP, FTPS and SFTP forms keep the S3 form's height: about 190 pt of blank band
+- **Surface:** Upload Destinations › Add/Edit, non-S3 protocols
+- **Observed:** the sheet is 737 × 760 pt for every protocol. In the WebDAV form the last help line ends at y = 486 and the footer note starts at y = 679, a 193 pt (25%) empty band above Test / Cancel / Save (`S19-destinations-form-webdav-in-context-light`, `S19-destinations-form-sftp-in-context-light`; the S3 form fills the same height, `S19-destinations-form-s3-in-context-light`).
+- **Expected:** the sheet fits its content, as the destination list does (737 × 409 pt).
+- **Suggested fix:** size the sheet per protocol (or from the form's fitting size) instead of the tallest form.
+
+### F-J3-004 · P3 · Increase Contrast adds outlines only; glyph, disabled and segment contrast are unchanged or lower
+- **Surface:** editor chrome with Increase Contrast
+- **Observed (sampled from the PNGs):** unselected tool glyphs are `#7F7F7F` on white, 4.0:1, in baseline and with the option; in dark `#A8A8A8` on `#3D3D3D` is 4.57:1 and 4.54:1 with it. Disabled Undo is 1.6:1 before and after. The unselected JPG segment is made lighter (`#484949` → `#555555`) so its label drops from 7.09:1 to 5.92:1 in dark (`S11-width-980-dark-ic` vs `S11-width-980-dark`, JPG label). Combined with Reduce Transparency the dark glyph rises to 5.92:1 only because the plate goes solid (`S11-width-980-dark-rt-ic`).
+- **Expected:** the option darkens inactive glyphs (aim 7:1) and never lowers a label's contrast.
+- **Suggested fix:** resolve inactive glyph and segment colours through the same Increase Contrast branch as the plate border.
+- **Not a finding, a harness limit:** Settings, History, Destinations, About and the alert sheets are unchanged under the injected option (`S17` 44 of 44 captures identical, `S19` standalone forms 28 of 28 (the in-context ones differ only through the editor behind), `S20` populated, empty and no-match 10 of 10, `S25` dark 2 of 2 active captures). Those windows are drawn with stock AppKit controls (`NSButton` radios and push buttons, `SettingsWindow.swift:76`, `AppAlert.swift:72`) that follow the real system setting and cannot be flipped by an in-process injection.
+
+### F-J3-005 · P3 · "100%" and "Original size" do not say what they measure
+- **Surface:** bottom bar › zoom pop-up and the "Original size" checkbox
+- **Observed:** a 2400 × 1600 shot is shown at 1516 × 1011 pt with the pop-up reading **100%** and the checkbox ticked (`S11M-size-1440x900-dark`, `S11M-size-980xmin-light`). True 1:1 is a separate Actual Size mode (canvas 4800 pt wide for a 4800 px shot, pop-up greyed, no checkbox: `S07-actual-size-light`). The checkbox controls the size of the dragged-out and exported image (`App+ModernChrome.swift:98`) but sits beside the zoom reading as a view option.
+- **Expected:** the readout and the label say what they are (for example "Fit 100%" or the pixel scale; "Drag at original size").
+- **Suggested fix:** rename the checkbox and add the pixel scale to the zoom tooltip.
+
+### F-J3-006 · P3 (plausible, needs a real-click check) · Size readouts disagree with the canvas in three captures
+- **Observed:** `S02-populated-light` is titled "800 × 600 · 10 KB" while its canvas is 1516 × 1011 pt (3:2, a 1200 × 800 synthetic); `S35-large-canvas-w1280-dark` and `S36-selection-w1280-dark` say "300 × 180 · 37 KB" over a shot that fills the 1280 pt window; and in `S08-resize-panel-in-context-light` the title says 2400 × 1600 while the Resize sheet's Width and Height read 1517 and 1011 pixels (**pending 3c**: Resize sheet).
+- **Likely cause:** the harness replaces the document image without refreshing title and status, and the Resize session starts from `canvas.outputSize` (document points) rather than the pixel size. Neither is confirmed against a real file open.
+- **Suggested check:** open a 2400 × 1600 PNG in an E2E session and compare title, status line and Resize sheet.
+
+### F-J3-007 · P3 · At 980 the status line loses its content, at 1440 and wider the bar sits idle
+- **Surface:** bottom bar status slot
+- **Observed:** the layout budget sample at 980 with the checkbox shown leaves 48 pt of free bottom-bar width and the status 172 pt, so "Arrow · Unsaved changes · 800 × 600 · 10 KB" is cut to "Unsaved changes" (`S11M-size-980xmin-light`) and the upload link to "Link copied · cdn.exa…" (`S21-publish-success-footer-w980-light`, `j3-diffs/S21-footer-states-w980-light.png`; progress shows "Uploading Quarterly plan…"). The same bar has 542 pt of free width at 1440 and 891 to 1,158 pt at 2056 (`S11M-size-full-dark`, layout `slack.freeHorizontal`). Full-screen layout itself is **pending 3c**.
+- **Expected:** the 980 bar spends its space on what the user needs after an upload (the link), and wide windows are not left with a hole in the middle.
+- **Suggested fix:** at 980 shrink the "Original size" label to the checkbox plus tooltip (about 100 pt back); let the status keep the tool name and link first.
+
+### F-J3-008 · P3 · The window title line is the only app-owned text under 18 pt
+- **Observed:** a sweep of every `metrics/*.json` text field across 537 baseline captures finds no visible app-owned text below 18 pt except the title bar string ("Untitled – 800 × 600 · 10 KB", document name and size) at 13 pt system size. The Fonts panel (11 pt) is a system panel; the zoom pop-up's inner field reports 13 pt but its digits are drawn about 17 pt tall.
+- **Expected:** app-owned strings that carry information are 18 pt or more.
+- **Suggested fix:** none required if the title bar is treated as system chrome; if not, the size line belongs in the 20 pt status line, where it already is.
+
+### F-J3-009 · P3 · Small and empty documents use 4–41% of a large window
+- **Surface:** editor canvas well at 1440 × 900 and larger
+- **Observed:** the blank 800 × 600 canvas is 803 × 600 pt in a 1440 × 812 window (41%, `S11-width-1440-dark`), 800 × 600 in 2056 × 1197 (`S11E-empty-size-full-light`, 19.5%) and a 300 × 180 shot is 4.2% of a 1440 × 900 window (`S34-small-canvas-w1440-dark`); tools and footer are unchanged in size. Full-screen specifics are F-J1-018, **pending 3c**.
+- **Expected:** a small image can be shown larger without leaving 100%.
+- **Suggested fix:** an optional "Fit up to 200%" for images under half the viewport.
+
+### F-J3-010 · P3 · Unselected radios and checkboxes are 1.25:1
+- **Observed:** the unselected "Dock" radio disc is `#E6E6E6` on `#FFFFFF`, 1.25:1 (1.34:1 in dark: `#343434` on `#1E1E1E`), with no outline (`S17-settings-general-light`, same rendering for "Export at original size" in `S10-export-accessory-alone-light` and "Make uploads public-read" in `S19-destinations-form-s3-in-context-light`). These are system-drawn controls.
+- **Expected:** non-text contrast of at least 3:1 for a control's state indicator.
+- **Suggested fix:** leave to AppKit's Increase Contrast handling, or draw an outline ring; flagged because the owner asked about the chrome as a whole.
+
+### F-J3-011 · P3 · The Resize glyph does not read as resize
+- **Observed:** the bottom-bar Resize… button is a stepped ruler (`S11-width-980-light`, right of the zoom pop-up); the Crop tool uses the standard crop glyph, and the Resize sheet is titled "Resize or Crop".
+- **Suggested fix:** use arrows-to-corners or the crop glyph for the command, keep the ruler for dimensions.
+
+## Rendered confirmations of earlier fixes (rendered only, not E2E)
+
+| Earlier finding | What the 3194247 render shows |
+|---|---|
+| F-J1-021 floppy-disk means Save to History | Save is a box-archive glyph (`S11-width-980-light`) |
+| F-J2-008 History no-match | "Clear filters" button and "0 of 6 items" footer (`S20-history-no-match-light`); the blank column is F-J3-002 |
+| F-J2-009 History details column | selected and populated states fill it ("6 snaps in this view", `S20-history-populated-dark`) |
+| F-J2-012 Settings height jumps | General, Drawing, Capture and Upload at 301, 242, 577 and 400 pt (558 with five or more destinations), each fitted, no clipped caption (`S17-settings-general-light`, `S17-settings-upload-many-light`) |
+| F-J2-014 / 015 / 016 / 018 destination forms | per-protocol Test, per-protocol placeholders and help, S3 placeholders, a separate red result band above the buttons (`S19-destinations-form-webdav-in-context-light`, `S19-destinations-test-error-dark`) |
+| F-J2-019 Remove confirmation | Cancel is the yellow default, Remove is red (`S26-remove-destination-light`) |
+| F-J2-021 / 022 upload status | progress, success (Open and Copy icons), error (Retry and Info) states; link still truncated at 980 (F-J3-007) |
+| F-J2-023 About reflow | About is a compact column; the license text reflows at 20 pt (`S25-license-window-dark`) |
+| F-J1-004 Return in Resize | the sheet draws OK as the yellow default (`S08-resize-panel-in-context-light`); the Return behaviour needs a real key press |
+
+## J3 rendered matrix
+
+Legend: **ok** = captured and looked at; **ok·m** = captured and machine-checked (`check-eye-dump`, pixel diff against the baseline, metrics) but not individually viewed; **F-J3-nnn** = finding; **n/c** = not captured (reason below). Sizes: `L`/`D` = light/dark; "980" = 980 pt wide; "wide" = 1280, 1440 or full. Option columns refer to the injected option at 980 and 1440 (light and dark) unless a footnote says otherwise.
+
+| Surface (harness id) | L 980 | D 980 | L wide | D wide | Reduce Transp. | Increase Contrast | Diff. w/o Color | Reduce Motion | RT+IC / all four |
+|---|---|---|---|---|---|---|---|---|---|
+| Editor empty (S01, S11, S11E) | ok | ok | ok·m | ok (F-J3-009) | ok | ok (F-J3-004) | F-J3-001 | ok | ok |
+| Editor populated (S02, S11M) | ok | ok·m | ok·m | ok | ok·m | ok·m | ok·m | ok·m | ok·m |
+| Top and bottom bars (S03, S09, S37) | ok | ok·m | ok·m | ok·m | ok | ok (F-J3-004) | F-J3-001 | ok·m | ok |
+| Tool and control states (S04, S28, S40) | ok·m | ok·m | ok·m | ok·m | ok (S40-pressed) | ok·m | ok·m | ok (press scale) | ok·m |
+| Selection, text editing (S05, S36) | ok | ok·m | ok·m | ok | ok·m | ok·m | ok·m | ok·m | ok·m |
+| Colour, size, font popovers (S06, S30, S31) | ok | ok·m | ok·m | ok·m | ok·m | ok·m | ok·m | ok·m | ok·m |
+| Zoom, large, small, Actual Size (S07, S33-S35) | ok | ok·m | ok·m | ok (F-J3-005, 009) | ok·m | ok·m | ok·m | ok·m | n/c |
+| Crop and Resize sheet (S08) | ok (pending 3c) | ok·m | n/c | n/c | ok·m | ok·m | ok·m | n/c | n/c |
+| Export accessory alone (S10) | ok | ok·m | n/c | n/c | ok·m | ok·m | ok·m | n/c | n/c |
+| Frame mode (S12, S32) | ok | ok·m | ok·m | ok | ok·m | ok·m | ok·m | n/c | n/c |
+| Picker, countdown, flash (S13-S15) | ok | ok | n/c | n/c | n/c | ok·m (S13 0 px) | n/c | ok·m (state only) | n/c |
+| Permission sheet (S16) | ok | ok·m | n/c | n/c | n/c | n/c | n/c | n/c | n/c |
+| Settings, 4 tabs (S17) | ok | ok·m | ok·m (1280 variants) | ok | ok·m (0 px) | harness limit | ok·m (0 px) | n/c | n/c |
+| Capture Shortcuts sheet (S18) | ok·m | ok | n/c | n/c | n/c | n/c | n/c | n/c | n/c |
+| Destinations list and forms (S19) | ok | ok·m | ok·m | ok·m | ok·m | harness limit | ok·m | n/c | n/c |
+| History (S20) | ok | ok·m | ok·m (1120, 1280) | ok (F-J3-002) | ok·m | harness limit | ok·m | n/c | n/c |
+| Upload states (S21) | ok (F-J3-007) | ok·m | ok·m (1280, 1440) | ok | n/c (inactive pairs) | n/c (inactive pairs) | n/c | n/c | n/c |
+| Photos browser (S22) | n/c: reads the owner's Photos library, no synthetic seam | n/c | n/c | n/c | n/c | n/c | n/c | n/c | n/c |
+| Toolbox menu open (S23) | n/c: harness step reports "toolbox popup not found" (pending 3c) | n/c | n/c | n/c | n/c | n/c | n/c | n/c | n/c |
+| Status item (S24) | ok (limit: template glyph tinted by the menu bar, contrast not assessable) | ok·m | n/c | n/c | n/c | n/c | n/c | n/c | n/c |
+| About, License (S25) | ok | ok | n/c | n/c | ok·m | ok·m (0 px) | n/c | n/c | n/c |
+| Alerts and sheets (S26, S39) | ok | ok | ok·m | ok·m | ok·m | harness limit | ok·m | n/c | n/c |
+| Tooltips, drag thumbnail, help bevel (S29, S38) | ok | ok·m | n/c | n/c | ok·m | ok·m | n/c | n/c | n/c |
+| Full screen (S11F, S11FP) | n/a | n/a | ok·m | ok (pending 3c) | n/c | n/c | n/c | n/c | n/c |
+| Layout budget (LAYOUT) | ok·m | ok·m | ok·m | ok·m | n/c | n/c | n/c | n/c | n/c |
+
+Not captured and why: the native macOS tooltip and the Share picker (`S29`, window-server and out-of-process, recorded as harness gaps), the export save panel itself (`S10`: the modal call returns before a window can be captured, so only the accessory is rendered), the Wipe confirmation (none exists: Wipe acts immediately, recorded by the harness), Photos (above), Font Awesome Pro icons (not bundled), system-owned appearance and accessibility settings (injected only), VoiceOver speech and live screen capture (not provable from renders). Sizes 1024 × 740 and 1440 × 900 exist for the editor (S11M, S11E), History (1120 × 850, 1280 × 800), Settings (1280 variants), Upload (1280, 1440) and the S30-S36 states (1280, 1440); the other surfaces were captured only at their native harness size.
+
+Method note: an automated per-field contrast sweep over the metrics was tried and dropped because the nested sheet frames do not map cleanly to PNG coordinates; every contrast figure above comes from sampling the PNG at a known location.
+
 # E2E audit findings: lane J4 (real-click retest of audit batches 3a, 3b and 3c)
 
 Source revision `94b7aa5` (main after merge of batch 3c). Driver: Sonnet J4, real clicks and keys through kimi-cu on two isolated session copies: pid 62733 (`com.shoemoney.opensnap.e2e-62694`, `--seed all`) and pid 70107 (`com.shoemoney.opensnap.e2e-70088`, `--seed history --aws`). Both stopped with "stores unchanged". Screenshots are in `docs/design/evidence/e2e-2026-10-10/j4/` (names below are relative to it, shortened to their number). The live AWS check is logged in `j4-aws-log.md`.

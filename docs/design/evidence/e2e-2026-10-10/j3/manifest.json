@@ -1,0 +1,4425 @@
+{
+ "sourceSha": "3194247",
+ "bundleId": "(several, one per run)",
+ "iconMode": "sf",
+ "faMode": "FA unavailable: no FontAwesome7Pro subset fonts are bundled in this build, so every capture uses SF Symbols (nothing was faked)",
+ "captureCount": 111,
+ "unavailable": [],
+ "gaps": [],
+ "captures": [
+  {
+   "id": "S02",
+   "slug": "populated",
+   "surface": "editor, populated",
+   "state": "synthetic 1200x800 background + arrow, line, rectangle (open+filled), ellipse, brush, highlighter, fill, text (outline+shadow, plain), SVG path, raster",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    2358
+   ],
+   "pointSize": [
+    1561,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S02-populated-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    906
+   ],
+   "downscaled": true,
+   "layout": "layout/S02-populated-light@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S03",
+   "slug": "topbar",
+   "surface": "top bar",
+   "state": "Hide, Toolbox, Photos | Snap | ten tools | Color, Size, Font; title shows document name",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S03-topbar-dark@3194247.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S03-topbar-dark@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S03",
+   "slug": "topbar",
+   "surface": "top bar",
+   "state": "Hide, Toolbox, Photos | Snap | ten tools | Color, Size, Font; title shows document name",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S03-topbar-dark-rt@3194247.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S03-topbar-dark-rt@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "reduceTransparency"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": true
+   }
+  },
+  {
+   "id": "S03",
+   "slug": "topbar",
+   "surface": "top bar",
+   "state": "Hide, Toolbox, Photos | Snap | ten tools | Color, Size, Font; title shows document name",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S03-topbar-dark-ic@3194247.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S03-topbar-dark-ic@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S03",
+   "slug": "topbar",
+   "surface": "top bar",
+   "state": "Hide, Toolbox, Photos | Snap | ten tools | Color, Size, Font; title shows document name",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S03-topbar-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S03-topbar-light@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S05",
+   "slug": "text-editing",
+   "surface": "text editing",
+   "state": "text tool field editor active with typed text and grip",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    2358
+   ],
+   "pointSize": [
+    1489,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S05-text-editing-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    950
+   ],
+   "downscaled": true,
+   "layout": "layout/S05-text-editing-light@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S06",
+   "slug": "color-palette-popover",
+   "surface": "color picker",
+   "state": "preset palette popover window alone",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    544,
+    362
+   ],
+   "pointSize": [
+    272,
+    181
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S06-color-palette-popover-light@3194247.png",
+   "storedPixelSize": [
+    544,
+    362
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S07",
+   "slug": "actual-size",
+   "surface": "canvas viewport",
+   "state": "Actual Size on: navigator overview panel beside the window",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1662,
+    1179
+   ],
+   "pixelSize": [
+    3674,
+    2358
+   ],
+   "pointSize": [
+    1837,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S07-actual-size-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    770
+   ],
+   "downscaled": true,
+   "layout": "layout/S07-actual-size-light@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S07",
+   "slug": "large-fit",
+   "surface": "canvas viewport",
+   "state": "2400x1500 image fitted into the window",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1662,
+    1179
+   ],
+   "pixelSize": [
+    3324,
+    2358
+   ],
+   "pointSize": [
+    1662,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S07-large-fit-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    851
+   ],
+   "downscaled": true,
+   "layout": "layout/S07-large-fit-light@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S08",
+   "slug": "resize-panel-in-context",
+   "surface": "Resize panel",
+   "state": "Resize sheet with built-in + two synthetic presets (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    2358
+   ],
+   "pointSize": [
+    1561,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S08-resize-panel-in-context-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    906
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S09",
+   "slug": "footer",
+   "surface": "footer",
+   "state": "zoom, status, format, drag well, upload",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    120
+   ],
+   "pointSize": [
+    1489,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S09-footer-dark@3194247.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S09-footer-dark@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S09",
+   "slug": "footer",
+   "surface": "footer",
+   "state": "zoom, status, format, drag well, upload",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    120
+   ],
+   "pointSize": [
+    1489,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S09-footer-dark-rt@3194247.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S09-footer-dark-rt@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "reduceTransparency"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": true
+   }
+  },
+  {
+   "id": "S09",
+   "slug": "footer",
+   "surface": "footer",
+   "state": "zoom, status, format, drag well, upload",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    120
+   ],
+   "pointSize": [
+    1489,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S09-footer-dark-ic@3194247.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S09-footer-dark-ic@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S09",
+   "slug": "footer",
+   "surface": "footer",
+   "state": "zoom, status, format, drag well, upload",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    120
+   ],
+   "pointSize": [
+    1489,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S09-footer-dark-rt-ic@3194247.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S09-footer-dark-rt-ic@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "reduceTransparency",
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": true
+   }
+  },
+  {
+   "id": "S09",
+   "slug": "footer",
+   "surface": "footer",
+   "state": "zoom, status, format, drag well, upload",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    120
+   ],
+   "pointSize": [
+    1489,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S09-footer-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S09-footer-light@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S09",
+   "slug": "footer",
+   "surface": "footer",
+   "state": "zoom, status, format, drag well, upload",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    120
+   ],
+   "pointSize": [
+    1489,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S09-footer-light-ic@3194247.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S09-footer-light-ic@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S09",
+   "slug": "footer",
+   "surface": "footer",
+   "state": "zoom, status, format, drag well, upload",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    120
+   ],
+   "pointSize": [
+    1489,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S09-footer-light-rt-ic-dwc-rm@3194247.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S09-footer-light-rt-ic-dwc-rm@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "reduceTransparency",
+     "increaseContrast",
+     "differentiateWithoutColor",
+     "reduceMotion"
+    ],
+    "differentiateWithoutColor": true,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": true,
+    "reduceTransparency": true
+   }
+  },
+  {
+   "id": "S09",
+   "slug": "footer-long-status",
+   "surface": "footer",
+   "state": "very long status text",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    120
+   ],
+   "pointSize": [
+    1489,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S09-footer-long-status-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S09-footer-long-status-light@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S09",
+   "slug": "format-toggle-png",
+   "surface": "footer",
+   "state": "PNG | JPG segmented toggle with PNG selected",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    120
+   ],
+   "pointSize": [
+    1489,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S09-format-toggle-png-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S09-format-toggle-png-light@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S09",
+   "slug": "format-toggle-png",
+   "surface": "footer",
+   "state": "PNG | JPG segmented toggle with PNG selected",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    120
+   ],
+   "pointSize": [
+    1489,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S09-format-toggle-png-light-dwc@3194247.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S09-format-toggle-png-light-dwc@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "differentiateWithoutColor"
+    ],
+    "differentiateWithoutColor": true,
+    "increaseContrast": false,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S10",
+   "slug": "export-accessory-alone",
+   "surface": "export save panel",
+   "state": "ExportAccessory view rendered in its own window (JPEG selected)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    646,
+    708
+   ],
+   "pointSize": [
+    323,
+    354
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S10-export-accessory-alone-light@3194247.png",
+   "storedPixelSize": [
+    646,
+    708
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S11",
+   "slug": "width-1280",
+   "surface": "window sizes",
+   "state": "window width 1280 pt, default height",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    812
+   ],
+   "pixelSize": [
+    2560,
+    1624
+   ],
+   "pointSize": [
+    1280,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-width-1280-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    761
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-width-1280-light@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S11",
+   "slug": "width-1440",
+   "surface": "window sizes",
+   "state": "window width 1440 pt, default height",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    812
+   ],
+   "pixelSize": [
+    2880,
+    1624
+   ],
+   "pointSize": [
+    1440,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-width-1440-dark@3194247.png",
+   "storedPixelSize": [
+    1200,
+    677
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-width-1440-dark@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S11",
+   "slug": "width-1440",
+   "surface": "window sizes",
+   "state": "window width 1440 pt, default height",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    812
+   ],
+   "pixelSize": [
+    2880,
+    1624
+   ],
+   "pointSize": [
+    1440,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-width-1440-dark-rt@3194247.png",
+   "storedPixelSize": [
+    1200,
+    677
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-width-1440-dark-rt@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "reduceTransparency"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": true
+   }
+  },
+  {
+   "id": "S11",
+   "slug": "width-1440",
+   "surface": "window sizes",
+   "state": "window width 1440 pt, default height",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    812
+   ],
+   "pixelSize": [
+    2880,
+    1624
+   ],
+   "pointSize": [
+    1440,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-width-1440-dark-dwc@3194247.png",
+   "storedPixelSize": [
+    1200,
+    677
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-width-1440-dark-dwc@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "differentiateWithoutColor"
+    ],
+    "differentiateWithoutColor": true,
+    "increaseContrast": false,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S11",
+   "slug": "width-1440",
+   "surface": "window sizes",
+   "state": "window width 1440 pt, default height",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    812
+   ],
+   "pixelSize": [
+    2880,
+    1624
+   ],
+   "pointSize": [
+    1440,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-width-1440-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    677
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-width-1440-light@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S11",
+   "slug": "width-980",
+   "surface": "window sizes",
+   "state": "window width 980 pt, default height",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    812
+   ],
+   "pixelSize": [
+    1960,
+    1624
+   ],
+   "pointSize": [
+    980,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-width-980-dark@3194247.png",
+   "storedPixelSize": [
+    1200,
+    994
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-width-980-dark@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S11",
+   "slug": "width-980",
+   "surface": "window sizes",
+   "state": "window width 980 pt, default height",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    812
+   ],
+   "pixelSize": [
+    1960,
+    1624
+   ],
+   "pointSize": [
+    980,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-width-980-dark-rt@3194247.png",
+   "storedPixelSize": [
+    1200,
+    994
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-width-980-dark-rt@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "reduceTransparency"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": true
+   }
+  },
+  {
+   "id": "S11",
+   "slug": "width-980",
+   "surface": "window sizes",
+   "state": "window width 980 pt, default height",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    812
+   ],
+   "pixelSize": [
+    1960,
+    1624
+   ],
+   "pointSize": [
+    980,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-width-980-dark-ic@3194247.png",
+   "storedPixelSize": [
+    1200,
+    994
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-width-980-dark-ic@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S11",
+   "slug": "width-980",
+   "surface": "window sizes",
+   "state": "window width 980 pt, default height",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    812
+   ],
+   "pixelSize": [
+    1960,
+    1624
+   ],
+   "pointSize": [
+    980,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-width-980-dark-dwc@3194247.png",
+   "storedPixelSize": [
+    1200,
+    994
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-width-980-dark-dwc@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "differentiateWithoutColor"
+    ],
+    "differentiateWithoutColor": true,
+    "increaseContrast": false,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S11",
+   "slug": "width-980",
+   "surface": "window sizes",
+   "state": "window width 980 pt, default height",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    812
+   ],
+   "pixelSize": [
+    1960,
+    1624
+   ],
+   "pointSize": [
+    980,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-width-980-dark-rt-ic@3194247.png",
+   "storedPixelSize": [
+    1200,
+    994
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-width-980-dark-rt-ic@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "reduceTransparency",
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": true
+   }
+  },
+  {
+   "id": "S11",
+   "slug": "width-980",
+   "surface": "window sizes",
+   "state": "window width 980 pt, default height",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    812
+   ],
+   "pixelSize": [
+    1960,
+    1624
+   ],
+   "pointSize": [
+    980,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-width-980-dark-rt-ic-dwc-rm@3194247.png",
+   "storedPixelSize": [
+    1200,
+    994
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-width-980-dark-rt-ic-dwc-rm@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "reduceTransparency",
+     "increaseContrast",
+     "differentiateWithoutColor",
+     "reduceMotion"
+    ],
+    "differentiateWithoutColor": true,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": true,
+    "reduceTransparency": true
+   }
+  },
+  {
+   "id": "S11",
+   "slug": "width-980",
+   "surface": "window sizes",
+   "state": "window width 980 pt, default height",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    812
+   ],
+   "pixelSize": [
+    1960,
+    1624
+   ],
+   "pointSize": [
+    980,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-width-980-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    994
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-width-980-light@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S11",
+   "slug": "width-980",
+   "surface": "window sizes",
+   "state": "window width 980 pt, default height",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    812
+   ],
+   "pixelSize": [
+    1960,
+    1624
+   ],
+   "pointSize": [
+    980,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-width-980-light-rt@3194247.png",
+   "storedPixelSize": [
+    1200,
+    994
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-width-980-light-rt@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "reduceTransparency"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": true
+   }
+  },
+  {
+   "id": "S11",
+   "slug": "width-980",
+   "surface": "window sizes",
+   "state": "window width 980 pt, default height",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    812
+   ],
+   "pixelSize": [
+    1960,
+    1624
+   ],
+   "pointSize": [
+    980,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-width-980-light-ic@3194247.png",
+   "storedPixelSize": [
+    1200,
+    994
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-width-980-light-ic@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S11",
+   "slug": "width-980",
+   "surface": "window sizes",
+   "state": "window width 980 pt, default height",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    812
+   ],
+   "pixelSize": [
+    1960,
+    1624
+   ],
+   "pointSize": [
+    980,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-width-980-light-dwc@3194247.png",
+   "storedPixelSize": [
+    1200,
+    994
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-width-980-light-dwc@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "differentiateWithoutColor"
+    ],
+    "differentiateWithoutColor": true,
+    "increaseContrast": false,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S11",
+   "slug": "width-980",
+   "surface": "window sizes",
+   "state": "window width 980 pt, default height",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    812
+   ],
+   "pixelSize": [
+    1960,
+    1624
+   ],
+   "pointSize": [
+    980,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-width-980-light-rm@3194247.png",
+   "storedPixelSize": [
+    1200,
+    994
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-width-980-light-rm@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "reduceMotion"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": true,
+    "reduceMotion": true,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S11",
+   "slug": "width-980",
+   "surface": "window sizes",
+   "state": "window width 980 pt, default height",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    812
+   ],
+   "pixelSize": [
+    1960,
+    1624
+   ],
+   "pointSize": [
+    980,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-width-980-light-rt-ic@3194247.png",
+   "storedPixelSize": [
+    1200,
+    994
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-width-980-light-rt-ic@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "reduceTransparency",
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": true
+   }
+  },
+  {
+   "id": "S11",
+   "slug": "width-980",
+   "surface": "window sizes",
+   "state": "window width 980 pt, default height",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    812
+   ],
+   "pixelSize": [
+    1960,
+    1624
+   ],
+   "pointSize": [
+    980,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-width-980-light-rt-ic-dwc-rm@3194247.png",
+   "storedPixelSize": [
+    1200,
+    994
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-width-980-light-rt-ic-dwc-rm@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "reduceTransparency",
+     "increaseContrast",
+     "differentiateWithoutColor",
+     "reduceMotion"
+    ],
+    "differentiateWithoutColor": true,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": true,
+    "reduceTransparency": true
+   }
+  },
+  {
+   "id": "S11E",
+   "slug": "empty-size-1440x900",
+   "surface": "window size matrix, empty",
+   "state": "requested 1440x900 (1440x900 pt), window is 1440x900 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11E-empty-size-1440x900-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S11E-empty-size-1440x900-light@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S11E",
+   "slug": "empty-size-980xmin",
+   "surface": "window size matrix, empty",
+   "state": "requested 980xmin (980x640 pt), window is 980x640 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11E-empty-size-980xmin-dark@3194247.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S11E-empty-size-980xmin-dark@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S11E",
+   "slug": "empty-size-full",
+   "surface": "window size matrix, empty",
+   "state": "requested full (2056x1197 pt), window is 2056x1197 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    2056,
+    1197
+   ],
+   "pixelSize": [
+    4112,
+    2394
+   ],
+   "pointSize": [
+    2056,
+    1197
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11E-empty-size-full-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    699
+   ],
+   "downscaled": true,
+   "layout": "layout/S11E-empty-size-full-light@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S11F",
+   "slug": "size-fullscreen",
+   "surface": "window sizes",
+   "state": "true full screen (styleMask.fullScreen)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    2056,
+    1290
+   ],
+   "pixelSize": [
+    4112,
+    2580
+   ],
+   "pointSize": [
+    2056,
+    1290
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "cacheDisplay (CGWindowList image was blank)",
+   "file": "S11F-size-fullscreen-dark@3194247.png",
+   "storedPixelSize": [
+    1200,
+    753
+   ],
+   "downscaled": true,
+   "layout": "layout/S11F-size-fullscreen-dark@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S11FP",
+   "slug": "size-fullscreen-populated",
+   "surface": "window sizes, populated",
+   "state": "true full screen (styleMask.fullScreen)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    2056,
+    1290
+   ],
+   "pixelSize": [
+    4112,
+    2580
+   ],
+   "pointSize": [
+    2056,
+    1290
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11FP-size-fullscreen-populated-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    753
+   ],
+   "downscaled": true,
+   "layout": "layout/S11FP-size-fullscreen-populated-light@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S11M",
+   "slug": "size-1440x900",
+   "surface": "window size matrix, populated",
+   "state": "requested 1440x900 (1440x900 pt), window is 1440x900 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11M-size-1440x900-dark@3194247.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S11M-size-1440x900-dark@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S11M",
+   "slug": "size-980xmin",
+   "surface": "window size matrix, populated",
+   "state": "requested 980xmin (980x640 pt), window is 980x640 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11M-size-980xmin-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S11M-size-980xmin-light@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S11M",
+   "slug": "size-full",
+   "surface": "window size matrix, populated",
+   "state": "requested full (2056x1197 pt), window is 2056x1197 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    2056,
+    1197
+   ],
+   "pixelSize": [
+    4112,
+    2394
+   ],
+   "pointSize": [
+    2056,
+    1197
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11M-size-full-dark@3194247.png",
+   "storedPixelSize": [
+    1200,
+    699
+   ],
+   "downscaled": true,
+   "layout": "layout/S11M-size-full-dark@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S12",
+   "slug": "frame-w1280",
+   "surface": "Frame mode",
+   "state": "Frame mode at window width 1280 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    1179
+   ],
+   "pixelSize": [
+    2560,
+    2358
+   ],
+   "pointSize": [
+    1280,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-w1280-dark@3194247.png",
+   "storedPixelSize": [
+    1200,
+    1105
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-w1280-dark@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S12",
+   "slug": "frame-w980",
+   "surface": "Frame mode",
+   "state": "Frame mode at window width 980 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    1179
+   ],
+   "pixelSize": [
+    1960,
+    2358
+   ],
+   "pointSize": [
+    980,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-w980-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    1444
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-w980-light@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S13",
+   "slug": "picker-no-recording-grant",
+   "surface": "capture picker / crosshair + magnifier",
+   "state": "crosshair overlay with magnifier (lens hatched placeholder reading Screen Recording off, as without a grant), no drag yet",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    4112,
+    2658
+   ],
+   "pointSize": [
+    2056,
+    1329
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S13-picker-no-recording-grant-dark@3194247.png",
+   "storedPixelSize": [
+    1200,
+    776
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S13",
+   "slug": "picker-synthetic-lens",
+   "surface": "capture picker / crosshair + magnifier",
+   "state": "crosshair overlay with magnifier (lens fed synthetic pixels), no drag yet",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    4112,
+    2658
+   ],
+   "pointSize": [
+    2056,
+    1329
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S13-picker-synthetic-lens-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    776
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S14",
+   "slug": "countdown-3",
+   "surface": "countdown overlay",
+   "state": "countdown digit 3 (tick 2)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    280,
+    280
+   ],
+   "pointSize": [
+    140,
+    140
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S14-countdown-3-dark@3194247.png",
+   "storedPixelSize": [
+    280,
+    280
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S14",
+   "slug": "countdown-3",
+   "surface": "countdown overlay",
+   "state": "countdown digit 3 (tick 1)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    280,
+    280
+   ],
+   "pointSize": [
+    140,
+    140
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S14-countdown-3-dark-rm@3194247.png",
+   "storedPixelSize": [
+    280,
+    280
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "reduceMotion"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": true,
+    "reduceMotion": true,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S15",
+   "slug": "flash-peak",
+   "surface": "capture flash",
+   "state": "flash panel at its peak alpha (0.7) in front of the editor, editor behind it",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    2358
+   ],
+   "pointSize": [
+    1489,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S15-flash-peak-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    950
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S15",
+   "slug": "flash-peak",
+   "surface": "capture flash",
+   "state": "flash panel at its peak alpha (0.7) in front of the editor, editor behind it",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    2358
+   ],
+   "pointSize": [
+    1489,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S15-flash-peak-light-rm@3194247.png",
+   "storedPixelSize": [
+    1200,
+    950
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "reduceMotion"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": true,
+    "reduceMotion": true,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S16",
+   "slug": "permission-sheet",
+   "surface": "Screen Recording permission sheet",
+   "state": "app-owned sheet: title, instructions, Open System Settings (default) and Cancel",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    1120,
+    388
+   ],
+   "pointSize": [
+    560,
+    194
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S16-permission-sheet-light@3194247.png",
+   "storedPixelSize": [
+    1120,
+    388
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture",
+   "surface": "Settings: Capture",
+   "state": "Capture tab: flash on, shortcuts enabled, every action None",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1154
+   ],
+   "pointSize": [
+    640,
+    577
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    1082
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b/S17-settings-capture-light@41b2507.png",
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S17",
+   "slug": "settings-drawing",
+   "surface": "Settings: Drawing",
+   "state": "Drawing tab, default values",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    484
+   ],
+   "pointSize": [
+    640,
+    242
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-drawing-dark@3194247.png",
+   "storedPixelSize": [
+    1200,
+    454
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b/S17-settings-drawing-dark@41b2507.png",
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S17",
+   "slug": "settings-general",
+   "surface": "Settings: General",
+   "state": "General tab, default values",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    602
+   ],
+   "pointSize": [
+    640,
+    301
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-general-dark@3194247.png",
+   "storedPixelSize": [
+    1200,
+    564
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b/S17-settings-general-dark@41b2507.png",
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S17",
+   "slug": "settings-general",
+   "surface": "Settings: General",
+   "state": "General tab, default values",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    602
+   ],
+   "pointSize": [
+    640,
+    301
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-general-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    564
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b/S17-settings-general-light@41b2507.png",
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S17",
+   "slug": "settings-general",
+   "surface": "Settings: General",
+   "state": "General tab, default values",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1280,
+    602
+   ],
+   "pointSize": [
+    640,
+    301
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-general-light-ic@3194247.png",
+   "storedPixelSize": [
+    1200,
+    564
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b/S17-settings-general-light@41b2507.png",
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-empty",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, no destination saved",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    572
+   ],
+   "pointSize": [
+    640,
+    286
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-empty-dark@3194247.png",
+   "storedPixelSize": [
+    1200,
+    536
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b/S17-settings-upload-empty-dark@41b2507.png",
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-many",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, eight saved destinations: five listed, then 'and 3 more', the caption and Manage button in view",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1116
+   ],
+   "pointSize": [
+    640,
+    558
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-many-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    1046
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b/S17-settings-upload-many-light@41b2507.png",
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S18",
+   "slug": "hotkeys-sheet",
+   "surface": "Preferences: Hotkeys",
+   "state": "Capture Shortcuts sheet (all actions None)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    1554,
+    1444
+   ],
+   "pointSize": [
+    777,
+    722
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S18-hotkeys-sheet-dark@3194247.png",
+   "storedPixelSize": [
+    1200,
+    1115
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-s3-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "new S3-compatible destination: its own endpoint scheme, placeholders and help, and the Test note in the one-line result band (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    2358
+   ],
+   "pointSize": [
+    1489,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-form-s3-in-context-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    950
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b/S19-destinations-form-s3-in-context-light@41b2507.png",
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-sftp-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "new SFTP destination: its own endpoint scheme, placeholders and help, and the Test note in the one-line result band (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    2358
+   ],
+   "pointSize": [
+    1489,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-form-sftp-in-context-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    950
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b/S19-destinations-form-sftp-in-context-light@41b2507.png",
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-webdav-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "new WebDAV destination: its own endpoint scheme, placeholders and help, and the Test note in the one-line result band (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    2358
+   ],
+   "pointSize": [
+    1489,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-form-webdav-in-context-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    950
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b/S19-destinations-form-webdav-in-context-light@41b2507.png",
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-list-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "three synthetic destinations (Example S3 default, SFTP, WebDAV) (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    2358
+   ],
+   "pointSize": [
+    1489,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-list-in-context-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    950
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b/S19-destinations-list-in-context-light@41b2507.png",
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-test-connected",
+   "surface": "Destinations / Publishing",
+   "state": "S3 form after a synthetic successful Test: check glyph, Connected, detail line",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1520
+   ],
+   "pointSize": [
+    737,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-test-connected-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    1237
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b/S19-destinations-test-connected-light@41b2507.png",
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-test-error",
+   "surface": "Destinations / Publishing",
+   "state": "S3 form after a synthetic failed Test: octagon glyph and an Error: line",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1520
+   ],
+   "pointSize": [
+    737,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-test-error-dark@3194247.png",
+   "storedPixelSize": [
+    1200,
+    1237
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-3b/S19-destinations-test-error-dark@41b2507.png",
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S20",
+   "slug": "history-880x600-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 880 x 600: grid reflow, check badge, details beside the grid",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    1760,
+    1280
+   ],
+   "pointSize": [
+    880,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-880x600-selected-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    873
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S20",
+   "slug": "history-empty",
+   "surface": "History browser",
+   "state": "History window with no entries",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-empty-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S20",
+   "slug": "history-link-copied",
+   "surface": "History browser",
+   "state": "a Shared entry selected after Copy Link: the footer confirms, and the destination link is cut in its middle with the full text in its tooltip",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    1760,
+    1292
+   ],
+   "pointSize": [
+    880,
+    646
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-link-copied-dark@3194247.png",
+   "storedPixelSize": [
+    1200,
+    881
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S20",
+   "slug": "history-no-match",
+   "surface": "History browser",
+   "state": "filters that match nothing at 880 x 600: centred message, no save hint",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    1760,
+    1200
+   ],
+   "pointSize": [
+    880,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-no-match-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S20",
+   "slug": "history-populated",
+   "surface": "History browser",
+   "state": "six synthetic entries across dates and actions (Saved/Exported/Shared)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-populated-dark@3194247.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S20",
+   "slug": "history-populated",
+   "surface": "History browser",
+   "state": "six synthetic entries across dates and actions (Saved/Exported/Shared)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-populated-dark-ic@3194247.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-details-w1440",
+   "surface": "publish error",
+   "state": "the Details… sheet with the whole error (no second Error: under the title), at w1440",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S21-publish-error-details-w1440-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-footer-w980",
+   "surface": "publish error",
+   "state": "footer crop with the inline error, Retry and Details, at w980",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-error-footer-w980-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-error-footer-w980-light@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S21",
+   "slug": "publish-progress-footer-w980",
+   "surface": "publish progress",
+   "state": "footer crop during the upload, at w980",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-progress-footer-w980-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-progress-footer-w980-light@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S21",
+   "slug": "publish-success-footer-w980",
+   "surface": "publish success",
+   "state": "footer crop with Link copied · the link, Open and Copy, at w980",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-success-footer-w980-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-success-footer-w980-light@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S21",
+   "slug": "publish-success-w1440",
+   "surface": "publish success",
+   "state": "Link copied · the link itself, then Open and Copy on their plate, after a stubbed upload, at w1440",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-success-w1440-dark@3194247.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-success-w1440-dark@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S24",
+   "slug": "statusitem-highlighted",
+   "surface": "status-bar item",
+   "state": "menu-bar icon, highlighted",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    64,
+    56
+   ],
+   "pointSize": [
+    32,
+    28
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "NSView.cacheDisplay (view only, not a window capture)",
+   "file": "S24-statusitem-highlighted-light@3194247.png",
+   "storedPixelSize": [
+    64,
+    56
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S24",
+   "slug": "statusitem-normal",
+   "surface": "status-bar item",
+   "state": "menu-bar icon, normal (the button view only; the real bar is not captured)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    64,
+    56
+   ],
+   "pointSize": [
+    32,
+    28
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "NSView.cacheDisplay (view only, not a window capture)",
+   "file": "S24-statusitem-normal-light@3194247.png",
+   "storedPixelSize": [
+    64,
+    56
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S25",
+   "slug": "about-panel",
+   "surface": "About window",
+   "state": "app-owned About window: icon, name, version and build, credit line, license link",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    720,
+    744
+   ],
+   "pointSize": [
+    360,
+    372
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S25-about-panel-dark-ic@3194247.png",
+   "storedPixelSize": [
+    720,
+    744
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S25",
+   "slug": "about-panel",
+   "surface": "About window",
+   "state": "app-owned About window: icon, name, version and build, credit line, license link",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    720,
+    744
+   ],
+   "pointSize": [
+    360,
+    372
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S25-about-panel-light@3194247.png",
+   "storedPixelSize": [
+    720,
+    744
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S25",
+   "slug": "license-window",
+   "surface": "About window",
+   "state": "the MIT License window with the paragraphs reflowed to the window width",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    1240,
+    1184
+   ],
+   "pointSize": [
+    620,
+    592
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S25-license-window-dark@3194247.png",
+   "storedPixelSize": [
+    1200,
+    1146
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S26",
+   "slug": "remove-destination",
+   "surface": "alerts / sheets",
+   "state": "Remove “Example S3”? sheet on the Upload Destinations sheet (default destination): Cancel is the default, Remove is destructive",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    2358
+   ],
+   "pointSize": [
+    1489,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 3 own windows)",
+   "file": "S26-remove-destination-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    950
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S26",
+   "slug": "rename",
+   "surface": "alerts / sheets",
+   "state": "Rename… sheet with text field",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    2358
+   ],
+   "pointSize": [
+    1489,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S26-rename-dark@3194247.png",
+   "storedPixelSize": [
+    1200,
+    950
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S29",
+   "slug": "help-bevel",
+   "surface": "help bevel (tool-tip overlay)",
+   "state": "OriginalHelpBevel HUD with a hover hint for a top-bar control (Rectangle tool) (feature is off by default); editor at the top of the screen, so the plate sits inside the window, clear of the title bar and both bars",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    2358
+   ],
+   "pointSize": [
+    1489,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S29-help-bevel-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    950
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S30",
+   "slug": "size-popover-w980",
+   "surface": "Size popover",
+   "state": "Size popover open below the pill at window width 980xmin, value 6.75, Brush tool",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    2126,
+    1280
+   ],
+   "pointSize": [
+    1063,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S30-size-popover-w980-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    722
+   ],
+   "downscaled": true,
+   "layout": "layout/S30-size-popover-w980-light@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S31",
+   "slug": "color-popover-w980",
+   "surface": "Colour popover",
+   "state": "Drawing colours popover open below the top-bar swatch at window width 980, a preset colour current",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S31-color-popover-w980-dark-rt@3194247.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S31-color-popover-w980-dark-rt@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "reduceTransparency"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": true
+   }
+  },
+  {
+   "id": "S31",
+   "slug": "color-popover-w980",
+   "surface": "Colour popover",
+   "state": "Drawing colours popover open below the top-bar swatch at window width 980, a preset colour current",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S31-color-popover-w980-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S31-color-popover-w980-light@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S31",
+   "slug": "color-popover-w980",
+   "surface": "Colour popover",
+   "state": "Drawing colours popover open below the top-bar swatch at window width 980, a preset colour current",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S31-color-popover-w980-light-ic@3194247.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S31-color-popover-w980-light-ic@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S31",
+   "slug": "color-popover-w980",
+   "surface": "Colour popover",
+   "state": "Drawing colours popover open below the top-bar swatch at window width 980, a preset colour current",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S31-color-popover-w980-light-dwc@3194247.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S31-color-popover-w980-light-dwc@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "differentiateWithoutColor"
+    ],
+    "differentiateWithoutColor": true,
+    "increaseContrast": false,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S32",
+   "slug": "frame-large-w1280",
+   "surface": "Frame mode, canvas fills the viewport",
+   "state": "Frame mode at 1280x800: large shot at 100% so the canvas fills the viewport; Snap Frame + Cancel; no Original size checkbox",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S32-frame-large-w1280-dark@3194247.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S32-frame-large-w1280-dark@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S33",
+   "slug": "large-shot-w980",
+   "surface": "Large shot at 980",
+   "state": "2400x1500 shot at window width 980, Original size checkbox visible",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S33-large-shot-w980-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S33-large-shot-w980-light@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S34",
+   "slug": "small-canvas-w1440",
+   "surface": "Small canvas centred",
+   "state": "150x90 canvas at window 1440x900: equal margins left/right and top/bottom",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S34-small-canvas-w1440-dark@3194247.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S34-small-canvas-w1440-dark@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S35",
+   "slug": "large-canvas-w1280",
+   "surface": "Large canvas fills the viewport",
+   "state": "large shot at 100% in a 1280x800 window: canvas runs to the 12-pt margin and scrolls",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S35-large-canvas-w1280-dark@3194247.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S35-large-canvas-w1280-dark@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S36",
+   "slug": "selection-w1280",
+   "surface": "Selection",
+   "state": "rectangle selected with handles at window 1280x800; Color/Size/Font act on it",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S36-selection-w1280-dark@3194247.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S36-selection-w1280-dark@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S38",
+   "slug": "tooltip-snap-w980",
+   "surface": "App tooltip",
+   "state": "the Snap tooltip below the Snap button; the long sentence wraps at 420 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S38-tooltip-snap-w980-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S38-tooltip-snap-w980-light@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S39",
+   "slug": "discard-sheet",
+   "surface": "alerts / sheets",
+   "state": "Save your drawing? sheet over the titled window (Save / Cancel / Don’t Save)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S39-discard-sheet-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S39",
+   "slug": "discard-sheet",
+   "surface": "alerts / sheets",
+   "state": "Save your drawing? sheet over the titled window (Save / Cancel / Don’t Save)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S39-discard-sheet-light-ic@3194247.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S39",
+   "slug": "titled-window-w980",
+   "surface": "titled window",
+   "state": "title = document name, subtitle = size, proxy icon, no title-bar separator, at w980",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S39-titled-window-w980-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S39-titled-window-w980-light@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S40",
+   "slug": "swatch-states",
+   "surface": "component states",
+   "state": "Colour popover: Red selected (3 pt accent outline and check glyph), Blue hovered (label 0.5 outline), Translucent gray pressed (0.16 fill)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    544,
+    362
+   ],
+   "pointSize": [
+    272,
+    181
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S40-swatch-states-light@3194247.png",
+   "storedPixelSize": [
+    544,
+    362
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S40",
+   "slug": "tool-pressed",
+   "surface": "component states",
+   "state": "Rectangle tool pressed: a label 0.16 fill (0.28 under Increase Contrast) and the glyph drawn at 0.96",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-pressed-dark@3194247.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-pressed-dark@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S40",
+   "slug": "tool-pressed",
+   "surface": "component states",
+   "state": "Rectangle tool pressed: a label 0.16 fill (0.28 under Increase Contrast) and the glyph drawn at 0.96",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-pressed-dark-rt@3194247.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-pressed-dark-rt@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "reduceTransparency"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": true
+   }
+  },
+  {
+   "id": "S40",
+   "slug": "tool-pressed",
+   "surface": "component states",
+   "state": "Rectangle tool pressed: a label 0.16 fill (0.28 under Increase Contrast) and the glyph drawn at 0.96",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-pressed-dark-rm@3194247.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-pressed-dark-rm@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "reduceMotion"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": true,
+    "reduceMotion": true,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S40",
+   "slug": "tool-pressed",
+   "surface": "component states",
+   "state": "Rectangle tool pressed: a label 0.16 fill (0.28 under Increase Contrast) and the glyph drawn at 0.96",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-pressed-light@3194247.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-pressed-light@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": false,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S40",
+   "slug": "tool-pressed",
+   "surface": "component states",
+   "state": "Rectangle tool pressed: a label 0.16 fill (0.28 under Increase Contrast) and the glyph drawn at 0.96",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-pressed-light-ic@3194247.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-pressed-light-ic@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S40",
+   "slug": "tool-pressed",
+   "surface": "component states",
+   "state": "Rectangle tool pressed: a label 0.16 fill (0.28 under Increase Contrast) and the glyph drawn at 0.96",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-pressed-light-rm@3194247.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-pressed-light-rm@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "reduceMotion"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": false,
+    "injected": true,
+    "reduceMotion": true,
+    "reduceTransparency": false
+   }
+  },
+  {
+   "id": "S40",
+   "slug": "tool-pressed",
+   "surface": "component states",
+   "state": "Rectangle tool pressed: a label 0.16 fill (0.28 under Increase Contrast) and the glyph drawn at 0.96",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "3194247",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-pressed-light-rt-ic-dwc-rm@3194247.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-pressed-light-rt-ic-dwc-rm@3194247.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "reduceTransparency",
+     "increaseContrast",
+     "differentiateWithoutColor",
+     "reduceMotion"
+    ],
+    "differentiateWithoutColor": true,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": true,
+    "reduceTransparency": true
+   }
+  }
+ ]
+}
