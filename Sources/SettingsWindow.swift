@@ -608,7 +608,7 @@ final class SettingsTabStrip: NSView {
         row = NSStackView(views: buttons)
         super.init(frame: .zero)
         wantsLayer = true
-        focusRingType = .exterior
+        focusRingType = .none
         row.orientation = .horizontal; row.alignment = .centerY; row.spacing = DesignTokens.Space.s1
         row.translatesAutoresizingMaskIntoConstraints = false
         addSubview(row)
@@ -647,11 +647,29 @@ final class SettingsTabStrip: NSView {
     // MARK: Keyboard
 
     override var acceptsFirstResponder: Bool { true }
+    /// Like a system control, the strip shows its focus ring only when the keyboard put focus there (Tab, an arrow key, Full Keyboard
+    /// Access) and not when the window merely opens with it as the first key view.
+    private(set) var showsKeyboardFocus = false
+    private func setKeyboardFocus(_ on: Bool) {
+        guard showsKeyboardFocus != on else { return }
+        showsKeyboardFocus = on
+        focusRingType = on ? .exterior : .none
+        noteFocusRingMaskChanged(); needsDisplay = true
+    }
+    override func becomeFirstResponder() -> Bool {
+        let accepted = super.becomeFirstResponder()
+        if accepted, NSApp.currentEvent?.type == .keyDown || NSApp.isFullKeyboardAccessEnabled { setKeyboardFocus(true) }
+        return accepted
+    }
+    override func resignFirstResponder() -> Bool {
+        setKeyboardFocus(false)
+        return super.resignFirstResponder()
+    }
     override func keyDown(with event: NSEvent) {
         guard event.modifierFlags.intersection(.deviceIndependentFlagsMask).isEmpty, selectedIndex >= 0 else { return super.keyDown(with: event) }
         switch event.keyCode {
-        case 123: onSelect?(max(0, selectedIndex - 1))
-        case 124: onSelect?(min(buttons.count - 1, selectedIndex + 1))
+        case 123: setKeyboardFocus(true); onSelect?(max(0, selectedIndex - 1))
+        case 124: setKeyboardFocus(true); onSelect?(min(buttons.count - 1, selectedIndex + 1))
         default: super.keyDown(with: event)
         }
     }

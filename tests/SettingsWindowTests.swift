@@ -247,10 +247,13 @@ private enum SettingsWindowTests {
         // Keyboard: the strip is one key-view stop and the arrows move between tabs.
         expect(strip.acceptsFirstResponder && strip.canBecomeKeyView && strip.buttons.allSatisfy(\.refusesFirstResponder), "the strip is the one key-view stop; its buttons do not take focus")
         expect(window.makeFirstResponder(strip) && window.firstResponder === strip, "the strip can hold focus")
+        expect(!strip.showsKeyboardFocus && strip.focusRingType == .none, "focus that arrives without a key press (the window opening) draws no ring")
         func arrow(_ code: UInt16, _ flags: NSEvent.ModifierFlags = []) {
             strip.keyDown(with: keyEvent(code == 123 ? "\u{F702}" : "\u{F703}", code: code, flags: flags, window: window))
         }
         arrow(124); expect(controller.selectedIndex == 1, "Right moves to Drawing")
+        expect(strip.showsKeyboardFocus && strip.focusRingType == .exterior && strip.focusRingMaskBounds == strip.convert(strip.buttons[1].bounds, from: strip.buttons[1]),
+               "an arrow key shows the focus ring, around the selected tab")
         arrow(124); arrow(124); expect(controller.selectedIndex == 3, "Right walks on to Upload")
         arrow(124); expect(controller.selectedIndex == 3, "Right stops at the last tab")
         arrow(123); expect(controller.selectedIndex == 2 && window.title == "Capture", "Left moves back to Capture")
@@ -263,6 +266,7 @@ private enum SettingsWindowTests {
         expect(closes == 1 && controller.selectedIndex == 0, "Escape still closes with the strip focused")
         controller.onClose = nil
         _ = window.makeFirstResponder(nil)
+        expect(!strip.showsKeyboardFocus, "the ring goes when focus leaves the strip")
 
         // Accessibility: a tab group of tabs, each with its label, the selection exposed as the group's value.
         expect(strip.accessibilityRole() == .tabGroup && strip.isAccessibilityElement(), "the strip is a tab group")
