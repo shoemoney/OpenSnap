@@ -321,7 +321,7 @@ extension AppSafetyTests {
         let address = UploadState.displayAddress(of: url)
         try expect(status.variants.first == "Link copied · " + address && status.variants.last?.hasPrefix("Link copied · ") == true && status.variants.count > 3,
                    "The status carries the link after Link copied, and shorter middle-cut steps (\(status.variants.first ?? ""))")
-        try expect((status.stringValue.hasPrefix("Link copied · ") || status.stringValue.hasPrefix("Copied · …")) && status.frame.width > 100,
+        try expect((status.stringValue.hasPrefix("Link copied · ") || status.stringValue.hasPrefix("Copied · …")) && status.frame.width > 100 && status.stringValue.contains(String(url.lastPathComponent.suffix(6))),
                    "At 980 the \(Int(status.frame.width)) pt slot is used for the link, not left empty (\(status.stringValue))")
         try expect(AppToolTip.text(for: status) == "Link copied: " + url.absoluteString && status.accessibilityHelp() == "Link copied: " + url.absoluteString,
                    "The full URL stays on the tooltip and in the VoiceOver help, whatever the status shows")

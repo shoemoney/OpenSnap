@@ -450,6 +450,10 @@ struct SettingsDestinationActions {
 
 @MainActor
 final class UploadSettingsTab: SettingsTabViewController {
+    /// This tab has one label ("Destinations:"), so its label column is that wide, not as wide as the longest label on any tab: the list and
+    /// its four buttons get the room (Add…, Edit…, Remove and Make Default need about 410 pt at 20 pt).
+    static var labelColumnWidth: CGFloat { SettingsLayout.labelWidth(for: ["Destinations:"]) }
+    static var listWidth: CGFloat { SettingsLayout.availableControlWidth(labelWidth: labelColumnWidth) }
     private let destinations: () -> PublishingDestinationList
     private let listSurface = SettingsListSurface()
     private var listStack: NSStackView { listSurface.stack }
@@ -483,18 +487,19 @@ final class UploadSettingsTab: SettingsTabViewController {
     var selectedDestination: PublishingDestination? { listed.first { $0.id == selectedID } }
 
     override func makeRows() -> [[NSView]] {
+        labelWidth = Self.labelColumnWidth; controlWidth = Self.listWidth
         emptyLabel.font = DesignTokens.Typography.font(.body); emptyLabel.textColor = DesignTokens.Palette.Text.secondary
-        emptyLabel.preferredMaxLayoutWidth = SettingsLayout.controlColumnWidth - 2 * DesignTokens.Space.s4
+        emptyLabel.preferredMaxLayoutWidth = Self.listWidth - 2 * DesignTokens.Space.s4
         listSurface.translatesAutoresizingMaskIntoConstraints = false
-        listSurface.widthAnchor.constraint(equalToConstant: SettingsLayout.controlColumnWidth).isActive = true
+        listSurface.widthAnchor.constraint(equalToConstant: Self.listWidth).isActive = true
         addButton = SettingsLayout.pushButton("Add…", identifier: "addDestination", target: self, action: #selector(addTapped))
         editButton = SettingsLayout.pushButton("Edit…", identifier: "editDestination", target: self, action: #selector(editTapped))
         removeButton = SettingsLayout.pushButton("Remove", identifier: "removeDestination", target: self, action: #selector(removeTapped))
         defaultButton = SettingsLayout.pushButton("Make Default", identifier: "makeDefaultDestination", target: self, action: #selector(makeDefaultTapped))
         emptyAddButton = SettingsLayout.pushButton("Add…", identifier: "addFirstDestination", target: self, action: #selector(addTapped))
         buttonRow = NSStackView(views: [addButton, editButton, removeButton, defaultButton])
-        buttonRow.orientation = .horizontal; buttonRow.spacing = DesignTokens.Space.s3
-        let caption = SettingsLayout.caption("Uploads go to the default destination. Right-click Upload to switch.")
+        buttonRow.orientation = .horizontal; buttonRow.spacing = DesignTokens.Space.s2
+        let caption = SettingsLayout.caption("Uploads go to the default destination. Right-click Upload to switch.", width: Self.listWidth)
         defer { refresh() }
         // The label sits level with the first destination row, not with the middle of a tall list.
         let label = SettingsLayout.rowLabel("Destinations:")
@@ -547,12 +552,12 @@ final class UploadSettingsTab: SettingsTabViewController {
             if index > 0 {
                 let line = NSBox(); line.boxType = .separator; line.translatesAutoresizingMaskIntoConstraints = false
                 listStack.addArrangedSubview(line)
-                line.widthAnchor.constraint(equalToConstant: SettingsLayout.controlColumnWidth).isActive = true
+                line.widthAnchor.constraint(equalToConstant: Self.listWidth).isActive = true
             }
             let row = SettingsDestinationRow(name: destination.name, transport: destination.settings.transport.title, isDefault: destination.id == defaultID)
             row.translatesAutoresizingMaskIntoConstraints = false
             row.heightAnchor.constraint(equalToConstant: SettingsDestinationRow.height).isActive = true
-            row.widthAnchor.constraint(equalToConstant: SettingsLayout.controlColumnWidth).isActive = true
+            row.widthAnchor.constraint(equalToConstant: Self.listWidth).isActive = true
             row.onClick = { [weak self] count in
                 self?.select(id: destination.id)
                 if count > 1 { self?.onEdit(destination) }
@@ -572,7 +577,7 @@ final class UploadSettingsTab: SettingsTabViewController {
                 column.trailingAnchor.constraint(lessThanOrEqualTo: wrapper.trailingAnchor, constant: -DesignTokens.Space.s4),
                 column.topAnchor.constraint(equalTo: wrapper.topAnchor, constant: DesignTokens.Space.s3),
                 column.bottomAnchor.constraint(equalTo: wrapper.bottomAnchor, constant: -DesignTokens.Space.s3),
-                wrapper.widthAnchor.constraint(equalToConstant: SettingsLayout.controlColumnWidth)])
+                wrapper.widthAnchor.constraint(equalToConstant: Self.listWidth)])
             listStack.addArrangedSubview(wrapper)
         }
         // With destinations the four buttons sit under the list; with none the Add… inside the list is the only command.

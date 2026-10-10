@@ -45,6 +45,12 @@ enum HistoryStoreTests {
             try published.follow(shared, snapshot: resized, name: "Sent resized"); try published.follow(kept, snapshot: resized, name: "Kept resized")
             try expect(published.entry(shared)?.size == CGSize(width: 1011, height: 758) && published.entry(shared)?.publishedSize == CGSize(width: 800, height: 600), "The shared entry follows the resize but remembers 800 x 600")
             try expect(published.entry(kept)?.publishedSize == nil, "An entry that was never uploaded has no published size")
+            // R1-002: the size recorded is the size that went out (the picture's own pixels when Original size applied), not the editable copy's output size.
+            let original = try published.archive(sent, name: "Original", action: .shared, destination: "S3", remoteURL: link, remoteBinding: ["destination": "fixture"], publishedSize: CGSize(width: 2400, height: 1600))
+            try expect(published.entry(original)?.publishedSize == CGSize(width: 2400, height: 1600) && published.entry(original)?.size == CGSize(width: 800, height: 600), "An upload keeps the published size it is given, apart from the copy's own size")
+            // R1-022: taking the post down takes its published size with it; nothing is left claiming an image that is gone.
+            try published.clearRemote(original)
+            try expect(published.entry(original)?.remoteURL == nil && published.entry(original)?.publishedSize == nil, "Delete from Web clears the published size too")
             try expect(try HistoryStore(directory: root.appendingPathComponent("Published")).entry(shared)?.publishedSize == CGSize(width: 800, height: 600), "The published size survives a reload")
             let whole = try HistoryStore.Snapshot(canvasData: { var d = SketchDocument(size: CGSize(width: 2400, height: 1600)); d.renderSize = CGSize(width: 1444.285714, height: 1011); return try d.encoded() }(), drawingDefaults: .init(), preview: nil)
             try expect(whole.size == CGSize(width: 1444, height: 1011), "A stored fractional output size is archived as whole pixels (\(whole.size))")

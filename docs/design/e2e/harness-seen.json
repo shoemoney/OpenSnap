@@ -99,21 +99,21 @@
   },
   "S17": {
    "id": "S17",
-   "slug": "settings-upload",
+   "slug": "settings-upload-many",
    "surface": "Settings: Upload",
-   "state": "Upload tab: three saved destinations, the first is the default"
+   "state": "Upload tab, eight saved destinations, all listed: the list is as tall as the screen allows and scrolls past that; Add…, Edit…, Remove, Make Default and the caption in view"
   },
   "S18": {
    "id": "S18",
-   "slug": "hotkeys-sheet",
-   "surface": "Preferences: Hotkeys",
-   "state": "Capture Shortcuts sheet (all actions None)"
+   "slug": "hotkeys-via-app-menu",
+   "surface": "Settings: Capture",
+   "state": "Capture Shortcuts… from the app menu: Settings opens on the Capture tab (all actions None)"
   },
   "S19": {
    "id": "S19",
-   "slug": "destinations-test-error",
+   "slug": "settings-upload-list",
    "surface": "Destinations / Publishing",
-   "state": "S3 form after a synthetic failed Test: octagon glyph and an Error: line"
+   "state": "Settings, Upload tab: three synthetic destinations (Example S3 default, SFTP, WebDAV) with Add…, Edit…, Remove and Make Default"
   },
   "S20": {
    "id": "S20",
@@ -131,7 +131,7 @@
    "id": "S23",
    "slug": "toolbox-menu-open",
    "surface": "menus",
-   "state": "Toolbox pull-down open"
+   "state": "Toolbox menu open (a selection-style pop-up, so its rows draw their icons)"
   },
   "S24": {
    "id": "S24",
@@ -141,9 +141,9 @@
   },
   "S25": {
    "id": "S25",
-   "slug": "about-panel",
+   "slug": "license-window",
    "surface": "About window",
-   "state": "app-owned About window: icon, name, version and build, credit line, license link"
+   "state": "the MIT License window with the paragraphs reflowed to the window width"
   },
   "S26": {
    "id": "S26",
@@ -173,7 +173,7 @@
    "id": "S31",
    "slug": "color-popover-w980",
    "surface": "Colour popover",
-   "state": "Drawing colours popover open below the top-bar swatch at window width 980"
+   "state": "Drawing colours popover open below the top-bar swatch at window width 980, a preset colour current"
   },
   "S32": {
    "id": "S32",
@@ -221,28 +221,29 @@
    "id": "S39",
    "slug": "upload-error-sheet",
    "surface": "alerts / sheets",
-   "state": "error sheet after a stubbed failed upload, over the titled window"
+   "state": "Details… sheet after a stubbed failed upload (the error itself is inline), over the titled window"
   },
   "S40": {
    "id": "S40",
    "slug": "wipe-pressed",
    "surface": "component states",
    "state": "Wipe pressed: label 0.16 fill, glyph at 0.96"
+  },
+  "ZZ": {
+   "id": "ZZ",
+   "slug": "unexpected-modal-1",
+   "surface": "unexpected modal alert",
+   "state": "a modal appeared that no surface expected"
   }
  },
  "controls": [
   [
    "AXButton",
-   "Add Preset",
-   [
-    "S08"
-   ]
-  ],
-  [
-   "AXButton",
    "Add…",
    [
-    "S19"
+    "S17",
+    "S19",
+    "S26"
    ]
   ],
   [
@@ -263,14 +264,6 @@
   ],
   [
    "AXButton",
-   "Blank",
-   [
-    "S01",
-    "S11"
-   ]
-  ],
-  [
-   "AXButton",
    "Blue",
    [
     "S06",
@@ -285,7 +278,6 @@
     "S08",
     "S12",
     "S16",
-    "S18",
     "S19",
     "S26",
     "S32",
@@ -294,7 +286,29 @@
   ],
   [
    "AXButton",
-   "Clear",
+   "Cancel upload",
+   [
+    "S21"
+   ]
+  ],
+  [
+   "AXButton",
+   "Clear All",
+   [
+    "S17",
+    "S18"
+   ]
+  ],
+  [
+   "AXButton",
+   "Clear filters",
+   [
+    "S20"
+   ]
+  ],
+  [
+   "AXButton",
+   "Clear image",
    [
     "S03",
     "S04",
@@ -305,8 +319,6 @@
     "S12",
     "S15",
     "S16",
-    "S18",
-    "S19",
     "S21",
     "S28",
     "S29",
@@ -358,8 +370,6 @@
     "S12",
     "S15",
     "S16",
-    "S18",
-    "S19",
     "S21",
     "S23",
     "S26",
@@ -394,6 +404,13 @@
   ],
   [
    "AXButton",
+   "Copy link",
+   [
+    "S21"
+   ]
+  ],
+  [
+   "AXButton",
    "Custom color…",
    [
     "S06",
@@ -406,21 +423,6 @@
    "Delete from Web",
    [
     "S20"
-   ]
-  ],
-  [
-   "AXButton",
-   "Disable All",
-   [
-    "S17",
-    "S18"
-   ]
-  ],
-  [
-   "AXButton",
-   "Done",
-   [
-    "S19"
    ]
   ],
   [
@@ -448,8 +450,6 @@
     "S12",
     "S15",
     "S16",
-    "S18",
-    "S19",
     "S21",
     "S23",
     "S26",
@@ -472,7 +472,9 @@
    "AXButton",
    "Edit…",
    [
-    "S19"
+    "S17",
+    "S19",
+    "S26"
    ]
   ],
   [
@@ -492,8 +494,6 @@
     "S12",
     "S15",
     "S16",
-    "S18",
-    "S19",
     "S21",
     "S23",
     "S26",
@@ -538,8 +538,7 @@
     "S12",
     "S15",
     "S16",
-    "S18",
-    "S19",
+    "S20",
     "S21",
     "S23",
     "S26",
@@ -556,13 +555,6 @@
     "S38",
     "S39",
     "S40"
-   ]
-  ],
-  [
-   "AXButton",
-   "Hide from History",
-   [
-    "S20"
    ]
   ],
   [
@@ -591,8 +583,6 @@
     "S12",
     "S15",
     "S16",
-    "S18",
-    "S19",
     "S21",
     "S23",
     "S26",
@@ -629,22 +619,25 @@
    "AXButton",
    "Make Default",
    [
-    "S19"
-   ]
-  ],
-  [
-   "AXButton",
-   "Manage Destinations…",
-   [
-    "S17"
+    "S17",
+    "S19",
+    "S26"
    ]
   ],
   [
    "AXButton",
    "Move to Trash",
    [
-    "S20",
     "S26"
+   ]
+  ],
+  [
+   "AXButton",
+   "Nothing to clear",
+   [
+    "S01",
+    "S11",
+    "S38"
    ]
   ],
   [
@@ -680,6 +673,13 @@
   ],
   [
    "AXButton",
+   "Open link in browser",
+   [
+    "S21"
+   ]
+  ],
+  [
+   "AXButton",
    "Orange",
    [
     "S06",
@@ -711,8 +711,6 @@
     "S12",
     "S15",
     "S16",
-    "S18",
-    "S19",
     "S21",
     "S23",
     "S26",
@@ -753,22 +751,30 @@
    "AXButton",
    "Remove",
    [
-    "S08",
+    "S17",
     "S19",
     "S26"
    ]
   ],
   [
    "AXButton",
-   "Reset Defaults",
+   "Remove annotations",
    [
-    "S17",
-    "S18"
+    "S02",
+    "S05",
+    "S07",
+    "S12",
+    "S23",
+    "S26",
+    "S33",
+    "S36",
+    "S38",
+    "S39"
    ]
   ],
   [
    "AXButton",
-   "Resize…",
+   "Resize or crop the picture",
    [
     "S01",
     "S02",
@@ -783,8 +789,6 @@
     "S12",
     "S15",
     "S16",
-    "S18",
-    "S19",
     "S21",
     "S23",
     "S26",
@@ -812,19 +816,19 @@
   ],
   [
    "AXButton",
-   "Save",
+   "Retry upload",
    [
-    "S18",
-    "S19",
-    "S26",
+    "S21",
     "S39"
    ]
   ],
   [
    "AXButton",
-   "Save Preset",
+   "Save",
    [
-    "S08"
+    "S19",
+    "S26",
+    "S39"
    ]
   ],
   [
@@ -844,8 +848,6 @@
     "S12",
     "S15",
     "S16",
-    "S18",
-    "S19",
     "S21",
     "S23",
     "S26",
@@ -862,6 +864,14 @@
     "S38",
     "S39",
     "S40"
+   ]
+  ],
+  [
+   "AXButton",
+   "Show error details",
+   [
+    "S21",
+    "S39"
    ]
   ],
   [
@@ -928,8 +938,6 @@
     "S11",
     "S15",
     "S16",
-    "S18",
-    "S19",
     "S21",
     "S23",
     "S26",
@@ -972,6 +980,13 @@
   ],
   [
    "AXButton",
+   "Trash",
+   [
+    "S20"
+   ]
+  ],
+  [
+   "AXButton",
    "Undo",
    [
     "S01",
@@ -987,8 +1002,6 @@
     "S12",
     "S15",
     "S16",
-    "S18",
-    "S19",
     "S21",
     "S23",
     "S26",
@@ -1009,7 +1022,7 @@
   ],
   [
    "AXButton",
-   "Upload",
+   "Upload image",
    [
     "S01",
     "S02",
@@ -1024,8 +1037,6 @@
     "S12",
     "S15",
     "S16",
-    "S18",
-    "S19",
     "S21",
     "S23",
     "S26",
@@ -1055,21 +1066,6 @@
   ],
   [
    "AXButton",
-   "Wipe",
-   [
-    "S02",
-    "S05",
-    "S07",
-    "S12",
-    "S23",
-    "S26",
-    "S33",
-    "S36",
-    "S39"
-   ]
-  ],
-  [
-   "AXButton",
    "Yellow",
    [
     "S06",
@@ -1095,6 +1091,7 @@
     "S20",
     "S21",
     "S23",
+    "S25",
     "S28",
     "S29",
     "S30",
@@ -1126,8 +1123,6 @@
     "S12",
     "S15",
     "S16",
-    "S18",
-    "S19",
     "S21",
     "S23",
     "S26",
@@ -1163,8 +1158,6 @@
     "S12",
     "S15",
     "S16",
-    "S18",
-    "S19",
     "S21",
     "S23",
     "S26",
@@ -1200,8 +1193,6 @@
     "S12",
     "S15",
     "S16",
-    "S18",
-    "S19",
     "S21",
     "S23",
     "S26",
@@ -1237,8 +1228,6 @@
     "S12",
     "S15",
     "S16",
-    "S18",
-    "S19",
     "S21",
     "S23",
     "S26",
@@ -1282,8 +1271,6 @@
     "S12",
     "S15",
     "S16",
-    "S18",
-    "S19",
     "S21",
     "S23",
     "S26",
@@ -1326,8 +1313,6 @@
     "S12",
     "S15",
     "S16",
-    "S18",
-    "S19",
     "S21",
     "S23",
     "S26",
@@ -1363,8 +1348,6 @@
     "S12",
     "S15",
     "S16",
-    "S18",
-    "S19",
     "S21",
     "S23",
     "S26",
@@ -1411,8 +1394,6 @@
     "S09",
     "S15",
     "S16",
-    "S18",
-    "S19",
     "S21",
     "S23",
     "S26",
@@ -1446,8 +1427,6 @@
     "S12",
     "S15",
     "S16",
-    "S18",
-    "S19",
     "S21",
     "S23",
     "S26",
@@ -1483,8 +1462,6 @@
     "S12",
     "S15",
     "S16",
-    "S18",
-    "S19",
     "S21",
     "S23",
     "S26",
@@ -1514,7 +1491,8 @@
    "AXCheckBox",
    "Show capture flash",
    [
-    "S17"
+    "S17",
+    "S18"
    ]
   ],
   [
@@ -1548,8 +1526,6 @@
     "S12",
     "S15",
     "S16",
-    "S18",
-    "S19",
     "S21",
     "S23",
     "S26",
@@ -1608,150 +1584,8 @@
    ]
   ],
   [
-   "AXMenuButton",
-   "Common drawing and capture commands",
-   [
-    "S01",
-    "S02",
-    "S03",
-    "S04",
-    "S05",
-    "S06",
-    "S07",
-    "S08",
-    "S09",
-    "S11",
-    "S12",
-    "S15",
-    "S16",
-    "S18",
-    "S19",
-    "S21",
-    "S23",
-    "S26",
-    "S28",
-    "S29",
-    "S30",
-    "S31",
-    "S32",
-    "S33",
-    "S34",
-    "S35",
-    "S36",
-    "S37",
-    "S38",
-    "S39",
-    "S40"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "About OpenSnap",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Actual Size",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Add Shadow",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Arrow Head",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "At End",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "At Start",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Bring to Front",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Cancel Frame",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Cancel Snapshot",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Capture",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Capture Shortcuts…",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Check Spelling",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Check Spelling as You Type",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Close",
-   [
-    "S23"
-   ]
-  ],
-  [
    "AXMenuItem",
    "Copy",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Crop Selection",
    [
     "S23"
    ]
@@ -1772,28 +1606,7 @@
   ],
   [
    "AXMenuItem",
-   "Cut",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Default Text Style",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
    "Delete",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Drawing",
    [
     "S23"
    ]
@@ -1814,13 +1627,6 @@
   ],
   [
    "AXMenuItem",
-   "File",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
    "Filled Shapes",
    [
     "S23"
@@ -1828,21 +1634,7 @@
   ],
   [
    "AXMenuItem",
-   "Flatten",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
    "Flip Horizontal",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Flip Vertical",
    [
     "S23"
    ]
@@ -1863,112 +1655,7 @@
   ],
   [
    "AXMenuItem",
-   "Group",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "History",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Image",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Loose",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Medium",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "More Commands",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "New",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Open…",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Page Setup…",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
    "Paste",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Pencil Smoothing",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Photos…",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Precise",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Print…",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Publish…",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Quit OpenSnap",
    [
     "S23"
    ]
@@ -1982,14 +1669,7 @@
   ],
   [
    "AXMenuItem",
-   "Rename…",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Resize…",
+   "Remove Snap Picture",
    [
     "S23"
    ]
@@ -1997,27 +1677,6 @@
   [
    "AXMenuItem",
    "Rotate Clockwise",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Rotate Counterclockwise",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Save",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Save As…",
    [
     "S23"
    ]
@@ -2038,70 +1697,7 @@
   ],
   [
    "AXMenuItem",
-   "Send to Back",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Set Snap to Normal Size",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Settings…",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
    "Shadow",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Share…",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Sharing Settings…",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Show Spelling and Grammar",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Snap from Link…",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Spelling",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Text",
    [
     "S23"
    ]
@@ -2114,66 +1710,45 @@
    ]
   ],
   [
-   "AXMenuItem",
-   "Timed Snapshot…",
+   "AXPopUpButton",
+   "Actual, 100%. Zoom is how large the drawing is shown. Actual Size shows one image pixel per screen pixel.",
    [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Toggle Text Outline",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Toggle Text Shadow",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Transparent Background",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Ungroup",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "White Background",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Window Snapshot",
-   [
-    "S23"
-   ]
-  ],
-  [
-   "AXMenuItem",
-   "Wipe Snap Only",
-   [
-    "S23"
+    "S07"
    ]
   ],
   [
    "AXPopUpButton",
-   "Actual, 100%",
+   "Drawing, edit and capture commands",
    [
-    "S07"
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S11",
+    "S12",
+    "S15",
+    "S16",
+    "S21",
+    "S23",
+    "S26",
+    "S28",
+    "S29",
+    "S30",
+    "S31",
+    "S32",
+    "S33",
+    "S34",
+    "S35",
+    "S36",
+    "S37",
+    "S38",
+    "S39",
+    "S40"
    ]
   ],
   [
@@ -2185,7 +1760,7 @@
   ],
   [
    "AXPopUpButton",
-   "Output, 100%",
+   "Output, 100%. Zoom is how large the drawing is shown. Actual Size shows one image pixel per screen pixel.",
    [
     "S02",
     "S03",
@@ -2198,8 +1773,6 @@
     "S12",
     "S15",
     "S16",
-    "S18",
-    "S19",
     "S21",
     "S23",
     "S26",
@@ -2215,6 +1788,15 @@
     "S37",
     "S39",
     "S40"
+   ]
+  ],
+  [
+   "AXPopUpButton",
+   "Zoom is how large the drawing is shown. Actual Size shows one image pixel per screen pixel.",
+   [
+    "S01",
+    "S07",
+    "S11"
    ]
   ],
   [
@@ -2235,7 +1817,10 @@
    "AXRadioButton",
    "Capture",
    [
-    "S17"
+    "S17",
+    "S18",
+    "S19",
+    "S26"
    ]
   ],
   [
@@ -2256,7 +1841,10 @@
    "AXRadioButton",
    "Drawing",
    [
-    "S17"
+    "S17",
+    "S18",
+    "S19",
+    "S26"
    ]
   ],
   [
@@ -2277,7 +1865,10 @@
    "AXRadioButton",
    "General",
    [
-    "S17"
+    "S17",
+    "S18",
+    "S19",
+    "S26"
    ]
   ],
   [
@@ -2297,8 +1888,6 @@
     "S12",
     "S15",
     "S16",
-    "S18",
-    "S19",
     "S21",
     "S23",
     "S26",
@@ -2362,8 +1951,6 @@
     "S12",
     "S15",
     "S16",
-    "S18",
-    "S19",
     "S21",
     "S23",
     "S26",
@@ -2421,7 +2008,10 @@
    "AXRadioButton",
    "Upload",
    [
-    "S17"
+    "S17",
+    "S18",
+    "S19",
+    "S26"
    ]
   ],
   [
@@ -2441,8 +2031,6 @@
     "S12",
     "S15",
     "S16",
-    "S18",
-    "S19",
     "S21",
     "S23",
     "S26",

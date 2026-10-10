@@ -584,7 +584,10 @@ private enum SettingsWindowTests {
             let own = SettingsLayout.labelWidth(for: labels)
             expect(controller.tabItems[index].viewController.labelWidth == own && own <= labelWidth && (index != 0 || own < labelWidth), "\(controller.tabItems[index].label) sizes its label column to its own labels (\(own) vs \(labelWidth))")
         }
-        expect(controller.capture.labelWidth == labelWidth && controller.upload.labelWidth == labelWidth, "Capture and Upload keep the shared label column")
+        expect(controller.capture.labelWidth == labelWidth, "Capture keeps the shared label column (its shortcut rows need the longest labels)")
+        // Upload has one label; sizing the column to it gives the list and its Add…, Edit…, Remove and Make Default row the room they need.
+        expect(controller.upload.labelWidth == UploadSettingsTab.labelColumnWidth && controller.upload.labelWidth < labelWidth && controller.upload.controlWidth == UploadSettingsTab.listWidth,
+               "Upload sizes its label column to 'Destinations:' (\(controller.upload.labelWidth) vs \(labelWidth)) and gives the rest to the list (\(controller.upload.controlWidth))")
     }
 
     // MARK: General and Drawing
@@ -732,6 +735,11 @@ private enum SettingsWindowTests {
         expect(tab.rows[1].pill != nil && tab.rows[0].pill == nil, "the default destination carries the Default pill")
         expect(tab.rows[0].transportField.stringValue == PublishingProtocol.webDAV.title && tab.rows[1].transportField.stringValue == PublishingProtocol.s3.title, "each row names its transport")
         expect(tab.emptyStateText == nil && tab.emptyAddButton.isHidden, "no empty state while destinations exist")
+        controller.window.contentView?.layoutSubtreeIfNeeded()
+        for button in [tab.addButton!, tab.editButton!, tab.removeButton!, tab.defaultButton!] {
+            let titleWidth = (button.title as NSString).size(withAttributes: [.font: DesignTokens.Typography.font(.body)]).width
+            expect(button.frame.width >= titleWidth + 8 && tab.view.bounds.contains(button.convert(button.bounds, to: tab.view)), "\(button.title) is whole inside the tab (\(button.frame.width) pt for \(titleWidth) of text)")
+        }
         expect(["Add…", "Edit…", "Remove", "Make Default"] == [tab.addButton, tab.editButton, tab.removeButton, tab.defaultButton].map(\.title)
                && !tab.addButton.title.contains("..."), "the list has Add…, Edit…, Remove and Make Default with a real ellipsis")
         expect(tab.selectedID == list.defaultID && tab.rows[1].isSelected && !tab.rows[0].isSelected, "the default destination starts selected, so the buttons are ready")
