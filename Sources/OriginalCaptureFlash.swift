@@ -12,7 +12,7 @@ enum OriginalCaptureFlashTiming {
     /// Reduce Motion: no ramp, one frame at peak alpha for this long.
     static let reducedMotionDuration: TimeInterval = 0.05
     /// UserDefaults key for "Show capture flash". Absent means on. Off means no flash at any time, with or without Reduce
-    /// Motion; Reduce Motion with it on plays the single reduced frame. There is deliberately no Settings row yet.
+    /// Motion; Reduce Motion with it on plays the single reduced frame. The Capture tab of Settings owns the checkbox.
     static let showFlashKey = "showCaptureFlash"
 
     enum Phase { case flash, deflash }
