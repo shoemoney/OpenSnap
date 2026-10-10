@@ -351,6 +351,7 @@ extension AuditRun {
             step("S24", "status item") { s24() }
             step("S25", "about") { s25() }
             step("S26", "alerts") { s26() }
+            step("S26D", "remove destination sheet") { s26d() }
             step("S28", "keyboard focus") { s28() }
             step("S29", "extra surfaces") { s29() }
             step("S30", "size popover") { s30() }
@@ -737,22 +738,36 @@ extension AuditRun {
         }
     }
 
-    /// Colour popover open from the top-bar swatch at 980.
+    /// Colour popover open from the top-bar swatch, at 980 and 1440: with a preset colour current (its swatch checked) and with a custom
+    /// one (the Custom color… row carries the chip and the check).
     func s31() {
-        guard loadThenPlace("980xmin", size: CGSize(width: 1000, height: 700), name: "Colour popover", surface: "S31") != nil else { return }
-        app.presentDrawingColors(hover: false)
-        pump(0.7)
-        let popoverWindow = app.colorPopover?.contentViewController?.view.window
-        popoverWindow?.orderFrontRegardless()
-        if popoverWindow == nil { gap("S31", "Colour popover", "the popover window did not appear") }
-        shoot("S31", "color-popover-w980", surface: "Colour popover", state: "Drawing colours popover open below the top-bar swatch at window width 980",
-              windows: popoverWindow.map { [window, $0] } ?? [window], refs: ["App.swift|func presentDrawingColors"], settle: 0.2,
-              extra: popoverMetrics(popoverWindow, anchor: app.paletteButton))
-        if let popoverWindow {
-            shoot("S31", "color-popover-only-w980", surface: "Colour popover", state: "the popover window alone", windows: [popoverWindow], refs: ["App.swift|func presentDrawingColors"], settle: 0.1)
+        for spec in ["980xmin", "1440x900"] {
+            guard loadThenPlace(spec, size: CGSize(width: 1000, height: 700), name: "Colour popover", surface: "S31") != nil else { return }
+            let width = widthSlug(spec)
+            for (variant, color) in [("", OriginalDrawingControls.presets[0].color), ("-custom", NSColor(deviceRed: 0.18, green: 0.62, blue: 0.55, alpha: 1))] { // token-exempt: a custom drawing colour for the capture
+                app.applyChosenColor(color, modifiers: [])
+                app.presentDrawingColors(hover: false)
+                pump(0.7)
+                let popoverWindow = app.colorPopover?.contentViewController?.view.window
+                popoverWindow?.orderFrontRegardless()
+                if popoverWindow == nil { gap("S31", "Colour popover", "the popover window did not appear") }
+                var extra = popoverMetrics(popoverWindow, anchor: app.paletteButton)
+                extra["customRowIsCurrent"] = app.customColorButton?.isCurrentChoice ?? false
+                extra["checkedPresets"] = app.presetColorButtons.filter { $0.state == .on }.map { $0.accessibilityLabel() ?? "" }
+                if let content = app.colorPopover?.contentViewController?.view {
+                    extra["popoverContentSize"] = [Double(content.frame.width), Double(content.frame.height)]
+                    extra["rowFrames"] = (app.presetColorButtons.map { $0 as NSView } + [app.customColorButton].compactMap { $0 }).map { rectJSON($0.frame) }
+                }
+                shoot("S31", "color-popover\(variant)-\(width)", surface: "Colour popover", state: "Drawing colours popover open below the top-bar swatch at window width \(width.dropFirst()), \(variant.isEmpty ? "a preset colour current" : "a custom colour current")",
+                      windows: popoverWindow.map { [window, $0] } ?? [window], refs: ["App.swift|func presentDrawingColors", "BezelDrawingControls.swift|final class BezelCustomColorButton"], settle: 0.2, extra: extra)
+                if let popoverWindow {
+                    shoot("S31", "color-popover-only\(variant)-\(width)", surface: "Colour popover", state: "the popover window alone\(variant.isEmpty ? "" : ", custom colour current")", windows: [popoverWindow], refs: ["App.swift|func presentDrawingColors"], settle: 0.1)
+                }
+                app.closeDrawingColors()
+                pump(0.3)
+            }
+            app.applyChosenColor(OriginalDrawingControls.presets[0].color, modifiers: [])
         }
-        app.closeDrawingColors()
-        pump(0.3)
     }
 
     /// A shot big enough that the Original-size checkbox shows (`isLargeShot`), growing the synthetic size until the app agrees.
@@ -1241,10 +1256,11 @@ extension AuditRun {
         var mode = "success"
     }
 
-    /// OSN-054: the upload states in the status slot of the bottom bar, at 980 and 1280. The uploader is a stub; nothing leaves the process.
+    /// OSN-054: the upload states in the status slot of the bottom bar, at 980, 1280 and 1440, over a large shot so the Original size
+    /// checkbox takes part (it steps aside only where the slot cannot hold it). The uploader is a stub; nothing leaves the process.
     func s21() {
         syntheticDestinations()
-        loadSynthetic(size: CGSize(width: 1000, height: 700), name: "Quarterly planning review of the new upload flow")
+        guard loadLargeShot(name: "Quarterly planning review of the new upload flow") != nil else { gap("S21", "publish states", "no synthetic size made isLargeShot true"); return }
         let gate = UploadGate()
         app.publishing.clipboardWriter = { _ in }
         app.linkOpener = { _ in }
@@ -1256,16 +1272,16 @@ extension AuditRun {
             return plan.publicURL ?? plan.remoteURL
         }
         let refs = ["UploadStatus.swift|enum UploadState", "App+Upload.swift|func uploadStateChanged", "App.swift|func beginUpload", "ModernEditorChrome.swift|let uploadControls"]
-        for spec in ["980xmin", "1280x800"] {
+        for spec in ["980xmin", "1280x800", "1440x900"] {
             guard let size = windowSize(for: spec, surface: "S21") else { continue }
             placeWindow(size)
             window.makeKeyAndOrderFront(nil); pump(0.4)
-            let width = spec.hasPrefix("980") ? "w980" : "w1280"
+            let width = widthSlug(spec)
             app.uploadState = .idle
             gate.mode = "wait"
             app.publishImage()
             pump(0.8)
-            shoot("S21", "publish-progress-\(width)", surface: "publish progress", state: "Uploading <name>\u{2026}: 20 pt spinner, truncating status, Cancel; no Original size checkbox, at \(width)", refs: refs, extra: ["status": app.status.stringValue, "uploadState": String(describing: app.uploadState)])
+            shoot("S21", "publish-progress-\(width)", surface: "publish progress", state: "Uploading <name>\u{2026}: 20 pt spinner, truncating status, Cancel on its plate; the Original size checkbox only where the slot holds it, at \(width)", refs: refs, extra: ["status": app.status.stringValue, "uploadState": String(describing: app.uploadState), "originalSizeCheckboxHidden": app.dragOriginalControl.isHidden])
             shoot("S21", "publish-progress-footer-\(width)", surface: "publish progress", state: "footer crop during the upload, at \(width)", crop: footerCrop(), refs: refs, settle: 0.1)
             if width == "w980", let share = app.webpostButton, let menu = share.menu {
                 captureTrackedMenu("S21", "upload-menu-busy", surface: "publish progress", state: "destination menu while an upload runs (Cancel Upload offered)", refs: ["App.swift|Cancel Upload"],
@@ -1273,15 +1289,15 @@ extension AuditRun {
             }
             gate.release.signal()
             pump(1.5)
-            shoot("S21", "publish-success-\(width)", surface: "publish success", state: "Link copied with Open and Copy after a stubbed upload, at \(width)", refs: refs, extra: ["status": app.status.stringValue, "uploadState": String(describing: app.uploadState)])
-            shoot("S21", "publish-success-footer-\(width)", surface: "publish success", state: "footer crop with Link copied, Open and Copy, at \(width)", crop: footerCrop(), refs: refs, settle: 0.1)
+            shoot("S21", "publish-success-\(width)", surface: "publish success", state: "Link copied · the link itself, then Open and Copy on their plate, after a stubbed upload, at \(width)", refs: refs, extra: ["status": app.status.stringValue, "uploadState": String(describing: app.uploadState), "originalSizeCheckboxHidden": app.dragOriginalControl.isHidden])
+            shoot("S21", "publish-success-footer-\(width)", surface: "publish success", state: "footer crop with Link copied · the link, Open and Copy, at \(width)", crop: footerCrop(), refs: refs, settle: 0.1)
             app.expireUploadSuccess()
             pump(0.4)
             gate.mode = "fail"
             app.publishImage()
             pump(1.5)
-            shoot("S21", "publish-error-\(width)", surface: "publish error", state: "inline Error: with Retry and Details\u{2026} after a stubbed failed upload, at \(width)", refs: refs, extra: ["status": app.status.stringValue, "uploadState": String(describing: app.uploadState)])
-            shoot("S21", "publish-error-footer-\(width)", surface: "publish error", state: "footer crop with the inline error, Retry and Details\u{2026}, at \(width)", crop: footerCrop(), refs: refs, settle: 0.1)
+            shoot("S21", "publish-error-\(width)", surface: "publish error", state: "inline Error: with the Retry and Details icon buttons on their plate after a stubbed failed upload, at \(width)", refs: refs, extra: ["status": app.status.stringValue, "uploadState": String(describing: app.uploadState), "originalSizeCheckboxHidden": app.dragOriginalControl.isHidden])
+            shoot("S21", "publish-error-footer-\(width)", surface: "publish error", state: "footer crop with the inline error, Retry and Details, at \(width)", crop: footerCrop(), refs: refs, settle: 0.1)
             captureAlertSheet("S21", "publish-error-details-\(width)", surface: "publish error", state: "the Details\u{2026} sheet with the whole error, at \(width)", refs: ["App+Upload.swift|func showUploadErrorDetails"]) { app.showUploadErrorDetails() }
             app.uploadState = .idle
             pump(0.3)
@@ -1419,20 +1435,29 @@ extension AuditRun {
                 captureAlertSheet("S26", "history-trash", surface: "alerts / sheets", state: "Move archived drawings to Trash? sheet", refs: ["App.swift|func removeHistory("]) { app.removeHistory([id], deleteFiles: true) }
             }
         }
+        gap("S26", "Wipe confirmation", "No Wipe confirmation exists: Wipe/Undo (Canvas.wipe) acts immediately, so there is nothing to capture; recorded as a finding")
+    }
+
+    /// The Remove destination question as an app-owned sheet on the Upload Destinations sheet (a surface of its own so it can run alone).
+    func s26d() {
         syntheticDestinations()
         do {
             let (panel, view) = try app.publishing.buildSettings()
             window.beginSheet(panel); pump(0.8)
             let list = try AppDelegate.publishingStore.load()
             if let name = list.destinations.first?.name, let target = list.destinations.first {
-                let prompt = PublishingDestinationsView.removalPrompt(for: target, in: list)
-                captureModal("S26", "remove-destination", surface: "alerts / sheets", state: "Remove “\(name)”? confirmation (default destination)", refs: ["PublishingDestinationsView.swift|private static func askToRemove"]) {
-                    _ = view.confirmRemoval(prompt.title, prompt.detail)
-                }
+                view.select(id: target.id)
+                view.removeTapped(); pump(0.9)
+                if let alert = AppAlert.presentedAlerts.last {
+                    shoot("S26", "remove-destination", surface: "alerts / sheets", state: "Remove “\(name)”? sheet on the Upload Destinations sheet (default destination): destructive Remove, Cancel",
+                          windows: [alert.panel, panel, window], refs: ["PublishingDestinationsView.swift|private func askToRemove", "AppAlert.swift|final class AppAlert"], settle: 0.1,
+                          extra: ["alertTitle": alert.title, "alertButtons": alert.buttons.map(\.title), "titleFont": fontInfo(alert.titleLabel.font) as Any, "messageFont": fontInfo(alert.messageLabel.font) as Any,
+                                  "buttonFonts": alert.buttonViews.map { fontInfo($0.font) as Any }, "presentedAs": panel.attachedSheet === alert.panel ? "sheet on the Upload Destinations sheet" : "separate panel"])
+                    alert.cancel(); pump(0.3)
+                } else { gap("S26", "Remove destination alert", "no app-owned alert was on screen after Remove was pressed") }
             }
             app.publishing.cancelSettings(); pump(0.4)
         } catch { gap("S26", "Remove destination alert", "buildSettings threw: \(error.localizedDescription)") }
-        gap("S26", "Wipe confirmation", "No Wipe confirmation exists: Wipe/Undo (Canvas.wipe) acts immediately, so there is nothing to capture; recorded as a finding")
     }
 
     func s28() {
