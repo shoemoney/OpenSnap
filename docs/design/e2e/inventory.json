@@ -203,9 +203,9 @@
   },
   {
    "id": "S20",
-   "slug": "history-selected",
+   "slug": "history-tile-hover",
    "surface": "History browser",
-   "state": "one entry selected (action buttons enabled)"
+   "state": "one entry selected (accent fill, border, check badge) and another tile hovered (label 0.08 fill)"
   },
   {
    "id": "S21",
@@ -236,6 +236,18 @@
    "slug": "rename",
    "surface": "alerts / sheets",
    "state": "Rename… sheet with text field"
+  },
+  {
+   "id": "S28",
+   "slug": "focus-topbar-tool",
+   "surface": "keyboard focus",
+   "state": "Brush tool button is first responder (focus ring)"
+  },
+  {
+   "id": "S29",
+   "slug": "help-bevel",
+   "surface": "help bevel (tool-tip overlay)",
+   "state": "OriginalHelpBevel HUD with a hover hint for a top-bar control (Rectangle tool) (feature is off by default); editor at the top of the screen, so the plate sits inside the window, clear of the title bar and both bars"
   },
   {
    "id": "S30",
@@ -283,7 +295,7 @@
    "id": "S37",
    "slug": "format-png-w980",
    "surface": "PNG | JPG at 980",
-   "state": "PNG selected at window width 980 with the large-shot bottom bar; footer group width 257.0 pt"
+   "state": "PNG selected at window width 980 with the large-shot bottom bar; footer group width 242.0 pt"
   },
   {
    "id": "S38",
@@ -296,6 +308,12 @@
    "slug": "upload-error-sheet",
    "surface": "alerts / sheets",
    "state": "error sheet after a stubbed failed upload, over the titled window"
+  },
+  {
+   "id": "S40",
+   "slug": "wipe-pressed",
+   "surface": "component states",
+   "state": "Wipe pressed: label 0.16 fill, glyph at 0.96"
   }
  ],
  "entries": [
@@ -4219,30 +4237,6 @@
   {
    "area": "BAR",
    "surface": "Bottom bar",
-   "name": "Drag Me",
-   "type": "control",
-   "icon": "hand",
-   "entryPath": "Bottom bar › Drag Me",
-   "prerequisite": "Fresh launch, empty document",
-   "expected": "Drag the drawing to Finder or another app; the file is frozen at drag start",
-   "owner": "app",
-   "exercise": "e2e",
-   "gap": null,
-   "note": null,
-   "shortcut": null,
-   "proof": [],
-   "rendered": [
-    "S03",
-    "S09"
-   ],
-   "sources": [
-    "source"
-   ],
-   "id": "E2E-BAR-029"
-  },
-  {
-   "area": "BAR",
-   "surface": "Bottom bar",
    "name": "Original size",
    "type": "control",
    "icon": null,
@@ -4758,6 +4752,30 @@
     "source"
    ],
    "id": "E2E-BAR-051"
+  },
+  {
+   "area": "BAR",
+   "surface": "Bottom bar",
+   "name": "Drag image to another app",
+   "type": "control",
+   "icon": "hand",
+   "entryPath": "Bottom bar › Drag image to another app",
+   "prerequisite": "Fresh launch, empty document",
+   "expected": "The Drag Me well (accessibility label Drag image to another app): drag the drawing to Finder or another app; the file is frozen at drag start",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": null,
+   "shortcut": null,
+   "proof": [],
+   "rendered": [
+    "S03",
+    "S09"
+   ],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-BAR-052"
   },
   {
    "area": "TOOL",
@@ -11165,7 +11183,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "case .font; Free codepoint 0xF031; SF fallback textformat.size; used in AboutWindow.swift, Canvas.swift, DesignTokens.swift, DocumentModel.swift, ExportAccessory.swift, EyeDumpAudit.swift, EyeDumpAuditSurfaces.swift, GlobalHotkeys.swift, LegacyReader.swift, ModernEditorChrome.swift, OriginalCaptureCountdown.swift, OriginalHelpBevel.swift, ResizePanel.swift, SVGExport.swift, SettingsWindow.swift, StatusItemSupport.swift, TextStyleForm.swift",
+   "note": "case .font; Free codepoint 0xF031; SF fallback textformat.size; used in AboutWindow.swift, Canvas.swift, DesignTokens.swift, DocumentModel.swift, ExportAccessory.swift, EyeDumpAudit.swift, EyeDumpAuditSurfaces.swift, GlassChrome.swift, GlobalHotkeys.swift, LegacyReader.swift, ModernEditorChrome.swift, OriginalCaptureCountdown.swift, OriginalHelpBevel.swift, ResizePanel.swift, SVGExport.swift, SettingsWindow.swift, StatusItemSupport.swift, TextStyleForm.swift",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -11309,7 +11327,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "case .check; Free codepoint 0xF00C; SF fallback checkmark; used in PublishingDestinationsView.swift",
+   "note": "case .check; Free codepoint 0xF00C; SF fallback checkmark; used in BezelDrawingControls.swift, PublishingDestinationsView.swift",
    "shortcut": null,
    "proof": [],
    "rendered": [

@@ -353,7 +353,7 @@ def build_chrome():
         ("Save", "toolbar button", "floppy-disk", "Saves to History (tooltip Save to History); status confirms", "S09"),
         ("History", "toolbar button", "clock-rotate-left", "Opens the History window", "S09"),
         ("Image format (PNG | JPG)", "control", None, "Two-segment capsule; choice persists and drives drag, export and upload format", "S09"),
-        ("Drag Me", "control", "hand", "Drag the drawing to Finder or another app; the file is frozen at drag start", "S09"),
+        ("Drag image to another app", "control", "hand", "The Drag Me well (accessibility label Drag image to another app): drag the drawing to Finder or another app; the file is frozen at drag start", "S09"),
         ("Original size", "control", None, "Checkbox: drag out at original size; stored as DragOriginalSize", "S09"),
         ("Upload", "toolbar button", "cloud-arrow-up", "Left-click uploads to the default destination and copies the link; right-click or Control-click opens the destination menu", "S09"),
     ]

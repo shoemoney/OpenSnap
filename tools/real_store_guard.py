@@ -33,7 +33,8 @@ THROWAWAY_PREFIXES = ["SkitchRedux.ResizePresetsTests.", "SkitchHistoryTests.", 
                       "SkitchRedux.GlobalHotkeys.Tests.", "OpenSkitch.appearance.tests.", "OpenSkitch.magnifier.",
                       "OpenSnap.ResizePresetsTests.", "OpenSnapHistoryTests.", "OpenSnap.preferences.tests.",
                       "OpenSnap.magnifier.", "OpenSnap.GlobalHotkeys.Tests.", "openskitch-hotkey-probe",
-                      "com.test.opensnap.", "com.shoemoney.opensnap.eyedump-", "com.shoemoney.opensnap.startup-"]
+                      "com.test.opensnap.", "com.shoemoney.opensnap.eyedump-", "com.shoemoney.opensnap.startup-",
+                      "com.shoemoney.opensnap.e2e-"]
 
 
 def throwaway_plists():
