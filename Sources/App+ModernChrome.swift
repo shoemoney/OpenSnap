@@ -119,6 +119,7 @@ extension AppDelegate {
         dragFormatToggle.target = self; dragFormatToggle.action = #selector(changeDragOptions(_:))
         dragFormatToggle.selectedSegment = FormatToggle.segment(forStoredChoice: UserDefaults.standard.integer(forKey: FormatToggle.defaultsKey))
         status.font = DesignTokens.Typography.font(.caption); status.lineBreakMode = .byTruncatingTail
+        status.setAccessibilityRole(.staticText)
 
         let controls = ModernEditorChrome.SharedControls(
             canvas: canvas, canvasBorder: canvasBorder, status: status, sizeLabel: sizeLabel,
@@ -143,6 +144,7 @@ extension AppDelegate {
         nameField.onChange = { [weak self] name in self?.showDocumentName(name) }
         showDocumentName(nameField.stringValue)
         configureWebpostButton(chrome.shareButton)
+        wireUploadControls(chrome.uploadControls)
 
         snapButton = chrome.snapButton; cancelFrameButton = chrome.cancelFrameButton
         resizeButton = chrome.resizeButton

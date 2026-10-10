@@ -74,6 +74,12 @@ final class ZoomPopUpButton: NSPopUpButton {
     /// The menu-only Actual Size command: it never becomes the face, so it is not part of the capsule's width budget.
     static let actualSizeTag = 998
     override func accessibilityValue() -> Any? { selectedItem?.toolTip ?? titleOfSelectedItem }
+    override var canBecomeKeyView: Bool { KeyboardNavigation.reaches(self) }
+}
+
+/// The Toolbox pop-up; like every chrome button it joins the key-view loop with Full Keyboard Access.
+final class ToolboxPopUpButton: NSPopUpButton {
+    override var canBecomeKeyView: Bool { KeyboardNavigation.reaches(self) }
 }
 
 /// The Modern editor layout: a top bar holding capture and annotation, the solid canvas well across the full width and a
@@ -125,6 +131,8 @@ final class ModernEditorChrome: NSView {
     let header = NSView()
     let footer = NSView()
     private(set) var toolButtons: [String: CommandButton] = [:]
+    /// The first control of the top bar, where "Focus Toolbar" puts the keyboard.
+    var firstToolbarControl: NSControl { hideButton }
     let hideButton, photosButton, saveButton, historyButton, snapButton, cancelFrameButton,
         fontButton, undoButton, wipeButton, resizeButton, shareButton: CommandButton
     /// The canvas well is the solid `surface.canvasWell` colour, drawn by the scroll view and its clip view (corner included).
@@ -143,6 +151,8 @@ final class ModernEditorChrome: NSView {
     }
 
     private let controls: SharedControls
+    /// The spinner and inline commands that take over the status slot while an upload runs, succeeds or fails (OSN-054).
+    let uploadControls = UploadStatusControls()
     private let hideAction: Selector, undoAction: Selector
     private let toolOrder: [String]
     private let accessibilityProvider: @MainActor () -> ChromeAccessibility
@@ -183,9 +193,9 @@ final class ModernEditorChrome: NSView {
         shareButton = CommandButton(title: "", target: actions.target, action: actions.share)
         GlassChrome.useExtraLarge(shareButton)
         shareButton.image = ChromeIcons.resolve(.upload, family: .regular, pointSize: GlassChrome.Metrics.iconPointSize).image
-        shareButton.image?.accessibilityDescription = "Upload"
+        shareButton.image?.accessibilityDescription = Self.uploadLabel
         shareButton.imagePosition = .imageOnly
-        AppToolTip.setText("Upload", for: shareButton)
+        AppToolTip.setText(Self.uploadLabel, for: shareButton)
         super.init(frame: .zero)
         build(actions: actions)
         displayOptionsObservation = DisplayOptions.observe { [weak self] _ in
@@ -253,6 +263,8 @@ final class ModernEditorChrome: NSView {
     // MARK: construction
 
     static let uploadSymbolName = "icloud.and.arrow.up"
+    /// What VoiceOver and the tooltip call the Upload command (T7).
+    static let uploadLabel = "Upload image"
 
     private func readable(_ control: NSControl) {
         control.font = DesignTokens.Typography.floored(control.font)
@@ -342,7 +354,7 @@ final class ModernEditorChrome: NSView {
             button.setButtonType(.toggle)
             button.iconPointSize = Metrics.iconPointSize
             button.icon = icon
-            button.setAccessibilityLabel(id.capitalized)
+            button.setAccessibilityLabel(id.capitalized + " tool")
             AppToolTip.setText(id.capitalized + " tool", for: button)
             toolButtons[id] = button
             toolViews.append(fixed(button, Metrics.toolButton))
@@ -399,11 +411,12 @@ final class ModernEditorChrome: NSView {
             popup.selectItem(at: selectedFormat)
         } else { formatWidth = formatControl.fittingSize.width }
         GlassChrome.fix(formatControl, NSSize(width: ceil(formatWidth), height: Metrics.commandHeight))
-        shareButton.setAccessibilityLabel("Upload to destination")
+        shareButton.setAccessibilityLabel(Self.uploadLabel)
         let footerGroup = plate([formatControl, cell(controls.dragExportView), fixed(shareButton)], "GlassFooterRow")
 
         // The status takes whatever width the groups leave; the Original size checkbox only exists for a large shot.
-        let statusRow = NSStackView(views: [controls.dragOriginalControl, controls.status])
+        // An upload swaps what sits here (spinner and Cancel, Open and Copy, Retry and Details) and hides the checkbox; the slot never grows.
+        let statusRow = NSStackView(views: uploadControls.leadingViews + [controls.dragOriginalControl, controls.status] + uploadControls.trailingViews)
         statusRow.orientation = .horizontal
         statusRow.spacing = 12
         statusRow.alignment = .centerY
@@ -446,6 +459,7 @@ final class ModernEditorChrome: NSView {
             scrollView.topAnchor.constraint(equalTo: headerGlass.bottomAnchor, constant: gap),
             scrollView.bottomAnchor.constraint(equalTo: footerGlass.topAnchor, constant: -gap)
         ])
+        fillList.append(contentsOf: uploadControls.commandButtons)
         for fill in fillList { fill.accessibility = accessibility }
     }
 }

@@ -8,6 +8,8 @@ private typealias Typography = DesignTokens.Typography
 enum StatusIcon {
     static let symbolName = "camera.viewfinder"
     static let name = DesignTokens.Brand.name
+    /// The menu-bar item opens a menu whose first command shows or hides the editor, so that is what VoiceOver says.
+    static let accessibilityLabel = "Show or hide " + name
 
     static func image() -> NSImage? {
         let symbol = NSImage(systemSymbolName: symbolName, accessibilityDescription: name)
@@ -19,7 +21,7 @@ enum StatusIcon {
     static func configure(_ button: NSButton) {
         button.image = image()
         button.toolTip = name
-        button.setAccessibilityLabel(name)
+        button.setAccessibilityLabel(accessibilityLabel)
     }
 }
 

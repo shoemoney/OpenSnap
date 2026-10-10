@@ -267,6 +267,40 @@ struct HistoryBrowserTests {
                     try expect(actions == [.open,.copy,.copyLink,.remove],"Native keyboard callback mapping")
                 }
             }),
+            ("Return opens the selection, Escape closes the window, and the grid starts with the keyboard (OSN-060)", {
+                try browser { browser,_ in
+                    let a = item("A"), b = item("B"), gone = item("Gone",missing:true)
+                    browser.update(items:[a,b,gone])
+                    var opened: [[UUID]] = []
+                    browser.onOpen = { opened.append($0) }
+                    let grid = try grid(browser)
+                    try expect(browser.window?.initialFirstResponder === grid,"The grid is where the keyboard starts")
+                    func press(_ code: UInt16,_ text: String) {
+                        grid.keyDown(with:NSEvent.keyEvent(with:.keyDown,location:.zero,modifierFlags:[],timestamp:0,windowNumber:0,context:nil,characters:text,charactersIgnoringModifiers:text,isARepeat:false,keyCode:code)!)
+                    }
+                    press(36,"\r")
+                    try expect(opened.isEmpty,"Return with nothing selected opens nothing")
+                    browser.select(ids:[b.id]); press(36,"\r")
+                    try expect(opened == [[b.id]],"Return opens the selected item")
+                    browser.select(ids:[a.id]); press(76,"\r")
+                    try expect(opened == [[b.id],[a.id]],"Enter on the keypad opens it too")
+                    browser.select(ids:[gone.id]); press(36,"\r")
+                    try expect(opened.count == 2,"Return does not open an item whose file is missing")
+                    var closed = 0
+                    let token = NotificationCenter.default.addObserver(forName:NSWindow.willCloseNotification,object:browser.window,queue:nil) { _ in closed += 1 }
+                    defer { NotificationCenter.default.removeObserver(token) }
+                    press(53,"\u{1b}")
+                    try expect(closed == 1,"Escape on the grid closes the History window")
+                }
+                // Escape from any other control reaches the window controller through the responder chain.
+                try browser { other,_ in
+                    var closed = 0
+                    let token = NotificationCenter.default.addObserver(forName:NSWindow.willCloseNotification,object:other.window,queue:nil) { _ in closed += 1 }
+                    defer { NotificationCenter.default.removeObserver(token) }
+                    other.cancelOperation(nil)
+                    try expect(closed == 1,"Escape reaching the window controller from another control closes the window as well")
+                }
+            }),
             ("All readable UI fonts satisfy minimum and grid captions use twenty", {
                 try browser { browser,_ in
                     let a = item("A"); browser.update(items:[a])
