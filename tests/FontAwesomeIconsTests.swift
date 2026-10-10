@@ -95,7 +95,7 @@ private enum FontAwesomeIconsTests {
     // MARK: table
 
     private static func table() {
-        expect(FAIcon.allCases.count == 34, "Icon table lists the 34 mapped icons")
+        expect(FAIcon.allCases.count == 35, "Icon table lists the 35 mapped icons")
         expect(Set(FAIcon.allCases.map(\.rawValue)).count == FAIcon.allCases.count, "Icon names are unique")
         expect(FAIcon.allCases.allSatisfy { $0.rawValue == $0.rawValue.lowercased() && !$0.rawValue.contains(" ") }, "Icon names are lowercase kebab-case")
         expect(FAIcon(rawValue: "eye-slash") == .eyeSlash && FAIcon(rawValue: "cloud-arrow-up") == .upload, "Raw values are the icons.yml keys")
@@ -103,7 +103,8 @@ private enum FontAwesomeIconsTests {
         expect(Set(codepoints).count == codepoints.count, "Every icon has its own codepoint")
         expect(FontAwesomeIcons.subsetUnicodes == Set(codepoints).sorted(), "subsetUnicodes is the sorted unique table")
         expect(FontAwesomeIcons.subsetUnicodes.count == FAIcon.allCases.count, "subsetUnicodes covers every icon exactly once")
-        expect(FAIcon.slashForward.codepoint == 0x2F && FAIcon.eyeSlash.codepoint == 0xF070 && FAIcon.upload.codepoint == 0xF0EE,
+        expect(FAIcon.slashForward.codepoint == 0x2F && FAIcon.eyeSlash.codepoint == 0xF070 && FAIcon.upload.codepoint == 0xF0EE
+               && FAIcon.gear.codepoint == 0xF013 && FAIcon(rawValue: "gear") == .gear,
                "Spot-checked codepoints match icons.yml")
         expect(FAFamily.regular.postScriptName == "FontAwesome7Pro-Regular" && FAFamily.solid.postScriptName == "FontAwesome7Pro-Solid", "PostScript names")
         expect(FAFamily.allCases.map(\.resourceName) == ["FontAwesome7Pro-Regular-subset", "FontAwesome7Pro-Solid-subset"], "Resource names")
