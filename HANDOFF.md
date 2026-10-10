@@ -51,7 +51,7 @@ python3 tools/test-native-startup.py
 sh tools/eye-dump-audit.sh /tmp/run-OUT     # the ONLY screenshot path: isolated copy of the app, own-window PNGs + manifest + safety.txt
 ```
 
-Quit a running built app before rebuilding (the startup script refuses otherwise) and check for unsaved work first. Use the supported computer-use tooling for real UI interaction, not AppleScript, CGEvent or `screencapture`. Never build or test in the main checkout; use a worktree.
+Quit a running built app before rebuilding and check for unsaved work first (the startup smoke and the audit harness run throwaway copies, so they never touch it). Use the supported computer-use tooling for real UI interaction, not AppleScript, CGEvent or `screencapture`. Never build or test in the main checkout; use a worktree.
 
 ## Invariants
 

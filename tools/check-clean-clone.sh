@@ -6,10 +6,8 @@
 #   2. sh tools/build.sh,
 #   3. python3 tools/check-no-original.py build/OpenSnap.app,
 #   4. python3 tools/test.py.
-# It never touches this checkout's build/ and never launches the app. tools/test-native-startup.py is NOT run: it starts the
-# built binary under the real bundle id (com.shoemoney.opensnap), and OPENSNAP_APP_SUPPORT / CFFIXED_USER_HOME do not
-# isolate UserDefaults, so it would read and write the owner's live preferences. The screenshot harness
-# (tools/eye-dump-audit.sh) is the safe way to run the built app: it launches a re-identified temp copy.
+# It never touches this checkout's build/ and never launches the app. tools/test-native-startup.py is NOT run here (it needs a GUI session).
+# It and the screenshot harness (tools/eye-dump-audit.sh) both launch a re-identified temp copy, never the built bundle itself.
 # Uncommitted edits are not in the clone; commit first (the script warns when the tree is dirty).
 # Slow (a full build plus every suite), so it is not part of tools/test.py.
 set -eu
@@ -44,5 +42,5 @@ echo "== check-no-original (bundle)"
 (cd "$CLONE" && run python3 tools/check-no-original.py build/OpenSnap.app)
 echo "== test.py (in the clone)"
 (cd "$CLONE" && run python3 tools/test.py) || { echo "FAIL: tools/test.py in the clone" >&2; exit 1; }
-echo "SKIPPED: tools/test-native-startup.py (launches the real bundle id against the real defaults; see the header)"
+echo "SKIPPED: tools/test-native-startup.py (needs a GUI session; it runs an isolated copy, see the header)"
 echo "PASS clean clone of $SHA: built, bundle has no original assets, all suites passed"

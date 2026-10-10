@@ -36,21 +36,23 @@ flowchart LR
 ```sh
 ./tools/build.sh                       # builds build/OpenSnap.app
 python3 tools/test.py                  # every suite; add --concurrent-app-safety for the isolation proof
-python3 tools/test-native-startup.py   # launches the built app against throwaway storage
+python3 tools/test-native-startup.py   # smoke-tests an isolated COPY of the built app (throwaway bundle id and home)
 ./tools/eye-dump-audit.sh OUTDIR       # the only screenshot path: PNGs of an isolated copy of the app's own windows (see below)
 sh tools/check-clean-clone.sh          # clones the committed HEAD to a temp dir; builds, checks the bundle and runs every suite there (slow; not part of test.py)
 sh tools/release.sh VERSION            # release zip + manifest (see below)
 ```
 
-Test and harness runs isolate themselves with `OPENSNAP_APP_SUPPORT` (a throwaway storage folder; the one-time data migration never runs when it is set), `OPENSNAP_EVIDENCE_DIR` and, for the startup script, a temporary `CFFIXED_USER_HOME`.
+Test and harness runs isolate themselves with `OPENSNAP_APP_SUPPORT` (a throwaway storage folder; the one-time data migration never runs when it is set), `OPENSNAP_EVIDENCE_DIR` and, for the startup script, a temporary `CFFIXED_USER_HOME`. Neither redirects `UserDefaults`, which is why the launched app is always a re-identified copy.
 
 `tools/eye-dump-audit.sh` never runs `build/OpenSnap.app` itself: it copies the bundle, gives the copy a throwaway bundle id (its own defaults domain) and ad-hoc re-signs it, then launches it with a throwaway home, support and evidence folder inside a `sandbox-exec` fence (no network; the real stores, `~/.aws`, `~/.ssh` and Keychains unreadable). The real stores are hashed before and after (`tools/real_store_guard.py`) and the run exits non-zero if any changed (`safety.txt`). Options: `--groups`, `--appearances light,dark`, `--icons sf|fa|both` (`fa` reports "FA unavailable" unless the Font Awesome subsets are bundled) and `--sizes 980xmin,1024x740,1280x800,1440x900,full`.
 
-`tools/check-clean-clone.sh` proves the committed tree needs nothing outside the repository: it clones HEAD into a fresh temp directory with no archive folder, no Font Awesome fonts and no token, then runs `tools/build.sh`, `tools/check-no-original.py build/OpenSnap.app` and `tools/test.py` inside the clone. It never touches this checkout's `build/` and never launches the app. It leaves out `tools/test-native-startup.py`: that script starts the built binary under the real bundle id, and `OPENSNAP_APP_SUPPORT` and `CFFIXED_USER_HOME` do not redirect `UserDefaults`, so on a machine that runs OpenSnap it can read and write the live preferences. Use `tools/eye-dump-audit.sh` for anything that needs the built app running.
+`tools/check-clean-clone.sh` proves the committed tree needs nothing outside the repository: it clones HEAD into a fresh temp directory with no archive folder, no Font Awesome fonts and no token, then runs `tools/build.sh`, `tools/check-no-original.py build/OpenSnap.app` and `tools/test.py` inside the clone. It never touches this checkout's `build/` and never launches the app. It leaves out `tools/test-native-startup.py` because that one needs a GUI session.
+
+`tools/test-native-startup.py` follows the same isolation pattern as the audit harness: it copies the bundle to a temp folder, sets `CFBundleIdentifier` to `com.shoemoney.opensnap.startup-<pid>` (a strict regex refuses anything else before any cleanup exists), ad-hoc re-signs it and runs only the copy with a throwaway home, `CFFIXED_USER_HOME`, `TMPDIR` and support folder. The real stores are hashed before and after (`tools/real_store_guard.py`), the throwaway defaults domain is dropped before the final compare (`defaults` is injectable as `OPENSNAP_STARTUP_DEFAULTS`), and any change fails the run. `tools/test-native-startup-guard.py` (part of `tools/test.py`, no GUI) proves those protections can fail.
 
 Tests print `SKIPPED (FA not bundled)` only for the Font Awesome glyph branch, which needs the licensed Pro subsets that are never committed; any other skipped suite is a failure. `tools/check-no-original.py --sources` fails if anything under `Sources/`, `tests/` or `tools/` names the retired archive folder.
 
-Run `tools/build.sh` before `tools/test-native-startup.py`, and quit a running copy of the app first; the startup script refuses otherwise. The Xcode command line tools provide the Swift toolchain.
+Run `tools/build.sh` before `tools/test-native-startup.py`; a running copy of the app is not affected, because the smoke only runs its own throwaway copy. The Xcode command line tools provide the Swift toolchain.
 
 The app icon is a Liquid Glass `.icon` built with `actool`, with a flattened `.icns` fallback. The icons in the UI use Font Awesome Pro when it is available and SF Symbols otherwise. The Pro fonts are licensed, so they are optional and never committed: with your own token in `FONTAWESOME_TOKEN`, run `OPENSNAP_FETCH_FONTAWESOME=1 ./tools/build.sh` and the build downloads the package, subsets only the glyphs the app uses into the git-ignored `build/fonts` and bundles them.
 
