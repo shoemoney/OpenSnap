@@ -32,7 +32,7 @@ private enum StatusItemSupportTests {
         StatusIcon.configure(button)
         expect(button.image?.isTemplate == true && (button.image?.size.width ?? 0) > 0, "configure() installs the template icon on the button")
         expect(button.toolTip == "OpenSnap", "The tooltip is the product name")
-        expect(button.accessibilityLabel() == "OpenSnap", "The spoken label is the product name")
+        expect(button.accessibilityLabel() == "Show or hide OpenSnap" && StatusIcon.accessibilityLabel == "Show or hide " + StatusIcon.name, "The spoken label says what the item does (OSN-062), and it still names the product")
         expect(!(button.accessibilityLabel() ?? "").lowercased().contains(["ski", "tch"].joined()), "No retired name on the status item")
     }
 

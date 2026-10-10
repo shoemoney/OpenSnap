@@ -136,6 +136,11 @@ private enum AccessibilityAuditTests {
         let ownerless = KeyOwner(); ownerless.setAccessibilityLabel("Sections")
         expect(kinds(found(host(ownerless))) == [.missingRole], "a custom focusable view with a label but no role is filed under missingRole")
 
+        // A scroll view's clip view is furniture: a subclass that takes the keys is not an unlabelled control (the main window's canvas sits in one).
+        final class FocusableClip: NSClipView { override var acceptsFirstResponder: Bool { true } }
+        let scroll = NSScrollView(); scroll.contentView = FocusableClip()
+        expect(found(host(scroll)).violations.isEmpty, "a focusable clip view inside a scroll view is not judged as a control")
+
         // Disabled and hidden: a disabled control need not take focus; a hidden one must still be labelled but is out of uniqueness.
         expect(found(host(button("Save").with { $0.refusesFirstResponder = true; $0.isEnabled = false })).violations.isEmpty, "a disabled control may refuse focus")
         let hiddenPair = host(button("One", label: "Page"), button("Two", label: "Page").with { $0.isHidden = true })
@@ -353,6 +358,13 @@ private enum AccessibilityAuditTests {
         let accessory = ExportAccessory(format: "jpeg", originalSize: false, jpegQuality: 0.7)
         accessory.view.layoutSubtreeIfNeeded()
         record("Export accessory", Audit.audit(accessory.view, surface: "Export accessory"))
+        // T9 (OSN-054): five formats, and the JPG quality is a statement ("JPG quality 75 %"), not a locked slider.
+        accessory.fixedJPEGQuality = 0.75
+        func everyView(_ view: NSView) -> [NSView] { [view] + view.subviews.flatMap(everyView) }
+        let accessoryViews = everyView(accessory.view)
+        expect(accessoryViews.compactMap { $0 as? NSPopUpButton }.first?.itemTitles == ["PNG", "JPG", "PDF", "TIFF", "SVG"], "Export accessory: the format popup lists PNG, JPG, PDF, TIFF, SVG")
+        expect(accessoryViews.compactMap { $0 as? NSSlider }.isEmpty, "Export accessory: there is no quality slider")
+        expect(accessoryViews.compactMap { $0 as? NSTextField }.contains { $0.stringValue == "JPG quality 75 %" }, "Export accessory: the quality row reads JPG quality 75 %")
         let hotkeys = GlobalHotkeyManager(defaults: settingsDefaults, backend: InertHotkeyBackend())
         let hotkeyPanel = GlobalHotkeySettingsPanel(manager: hotkeys)
         hotkeyPanel.window?.contentView?.layoutSubtreeIfNeeded()

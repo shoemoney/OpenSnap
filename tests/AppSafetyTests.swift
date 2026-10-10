@@ -1607,9 +1607,10 @@ enum AppSafetyTests {
         app.receivePublishing(.failure(cancellation))
         try expect(AppSafetyAlert.seen == ["Save your drawing?", cleanup.localizedDescription],
                    "Normal publishing cancellation after rejected Quit must remain silent")
-        AppSafetyAlert.answers.append(.init(title: genuine.localizedDescription, response: .alertFirstButtonReturn))
         app.receivePublishing(.failure(genuine))
-        try expect(AppSafetyAlert.seen.last == genuine.localizedDescription, "A genuine publishing failure while running must still be reported")
+        try expect(AppSafetyAlert.seen == ["Save your drawing?", cleanup.localizedDescription] && app.uploadState == .failure(message: genuine.localizedDescription)
+                   && app.status.stringValue == "Error: " + genuine.localizedDescription,
+                   "A genuine publishing failure while running is still reported: inline as Error: ..., no longer as an alert (OSN-054)")
     }
     static func realIdleCaptureShutdown() throws {
         AppSafetyCaptureCoordinator.useRealIdleShutdown = true
@@ -3747,7 +3748,7 @@ enum AppSafetyTests {
                            "Original nine drawing tools and the additional Crop command are all present as glass buttons")
                 try expect(!controls.contains { ($0 as? NSButton)?.action == #selector(AppDelegate.frameSnap) },
                            "Frame remains a menu command instead of a permanent capture button")
-                guard let toolbox = controls.compactMap({ $0 as? NSPopUpButton }).first(where: { $0.accessibilityLabel() == "Toolbox" }), let choices = toolbox.menu else { throw Failure(description: "Recovered Toolbox") }
+                guard let toolbox = controls.compactMap({ $0 as? NSPopUpButton }).first(where: { $0.accessibilityLabel() == "Toolbox menu" }), let choices = toolbox.menu else { throw Failure(description: "Recovered Toolbox") }
                 let more = choices.items.first { $0.title == "More Commands" }!.submenu!
                 for title in ["File", "Image", "Drawing", "Text", "Capture"] {
                     try expect(more.items.contains { $0.title == title && $0.submenu != nil }, "Additional commands retain the \(title) entry point")
@@ -3842,7 +3843,7 @@ enum AppSafetyTests {
         ]
         // Development aid: APP_SAFETY_FILTER=<text> runs only the cases whose title contains it. Unset, every case runs.
         let filter = ProcessInfo.processInfo.environment["APP_SAFETY_FILTER"]
-        let tests = (sharedCases + Self.modernCases + Self.webpostCases + Self.retiredFormatCases + Self.menuCases + Self.windowChromeCases).filter { filter.map($0.0.contains) ?? true }
+        let tests = (sharedCases + Self.modernCases + Self.webpostCases + Self.retiredFormatCases + Self.menuCases + Self.windowChromeCases + Self.uploadCases + Self.accessibilityCases).filter { filter.map($0.0.contains) ?? true }
         var results: [[String: Any]] = [], failures = 0
         for (name, test) in tests {
             AppSafetyAlert.reset(); AppSafetyAlert.install(); AppSafetyEvents.current = nil

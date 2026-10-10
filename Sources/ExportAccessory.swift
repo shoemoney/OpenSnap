@@ -1,9 +1,11 @@
 import AppKit
 
+/// The formats the Export panel offers, in the order it lists them (T9). The encoder still reads GIF and BMP (ImageExport), and Save As
+/// writes the .opensnap document; neither is an export choice any more, and a stored "gif", "bmp" or "opensnap" choice falls back to PNG.
 enum ExportAccessoryFormat: String, CaseIterable {
-    case png, jpeg, tiff, gif, bmp, pdf, svg, opensnap
+    case png, jpeg, pdf, tiff, svg
 
-    var title: String { self == .opensnap ? "OpenSnap" : rawValue.uppercased() }
+    var title: String { self == .jpeg ? "JPG" : rawValue.uppercased() }
 
     static func validated(_ value: String) -> ExportAccessoryFormat {
         switch value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
@@ -106,7 +108,6 @@ final class ExportAccessory: NSObject {
     var onChange: () -> Void
     private var contentView: NSView?
     private var formatPopup: NSPopUpButton?
-    private var qualitySlider: NSSlider?
     private var qualityLabel: NSTextField?
     private var originalSizeCheckbox: NSButton?
     private var dimensionsLabel: NSTextField?
@@ -138,13 +139,13 @@ final class ExportAccessory: NSObject {
         set { optionsChanged(options.setOriginalSize(newValue)) }
     }
 
-    /// Finite 0.1...1.0 value, snapped to the slider's ten 10% ticks.
+    /// Finite 0.1...1.0 value, snapped to ten 10% steps.
     var jpegQuality: Double {
         get { options.jpegQuality }
         set { optionsChanged(options.setJPEGQuality(newValue)) }
     }
 
-    /// When set (Modern), JPEG always encodes at this quality and the slider is shown locked at it.
+    /// When set (the app always sets it), JPG encodes at this quality and the panel states it as text.
     var fixedJPEGQuality: Double? { didSet { render() } }
     var effectiveJPEGQuality: Double { fixedJPEGQuality ?? options.jpegQuality }
 
@@ -185,22 +186,9 @@ final class ExportAccessory: NSObject {
         formatRow.alignment = .centerY
         formatRow.spacing = 20
 
-        let quality = label(options.qualityLabel)
+        // JPG is always written at one fixed quality, so it is a statement here, not a control.
+        let quality = label(Self.qualityText(effectiveJPEGQuality))
         qualityLabel = quality
-        let slider = NSSlider(value: options.jpegQuality,
-                              minValue: ExportAccessoryOptions.minimumJPEGQuality,
-                              maxValue: ExportAccessoryOptions.maximumJPEGQuality,
-                              target: self, action: #selector(selectQuality(_:)))
-        slider.numberOfTickMarks = ExportAccessoryOptions.jpegTickCount
-        slider.allowsTickMarkValuesOnly = true
-        slider.tickMarkPosition = .below
-        slider.isContinuous = true
-        slider.setAccessibilityLabel("JPEG quality, 10 to 100 percent")
-        qualitySlider = slider
-        let sliderRow = NSStackView(views: [label("10%"), slider, label("100%")])
-        sliderRow.orientation = .horizontal
-        sliderRow.alignment = .centerY
-        sliderRow.spacing = 14
 
         let checkbox = NSButton(checkboxWithTitle: "Export at original size", target: self,
                                 action: #selector(selectOriginalSize(_:)))
@@ -213,7 +201,7 @@ final class ExportAccessory: NSObject {
         dimensions.setAccessibilityLabel("Export dimensions")
         bytes.setAccessibilityLabel("Actual encoded file size")
 
-        let stack = NSStackView(views: [heading, formatRow, quality, sliderRow, checkbox, dimensions, bytes])
+        let stack = NSStackView(views: [heading, formatRow, quality, checkbox, dimensions, bytes])
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 14
@@ -225,8 +213,6 @@ final class ExportAccessory: NSObject {
             stack.topAnchor.constraint(equalTo: content.topAnchor, constant: 20),
             popup.widthAnchor.constraint(greaterThanOrEqualToConstant: 200),
             popup.heightAnchor.constraint(greaterThanOrEqualToConstant: 38),
-            sliderRow.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            slider.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
             checkbox.heightAnchor.constraint(greaterThanOrEqualToConstant: 36),
             dimensions.widthAnchor.constraint(equalTo: stack.widthAnchor),
             bytes.widthAnchor.constraint(equalTo: stack.widthAnchor),
@@ -236,10 +222,12 @@ final class ExportAccessory: NSObject {
         render()
         content.setFrameSize(NSSize(width: 600, height: stack.fittingSize.height + 40))
         stack.bottomAnchor.constraint(equalTo: content.bottomAnchor, constant: -20).isActive = true
-        popup.nextKeyView = slider
-        slider.nextKeyView = checkbox
+        popup.nextKeyView = checkbox
         return content
     }
+
+    /// "JPG quality 75 %": the quality a JPG is written at, whole percent.
+    static func qualityText(_ quality: Double) -> String { "JPG quality \(Int((quality * 100).rounded())) %" }
 
     private func label(_ text: String, style: DesignTokens.Typography.Style = .body) -> NSTextField {
         let label = NSTextField(wrappingLabelWithString: text)
@@ -252,12 +240,8 @@ final class ExportAccessory: NSObject {
         if let index = ExportAccessoryFormat.allCases.firstIndex(of: options.selectedFormat) {
             formatPopup?.selectItem(at: index)
         }
-        // A fixed quality sits between the 10% ticks, so let the knob rest exactly on it.
-        qualitySlider?.allowsTickMarkValuesOnly = fixedJPEGQuality == nil
-        qualitySlider?.doubleValue = effectiveJPEGQuality
-        qualitySlider?.isEnabled = options.jpegControlsEnabled && fixedJPEGQuality == nil
         qualityLabel?.isEnabled = options.jpegControlsEnabled
-        qualityLabel?.stringValue = fixedJPEGQuality.map { "JPEG quality: \(Int(($0 * 100).rounded()))%" } ?? options.qualityLabel
+        qualityLabel?.stringValue = Self.qualityText(effectiveJPEGQuality)
         originalSizeCheckbox?.state = options.originalSize ? .on : .off
         dimensionsLabel?.stringValue = preview.dimensionsLabel
         byteCountLabel?.stringValue = preview.byteCountLabel
@@ -266,11 +250,6 @@ final class ExportAccessory: NSObject {
     @objc private func selectFormat(_ sender: NSPopUpButton) {
         guard let selected = sender.selectedItem?.representedObject as? String else { return }
         format = selected
-    }
-
-    @objc private func selectQuality(_ sender: NSSlider) {
-        guard options.jpegControlsEnabled else { return }
-        jpegQuality = sender.doubleValue
     }
 
     @objc private func selectOriginalSize(_ sender: NSButton) {

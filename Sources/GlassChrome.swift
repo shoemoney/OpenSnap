@@ -96,6 +96,23 @@ protocol ChromeFillable: AnyObject {
     var accessibility: ChromeAccessibility { get set }
 }
 
+/// Whether Tab reaches buttons and pop-ups: the system's Full Keyboard Access setting (System Settings > Keyboard > Keyboard navigation).
+/// The chrome's buttons follow it like any AppKit button. A test replaces the reading so the key-view loop can be walked on any machine.
+@MainActor
+enum KeyboardNavigation {
+    /// True from Window > Focus Toolbar until the window stops being key: the user asked for the keyboard on the bars, so they behave as
+    /// they do with Full Keyboard Access on, whatever the system setting is.
+    static var toolbarFocusActive = false
+    static var fullKeyboardAccess: () -> Bool = { NSApp.isFullKeyboardAccessEnabled || toolbarFocusActive }
+    /// Whether the view takes part in the key-view loop: Tab reaches it, it is enabled and on screen, and it can take the keyboard.
+    /// Taking the keyboard (acceptsFirstResponder) is not tied to the setting: a click, VoiceOver or Window > Focus Toolbar can always
+    /// put it on a button; the setting only decides whether Tab stops there.
+    static func reaches(_ view: NSView) -> Bool {
+        let enabled = (view as? NSControl)?.isEnabled ?? true
+        return fullKeyboardAccess() && enabled && view.acceptsFirstResponder && !view.isHiddenOrHasHiddenAncestor && view.window != nil
+    }
+}
+
 /// The one command button of the chrome (T6): borderless, icon from the Font Awesome / SF Symbol chain, and its own rest, hover,
 /// pressed, selected, disabled and focus state resolved by `StateStyles.command` and drawn as a fill on a rounded layer
 /// (`StatePlate`), never as another glass surface. Available on macOS 13 so the unit tests run anywhere. Click, Control-click and
@@ -303,6 +320,8 @@ class CommandButton: OriginalActionButton, ChromeFillable {
         super.layout()
         if showsIndicator { showIndicator(plate.stateStyle) }
     }
+
+    override var canBecomeKeyView: Bool { KeyboardNavigation.reaches(self) }
 
     override func becomeFirstResponder() -> Bool {
         let accepted = super.becomeFirstResponder()
@@ -715,6 +734,7 @@ final class SegmentedToggle: NSControl, ChromeFillable {
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     override var acceptsFirstResponder: Bool { isEnabled }
+    override var canBecomeKeyView: Bool { KeyboardNavigation.reaches(self) }
     override var isFlipped: Bool { false }
     override var isEnabled: Bool { didSet { needsDisplay = true; noteFocusRingMaskChanged() } }
 

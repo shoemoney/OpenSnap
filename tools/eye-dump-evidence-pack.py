@@ -23,6 +23,9 @@ def before_stem(c):
                ("S26", "close-unsaved"): "S26-close-unsaved", ("S26", "rename"): "S26-rename", ("S26", "error-generic"): "S26-error-generic",
                ("S26", "history-hide"): "S26-history-hide", ("S26", "history-trash"): "S26-history-trash",
                ("S21", "publish-error"): "S21-publish-error",
+               # OSN-054: the upload states live in the status slot at two widths; each is compared with the same state before.
+               **{("S21", f"{kind}{part}-{w}"): f"S21-publish-{kind}{part}" for kind in ("progress", "success", "error") for part in ("", "-footer") for w in ("w980", "w1280")},
+               ("S21", "publish-error-details-w980"): "S21-publish-error", ("S21", "publish-error-details-w1280"): "S21-publish-error",
                # The titled window with subtitle is compared with the same window before: the plain "OpenSnap" title bar.
                ("S39", "titled-window-w980"): "S11-width-980", ("S39", "titled-window-w1280"): "S11-width-1280",
                ("S39", "titlebar-crop-w980"): "S01-editor-empty", ("S39", "titlebar-crop-w1280"): "S01-editor-empty"}

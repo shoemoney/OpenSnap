@@ -170,6 +170,8 @@ final class BezelSizeSlider: NSControl, NSPopoverDelegate {
     static let glyphLength: CGFloat = 24
     /// One preset step, the distance between neighbouring sizes.
     static let stepSize = 2.625
+    /// The VoiceOver action that opens the popover with the five presets and the track.
+    static let showOptionsActionName = "Show size options"
     var onBegin: (() -> Bool)?
     var onEnd: (() -> Void)?
     /// Tests hand in a popover that never reaches the screen.
@@ -186,6 +188,7 @@ final class BezelSizeSlider: NSControl, NSPopoverDelegate {
     private(set) var isHovered = false
     private var hoverArea: NSTrackingArea?
     override var acceptsFirstResponder: Bool { isEnabled }
+    override var canBecomeKeyView: Bool { KeyboardNavigation.reaches(self) }
     override var isEnabled: Bool {
         didSet {
             guard isEnabled != oldValue else { return }
@@ -233,10 +236,16 @@ final class BezelSizeSlider: NSControl, NSPopoverDelegate {
         focusRingType = .exterior
         setAccessibilityElement(true); setAccessibilityRole(.slider)
         setAccessibilityLabel("Drawing size")
+        setAccessibilityCustomActions([NSAccessibilityCustomAction(name: Self.showOptionsActionName) { [weak self] in
+            guard let self, self.isEnabled else { return false }
+            if !self.isPopoverShown { self.showPopover() }
+            return true
+        }])
         AppToolTip.setText("Five drawing sizes; hold Shift for continuous adjustment", for: self)
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-    override func accessibilityValue() -> Any? { NSNumber(value: value) }
+    /// The whole-number size, as the tooltip and the old Size text read it; the stored value keeps its fraction.
+    override func accessibilityValue() -> Any? { NSNumber(value: value.rounded()) }
     override func accessibilityMinValue() -> Any? { NSNumber(value: OriginalDrawingControls.minimum) }
     override func accessibilityMaxValue() -> Any? { NSNumber(value: OriginalDrawingControls.maximum) }
     override func setAccessibilityValue(_ value: Any?) {
@@ -405,6 +414,9 @@ final class SizePopoverContent: NSView {
             ]
         }
         NSLayoutConstraint.activate(constraints)
+        // A popover is its own window, so the main window's loop does not reach it: the track, then the five presets, then round again.
+        let order: [NSView] = [trackView] + presetButtons
+        for (index, view) in order.enumerated() { view.nextKeyView = order[(index + 1) % order.count] }
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
@@ -480,7 +492,7 @@ final class SizeTrackView: NSControl {
     func fraction(forX x: CGFloat) -> CGFloat { travel > 0 ? (x - Self.knobDiameter / 2) / travel : 0 }
     func x(forFraction fraction: CGFloat) -> CGFloat { Self.knobDiameter / 2 + fraction * travel }
 
-    override func accessibilityValue() -> Any? { slider.map { NSNumber(value: $0.doubleValue) } }
+    override func accessibilityValue() -> Any? { slider.map { NSNumber(value: $0.doubleValue.rounded()) } }
     override func accessibilityMinValue() -> Any? { NSNumber(value: OriginalDrawingControls.minimum) }
     override func accessibilityMaxValue() -> Any? { NSNumber(value: OriginalDrawingControls.maximum) }
     override func accessibilityPerformIncrement() -> Bool { slider?.accessibilityPerformIncrement() ?? false }
@@ -624,6 +636,7 @@ final class SizePresetButton: NSButton {
 /// Original color-container/palette tracking is active without taking text focus.
 final class BezelHoverButton: NSButton {
     var onHover: ((Bool) -> Void)?
+    override var canBecomeKeyView: Bool { KeyboardNavigation.reaches(self) }
     private var hoverTracking: NSTrackingArea?
     override func updateTrackingAreas() {
         if let hoverTracking { removeTrackingArea(hoverTracking) }

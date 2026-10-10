@@ -52,6 +52,9 @@ if (root / 'tests/TestDefaults.swift').exists():
     paths.append(root / 'tests/TestDefaults.swift')
 if (root / 'tests/AppSafetyWindowChromeCases.swift').exists():
     paths.append(root / 'tests/AppSafetyWindowChromeCases.swift')
+for extra in ('AppSafetyUploadCases.swift', 'AppSafetyAccessibilityCases.swift', 'AccessibilityAudit.swift'):
+    if (root / 'tests' / extra).exists():
+        paths.append(root / 'tests' / extra)
 inputs = [(p.name, app_source if p.name == 'App.swift' else p) for p in paths]
 for attempt in range(3):
     snapshot = {name: (p, p.read_bytes()) for name, p in inputs}

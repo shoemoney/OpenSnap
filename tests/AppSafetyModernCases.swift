@@ -237,10 +237,10 @@ extension AppSafetyTests {
         let accessory = app.exportPanelAccessory()
         try expect(accessory.format == "jpeg" && accessory.effectiveJPEGQuality == 0.75, "The real export accessory is JPEG at 0.75 despite a stored 0.3")
         accessory.jpegQuality = 0.3
-        var sliders: [NSSlider] = []
-        func findSliders(_ view: NSView) { if let slider = view as? NSSlider { sliders.append(slider) }; view.subviews.forEach(findSliders) }
-        findSliders(accessory.view)
-        try expect(sliders.count == 1 && !sliders[0].isEnabled && abs(sliders[0].doubleValue - 0.75) < 0.001, "The export quality slider is locked at 0.75: \(sliders.map { ($0.isEnabled, $0.doubleValue) })")
+        func everyView(_ view: NSView) -> [NSView] { [view] + view.subviews.flatMap(everyView) }
+        let panelViews = everyView(accessory.view)
+        try expect(panelViews.compactMap { $0 as? NSSlider }.isEmpty && panelViews.compactMap { $0 as? NSTextField }.contains { $0.stringValue == "JPG quality 75 %" },
+                   "The export quality is stated as 'JPG quality 75 %', not offered as a slider (OSN-054)")
         try expect(try app.exportPanelData(accessory) == want, "The real export bytes are exactly the 0.75 encoding")
         let historyID = try app.archiveStore().archive(try app.historySnapshot(), name: "Toggle", action: .archived)
         let history = try app.historyExport(historyID, format: "jpeg")
@@ -572,12 +572,14 @@ extension AppSafetyTests {
         facts["size.tip"] = AppToolTip.text(for: app.widthControl) ?? "<nil>"
         facts["name.placeholder"] = app.nameField.placeholderString ?? "<nil>"
         facts["status.font"] = String(Double(app.status.font?.pointSize ?? 0))
-        let toolbox = collect(NSPopUpButton.self, in: content).first { $0.accessibilityLabel() == "Toolbox" }
+        let toolbox = collect(NSPopUpButton.self, in: content).first { $0.accessibilityLabel() == "Toolbox menu" }
         facts["toolbox.label"] = toolbox?.accessibilityLabel() ?? "<nil>"
         facts["toolbox.tip"] = toolbox.flatMap { AppToolTip.text(for: $0) } ?? "<nil>"
         facts["toolbox.items"] = toolbox?.itemTitles.joined(separator: "|") ?? "<nil>"
         let tools = Set(app.toolButtons.values.map(ObjectIdentifier.init))
-        let plain = collect(NSButton.self, in: content).filter { !($0 is NSPopUpButton) && !tools.contains(ObjectIdentifier($0)) }
+        // The upload status commands (Cancel upload, Open link, Copy link, Retry, Details…) are covered by the upload cases.
+        let uploadCommands = Set(((app.modernChrome as? ModernEditorChrome)?.uploadControls.commandButtons ?? []).map(ObjectIdentifier.init))
+        let plain = collect(NSButton.self, in: content).filter { !($0 is NSPopUpButton) && !tools.contains(ObjectIdentifier($0)) && !uploadCommands.contains(ObjectIdentifier($0)) }
         // Modern's upload command is icon-only with its own label; webpostModernIconOnly covers it.
         let upload = #selector(AppDelegate.share(_:))
         facts["buttons"] = plain.filter { $0.action != upload && $0.action != #selector(AppDelegate.toggleActualSize) }.map(\.title).sorted().joined(separator: "|")
@@ -668,45 +670,45 @@ extension AppSafetyTests {
             "snap.tip": "Snap: drag an area or click a window; right-click or Control-click for Fullscreen",
             "status.font": "18.0",
             "tool.arrow.id": "arrow",
-            "tool.arrow.label": "Arrow",
+            "tool.arrow.label": "Arrow tool",
             "tool.arrow.tip": "Arrow tool (selected); Option reverses direction, Shift constrains the angle",
             "tool.brush.id": "brush",
-            "tool.brush.label": "Brush",
+            "tool.brush.label": "Brush tool",
             "tool.brush.tip": "Brush tool",
             "tool.crop.id": "crop",
-            "tool.crop.label": "Crop",
+            "tool.crop.label": "Crop tool",
             "tool.crop.tip": "Crop tool",
             "tool.ellipse.id": "ellipse",
-            "tool.ellipse.label": "Ellipse",
+            "tool.ellipse.label": "Ellipse tool",
             "tool.ellipse.tip": "Ellipse tool",
             "tool.eraser.id": "eraser",
-            "tool.eraser.label": "Eraser",
+            "tool.eraser.label": "Eraser tool",
             "tool.eraser.tip": "Eraser tool",
             "tool.fill.id": "fill",
-            "tool.fill.label": "Fill",
+            "tool.fill.label": "Fill tool",
             "tool.fill.tip": "Fill tool",
             "tool.line.id": "line",
-            "tool.line.label": "Line",
+            "tool.line.label": "Line tool",
             "tool.line.tip": "Line tool",
             "tool.rectangle.id": "rectangle",
-            "tool.rectangle.label": "Rectangle",
+            "tool.rectangle.label": "Rectangle tool",
             "tool.rectangle.tip": "Rectangle tool",
             "tool.select.id": "select",
-            "tool.select.label": "Select",
+            "tool.select.label": "Select tool",
             "tool.select.tip": "Select tool",
             "tool.text.id": "text",
-            "tool.text.label": "Text",
+            "tool.text.label": "Text tool",
             "tool.text.tip": "Text tool",
             "toolbox.items": "Toolbox|About OpenSnap|Settings…|Quit OpenSnap||New|Open…|Photos…|Save to History|Export…|Save As…|Print…||Cut|Copy|Paste|Delete|Select All|Duplicate|Text Style…||Crosshair Snapshot|Fullscreen Snapshot|Frame Snapshot|Re-snap (Keep Pen)||Set Snap to Normal Size|Flip Horizontal|Rotate Clockwise|Transparent Background|Crop Snap at Current Edges|Wipe Snap Only||More Commands|Filled Shapes|Shadow",
-            "toolbox.label": "Toolbox",
+            "toolbox.label": "Toolbox menu",
             "toolbox.tip": "Common drawing and capture commands; additional actions are in More Commands",
             "zoom.label": "Canvas zoom"
         ]
         let differing = expectedFacts.keys.sorted().filter { expectedFacts[$0] != modern[$0] }
             .map { "\($0): expected '\(expectedFacts[$0] ?? "")' but found '\(modern[$0] ?? "<missing>")'" }
         try expect(differing.isEmpty && modern.count == expectedFacts.count, "Control strings differ from the recovered ones (\(modern.count) vs \(expectedFacts.count) facts): " + differing.joined(separator: "; "))
-        try expect(modern["tool.arrow.label"] == "Arrow" && modern["tool.crop.tip"] == "Crop tool"
-                   && modern["toolbox.label"] == "Toolbox" && modern["drag.label"] == "Drag image to another app" && modern["format.label"] == "Image format", "The strings are the recovered ones, not merely equal to each other")
+        try expect(modern["tool.arrow.label"] == "Arrow tool" && modern["tool.crop.tip"] == "Crop tool"
+                   && modern["toolbox.label"] == "Toolbox menu" && modern["drag.label"] == "Drag image to another app" && modern["format.label"] == "Image format", "The strings are the recovered ones, not merely equal to each other")
         // At launch Wipe reads its Blank stage; every other command reads its title (the icon-only upload button is checked on its own).
         let spoken = ["hide": "Hide", "photos": "Photos", "save": "Save", "history": "History", "snap": "Snap", "cancel": "Cancel", "font": "Font",
                       "undo": "Undo", "wipe": "Blank", "resize": "Resize…"]
@@ -732,7 +734,7 @@ extension AppSafetyTests {
             (#selector(AppDelegate.snapButtonPressed), "Snap", ModernEditorChrome.snapToolTip), (#selector(AppDelegate.chooseFont), "Font", "Font"),
             (#selector(AppDelegate.undo), "Undo", "Undo (⌘Z)"), (#selector(AppDelegate.wipe), "Blank", "Blank"),
             (#selector(AppDelegate.resize), "Resize…", "Resize…"),
-            (#selector(AppDelegate.share(_:)), "Upload to destination", AppDelegate.webpostHelp)]
+            (#selector(AppDelegate.share(_:)), "Upload image", AppDelegate.webpostHelp)]
         func verify(_ label: String) throws {
             let buttons = collect(NSButton.self, in: content)
             for (action, name, tip) in expected {
@@ -755,8 +757,8 @@ extension AppSafetyTests {
             try verify("overlay preference \(show)")
         }
         app.canvas.strokeWidth = 9.38; app.syncDrawingControls()
-        try expect(AppToolTip.text(for: app.widthControl) == "Size 9" && ((app.widthControl.accessibilityValue() as? NSNumber)?.doubleValue == 9.375 || abs(((app.widthControl.accessibilityValue() as? NSNumber)?.doubleValue ?? 0) - 9.38) < 0.01),
-                   "The slider tooltip shows the whole-number size and VoiceOver reads its value")
+        try expect(AppToolTip.text(for: app.widthControl) == "Size 9" && (app.widthControl.accessibilityValue() as? NSNumber)?.doubleValue == 9,
+                   "The slider tooltip and VoiceOver both read the whole-number size (OSN-062: it was the fraction 9.38)")
         let before = AppToolTip.text(for: app.widthControl)
         app.canvas.strokeWidth = 3; app.syncDrawingControls()
         try expect(AppToolTip.text(for: app.widthControl) == "Size " + String(format: "%.0f", app.widthControl.doubleValue.rounded()) && AppToolTip.text(for: app.widthControl) != before, "The Size tooltip follows the slider (\(AppToolTip.text(for: app.widthControl) ?? "nil"))")
@@ -1423,7 +1425,7 @@ extension AppSafetyTests {
         try expect(app.validateMenuItem(preferences) && !app.validateMenuItem(cancel) && !app.validateMenuItem(undo), "Symbols do not change which commands are available")
         app.canvas.setBackgroundColor(.yellow)
         try expect(app.validateMenuItem(undo), "Undo becomes available after an edit")
-        let toolbox = collect(NSPopUpButton.self, in: app.window.contentView!).first { $0.accessibilityLabel() == "Toolbox" }
+        let toolbox = collect(NSPopUpButton.self, in: app.window.contentView!).first { $0.accessibilityLabel() == "Toolbox menu" }
         try expect(toolbox?.menu?.items.contains { $0.title == "More Commands" } == true, "The Toolbox menu keeps its More Commands entry")
     }
 
@@ -1639,7 +1641,7 @@ extension AppSafetyTests {
         let content = try (app.window.contentView).unwrap("content")
         let body = DesignTokens.Typography.font(.body).pointSize, caption = DesignTokens.Typography.font(.caption).pointSize
         let controls: [(String, NSControl)] = [("zoom popup", app.zoomControl), ("Original size checkbox", app.dragOriginalControl), ("Color button", app.paletteButton),
-                                               ("Toolbox", try collect(NSPopUpButton.self, in: content).first { $0.accessibilityLabel() == "Toolbox" }.unwrap("Toolbox")), ("PNG | JPG", app.dragFormatToggle)]
+                                               ("Toolbox", try collect(NSPopUpButton.self, in: content).first { $0.accessibilityLabel() == "Toolbox menu" }.unwrap("Toolbox")), ("PNG | JPG", app.dragFormatToggle)]
         for (name, control) in controls {
             try expect(control.font?.pointSize == body && body == 20, "\(name) is body text, 20 pt (is \(control.font?.pointSize ?? 0))")
         }
@@ -1712,7 +1714,7 @@ extension AppSafetyTests {
             try expect(control.target === app && control.action == action, "\(name) still sends its action to the AppDelegate after the move")
         }
         func minX(_ view: NSView) -> CGFloat { view.convert(view.bounds, to: content).minX }
-        let toolbox = try collect(NSPopUpButton.self, in: content).first { $0.accessibilityLabel() == "Toolbox" }.unwrap("Toolbox")
+        let toolbox = try collect(NSPopUpButton.self, in: content).first { $0.accessibilityLabel() == "Toolbox menu" }.unwrap("Toolbox")
         let tools = toolOrder.compactMap { app.toolButtons[SketchTool(rawValue: $0)!] as NSView? }
         let top: [NSView] = [chrome.hideButton, toolbox, chrome.photosButton, chrome.snapButton] + tools + [app.paletteButton, app.widthControl, chrome.fontButton]
         let topX = top.map(minX)

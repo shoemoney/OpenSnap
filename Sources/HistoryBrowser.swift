@@ -348,6 +348,8 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         collection.register(HistoryDayHeader.self,forSupplementaryViewOfKind:NSCollectionView.elementKindSectionHeader,withIdentifier:HistoryDayHeader.identifier)
         collection.setDraggingSourceOperationMask(.copy,forLocal:false); collection.setDraggingSourceOperationMask(.copy,forLocal:true)
         collection.browser = self
+        // The keyboard starts on the grid, where Return opens the selection and Escape closes the window.
+        window?.initialFirstResponder = collection
         let menu = NSMenu(title:"History actions"); menu.font = Typography.font(.body)
         for action in Action.allCases {
             let item = NSMenuItem(title:action.title,action:#selector(actionInvoked(_:)),keyEquivalent:"")
@@ -446,6 +448,11 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         if let width = window?.contentView?.bounds.width { layoutDetails(forContentWidth:width) }
     }
     override func cancelOperation(_ sender: Any?) { window?.performClose(sender) }
+    /// Opening the window puts the keyboard on the grid unless a field already has it.
+    override func showWindow(_ sender: Any?) {
+        super.showWindow(sender)
+        if let window, !(window.firstResponder is NSText) { window.makeFirstResponder(collection) }
+    }
 
     private func updateEmptyState() {
         let nothingSaved = items.isEmpty

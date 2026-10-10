@@ -176,7 +176,7 @@ enum AccessibilityAudit {
             }
             if let image = view as? NSImageView { judgeImage(image, path: path, hidden: hidden) }
             else if let control = view as? NSControl, !Self.isFurniture(control) { judgeControl(control, path: path, hidden: hidden, repeating: repeating) }
-            else if !(view is NSControl), !Self.isAppKit(view), view.acceptsFirstResponder, !(view is NSTextView) {
+            else if !(view is NSControl), !Self.isAppKit(view), view.acceptsFirstResponder, !(view is NSTextView), !(view is NSClipView), !(view is NSScrollView) {
                 judgeCustomFocusable(view, path: path, hidden: hidden, repeating: repeating)
             }
 
