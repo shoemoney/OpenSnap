@@ -651,7 +651,8 @@ final class GlobalHotkeyForm: NSView {
 
         let grid = NSGridView(views: gridRows)
         grid.translatesAutoresizingMaskIntoConstraints = false
-        grid.rowSpacing = Space.s4; grid.columnSpacing = Space.s4
+        // The Settings tab sits in a window with one height for every tab, so its rows are a little closer than the sheet's.
+        grid.rowSpacing = mode == .live ? Space.s3 : Space.s4; grid.columnSpacing = Space.s4
         grid.column(at: 0).xPlacement = .trailing; grid.column(at: 0).width = labelWidth
         grid.column(at: 1).xPlacement = .leading
         for index in 0..<grid.numberOfRows { grid.row(at: index).yPlacement = .center }

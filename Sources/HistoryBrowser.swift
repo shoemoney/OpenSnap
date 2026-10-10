@@ -554,7 +554,7 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         let missingCount = selected.filter(\.missing).count
         warning.stringValue = missingCount == 0 ? "" : "Error: \(missingCount) selected \(missingCount == 1 ? "file is" : "files are") missing. You can remove the history entry or use its web link."
         warning.isHidden = missingCount == 0
-        detailsHint.isHidden = !selected.isEmpty; detailsImage.isHidden = selected.isEmpty; detailsFields?.isHidden = selected.isEmpty
+        detailsHint.isHidden = !selected.isEmpty || visibleItems.isEmpty; detailsImage.isHidden = selected.isEmpty; detailsFields?.isHidden = selected.isEmpty
         let summary = Self.summaryLines(for:visibleItems)
         detailsSummaryTitle.isHidden = !selected.isEmpty || summary.isEmpty; detailsSummary.isHidden = detailsSummaryTitle.isHidden
         detailsSummaryTitle.stringValue = summary.first ?? ""; detailsSummary.stringValue = summary.dropFirst().joined(separator:"\n")

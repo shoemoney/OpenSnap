@@ -121,7 +121,7 @@ enum UploadState: Equatable {
 /// `duration` seconds or until the next upload starts, instead of being overwritten by the next status refresh a moment later (F-J2-022).
 @MainActor
 enum UploadNotice {
-    static let duration: TimeInterval = 10
+    nonisolated static let duration: TimeInterval = 10
     private(set) static var text: String?
     private static var timer: Timer?
     /// Called when the notice appears or goes, so the owner refreshes the status line.
