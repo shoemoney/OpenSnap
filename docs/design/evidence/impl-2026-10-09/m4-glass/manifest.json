@@ -1,0 +1,2677 @@
+{
+ "sourceSha": "da2738d",
+ "bundleId": "com.shoemoney.opensnap.eyedump-47101",
+ "iconMode": "sf",
+ "faMode": "FA unavailable: no FontAwesome7Pro subset fonts are bundled in this build, so every capture uses SF Symbols (nothing was faked)",
+ "captureCount": 86,
+ "unavailable": [],
+ "gaps": [],
+ "captures": [
+  {
+   "id": "S01",
+   "slug": "editor-empty",
+   "surface": "editor, empty",
+   "state": "fresh blank canvas, default window",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    772
+   ],
+   "pixelSize": [
+    2048,
+    1544
+   ],
+   "pointSize": [
+    1024,
+    772
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S01-editor-empty-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    905
+   ],
+   "downscaled": true,
+   "layout": "layout/S01-editor-empty-dark@da2738d.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m1-rail/S01-editor-empty-dark@fef46c7.png"
+  },
+  {
+   "id": "S01",
+   "slug": "editor-empty",
+   "surface": "editor, empty",
+   "state": "fresh blank canvas, default window",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    772
+   ],
+   "pixelSize": [
+    2048,
+    1544
+   ],
+   "pointSize": [
+    1024,
+    772
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S01-editor-empty-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    905
+   ],
+   "downscaled": true,
+   "layout": "layout/S01-editor-empty-light@da2738d.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m1-rail/S01-editor-empty-light@fef46c7.png"
+  },
+  {
+   "id": "S02",
+   "slug": "populated",
+   "surface": "editor, populated",
+   "state": "synthetic 1200x800 background + arrow, line, rectangle (open+filled), ellipse, brush, highlighter, fill, text (outline+shadow, plain), SVG path, raster",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    2358
+   ],
+   "pointSize": [
+    1561,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S02-populated-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    906
+   ],
+   "downscaled": true,
+   "layout": "layout/S02-populated-dark@da2738d.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m1-rail/S02-populated-dark@fef46c7.png"
+  },
+  {
+   "id": "S02",
+   "slug": "populated",
+   "surface": "editor, populated",
+   "state": "synthetic 1200x800 background + arrow, line, rectangle (open+filled), ellipse, brush, highlighter, fill, text (outline+shadow, plain), SVG path, raster",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    2358
+   ],
+   "pointSize": [
+    1561,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S02-populated-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    906
+   ],
+   "downscaled": true,
+   "layout": "layout/S02-populated-light@da2738d.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m1-rail/S02-populated-light@fef46c7.png"
+  },
+  {
+   "id": "S03",
+   "slug": "bottombar",
+   "surface": "bottom bar",
+   "state": "Undo, Wipe | Zoom, Resize | status | Save, History | PNG|JPG, Drag, Upload",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    120
+   ],
+   "pointSize": [
+    1489,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S03-bottombar-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S03-bottombar-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S03",
+   "slug": "bottombar",
+   "surface": "bottom bar",
+   "state": "Undo, Wipe | Zoom, Resize | status | Save, History | PNG|JPG, Drag, Upload",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    120
+   ],
+   "pointSize": [
+    1489,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S03-bottombar-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S03-bottombar-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S03",
+   "slug": "topbar",
+   "surface": "top bar",
+   "state": "Hide, Toolbox, Photos | Snap | ten tools | Color, Size, Font; title shows document name",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S03-topbar-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S03-topbar-dark@da2738d.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m1-rail/S03-topbar-dark@fef46c7.png"
+  },
+  {
+   "id": "S03",
+   "slug": "topbar",
+   "surface": "top bar",
+   "state": "Hide, Toolbox, Photos | Snap | ten tools | Color, Size, Font; title shows document name",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S03-topbar-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S03-topbar-light@da2738d.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m1-rail/S03-topbar-light@fef46c7.png"
+  },
+  {
+   "id": "S11E",
+   "slug": "empty-size-1024x740",
+   "surface": "window size matrix, empty",
+   "state": "requested 1024x740 (1024x740 pt), window is 1024x740 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    740
+   ],
+   "pixelSize": [
+    2048,
+    1480
+   ],
+   "pointSize": [
+    1024,
+    740
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11E-empty-size-1024x740-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    867
+   ],
+   "downscaled": true,
+   "layout": "layout/S11E-empty-size-1024x740-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S11E",
+   "slug": "empty-size-1024x740",
+   "surface": "window size matrix, empty",
+   "state": "requested 1024x740 (1024x740 pt), window is 1024x740 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    740
+   ],
+   "pixelSize": [
+    2048,
+    1480
+   ],
+   "pointSize": [
+    1024,
+    740
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11E-empty-size-1024x740-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    867
+   ],
+   "downscaled": true,
+   "layout": "layout/S11E-empty-size-1024x740-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S11E",
+   "slug": "empty-size-1280x800",
+   "surface": "window size matrix, empty",
+   "state": "requested 1280x800 (1280x800 pt), window is 1280x800 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11E-empty-size-1280x800-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S11E-empty-size-1280x800-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S11E",
+   "slug": "empty-size-1280x800",
+   "surface": "window size matrix, empty",
+   "state": "requested 1280x800 (1280x800 pt), window is 1280x800 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11E-empty-size-1280x800-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S11E-empty-size-1280x800-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S11E",
+   "slug": "empty-size-1440x900",
+   "surface": "window size matrix, empty",
+   "state": "requested 1440x900 (1440x900 pt), window is 1440x900 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11E-empty-size-1440x900-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S11E-empty-size-1440x900-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S11E",
+   "slug": "empty-size-1440x900",
+   "surface": "window size matrix, empty",
+   "state": "requested 1440x900 (1440x900 pt), window is 1440x900 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11E-empty-size-1440x900-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S11E-empty-size-1440x900-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S11E",
+   "slug": "empty-size-980xmin",
+   "surface": "window size matrix, empty",
+   "state": "requested 980xmin (980x640 pt), window is 980x640 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11E-empty-size-980xmin-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S11E-empty-size-980xmin-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S11E",
+   "slug": "empty-size-980xmin",
+   "surface": "window size matrix, empty",
+   "state": "requested 980xmin (980x640 pt), window is 980x640 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11E-empty-size-980xmin-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S11E-empty-size-980xmin-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S11E",
+   "slug": "empty-size-full",
+   "surface": "window size matrix, empty",
+   "state": "requested full (2056x1197 pt), window is 2056x1197 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    2056,
+    1197
+   ],
+   "pixelSize": [
+    4112,
+    2394
+   ],
+   "pointSize": [
+    2056,
+    1197
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11E-empty-size-full-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    699
+   ],
+   "downscaled": true,
+   "layout": "layout/S11E-empty-size-full-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S11E",
+   "slug": "empty-size-full",
+   "surface": "window size matrix, empty",
+   "state": "requested full (2056x1197 pt), window is 2056x1197 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    2056,
+    1197
+   ],
+   "pixelSize": [
+    4112,
+    2394
+   ],
+   "pointSize": [
+    2056,
+    1197
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11E-empty-size-full-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    699
+   ],
+   "downscaled": true,
+   "layout": "layout/S11E-empty-size-full-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S11F",
+   "slug": "size-fullscreen",
+   "surface": "window sizes",
+   "state": "true full screen (styleMask.fullScreen)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    2056,
+    1290
+   ],
+   "pixelSize": [
+    4112,
+    2580
+   ],
+   "pointSize": [
+    2056,
+    1290
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "cacheDisplay (CGWindowList image was blank)",
+   "file": "S11F-size-fullscreen-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    753
+   ],
+   "downscaled": true,
+   "layout": "layout/S11F-size-fullscreen-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S11F",
+   "slug": "size-fullscreen",
+   "surface": "window sizes",
+   "state": "true full screen (styleMask.fullScreen)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    2056,
+    1290
+   ],
+   "pixelSize": [
+    4112,
+    2580
+   ],
+   "pointSize": [
+    2056,
+    1290
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "cacheDisplay (CGWindowList image was blank)",
+   "file": "S11F-size-fullscreen-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    753
+   ],
+   "downscaled": true,
+   "layout": "layout/S11F-size-fullscreen-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S11FP",
+   "slug": "size-fullscreen-populated",
+   "surface": "window sizes, populated",
+   "state": "true full screen (styleMask.fullScreen)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    2056,
+    1290
+   ],
+   "pixelSize": [
+    4112,
+    2580
+   ],
+   "pointSize": [
+    2056,
+    1290
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11FP-size-fullscreen-populated-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    753
+   ],
+   "downscaled": true,
+   "layout": "layout/S11FP-size-fullscreen-populated-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S11FP",
+   "slug": "size-fullscreen-populated",
+   "surface": "window sizes, populated",
+   "state": "true full screen (styleMask.fullScreen)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    2056,
+    1290
+   ],
+   "pixelSize": [
+    4112,
+    2580
+   ],
+   "pointSize": [
+    2056,
+    1290
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11FP-size-fullscreen-populated-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    753
+   ],
+   "downscaled": true,
+   "layout": "layout/S11FP-size-fullscreen-populated-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S11M",
+   "slug": "size-1024x740",
+   "surface": "window size matrix, populated",
+   "state": "requested 1024x740 (1024x740 pt), window is 1024x740 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    740
+   ],
+   "pixelSize": [
+    2048,
+    1480
+   ],
+   "pointSize": [
+    1024,
+    740
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11M-size-1024x740-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    867
+   ],
+   "downscaled": true,
+   "layout": "layout/S11M-size-1024x740-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S11M",
+   "slug": "size-1024x740",
+   "surface": "window size matrix, populated",
+   "state": "requested 1024x740 (1024x740 pt), window is 1024x740 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    740
+   ],
+   "pixelSize": [
+    2048,
+    1480
+   ],
+   "pointSize": [
+    1024,
+    740
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11M-size-1024x740-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    867
+   ],
+   "downscaled": true,
+   "layout": "layout/S11M-size-1024x740-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S11M",
+   "slug": "size-1280x800",
+   "surface": "window size matrix, populated",
+   "state": "requested 1280x800 (1280x800 pt), window is 1280x800 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11M-size-1280x800-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S11M-size-1280x800-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S11M",
+   "slug": "size-1280x800",
+   "surface": "window size matrix, populated",
+   "state": "requested 1280x800 (1280x800 pt), window is 1280x800 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11M-size-1280x800-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S11M-size-1280x800-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S11M",
+   "slug": "size-1440x900",
+   "surface": "window size matrix, populated",
+   "state": "requested 1440x900 (1440x900 pt), window is 1440x900 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11M-size-1440x900-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S11M-size-1440x900-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S11M",
+   "slug": "size-1440x900",
+   "surface": "window size matrix, populated",
+   "state": "requested 1440x900 (1440x900 pt), window is 1440x900 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11M-size-1440x900-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S11M-size-1440x900-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S11M",
+   "slug": "size-980xmin",
+   "surface": "window size matrix, populated",
+   "state": "requested 980xmin (980x640 pt), window is 980x640 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11M-size-980xmin-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S11M-size-980xmin-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S11M",
+   "slug": "size-980xmin",
+   "surface": "window size matrix, populated",
+   "state": "requested 980xmin (980x640 pt), window is 980x640 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11M-size-980xmin-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S11M-size-980xmin-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S11M",
+   "slug": "size-full",
+   "surface": "window size matrix, populated",
+   "state": "requested full (2056x1197 pt), window is 2056x1197 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    2056,
+    1197
+   ],
+   "pixelSize": [
+    4112,
+    2394
+   ],
+   "pointSize": [
+    2056,
+    1197
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11M-size-full-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    699
+   ],
+   "downscaled": true,
+   "layout": "layout/S11M-size-full-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S11M",
+   "slug": "size-full",
+   "surface": "window size matrix, populated",
+   "state": "requested full (2056x1197 pt), window is 2056x1197 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    2056,
+    1197
+   ],
+   "pixelSize": [
+    4112,
+    2394
+   ],
+   "pointSize": [
+    2056,
+    1197
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11M-size-full-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    699
+   ],
+   "downscaled": true,
+   "layout": "layout/S11M-size-full-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S12",
+   "slug": "frame-mode",
+   "surface": "Frame mode",
+   "state": "Frame mode: clear canvas hole, Snap Frame + Cancel, window alpha 0.8",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    2358
+   ],
+   "pointSize": [
+    1489,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-mode-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    950
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-mode-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S12",
+   "slug": "frame-mode",
+   "surface": "Frame mode",
+   "state": "Frame mode: clear canvas hole, Snap Frame + Cancel, window alpha 0.8",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    2358
+   ],
+   "pointSize": [
+    1489,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-mode-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    950
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-mode-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S12",
+   "slug": "frame-resnap",
+   "surface": "Frame mode",
+   "state": "Re-snap (keep pen) Frame mode over existing annotations",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    2358
+   ],
+   "pointSize": [
+    1489,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-resnap-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    950
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-resnap-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S12",
+   "slug": "frame-resnap",
+   "surface": "Frame mode",
+   "state": "Re-snap (keep pen) Frame mode over existing annotations",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    2358
+   ],
+   "pointSize": [
+    1489,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-resnap-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    950
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-resnap-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S12",
+   "slug": "frame-w1024",
+   "surface": "Frame mode",
+   "state": "Frame mode at window width 1024 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    2048,
+    2358
+   ],
+   "pointSize": [
+    1024,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-w1024-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    1382
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-w1024-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S12",
+   "slug": "frame-w1024",
+   "surface": "Frame mode",
+   "state": "Frame mode at window width 1024 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    2048,
+    2358
+   ],
+   "pointSize": [
+    1024,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-w1024-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    1382
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-w1024-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S12",
+   "slug": "frame-w1280",
+   "surface": "Frame mode",
+   "state": "Frame mode at window width 1280 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    1179
+   ],
+   "pixelSize": [
+    2560,
+    2358
+   ],
+   "pointSize": [
+    1280,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-w1280-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    1105
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-w1280-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S12",
+   "slug": "frame-w1280",
+   "surface": "Frame mode",
+   "state": "Frame mode at window width 1280 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    1179
+   ],
+   "pixelSize": [
+    2560,
+    2358
+   ],
+   "pointSize": [
+    1280,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-w1280-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    1105
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-w1280-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S12",
+   "slug": "frame-w980",
+   "surface": "Frame mode",
+   "state": "Frame mode at window width 980 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    1179
+   ],
+   "pixelSize": [
+    1960,
+    2358
+   ],
+   "pointSize": [
+    980,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-w980-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    1444
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-w980-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S12",
+   "slug": "frame-w980",
+   "surface": "Frame mode",
+   "state": "Frame mode at window width 980 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    1179
+   ],
+   "pixelSize": [
+    1960,
+    2358
+   ],
+   "pointSize": [
+    980,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-w980-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    1444
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-w980-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S30",
+   "slug": "size-popover-w1280",
+   "surface": "Size popover",
+   "state": "Size popover open below the pill at window width 1280x800, value 6.75, Brush tool",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2726,
+    1600
+   ],
+   "pointSize": [
+    1363,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S30-size-popover-w1280-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    704
+   ],
+   "downscaled": true,
+   "layout": "layout/S30-size-popover-w1280-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S30",
+   "slug": "size-popover-w1280",
+   "surface": "Size popover",
+   "state": "Size popover open below the pill at window width 1280x800, value 6.75, Brush tool",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2726,
+    1600
+   ],
+   "pointSize": [
+    1363,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S30-size-popover-w1280-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    704
+   ],
+   "downscaled": true,
+   "layout": "layout/S30-size-popover-w1280-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S30",
+   "slug": "size-popover-w980",
+   "surface": "Size popover",
+   "state": "Size popover open below the pill at window width 980xmin, value 6.75, Brush tool",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    2126,
+    1280
+   ],
+   "pointSize": [
+    1063,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S30-size-popover-w980-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    722
+   ],
+   "downscaled": true,
+   "layout": "layout/S30-size-popover-w980-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S30",
+   "slug": "size-popover-w980",
+   "surface": "Size popover",
+   "state": "Size popover open below the pill at window width 980xmin, value 6.75, Brush tool",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    2126,
+    1280
+   ],
+   "pointSize": [
+    1063,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S30-size-popover-w980-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    722
+   ],
+   "downscaled": true,
+   "layout": "layout/S30-size-popover-w980-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S31",
+   "slug": "color-popover-only-w980",
+   "surface": "Colour popover",
+   "state": "the popover window alone",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    544,
+    332
+   ],
+   "pointSize": [
+    272,
+    166
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S31-color-popover-only-w980-dark@da2738d.png",
+   "storedPixelSize": [
+    544,
+    332
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S31",
+   "slug": "color-popover-only-w980",
+   "surface": "Colour popover",
+   "state": "the popover window alone",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    544,
+    332
+   ],
+   "pointSize": [
+    272,
+    166
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S31-color-popover-only-w980-light@da2738d.png",
+   "storedPixelSize": [
+    544,
+    332
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S31",
+   "slug": "color-popover-w980",
+   "surface": "Colour popover",
+   "state": "Drawing colours popover open below the top-bar swatch at window width 980",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S31-color-popover-w980-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S31-color-popover-w980-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S31",
+   "slug": "color-popover-w980",
+   "surface": "Colour popover",
+   "state": "Drawing colours popover open below the top-bar swatch at window width 980",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S31-color-popover-w980-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S31-color-popover-w980-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S32",
+   "slug": "frame-large-w1280",
+   "surface": "Frame mode, canvas fills the viewport",
+   "state": "Frame mode at 1280x800: large shot at 100% so the canvas fills the viewport; Snap Frame + Cancel; no Original size checkbox",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S32-frame-large-w1280-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S32-frame-large-w1280-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S32",
+   "slug": "frame-large-w1280",
+   "surface": "Frame mode, canvas fills the viewport",
+   "state": "Frame mode at 1280x800: large shot at 100% so the canvas fills the viewport; Snap Frame + Cancel; no Original size checkbox",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S32-frame-large-w1280-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S32-frame-large-w1280-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S32",
+   "slug": "frame-large-w980",
+   "surface": "Frame mode, canvas fills the viewport",
+   "state": "Frame mode at 980xmin: large shot at 100% so the canvas fills the viewport; Snap Frame + Cancel; no Original size checkbox",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S32-frame-large-w980-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S32-frame-large-w980-dark@da2738d.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m1-rail/S12-frame-w980-dark@fef46c7.png"
+  },
+  {
+   "id": "S32",
+   "slug": "frame-large-w980",
+   "surface": "Frame mode, canvas fills the viewport",
+   "state": "Frame mode at 980xmin: large shot at 100% so the canvas fills the viewport; Snap Frame + Cancel; no Original size checkbox",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S32-frame-large-w980-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S32-frame-large-w980-light@da2738d.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m1-rail/S12-frame-w980-light@fef46c7.png"
+  },
+  {
+   "id": "S33",
+   "slug": "large-shot-w980",
+   "surface": "Large shot at 980",
+   "state": "2400x1500 shot at window width 980, Original size checkbox visible",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S33-large-shot-w980-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S33-large-shot-w980-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S33",
+   "slug": "large-shot-w980",
+   "surface": "Large shot at 980",
+   "state": "2400x1500 shot at window width 980, Original size checkbox visible",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S33-large-shot-w980-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S33-large-shot-w980-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S33",
+   "slug": "large-shot-w980-bottombar",
+   "surface": "Large shot at 980",
+   "state": "bottom bar only: Original size checkbox, status, groups",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S33-large-shot-w980-bottombar-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S33-large-shot-w980-bottombar-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S33",
+   "slug": "large-shot-w980-bottombar",
+   "surface": "Large shot at 980",
+   "state": "bottom bar only: Original size checkbox, status, groups",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S33-large-shot-w980-bottombar-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S33-large-shot-w980-bottombar-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S34",
+   "slug": "small-canvas-w1280",
+   "surface": "Small canvas centred",
+   "state": "150x90 canvas at window 1280x800: equal margins left/right and top/bottom",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S34-small-canvas-w1280-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S34-small-canvas-w1280-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S34",
+   "slug": "small-canvas-w1280",
+   "surface": "Small canvas centred",
+   "state": "150x90 canvas at window 1280x800: equal margins left/right and top/bottom",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S34-small-canvas-w1280-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S34-small-canvas-w1280-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S34",
+   "slug": "small-canvas-w1440",
+   "surface": "Small canvas centred",
+   "state": "150x90 canvas at window 1440x900: equal margins left/right and top/bottom",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S34-small-canvas-w1440-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S34-small-canvas-w1440-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S34",
+   "slug": "small-canvas-w1440",
+   "surface": "Small canvas centred",
+   "state": "150x90 canvas at window 1440x900: equal margins left/right and top/bottom",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S34-small-canvas-w1440-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S34-small-canvas-w1440-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S34",
+   "slug": "small-canvas-w980",
+   "surface": "Small canvas centred",
+   "state": "150x90 canvas at window 980xmin: equal margins left/right and top/bottom",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S34-small-canvas-w980-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S34-small-canvas-w980-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S34",
+   "slug": "small-canvas-w980",
+   "surface": "Small canvas centred",
+   "state": "150x90 canvas at window 980xmin: equal margins left/right and top/bottom",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S34-small-canvas-w980-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S34-small-canvas-w980-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S35",
+   "slug": "large-canvas-w1280",
+   "surface": "Large canvas fills the viewport",
+   "state": "large shot at 100% in a 1280x800 window: canvas runs to the 12-pt margin and scrolls",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S35-large-canvas-w1280-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S35-large-canvas-w1280-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S35",
+   "slug": "large-canvas-w1280",
+   "surface": "Large canvas fills the viewport",
+   "state": "large shot at 100% in a 1280x800 window: canvas runs to the 12-pt margin and scrolls",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S35-large-canvas-w1280-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S35-large-canvas-w1280-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S35",
+   "slug": "large-canvas-w980",
+   "surface": "Large canvas fills the viewport",
+   "state": "large shot at 100% in a 980xmin window: canvas runs to the 12-pt margin and scrolls",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S35-large-canvas-w980-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S35-large-canvas-w980-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S35",
+   "slug": "large-canvas-w980",
+   "surface": "Large canvas fills the viewport",
+   "state": "large shot at 100% in a 980xmin window: canvas runs to the 12-pt margin and scrolls",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S35-large-canvas-w980-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S35-large-canvas-w980-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S36",
+   "slug": "selection-w1280",
+   "surface": "Selection",
+   "state": "rectangle selected with handles at window 1280x800; Color/Size/Font act on it",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S36-selection-w1280-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S36-selection-w1280-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S36",
+   "slug": "selection-w1280",
+   "surface": "Selection",
+   "state": "rectangle selected with handles at window 1280x800; Color/Size/Font act on it",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S36-selection-w1280-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S36-selection-w1280-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S36",
+   "slug": "selection-w980",
+   "surface": "Selection",
+   "state": "rectangle selected with handles at window 980xmin; Color/Size/Font act on it",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S36-selection-w980-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S36-selection-w980-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S36",
+   "slug": "selection-w980",
+   "surface": "Selection",
+   "state": "rectangle selected with handles at window 980xmin; Color/Size/Font act on it",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S36-selection-w980-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S36-selection-w980-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S36",
+   "slug": "text-editing-w1280",
+   "surface": "Text editing",
+   "state": "text tool field editor active with typed text at window 1280x800",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S36-text-editing-w1280-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S36-text-editing-w1280-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S36",
+   "slug": "text-editing-w1280",
+   "surface": "Text editing",
+   "state": "text tool field editor active with typed text at window 1280x800",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S36-text-editing-w1280-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S36-text-editing-w1280-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S36",
+   "slug": "text-editing-w980",
+   "surface": "Text editing",
+   "state": "text tool field editor active with typed text at window 980xmin",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S36-text-editing-w980-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S36-text-editing-w980-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S36",
+   "slug": "text-editing-w980",
+   "surface": "Text editing",
+   "state": "text tool field editor active with typed text at window 980xmin",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S36-text-editing-w980-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S36-text-editing-w980-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S37",
+   "slug": "format-jpg-w980",
+   "surface": "PNG | JPG at 980",
+   "state": "JPG selected at window width 980 with the large-shot bottom bar; footer group width 257.0 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S37-format-jpg-w980-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S37-format-jpg-w980-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S37",
+   "slug": "format-jpg-w980",
+   "surface": "PNG | JPG at 980",
+   "state": "JPG selected at window width 980 with the large-shot bottom bar; footer group width 257.0 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S37-format-jpg-w980-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S37-format-jpg-w980-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S37",
+   "slug": "format-png-w980",
+   "surface": "PNG | JPG at 980",
+   "state": "PNG selected at window width 980 with the large-shot bottom bar; footer group width 257.0 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S37-format-png-w980-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S37-format-png-w980-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S37",
+   "slug": "format-png-w980",
+   "surface": "PNG | JPG at 980",
+   "state": "PNG selected at window width 980 with the large-shot bottom bar; footer group width 257.0 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S37-format-png-w980-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S37-format-png-w980-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S38",
+   "slug": "tooltip-size-w980",
+   "surface": "App tooltip",
+   "state": "the live Size tooltip below the Size pill (Size 7)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S38-tooltip-size-w980-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S38-tooltip-size-w980-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S38",
+   "slug": "tooltip-size-w980",
+   "surface": "App tooltip",
+   "state": "the live Size tooltip below the Size pill (Size 7)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S38-tooltip-size-w980-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S38-tooltip-size-w980-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S38",
+   "slug": "tooltip-snap-w980",
+   "surface": "App tooltip",
+   "state": "the Snap tooltip below the Snap button; the long sentence wraps at 420 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S38-tooltip-snap-w980-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S38-tooltip-snap-w980-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S38",
+   "slug": "tooltip-snap-w980",
+   "surface": "App tooltip",
+   "state": "the Snap tooltip below the Snap button; the long sentence wraps at 420 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S38-tooltip-snap-w980-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S38-tooltip-snap-w980-light@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S38",
+   "slug": "tooltip-zoom-w980",
+   "surface": "App tooltip",
+   "state": "a bottom-bar control: the plate opens above the zoom face because there is no room below",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1336
+   ],
+   "pointSize": [
+    980,
+    668
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S38-tooltip-zoom-w980-dark@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": "layout/S38-tooltip-zoom-w980-dark@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S38",
+   "slug": "tooltip-zoom-w980",
+   "surface": "App tooltip",
+   "state": "a bottom-bar control: the plate opens above the zoom face because there is no room below",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1336
+   ],
+   "pointSize": [
+    980,
+    668
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S38-tooltip-zoom-w980-light@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": "layout/S38-tooltip-zoom-w980-light@da2738d.json",
+   "before": null
+  }
+ ]
+}

@@ -53,12 +53,12 @@ Suite counts are the ones the sources record. No other counts are claimed.
 
 - **Unsafe tool still on main:** `tools/test-native-startup.py` launches the real bundle id in place. The fix is in progress on `impl/m4-type`. Do not run it until that is merged.
 - **Round-1 incident (OSN-001):** a can-fail proof deleted the owner's real `com.shoemoney.opensnap` defaults plist. Cause: a cleanup trap was installed before an id refusal. Fixed in `db973a6`. The SkitchRedux store and `com.shoemoney.skitch-redux.plist` hashed unchanged. The migration marker is a file in the absent OpenSnap folder, so the parked migration is unaffected.
-- **Deferred to OSN-042:** the phantom capsule under Snap (the hidden Cancel glass surface); the full-screen salmon tint and accent loss (backdrop vibrancy); the legacy-scroller white corner.
+- **OSN-042 (branch `impl/m4-glass`):** the phantom capsule under Snap and the full-screen salmon tint are gone (no per-button glass, no backdrop or bleed). The legacy-scroller corner is no longer white but is 250/255 against the well's 246/255 (AppKit draws it); open. Evidence: `evidence/impl-2026-10-09/m4-glass/`.
 - **Size popover** can overhang the window edge. It stays on screen and is accepted as standard NSPopover behaviour.
 - **Canvas centring** was a pre-existing bug, also present at `bad6617`. It is fixed for document changes in the rail-removal branch (`c53155c`).
-- **Q3** is open until the OSN-042 spike. The glass budget differs between the spec (5 surfaces, section 0) and T4 (8 surfaces).
+- **Q3 resolved: option B (custom bars).** Spike: an `NSToolbar` with the top-bar items shows 14 of 17 at 980 pt (14 of 18 in Frame mode) and needs 1060 pt (1120 in Frame mode) to show all. The glass budget is 8 plates in 2 containers (was 26 in 7).
 - **Settings** window is still titled "Preferences" (OSN-051).
-- **Not run:** live screen capture; real popover translucency; VoiceOver speech (OSN-062 manual pass); injected Reduce Transparency and Increase Contrast captures (OSN-061); FA icon mode.
+- **Not run:** live screen capture; real popover translucency; VoiceOver speech (OSN-062 manual pass); Reduce Transparency alone and Increase Contrast alone captures (both together are in `m4-glass`); FA Pro icon mode.
 - **OS-owned text (D-TEXT):** menu-bar strip titles, window title-bar text, system tooltips inside system panels, NSAlert text size, Save, Open and Print panels, Fonts and Colors panels.
 - **OSN-023:** manual 1x and 2x menu-bar check not done.
 - **OSN-041 in progress:** chrome, App, Resize, Photos, TextStyle, Hotkeys, Export and the 20 pt tooltips remain. The worker on `impl/m4-type` is not merged.

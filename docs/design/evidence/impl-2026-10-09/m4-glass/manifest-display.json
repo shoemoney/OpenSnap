@@ -1,0 +1,383 @@
+{
+ "sourceSha": "da2738d",
+ "bundleId": "com.shoemoney.opensnap.eyedump-57875",
+ "iconMode": "sf",
+ "faMode": "FA unavailable: no FontAwesome7Pro subset fonts are bundled in this build, so every capture uses SF Symbols (nothing was faked)",
+ "captureCount": 12,
+ "unavailable": [],
+ "gaps": [],
+ "captures": [
+  {
+   "id": "S01",
+   "slug": "editor-empty",
+   "surface": "editor, empty",
+   "state": "fresh blank canvas, default window",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    772
+   ],
+   "pixelSize": [
+    2048,
+    1544
+   ],
+   "pointSize": [
+    1024,
+    772
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S01-editor-empty-dark-rt-ic@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    905
+   ],
+   "downscaled": true,
+   "layout": "layout/S01-editor-empty-dark-rt-ic@da2738d.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m1-rail/S01-editor-empty-dark@fef46c7.png"
+  },
+  {
+   "id": "S01",
+   "slug": "editor-empty",
+   "surface": "editor, empty",
+   "state": "fresh blank canvas, default window",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    772
+   ],
+   "pixelSize": [
+    2048,
+    1544
+   ],
+   "pointSize": [
+    1024,
+    772
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S01-editor-empty-light-rt-ic@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    905
+   ],
+   "downscaled": true,
+   "layout": "layout/S01-editor-empty-light-rt-ic@da2738d.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m1-rail/S01-editor-empty-light@fef46c7.png"
+  },
+  {
+   "id": "S11M",
+   "slug": "size-1024x740",
+   "surface": "window size matrix, populated",
+   "state": "requested 1024x740 (1024x740 pt), window is 1024x740 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    740
+   ],
+   "pixelSize": [
+    2048,
+    1480
+   ],
+   "pointSize": [
+    1024,
+    740
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11M-size-1024x740-dark-rt-ic@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    867
+   ],
+   "downscaled": true,
+   "layout": "layout/S11M-size-1024x740-dark-rt-ic@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S11M",
+   "slug": "size-1024x740",
+   "surface": "window size matrix, populated",
+   "state": "requested 1024x740 (1024x740 pt), window is 1024x740 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    740
+   ],
+   "pixelSize": [
+    2048,
+    1480
+   ],
+   "pointSize": [
+    1024,
+    740
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11M-size-1024x740-light-rt-ic@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    867
+   ],
+   "downscaled": true,
+   "layout": "layout/S11M-size-1024x740-light-rt-ic@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S11M",
+   "slug": "size-1280x800",
+   "surface": "window size matrix, populated",
+   "state": "requested 1280x800 (1280x800 pt), window is 1280x800 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11M-size-1280x800-dark-rt-ic@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S11M-size-1280x800-dark-rt-ic@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S11M",
+   "slug": "size-1280x800",
+   "surface": "window size matrix, populated",
+   "state": "requested 1280x800 (1280x800 pt), window is 1280x800 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11M-size-1280x800-light-rt-ic@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S11M-size-1280x800-light-rt-ic@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S11M",
+   "slug": "size-1440x900",
+   "surface": "window size matrix, populated",
+   "state": "requested 1440x900 (1440x900 pt), window is 1440x900 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11M-size-1440x900-dark-rt-ic@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S11M-size-1440x900-dark-rt-ic@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S11M",
+   "slug": "size-1440x900",
+   "surface": "window size matrix, populated",
+   "state": "requested 1440x900 (1440x900 pt), window is 1440x900 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11M-size-1440x900-light-rt-ic@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S11M-size-1440x900-light-rt-ic@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S11M",
+   "slug": "size-980xmin",
+   "surface": "window size matrix, populated",
+   "state": "requested 980xmin (980x640 pt), window is 980x640 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11M-size-980xmin-dark-rt-ic@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S11M-size-980xmin-dark-rt-ic@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S11M",
+   "slug": "size-980xmin",
+   "surface": "window size matrix, populated",
+   "state": "requested 980xmin (980x640 pt), window is 980x640 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11M-size-980xmin-light-rt-ic@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S11M-size-980xmin-light-rt-ic@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S11M",
+   "slug": "size-full",
+   "surface": "window size matrix, populated",
+   "state": "requested full (2056x1197 pt), window is 2056x1197 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    2056,
+    1197
+   ],
+   "pixelSize": [
+    4112,
+    2394
+   ],
+   "pointSize": [
+    2056,
+    1197
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11M-size-full-dark-rt-ic@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    699
+   ],
+   "downscaled": true,
+   "layout": "layout/S11M-size-full-dark-rt-ic@da2738d.json",
+   "before": null
+  },
+  {
+   "id": "S11M",
+   "slug": "size-full",
+   "surface": "window size matrix, populated",
+   "state": "requested full (2056x1197 pt), window is 2056x1197 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    2056,
+    1197
+   ],
+   "pixelSize": [
+    4112,
+    2394
+   ],
+   "pointSize": [
+    2056,
+    1197
+   ],
+   "scale": 2,
+   "sourceSha": "da2738d",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11M-size-full-light-rt-ic@da2738d.png",
+   "storedPixelSize": [
+    1200,
+    699
+   ],
+   "downscaled": true,
+   "layout": "layout/S11M-size-full-light-rt-ic@da2738d.json",
+   "before": null
+  }
+ ]
+}
