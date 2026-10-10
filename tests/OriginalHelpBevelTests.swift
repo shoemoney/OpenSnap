@@ -673,7 +673,8 @@ private enum OriginalHelpBevelTests {
             })
             bevel.enabled = true
             bevel.modifiers(message: "Mode test")
-            let end = Date().addingTimeInterval(0.6)
+            // The fade is a few timer ticks; the wait is generous so a loaded machine does not turn a slow tick into a failure.
+            let end = Date().addingTimeInterval(10)
             while bevel.panel!.alphaValue < 1 && Date() < end {
                 _ = RunLoop.main.run(mode: mode, before: Date().addingTimeInterval(0.03))
             }

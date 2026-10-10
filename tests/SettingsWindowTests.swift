@@ -410,24 +410,44 @@ private enum SettingsWindowTests {
         expect(heights[0] < heights[3] && heights[1] < heights[2] && heights[0] < heights[2] && Set(heights.map { $0.rounded() }).count >= 3,
                "the tabs are different heights, each its own: \(heights)")
         // The window follows the tab with an animation, its top edge fixed the whole way.
+        // The animation runs on a clock the test owns: each frame is asked for at a chosen moment and waited for as a condition, so no
+        // assertion depends on how many timer ticks a loaded machine happens to deliver in a fixed time.
+        var now = Date(timeIntervalSinceReferenceDate: 1_000)
+        controller.clock = { now }
         controller.reduceMotion = { false }; controller.animatesWhenHidden = true
-        controller.select(0); spin(0.4)
+        func settle(_ what: String, _ condition: () -> Bool) {
+            spin(10, until: condition)
+            expect(condition(), "timed out waiting for \(what) (height \(window.frame.height))")
+        }
+        func finishAnimation(toTabAt index: Int) {
+            now = now.addingTimeInterval(SettingsWindowController.resizeDuration + 1)
+            settle("the window to reach tab \(index)'s height") { abs(window.frame.height - controller.windowHeight(forTabAt: index)) < 0.5 }
+        }
+        controller.select(0); finishAnimation(toTabAt: 0)
         let top = window.frame.maxY, startHeight = window.frame.height
         let targetHeight = controller.windowHeight(forTabAt: 3)
         controller.select(3)
-        var sawBetween = false
-        for _ in 0..<8 {
-            spin(0.02)
+        let began = now
+        for fraction in [0.25, 0.5, 0.75] {
+            now = began.addingTimeInterval(SettingsWindowController.resizeDuration * fraction)
+            let eased = CGFloat(fraction * fraction * (3 - 2 * fraction))
+            let expected = startHeight + (targetHeight - startHeight) * eased
+            settle("the frame \(Int(fraction * 100))% of the way (\(expected))") { abs(window.frame.height - expected) < 1 }
+            expect(window.frame.height > startHeight + 1 && window.frame.height < targetHeight - 1, "the resize is animated, not a jump (\(window.frame.height) between \(startHeight) and \(targetHeight))")
             expect(abs(window.frame.maxY - top) < 0.5, "the title bar stays put while the window resizes (top \(window.frame.maxY) vs \(top))")
-            if window.frame.height > startHeight + 1 && window.frame.height < targetHeight - 1 { sawBetween = true }
         }
-        spin(0.5)
-        expect(sawBetween, "the resize is animated, not a jump")
+        finishAnimation(toTabAt: 3)
         expect(abs(window.frame.height - targetHeight) < 0.5 && abs(window.frame.maxY - top) < 0.5, "the animation lands on the tab's height with the top where it was")
         // A tab picked mid-animation replaces the one before it and the last choice wins.
-        controller.select(2); spin(0.03); controller.select(1); spin(0.5)
+        controller.select(2)
+        now = now.addingTimeInterval(SettingsWindowController.resizeDuration * 0.5)
+        let midway = window.frame.height
+        settle("a frame on the way to tab 2") { abs(window.frame.height - midway) > 0.5 }
+        controller.select(1)
+        finishAnimation(toTabAt: 1)
         expect(abs(window.frame.height - controller.windowHeight(forTabAt: 1)) < 0.5 && abs(window.frame.maxY - top) < 0.5, "the last tab chosen mid-animation sets the final size")
-        controller.select(0); spin(0.5)
+        controller.select(0); finishAnimation(toTabAt: 0)
+        controller.clock = Date.init
         // Reduce Motion: the size changes at once.
         controller.reduceMotion = { true }
         controller.select(2)
@@ -458,7 +478,8 @@ private enum SettingsWindowTests {
         let k = GlobalHotkeyKeys.choices.firstIndex { $0.name == "K" }! + 1
         let popup = form.keyPopup(for: .screen)
         popup.selectItem(at: k); _ = popup.target?.perform(popup.action, with: popup)
-        spin(0.3) { abs(window.frame.height - idle) > 0.5 }
+        let errorHeight = { window.frameRect(forContentRect: NSRect(x: 0, y: 0, width: SettingsLayout.contentWidth, height: SettingsContentView.chromeHeight + controller.capture.fittingHeight)).height }
+        spin(10) { form.statusField.stringValue.hasPrefix("Error: ") && abs(window.frame.height - errorHeight()) < 0.5 }
         window.contentView?.layoutSubtreeIfNeeded()
         let withError = form.statusField.stringValue
         expect(withError.hasPrefix("Error: "), "the refused key shows an error: '\(withError)'")
@@ -471,8 +492,8 @@ private enum SettingsWindowTests {
                "the whole wrapped message sits inside the tab: \(box) in \(controller.capture.view.bounds)")
         // Choosing None again clears the error and the window gives the room back.
         popup.selectItem(at: 0); _ = popup.target?.perform(popup.action, with: popup)
-        spin(0.3) { abs(window.frame.height - wanted) > 0.5 || field.stringValue == GlobalHotkeyForm.idleLiveStatus }
-        spin(0.1)
+        let refitHeight = { abs(window.frame.height - controller.windowHeight(forTabAt: 2)) < 0.5 }
+        spin(10) { field.stringValue == GlobalHotkeyForm.idleLiveStatus && refitHeight() }
         expect(abs(window.frame.height - controller.windowHeight(forTabAt: 2)) < 0.5, "the Capture tab refits when the error goes: \(window.frame.height)")
     }
 
