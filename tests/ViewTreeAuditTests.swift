@@ -3,7 +3,7 @@
 // xcrun swiftc -swift-version 5 -target arm64-apple-macosx26.0 -D VIEW_TREE_AUDIT_TESTS \
 //   Sources/DesignTokens.swift Sources/AboutWindow.swift Sources/HistoryBrowser.swift Sources/ResizePresets.swift Sources/ResizePanel.swift \
 //   Sources/Publishing.swift Sources/PublishingS3.swift Sources/PublishingDestinations.swift Sources/PublishingDestinationsView.swift \
-//   Sources/SVGPath.swift Sources/StrokeFitting.swift Sources/GeneralPreferencesForm.swift Sources/TextStyleForm.swift Sources/ExportAccessory.swift \
+//   Sources/SVGPath.swift Sources/StrokeFitting.swift Sources/GeneralPreferencesState.swift Sources/TextStyleForm.swift Sources/ExportAccessory.swift \
 //   Sources/SettingsWindow.swift Sources/GlobalHotkeys.swift Sources/AppToolTip.swift Sources/DisplayOptions.swift Sources/OriginalCaptureFlash.swift \
 //   Sources/FontAwesomeIcons.swift Sources/ChromeIcons.swift Sources/FontAwesomeFree.swift \
 //   tests/TestDefaults.swift tests/ViewTreeAudit.swift tests/ViewTreeAuditTests.swift -o /tmp/opensnap-view-tree-audit-tests
@@ -277,10 +277,6 @@ private enum ViewTreeAuditTests {
         }
         if let sheet = parent.attachedSheet { parent.endSheet(sheet) }
 
-        // Preferences, text style and the export accessory (each is a plain view).
-        let general = GeneralPreferencesForm(state: GeneralPreferencesState(drawingPrecision: .medium, arrowHead: 2, includeApp: true, statusMenu: 0, showToolTips: true))
-        general.layoutSubtreeIfNeeded()
-        record("General preferences", Audit.audit(general, surface: "General preferences"))
         // The Settings window, every tab, as the user can reach it: the window walk follows the selected tab, the tab views are walked directly.
         let settingsSuite = "OpenSnapViewTreeAudit.settings." + UUID().uuidString
         let settingsDefaults = TestDefaults(name: settingsSuite)

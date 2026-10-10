@@ -133,8 +133,8 @@ suites = [
     ("original-help-bevel-tests", ["DisplayOptions.swift", "OriginalHelpBevel.swift"], "OriginalHelpBevelTests.swift", "ORIGINAL_HELP_BEVEL_TESTS", ()),
     ("window-zoom-tests", ["WindowZoom.swift"], "WindowZoomTests.swift", "WINDOW_ZOOM_TESTS", ()),
     ("text-style-form-tests", ["TextStyleForm.swift"], "TextStyleFormTests.swift", "TEXT_STYLE_FORM_TESTS", ()),
-    ("general-preferences-form-tests", ["SVGPath.swift", "StrokeFitting.swift", "GeneralPreferencesForm.swift"], "GeneralPreferencesFormTests.swift", "GENERAL_PREFERENCES_FORM_TESTS", ()),
-    ("original-general-preferences-tests", ["SVGPath.swift", "StrokeFitting.swift", "DocumentModel.swift", "GeneralPreferencesForm.swift", "OriginalGeneralPreferences.swift", "TestDefaults.swift"], "OriginalGeneralPreferencesTests.swift", "ORIGINAL_GENERAL_PREFERENCES_TESTS", ()),
+    ("general-preferences-state-tests", ["SVGPath.swift", "StrokeFitting.swift", "GeneralPreferencesState.swift"], "GeneralPreferencesStateTests.swift", "GENERAL_PREFERENCES_STATE_TESTS", ()),
+    ("original-general-preferences-tests", ["SVGPath.swift", "StrokeFitting.swift", "DocumentModel.swift", "GeneralPreferencesState.swift", "OriginalGeneralPreferences.swift", "TestDefaults.swift"], "OriginalGeneralPreferencesTests.swift", "ORIGINAL_GENERAL_PREFERENCES_TESTS", ()),
     ("resize-presets-tests", ["ResizePresets.swift", "TestDefaults.swift"], "ResizePresetsTests.swift", "RESIZE_PRESETS_TESTS", ()),
     ("window-sizing-tests", ["WindowSizing.swift"], "WindowSizingTests.swift", "WINDOW_SIZING_TESTS", ()),
     ("canvas-navigator-tests", ["CanvasNavigator.swift"], "CanvasNavigatorTests.swift", "CANVAS_NAVIGATOR_TESTS", ()),
@@ -152,7 +152,7 @@ suites = [
     ("publishing-shutdown-tests", ["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift", *ICONS], "PublishingShutdownTests.swift", None, ("--test",)),
     ("publishing-destinations-tests", ["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift", *ICONS], "PublishingDestinationsTests.swift", None, ("--test",)),
     ("hotkey-tests", ["GlobalHotkeys.swift", "AppToolTip.swift", "TestDefaults.swift"], "GlobalHotkeysTests.swift", "GLOBAL_HOTKEY_TESTS", ()),
-    ("settings-window-tests", ["SettingsWindow.swift", "GeneralPreferencesForm.swift", "GlobalHotkeys.swift", "AppToolTip.swift", "DisplayOptions.swift", "OriginalCaptureFlash.swift",
+    ("settings-window-tests", ["SettingsWindow.swift", "GeneralPreferencesState.swift", "GlobalHotkeys.swift", "AppToolTip.swift", "DisplayOptions.swift", "OriginalCaptureFlash.swift",
                                "StrokeFitting.swift", "Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift", *ICONS,
                                "TestDefaults.swift", "ViewTreeAudit.swift"], "SettingsWindowTests.swift", "SETTINGS_WINDOW_TESTS", ()),
     ("svg-tests", ["SVGPath.swift", "DocumentModel.swift", "VectorGeometry.swift", "StrokeFitting.swift", "ImageExport.swift", "Canvas.swift", "SVGExport.swift"], "SVGExportTests.swift", "SVG_EXPORT_TESTS", ()),
@@ -171,7 +171,7 @@ suites = [
     # G4: the font-floor walker over every surface whose sources compile in isolation. The full main window joins via app-safety.
     ("view-tree-audit-tests", ["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift",
                                "AboutWindow.swift", "HistoryBrowser.swift", "ResizePresets.swift", "ResizePanel.swift", *ICONS, "StrokeFitting.swift",
-                               "GeneralPreferencesForm.swift", "TextStyleForm.swift", "ExportAccessory.swift", "TestDefaults.swift", "ViewTreeAudit.swift",
+                               "GeneralPreferencesState.swift", "TextStyleForm.swift", "ExportAccessory.swift", "TestDefaults.swift", "ViewTreeAudit.swift",
                                "SettingsWindow.swift", "GlobalHotkeys.swift", "AppToolTip.swift", "DisplayOptions.swift", "OriginalCaptureFlash.swift"],
      "ViewTreeAuditTests.swift", "VIEW_TREE_AUDIT_TESTS", ()),
 ]

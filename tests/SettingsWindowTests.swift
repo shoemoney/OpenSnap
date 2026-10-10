@@ -1,7 +1,7 @@
 // The Settings window, built standalone with in-memory stand-ins for everything the app owns. No window is ordered onto the
 // desktop, no hotkey is registered with the system, no defaults domain is opened, no network, Keychain or real store is read.
 // xcrun swiftc -swift-version 5 -target arm64-apple-macosx26.0 -D SETTINGS_WINDOW_TESTS \
-//   Sources/SettingsWindow.swift Sources/GeneralPreferencesForm.swift Sources/GlobalHotkeys.swift Sources/AppToolTip.swift \
+//   Sources/SettingsWindow.swift Sources/GeneralPreferencesState.swift Sources/GlobalHotkeys.swift Sources/AppToolTip.swift \
 //   Sources/DesignTokens.swift Sources/FontAwesomeIcons.swift Sources/ChromeIcons.swift Sources/FontAwesomeFree.swift \
 //   Sources/SVGPath.swift Sources/StrokeFitting.swift Sources/DisplayOptions.swift Sources/OriginalCaptureFlash.swift \
 //   Sources/Publishing.swift Sources/PublishingS3.swift Sources/PublishingDestinations.swift Sources/PublishingDestinationsView.swift \
