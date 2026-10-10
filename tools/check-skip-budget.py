@@ -7,8 +7,10 @@ Usage: check-skip-budget.py LOG      (the captured output of `python3 tools/test
 Every SKIP / SKIPPED marker in the log must carry a parenthesised reason, and the reason must be
   macOS < N        the host is older than a feature's floor (the suites print e.g. "SKIPPED (macOS < 27): ...")
   FA not bundled   the licensed Font Awesome Pro subsets are absent. Allowed only when OPENSNAP_ALLOW_SKIP contains `fa`
-                   (a licence-free CI) or when build/fonts holds no *-subset.ttf; if the fonts ARE there the glyph branch
-                   must have run, so a skip is a failure.
+                   (a licence-free CI) or when neither build/fonts nor $OPENSNAP_FA_FONT_DIR holds a *-subset.ttf; if the
+                   fonts ARE there the glyph branch must have run, so a skip is a failure. (Note: GlassChromeTests also
+                   searches six parent levels for a build/fonts, so a worktree under a checkout that has fonts runs that
+                   suite's glyph branch while tools/test.py's FontAwesomeIconsTests, which looks at this repo's build/fonts only, skips.)
 Anything else, or a marker with no reason, is a violation. An empty log exits 2 (a missing log must never read as a pass).
 Exit status: 0 within budget, 1 violations, 2 unusable input. --fonts-dir DIR overrides build/fonts (tests only).
 """
@@ -25,9 +27,11 @@ def fa_allowed(fonts_dir, environment):
     allow = {part.strip() for part in environment.get("OPENSNAP_ALLOW_SKIP", "").split(",")}
     if "fa" in allow:
         return True, "OPENSNAP_ALLOW_SKIP=fa"
-    if not any(fonts_dir.glob("*-subset.ttf")):
-        return True, f"no *-subset.ttf in {fonts_dir}"
-    return False, f"Font Awesome subsets exist in {fonts_dir}, so the glyph branch must run"
+    searched = [fonts_dir] + ([Path(environment["OPENSNAP_FA_FONT_DIR"])] if environment.get("OPENSNAP_FA_FONT_DIR") else [])
+    present = next((folder for folder in searched if any(folder.glob("*-subset.ttf"))), None)
+    if present is None:
+        return True, "no *-subset.ttf in " + " or ".join(str(folder) for folder in searched)
+    return False, f"Font Awesome subsets exist in {present}, so the glyph branch must run"
 
 
 def check(text, fonts_dir, environment):
@@ -81,6 +85,7 @@ def self_test():
             ("two allowed skips on one line", both, empty, {}, 0),
             ("FA skip, fonts present", fa, stocked, {}, 1),
             ("FA skip, fonts present, OPENSNAP_ALLOW_SKIP=fa", fa, stocked, {"OPENSNAP_ALLOW_SKIP": "fa"}, 0),
+            ("FA skip, fonts named by OPENSNAP_FA_FONT_DIR", fa, empty, {"OPENSNAP_FA_FONT_DIR": str(stocked)}, 1),
             ("macOS skip is unaffected by fonts", macos, stocked, {}, 0),
             ("unlisted reason", "CanvasTests: SKIPPED (needs the archive)\n", empty, {}, 1),
             ("missing fixture", "PhotoBrowserTests: SKIPPED (fixture absent)\n", empty, {}, 1),
