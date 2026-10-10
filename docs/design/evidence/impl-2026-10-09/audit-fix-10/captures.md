@@ -3,6 +3,8 @@
 Source `9faf5c0`; icon mode **sf** (FA unavailable); 44 captures, every PNG scaled to at most 1200 px wide.
 Pre-change twins are referenced from `docs/design/evidence/impl-2026-10-09/audit-fix-9` at `6cc0b37`; they are not copied.
 
+Note: the ticked behaviour of `S46-corner-drag-ticked-*` changed in batch 11 (R4-003: the drag scales the picture's own pixels by its proportion); see `audit-fix-11` for the current captures.
+
 | Capture | Appearance | Window pt | What it shows | Layout JSON | BEFORE (pre-change) |
 |---|---|---|---|---|---|
 | `S46-capture-note-reregister-error-dark@9faf5c0.png` | dark | 980×640 | Capture tab after the window stopped being the one in use while another claim holds the key: the note carries the manager's error instead of saying shortcuts are saved and live (R3-008) | `—` | — |

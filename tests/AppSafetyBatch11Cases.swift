@@ -11,7 +11,9 @@ extension AppSafetyTests {
             ("A corner drag with Original size ticked scales the picture in its own pixels by the drag's proportion, and the title says so while dragging (R4-003)", b11CornerDragTicked),
             ("A Limit lands on its number, repeated or not, on a picture whose partner side rounds down by half a pixel", b11RepeatedLimit),
             ("The automatic zoom-to-fit is tracked after a document fit, in full screen and across Frame mode (R4-004)", b11FitZoomIsTracked),
-            ("File > Export offers Original size only when the picture differs from the size it is shown at (R4-007)", b11ExportOffersOriginalOnlyWhenItDiffers)
+            ("File > Export offers Original size only when the picture differs from the size it is shown at (R4-007)", b11ExportOffersOriginalOnlyWhenItDiffers),
+            ("A ticked corner drag stops growing the picture at the supported size: the title never reads a size release could not make (R5-003)", b12OversizedTickedDrag),
+            ("A Limit lands on its number on a drawing with no snap too, where the partner side rounds down by half a pixel (R5-004)", b12LimitWithoutSnap)
         ]
     }
 
@@ -60,6 +62,38 @@ extension AppSafetyTests {
             // So a Resize down afterwards still returns to 100%.
             try b11Apply(app, width: 400)
             try expect(app.canvas.zoom == 1, "\(word): a later Resize down is shown at 100% (\(app.canvas.zoom))")
+        }
+        // R5-002: an Undo made while Actual Size is up is fitted when Actual Size ends, not put back to the zoom and frame it began with.
+        do {
+            let fixture = try Fixture(), app = fixture.app
+            try b11Large(app, ticked: false)
+            let shown = app.canvas.outputSize
+            try b11Apply(app, width: 1600)
+            try expect(app.canvas.zoom < 1, "The resized picture is shown by zoom (\(app.canvas.zoom))")
+            app.toggleActualSize()
+            try expect(app.isActualSize, "Actual Size is up")
+            app.undo()
+            app.toggleActualSize()
+            try expect(!app.isActualSize && app.canvas.outputSize == shown, "Undo inside Actual Size took the Resize back (\(app.canvas.outputSize))")
+            try expect(app.canvas.zoom == 1 && app.pictureFitZoom == nil, "…and leaving Actual Size shows it at 100%, not the small zoom the Resize had (\(app.canvas.zoom))")
+        }
+        // …and full screen entered or left while Actual Size is up is not undone by leaving it.
+        do {
+            let fixture = try Fixture(), app = fixture.app
+            guard let window = app.window as? AppSafetyWindow else { throw Failure(description: "Isolated window") }
+            try b11Large(app, ticked: false)
+            window.setFrame(NSRect(x: 0, y: 0, width: 2056, height: 1329), display: false)
+            window.contentView?.layoutSubtreeIfNeeded()
+            window.simulatesFullScreen = true
+            app.windowDidEnterFullScreen(Notification(name: NSWindow.didEnterFullScreenNotification, object: window))
+            try expect(app.canvas.zoom > 1 && app.fullScreenZoom != nil, "Full screen magnifies the shot (\(app.canvas.zoom))")
+            app.toggleActualSize()
+            try expect(app.isActualSize, "Actual Size is up in full screen")
+            window.simulatesFullScreen = false
+            app.windowDidExitFullScreen(Notification(name: NSWindow.didExitFullScreenNotification, object: window))
+            app.toggleActualSize()
+            try expect(!app.isActualSize && app.canvas.zoom == 1 && app.fullScreenZoom == nil,
+                       "Leaving Actual Size after full screen ended shows the window's own zoom, not full screen's (\(app.canvas.zoom))")
         }
         // Nothing to show larger: a snap at its own size, 100%, or a blank canvas, keeps the item disabled.
         let fixture = try Fixture(), app = fixture.app
@@ -203,6 +237,31 @@ extension AppSafetyTests {
             try b11Apply(app, width: 300)
             try expect(app.canvas.zoom == 1, "A Resize down afterwards is shown at 100% (\(app.canvas.zoom))")
         }
+        // R5-001: a Resize previewed in full screen and cancelled leaves full screen's record of its zoom where it was, so the window
+        // still refits and the way out still puts the zoom back.
+        do {
+            let fixture = try Fixture(), app = fixture.app
+            guard let window = app.window as? AppSafetyWindow else { throw Failure(description: "Isolated window") }
+            app.maximumNormalCanvasOverride = b11Capacity
+            app.canvas.newBlank(size: CGSize(width: 800, height: 600)); app.canvas.setBackground(try image(size: CGSize(width: 800, height: 600)))
+            app.documentGeneration = UUID(); app.canvas.editingUndoManager.removeAllActions(); app.adoptRasterViewport()
+            window.setFrame(NSRect(x: 0, y: 0, width: 2056, height: 1329), display: false)
+            window.contentView?.layoutSubtreeIfNeeded()
+            window.simulatesFullScreen = true
+            app.windowDidEnterFullScreen(Notification(name: NSWindow.didEnterFullScreenNotification, object: window))
+            let magnified = app.canvas.zoom
+            try expect(magnified > 1, "Full screen magnifies the 800 × 600 snap (\(magnified))")
+            let session = try app.makeResizeSession().b6Unwrap("the resize session")
+            session.state.edit(.width, text: "1600")
+            try expect(try session.preview(), "1600 previews")
+            try expect(abs(app.canvas.zoom - magnified) >= 0.0005, "The preview refits to the Space (\(app.canvas.zoom))")
+            session.cancel()
+            try expect(abs(app.canvas.zoom - magnified) < 0.0005 && abs((app.fullScreenZoom?.applied ?? -1) - magnified) < 0.0005,
+                       "Cancel puts back the zoom and full screen's record of it (\(app.canvas.zoom), \(String(describing: app.fullScreenZoom)))")
+            window.simulatesFullScreen = false
+            app.windowDidExitFullScreen(Notification(name: NSWindow.didExitFullScreenNotification, object: window))
+            try expect(app.canvas.zoom == 1, "Leaving full screen puts the 100% back (\(app.canvas.zoom))")
+        }
         // Frame mode: an Undo made while Frame is up is fitted when Frame ends.
         do {
             let fixture = try Fixture(), app = fixture.app
@@ -215,6 +274,45 @@ extension AppSafetyTests {
             try expect(app.canvas.outputSize.width < 1600, "Undo took the Resize back (\(app.canvas.outputSize))")
             app.leaveFrame()
             try expect(!app.frameMode && app.canvas.zoom == 1, "Leaving Frame refits the restored snap to 100% (\(app.canvas.zoom))")
+        }
+    }
+
+    // MARK: R5-003
+
+    private static func b12OversizedTickedDrag() throws {
+        let fixture = try Fixture(), app = fixture.app
+        let board = b6Pasteboard(app); defer { board.releaseGlobally() }
+        try b11Large(app, ticked: true)
+        let shown = app.canvas.outputSize
+        try expect(app.beginWindowGesture(.corner(.bottomRight)), "Begin the corner drag")
+        app.previewBorderGesture(delta: CGPoint(x: 4000, y: 0), flags: [])
+        let proportion = app.canvas.outputSize.width / shown.width
+        try expect(b11Snap.width * proportion * b11Snap.height * proportion > SketchDocument.maximumPixelCount, "The drag asks for more pixels than the picture may have (×\(proportion))")
+        let title = app.titlePixelSize
+        try expect(SketchDocument.validSize(title) && title.width * title.height <= SketchDocument.maximumPixelCount,
+                   "Mid-drag the title says a size release can make (\(title))")
+        try expect(app.window.subtitle.hasPrefix(PixelSizeText.text(title)), "…and the window title carries it (\(app.window.subtitle))")
+        app.endWindowGesture()
+        try expect(app.canvas.canvasSize == title && app.canvas.outputSize == title, "Release leaves the picture at what the title said (\(app.canvas.canvasSize))")
+        try expect(app.canvas.editingUndoManager.canUndo, "…as one Undo step")
+        try b6AllAgree(app, board, title, "Oversized ticked drag")
+    }
+
+    // MARK: R5-004
+
+    private static func b12LimitWithoutSnap() throws {
+        for (size, limit, expected) in [(CGSize(width: 1981, height: 953), 1400, CGSize(width: 1400, height: 673)),
+                                        (CGSize(width: 2351, height: 900), 1200, CGSize(width: 1200, height: 459))] {
+            let fixture = try Fixture(), app = fixture.app
+            app.canvas.newBlank(size: size)
+            app.documentGeneration = UUID(); app.canvas.editingUndoManager.removeAllActions()
+            try expect(app.canvas.document.backgroundPNG == nil && app.canvas.outputSize == size, "\(size): a drawing with no snap")
+            let session = try app.makeResizeSession().b6Unwrap("a limit session")
+            session.state.setMode(.limit)
+            session.state.limitText = String(limit)
+            try expect(try session.commit(), "Apply a limit of \(limit)")
+            try expect(app.canvas.outputSize == expected, "\(size), Limit \(limit): the longest side is the number typed (\(app.canvas.outputSize), not \(expected))")
+            session.cancel()
         }
     }
 

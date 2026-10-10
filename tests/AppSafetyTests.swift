@@ -2935,6 +2935,8 @@ enum AppSafetyTests {
     static func actualPriorResizeHistory() throws {
         let fixture = try Fixture(), app = fixture.app
         try viewportFixture(app)
+        // The window fits the 150-pixel output it starts with, as it does in the app: leaving Actual Size after the Undo fits it again (R5-002).
+        app.sizeNormalWindowToCanvas(centered: false)
         let normal = try app.canvas.snapshotDocumentData(), source = app.canvas.document
         let selection = app.canvas.selection, frame = app.window.frame
         let history = app.canvas.editingUndoManager

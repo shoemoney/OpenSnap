@@ -41,7 +41,7 @@ extension AppDelegate {
         guard !terminationStarted, !isActualSize, !frameMode, windowGesture == nil,
               window.attachedSheet == nil, activeResizeSession == nil else { return nil }
         let generation = documentGeneration
-        var baseline: (output: CGSize, source: CGSize, frame: CGRect, zoom: CGFloat, fit: CGFloat?, dirty: Bool)?
+        var baseline: (output: CGSize, source: CGSize, frame: CGRect, zoom: CGFloat, fit: CGFloat?, dirty: Bool, fullScreen: (generation: UUID, before: CGFloat, applied: CGFloat)?)?
         // The fields open at the size the title shows; the geometry maps what is typed back into output pixels. Apply moves the base:
         // the title shows the new size and the next edit is measured from it.
         var displayed = titlePixelSize
@@ -76,7 +76,7 @@ extension AppDelegate {
                 // the transient preview begins. Timer saves leave it intact.
                 self.saveRecovery()
                 let first = (output: self.canvas.outputSize, source: self.canvas.canvasSize,
-                             frame: self.window.frame, zoom: self.canvas.zoom, fit: self.pictureFitZoom, dirty: self.dirty)
+                             frame: self.window.frame, zoom: self.canvas.zoom, fit: self.pictureFitZoom, dirty: self.dirty, fullScreen: self.fullScreenZoom)
                 guard self.canvas.beginViewportEdit(name: "Resize") else {
                     throw NSError(domain: "OpenSnap", code: 5, userInfo: [NSLocalizedDescriptionKey: "Finish the current edit before resizing."])
                 }
@@ -106,6 +106,8 @@ extension AppDelegate {
                     self.setCanvasDisplayZoom(baseline.zoom, label: baseline.fit == nil ? "Output" : "Fit")
                 }
                 self.pictureFitZoom = baseline.fit
+                // Each preview in full screen refitted and moved full screen's record of the zoom it chose; it goes back with the zoom (R5-001).
+                if self.isFullScreen, baseline.fullScreen != nil { self.fullScreenZoom = baseline.fullScreen }
                 self.setWindowFrame(baseline.frame)
                 self.dirty = baseline.dirty
                 self.window.isDocumentEdited = baseline.dirty
@@ -166,7 +168,8 @@ extension AppDelegate {
         guard let window else { return }
         let state = ActualViewState(generation: documentGeneration, outputSize: canvas.outputSize,
                                     zoom: canvas.zoom, pictureFit: pictureFitZoom, windowFrame: window.frame,
-                                    scrollOrigin: canvas.enclosingScrollView?.contentView.bounds.origin ?? .zero)
+                                    scrollOrigin: canvas.enclosingScrollView?.contentView.bounds.origin ?? .zero,
+                                    fullScreen: isFullScreen, fullScreenZoom: fullScreenZoom)
         guard canvas.beginActualPresentation() else { return }
         actualView = state
         setCanvasDisplayZoom(1, label: "Actual")
@@ -182,11 +185,29 @@ extension AppDelegate {
         if let panel = navigatorWindow { window?.removeChildWindow(panel); panel.orderOut(nil) }
         guard state.generation == documentGeneration else { updateStatus(); return }
         canvas.endActualPresentation()
-        setCanvasDisplayZoom(state.zoom, label: "Normal")
-        pictureFitZoom = state.pictureFit
-        setWindowFrame(state.windowFrame)
-        if let scroll = canvas.enclosingScrollView {
-            scroll.contentView.scroll(to: state.scrollOrigin); scroll.reflectScrolledClipView(scroll.contentView)
+        let sizeChanged = canvas.outputSize != state.outputSize
+        if state.fullScreen != isFullScreen {
+            // Full screen was entered or left while Actual Size was up: the zoom and frame it began with belong to the other window, so the
+            // picture is fitted to this one instead (R5-002).
+            if isFullScreen {
+                setCanvasDisplayZoom(state.zoom, label: "Normal")
+                pictureFitZoom = state.pictureFit
+                fitDrawingForFullScreen()
+            } else {
+                setCanvasDisplayZoom(state.fullScreenZoom?.before ?? state.zoom, label: "Normal")
+                pictureFitZoom = state.pictureFit
+                fullScreenZoom = nil
+                if refitPictureZoom() || sizeChanged { sizeNormalWindowToCanvas(centered: false) }
+            }
+        } else {
+            setCanvasDisplayZoom(state.zoom, label: "Normal")
+            pictureFitZoom = state.pictureFit
+            setWindowFrame(state.windowFrame)
+            // An Undo or an Image edit made while Actual Size was up changed the picture: fit the one that is back (R5-002).
+            if sizeChanged { finishHistoryResize(previousOutput: state.outputSize) }
+            if let scroll = canvas.enclosingScrollView {
+                scroll.contentView.scroll(to: state.scrollOrigin); scroll.reflectScrolledClipView(scroll.contentView)
+            }
         }
         if state.savedWhileActive && canvas.outputSize != canvas.fullResolutionOutputSize {
             dirty = true; window?.isDocumentEdited = true
@@ -342,8 +363,19 @@ extension AppDelegate {
     /// What a corner drag leaves the picture at when the title counts its own pixels (Original size ticked): the dragged shown size is a
     /// proportion of the one the drag began at, and the picture scales by that proportion, as the ticked Resize sheet does (R4-003).
     func cornerDragPictureSize(_ gesture: WindowGesture) -> CGSize {
-        let factor = canvas.outputSize.width / gesture.outputSize.width
-        return SketchDocument.wholePixels(CGSize(width: gesture.sourceSize.width * factor, height: gesture.sourceSize.height * factor))
+        var factor = canvas.outputSize.width / gesture.outputSize.width
+        // The picture's own pixels have a ceiling a shown size does not: the drag stops growing the picture there, so the title never
+        // reads a size release could not make (R5-003).
+        let source = gesture.sourceSize
+        let ceiling = min(SketchDocument.maximumDimension / source.width, SketchDocument.maximumDimension / source.height,
+                          (SketchDocument.maximumPixelCount / (source.width * source.height)).squareRoot())
+        factor = min(factor, ceiling)
+        var size = SketchDocument.wholePixels(CGSize(width: source.width * factor, height: source.height * factor))
+        while !SketchDocument.validSize(size), factor > 0 {
+            factor *= 0.9999
+            size = SketchDocument.wholePixels(CGSize(width: source.width * factor, height: source.height * factor))
+        }
+        return size
     }
 
     func previewBorderGesture(delta: CGPoint, flags: NSEvent.ModifierFlags) {
