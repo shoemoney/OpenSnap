@@ -1123,6 +1123,8 @@ extension AuditRun {
         capture(2, "capture-error", "Capture tab with a refused shortcut (a key with no Command or Control)")
         // A chosen shortcut: the selected modifier segments are drawn in the accent (Option and Control here).
         let modifiers = form.modifierControl(for: .screen)
+        controller.select(2)
+        key.selectItem(withTitle: "K"); _ = key.target?.perform(key.action, with: key)
         modifiers.setSelected(true, forSegment: 1); modifiers.setSelected(true, forSegment: 2); _ = modifiers.target?.perform(modifiers.action, with: modifiers)
         capture(2, "capture-modifiers", "Capture tab with Option-Control-K chosen for Screen region: the selected modifier segments are in the accent")
         key.selectItem(at: 0); _ = key.target?.perform(key.action, with: key)
