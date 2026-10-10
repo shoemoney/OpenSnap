@@ -80,7 +80,7 @@ private enum StateStylesTests {
                         try expect(abs(alpha(selectedPressed.fill) - (selectedAlpha + 0.12)) < 0.004 && selectedPressed.glyphScale == 0.96 && selectedPressed.indicator == dwc, "pressing a selected control deepens it by 0.12: \(label)")
 
                         let disabled = style(.disabled)
-                        try expect(disabled.fill == nil && disabled.border == nil && disabled.contentAlpha == 0.38 && !disabled.indicator && !disabled.focusRing && disabled.glyphScale == 1, "disabled is bare at 0.38: \(label)")
+                        try expect(disabled.fill == nil && disabled.border == nil && disabled.contentAlpha == StateStyles.disabledAlpha(highContrast: hc) && !disabled.indicator && !disabled.focusRing && disabled.glyphScale == 1, "disabled is bare at 0.38: \(label)")
                         let disabledSelected = style(.disabled, selected: true)
                         try expect(disabledSelected.fill == nil && !disabledSelected.indicator, "a disabled selected control keeps nothing interactive: \(label)")
 
@@ -165,7 +165,7 @@ private enum StateStylesTests {
                 try expect(same(hover.fill, acc.blended(withFraction: 0.08, of: .white)), "hover brightens by 8 %: \(label)")
                 try expect(same(pressed.fill, acc.blended(withFraction: 0.12, of: .black)), "press darkens by 12 %: \(label)")
                 try expect(lum(hover.fill!) > lum(rest.fill!) && lum(pressed.fill!) < lum(rest.fill!), "hover is lighter and press darker than rest: \(label)")
-                try expect(same(disabled.fill, rest.fill) && disabled.contentAlpha == 0.38 && rest.contentAlpha == 1, "disabled Snap is the same accent dimmed to 0.38: \(label)")
+                try expect(same(disabled.fill, rest.fill) && disabled.contentAlpha == StateStyles.disabledAlpha(highContrast: hc) && rest.contentAlpha == 1, "disabled Snap is the same accent dimmed to 0.38: \(label)")
                 try expect(pressed.glyphScale == 0.96 && hover.glyphScale == 1, "pressed Snap scales its glyph: \(label)")
                 try expect(rest.borderWidth == (hc ? 1 : 0), "Increase Contrast outlines Snap: \(label)")
                 let selected = StateStyles.command(.selected, primary: true, focused: false, highContrast: hc, differentiate: true, appearance: appearance)
@@ -239,7 +239,7 @@ private enum StateStylesTests {
                 try expect(marked.indicator && marked.strongText && marked.borderWidth == 2 && marked.border != nil, "Differentiate adds the capsule and a 2 pt outline on top of the weight: \(label)")
                 try expect(!unmarked.indicator && unmarked.borderWidth == 1, "without Differentiate the selected segment keeps its 1 pt accent border and no capsule: \(label)")
                 try expect(!same(marked.border, unmarked.border), "the Differentiate outline is the label colour, not the accent: \(label)")
-                try expect(style(.disabled).contentAlpha == 0.38 && alpha(style(.disabled).fill) == alpha(style(.rest).fill), "a disabled segment keeps its plate and dims its content: \(label)")
+                try expect(style(.disabled).contentAlpha == StateStyles.disabledAlpha(highContrast: hc) && alpha(style(.disabled).fill) == alpha(style(.rest).fill), "a disabled segment keeps its plate and dims its content: \(label)")
                 try expect(!style(.rest).focusRing && style(.rest, focused: true).focusRing && !style(.disabled, focused: true).focusRing, "focus ring follows focus and never shows when disabled: \(label)")
             }
         }
@@ -255,7 +255,7 @@ private enum StateStylesTests {
                 try expect(style(.rest).knobScale == 1 && style(.hover).knobScale == 1.15 && style(.pressed).knobScale == 1.25, "knob scales 1, 1.15, 1.25: \(label)")
                 try expect(style(.rest).highlight == nil && style(.hover).highlight == nil, "only a held knob highlights the track: \(label)")
                 try expect(abs(alpha(style(.pressed).highlight) - (hc ? 0.45 : 0.30)) < 0.004 && same(style(.pressed).highlight?.withAlphaComponent(1), acc), "the held track is accent@0.3 (HC 0.45): \(label)")
-                try expect(style(.disabled).alpha == 0.38 && style(.rest).alpha == 1 && style(.disabled).knobScale == 1 && style(.disabled).highlight == nil, "a disabled track is dimmed to 0.38 and inert: \(label)")
+                try expect(style(.disabled).alpha == StateStyles.disabledAlpha(highContrast: hc) && style(.rest).alpha == 1 && style(.disabled).knobScale == 1 && style(.disabled).highlight == nil, "a disabled track is dimmed to 0.38 and inert: \(label)")
                 try expect(same(style(.rest).knob, acc), "the knob is the accent: \(label)")
                 try expect((style(.rest).knobBorder != nil) == hc, "Increase Contrast rings the knob: \(label)")
                 if hc {
@@ -286,7 +286,7 @@ private enum StateStylesTests {
                 try expect(abs(alpha(plated(.hover).fill) - (alpha(plain(.hover).fill) + rest)) < 0.004, "hover adds to the rest plate: \(label)")
                 try expect(abs(alpha(plated(.pressed).fill) - (alpha(plain(.pressed).fill) + rest)) < 0.004, "press adds to the rest plate: \(label)")
                 try expect(alpha(plated(.hover).fill) > alpha(plated(.rest).fill) && alpha(plated(.pressed).fill) > alpha(plated(.hover).fill), "rest < hover < pressed: \(label)")
-                try expect(abs(alpha(plated(.disabled).fill) - rest) < 0.004 && plated(.disabled).contentAlpha == 0.38, "a disabled one keeps the plate and dims: \(label)")
+                try expect(abs(alpha(plated(.disabled).fill) - rest) < 0.004 && plated(.disabled).contentAlpha == StateStyles.disabledAlpha(highContrast: hc), "a disabled one keeps the plate and dims: \(label)")
                 // Everything else is the plain command: content colour, no border, focus ring, no indicator.
                 try expect(plated(.rest).content == plain(.rest).content && plated(.rest).border == nil && !plated(.rest).indicator && plated(.rest, focused: true).focusRing, "only the fill differs: \(label)")
                 // Selection and Snap are untouched by the flag.
@@ -312,7 +312,7 @@ private enum StateStylesTests {
                 try expect(alpha(hover.outline) > alpha(rest.outline), "hover outlines stronger than rest: \(label)")
                 try expect(abs(alpha(pressed.fill) - (hc ? 0.28 : 0.16)) < 0.004 && !pressed.check, "pressed fills label@0.16: \(label)")
                 try expect(selected.outlineWidth == 3 && selected.check && same(selected.outline, accent(appearance, highContrast: hc)), "selected is a 3 pt accent outline plus the check: \(label)")
-                try expect(disabled.alpha == 0.38 && !disabled.check && disabled.fill == nil, "disabled swatch is dimmed to 0.38: \(label)")
+                try expect(disabled.alpha == StateStyles.disabledAlpha(highContrast: hc) && !disabled.check && disabled.fill == nil, "disabled swatch is dimmed to 0.38: \(label)")
                 try expect([rest, hover, pressed, disabled].allSatisfy { !$0.check } && selected.check, "only the selected swatch carries the check")
             }
         }

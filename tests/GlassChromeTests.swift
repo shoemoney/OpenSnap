@@ -654,7 +654,7 @@ private enum GlassChromeTests {
                 expect(isFill(fill(tool), base: accent, alpha: selected + 0.12), "\(tag): pressing a selected button deepens it by 0.12")
                 tool.highlight(false); tool.setHovered(false)
                 tool.isEnabled = false
-                expect(tool.layer?.backgroundColor == nil && tool.alphaValue == 0.38 && !tool.showsIndicator, "\(tag): disabled has no fill and no indicator and dims to 0.38")
+                expect(tool.layer?.backgroundColor == nil && tool.alphaValue == StateStyles.disabledAlpha(highContrast: hc) && !tool.showsIndicator, "\(tag): disabled has no fill and no indicator and dims to 0.38 (0.55 under Increase Contrast)")
                 tool.setHovered(true); tool.highlight(true)
                 expect(tool.layer?.backgroundColor == nil && tool.glyphScale == 1, "\(tag): disabled ignores hover and press")
                 tool.highlight(false); tool.setHovered(false)
@@ -679,7 +679,7 @@ private enum GlassChromeTests {
                        && glyphRatio(snap, arm: arm) >= 4.5, "\(tag): Snap darkens on press and keeps its contrast")
                 snap.highlight(false); snap.setHovered(false)
                 snap.isEnabled = false
-                expect(isFill(fill(snap), base: accent, alpha: 1) && snap.alphaValue == 0.38, "\(tag): a disabled Snap is the accent dimmed to 0.38 through alpha")
+                expect(isFill(fill(snap), base: accent, alpha: 1) && snap.alphaValue == StateStyles.disabledAlpha(highContrast: hc), "\(tag): a disabled Snap is the accent dimmed to 0.38 (0.55 under Increase Contrast) through alpha")
             }
         }
 
@@ -986,12 +986,15 @@ private enum GlassChromeTests {
     }
 
     /// Pixels, not tokens: a tool glyph drawn on the window colour, in each of the four appearances, with and without Increase Contrast.
+    /// The tools are two-state buttons like the real ones: a toggle cell dims its own image under the tint, which a momentary button
+    /// never does (F-R-002: an unselected tool sat near 4:1 whatever Increase Contrast asked for).
     private static func glyphContrastTests() {
-        func drawn(_ appearance: NSAppearance, options: ChromeAccessibility, enabled: Bool) -> CGFloat {
+        func drawn(_ appearance: NSAppearance, options: ChromeAccessibility, enabled: Bool, toggle: Bool) -> CGFloat {
             let host = NSView(frame: NSRect(x: 0, y: 0, width: 100, height: 70))
             host.wantsLayer = true; host.appearance = appearance
             appearance.performAsCurrentDrawingAppearance { host.layer?.backgroundColor = DesignTokens.Palette.Surface.window.cgColor }
             let tool = CommandButton(title: "", target: nil, action: nil)
+            if toggle { tool.setButtonType(.toggle); tool.state = .off }
             tool.icon = .paintbrush; tool.accessibility = options; tool.isEnabled = enabled
             GlassChrome.fix(tool, GlassChrome.Metrics.iconButton)
             tool.frame.origin = NSPoint(x: 28, y: 12)
@@ -1001,16 +1004,23 @@ private enum GlassChromeTests {
             host.layoutSubtreeIfNeeded(); tool.display()
             return ContrastProbe.measure(host, appearance: appearance, plateAt: NSPoint(x: 3, y: 3), textFrames: [tool.frame]).textRatios[0]
         }
-        for (name, appearance) in ContrastProbe.appearances {
-            let high = name.contains("increaseContrast")
-            let options = high ? contrast : plain
-            let enabled = drawn(appearance, options: options, enabled: true), off = drawn(appearance, options: options, enabled: false)
-            expect(enabled >= 7, "An enabled tool glyph is drawn at \(enabled):1 or better on the window colour (\(name))")
-            expect(off > 1.2 && enabled / off >= 4, "A disabled glyph is visibly distinct from an enabled one (\(name): \(off) against \(enabled))")
-        }
-        for (name, appearance) in [("light", ContrastProbe.appearances[0].appearance), ("dark", ContrastProbe.appearances[1].appearance)] {
-            let base = drawn(appearance, options: plain, enabled: true), high = drawn(appearance, options: contrast, enabled: true)
-            expect(high >= base + 1.5 && high >= 14, "Increase Contrast raises a glyph's contrast, not only its outline (\(name): \(base) -> \(high))")
+        for toggle in [false, true] {
+            let kind = toggle ? "two-state tool" : "command"
+            for (name, appearance) in ContrastProbe.appearances {
+                let high = name.contains("increaseContrast")
+                let options = high ? contrast : plain
+                let enabled = drawn(appearance, options: options, enabled: true, toggle: toggle), off = drawn(appearance, options: options, enabled: false, toggle: toggle)
+                expect(enabled >= 7, "An enabled \(kind) glyph is drawn at \(enabled):1 or better on the window colour (\(name))")
+                expect(off > 1.2 && enabled / off >= 2, "A disabled \(kind) glyph is visibly distinct from an enabled one (\(name): \(off) against \(enabled))")
+                // Increase Contrast: the unselected glyph is near the full label colour and a disabled one still reads at 3:1.
+                if high { expect(enabled >= 14 && off >= 3, "Increase Contrast: \(kind) glyph \(enabled):1 enabled and \(off):1 disabled (\(name))") }
+            }
+            for (name, appearance) in [("light", ContrastProbe.appearances[0].appearance), ("dark", ContrastProbe.appearances[1].appearance)] {
+                let base = drawn(appearance, options: plain, enabled: true, toggle: toggle), high = drawn(appearance, options: contrast, enabled: true, toggle: toggle)
+                expect(high >= base && high >= 14, "Increase Contrast keeps the \(kind) glyph at full label strength (\(name): \(base) -> \(high))")
+                let offBase = drawn(appearance, options: plain, enabled: false, toggle: toggle), offHigh = drawn(appearance, options: contrast, enabled: false, toggle: toggle)
+                expect(offHigh >= offBase + 1, "Increase Contrast lifts a disabled \(kind) glyph (\(name): \(offBase) -> \(offHigh))")
+            }
         }
     }
 
