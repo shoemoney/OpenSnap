@@ -254,8 +254,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     /// What Retry sends again after a failure: the same bytes, file name and document the failed attempt had.
     var retryablePayload: UploadPayload?
     var uploadSuccessTimer: Timer?
-    /// How long "Link copied" stays in the status slot before the normal status returns.
-    var uploadSuccessDuration: TimeInterval = 4
+    /// How long "Link copied" stays in the status slot before the normal status returns (long enough to read the link and reach for Open or Copy).
+    var uploadSuccessDuration: TimeInterval = UploadState.successDuration
     /// The failure belongs to the document it was raised for; a different document drops it.
     var uploadFailureGeneration: UUID?
     /// Test seam: opens the uploaded link in the browser.
@@ -263,7 +263,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     /// Test seams: replace the real NSSharingServicePicker and the Sharing Settings sheet.
     var sharePickerPresenter: ((NSImage, NSView?) -> Void)?
     var sharingSettingsPresenter: (() -> Void)?
-    let historyRemoteDeletion = HistoryRemoteDeletionCoordinator(destinationBinding: nil, store: AppDelegate.publishingStore)
+    /// `var` so a test can give it a fake adapter; production never reassigns it.
+    var historyRemoteDeletion = HistoryRemoteDeletionCoordinator(destinationBinding: nil, store: AppDelegate.publishingStore)
     /// Test seam: the window the keyboard is in.
     var keyWindowProvider: () -> NSWindow? = { NSApp.keyWindow }
     /// Test seams: the deletion binding captured for a file name before an upload, and for the published URL after it.
@@ -1266,6 +1267,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         let variants: [String]
         if let notice = statusNotice { variants = [notice] }
         else if !uploadState.statusVariants.isEmpty { variants = uploadState.statusVariants }
+        else if let notice = UploadNotice.text { variants = [notice] }
         else if canvas.tool == .crop && canvas.hasPendingCrop {
             // The crop is applied by Return and dropped by Esc; say so, shortest last, never the state alone first.
             variants = ["Crop: press Return to apply, Esc to cancel", "Crop: Return applies, Esc cancels", "Return applies, Esc cancels", dirty ? "Unsaved changes" : "Saved"]
@@ -1503,7 +1505,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         browser.update(items: store.entries.map { entry in
             HistoryBrowser.Item(id: entry.id, name: entry.name, date: entry.date, size: entry.size,
                 action: entry.action.title, text: entry.text, destination: entry.destination,
-                link: entry.remoteURL, previewURL: store.previewURL(entry), missing: store.missing(entry.id))
+                link: entry.remoteURL, previewURL: store.previewURL(entry), missing: store.missing(entry.id),
+                canDeleteFromWeb: entry.remoteBinding != nil)
         })
     }
     @objc func showHistory() {
@@ -1631,11 +1634,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         }
     }
     func deleteHistoryRemote(_ ids: [UUID]) {
-        guard !terminationStarted, let id = ids.first, ids.count == 1 else { return }
-        guard let entry = historyStore?.entry(id), let url = entry.remoteURL, let binding = entry.remoteBinding else {
-            // A refused click is never silent: the reason is a sheet on History, where the click was.
+        guard !terminationStarted, !ids.isEmpty else { return }
+        guard ids.count == 1, let id = ids.first, let entry = historyStore?.entry(id), let url = entry.remoteURL, let binding = entry.remoteBinding else {
+            // The toolbar button is off for these, and says why in its tooltip; an attempt anyway (menu, accessibility action) is answered with
+            // the same reason as a sheet on History, never ignored.
             guard openHistoryQuestions.insert("web-refused").inserted else { return }
-            presentFromHistory(AppAlert(title: "Can\u{2019}t delete this from the web", message: Self.deleteFromWebRefusal(for: historyStore?.entry(id)))) { [weak self] _ in
+            let reason = ids.count == 1 ? Self.deleteFromWebRefusal(for: historyStore?.entry(ids[0])) : "Delete from Web removes one post at a time. Select a single entry."
+            presentFromHistory(AppAlert(title: "Can\u{2019}t delete this from the web", message: reason)) { [weak self] _ in
                 self?.openHistoryQuestions.remove("web-refused")
             }
             return
@@ -1911,7 +1916,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             uploadState = .success(url: url, copied: publishing.lastTransferCopiedLink)
         case .failure(let error):
             if (error as NSError).domain == NSCocoaErrorDomain && (error as NSError).code == NSUserCancelledError {
-                retryablePayload = nil; updateStatus(); status.stringValue = "Upload cancelled"
+                retryablePayload = nil; UploadNotice.post("Upload cancelled"); updateStatus()
             } else { uploadState = .failure(message: error.localizedDescription) }
         }
     }

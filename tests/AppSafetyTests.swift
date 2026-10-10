@@ -3864,7 +3864,7 @@ enum AppSafetyTests {
         ]
         // Development aid: APP_SAFETY_FILTER=<text> runs only the cases whose title contains it. Unset, every case runs.
         let filter = ProcessInfo.processInfo.environment["APP_SAFETY_FILTER"]
-        let tests = (sharedCases + Self.modernCases + Self.webpostCases + Self.retiredFormatCases + Self.menuCases + Self.windowChromeCases + Self.uploadCases + Self.accessibilityCases + Self.auditCases + Self.batch3cCases).filter { filter.map($0.0.contains) ?? true }
+        let tests = (sharedCases + Self.modernCases + Self.webpostCases + Self.retiredFormatCases + Self.menuCases + Self.windowChromeCases + Self.uploadCases + Self.accessibilityCases + Self.auditCases + Self.batch3cCases + Self.s3EndToEndCases).filter { filter.map($0.0.contains) ?? true }
         var results: [[String: Any]] = [], failures = 0
         for (name, test) in tests {
             AppSafetyAlert.reset(); AppSafetyAlert.install(); AppSafetyEvents.current = nil

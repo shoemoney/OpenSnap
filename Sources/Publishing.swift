@@ -709,7 +709,10 @@ enum PublishingProcess {
 }
 
 enum PublishingCurl {
+    /// A test sets this so an upload plan never asks the system curl what it can do.
+    static var capabilitiesOverride: PublishingCapabilities?
     static func capabilities(cancellation: PublishingCancellation = PublishingCancellation()) throws -> PublishingCapabilities {
+        if let capabilitiesOverride { return capabilitiesOverride }
         let output = try PublishingProcess.run(executable: "/usr/bin/curl", arguments: ["--disable", "--version"], timeout: 5, cancellation: cancellation)
         guard output.code == 0 else { throw PublishingFailure("System curl capabilities could not be inspected.") }
         return try PublishingCapabilities(versionOutput: output.stdout)
@@ -773,6 +776,10 @@ enum PublishingTransfer {
         try cancellation.check()
         return try result.get()
     }
+    /// Fetches the public URL for the post-upload check. A test replaces it with a recorder, so no test resolves a host.
+    static var publicCheckRunner: (_ config: Data, _ cancellation: PublishingCancellation) throws -> PublishingProcess.Output = { config, cancellation in
+        try PublishingProcess.run(executable: "/usr/bin/curl", arguments: ["--disable", "--config", "-"], input: config, timeout: 35, cancellation: cancellation)
+    }
     private static func performUpload(data: Data, plan: PublishingPlan, username: String, password: String, sessionToken: String,
                                       cancellation: PublishingCancellation) throws -> URL {
         try cancellation.check()
@@ -790,7 +797,7 @@ enum PublishingTransfer {
         let config = try check.curlConfig(download: download, byteCount: data.count)
         let output: PublishingProcess.Output
         do {
-            output = try PublishingProcess.run(executable: "/usr/bin/curl", arguments: ["--disable", "--config", "-"], input: config, timeout: 35, cancellation: cancellation)
+            output = try publicCheckRunner(config, cancellation)
         } catch { throw PublishingFailure("The file uploaded, but public URL verification failed or timed out. No link was copied.") }
         let downloaded = try? Data(contentsOf: download, options: .mappedIfSafe)
         return try check.verifiedResult(stdout: output.stdout, exitCode: output.code, stderr: output.stderr,

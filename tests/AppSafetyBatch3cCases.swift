@@ -83,14 +83,19 @@ extension AppSafetyTests {
         let bound = try store.archive(snapshot, name: "New", action: .shared, destination: url.absoluteString, remoteURL: url,
                                       remoteBinding: ["version": "1", "destinationSHA256": String(repeating: "a", count: 64), "publicURL": url.absoluteString])
         let refusal = "Can\u{2019}t delete this from the web"
-        AppSafetyAlert.answers = [.init(title: refusal, response: .alertFirstButtonReturn), .init(title: refusal, response: .alertFirstButtonReturn),
-                                  .init(title: "Delete this web post?", response: .alertSecondButtonReturn)]
         var messages: [String] = []
-        AppSafetyAlert.beforeReply = { messages.append(AppAlert.presentedAlerts.last?.message ?? "") }
-        app.deleteHistoryRemote([local]); app.deleteHistoryRemote([unbound]); app.deleteHistoryRemote([bound])
-        AppSafetyAlert.beforeReply = nil
+        AppSafetyAlert.holdAnswers = true
+        for ids in [[local], [unbound], [unbound, bound]] {
+            app.deleteHistoryRemote(ids)
+            messages.append(AppSafetyAlert.pending.last?.alert.message ?? "")
+            b3cAnswerNext(.alertFirstButtonReturn)
+        }
+        AppSafetyAlert.holdAnswers = false
+        AppSafetyAlert.answers = [.init(title: "Delete this web post?", response: .alertSecondButtonReturn)]
+        app.deleteHistoryRemote([bound])
         try expect(AppSafetyAlert.hosts.allSatisfy { $0 === history }, "Every Delete from Web answer is on History, never a dead click")
-        try expect(AppSafetyAlert.seen == [refusal, refusal, "Delete this web post?"], "Refused twice with a reason, asked once with a binding: \(AppSafetyAlert.seen)")
+        try expect(AppSafetyAlert.seen == [refusal, refusal, refusal, "Delete this web post?"], "Refused three times (never uploaded, unrecorded, several at once) with a reason, asked once with a binding: \(AppSafetyAlert.seen)")
+        try expect(messages.count == 3 && messages[2].contains("one post at a time"), "A multiple selection is told it is one post at a time: \(messages)")
         try expect(AppDelegate.deleteFromWebRefusal(for: store.entry(local)).contains("never uploaded"), "A local drawing says it was never uploaded")
         try expect(AppDelegate.deleteFromWebRefusal(for: store.entry(unbound)).contains("before OpenSnap recorded"), "An upload without a recorded destination says so")
         try expect(store.entry(bound)?.remoteURL != nil && store.entry(unbound)?.remoteURL != nil, "Cancel and refusal change nothing")

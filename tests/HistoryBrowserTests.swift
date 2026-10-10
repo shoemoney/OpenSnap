@@ -626,7 +626,18 @@ struct HistoryBrowserTests {
                     try expect(AppToolTip.text(for:button)?.contains("unavailable") == true && AppToolTip.text(for:button)?.contains("recorded where it went") == true,"The tooltip says why: \(AppToolTip.text(for:button) ?? "")")
                     try expect(browser.canPerform(.copyLink) && HistoryBrowser.deleteRemoteHelp(for:[]) == "Delete from Web","Its other link actions stay on, and nothing selected has no special text")
                     browser.select(ids:[recorded.id,legacy.id])
-                    try expect(!browser.canPerform(.deleteRemote),"A mixed selection is not deletable")
+                    try expect(!browser.canPerform(.deleteRemote) && !button.isEnabled,"A multiple selection is not deletable")
+                    try expect(AppToolTip.text(for:button)?.contains("one post at a time") == true,"A multiple selection says why: \(AppToolTip.text(for:button) ?? "")")
+                    let local = item("Local",action:"Archived",link:false)
+                    browser.update(items:[recorded,legacy,local]); browser.select(ids:[local.id])
+                    try expect(!button.isEnabled && AppToolTip.text(for:button)?.contains("never uploaded") == true,"A drawing that never went to the web says so: \(AppToolTip.text(for:button) ?? "")")
+                    var asked: [[UUID]] = []
+                    browser.onDeleteRemote = { asked.append($0) }
+                    browser.perform(.deleteRemote); browser.select(ids:[legacy.id]); browser.perform(.deleteRemote); browser.select(ids:[recorded.id]); browser.perform(.deleteRemote)
+                    try expect(asked == [[local.id],[legacy.id],[recorded.id]],"Invoked anyway, the disabled action still reaches the app, which answers with a sheet: \(asked)")
+                    browser.select(ids:[])
+                    browser.perform(.deleteRemote)
+                    try expect(asked.count == 3,"Nothing selected asks nothing")
                 }
             }),
             ("The details column is a summary with nothing selected, and a link stays on one line with its full text in the tooltip", {
