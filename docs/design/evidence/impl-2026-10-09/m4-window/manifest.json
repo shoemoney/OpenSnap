@@ -1,0 +1,1561 @@
+{
+ "sourceSha": "7bf20f8",
+ "bundleId": "com.shoemoney.opensnap.eyedump-53417",
+ "iconMode": "sf",
+ "faMode": "FA unavailable: no FontAwesome7Pro subset fonts are bundled in this build, so every capture uses SF Symbols (nothing was faked)",
+ "captureCount": 50,
+ "unavailable": [],
+ "gaps": [],
+ "captures": [
+  {
+   "id": "S01",
+   "slug": "editor-empty",
+   "surface": "editor, empty",
+   "state": "fresh blank canvas, default window",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S01-editor-empty-dark@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": "layout/S01-editor-empty-dark@7bf20f8.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S01-editor-empty-dark@da2738d.png"
+  },
+  {
+   "id": "S01",
+   "slug": "editor-empty",
+   "surface": "editor, empty",
+   "state": "fresh blank canvas, default window",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S01-editor-empty-light@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": "layout/S01-editor-empty-light@7bf20f8.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S01-editor-empty-light@da2738d.png"
+  },
+  {
+   "id": "S11",
+   "slug": "size-contentmin",
+   "surface": "window sizes",
+   "state": "contentMinSize 980x608",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-size-contentmin-dark@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-size-contentmin-dark@7bf20f8.json",
+   "before": null
+  },
+  {
+   "id": "S11",
+   "slug": "size-contentmin",
+   "surface": "window sizes",
+   "state": "contentMinSize 980x608",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-size-contentmin-light@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-size-contentmin-light@7bf20f8.json",
+   "before": null
+  },
+  {
+   "id": "S11",
+   "slug": "size-default",
+   "surface": "window sizes",
+   "state": "default 1024x740",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-size-default-dark@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-size-default-dark@7bf20f8.json",
+   "before": null
+  },
+  {
+   "id": "S11",
+   "slug": "size-default",
+   "surface": "window sizes",
+   "state": "default 1024x740",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-size-default-light@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-size-default-light@7bf20f8.json",
+   "before": null
+  },
+  {
+   "id": "S11",
+   "slug": "size-maximized",
+   "surface": "window sizes",
+   "state": "maximized to visibleFrame 2056x1197",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    2056,
+    1197
+   ],
+   "pixelSize": [
+    4112,
+    2394
+   ],
+   "pointSize": [
+    2056,
+    1197
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-size-maximized-dark@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    699
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-size-maximized-dark@7bf20f8.json",
+   "before": null
+  },
+  {
+   "id": "S11",
+   "slug": "size-maximized",
+   "surface": "window sizes",
+   "state": "maximized to visibleFrame 2056x1197",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    2056,
+    1197
+   ],
+   "pixelSize": [
+    4112,
+    2394
+   ],
+   "pointSize": [
+    2056,
+    1197
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-size-maximized-light@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    699
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-size-maximized-light@7bf20f8.json",
+   "before": null
+  },
+  {
+   "id": "S11",
+   "slug": "size-tall",
+   "surface": "window sizes",
+   "state": "tall 1000x1157",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1000,
+    1157
+   ],
+   "pixelSize": [
+    2000,
+    2314
+   ],
+   "pointSize": [
+    1000,
+    1157
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-size-tall-dark@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    1388
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-size-tall-dark@7bf20f8.json",
+   "before": null
+  },
+  {
+   "id": "S11",
+   "slug": "size-tall",
+   "surface": "window sizes",
+   "state": "tall 1000x1157",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1000,
+    1157
+   ],
+   "pixelSize": [
+    2000,
+    2314
+   ],
+   "pointSize": [
+    1000,
+    1157
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-size-tall-light@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    1388
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-size-tall-light@7bf20f8.json",
+   "before": null
+  },
+  {
+   "id": "S11",
+   "slug": "size-wide",
+   "surface": "window sizes",
+   "state": "wide 1900x640",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1900,
+    640
+   ],
+   "pixelSize": [
+    3800,
+    1280
+   ],
+   "pointSize": [
+    1900,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-size-wide-dark@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    404
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-size-wide-dark@7bf20f8.json",
+   "before": null
+  },
+  {
+   "id": "S11",
+   "slug": "size-wide",
+   "surface": "window sizes",
+   "state": "wide 1900x640",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1900,
+    640
+   ],
+   "pixelSize": [
+    3800,
+    1280
+   ],
+   "pointSize": [
+    1900,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-size-wide-light@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    404
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-size-wide-light@7bf20f8.json",
+   "before": null
+  },
+  {
+   "id": "S11",
+   "slug": "width-1024",
+   "surface": "window sizes",
+   "state": "window width 1024 pt, default height",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    812
+   ],
+   "pixelSize": [
+    2048,
+    1624
+   ],
+   "pointSize": [
+    1024,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-width-1024-dark@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    952
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-width-1024-dark@7bf20f8.json",
+   "before": null
+  },
+  {
+   "id": "S11",
+   "slug": "width-1024",
+   "surface": "window sizes",
+   "state": "window width 1024 pt, default height",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    812
+   ],
+   "pixelSize": [
+    2048,
+    1624
+   ],
+   "pointSize": [
+    1024,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-width-1024-light@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    952
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-width-1024-light@7bf20f8.json",
+   "before": null
+  },
+  {
+   "id": "S11",
+   "slug": "width-1280",
+   "surface": "window sizes",
+   "state": "window width 1280 pt, default height",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    812
+   ],
+   "pixelSize": [
+    2560,
+    1624
+   ],
+   "pointSize": [
+    1280,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-width-1280-dark@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    761
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-width-1280-dark@7bf20f8.json",
+   "before": null
+  },
+  {
+   "id": "S11",
+   "slug": "width-1280",
+   "surface": "window sizes",
+   "state": "window width 1280 pt, default height",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    812
+   ],
+   "pixelSize": [
+    2560,
+    1624
+   ],
+   "pointSize": [
+    1280,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-width-1280-light@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    761
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-width-1280-light@7bf20f8.json",
+   "before": null
+  },
+  {
+   "id": "S11",
+   "slug": "width-1440",
+   "surface": "window sizes",
+   "state": "window width 1440 pt, default height",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    812
+   ],
+   "pixelSize": [
+    2880,
+    1624
+   ],
+   "pointSize": [
+    1440,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-width-1440-dark@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    677
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-width-1440-dark@7bf20f8.json",
+   "before": null
+  },
+  {
+   "id": "S11",
+   "slug": "width-1440",
+   "surface": "window sizes",
+   "state": "window width 1440 pt, default height",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    812
+   ],
+   "pixelSize": [
+    2880,
+    1624
+   ],
+   "pointSize": [
+    1440,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-width-1440-light@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    677
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-width-1440-light@7bf20f8.json",
+   "before": null
+  },
+  {
+   "id": "S11",
+   "slug": "width-980",
+   "surface": "window sizes",
+   "state": "window width 980 pt, default height",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    812
+   ],
+   "pixelSize": [
+    1960,
+    1624
+   ],
+   "pointSize": [
+    980,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-width-980-dark@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    994
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-width-980-dark@7bf20f8.json",
+   "before": null
+  },
+  {
+   "id": "S11",
+   "slug": "width-980",
+   "surface": "window sizes",
+   "state": "window width 980 pt, default height",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    812
+   ],
+   "pixelSize": [
+    1960,
+    1624
+   ],
+   "pointSize": [
+    980,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11-width-980-light@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    994
+   ],
+   "downscaled": true,
+   "layout": "layout/S11-width-980-light@7bf20f8.json",
+   "before": null
+  },
+  {
+   "id": "S11F",
+   "slug": "size-fullscreen",
+   "surface": "window sizes",
+   "state": "true full screen (styleMask.fullScreen)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    2056,
+    1290
+   ],
+   "pixelSize": [
+    4112,
+    2580
+   ],
+   "pointSize": [
+    2056,
+    1290
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "cacheDisplay (CGWindowList image was blank)",
+   "file": "S11F-size-fullscreen-dark@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    753
+   ],
+   "downscaled": true,
+   "layout": "layout/S11F-size-fullscreen-dark@7bf20f8.json",
+   "before": "docs/design/evidence/2026-10-09/S11-size-fullscreen-dark@dc1eb26.png"
+  },
+  {
+   "id": "S11F",
+   "slug": "size-fullscreen",
+   "surface": "window sizes",
+   "state": "true full screen (styleMask.fullScreen)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    2056,
+    1290
+   ],
+   "pixelSize": [
+    4112,
+    2580
+   ],
+   "pointSize": [
+    2056,
+    1290
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "cacheDisplay (CGWindowList image was blank)",
+   "file": "S11F-size-fullscreen-light@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    753
+   ],
+   "downscaled": true,
+   "layout": "layout/S11F-size-fullscreen-light@7bf20f8.json",
+   "before": "docs/design/evidence/2026-10-09/S11-size-fullscreen-light@dc1eb26.png"
+  },
+  {
+   "id": "S11FP",
+   "slug": "size-fullscreen-populated",
+   "surface": "window sizes, populated",
+   "state": "true full screen (styleMask.fullScreen)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    2056,
+    1290
+   ],
+   "pixelSize": [
+    4112,
+    2580
+   ],
+   "pointSize": [
+    2056,
+    1290
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11FP-size-fullscreen-populated-dark@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    753
+   ],
+   "downscaled": true,
+   "layout": "layout/S11FP-size-fullscreen-populated-dark@7bf20f8.json",
+   "before": null
+  },
+  {
+   "id": "S11FP",
+   "slug": "size-fullscreen-populated",
+   "surface": "window sizes, populated",
+   "state": "true full screen (styleMask.fullScreen)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    2056,
+    1290
+   ],
+   "pixelSize": [
+    4112,
+    2580
+   ],
+   "pointSize": [
+    2056,
+    1290
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11FP-size-fullscreen-populated-light@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    753
+   ],
+   "downscaled": true,
+   "layout": "layout/S11FP-size-fullscreen-populated-light@7bf20f8.json",
+   "before": null
+  },
+  {
+   "id": "S12",
+   "slug": "frame-mode",
+   "surface": "Frame mode",
+   "state": "Frame mode: clear canvas hole, Snap Frame + Cancel, window alpha 0.8",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    2358
+   ],
+   "pointSize": [
+    1489,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-mode-dark@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    950
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-mode-dark@7bf20f8.json",
+   "before": null
+  },
+  {
+   "id": "S12",
+   "slug": "frame-mode",
+   "surface": "Frame mode",
+   "state": "Frame mode: clear canvas hole, Snap Frame + Cancel, window alpha 0.8",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    2358
+   ],
+   "pointSize": [
+    1489,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-mode-light@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    950
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-mode-light@7bf20f8.json",
+   "before": null
+  },
+  {
+   "id": "S12",
+   "slug": "frame-resnap",
+   "surface": "Frame mode",
+   "state": "Re-snap (keep pen) Frame mode over existing annotations",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    2358
+   ],
+   "pointSize": [
+    1489,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-resnap-dark@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    950
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-resnap-dark@7bf20f8.json",
+   "before": null
+  },
+  {
+   "id": "S12",
+   "slug": "frame-resnap",
+   "surface": "Frame mode",
+   "state": "Re-snap (keep pen) Frame mode over existing annotations",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    2358
+   ],
+   "pointSize": [
+    1489,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-resnap-light@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    950
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-resnap-light@7bf20f8.json",
+   "before": null
+  },
+  {
+   "id": "S12",
+   "slug": "frame-w1024",
+   "surface": "Frame mode",
+   "state": "Frame mode at window width 1024 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    2048,
+    2358
+   ],
+   "pointSize": [
+    1024,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-w1024-dark@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    1382
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-w1024-dark@7bf20f8.json",
+   "before": null
+  },
+  {
+   "id": "S12",
+   "slug": "frame-w1024",
+   "surface": "Frame mode",
+   "state": "Frame mode at window width 1024 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    2048,
+    2358
+   ],
+   "pointSize": [
+    1024,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-w1024-light@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    1382
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-w1024-light@7bf20f8.json",
+   "before": null
+  },
+  {
+   "id": "S12",
+   "slug": "frame-w1280",
+   "surface": "Frame mode",
+   "state": "Frame mode at window width 1280 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    1179
+   ],
+   "pixelSize": [
+    2560,
+    2358
+   ],
+   "pointSize": [
+    1280,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-w1280-dark@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    1105
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-w1280-dark@7bf20f8.json",
+   "before": null
+  },
+  {
+   "id": "S12",
+   "slug": "frame-w1280",
+   "surface": "Frame mode",
+   "state": "Frame mode at window width 1280 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    1179
+   ],
+   "pixelSize": [
+    2560,
+    2358
+   ],
+   "pointSize": [
+    1280,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-w1280-light@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    1105
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-w1280-light@7bf20f8.json",
+   "before": null
+  },
+  {
+   "id": "S12",
+   "slug": "frame-w980",
+   "surface": "Frame mode",
+   "state": "Frame mode at window width 980 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    1179
+   ],
+   "pixelSize": [
+    1960,
+    2358
+   ],
+   "pointSize": [
+    980,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-w980-dark@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    1444
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-w980-dark@7bf20f8.json",
+   "before": null
+  },
+  {
+   "id": "S12",
+   "slug": "frame-w980",
+   "surface": "Frame mode",
+   "state": "Frame mode at window width 980 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    1179
+   ],
+   "pixelSize": [
+    1960,
+    2358
+   ],
+   "pointSize": [
+    980,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-w980-light@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    1444
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-w980-light@7bf20f8.json",
+   "before": null
+  },
+  {
+   "id": "S16",
+   "slug": "permission-sheet",
+   "surface": "Screen Recording permission sheet",
+   "state": "app-owned sheet: title, instructions, Open System Settings (default) and Cancel",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    1120,
+    388
+   ],
+   "pointSize": [
+    560,
+    194
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S16-permission-sheet-dark@7bf20f8.png",
+   "storedPixelSize": [
+    1120,
+    388
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": "docs/design/evidence/2026-10-09/S16-permission-alert-dark.png"
+  },
+  {
+   "id": "S16",
+   "slug": "permission-sheet",
+   "surface": "Screen Recording permission sheet",
+   "state": "app-owned sheet: title, instructions, Open System Settings (default) and Cancel",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    1120,
+    388
+   ],
+   "pointSize": [
+    560,
+    194
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S16-permission-sheet-light@7bf20f8.png",
+   "storedPixelSize": [
+    1120,
+    388
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": "docs/design/evidence/2026-10-09/S16-permission-alert-light.png"
+  },
+  {
+   "id": "S16",
+   "slug": "permission-sheet-in-context",
+   "surface": "Screen Recording permission sheet",
+   "state": "the sheet over the dimmed editor (sheet + parent composite, sheet in front)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    2358
+   ],
+   "pointSize": [
+    1489,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S16-permission-sheet-in-context-dark@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    950
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S16",
+   "slug": "permission-sheet-in-context",
+   "surface": "Screen Recording permission sheet",
+   "state": "the sheet over the dimmed editor (sheet + parent composite, sheet in front)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    2358
+   ],
+   "pointSize": [
+    1489,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S16-permission-sheet-in-context-light@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    950
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S39",
+   "slug": "discard-sheet",
+   "surface": "alerts / sheets",
+   "state": "Save your drawing? sheet over the titled window (Save / Cancel / Don’t Save)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S39-discard-sheet-dark@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/2026-10-09/S26-close-unsaved-dark.png"
+  },
+  {
+   "id": "S39",
+   "slug": "discard-sheet",
+   "surface": "alerts / sheets",
+   "state": "Save your drawing? sheet over the titled window (Save / Cancel / Don’t Save)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S39-discard-sheet-light@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S39",
+   "slug": "titlebar-crop-w1280",
+   "surface": "titled window",
+   "state": "the title bar and top bar only, at w1280",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    172
+   ],
+   "pointSize": [
+    1280,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S39-titlebar-crop-w1280-dark@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    81
+   ],
+   "downscaled": true,
+   "layout": "layout/S39-titlebar-crop-w1280-dark@7bf20f8.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S01-editor-empty-dark@da2738d.png"
+  },
+  {
+   "id": "S39",
+   "slug": "titlebar-crop-w1280",
+   "surface": "titled window",
+   "state": "the title bar and top bar only, at w1280",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    172
+   ],
+   "pointSize": [
+    1280,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S39-titlebar-crop-w1280-light@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    81
+   ],
+   "downscaled": true,
+   "layout": "layout/S39-titlebar-crop-w1280-light@7bf20f8.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S01-editor-empty-light@da2738d.png"
+  },
+  {
+   "id": "S39",
+   "slug": "titlebar-crop-w980",
+   "surface": "titled window",
+   "state": "the title bar and top bar only, at w980",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S39-titlebar-crop-w980-dark@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S39-titlebar-crop-w980-dark@7bf20f8.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S01-editor-empty-dark@da2738d.png"
+  },
+  {
+   "id": "S39",
+   "slug": "titlebar-crop-w980",
+   "surface": "titled window",
+   "state": "the title bar and top bar only, at w980",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S39-titlebar-crop-w980-light@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S39-titlebar-crop-w980-light@7bf20f8.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S01-editor-empty-light@da2738d.png"
+  },
+  {
+   "id": "S39",
+   "slug": "titled-window-w1280",
+   "surface": "titled window",
+   "state": "title = document name, subtitle = size, proxy icon, no title-bar separator, at w1280",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S39-titled-window-w1280-dark@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S39-titled-window-w1280-dark@7bf20f8.json",
+   "before": "docs/design/evidence/2026-10-09/S11-width-1280-dark@dc1eb26.png"
+  },
+  {
+   "id": "S39",
+   "slug": "titled-window-w1280",
+   "surface": "titled window",
+   "state": "title = document name, subtitle = size, proxy icon, no title-bar separator, at w1280",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S39-titled-window-w1280-light@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S39-titled-window-w1280-light@7bf20f8.json",
+   "before": "docs/design/evidence/2026-10-09/S11-width-1280-light@dc1eb26.png"
+  },
+  {
+   "id": "S39",
+   "slug": "titled-window-w980",
+   "surface": "titled window",
+   "state": "title = document name, subtitle = size, proxy icon, no title-bar separator, at w980",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S39-titled-window-w980-dark@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S39-titled-window-w980-dark@7bf20f8.json",
+   "before": "docs/design/evidence/2026-10-09/S11-width-980-dark@dc1eb26.png"
+  },
+  {
+   "id": "S39",
+   "slug": "titled-window-w980",
+   "surface": "titled window",
+   "state": "title = document name, subtitle = size, proxy icon, no title-bar separator, at w980",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S39-titled-window-w980-light@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S39-titled-window-w980-light@7bf20f8.json",
+   "before": "docs/design/evidence/2026-10-09/S11-width-980-light@dc1eb26.png"
+  },
+  {
+   "id": "S39",
+   "slug": "upload-error-sheet",
+   "surface": "alerts / sheets",
+   "state": "error sheet after a stubbed failed upload, over the titled window",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S39-upload-error-sheet-dark@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/2026-10-09/S21-publish-error-dark.png"
+  },
+  {
+   "id": "S39",
+   "slug": "upload-error-sheet",
+   "surface": "alerts / sheets",
+   "state": "error sheet after a stubbed failed upload, over the titled window",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "7bf20f8",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S39-upload-error-sheet-light@7bf20f8.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  }
+ ]
+}

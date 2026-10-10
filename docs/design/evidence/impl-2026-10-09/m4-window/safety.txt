@@ -1,0 +1,27 @@
+sourceSha        7bf20f8
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+guard home       /Users/shoemoney
+bundle id        com.shoemoney.opensnap.eyedump-53417 (real id com.shoemoney.opensnap is never launched)
+app copy         /var/folders/_5/kk_5dshn1zx_mn3ftl5dl7g40000gp/T//eye-dump-audit.qpJwjm/OpenSnap.app (copied from /Users/shoemoney/Projects/OpenSkitch/.todo-worktrees/window/build/OpenSnap.app; the source bundle is never executed)
+display options  none (simulated inside the throwaway copy only; no system setting is written)
+isolation        env -i; HOME and CFFIXED_USER_HOME, TMPDIR, OPENSNAP_APP_SUPPORT, OPENSNAP_EVIDENCE_DIR all under /var/folders/_5/kk_5dshn1zx_mn3ftl5dl7g40000gp/T//eye-dump-audit.qpJwjm; OPENSNAP_FIXTURE unset
+destinations     none exist in the throwaway support folder; with OPENSNAP_APP_SUPPORT set the app keeps secrets in memory (no Keychain item is read or written) and the S19/S21 flows stub the uploader
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-53417) dropped BEFORE the final compare; the compare below would show any damage cleanup did
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+STORE CHANGED: left behind /Users/shoemoney/Library/Preferences/com.shoemoney.opensnap.eyedump-57357.plist
+RESULT STORES CHANGED
+
+--- fullscreen run ---
+sourceSha        7bf20f8
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+guard home       /Users/shoemoney
+bundle id        com.shoemoney.opensnap.eyedump-57898 (real id com.shoemoney.opensnap is never launched)
+app copy         /var/folders/_5/kk_5dshn1zx_mn3ftl5dl7g40000gp/T//eye-dump-audit.VXZyoD/OpenSnap.app (copied from /Users/shoemoney/Projects/OpenSkitch/.todo-worktrees/window/build/OpenSnap.app; the source bundle is never executed)
+display options  none (simulated inside the throwaway copy only; no system setting is written)
+isolation        env -i; HOME and CFFIXED_USER_HOME, TMPDIR, OPENSNAP_APP_SUPPORT, OPENSNAP_EVIDENCE_DIR all under /var/folders/_5/kk_5dshn1zx_mn3ftl5dl7g40000gp/T//eye-dump-audit.VXZyoD; OPENSNAP_FIXTURE unset
+destinations     none exist in the throwaway support folder; with OPENSNAP_APP_SUPPORT set the app keeps secrets in memory (no Keychain item is read or written) and the S19/S21 flows stub the uploader
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-57898) dropped BEFORE the final compare; the compare below would show any damage cleanup did
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
