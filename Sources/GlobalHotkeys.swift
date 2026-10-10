@@ -401,7 +401,7 @@ private final class CarbonGlobalHotkeyBackend: GlobalHotkeyBackend {
 /// showSettings(attachedTo:) from Preferences, and unregister() on termination.
 /// init has no desktop registration side effects. install/register are explicit.
 @MainActor
-final class GlobalHotkeyManager: NSObject {
+final class GlobalHotkeyManager: NSObject, GlobalHotkeyEditing {
     typealias Callback = @MainActor () -> Void
     private let store: GlobalHotkeyStore
     private let backend: GlobalHotkeyBackend
@@ -549,6 +549,15 @@ final class GlobalHotkeyManager: NSObject {
     }
 }
 
+/// What the shortcut editor needs from the manager: the saved settings, the last failure, and a way to apply a candidate.
+/// The real manager conforms; the app's isolated tests conform a stand-in that never touches the desktop.
+@MainActor
+protocol GlobalHotkeyEditing: AnyObject {
+    var settings: GlobalHotkeySettings { get }
+    var lastError: Error? { get }
+    func apply(_ candidate: GlobalHotkeySettings) throws
+}
+
 /// The shortcut editor, shared by the capture sheet and the Settings window.
 ///
 /// `.sheet` keeps the original transaction: edits stay in the draft until Save (Cancel discards them), and Reset Defaults
@@ -578,7 +587,7 @@ final class GlobalHotkeyForm: NSView {
     }
 
     let mode: Mode
-    private weak var manager: GlobalHotkeyManager?
+    private weak var manager: (any GlobalHotkeyEditing)?
     private var rows: [GlobalHotkeyAction: Row] = [:]
     let enabledCheckbox = NSButton(checkboxWithTitle: "Enable global capture shortcuts", target: nil, action: nil)
     let statusField = NSTextField(wrappingLabelWithString: "")
@@ -592,7 +601,7 @@ final class GlobalHotkeyForm: NSView {
     func keyPopup(for action: GlobalHotkeyAction) -> NSPopUpButton { rows[action]!.key }
     func modifierControl(for action: GlobalHotkeyAction) -> NSSegmentedControl { rows[action]!.modifiers }
 
-    init(manager: GlobalHotkeyManager, mode: Mode, labelWidth: CGFloat, width: CGFloat) {
+    init(manager: any GlobalHotkeyEditing, mode: Mode, labelWidth: CGFloat, width: CGFloat) {
         self.manager = manager; self.mode = mode
         super.init(frame: .zero)
         let statusWidth = width - labelWidth - Space.s4

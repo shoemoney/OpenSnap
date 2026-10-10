@@ -263,11 +263,11 @@ final class DrawingSettingsTab: SettingsTabViewController {
 @MainActor
 final class CaptureSettingsTab: SettingsTabViewController {
     private let defaults: UserDefaults
-    private let hotkeys: GlobalHotkeyManager
+    private let hotkeys: any GlobalHotkeyEditing
     private(set) var flashCheckbox: NSButton!
     private(set) var hotkeyForm: GlobalHotkeyForm!
 
-    init(defaults: UserDefaults, hotkeys: GlobalHotkeyManager) {
+    init(defaults: UserDefaults, hotkeys: any GlobalHotkeyEditing) {
         self.defaults = defaults; self.hotkeys = hotkeys
         super.init(nibName: nil, bundle: nil)
         title = "Capture"
@@ -538,7 +538,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         set { model.onChange = newValue }
     }
 
-    init(state: @escaping () -> GeneralPreferencesState, hotkeys: GlobalHotkeyManager, defaults: UserDefaults,
+    init(state: @escaping () -> GeneralPreferencesState, hotkeys: any GlobalHotkeyEditing, defaults: UserDefaults,
          destinations: @escaping () -> PublishingDestinationList, manageDestinations: @escaping (NSWindow) -> Void,
          frameAutosaveName: String? = nil) {
         stateProvider = state
