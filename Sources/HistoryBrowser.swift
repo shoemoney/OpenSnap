@@ -388,6 +388,9 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         formatPopup.target = self; formatPopup.action = #selector(formatChanged); formatPopup.setAccessibilityLabel("History drag export format")
         let flexible = NSView(); flexible.setContentHuggingPriority(.init(1),for:.horizontal)
         configure(actionRow,actions+[flexible]); actionRow.spacing = Space.s2
+        // The row is measured (`updateActionLabels`), never allowed to hold the window open: with every label showing it needs 945 pt, and
+        // it would otherwise be the reason the window stopped there instead of reaching its 880 minimum, where the labels collapse (F-J6-006).
+        actionRow.setClippingResistancePriority(.init(1),for:.horizontal)
         root.addArrangedSubview(actionRow)
         // "Drag as" sits at the end of the footer line, not in the action row: with it the row held no labels at 1000 wide, and
         // the three commands that take something away must keep theirs at the 880 minimum.
@@ -551,6 +554,12 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         detailsPanel.isHidden = detailsCollapsed
         window?.contentView?.layoutSubtreeIfNeeded()
     }
+    /// The labels follow the width the window is about to have, not the one it had, so a drag inward is never held open by labels that no
+    /// longer fit (the row measured 945 pt with all seven, and the window used to stop there; R2-005).
+    func windowWillResize(_ sender: NSWindow,to frameSize: NSSize) -> NSSize {
+        updateActionLabels(forContentWidth:sender.contentRect(forFrameRect:NSRect(origin:.zero,size:frameSize)).width)
+        return frameSize
+    }
     func windowDidResize(_ notification: Notification) {
         if let width = window?.contentView?.bounds.width { layoutDetails(forContentWidth:width); updateActionLabels(forContentWidth:width) }
     }
@@ -640,12 +649,8 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
             detailValues["Destination"]?.stringValue = value.destination ?? value.link?.absoluteString ?? "—"
         }
     }
-    /// A drawing's size in whole pixels with thousands separators; an older entry that stored a fractional size still reads whole.
-    nonisolated static func sizeText(for size: CGSize) -> String {
-        guard size.width.isFinite, size.height.isFinite, abs(size.width) < 1e9, abs(size.height) < 1e9 else { return "Unknown size" }
-        func whole(_ value: CGFloat) -> Int { max(1, Int((value + 0.5).rounded(.down))) }
-        return "\(whole(size.width).formatted()) × \(whole(size.height).formatted())"
-    }
+    /// A drawing's size in whole pixels, written as everywhere else in the app; an older entry that stored a fractional size still reads whole.
+    nonisolated static func sizeText(for size: CGSize) -> String { PixelSizeText.text(size) }
     /// The headline and one line per kind for the grid's current contents, in the tab order; empty when the grid is empty.
     nonisolated static func summaryLines(for items: [Item]) -> [String] {
         guard !items.isEmpty else { return [] }

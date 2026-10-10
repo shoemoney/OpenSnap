@@ -1613,8 +1613,8 @@ enum AppSafetyTests {
                    "Normal publishing cancellation after rejected Quit must remain silent")
         app.receivePublishing(.failure(genuine))
         try expect(AppSafetyAlert.seen == ["Save your drawing?", cleanup.localizedDescription] && app.uploadState == .failure(message: genuine.localizedDescription)
-                   && app.status.stringValue == "Error: " + genuine.localizedDescription,
-                   "A genuine publishing failure while running is still reported: inline as Error: ..., no longer as an alert (OSN-054)")
+                   && app.status.stringValue == genuine.localizedDescription,
+                   "A genuine publishing failure while running is still reported: inline (the message, with Retry and Details), no longer as an alert (OSN-054)")
     }
     static func realIdleCaptureShutdown() throws {
         AppSafetyCaptureCoordinator.useRealIdleShutdown = true
@@ -2001,6 +2001,7 @@ enum AppSafetyTests {
             app.canvas.document.elements = [element]; app.canvas.selection = [element.id]
         }
         try expect(app.canvas.setPresentationOutputSize(CGSize(width: 150, height: 90)), "Viewport fixture output")
+        app.dragOriginalControl.state = .off   // these fixtures exercise the shown (output) size; the picture-size model has its own cases (batch 6)
         app.setCanvasDisplayZoom(1, label: "Test")
         app.canvas.editingUndoManager.removeAllActions()
         app.dirty = false; app.window.isDocumentEdited = false
@@ -2966,7 +2967,7 @@ enum AppSafetyTests {
                             height: oldFrame.height - scroll.contentView.bounds.height)
         let expected = CGSize(width: max(app.window.minSize.width, chrome.width + 300 + 20),
                               height: max(app.window.minSize.height, chrome.height + 180 + 20))
-        try expect(!app.isLargeShot, "Shift reset fixture must be eligible for normal-size reset")
+        try expect(!app.isLargerThanScreen, "Shift reset fixture must be eligible for normal-size reset")
         try expect(app.beginWindowGesture(.corner(.bottomRight), flags: [.shift]), "Begin Shift corner reset")
         guard let gesture = app.windowGesture else { throw Failure(description: "Shift corner baseline") }
         let reset = try app.canvas.snapshotDocumentData(), fittedFrame = app.window.frame
@@ -3758,7 +3759,7 @@ enum AppSafetyTests {
                            "Original nine drawing tools and the additional Crop command are all present as glass buttons")
                 try expect(!controls.contains { ($0 as? NSButton)?.action == #selector(AppDelegate.frameSnap) },
                            "Frame remains a menu command instead of a permanent capture button")
-                guard let toolbox = controls.compactMap({ $0 as? NSPopUpButton }).first(where: { $0.accessibilityLabel() == "Toolbox menu" }), let choices = toolbox.menu else { throw Failure(description: "Recovered Toolbox") }
+                guard let toolbox = controls.compactMap({ $0 as? NSPopUpButton }).first(where: { $0.accessibilityLabel() == "Toolbox" }), let choices = toolbox.menu else { throw Failure(description: "Recovered Toolbox") }
                 // F-J1-009: a drawing session's commands only. The app, settings and file plumbing live in the menu bar, not here.
                 let expected: [Selector] = [#selector(AppDelegate.saveHistory), #selector(AppDelegate.exportFile),
                     #selector(AppDelegate.copyArtwork), #selector(AppDelegate.paste), #selector(AppDelegate.duplicate), #selector(AppDelegate.deleteSelection), #selector(AppDelegate.selectAll),
@@ -3863,7 +3864,7 @@ enum AppSafetyTests {
         ]
         // Development aid: APP_SAFETY_FILTER=<text> runs only the cases whose title contains it. Unset, every case runs.
         let filter = ProcessInfo.processInfo.environment["APP_SAFETY_FILTER"]
-        let tests = (sharedCases + Self.modernCases + Self.webpostCases + Self.retiredFormatCases + Self.menuCases + Self.windowChromeCases + Self.uploadCases + Self.accessibilityCases + Self.auditCases + Self.batch3cCases + Self.batch4Cases + Self.s3EndToEndCases).filter { filter.map($0.0.contains) ?? true }
+        let tests = (sharedCases + Self.modernCases + Self.webpostCases + Self.retiredFormatCases + Self.menuCases + Self.windowChromeCases + Self.uploadCases + Self.accessibilityCases + Self.auditCases + Self.batch3cCases + Self.batch4Cases + Self.batch6Cases + Self.s3EndToEndCases).filter { filter.map($0.0.contains) ?? true }
         var results: [[String: Any]] = [], failures = 0
         for (name, test) in tests {
             AppSafetyAlert.reset(); AppSafetyAlert.install(); AppSafetyEvents.current = nil

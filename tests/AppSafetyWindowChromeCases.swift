@@ -223,7 +223,7 @@ extension AppSafetyTests {
         let store = try app.archiveStore()
         if let snapshot = try? app.historySnapshot() { _ = try store.archive(snapshot, name: "Sheet demo", action: .archived) }
         guard let id = store.entries.first?.id else { throw Failure(description: "A History entry is needed for the confirmations") }
-        AppSafetyAlert.answers.append(.init(title: "Hide drawings from History?", response: .alertSecondButtonReturn))
+        AppSafetyAlert.answers.append(.init(title: "Hide drawings from History?", response: .alertFirstButtonReturn))
         app.removeHistory([id], deleteFiles: false)
         AppSafetyAlert.answers.append(.init(title: "Move archived drawings to Trash?", response: .alertFirstButtonReturn))
         app.removeHistory([id], deleteFiles: true)

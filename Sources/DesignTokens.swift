@@ -271,3 +271,15 @@ extension DesignTokens {
         static let name = "OpenSnap"
     }
 }
+
+/// The one way a pixel size is written anywhere in the app: whole pixels (half up, never below 1), no thousands separators ("2560 × 1800"),
+/// so the title, the status line, History Details, the Export panel and the Photos list all read the same. It lives with the tokens
+/// because every surface compiles them.
+enum PixelSizeText {
+    static func text(width: Int, height: Int) -> String { String(width) + " × " + String(height) }
+    static func text(_ size: CGSize) -> String {
+        guard size.width.isFinite, size.height.isFinite, abs(size.width) < 1e9, abs(size.height) < 1e9 else { return "Unknown size" }
+        func whole(_ value: CGFloat) -> Int { max(1, Int((value + 0.5).rounded(.down))) }
+        return text(width: whole(size.width), height: whole(size.height))
+    }
+}

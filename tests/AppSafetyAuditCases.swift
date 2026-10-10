@@ -388,7 +388,7 @@ extension AppSafetyTests {
         try expect(app.status.variants.first?.hasPrefix("Crop · ") == true && !app.status.variants.contains(hint), "Before a crop is dragged the status is the plain tool line (\(app.status.variants))")
         app.canvas.cropRect = CGRect(x: 20, y: 20, width: 200, height: 120)
         try expect(app.status.variants.first == hint && app.status.stringValue == hint, "A pending crop says what Return and Esc do (\(app.status.variants))")
-        try expect(app.status.variants.count >= 3 && (app.status.variants.last == "Unsaved changes" || app.status.variants.last == "Saved"), "Narrow windows still get shorter variants, ending at the saved state (\(app.status.variants))")
+        try expect(app.status.variants.count >= 3 && (app.status.variants.last == "Unsaved" || app.status.variants.last == "Saved"), "Narrow windows still get shorter variants, ending at the saved state (\(app.status.variants))")
         try expect(AppToolTip.text(for: app.status) == hint, "The full sentence is the tooltip")
         app.setTool(.brush)
         try expect(app.canvas.cropRect == nil && !app.status.variants.contains(hint) && app.status.variants.first?.hasPrefix("Brush · ") == true, "Changing tool clears the crop and its hint (\(app.status.variants))")

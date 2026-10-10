@@ -36,7 +36,7 @@ extension AppSafetyTests {
 
     // MARK: History
 
-    private static func b3cShowHistory(_ app: AppDelegate) throws -> AppSafetyWindow {
+    static func b3cShowHistory(_ app: AppDelegate) throws -> AppSafetyWindow {
         app.showHistory()
         guard let history = app.historyWindow as? AppSafetyWindow else { throw Failure(description: "History window") }
         history.simulatesVisibility = true; history.shown = true
@@ -48,11 +48,11 @@ extension AppSafetyTests {
         let id = try store.archive(historyDrawing("A"), name: "A", action: .archived)
         // History is created but not on screen: the question falls back to the editor, never to a window nobody can see.
         app.showHistory()
-        AppSafetyAlert.answers = [.init(title: "Hide drawings from History?", response: .alertSecondButtonReturn)]
+        AppSafetyAlert.answers = [.init(title: "Hide drawings from History?", response: .alertFirstButtonReturn)]
         app.removeHistory([id], deleteFiles: false)
         try expect(AppSafetyAlert.hosts.last.flatMap { $0 } === app.window, "With History off screen the question is on the editor")
         let history = try b3cShowHistory(app)
-        AppSafetyAlert.answers = [.init(title: "Hide drawings from History?", response: .alertSecondButtonReturn),
+        AppSafetyAlert.answers = [.init(title: "Hide drawings from History?", response: .alertFirstButtonReturn),
                                   .init(title: "Move archived drawings to Trash?", response: .alertFirstButtonReturn)]
         app.removeHistory([id], deleteFiles: false); app.removeHistory([id], deleteFiles: true)
         try expect(AppSafetyAlert.hosts.suffix(2).allSatisfy { $0 === history }, "Hide and Trash are sheets on the History window the click came from")
@@ -63,11 +63,11 @@ extension AppSafetyTests {
         try expect(AppSafetyAlert.pending.count == 1, "A second Hide while its sheet is open raises no second sheet (\(AppSafetyAlert.pending.count))")
         app.removeHistory([id], deleteFiles: true)
         try expect(AppSafetyAlert.pending.count == 2, "A different question is its own sheet")
-        b3cAnswerNext(.alertSecondButtonReturn)   // Hide: Cancel is second
+        b3cAnswerNext(.alertFirstButtonReturn)    // Hide: Cancel is first
         b3cAnswerNext(.alertFirstButtonReturn)    // Trash: Cancel is first
         app.removeHistory([id], deleteFiles: false)
         try expect(AppSafetyAlert.pending.count == 1, "After the answer the same question can be asked again")
-        b3cAnswerNext(.alertFirstButtonReturn)
+        b3cAnswerNext(.alertSecondButtonReturn)   // Hide is second, after Cancel
         AppSafetyAlert.holdAnswers = false
         try expect(!store.entries.contains { $0.id == id }, "Hide removes the entry from the list")
         try expect(history.attachedSheet == nil, "History is left with no sheet")
@@ -215,7 +215,7 @@ extension AppSafetyTests {
 
     private static func b3cToolbox() throws {
         let fixture = try Fixture(), app = fixture.app
-        let toolbox = try b3cFind(NSPopUpButton.self, in: app.window.contentView) { $0.accessibilityLabel() == "Toolbox menu" }.b3cUnwrap("Toolbox")
+        let toolbox = try b3cFind(NSPopUpButton.self, in: app.window.contentView) { $0.accessibilityLabel() == "Toolbox" }.b3cUnwrap("Toolbox")
         let rows = (toolbox.menu?.items ?? []).filter { !$0.isSeparatorItem }
         try expect(rows.count == 18 && rows.count < 33, "The Toolbox is \(rows.count) rows, not the old 33")
         // R1-005: AppKit draws a row's image only in a selection-style pop-up, so the Toolbox is one, with real NSMenuItem images.

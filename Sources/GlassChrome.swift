@@ -720,6 +720,7 @@ final class SegmentedToggle: NSControl, ChromeFillable {
             selectedSegment = min(max(0, selectedSegment), titles.count - 1)
             guard selectedSegment != oldValue else { return }
             needsDisplay = true
+            if isCompact { setAccessibilityHelp("Shows \(titles[selectedSegment]). Press to switch to \(titles[selectedSegment == 0 ? 1 : 0]).") }
             NSAccessibility.post(element: self, notification: .valueChanged)
         }
     }
@@ -755,11 +756,22 @@ final class SegmentedToggle: NSControl, ChromeFillable {
         return ceil(titles.map { ($0 as NSString).size(withAttributes: [.font: strong]).width }.max() ?? 0) + 2 * Self.segmentPadding
     }
 
+    /// In a narrow window the two segments collapse into one compact button that shows the current format and flips to the other on a
+    /// click (or Space): about 64 pt instead of 130, which the status line gets back (R2-014). Both radio children stay for VoiceOver.
+    var isCompact = false {
+        didSet {
+            guard isCompact != oldValue else { return }
+            invalidateIntrinsicContentSize(); needsDisplay = true
+            setAccessibilityHelp(isCompact ? "Shows \(titles[selectedSegment]). Press to switch to \(titles[selectedSegment == 0 ? 1 : 0])." : nil)
+        }
+    }
     override var intrinsicContentSize: NSSize {
-        NSSize(width: segmentWidth * CGFloat(titles.count) + Self.segmentGap * CGFloat(titles.count - 1), height: GlassChrome.Metrics.commandHeight)
+        let count = isCompact ? 1 : titles.count
+        return NSSize(width: segmentWidth * CGFloat(count) + Self.segmentGap * CGFloat(count - 1), height: GlassChrome.Metrics.commandHeight)
     }
 
     func segmentRect(_ index: Int) -> NSRect {
+        if isCompact { return index == selectedSegment ? bounds : .zero }
         let width = (bounds.width - Self.segmentGap * CGFloat(titles.count - 1)) / CGFloat(titles.count)
         return NSRect(x: CGFloat(index) * (width + Self.segmentGap), y: 0, width: width, height: bounds.height)
     }
@@ -811,6 +823,7 @@ final class SegmentedToggle: NSControl, ChromeFillable {
     override func draw(_ dirtyRect: NSRect) {
         for index in titles.indices {
             let style = style(ofSegment: index), rect = segmentRect(index)
+            if rect.isEmpty { continue }
             let radius = StatePlate.radius
             let shape = NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius)
             NSGraphicsContext.saveGraphicsState()
@@ -873,7 +886,7 @@ final class SegmentedToggle: NSControl, ChromeFillable {
         let released = segment(at: convert(event.locationInWindow, from: nil))
         setPressedSegment(nil)
         pressedOutside = nil
-        if let pressed, pressed == released { choose(pressed) }
+        if let pressed, pressed == released { choose(isCompact ? (selectedSegment == 0 ? 1 : 0) : pressed) }
     }
 
     override func viewDidHide() {

@@ -26,7 +26,8 @@ enum UploadState: Equatable {
         case .idle: return []
         case .uploading(let name):
             let verb = Self.retryingName == name && !name.isEmpty ? "Retrying" : "Uploading"
-            return [name.isEmpty ? "\(verb)…" : "\(verb) \(name)…"]
+            // The file name is a long random string; the narrow slot gives it up and keeps the verb whole rather than cutting "Uploading Shot-9f3…".
+            return name.isEmpty ? ["\(verb)…"] : ["\(verb) \(name)…", "\(verb)…"]
         case .success(let url, let copied):
             guard copied else { return [["http", "https"].contains(url.scheme ?? "") ? "Published image" : "Uploaded image to destination"] }
             return Self.copiedVariants(for: url)
@@ -34,17 +35,19 @@ enum UploadState: Equatable {
         }
     }
 
-    /// "Error: <first line>", then the same with the middle of the line cut a few characters at a time (the beginning says what failed and
-    /// the end is often the code that matters), and last a sentence that always fits. The tail of a long error is never simply dropped.
+    /// The first line of the error, then the same with the middle of the line cut a few characters at a time (the beginning says what failed
+    /// and the end is often the code that matters), and last "Upload failed", which always fits. The tail of a long error is never simply
+    /// dropped. There is no "Error:" lead in the footer: the red text, the Retry button and the Details button already say it, and the lead
+    /// cost the line twelve characters at 980 pt (R2-014). The tooltip and the spoken help keep "Error: ".
     static func errorVariants(for message: String) -> [String] {
-        let line = firstLine(of: message), prefix = "Error: "
-        var variants = [prefix + line]
+        let line = firstLine(of: message)
+        var variants = [line]
         var keep = line.count - 4
         while keep >= minimumErrorCharacters {
-            variants.append(prefix + middleTruncated(line, to: keep))
+            variants.append(middleTruncated(line, to: keep))
             keep -= 4
         }
-        if line.count > minimumErrorCharacters { variants.append(prefix + "Upload failed") }
+        if line.count > "Upload failed".count { variants.append("Upload failed") }
         return variants
     }
     static let minimumErrorCharacters = 24

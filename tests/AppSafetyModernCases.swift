@@ -574,7 +574,7 @@ extension AppSafetyTests {
         facts["size.tip"] = AppToolTip.text(for: app.widthControl) ?? "<nil>"
         facts["name.placeholder"] = app.nameField.placeholderString ?? "<nil>"
         facts["status.font"] = String(Double(app.status.font?.pointSize ?? 0))
-        let toolbox = collect(NSPopUpButton.self, in: content).first { $0.accessibilityLabel() == "Toolbox menu" }
+        let toolbox = collect(NSPopUpButton.self, in: content).first { $0.accessibilityLabel() == "Toolbox" }
         facts["toolbox.label"] = toolbox?.accessibilityLabel() ?? "<nil>"
         facts["toolbox.tip"] = toolbox.flatMap { AppToolTip.text(for: $0) } ?? "<nil>"
         facts["toolbox.items"] = toolbox?.itemTitles.joined(separator: "|") ?? "<nil>"
@@ -702,7 +702,7 @@ extension AppSafetyTests {
             "tool.text.label": "Text tool",
             "tool.text.tip": "Text tool",
             "toolbox.items": "Save to History|Export…||Copy|Paste|Duplicate|Delete|Select All||Crosshair Snapshot|Fullscreen Snapshot|Frame Snapshot|Re-snap (Keep Pen)||Rotate Clockwise|Flip Horizontal|Crop Snap at Current Edges|Remove Snap Picture||Filled Shapes|Shadow|Text Style…",
-            "toolbox.label": "Toolbox menu",
+            "toolbox.label": "Toolbox",
             "toolbox.tip": "Drawing, edit and capture commands; everything else is in the menu bar",
             "zoom.label": "Canvas zoom"
         ]
@@ -710,7 +710,7 @@ extension AppSafetyTests {
             .map { "\($0): expected '\(expectedFacts[$0] ?? "")' but found '\(modern[$0] ?? "<missing>")'" }
         try expect(differing.isEmpty && modern.count == expectedFacts.count, "Control strings differ from the recovered ones (\(modern.count) vs \(expectedFacts.count) facts): " + differing.joined(separator: "; "))
         try expect(modern["tool.arrow.label"] == "Arrow tool" && modern["tool.crop.tip"] == "Crop tool"
-                   && modern["toolbox.label"] == "Toolbox menu" && modern["drag.label"] == "Drag image to another app" && modern["format.label"] == "Image format", "The strings are the recovered ones, not merely equal to each other")
+                   && modern["toolbox.label"] == "Toolbox" && modern["drag.label"] == "Drag image to another app" && modern["format.label"] == "Image format", "The strings are the recovered ones, not merely equal to each other")
         // At launch Wipe reads its blank stage (a dimmed Clear image); every other command reads its title (the icon-only upload button is checked on its own).
         let spoken = ["hide": "Hide", "photos": "Photos", "save": "Save", "history": "History", "snap": "Snap", "cancel": "Cancel", "font": "Font",
                       "undo": "Undo", "wipe": "Clear image", "resize": "Resize…"]
@@ -866,7 +866,8 @@ extension AppSafetyTests {
             try expect(!app.dragOriginalControl.isHidden, "Leaving Frame brings the Original size checkbox back for a large shot")
         }
         // A small shot never had the checkbox, in Frame or out of it.
-        try viewportFixture(app)
+        app.canvas.newBlank(size: CGSize(width: 300, height: 180))
+        app.canvas.setBackground(try image(size: CGSize(width: 300, height: 180)))   // shown at its own size: nothing to choose
         app.updateViewportChrome()
         try expect(app.dragOriginalControl.isHidden, "A small shot has no checkbox")
         app.enterFrame(keepingAnnotations: false, manualFlags: [])
@@ -926,14 +927,14 @@ extension AppSafetyTests {
         // R1-013: with the title bar up (windowed) the footer does not repeat "W × H · PNG · bytes": the tool and the state only, whole at every width.
         app.footerShowsPictureFactsOverride = nil
         app.setTool(.arrow); app.dirty = true; app.updateDragPreview()
-        try expect(app.status.variants == ["Arrow · Unsaved changes", "Unsaved changes"] && !(AppToolTip.text(for: app.status) ?? "").contains("×") && (app.window.subtitle.contains("×")),
+        try expect(app.status.variants == ["Arrow · Unsaved changes", "Unsaved changes", "Unsaved"] && !(AppToolTip.text(for: app.status) ?? "").contains("×") && (app.window.subtitle.contains("×")),
                    "Windowed, the footer is the tool and state while the title bar carries the size (\(app.status.variants), title \(app.window.subtitle))")
         for width in [app.window.minSize.width, 1024, 1440] {
             app.setWindowFrame(CGRect(origin: origin, size: CGSize(width: width, height: app.window.frame.height)))
             app.updateViewportChrome(); content.layoutSubtreeIfNeeded()
             // Beside the Original size checkbox at 980 the slot holds only the state, which is never the part given up; wider, the tool comes back.
             let shown = app.status.stringValue
-            try expect(shown.hasSuffix("Unsaved changes") && !shown.contains("×") && (width < 1100 || shown == "Arrow · Unsaved changes"), "\(Int(width)): the windowed footer keeps the state whole and drops the tool only where it must (\(shown))")
+            try expect(shown.contains("Unsaved") && !shown.contains("…") && !shown.contains("×") && (width < 1100 || shown == "Arrow · Unsaved changes"), "\(Int(width)): the windowed footer keeps the state whole and drops the tool only where it must (\(shown))")
         }
         // An upload message is one text: it keeps its priority and is cut only at its tail. A plain write is one fixed text too.
         let field = StatusTextField(labelWithString: "")
@@ -1448,7 +1449,7 @@ extension AppSafetyTests {
         try expect(app.validateMenuItem(preferences) && !app.validateMenuItem(cancel) && !app.validateMenuItem(undo), "Symbols do not change which commands are available")
         app.canvas.setBackgroundColor(.yellow)
         try expect(app.validateMenuItem(undo), "Undo becomes available after an edit")
-        let toolbox = collect(NSPopUpButton.self, in: app.window.contentView!).first { $0.accessibilityLabel() == "Toolbox menu" }
+        let toolbox = collect(NSPopUpButton.self, in: app.window.contentView!).first { $0.accessibilityLabel() == "Toolbox" }
         try expect(toolbox?.menu?.items.contains { $0.action == #selector(AppDelegate.saveHistory) } == true, "The Toolbox menu keeps Save to History")
     }
 
@@ -1665,7 +1666,7 @@ extension AppSafetyTests {
         let content = try (app.window.contentView).unwrap("content")
         let body = DesignTokens.Typography.font(.body).pointSize, caption = DesignTokens.Typography.font(.caption).pointSize
         let controls: [(String, NSControl)] = [("zoom popup", app.zoomControl), ("Original size checkbox", app.dragOriginalControl), ("Color button", app.paletteButton),
-                                               ("Toolbox", try collect(NSPopUpButton.self, in: content).first { $0.accessibilityLabel() == "Toolbox menu" }.unwrap("Toolbox")), ("PNG | JPG", app.dragFormatToggle)]
+                                               ("Toolbox", try collect(NSPopUpButton.self, in: content).first { $0.accessibilityLabel() == "Toolbox" }.unwrap("Toolbox")), ("PNG | JPG", app.dragFormatToggle)]
         for (name, control) in controls {
             try expect(control.font?.pointSize == body && body == 20, "\(name) is body text, 20 pt (is \(control.font?.pointSize ?? 0))")
         }
@@ -1738,7 +1739,7 @@ extension AppSafetyTests {
             try expect(control.target === app && control.action == action, "\(name) still sends its action to the AppDelegate after the move")
         }
         func minX(_ view: NSView) -> CGFloat { view.convert(view.bounds, to: content).minX }
-        let toolbox = try collect(NSPopUpButton.self, in: content).first { $0.accessibilityLabel() == "Toolbox menu" }.unwrap("Toolbox")
+        let toolbox = try collect(NSPopUpButton.self, in: content).first { $0.accessibilityLabel() == "Toolbox" }.unwrap("Toolbox")
         let tools = toolOrder.compactMap { app.toolButtons[SketchTool(rawValue: $0)!] as NSView? }
         let top: [NSView] = [chrome.hideButton, toolbox, chrome.photosButton, chrome.snapButton] + tools + [app.paletteButton, app.widthControl, chrome.fontButton]
         let topX = top.map(minX)

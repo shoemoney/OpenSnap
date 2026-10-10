@@ -69,8 +69,14 @@ extension AppSafetyTests {
             session.state.edit(.width, text: String(Int(title.width) / 2))
             try expect(try session.preview(force: true), "Ticked \(ticked): half the title width previews")
             let half = app.canvas.outputSize
-            try expect(abs(half.width - output.width / 2) <= 1 && abs(half.height - output.height / 2) <= 1,
-                       "Ticked \(ticked): half of the title's pixels is half the output (\(half), output \(output))")
+            if ticked {
+                // The fields are the picture's own pixels, so half of them is a picture half as big (R2-002); what is shown follows.
+                try expect(app.canvas.canvasSize == CGSize(width: source.width / 2, height: source.height / 2),
+                           "Ticked: half of the title's pixels is a picture half as big (\(app.canvas.canvasSize))")
+            } else {
+                try expect(abs(half.width - output.width / 2) <= 1 && abs(half.height - output.height / 2) <= 1,
+                           "Unticked: half of the shown pixels is half the output (\(half), output \(output))")
+            }
             session.cancel()
             try expect(app.canvas.outputSize == output, "Ticked \(ticked): Cancel restores the output (\(app.canvas.outputSize))")
             let again = try app.makeResizeSession().b4Unwrap("a second resize session")
@@ -202,12 +208,12 @@ extension AppSafetyTests {
         app.footerShowsPictureFactsOverride = true   // full screen: no title bar, so the footer carries the size
         app.updateDragPreview()
         let variants = app.status.variants
-        try expect(variants.count == 5 && variants[0].components(separatedBy: " · ").count == 5, "The full line has tool, state, size, format and bytes (\(variants))")
+        try expect(variants.count == 6 && variants[0].components(separatedBy: " · ").count == 5, "The full line has tool, state, size, format and bytes (\(variants))")
         try expect(variants[1] == "Arrow · Unsaved changes · 800 × 600", "Format and bytes go first: \(variants[1])")
-        try expect(variants[2] == "Unsaved changes · 800 × 600" && variants[3] == "Arrow · Unsaved changes" && variants[4] == "Unsaved changes",
-                   "then the tool, then the size, and the state is the last thing standing: \(variants)")
+        try expect(variants[2] == "Unsaved changes · 800 × 600" && variants[3] == "Arrow · Unsaved changes" && variants[4] == "Unsaved changes" && variants[5] == "Unsaved",
+                   "then the tool, then the size, and the state is the last thing standing, in one word at the narrowest: \(variants)")
         try expect(variants.dropFirst().allSatisfy { !$0.contains("PNG") && !$0.contains("KB") && !$0.contains("MB") && !$0.contains("bytes") }, "No shortened step carries the format or the bytes")
-        try expect(variants.allSatisfy { $0.contains("Unsaved changes") }, "Every step keeps the state whole")
+        try expect(variants.allSatisfy { $0.contains("Unsaved") }, "Every step keeps the state whole (the last in one word)")
         app.dirty = false; app.updateStatus()
         app.footerShowsPictureFactsOverride = nil
         app.updateStatus()

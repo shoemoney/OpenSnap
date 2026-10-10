@@ -104,32 +104,63 @@ struct ResizePanelSubmission: Equatable {
     var constrainProportions = true
 }
 
+/// What a Resize typed in the picture's own pixels does to the picture: scale it to `scaleTo` (nil: it already is that size), keep `crop`
+/// of the scaled result (nil: all of it), and end at `size`.
+struct ResizePicturePlan: Equatable {
+    var scaleTo: CGSize?
+    var crop: CGRect?
+    var size: CGSize
+}
+
 enum ResizePanelGeometry {
     /// Original Scale first fits proportionally; an unconstrained request then
     /// expands/crops the centered viewport to the requested output dimensions.
     /// `displayed` is the whole-pixel size the sheet's fields were seeded with when that is not the output size (the title shows the
-    /// picture's own pixel size while Original size is ticked): the typed request is validated in those pixels, then mapped back into
-    /// output pixels, rounding half up like every other stored size, before the crop or fit math runs.
-    static func preview(source: CGSize, output: CGSize, displayed: CGSize? = nil, request: ResizePanelSubmission) throws -> (rect: CGRect?, output: CGSize) {
+    /// picture's own pixel size while Original size is ticked). When `atPictureSize` the title is the picture itself (Original size ticked,
+    /// or a snap shown at its own size): the request is then for that many pixels of the picture, and `picture` says how to get them
+    /// (scale the picture, then crop). `rect` and `output` stay the answer in the output's terms for a request on the shown size.
+    static func preview(source: CGSize, output: CGSize, displayed: CGSize? = nil, atPictureSize: Bool = false, request: ResizePanelSubmission) throws -> (rect: CGRect?, output: CGSize, picture: ResizePicturePlan?) {
         guard source.width.isFinite, source.height.isFinite, output.width.isFinite, output.height.isFinite,
               source.width > 0, source.height > 0, output.width > 0, output.height > 0 else { throw ResizePanelValidation.Failure.dimension }
-        var target = try ResizePanelValidation.validate(request.size)
+        let typed = try ResizePanelValidation.validate(request.size)
+        var target = typed
+        var picture: ResizePicturePlan?
         if let displayed, displayed != output {
             guard displayed.width.isFinite, displayed.height.isFinite, displayed.width > 0, displayed.height > 0 else { throw ResizePanelValidation.Failure.dimension }
             target = try ResizePanelValidation.validate(CGSize(width: ResizePanelValidation.wholePixel(target.width * output.width / displayed.width),
                                                                height: ResizePanelValidation.wholePixel(target.height * output.height / displayed.height)))
         }
+        if let displayed, atPictureSize {
+            guard displayed.width.isFinite, displayed.height.isFinite, displayed.width > 0, displayed.height > 0 else { throw ResizePanelValidation.Failure.dimension }
+            picture = try picturePlan(source: source, displayed: displayed, typed: typed, request: request)
+        }
         if request.isCrop {
             let size = CGSize(width: target.width * source.width / output.width, height: target.height * source.height / output.height)
             return (CGRect(x: (source.width-size.width)*request.anchor.x, y: (source.height-size.height)*request.anchor.y,
-                           width: size.width, height: size.height), target)
+                           width: size.width, height: size.height), target, picture)
         }
         let factor = min(target.width / output.width, target.height / output.height)
         let fitted = CGSize(width: ResizePanelValidation.wholePixel(output.width * factor), height: ResizePanelValidation.wholePixel(output.height * factor))
-        if request.constrainProportions { return (nil, try ResizePanelValidation.validate(fitted)) }
+        if request.constrainProportions { return (nil, try ResizePanelValidation.validate(fitted), picture) }
         let size = CGSize(width: target.width * source.width / (output.width * factor),
                           height: target.height * source.height / (output.height * factor))
-        return (CGRect(x: (source.width-size.width)/2, y: (source.height-size.height)/2, width: size.width, height: size.height), target)
+        return (CGRect(x: (source.width-size.width)/2, y: (source.height-size.height)/2, width: size.width, height: size.height), target, picture)
+    }
+
+    private static func picturePlan(source: CGSize, displayed: CGSize, typed: CGSize, request: ResizePanelSubmission) throws -> ResizePicturePlan {
+        if request.isCrop {
+            let crop = CGRect(x: (displayed.width - typed.width) * request.anchor.x, y: (displayed.height - typed.height) * request.anchor.y,
+                              width: typed.width, height: typed.height)
+            return ResizePicturePlan(scaleTo: displayed == source ? nil : displayed, crop: crop, size: typed)
+        }
+        let factor = min(typed.width / displayed.width, typed.height / displayed.height)
+        let scaled = try ResizePanelValidation.validate(CGSize(width: ResizePanelValidation.wholePixel(displayed.width * factor),
+                                                               height: ResizePanelValidation.wholePixel(displayed.height * factor)))
+        let scaleTo = scaled == source ? nil : scaled
+        if request.constrainProportions { return ResizePicturePlan(scaleTo: scaleTo, crop: nil, size: scaled) }
+        return ResizePicturePlan(scaleTo: scaleTo,
+            crop: CGRect(x: (scaled.width - typed.width) / 2, y: (scaled.height - typed.height) / 2, width: typed.width, height: typed.height),
+            size: typed)
     }
 }
 
@@ -177,6 +208,14 @@ struct ResizePanelState {
     private var submittedWidthText: String { displayWidthText }
     private var submittedHeightText: String { displayHeightText }
     private var submittedLimitText: String { displayLimitText }
+
+    /// The same sheet settings over a picture that now has `size`: what Apply leaves behind, so the fields show the new title size.
+    func rebased(to size: CGSize) -> ResizePanelState {
+        var next = ResizePanelState(size: size)
+        next.mode = mode; next.anchor = anchor; next.limitMode = limitMode
+        next.preserveRatio = preserveRatio && next.originalRatio != nil
+        return next
+    }
 
     mutating func setMode(_ mode: ResizePanelMode) {
         guard self.mode != mode else { return }
@@ -268,6 +307,7 @@ final class ResizePanelSession {
     private var onApply: ((CGSize, Bool, CGPoint) -> Void)?
     private var onPreview: ((ResizePanelSubmission) throws -> Void)?
     private var onFinish: ((Bool) -> Void)?
+    private var onCommit: (() -> CGSize)?
     private var isDelivering = false
     private(set) var lastPreview: ResizePanelSubmission?
     var onCompletion: ((Bool) -> Void)?
@@ -278,10 +318,23 @@ final class ResizePanelSession {
     }
 
     init(size: CGSize, onPreview: @escaping (ResizePanelSubmission) throws -> Void,
-         onFinish: @escaping (Bool) -> Void) {
+         onFinish: @escaping (Bool) -> Void, onCommit: (() -> CGSize)? = nil) {
         state = ResizePanelState(size: size)
         self.onPreview = onPreview
         self.onFinish = onFinish
+        self.onCommit = onCommit
+    }
+
+    /// Apply: what the sheet shows becomes a finished edit (one Undo step) and the sheet stays open on the new picture. Cancel afterwards
+    /// only takes back what is typed from here on; OK closes with the latest size.
+    @discardableResult
+    func commit() throws -> Bool {
+        guard !isFinished, !isDelivering, let commit = onCommit else { return false }
+        guard try preview() else { return false }
+        let size = commit()
+        state = state.rebased(to: size)
+        lastPreview = nil
+        return true
     }
 
     @discardableResult
@@ -309,6 +362,7 @@ final class ResizePanelSession {
         onApply = nil
         onPreview = nil
         onFinish = nil
+        onCommit = nil
         onCompletion = nil
         beforeDelivery()
         callback?(submission.size, submission.isCrop, submission.anchor)
@@ -325,6 +379,7 @@ final class ResizePanelSession {
         onApply = nil
         onPreview = nil
         onFinish = nil
+        onCommit = nil
         onCompletion = nil
         finish?(true)
         completion?(true)
@@ -883,8 +938,10 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
     @objc private func previewSheet(_ sender: Any?) {
         previewTimer?.invalidate(); previewTimer = nil
         panel?.makeFirstResponder(nil)
-        do { _ = try session.preview() }
-        catch { showError(error.localizedDescription) }
+        do {
+            // Apply keeps the change (one Undo step) and leaves the sheet open on the new size; Cancel then undoes only what is typed next.
+            if try session.commit() { renderState() } else { _ = try session.preview() }
+        } catch { showError(error.localizedDescription) }
     }
 
     @objc private func cancelSheet(_ sender: Any?) {

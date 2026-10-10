@@ -77,20 +77,27 @@ final class ZoomPopUpButton: NSPopUpButton {
     override var canBecomeKeyView: Bool { KeyboardNavigation.reaches(self) }
 }
 
-/// The Toolbox pop-up; like every chrome button it joins the key-view loop with Full Keyboard Access.
-/// The Toolbox is a selection-style pop-up (not a pull-down) because AppKit draws a menu row's `image` only in that style: a
-/// pull-down's rows come out as bare titles (measured on macOS 26 with the same items, images and fonts). Nothing is ever
-/// "selected" here: the face is its own item (the toolbox icon with a chevron), and the selection is cleared when the menu closes
-/// so no row keeps a checkmark that is not a real state.
+/// The Toolbox: a menu button. It keeps NSPopUpButton as its base so the chrome's sizing and the key-view loop stay as they were, but it
+/// never uses the selection-style pop-up behaviour: that style laid the chosen row over its own button, so the open menu covered the
+/// Toolbox, Photos and the first tools, and exposed a "value" (it read "Select All"). The rows now open below the button like any menu, the
+/// button has no value and reads as a menu button named "Toolbox" (R2-004, F-J6-009). The menu is a copy of the menu-bar rows, icons and all.
 final class ToolboxPopUpButton: NSPopUpButton, NSMenuDelegate {
     let faceItem = NSMenuItem(title: "Toolbox", action: nil, keyEquivalent: "")
+    /// Test seam: where the last open put the top-left of the menu, in this view's coordinates.
+    private(set) var lastPopUpOrigin: NSPoint?
+    /// Test seam: replaces showing the menu (a menu tracks until it closes, so a test records the request instead).
+    var popUpHandler: ((NSMenu, NSPoint) -> Void)?
 
     convenience init() {
         self.init(frame: .zero, pullsDown: false)
         if let popUpCell = cell as? NSPopUpButtonCell { popUpCell.usesItemFromMenu = false; popUpCell.menuItem = faceItem; popUpCell.arrowPosition = .noArrow }
         imagePosition = .imageOnly
+        setAccessibilityRole(.menuButton)
     }
     override var canBecomeKeyView: Bool { KeyboardNavigation.reaches(self) }
+    override func accessibilityValue() -> Any? { nil }
+    override func accessibilityRole() -> NSAccessibility.Role? { .menuButton }
+    override func accessibilityPerformPress() -> Bool { openMenu(); return true }
 
     /// Rows go in `menu`; the closed button shows `image`.
     func setFace(_ image: NSImage?) { faceItem.image = image; needsDisplay = true }
@@ -98,6 +105,21 @@ final class ToolboxPopUpButton: NSPopUpButton, NSMenuDelegate {
         rows.delegate = self
         menu = rows
         select(nil)
+    }
+    /// Opens the rows just under the button, aligned to its leading edge, so nothing on the bar is covered.
+    func openMenu() {
+        guard isEnabled, let rows = menu else { return }
+        let origin = NSPoint(x: 0, y: isFlipped ? bounds.maxY + 4 : bounds.minY - 4)
+        lastPopUpOrigin = origin
+        if let popUpHandler { popUpHandler(rows, origin) } else { rows.popUp(positioning: nil, at: origin, in: self) }
+    }
+    override func mouseDown(with event: NSEvent) { openMenu() }
+    override func performClick(_ sender: Any?) { openMenu() }
+    override func keyDown(with event: NSEvent) {
+        switch event.keyCode {
+        case 36, 49, 76, 125, 126: openMenu()      // Return, Space, keypad Enter, Down, Up
+        default: super.keyDown(with: event)
+        }
     }
     func menuDidClose(_ menu: NSMenu) { DispatchQueue.main.async { [weak self] in self?.select(nil) } }
 }
@@ -482,6 +504,8 @@ final class ModernEditorChrome: NSView {
             popup.selectItem(at: selectedFormat)
         } else { formatWidth = formatControl.fittingSize.width }
         GlassChrome.fix(formatControl, NSSize(width: ceil(formatWidth), height: Metrics.commandHeight))
+        formatWidthConstraint = formatControl.constraints.first { $0.firstAttribute == .width && $0.secondItem == nil }
+        regularFormatWidth = ceil(formatWidth)
         shareButton.setAccessibilityLabel(Self.uploadLabel)
         let footerGroup = plate([formatControl, cell(controls.dragExportView), fixed(shareButton)], "GlassFooterRow")
 
@@ -549,7 +573,20 @@ final class ModernEditorChrome: NSView {
     /// The width a bar takes at the chrome's current width.
     var barWidth: CGFloat { min(Self.maximumBarWidth, max(0, bounds.width - 2 * DesignTokens.Layout.margin)) }
 
+    /// Below this window width the PNG | JPG toggle is the one compact button (R2-014).
+    static let compactFormatBelow: CGFloat = 1100
+    private var formatWidthConstraint: NSLayoutConstraint?
+    private var regularFormatWidth: CGFloat = 0
+    /// Collapses or restores the format toggle for the window's current width; the bar's own layout pass calls it.
+    func updateFormatCompaction() {
+        guard let toggle = controls.dragFormatControl as? SegmentedToggle, let constraint = formatWidthConstraint else { return }
+        let compact = bounds.width > 0 && bounds.width < Self.compactFormatBelow
+        if toggle.isCompact != compact { toggle.isCompact = compact }
+        let width = compact ? ceil(toggle.intrinsicContentSize.width) : regularFormatWidth
+        if constraint.constant != width { constraint.constant = width }
+    }
     override func layout() {
+        updateFormatCompaction()
         let target = barWidth
         if target > 0 { for constraint in barWidthConstraints where constraint.constant != target { constraint.constant = target } }
         super.layout()

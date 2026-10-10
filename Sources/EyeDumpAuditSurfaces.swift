@@ -385,6 +385,8 @@ extension AuditRun {
         let name = "gaps-\(appearance)-\(iconMode)-\(wanted.sorted().joined(separator: "_"))-\(getpid()).json"
         try? FileManager.default.createDirectory(at: dir.appendingPathComponent("gapsraw"), withIntermediateDirectories: true)
         write(gaps, to: "gapsraw/\(name)")
+        try? FileManager.default.createDirectory(at: dir.appendingPathComponent("safety"), withIntermediateDirectories: true)
+        write(HarnessInputGuard.record(), to: "safety/input-fence-\(appearance)-\(iconMode)-\(getpid()).json")
     }
 
     // MARK: surfaces
@@ -1515,7 +1517,7 @@ extension AuditRun {
     func s23() {
         var menus: [String: Any] = [:]
         if let main = NSApp.mainMenu { menus["mainMenu"] = menuNode(main) }
-        if let toolbox = firstView(of: NSPopUpButton.self, label: "Toolbox menu"), let menu = toolbox.menu { menus["toolboxPopupMenu"] = menuNode(menu) }
+        if let toolbox = firstView(of: NSPopUpButton.self, label: "Toolbox"), let menu = toolbox.menu { menus["toolboxPopupMenu"] = menuNode(menu) }
         if let menu = app.webpostButton?.menu { menus["uploadDestinationMenu"] = menuNode(menu) }
         if let format = firstView(of: NSPopUpButton.self, label: "Drag Me format"), let menu = format.menu { menus["dragFormatPopupMenu"] = menuNode(menu) }
         menus["zoomPopupMenu"] = app.zoomControl.menu.map { menuNode($0) } as Any
@@ -1534,7 +1536,7 @@ extension AuditRun {
                                "iconIsTemplate": StatusIcon.image()?.isTemplate as Any,
                                "note": "Clicking the icon opens statusItemMenu; the first row follows the editor's visibility. The menu-bar strip titles are system-owned."]
         write(menus, to: "menus" + stemSuffix + ".json")
-        guard let toolbox = firstView(of: NSPopUpButton.self, label: "Toolbox menu") else { gap("S23", "Toolbox menu open", "toolbox popup not found"); return }
+        guard let toolbox = firstView(of: NSPopUpButton.self, label: "Toolbox") else { gap("S23", "Toolbox menu open", "toolbox popup not found"); return }
         captureTrackedMenu("S23", "toolbox-menu-open", surface: "menus", state: "Toolbox menu open (a selection-style pop-up, so its rows draw their icons)", refs: ["App.swift|func bezelToolbox()"],
                            dismiss: { toolbox.menu?.cancelTracking() }, trigger: { toolbox.performClick(nil) })
         pump(0.4)

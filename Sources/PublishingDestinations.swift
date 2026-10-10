@@ -111,6 +111,9 @@ final class PublishingMemorySecrets: PublishingSecretStore {
 }
 
 final class PublishingDestinationStore {
+    /// Posted, with the store as its object and after the lock is released, each time the saved destinations change (a save, a removal, a new
+    /// default). History listens, so Delete from Web follows the destination it was published to (F-J6-003).
+    static let didChange = Notification.Name("PublishingDestinationStoreDidChange")
     let directory: URL
     let secrets: PublishingSecretStore
     private let lock = NSLock()
@@ -149,17 +152,20 @@ final class PublishingDestinationStore {
     func defaultDestination() throws -> PublishingDestination? { try load().defaultDestination }
 
     func setDefault(_ id: String) throws {
-        lock.lock(); defer { lock.unlock() }
+        var wrote = false
+        lock.lock(); defer { lock.unlock(); if wrote { announceChange() } }
         var list = try loadLocked()
         guard list.destinations.contains(where: { $0.id == id }) else { throw PublishingFailure("That destination no longer exists.") }
         list.defaultID = id
-        try write(list)
+        try write(list); wrote = true
     }
+    private func announceChange() { NotificationCenter.default.post(name: Self.didChange, object: self) }
 
     /// Adds or replaces by id. A secret-bearing destination gets a fresh Keychain item; the old one is
     /// deleted only after the new list is committed, so a failed save never loses the working secret.
     func save(_ destination: PublishingDestination, password: String) throws {
-        lock.lock(); defer { lock.unlock() }
+        var wrote = false
+        lock.lock(); defer { lock.unlock(); if wrote { announceChange() } }
         var list = try loadLocked()
         var next = destination
         next.name = next.name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -181,7 +187,7 @@ final class PublishingDestinationStore {
         if next.settings.storesSecretInKeychain, !keepsSecret { try secrets.add(password, id: next.settings.credentialID) }
         if let index { list.destinations[index] = next } else { list.destinations.append(next) }
         if list.defaultID == nil || !list.destinations.contains(where: { $0.id == list.defaultID }) { list.defaultID = next.id }
-        do { try write(list) } catch {
+        do { try write(list); wrote = true } catch {
             if next.settings.storesSecretInKeychain, !keepsSecret { secrets.remove(next.settings.credentialID) }
             throw error
         }
@@ -191,12 +197,13 @@ final class PublishingDestinationStore {
     }
 
     func remove(_ id: String) throws {
-        lock.lock(); defer { lock.unlock() }
+        var wrote = false
+        lock.lock(); defer { lock.unlock(); if wrote { announceChange() } }
         var list = try loadLocked()
         guard let index = list.destinations.firstIndex(where: { $0.id == id }) else { return }
         let removed = list.destinations.remove(at: index)
         if list.defaultID == id || !list.destinations.contains(where: { $0.id == list.defaultID }) { list.defaultID = list.destinations.first?.id }
-        try write(list)
+        try write(list); wrote = true
         if removed.settings.storesSecretInKeychain, removed.settings.credentialID != legacyCredentialID() {
             secrets.remove(removed.settings.credentialID)
         }

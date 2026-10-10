@@ -56,8 +56,8 @@ extension AppSafetyTests {
         try expect(menuReport.violations.isEmpty && menuReport.controls > 60, "The main menu's dropdowns have no violations (\(menuReport.controls) items):\n\(menuReport.description)")
         let statusReport = AccessibilityAudit.audit(app.makeStatusMenu(), surface: "Status-item menu")
         try expect(statusReport.violations.isEmpty && statusReport.controls >= 4, "The status-item menu has no violations (\(statusReport.controls) items):\n\(statusReport.description)")
-        let toolbox = try everyView(try (app.window.contentView).unwrapped("content")).compactMap { $0 as? NSPopUpButton }.first { $0.accessibilityLabel() == "Toolbox menu" }.unwrapped("Toolbox")
-        let toolboxReport = AccessibilityAudit.audit(try toolbox.menu.unwrapped("Toolbox items"), surface: "Toolbox menu")
+        let toolbox = try everyView(try (app.window.contentView).unwrapped("content")).compactMap { $0 as? NSPopUpButton }.first { $0.accessibilityLabel() == "Toolbox" }.unwrapped("Toolbox")
+        let toolboxReport = AccessibilityAudit.audit(try toolbox.menu.unwrapped("Toolbox items"), surface: "Toolbox")
         try expect(toolboxReport.violations.isEmpty, "The Toolbox menu has no violations:\n\(toolboxReport.description)")
         _ = chrome
     }
@@ -70,7 +70,7 @@ extension AppSafetyTests {
             try expect(button.accessibilityLabel() == tool.rawValue.capitalized + " tool", "\(tool.rawValue): the label is '\(tool.rawValue.capitalized) tool' (\(button.accessibilityLabel() ?? "nil"))")
         }
         try expect(chrome.shareButton.accessibilityLabel() == "Upload image" && AppToolTip.text(for: chrome.shareButton)?.hasPrefix("Upload image") == true, "Upload is 'Upload image', label and tooltip")
-        let toolbox = try everyView(try (app.window.contentView).unwrapped("content")).compactMap { $0 as? NSPopUpButton }.first { $0.accessibilityLabel() == "Toolbox menu" }
+        let toolbox = try everyView(try (app.window.contentView).unwrapped("content")).compactMap { $0 as? NSPopUpButton }.first { $0.accessibilityLabel() == "Toolbox" }
         try expect(toolbox != nil, "The Toolbox is named 'Toolbox menu'")
         try expect(app.status.accessibilityRole() == .staticText, "The editor status line is static text (\(String(describing: app.status.accessibilityRole())))")
         try expect(StatusIcon.accessibilityLabel == "Show or hide OpenSnap", "The menu-bar item says what it does")

@@ -23,7 +23,7 @@ enum MenuSymbols {
         ("flatten", "square.3.layers.3d.down.right"), ("front", "square.3.layers.3d.top.filled"),
         ("back", "square.3.layers.3d.bottom.filled"), ("group", "rectangle.3.group"),
         ("ungroup", "square.on.square.dashed"), ("chooseFont", "textformat"), ("defaultTextStyle", "textformat.abc"),
-        ("toggleOutline", "a.square"), ("toggleTextShadow", "shadow"), ("screenSnap", "scope"),
+        ("toggleOutline", "a.square"), ("toggleTextShadow", "shadow"), ("toggleBezelFill:", "square.fill"), ("toggleBezelShadow:", "rectangle.fill.on.rectangle.fill"), ("screenSnap", "scope"),
         ("fullscreenSnap", "rectangle.inset.filled"), ("windowSnap", "macwindow"), ("frameSnap", "viewfinder"),
         ("resnap", "arrow.triangle.2.circlepath"), ("cancelFrame", "xmark"), ("timedSnap", "timer"),
         ("cancelSnapshot", "xmark.circle"), ("webSnap", "link"), ("focusToolbar", "menubar.rectangle"),

@@ -418,6 +418,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         for (name, handler) in [(NSWindow.willEnterFullScreenNotification, windowWillEnterFullScreen), (NSWindow.didEnterFullScreenNotification, windowDidEnterFullScreen), (NSWindow.didExitFullScreenNotification, windowDidExitFullScreen)] {
             NotificationCenter.default.addObserver(forName: name, object: window, queue: .main) { note in MainActor.assumeIsolated { handler(note) } }
         }
+        // Delete from Web depends on the default destination, so History is recomputed whenever the destinations change.
+        NotificationCenter.default.addObserver(forName: PublishingDestinationStore.didChange, object: nil, queue: nil) { [weak self] _ in
+            if Thread.isMainThread { MainActor.assumeIsolated { self?.refreshHistory() } }
+            else { DispatchQueue.main.async { MainActor.assumeIsolated { self?.refreshHistory() } } }
+        }
         installMenuPresence()
         applyPresencePolicy()
         installHintMonitoring()
@@ -820,7 +825,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             }
         }
         MenuTypography.apply(to: choices)
-        control.install(choices); control.setAccessibilityLabel("Toolbox menu")
+        control.install(choices); control.setAccessibilityLabel("Toolbox")
         AppToolTip.setText("Drawing, edit and capture commands; everything else is in the menu bar", for: control)
         return control
     }
@@ -1283,23 +1288,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         let variants: [String]
         // A running transfer owns the slot (its spinner is beside it); a notice posted meanwhile waits for it to finish.
         if uploadState.isUploading { variants = uploadState.statusVariants }
-        else if let notice = statusNotice { variants = [notice] }
+        else if let notice = statusNotice { variants = Self.noticeVariants(for: notice) }
         else if !uploadState.statusVariants.isEmpty { variants = uploadState.statusVariants }
         else if let notice = UploadNotice.text { variants = [notice] }
         else if canvas.tool == .crop && canvas.hasPendingCrop {
             // The crop is applied by Return and dropped by Esc; say so, shortest last, never the state alone first.
-            variants = ["Crop: press Return to apply, Esc to cancel", "Crop: Return applies, Esc cancels", "Return applies, Esc cancels", dirty ? "Unsaved changes" : "Saved"]
+            variants = ["Crop: press Return to apply, Esc to cancel", "Crop: Return applies, Esc cancels", "Return applies, Esc cancels", dirty ? "Unsaved changes" : "Saved", Self.shortState(dirty: dirty)]
         } else {
-            let tool = canvas.tool.rawValue.capitalized, state = dirty ? "Unsaved changes" : "Saved"
+            let tool = canvas.tool.rawValue.capitalized, state = dirty ? "Unsaved changes" : "Saved", short = Self.shortState(dirty: dirty)
             let detail = dragSizeLabel.stringValue
             // The title bar already says "W × H · PNG · bytes" (a window subtitle), so the footer does not say it twice: it carries the tool and
             // the state, and the picture's facts only where the title bar is gone, in full screen.
-            if detail.isEmpty || !footerShowsPictureFacts { variants = ["\(tool) · \(state)", state] }
+            if detail.isEmpty || !footerShowsPictureFacts { variants = ["\(tool) · \(state)", state, short] }
             else {
                 // What goes first when the slot narrows: the format and bytes, then the tool, then the document's size; the tool or the size
                 // outlasts the format and the bytes, and the saved state is never the one dropped.
                 let dimensions = detail.components(separatedBy: " · ")[0]
-                variants = ["\(tool) · \(state) · \(detail)", "\(tool) · \(state) · \(dimensions)", "\(state) · \(dimensions)", "\(tool) · \(state)", state]
+                variants = ["\(tool) · \(state) · \(detail)", "\(tool) · \(state) · \(dimensions)", "\(state) · \(dimensions)", "\(tool) · \(state)", state, short]
             }
         }
         status.setVariants(variants)
@@ -1316,6 +1321,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         let current = UserDefaults.standard.integer(forKey: FormatToggle.defaultsKey)
         UserDefaults.standard.set(FormatToggle.storedChoice(forSegment: dragFormatToggle.selectedSegment, current: current), forKey: FormatToggle.defaultsKey)
         UserDefaults.standard.set(dragOriginalControl.state == .on, forKey: "DragOriginalSize")
+        // The title and the footer follow the choice in the same pass; the timer only adds the measured bytes (F-J6-005).
+        refreshStatusText()
         scheduleDragPreview()
     }
     func scheduleDragPreview() {
@@ -1335,7 +1342,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     /// "W × H · PNG": the size and format the next export of the live document has, in whole pixels. Bytes are measured later.
     func dragSizeHead() -> String {
         let size = titlePixelSize
-        return "\(Int(size.width)) × \(Int(size.height)) · " + (dragFormat == "jpeg" ? "JPG" : "PNG")
+        return PixelSizeText.text(size) + " · " + (dragFormat == "jpeg" ? "JPG" : "PNG")
     }
     /// A document that was just opened or resized must not wear the previous one's size while the bytes are measured: the text
     /// is rewritten to the new dimensions at once (without bytes) and the timer adds them.
@@ -1670,13 +1677,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         guard openHistoryQuestions.insert(question).inserted else { return }
         let alert = AppAlert(title: deleteFiles ? "Move archived drawings to Trash?" : "Hide drawings from History?",
             message: deleteFiles ? "The selected History copies and previews will move to Trash. Exported originals and web posts are kept." : "The selected drawings will leave the History list. Their archive files and web posts are kept.",
-            buttons: deleteFiles ? [.init(title: "Cancel", role: .cancel), .init(title: "Move to Trash", role: .destructive)]
-                                 : [.init(title: "Hide"), .init(title: "Cancel", role: .cancel)])
+            buttons: [.init(title: "Cancel", role: .cancel), deleteFiles ? .init(title: "Move to Trash", role: .destructive) : .init(title: "Hide")])
         presentFromHistory(alert) { [weak self] result in
             guard let self else { return }
             self.openHistoryQuestions.remove(question)
-            // A destructive question puts Cancel first, so Return and the initial focus never destroy anything.
-            guard result == (deleteFiles ? .alertSecondButtonReturn : .alertFirstButtonReturn) else { return }
+            // Every History question puts Cancel first, so Return and the initial focus never remove anything (F-J6-008).
+            guard result == .alertSecondButtonReturn else { return }
             do {
                 if deleteFiles { try self.archiveStore().trash(Set(ids)) } else { try self.archiveStore().remove(Set(ids), deleteFiles: false) }
                 if let id = self.currentArchiveID, ids.contains(id) { self.currentArchiveID = nil }
@@ -1860,7 +1866,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     func showSharePicker(relativeTo anchor: NSView?) {
         guard let snapshot = try? historySnapshot() else { return }
         pickerSnapshot = ShareSnapshot(snapshot: snapshot, name: safeName(), generation: documentGeneration)
-        let image = canvas.renderedImage()
+        let image = canvas.renderedImage(originalSize: dragAtOriginalSize)
         if let sharePickerPresenter { sharePickerPresenter(image, anchor); return }
         let picker = NSSharingServicePicker(items: [image]); picker.delegate = self; sharePicker = picker
         guard let anchor = anchor ?? window.contentView else { return }
@@ -1945,6 +1951,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     @objc func shortcutSettings() { openPreferences(tab: SettingsWindowController.captureTabIndex) }
     /// Destinations have one surface, Settings › Upload; this item opens it there.
     @objc func sharingSettings() { openPreferences(tab: SettingsWindowController.uploadTabIndex) }
+    /// The state in one word, for the narrowest status slot: "Unsaved changes" gives up its second word before the status line cuts it (F-J6-004).
+    static func shortState(dirty: Bool) -> String { dirty ? "Unsaved" : "Saved" }
+    /// A notice, longest first, then sentences that still say the news when the slot is as narrow as the 980 pt window leaves it, so the
+    /// message is read whole rather than cut at its tail.
+    static func noticeVariants(for notice: String) -> [String] {
+        switch notice {
+        case nothingToSaveNotice: return [notice, "Nothing to save: the canvas is blank", "Nothing to save", "Blank canvas"]
+        case noDestinationNotice: return [notice, "Upload needs a destination", "Add a destination", "No destination"]
+        default: return [notice]
+        }
+    }
     static let nothingToSaveNotice = "Nothing to save to History yet: the canvas is blank."
     static let noDestinationNotice = "Upload needs a destination. Add one in Settings, Upload."
     /// Uploads use the footer toggle's format.
@@ -2418,7 +2435,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     }
     @objc func cut() { if let editor = activeTextEditor { editor.cut(nil) } else { canvas.copySelection(); canvas.deleteSelection() } }
     @objc func copyArtwork() { if let editor = activeTextEditor { editor.copy(nil) } else { canvas.copySelection() } }
-    @objc func copyImage() { NSPasteboard.general.clearContents(); NSPasteboard.general.writeObjects([canvas.renderedImage()]) }
+    /// Copy Image is the fourth path out beside drag, export and upload, so it sends the same pixels the title promises.
+    /// Where Copy Image writes; a test points it at a private pasteboard.
+    var imagePasteboard: NSPasteboard = .general
+    @objc func copyImage() { imagePasteboard.clearContents(); imagePasteboard.writeObjects([canvas.renderedImage(originalSize: dragAtOriginalSize)]) }
     @objc func paste() { if let editor = activeTextEditor { editor.paste(nil) } else { canvas.paste() } }
     @objc func selectAll() { if let editor = activeTextEditor { editor.selectAll(nil) } else { canvas.selectAll() } }
     @objc func deleteSelection() { if let editor = activeTextEditor { editor.delete(nil) } else { canvas.deleteSelection() } }
