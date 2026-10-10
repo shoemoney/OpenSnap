@@ -105,8 +105,6 @@ def source_for(sid, cls, text):
         return first_ref("App+ModernChrome.swift", "status.font = .systemFont(ofSize: 18)")
     if t == "Drawing colors":
         return first_ref("App.swift", "func label(_ text: String) -> NSTextField")
-    if t.startswith("Takes effect"):
-        return first_ref("GeneralPreferencesForm.swift", "appearanceNote.font = .systemFont(ofSize: 18)")
     if sid == "S19" and cls == "NSTextField":
         return first_ref("PublishingDestinationsView.swift", "let field = NSTextField(wrappingLabelWithString: text); field.font = Self.font(18)")
     if sid == "S19" and cls == "NSButton" and "public-read" in t:

@@ -3,7 +3,7 @@
     "project": "OpenSnap",
     "round": 2,
     "generated": "2026-10-09",
-    "statusNote": "Implementation progress at main f3ba77f (baseline bad6617): 20 done, 2 verified, 1 not-a-bug, 1 in-progress, 12 pending, of 36 todos. Each todo's status, mainState and implementation block record main at f3ba77f. Audit findings and priority counts are unchanged.",
+    "statusNote": "Implementation progress at main 658a16f (baseline bad6617): 24 done, 2 verified, 1 not-a-bug, 5 in-progress, 4 pending, of 36 todos. Each todo's status, mainState and implementation block record main at 658a16f, or the branch named in its mainState. Audit findings and priority counts are unchanged.",
     "auditedShas": {
       "briefed": "b9319c4",
       "drift": [
@@ -156,7 +156,7 @@
       "OSN-070"
     ],
     "implementationBaseline": "bad6617",
-    "implementationMainSha": "f3ba77f"
+    "implementationMainSha": "e124f77"
   },
   "decisions": [
     {
@@ -167,7 +167,7 @@
       "blocks": [
         "OSN-045"
       ],
-      "resolution": "Resolved: SF Symbols in release. Font Awesome Pro is never committed or shipped. Official Free FA vectors may be used where suitable (OSN-045 pending)."
+      "resolution": "Resolved: SF Symbols for menus. Chrome icons ship as Font Awesome Free 7.3.1 vectors compiled as path data where suitable, with SF Symbols as the fallback (OSN-045, 439d734). Font Awesome Pro is never committed or shipped."
     },
     {
       "id": "Q2",
@@ -188,7 +188,7 @@
         "OSN-042",
         "OSN-043"
       ],
-      "resolution": "Open: pending the OSN-042 spike."
+      "resolution": "Resolved: option B (custom bars), on spike evidence. An NSToolbar spike showed only 14 of 17 top-bar items visible at 980 pt (14 of 18 in Frame mode). Implemented in 8015360 (OSN-042): 26 glass surfaces became 8 group plates in 2 containers."
     },
     {
       "id": "Q4",
@@ -198,7 +198,7 @@
       "blocks": [
         "OSN-043"
       ],
-      "resolution": "Resolved as the default: full screen is enabled and is exclusive with Frame mode. Implementation pending in OSN-043."
+      "resolution": "Resolved: full screen is enabled. Frame refuses in full screen with \"Exit full screen to use Frame\". Implemented in 658a16f (OSN-043)."
     },
     {
       "id": "Q5",
@@ -220,7 +220,7 @@
         "OSN-050",
         "OSN-055"
       ],
-      "resolution": "Resolved: the app owns text wherever it can. Done: About window, 20 pt menus, permission sheet. In progress: app-owned tooltips (OSN-041). OS-owned limitations recorded: menu-bar strip titles, window title-bar text, system tooltips inside system panels, NSAlert text size, Save, Open and Print panels, Fonts and Colors panels."
+      "resolution": "Resolved: the app owns text wherever it can. Done: About window, 20 pt menus, permission sheet, app-owned 20 pt tooltips (OSN-041, efe2f68), and app-owned alert sheets at 20 pt (OSN-043, 658a16f). OS-owned limitations recorded: menu-bar strip titles; window title-bar title and subtitle; system tooltips inside Save, Open, Fonts and Colors panels, and NSMenuItem tooltips; Save, Open, Export and Page Setup panels; Fonts and Colors panels; traffic-light tooltips."
     },
     {
       "id": "D-HINT",
@@ -473,7 +473,7 @@
         "evidence": null,
         "openItems": [
           "Round-1 can-fail proof deleted the owner's real com.shoemoney.opensnap defaults plist (cause fixed in db973a6); the SkitchRedux store and com.shoemoney.skitch-redux.plist hashed unchanged.",
-          "tools/test-native-startup.py launches the real bundle id in place; being fixed in impl/m4-type, do not run it until fixed."
+          "tools/test-native-startup.py now runs only a throwaway-id temp copy, behind a store guard (efe2f68). The earlier warning no longer applies."
         ]
       }
     },
@@ -483,7 +483,7 @@
       "priority": "P0",
       "milestone": "M0",
       "status": "done",
-      "mainState": "Done as decisions, not code: the owner accepted the recommended defaults; Q1, Q2, Q4, Q5, D-HINT and D-T15-1 to D-T15-3 are resolved, and Q3 waits on the OSN-042 spike (no single merge; the decisions are reflected in c53155c, 77bad0c and f3ba77f).",
+      "mainState": "Done as decisions, not code: the owner accepted the recommended defaults. All ten decisions are resolved: Q1, Q2, Q4, Q5, D-HINT and D-T15-1 to D-T15-3 at their earlier merges, Q3 on the OSN-042 spike (option B, 8015360), and Q4 in OSN-043 (658a16f). The decisions are reflected in c53155c, 77bad0c, f3ba77f, 8015360 and 658a16f.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -545,8 +545,8 @@
         "tests": "n/a (decision record)",
         "evidence": null,
         "openItems": [
-          "Q3 stays open until the OSN-042 spike.",
-          "Q4 (full screen) is implemented in OSN-043, which is pending."
+          "Q3 resolved to option B (custom bars) on spike evidence (8015360).",
+          "Q4 (full screen) is implemented in OSN-043 (658a16f)."
         ]
       }
     },
@@ -1516,8 +1516,8 @@
       "title": "Type sweep: body 20, caption 18 only, native-text exceptions per D-TEXT",
       "priority": "P1",
       "milestone": "M4",
-      "status": "in-progress",
-      "mainState": "In progress: the Destinations and History files (f484d3e) and the capture overlay files (75a9ee6) are swept to 0 literals; chrome, App, Resize, Photos, TextStyle, Hotkeys, Export and the 20 pt tooltips remain on impl/m4-type.",
+      "status": "done",
+      "mainState": "Done: the type sweep is merged in efe2f68 (repo font literals 68 to 6, colour literals 17 to 8; the rest is in capture and harness files and annotated document-data lines). App-owned 20 pt tooltips (Sources/AppToolTip.swift) are in efe2f68 with tools/check-tooltips.py. Alert.make was finished in 658a16f (OSN-043 step 5).",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -1574,15 +1574,19 @@
         "D-TEXT"
       ],
       "implementation": {
-        "mergeCommit": null,
+        "mergeCommit": "efe2f68",
         "branchCommits": [
-          "75a9ee6"
+          "462b8c7",
+          "aeaee06",
+          "cc3c5d9",
+          "81131ae",
+          "7526fc5",
+          "b6658d2"
         ],
-        "tests": "no suite count recorded",
-        "evidence": null,
+        "tests": "app-safety 153/153 at efe2f68; tools/check-tooltips.py; tools/test-native-startup.py runs only a throwaway-id temp copy behind tools/test-native-startup-guard.py",
+        "evidence": "docs/design/evidence/impl-2026-10-09/m4-window/ (step 5 only)",
         "openItems": [
-          "Remaining: chrome, App, Resize, Photos, TextStyle, Hotkeys, Export and app-owned 20 pt tooltips.",
-          "The worker on impl/m4-type is not merged."
+          "Literal counts (6 font, 8 colour) remain in capture and harness files and annotated document-data lines, by design."
         ]
       }
     },
@@ -1591,8 +1595,8 @@
       "title": "Glass consolidation: one plate per group, solid canvas well, backdrop and bleed deleted, fallbacks",
       "priority": "P1",
       "milestone": "M4",
-      "status": "pending",
-      "mainState": "Open: no glass consolidation has landed, and the Q3 spike has not run.",
+      "status": "done",
+      "mainState": "Done: 26 glass surfaces became 8 group plates in 2 containers. The behind-window backdrop and canvas bleed are deleted; the solid canvas well removed the full-screen salmon tint. Only Snap is saturated; the selected tool is accent at 0.20 with a 1 pt accent border. The phantom capsule under Snap is gone. Reduce Transparency gives solid plates; Increase Contrast gives borders. Merged in 8015360.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -1654,13 +1658,23 @@
         "Q3"
       ],
       "implementation": {
-        "mergeCommit": null,
-        "branchCommits": [],
-        "tests": "none (not started)",
-        "evidence": null,
+        "mergeCommit": "8015360",
+        "branchCommits": [
+          "7b0c636",
+          "acfc154",
+          "850a2e9",
+          "622ca82",
+          "da2738d",
+          "ff3eeb4",
+          "212059c",
+          "33b8b3e"
+        ],
+        "tests": "app-safety 154/154 (cases for plates, well and G5 in acfc154)",
+        "evidence": "docs/design/evidence/impl-2026-10-09/m4-glass/ (98 captures at da2738d)",
         "openItems": [
-          "Q3 spike (NSToolbar or custom bars) first; reconcile the glass budget (5 in spec section 0, 8 in T4).",
-          "Deferred visual defects: phantom capsule under Snap (hidden Cancel glass surface); full-screen salmon tint and accent loss (backdrop vibrancy); legacy-scroller white corner."
+          "The legacy scroller corner is slightly lighter than the well (AppKit draws it; no public API).",
+          "Controls are 36 pt tall inside 44 pt bars; to be reviewed at sign-off (OSN-071).",
+          "Q3 resolved to option B (custom bars) on NSToolbar spike evidence."
         ]
       }
     },
@@ -1669,8 +1683,8 @@
       "title": "Unified window chrome: title and commands in one bar, autosave, representedURL, full screen per Q4",
       "priority": "P1",
       "milestone": "M4",
-      "status": "pending",
-      "mainState": "Open: unified window chrome, autosave, representedURL and full screen (Q4) have not landed.",
+      "status": "done",
+      "mainState": "Done: the window title is the document name, with a proxy icon and a \"W x H · size\" subtitle. The title bar is seamless: transparent outside Frame, opaque in Frame. Frame autosave is \"OpenSnap.Main\"; default size 1120x780; minimum 980x640. Full screen is allowed, and Frame refuses in full screen (\"Exit full screen to use Frame\", Q4). Document questions are app-owned sheets (Sources/AppAlert.swift). Merged in 658a16f.",
       "remainingWork": null,
       "openItems": [
         "Minimum height is not decided. T15 sets a 608 pt minimum content height (492 pt viewport). T8 sets a 680 pt window minimum. Decide which governs before the minimum-height captures are taken (technical-spec T8 and T15; not settled in visual-audit section 9)."
@@ -1727,13 +1741,21 @@
         "Q4"
       ],
       "implementation": {
-        "mergeCommit": null,
-        "branchCommits": [],
-        "tests": "none (not started)",
-        "evidence": null,
+        "mergeCommit": "658a16f",
+        "branchCommits": [
+          "d59b0a1",
+          "2cc0415",
+          "a3d0afe",
+          "aeaf890",
+          "52d0398",
+          "7bf20f8",
+          "1a65cd0"
+        ],
+        "tests": "app-safety 166/166; window chrome and AppAlert suites; can-fail mutations recorded on the branch",
+        "evidence": "docs/design/evidence/impl-2026-10-09/m4-window/ (50 captures at 7bf20f8)",
         "openItems": [
-          "Q4 default accepted (full screen on, exclusive with Frame mode); not implemented.",
-          "Minimum height unresolved: 608 pt (T15) against 680 pt (T8)."
+          "Minimum height resolved: 640 pt window (608 pt content), per T15. T8's 680 pt is not adopted. Width is measured from the live bars and floored at 980 pt.",
+          "OS-owned: window title-bar title and subtitle text, traffic-light tooltips, Save, Open, Export and Page Setup panels (D-TEXT)."
         ]
       }
     },
@@ -1742,8 +1764,8 @@
       "title": "Component state model: StateStyles, CommandButton, slider, swatch, drag well, History tile, canvas border rest",
       "priority": "P1",
       "milestone": "M4",
-      "status": "pending",
-      "mainState": "Open: the component state model (StateStyles, CommandButton, slider, swatch, drag well, History tile, canvas border rest) has not landed.",
+      "status": "in-progress",
+      "mainState": "In progress on impl/m4-states, not merged to main. The component state model (StateStyles, CommandButton, slider, swatch, drag well, History tile, canvas border rest) is not on main yet.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -1802,9 +1824,11 @@
       "implementation": {
         "mergeCommit": null,
         "branchCommits": [],
-        "tests": "none (not started)",
+        "tests": "none recorded",
         "evidence": null,
-        "openItems": []
+        "openItems": [
+          "Branch impl/m4-states is not merged; no branch SHA is recorded in this pass."
+        ]
       }
     },
     {
@@ -1812,8 +1836,8 @@
       "title": "Iconography: every chrome icon through Font Awesome; semantic fallbacks; glyph hygiene",
       "priority": "P1",
       "milestone": "M4",
-      "status": "pending",
-      "mainState": "Open: Q1 is answered (SF Symbols in release, Font Awesome Pro never committed or shipped), but the chrome icon pass has not landed and FA mode is unavailable in the harness.",
+      "status": "done",
+      "mainState": "Done: chrome icons resolve as Font Awesome Free 7.3.1 vectors compiled as path data (Sources/FontAwesomeFree.swift; no font files, no Pro material). The chain is Pro glyph (dev only), then Free vector, then SF Symbol, then none. Icons are CC BY 4.0, credited in THIRD_PARTY_NOTICES.md and reachable from About via \"Third-party notices\". Wipe uses the broom icon (SF fallback eraser.line.dashed); delete is trash. Menus keep SF Symbols (Q1). Merged in 439d734.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -1868,12 +1892,17 @@
         "Q1"
       ],
       "implementation": {
-        "mergeCommit": null,
-        "branchCommits": [],
-        "tests": "none (not started)",
+        "mergeCommit": "439d734",
+        "branchCommits": [
+          "637792d",
+          "3ca617d",
+          "8f66c62",
+          "515cab1"
+        ],
+        "tests": "IconCoverageTests: 980 checks",
         "evidence": null,
         "openItems": [
-          "Official Free FA vectors may be used where suitable; not yet applied."
+          "Font Awesome Pro icon mode is dev-only and is not run in the harness."
         ]
       }
     },
@@ -1962,8 +1991,8 @@
       "title": "Settings window rebuild: toolbar tabs, no Done, Escape closes, aligned grid",
       "priority": "P1",
       "milestone": "M5",
-      "status": "pending",
-      "mainState": "Open: Settings is still titled Preferences; the Classic rows are already gone (OSN-022).",
+      "status": "done",
+      "mainState": "Merged to main in e124f77 (impl/m5-settings integrated at a79a1d8 with the App.swift hunk, app-safety seam and legacy form removal); full suite green, app-safety 166/166.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -2011,12 +2040,12 @@
       ],
       "decisions": [],
       "implementation": {
-        "mergeCommit": null,
+        "mergeCommit": "e124f77",
         "branchCommits": [],
-        "tests": "none (not started)",
-        "evidence": null,
+        "tests": "SettingsWindowTests 1405 checks; G4 walker 0 violations over the Settings tabs; app-safety 166/166 at integration",
+        "evidence": "docs/design/evidence/impl-2026-10-09/m5-settings/ (36 captures at a48d0df)",
         "openItems": [
-          "Settings is still titled Preferences; toolbar tabs and the aligned grid are not started."
+          "Integrated at a79a1d8 on impl/m5-settings; not on main. Not claimed as done until the suite passes and the branch merges."
         ]
       }
     },
@@ -2208,7 +2237,9 @@
         "branchCommits": [],
         "tests": "none (not started)",
         "evidence": null,
-        "openItems": []
+        "openItems": [
+          "AWS live validation on 2026-10-09 is recorded as validation evidence only (one synthetic object uploaded through OpenSnap's S3 path, read back over the CDN with identical bytes, then deleted through the app's delete path). The upload UX (progress, success, errors, announcements) is not built."
+        ]
       }
     },
     {
@@ -2502,8 +2533,8 @@
       "title": "Display-option consumers and an injected DisplayOptions capture mode",
       "priority": "P1",
       "milestone": "M6",
-      "status": "pending",
-      "mainState": "Open: display-option consumers and the injected DisplayOptions capture mode have not landed.",
+      "status": "in-progress",
+      "mainState": "In progress: part 1 is on main (accfedd). A DisplayOptions model reads Reduce Motion, Reduce Transparency, Increase Contrast and Differentiate Without Color live and observes them. Consumers: countdown, flash and hint bevel; the glass consolidation (8015360) applies them to plates and borders. A harness-gated --display injection mode is in tools/eye-dump-audit.sh; a normal launch cannot use it. DisplayOptionsTests: 92 checks. OSN-061 stays in-progress.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -2554,11 +2585,19 @@
       ],
       "decisions": [],
       "implementation": {
-        "mergeCommit": null,
-        "branchCommits": [],
-        "tests": "none (not started)",
+        "mergeCommit": "accfedd",
+        "branchCommits": [
+          "de21b6e",
+          "d0f8013",
+          "2dc613e",
+          "eaab72f",
+          "f975dfa"
+        ],
+        "tests": "DisplayOptionsTests: 92 checks",
         "evidence": null,
-        "openItems": []
+        "openItems": [
+          "Only part 1 is on main; the todo stays in-progress."
+        ]
       }
     },
     {
@@ -2624,8 +2663,8 @@
       "title": "Regression gates in tools/test.py: font-floor walker, glass depth and budget, glyphs, original bytes, Skitch strings, layout fit at 980",
       "priority": "P0",
       "milestone": "M7",
-      "status": "pending",
-      "mainState": "Partly: check-no-original.py, check-clean-clone.sh, check-brand.py and check-tokens.py (report mode) are on main; the remaining gates in this todo are not recorded as landed.",
+      "status": "in-progress",
+      "mainState": "Partial. On main from 0996da5: G6 tools/check-glyphs.py (decorative glyph scan, strict, 0 hits); G7 tools/check-eye-dump.py (harness output checker: PNG decode, clipping, rail absent, 12 pt margin, minimum sizes; contrast advisory); G11 tools/check-skip-budget.py; G4 font-floor walker tests/ViewTreeAudit.swift with ViewTreeAuditTests. The gates are wired into tools/test.py in efe2f68. Earlier on main: check-no-original.py, check-clean-clone.sh, check-brand.py and check-tokens.py (report mode). Not recorded as landed: G3 check-user-strings.py, the dynamic Skitch-string check, and a layout-fit-at-980 gate beyond the measured-width test in 658a16f.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -2709,12 +2748,22 @@
       ],
       "decisions": [],
       "implementation": {
-        "mergeCommit": null,
-        "branchCommits": [],
-        "tests": "none beyond the gates listed in mainState",
+        "mergeCommit": "0996da5",
+        "branchCommits": [
+          "90f70bc",
+          "2cbf59c",
+          "bb0659a",
+          "56393f8",
+          "8cdebcb",
+          "7852769",
+          "8c75d9e",
+          "b6658d2"
+        ],
+        "tests": "each new gate has a can-fail self-test (90f70bc, 2cbf59c, bb0659a); the gates run from tools/test.py (wired in efe2f68, b6658d2)",
         "evidence": null,
         "openItems": [
-          "Font-floor walker, glass depth and budget, and layout fit at 980 are not recorded as landed."
+          "Not recorded as landed: G3 check-user-strings.py, the dynamic Skitch-string check, and a layout-fit-at-980 gate beyond the measured-width test.",
+          "G5 and G9 status beyond what is listed above is not recorded in this pass."
         ]
       }
     },
@@ -2807,8 +2856,8 @@
       "title": "WP7: migration verified on a copy of the owner's real store; clean-clone build, test and release dry run",
       "priority": "P0",
       "milestone": "M7",
-      "status": "pending",
-      "mainState": "Open: migration is not verified on a copy of the owner's real store (not authorized in this run), and the release dry run has not been done.",
+      "status": "in-progress",
+      "mainState": "Partial. The synthetic migration dry run is on main from 0996da5: 58 documents, 2 destinations; the source manifest is unchanged and a re-run is a no-op. Release dry run in a temp clone: zip SHA-256 2b0e2268c7bdda3778ae8bcd1bac1571e6c492308c1604d6ef27dbc723582725; codesign verify OK; nothing tagged, pushed or uploaded. The AWS cdn upload dry run is partly satisfied by the 2026-10-09 live validation (see progress.md). Not done: migration on a copy of the owner's real store (not authorized in this run).",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -2854,13 +2903,17 @@
       ],
       "decisions": [],
       "implementation": {
-        "mergeCommit": null,
-        "branchCommits": [],
-        "tests": "none (not started)",
+        "mergeCommit": "0996da5",
+        "branchCommits": [
+          "56393f8",
+          "8cdebcb"
+        ],
+        "tests": "tools/migration-dry-run.py synthetic store: 58 documents, 2 destinations; re-run is a no-op",
         "evidence": null,
         "openItems": [
-          "Migration on a copy of the owner's real store is not authorized in this run.",
-          "No push or release has been made."
+          "Not done: migration on a copy of the owner's real store (not authorized in this run).",
+          "Not done: no tag, push, upload or release. Release work is a dry run only.",
+          "AWS live validation 2026-10-09 (partial evidence for the cdn upload dry run): OpenSnap's own S3 path, one synthetic object uploaded and deleted through the app; see progress.md."
         ]
       }
     }

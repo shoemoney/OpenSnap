@@ -37,6 +37,20 @@ final class AppSafetyWindow: NSWindow {
     override func orderBack(_ sender: Any?) {}
 }
 
+/// The Settings window, kept off screen exactly as AppSafetyWindow keeps the editor.
+final class AppSafetySettingsWindow: SettingsWindow {
+    var simulatedSheet: NSWindow?
+    var simulatesVisibility = false
+    var shown = false
+    override var isVisible: Bool { simulatesVisibility && shown }
+    override var isKeyWindow: Bool { simulatesVisibility && shown }
+    override var attachedSheet: NSWindow? { simulatedSheet ?? super.attachedSheet }
+    override func makeKeyAndOrderFront(_ sender: Any?) { if simulatesVisibility { shown = true } }
+    override func orderFront(_ sender: Any?) { if simulatesVisibility { shown = true } }
+    override func orderOut(_ sender: Any?) { shown = false }
+    override func center() {}
+}
+
 final class AppSafetyCloseProbe: NSWindow {
     var closeRequests = 0
     override func performClose(_ sender: Any?) { closeRequests += 1 }
@@ -131,7 +145,7 @@ enum AppSafetyTermination {
 // No defaults, Carbon handler or desktop registration is reachable through this
 // adapter. GlobalHotkeys.swift still compiles alongside the actual app sources.
 @MainActor
-final class AppSafetyHotkeyManager {
+final class AppSafetyHotkeyManager: GlobalHotkeyEditing {
     static var installations = 0
     static var unregistrations = 0
     var screen: (@MainActor () -> Void)?
@@ -140,6 +154,9 @@ final class AppSafetyHotkeyManager {
     var upload: (@MainActor () -> Void)?
     var show: (@MainActor () -> Void)?
     var settingsParents: [NSWindow?] = []
+    var settings = GlobalHotkeySettings()
+    var lastError: Error?
+    func apply(_ candidate: GlobalHotkeySettings) throws { settings = candidate }
     func install(globalScreen: @escaping @MainActor () -> Void,
                  globalWindow: @escaping @MainActor () -> Void,
                  globalFullscreen: @escaping @MainActor () -> Void,
@@ -369,6 +386,7 @@ enum AppSafetyTests {
             if FileManager.default.fileExists(atPath: staleRecovery.path) { try FileManager.default.removeItem(at: staleRecovery) }
             try FileManager.default.createDirectory(at: app.support, withIntermediateDirectories: true)
             if let nativeRecovery { try nativeRecovery.write(to: app.support.appendingPathComponent("Recovery.opensnap"), options: .atomic) }
+            SettingsWindowController.windowClass = AppSafetySettingsWindow.self
             // Use the real launch method to test onChange and onOpenDocument wiring.
             app.applicationDidFinishLaunching(Notification(name: NSApplication.didFinishLaunchingNotification))
             app.timer?.invalidate(); app.timer = nil
@@ -522,7 +540,7 @@ enum AppSafetyTests {
     static func captureDismissesPreferences() throws {
         let fixture = try Fixture(), app = fixture.app
         app.showPreferences()
-        let preferences = app.preferencesWindow as! AppSafetyWindow
+        let preferences = app.preferencesWindow as! AppSafetySettingsWindow
         preferences.simulatesVisibility = true; preferences.shown = true
         app.receiveCapture(.failure(AppSafetyCaptureCoordinator.cancellation))
         try expect(preferences.isVisible, "Cancelled capture retains Preferences")
@@ -2026,16 +2044,17 @@ enum AppSafetyTests {
         let command = menu.items.first { $0.title == "Settings…" }!
         try expect(command.keyEquivalent == "," && command.action == #selector(AppDelegate.showPreferences), "Command-comma opens real Preferences")
         app.showPreferences()
-        let panel = app.preferencesWindow!, form = app.preferencesForm!
-        try expect(panel.title == "Preferences" && panel.contentView === form && panel.contentMinSize.width >= 650, "Preferences owns a native readable window and form")
+        let panel = app.preferencesWindow!, settings = app.settingsController!
+        try expect(panel.title == "General" && panel is AppSafetySettingsWindow && !panel.styleMask.contains(.resizable) && settings.tabItems.map(\.label) == ["General", "Drawing", "Capture", "Upload"],
+                   "Settings is a titled window of four tabs and keeps off screen under test")
         try expect(editor.superview != nil && editor.string == "Keep pending typing" && history.undoActionName == undo && history.redoActionName == redo,
                    "Opening Preferences does not finish or lose pending text or its Undo branch")
         var choices = app.generalPreferences.state
         choices.showToolTips = true; choices.showKeyboardTips = true
         choices.drawingPrecision = .loose; choices.arrowHead = 1; choices.includeApp = true; choices.statusMenu = 1
-        form.onChange?(choices)
+        settings.onChange?(choices)
         try expect(app.generalPreferences.state == choices && app.canvas.strokeSmoothing == .loose && app.canvas.arrowHeadPreference == 1,
-                   "Form routes immediate original preference writes and future drawing defaults")
+                   "Settings routes immediate original preference writes and future drawing defaults")
         try expect(app.helpBevel?.enabled == true && !defaults.bool(forKey: "disableOverlay") && !defaults.bool(forKey: "disableModtips"),
                    "Both original inverse hint settings apply independently to the live shell")
         try expect(AppSafetyPresence.policies.last == .accessory, "Menu-only policy applies without relaunch")
@@ -2045,18 +2064,24 @@ enum AppSafetyTests {
         let arrow = NSMenuItem(); arrow.tag = 2; app.changeArrowHead(arrow)
         try expect(app.generalPreferences.state.drawingPrecision == .precise && defaults.integer(forKey: "fittingPrecision") == 0 && app.canvas.arrowHeadPreference == 2,
                    "Existing Drawing menu choices keep the Preferences model and recovered precision key synchronized")
-        form.onShortcuts?()
-        try expect(app.hotkeys.settingsParents.last! === panel && form.onSharing != nil, "Shortcuts attaches to Preferences and Sharing has a live route")
+        try expect(settings.drawing.precisionButtons.first { $0.state == .on }?.tag == 0 && settings.drawing.arrowButtons.first { $0.state == .on }?.tag == 2,
+                   "A menu choice refreshes the open Settings window")
+        try expect(settings.capture.hotkeyForm.mode == .live && app.hotkeys.settingsParents.isEmpty, "Shortcuts are edited inside the Capture tab, not in a sheet")
+        settings.select(3); settings.upload.manageButton.performClick(nil)
+        try expect(panel.attachedSheet != nil, "Manage Destinations opens the Destinations sheet on the Settings window")
+        app.closePreferences()
+        try expect(panel.attachedSheet != nil, "Closing Settings leaves its sheet to finish first")
+        app.publishing.cancelSettings()
         let same = app.preferencesWindow; app.showPreferences()
-        try expect(app.preferencesWindow === same && app.preferencesForm === form, "Repeated open reuses and synchronizes one owned window")
-        form.onDone?()
-        try expect(editor.superview != nil && editor.string == "Keep pending typing", "Done retains the pending native editor")
+        try expect(app.preferencesWindow === same && app.settingsController === settings, "Repeated open reuses and synchronizes one owned window")
+        panel.cancelOperation(nil)
+        try expect(editor.superview != nil && editor.string == "Keep pending typing", "Escape closes Settings and retains the pending native editor")
         let auxiliary = AppSafetyCloseProbe(contentRect: .zero, styleMask: [.titled, .closable], backing: .buffered, defer: true)
         app.closeWindow(auxiliary)
         try expect(auxiliary.closeRequests == 1 && editor.superview != nil, "Close routes utility windows to their own native close path without hiding the editor")
-        try expect(!app.windowShouldClose(panel), "Native Preferences close uses its owned hide path")
+        try expect(!settings.windowShouldClose(panel), "Native Settings close uses its owned hide path")
         app.terminationStarted = true
-        choices.arrowHead = 1; form.onChange?(choices)
+        choices.arrowHead = 1; settings.onChange?(choices)
         try expect(app.canvas.arrowHeadPreference == 2 && !app.validateMenuItem(command), "Termination blocks preference writes and reopening")
     }
     static func hintShellRouting() throws {

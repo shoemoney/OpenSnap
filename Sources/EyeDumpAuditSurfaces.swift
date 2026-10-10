@@ -3,6 +3,17 @@ import CoreGraphics
 
 /// Surface flows for the audit harness. Every flow drives the app's own presentation code with synthetic content;
 /// nothing here captures the screen, touches the network, the Keychain or the real stores.
+/// A shortcut backend that registers nothing, so a Settings window built by the harness cannot claim a key on the desktop.
+@MainActor
+final class AuditInertHotkeyBackend: GlobalHotkeyBackend {
+    var registeredIDs: Set<UInt32> { [] }
+    func installHandler(onEvent: @escaping @MainActor @Sendable (UInt32) -> Void) throws {}
+    func systemReservedBindings() throws -> Set<GlobalHotkeyBinding> { [] }
+    func register(_ binding: GlobalHotkeyBinding, id: UInt32) throws {}
+    func unregister(id: UInt32) throws {}
+    func shutdown() throws {}
+}
+
 extension AuditRun {
     var canvas: CanvasView { app.canvas }
 
@@ -1040,25 +1051,72 @@ extension AuditRun {
         pump(0.4)
     }
 
+    /// The Settings window, built straight from SettingsWindow.swift against stand-ins, so the capture does not depend on how the app opens it.
+    /// Every tab is imaged at the screen's own size and again as sized for a 1280 x 800 screen (menu bar and Dock taken off).
     func s17() {
-        app.showPreferences()
-        pump(0.8)
-        if let prefs = app.preferencesWindow {
-            shoot("S17", "preferences-general", surface: "Preferences: General", state: "General preferences window (single page)", windows: [prefs],
-                  refs: ["App.swift|@objc func showPreferences()", "GeneralPreferencesForm.swift|final class GeneralPreferencesForm"])
-            if let form = app.preferencesForm {
-                form.synchronize(GeneralPreferencesState(drawingPrecision: .loose, arrowHead: 1, includeApp: true, statusMenu: 1, showToolTips: true, showKeyboardTips: true))
-                shoot("S17", "preferences-alt-values", surface: "Preferences: General", state: "alternate values selected (Loose, Start, Menu bar, both tip overlays on)", windows: [prefs],
-                      refs: ["GeneralPreferencesForm.swift|func synchronize"])
+        let fakeVisible = CGSize(width: 1280, height: 706)
+        var dav = PublishingSettings(); dav.endpoint = "https://dav.example.com/files"; dav.username = "demo"; dav.publicBaseURL = "https://dav.example.com/files"
+        var s3 = PublishingSettings(); s3.transport = .s3; s3.publicBaseURL = "https://cdn.example.com/pics"; s3.s3 = S3Options()
+        var sftp = PublishingSettings(); sftp.transport = .sftp; sftp.endpoint = "sftp://example.com/var/www"
+        let items = [PublishingDestination(name: "Example S3", settings: s3), PublishingDestination(name: "Example WebDAV", settings: dav),
+                     PublishingDestination(name: "Example SFTP", settings: sftp)]
+        let list = PublishingDestinationList(defaultID: items[0].id, destinations: items)
+        var stored = GeneralPreferencesState(drawingPrecision: .medium, arrowHead: 2, includeApp: true, statusMenu: 0)
+        var destinations = list
+        let controller = SettingsWindowController(state: { stored }, hotkeys: GlobalHotkeyManager(defaults: .standard, backend: AuditInertHotkeyBackend()), defaults: .standard,
+                                                  destinations: { destinations }, manageDestinations: { _ in })
+        controller.onChange = { stored = $0 }
+        let screen = (window.screen ?? NSScreen.main)?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
+        let refs = ["SettingsWindow.swift|final class SettingsWindowController", "SettingsWindow.swift|final class SettingsTabViewController"]
+        func place(_ visible: NSRect) {
+            controller.visibleFrame = { visible }
+            controller.fit(animated: false)
+            controller.window.setFrameTopLeftPoint(NSPoint(x: visible.minX + 40, y: visible.maxY - 24))
+        }
+        func capture(_ tab: Int, _ slug: String, _ state: String) {
+            controller.select(tab)
+            place(screen)
+            controller.show()
+            controller.window.setFrameTopLeftPoint(NSPoint(x: screen.minX + 40, y: screen.maxY - 24))
+            let title = controller.tabItems[tab].label
+            shoot("S17", "settings-" + slug, surface: "Settings: " + title, state: state, windows: [controller.window], refs: refs, settle: 0.5,
+                  extra: ["windowTitle": controller.window.title, "tabFittingHeight": Double(controller.windowHeight(forTabAt: tab))])
+            // The captured window is the size its tab asks for: a late animation from an earlier change would show up here.
+            if abs(controller.window.frame.height - controller.windowHeight(forTabAt: tab)) > 0.5 {
+                gap("S17", "Settings: " + title, "the window settled at \(controller.window.frame.height) pt, not the \(controller.windowHeight(forTabAt: tab)) pt its tab asks for")
             }
-        } else { gap("S17", "Preferences", "preferencesWindow was nil") }
-        app.closePreferences()
+            let fake = NSRect(x: screen.minX, y: screen.maxY - fakeVisible.height, width: fakeVisible.width, height: fakeVisible.height)
+            place(fake)
+            let fits = controller.window.frame.height <= fakeVisible.height
+            shoot("S17", "settings-" + slug + "-1280x800", surface: "Settings: " + title, state: state + ", sized for a 1280 x 800 screen (\(Int(fakeVisible.height)) pt visible)", windows: [controller.window], refs: refs, settle: 0.5,
+                  extra: ["fakeScreen": "1280x800", "fakeVisibleHeight": Double(fakeVisible.height), "windowHeight": Double(controller.window.frame.height), "fitsVisibleHeight": fits])
+            if !fits { gap("S17", "Settings: " + title, "the window is \(controller.window.frame.height) pt tall on a \(fakeVisible.height) pt visible height") }
+        }
+        capture(0, "general", "General tab, default values")
+        capture(1, "drawing", "Drawing tab, default values")
+        capture(2, "capture", "Capture tab: flash on, shortcuts enabled, every action None")
+        capture(3, "upload", "Upload tab: three saved destinations, the first is the default")
+        stored = GeneralPreferencesState(drawingPrecision: .loose, arrowHead: 1, includeApp: false, statusMenu: 1, showToolTips: true, showKeyboardTips: true)
+        controller.refresh()
+        capture(0, "general-alt", "General tab, alternate values (Menu bar, snap window off, both hint options on)")
+        capture(1, "drawing-alt", "Drawing tab, alternate values (Loose, Start)")
+        // A refused shortcut leaves its error line on the tab, which grows the window to hold it.
+        controller.select(2)
+        let form = controller.capture.hotkeyForm!
+        let key = form.keyPopup(for: .screen)
+        key.selectItem(withTitle: "K"); _ = key.target?.perform(key.action, with: key)
+        capture(2, "capture-error", "Capture tab with a refused shortcut (a key with no Command or Control)")
+        key.selectItem(at: 0); _ = key.target?.perform(key.action, with: key)
+        destinations = PublishingDestinationList()
+        controller.refresh()
+        capture(3, "upload-empty", "Upload tab, no destination saved")
+        controller.window.orderOut(nil)
     }
 
     func s18() {
         app.shortcutSettings()
         captureSheet("S18", "hotkeys-sheet", surface: "Preferences: Hotkeys", state: "Capture Shortcuts sheet (all actions None)",
-                     refs: ["GlobalHotkeys.swift|func present(attachedTo", "App.swift|@objc func shortcutSettings()"], dismiss: { [self] in
+                     refs: ["GlobalHotkeys.swift|final class GlobalHotkeyForm", "GlobalHotkeys.swift|func present(attachedTo", "App.swift|@objc func shortcutSettings()"], dismiss: { [self] in
                         if let sheet = window.attachedSheet { window.endSheet(sheet, returnCode: .cancel); sheet.orderOut(nil) }
                      })
     }

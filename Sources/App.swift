@@ -255,8 +255,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     let historyRemoteDeletion = HistoryRemoteDeletionCoordinator(destinationBinding: nil, store: AppDelegate.publishingStore)
     let hotkeys = GlobalHotkeyManager()
     var generalPreferences: OriginalGeneralPreferences { OriginalGeneralPreferences(defaults: .standard) }
-    var preferencesWindow: NSWindow?
-    var preferencesForm: GeneralPreferencesForm?
+    var settingsController: SettingsWindowController?
+    var preferencesWindow: NSWindow? { settingsController?.window }
     var helpBevel: OriginalHelpBevel?
     /// Controls the hover-hint bevel describes (weak): their tooltip yields to the bevel while it is enabled.
     let hintTrackedViews = NSHashTable<NSView>.weakObjects()
@@ -904,13 +904,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     @objc func changeSmoothing(_ sender: NSMenuItem) {
         guard let raw = sender.representedObject as? String, let mode = StrokeSmoothing(rawValue: raw) else { return }
         canvas.strokeSmoothing = mode; generalPreferences.setPrecision(mode)
-        preferencesForm?.synchronize(generalPreferences.state)
+        settingsController?.synchronize(generalPreferences.state)
     }
     @objc func changeArrowHead(_ sender: NSMenuItem) {
         guard sender.tag == 1 || sender.tag == 2 else { return }
         canvas.arrowHeadPreference = sender.tag
         UserDefaults.standard.set(sender.tag, forKey: OriginalArrowGeometry.preferenceKey)
-        preferencesForm?.synchronize(generalPreferences.state)
+        settingsController?.synchronize(generalPreferences.state)
     }
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         if menuItem.action == #selector(statusShowHide) { menuItem.title = statusShowHideTitle; return !terminationStarted }
@@ -1685,27 +1685,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     @objc func showPreferences() {
         guard !terminationStarted, !frameCaptureInProgress, window?.attachedSheet == nil,
               preferencesWindow?.attachedSheet == nil, NSApp.modalWindow == nil else { return }
-        if preferencesWindow == nil {
-            let panel = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 800, height: 570),
-                styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
-            panel.title = "Preferences"; panel.isReleasedWhenClosed = false
-            panel.contentMinSize = NSSize(width: 650, height: 500); panel.delegate = self
-            let form = GeneralPreferencesForm(state: generalPreferences.state)
-            form.onChange = { [weak self] in self?.applyGeneralPreferences($0) }
-            form.onDone = { [weak self] in self?.closePreferences() }
-            form.onShortcuts = { [weak self] in
-                guard let self, !self.terminationStarted else { return }
-                self.hotkeys.showSettings(attachedTo: self.preferencesWindow)
-            }
-            form.onSharing = { [weak self] in
-                guard let self, !self.terminationStarted, let panel = self.preferencesWindow else { return }
-                self.publishing.showSettings(relativeTo: panel)
-            }
-            panel.contentView = form
-            preferencesForm = form; preferencesWindow = panel; panel.center()
+        if settingsController == nil {
+            let settings = SettingsWindowController(
+                state: { [unowned self] in self.generalPreferences.state }, hotkeys: hotkeys, defaults: .standard,
+                destinations: { [unowned self] in self.publishing.destinations() },
+                manageDestinations: { [weak self] window in
+                    guard let self, !self.terminationStarted else { return }
+                    self.publishing.showSettings(relativeTo: window)
+                },
+                frameAutosaveName: SettingsWindowController.autosaveName)
+            settings.onChange = { [weak self] in self?.applyGeneralPreferences($0) }
+            settings.onClose = { [weak self] in self?.closePreferences() }
+            settingsController = settings
         }
-        preferencesForm?.synchronize(generalPreferences.state)
-        preferencesWindow?.makeKeyAndOrderFront(nil)
+        settingsController?.show()
     }
     func applyGeneralPreferences(_ state: GeneralPreferencesState) {
         guard !terminationStarted else { return }
@@ -1714,7 +1707,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         let saved = generalPreferences.state
         canvas.strokeSmoothing = saved.drawingPrecision
         canvas.arrowHeadPreference = UserDefaults.standard.integer(forKey: OriginalArrowGeometry.preferenceKey)
-        preferencesForm?.synchronize(saved)
+        settingsController?.synchronize(saved)
         if saved.statusMenu != previous.statusMenu { applyPresencePolicy() }
         helpBevel?.enabled = saved.showKeyboardTips
     }

@@ -1,6 +1,6 @@
 # OpenSnap todo checklist (visual audit, 2026-10-09, final)
 
-Status of every todo at main `f3ba77f` (implementation baseline `bad6617`): **20 done, 2 verified, 1 not-a-bug, 1 in-progress, 12 pending.** Each todo has an Implementation note (merge, evidence, open items). Counts and the commit map are in `progress.md`. IDs, priorities, milestones, dependencies and Lane A match `visual-audit.md` section 9 exactly. Each section records the main state at `f3ba77f`. The audit's section 9 state at `dc1eb26` is in `visual-audit.md`. This file is generated from the same data as `backlog.json`. Edit the source, not the output.
+Status of every todo at main `658a16f` (implementation baseline `bad6617`): **24 done, 2 verified, 1 not-a-bug, 5 in-progress, 4 pending.** Each todo has an Implementation note (merge, evidence, open items). Counts and the commit map are in `progress.md`. IDs, priorities, milestones, dependencies and Lane A match `visual-audit.md` section 9 exactly. Each section records the main state at `658a16f`. The audit's section 9 state at `dc1eb26` is in `visual-audit.md`. This file is generated from the same data as `backlog.json`. Edit the source, not the output.
 
 Snapshot: briefed at `b9319c4`; drift to `4b2ae0f` and then `dc1eb26` (checked 11:01 CDT). WP4 (rename) merged before the implementation baseline (`f7ff86b`, `d2dc3c9`). Reconcile each todo against main before starting it (roadmap section 2a). Line numbers, counts and words such as 'today' in substeps and acceptance describe the `4b2ae0f` source unless a todo says otherwise. Estimates are in d, following the round-1 method (one Sonnet implementer-day). Lane A means the todo edits `Sources/App.swift`, which is serial.
 
@@ -49,7 +49,7 @@ Visual validation checklists cite BEFORE capture stems from `evidence/2026-10-09
 
 Counts: 36 todos. P0 12, P1 20, P2 4. M0 2, M1 5, M2 5, M3 3, M4 6, M5 9, M6 3, M7 3. Lane A 22.
 
-Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 12 pending.
+Status at `e124f77`: 25 done, 2 verified, 1 not-a-bug, 4 in-progress (OSN-044, OSN-061, OSN-070, OSN-072), 4 pending (OSN-054, OSN-060, OSN-062, OSN-071).
 
 ---
 
@@ -59,9 +59,9 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 `OSN-001 · P0 · M0 · Status: done`
 
-**Implementation (main f3ba77f):** merge `3431efc`. Evidence: none. Open: Round-1 can-fail proof deleted the owner's real com.shoemoney.opensnap defaults plist (cause fixed in `db973a6`); the SkitchRedux store and com.shoemoney.skitch-redux.plist hashed unchanged. tools/test-native-startup.py launches the real bundle id in place; being fixed in impl/m4-type, do not run it until fixed.
+**Implementation (main 658a16f):** merge `3431efc`; branch commits `0f0db46`, `161e191`, `b919775`, `9e9ec8c`, `db973a6`; Evidence: none. Open: Round-1 can-fail proof deleted the owner's real com.shoemoney.opensnap defaults plist (cause fixed in db973a6); the SkitchRedux store and com.shoemoney.skitch-redux.plist hashed unchanged. tools/test-native-startup.py now runs only a throwaway-id temp copy, behind a store guard (efe2f68). The earlier warning no longer applies.
 
-**Main state (f3ba77f):** Done: merged in 3431efc, so tools/eye-dump-audit.sh is the only screenshot path and tools/eye-dump.sh is deleted; the legacy --eye-dump hook was retired in 77bad0c.
+**Main state (658a16f):** Done: merged in 3431efc, so tools/eye-dump-audit.sh is the only screenshot path and tools/eye-dump.sh is deleted; the legacy --eye-dump hook was retired in 77bad0c.
 
 **Findings:** VF-05, VF-06, VF-24. **Spec:** T14.
 
@@ -119,9 +119,9 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 `OSN-002 · P0 · M0 · Status: done`
 
-**Implementation (main f3ba77f):** no merge. Evidence: none. Open: Q3 stays open until the OSN-042 spike. Q4 (full screen) is implemented in OSN-043, which is pending.
+**Implementation (main 658a16f):** no merge to main; Evidence: none. Open: Q3 resolved to option B (custom bars) on spike evidence (8015360). Q4 (full screen) is implemented in OSN-043 (658a16f).
 
-**Main state (f3ba77f):** Done as decisions, not code: the owner accepted the recommended defaults; Q1, Q2, Q4, Q5, D-HINT and D-T15-1 to D-T15-3 are resolved, and Q3 waits on the OSN-042 spike (no single merge; the decisions are reflected in c53155c, 77bad0c and f3ba77f).
+**Main state (658a16f):** Done as decisions, not code: the owner accepted the recommended defaults. All ten decisions are resolved: Q1, Q2, Q4, Q5, D-HINT and D-T15-1 to D-T15-3 at their earlier merges, Q3 on the OSN-042 spike (option B, 8015360), and Q4 in OSN-043 (658a16f). The decisions are reflected in c53155c, 77bad0c, f3ba77f, 8015360 and 658a16f.
 
 **Findings:** VF-05, VF-07, VF-08, VF-11, VF-21. **Spec:** §0, T15 k.
 
@@ -174,9 +174,9 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 `OSN-010 · P1 · M1 · Status: done`
 
-**Implementation (main f3ba77f):** merge `c53155c`. Evidence: `docs/design/evidence/impl-2026-10-09/m1-rail`. Open: none.
+**Implementation (main 658a16f):** merge `c53155c`. Evidence: `docs/design/evidence/impl-2026-10-09/m1-rail`. Open: none.
 
-**Main state (f3ba77f):** Done: the right rail is removed (merged in c53155c); capture and annotation sit on top, the document and output below, and the canvas runs to the 12 pt margin.
+**Main state (658a16f):** Done: the right rail is removed (merged in c53155c); capture and annotation sit on top, the document and output below, and the canvas runs to the 12 pt margin.
 
 **Findings:** VF-07, VF-22, VF-26. **Spec:** T15.
 
@@ -245,9 +245,9 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 `OSN-011 · P1 · M1 · Status: done`
 
-**Implementation (main f3ba77f):** merge `c53155c`. Evidence: `docs/design/evidence/impl-2026-10-09/m1-rail`. Open: none.
+**Implementation (main 658a16f):** merge `c53155c`. Evidence: `docs/design/evidence/impl-2026-10-09/m1-rail`. Open: none.
 
-**Main state (f3ba77f):** Done: the vertical rail slider is replaced by a Size pill with a popover in the top bar (de7f511, merged in c53155c); arrow keys follow NSSlider (D-T15-2).
+**Main state (658a16f):** Done: the vertical rail slider is replaced by a Size pill with a popover in the top bar (de7f511, merged in c53155c); arrow keys follow NSSlider (D-T15-2).
 
 **Findings:** VF-07, VF-13. **Spec:** T15 d.
 
@@ -307,9 +307,9 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 `OSN-012 · P1 · M1 · Status: done`
 
-**Implementation (main f3ba77f):** merge `c53155c`. Evidence: none. Open: none.
+**Implementation (main 658a16f):** merge `c53155c`. Evidence: none. Open: none.
 
-**Main state (f3ba77f):** Done: the rail-removal regression suite (no rail, canvas to the margin, controls inside their bars in normal and Frame mode, width budget) is merged in c53155c.
+**Main state (658a16f):** Done: the rail-removal regression suite (no rail, canvas to the margin, controls inside their bars in normal and Frame mode, width budget) is merged in c53155c.
 
 **Findings:** VF-07. **Spec:** T15 h.
 
@@ -359,9 +359,9 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 `OSN-013 · P1 · M1 · Status: done`
 
-**Implementation (main f3ba77f):** merge `c53155c`. Evidence: `docs/design/evidence/impl-2026-10-09/m1-rail`. Open: FA icon mode unavailable in this run. No live screen capture; the captures are harness-rendered.
+**Implementation (main 658a16f):** merge `c53155c`. Evidence: `docs/design/evidence/impl-2026-10-09/m1-rail`. Open: FA icon mode unavailable in this run. No live screen capture; the captures are harness-rendered.
 
-**Main state (f3ba77f):** Done: 80 rail-removal captures at fef46c7 (light and dark, 980 to full screen, empty and populated, Frame, popovers, PNG and JPG) are in m1-rail, reviewed by Opus, merged in c53155c.
+**Main state (658a16f):** Done: 80 rail-removal captures at fef46c7 (light and dark, 980 to full screen, empty and populated, Frame, popovers, PNG and JPG) are in m1-rail, reviewed by Opus, merged in c53155c.
 
 **Findings:** VF-07. **Spec:** T15 j, §8.
 
@@ -406,9 +406,9 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 `OSN-014 · P1 · M1 · Status: done`
 
-**Implementation (main f3ba77f):** merge `c53155c`. Evidence: `docs/design/evidence/impl-2026-10-09/m1-rail`. Open: Live verification of the Frame scrollers (VF-27) is not done; the evidence is harness-rendered.
+**Implementation (main 658a16f):** merge `c53155c`. Evidence: `docs/design/evidence/impl-2026-10-09/m1-rail`. Open: Live verification of the Frame scrollers (VF-27) is not done; the evidence is harness-rendered.
 
-**Main state (f3ba77f):** Done: Frame mode hides the Original-size checkbox and the overlay scrollers, so they stay out of the snapped image (ab4373d and 2189f4a, merged in c53155c).
+**Main state (658a16f):** Done: Frame mode hides the Original-size checkbox and the overlay scrollers, so they stay out of the snapped image (ab4373d and 2189f4a, merged in c53155c).
 
 **Findings:** VF-27. **Spec:** T15 e.
 
@@ -461,9 +461,9 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 `OSN-020 · P0 · M2 · Status: done`
 
-**Implementation (main f3ba77f):** merge `77bad0c`. Evidence: none. Open: none.
+**Implementation (main 658a16f):** merge `77bad0c`. Evidence: none. Open: none.
 
-**Main state (f3ba77f):** Done: the clean-clone gate and skip policy are merged in 77bad0c (the WP3 build changes landed before the baseline, in 6acc21c and 1b065b6); the clean-clone script passed on dbf7461, and check-no-original.py and check-skitch-strings.py are on main.
+**Main state (658a16f):** Done: the clean-clone gate and skip policy are merged in 77bad0c (the WP3 build changes landed before the baseline, in 6acc21c and 1b065b6); the clean-clone script passed on dbf7461, and check-no-original.py and check-skitch-strings.py are on main.
 
 **Remaining work:** Verification of the clean-clone build, plus the check-skitch-strings gate, which is not on main.
 
@@ -519,9 +519,9 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 `OSN-021 · P0 · M2 · Status: verified`
 
-**Implementation (main f3ba77f):** commits `fc77158`, `691b890`, `12c6dfa`. Evidence: `docs/design/evidence/impl-2026-10-09/m5-capture`. Open: System cursor check is not recorded in the sources.
+**Implementation (main 658a16f):** commits `fc77158`, `691b890`, `12c6dfa`. Evidence: `docs/design/evidence/impl-2026-10-09/m5-capture`. Open: System cursor check is not recorded in the sources.
 
-**Main state (f3ba77f):** Verified: own assets landed before the baseline (fc77158, 691b890, 12c6dfa, all in bad6617); source gates are clean and the drawn countdown was re-captured in m5-capture.
+**Main state (658a16f):** Verified: own assets landed before the baseline (fc77158, 691b890, 12c6dfa, all in bad6617); source gates are clean and the drawn countdown was re-captured in m5-capture.
 
 **Remaining work:** Verification: a visual check against the cited S14 captures, plus the source grep gate.
 
@@ -584,9 +584,9 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 `OSN-022 · P0 · M2 · Status: verified`
 
-**Implementation (main f3ba77f):** commits `42c52d8`, `6acc21c`. Evidence: none. Open: Settings capture is not re-shot; it waits for OSN-051. Preferences window and first-launch visual check are not recorded.
+**Implementation (main 658a16f):** commits `42c52d8`, `6acc21c`. Evidence: none. Open: Settings capture is not re-shot; it waits for OSN-051. Preferences window and first-launch visual check are not recorded.
 
-**Main state (f3ba77f):** Verified: Classic removal landed before the baseline (42c52d8, 6acc21c, in bad6617); source gates are clean and the minimum is macOS 26.0.
+**Main state (658a16f):** Verified: Classic removal landed before the baseline (42c52d8, 6acc21c, in bad6617); source gates are clean and the minimum is macOS 26.0.
 
 **Remaining work:** Verification: a visual check against the cited S17 captures and a new first-launch capture, plus the Classic-removal checks.
 
@@ -648,9 +648,9 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 `OSN-023 · P0 · M2 · Status: done`
 
-**Implementation (main f3ba77f):** merge `77bad0c`. Evidence: none. Open: Manual 1x and 2x menu-bar check is not done.
+**Implementation (main 658a16f):** merge `77bad0c`. Evidence: none. Open: Manual 1x and 2x menu-bar check is not done.
 
-**Main state (f3ba77f):** Done: the status item uses an SF template icon and the drag overlays are drawn SF badges, with an artwork gate (no NSImage(named:), no picture lookups), merged in 77bad0c (45dc148).
+**Main state (658a16f):** Done: the status item uses an SF template icon and the drag overlays are drawn SF badges, with an artwork gate (no NSImage(named:), no picture lookups), merged in 77bad0c (45dc148).
 
 **Remaining work:** Verification: a visual check against the cited S24 and S29 captures, plus a grep for the original overlay names.
 
@@ -700,9 +700,9 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 `OSN-024 · P0 · M2 · Status: done`
 
-**Implementation (main f3ba77f):** merge `77bad0c`. Evidence: none. Open: none.
+**Implementation (main 658a16f):** merge `77bad0c`. Evidence: none. Open: none.
 
-**Main state (f3ba77f):** Done: no original/ reference remains in tests or tools, dead skip paths are removed, and the only allowed skip is SKIPPED (FA not bundled); merged in 77bad0c (45dc148).
+**Main state (658a16f):** Done: no original/ reference remains in tests or tools, dead skip paths are removed, and the only allowed skip is SKIPPED (FA not bundled); merged in 77bad0c (45dc148).
 
 **Findings:** VF-01. **Spec:** T13, T14.
 
@@ -758,9 +758,9 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 `OSN-030 · P0 · M3 · Status: done`
 
-**Implementation (main f3ba77f):** merge `f7ff86b`, `d2dc3c9` (in baseline `bad6617`). Evidence: none. Open: Verification on a copy of the owner's real store (OSN-072) is not authorized in this run.
+**Implementation (main 658a16f):** merge `f7ff86b`, `d2dc3c9` (in baseline `bad6617`). Evidence: none. Open: Verification on a copy of the owner's real store (OSN-072) is not authorized in this run.
 
-**Main state (f3ba77f):** Done before this run: the OpenSnap rename and copy-never-move migration merged in f7ff86b and d2dc3c9, both in the baseline bad6617; migration tests are green.
+**Main state (658a16f):** Done before this run: the OpenSnap rename and copy-never-move migration merged in f7ff86b and d2dc3c9, both in the baseline bad6617; migration tests are green.
 
 **Findings:** VF-03. **Spec:** T13.
 
@@ -822,9 +822,9 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 `OSN-031 · P0 · M3 · Status: done`
 
-**Implementation (main f3ba77f):** merge `77bad0c`. Evidence: none. Open: Menu-bar strip titles stay OS-owned (D-TEXT).
+**Implementation (main 658a16f):** merge `77bad0c`. Evidence: none. Open: Menu-bar strip titles stay OS-owned (D-TEXT).
 
-**Main state (f3ba77f):** Done: OpenSnap menus, Toolbox copied from the main menu with parity tests, app-owned About window, DesignTokens.Brand.name and tools/check-brand.py, merged in 77bad0c (51e37a9).
+**Main state (658a16f):** Done: OpenSnap menus, Toolbox copied from the main menu with parity tests, app-owned About window, DesignTokens.Brand.name and tools/check-brand.py, merged in 77bad0c (51e37a9).
 
 **Findings:** VF-03. **Spec:** T12.
 
@@ -884,9 +884,9 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 `OSN-032 · P1 · M3 · Status: done`
 
-**Implementation (main f3ba77f):** merge `f484d3e`; `77bad0c` (Toolbox ellipsis). Evidence: none. Open: none.
+**Implementation (main 658a16f):** merge `f484d3e`; `77bad0c` (Toolbox ellipsis). Evidence: none. Open: none.
 
-**Main state (f3ba77f):** Done: Destinations placeholders and History tab names merged in f484d3e, the Toolbox ellipsis merged in 77bad0c, and analysis/ and the decompile tools were already gone.
+**Main state (658a16f):** Done: Destinations placeholders and History tab names merged in f484d3e, the Toolbox ellipsis merged in 77bad0c, and analysis/ and the decompile tools were already gone.
 
 **Findings:** VF-19, VF-23. **Spec:** T12, T13.
 
@@ -951,9 +951,9 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 `OSN-040 · P1 · M4 · Status: done`
 
-**Implementation (main f3ba77f):** merge `8df7780`. Evidence: none. Open: tools/check-tokens.py runs in report mode only.
+**Implementation (main 658a16f):** merge `8df7780`. Evidence: none. Open: tools/check-tokens.py runs in report mode only.
 
-**Main state (f3ba77f):** Done: DesignTokens.swift (Typography, Space, Radius, Size, Layout with the 12 pt margin, four-arm Palette) is merged in 8df7780, with the G9 literal gate in report mode.
+**Main state (658a16f):** Done: DesignTokens.swift (Typography, Space, Radius, Size, Layout with the 12 pt margin, four-arm Palette) is merged in 8df7780, with the G9 literal gate in report mode.
 
 **Findings:** VF-12. **Spec:** T1–T3.
 
@@ -1002,11 +1002,11 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 ## OSN-041 · Type sweep: body 20, caption 18 only, native-text exceptions per D-TEXT
 
-`OSN-041 · P1 · M4 · Status: in-progress`
+`OSN-041 · P1 · M4 · Status: done`
 
-**Implementation (main f3ba77f):** commits `75a9ee6`. Evidence: none. Open: Remaining: chrome, App, Resize, Photos, TextStyle, Hotkeys, Export and app-owned 20 pt tooltips. The worker on impl/m4-type is not merged.
+**Implementation (main 658a16f):** merge `efe2f68`; branch commits `462b8c7`, `aeaee06`, `cc3c5d9`, `81131ae`, `7526fc5`, `b6658d2`; Evidence: `docs/design/evidence/impl-2026-10-09/m4-window/` (step 5 only). Open: Literal counts (6 font, 8 colour) remain in capture and harness files and annotated document-data lines, by design.
 
-**Main state (f3ba77f):** In progress: the Destinations and History files (f484d3e) and the capture overlay files (75a9ee6) are swept to 0 literals; chrome, App, Resize, Photos, TextStyle, Hotkeys, Export and the 20 pt tooltips remain on impl/m4-type.
+**Main state (658a16f):** Done: the type sweep is merged in efe2f68 (repo font literals 68 to 6, colour literals 17 to 8; the rest is in capture and harness files and annotated document-data lines). App-owned 20 pt tooltips (Sources/AppToolTip.swift) are in efe2f68 with tools/check-tooltips.py. Alert.make was finished in 658a16f (OSN-043 step 5).
 
 **Findings:** VF-11. **Spec:** T1.
 
@@ -1063,11 +1063,11 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 ## OSN-042 · Glass consolidation: one plate per group, solid canvas well, backdrop and bleed deleted, fallbacks
 
-`OSN-042 · P1 · M4 · Status: implemented on impl/m4-glass (pending review)`
+`OSN-042 · P1 · M4 · Status: done`
 
-**Implementation (main f3ba77f):** no merge. Evidence: none. Open: Q3 spike (NSToolbar or custom bars) first; reconcile the glass budget (5 in spec section 0, 8 in T4). Deferred visual defects: phantom capsule under Snap (hidden Cancel glass surface); full-screen salmon tint and accent loss (backdrop vibrancy); legacy-scroller white corner.
+**Implementation (main 658a16f):** merge `8015360`; branch commits `7b0c636`, `acfc154`, `850a2e9`, `622ca82`, `da2738d`, `ff3eeb4`, `212059c`, `33b8b3e`; Evidence: `docs/design/evidence/impl-2026-10-09/m4-glass/` (98 captures at da2738d). Open: The legacy scroller corner is slightly lighter than the well (AppKit draws it; no public API). Controls are 36 pt tall inside 44 pt bars; to be reviewed at sign-off (OSN-071). Q3 resolved to option B (custom bars) on NSToolbar spike evidence.
 
-**Main state (f3ba77f):** Open: no glass consolidation has landed, and the Q3 spike has not run.
+**Main state (658a16f):** Done: 26 glass surfaces became 8 group plates in 2 containers. The behind-window backdrop and canvas bleed are deleted; the solid canvas well removed the full-screen salmon tint. Only Snap is saturated; the selected tool is accent at 0.20 with a 1 pt accent border. The phantom capsule under Snap is gone. Reduce Transparency gives solid plates; Increase Contrast gives borders. Merged in 8015360.
 
 **Findings:** VF-09, VF-10. **Spec:** T4.
 
@@ -1128,11 +1128,11 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 ## OSN-043 · Unified window chrome: title and commands in one bar, autosave, representedURL, full screen per Q4
 
-`OSN-043 · P1 · M4 · Status: pending`
+`OSN-043 · P1 · M4 · Status: done`
 
-**Implementation (main f3ba77f):** no merge. Evidence: none. Open: Q4 default accepted (full screen on, exclusive with Frame mode); not implemented. Minimum height unresolved: 608 pt (T15) against 680 pt (T8).
+**Implementation (main 658a16f):** merge `658a16f`; branch commits `d59b0a1`, `2cc0415`, `a3d0afe`, `aeaf890`, `52d0398`, `7bf20f8`, `1a65cd0`; Evidence: `docs/design/evidence/impl-2026-10-09/m4-window/` (50 captures at 7bf20f8). Open: Minimum height resolved: 640 pt window (608 pt content), per T15. T8's 680 pt is not adopted. Width is measured from the live bars and floored at 980 pt. OS-owned: window title-bar title and subtitle text, traffic-light tooltips, Save, Open, Export and Page Setup panels (D-TEXT).
 
-**Main state (f3ba77f):** Open: unified window chrome, autosave, representedURL and full screen (Q4) have not landed.
+**Main state (658a16f):** Done: the window title is the document name, with a proxy icon and a "W x H · size" subtitle. The title bar is seamless: transparent outside Frame, opaque in Frame. Frame autosave is "OpenSnap.Main"; default size 1120x780; minimum 980x640. Full screen is allowed, and Frame refuses in full screen ("Exit full screen to use Frame", Q4). Document questions are app-owned sheets (Sources/AppAlert.swift). Merged in 658a16f.
 
 **Open items**
 
@@ -1191,11 +1191,11 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 ## OSN-044 · Component state model: StateStyles, CommandButton, slider, swatch, drag well, History tile, canvas border rest
 
-`OSN-044 · P1 · M4 · Status: pending`
+`OSN-044 · P1 · M4 · Status: in-progress`
 
-**Implementation (main f3ba77f):** no merge. Evidence: none. Open: none.
+**Implementation (main 658a16f):** no merge to main; Evidence: none. Open: Branch impl/m4-states is not merged; no branch SHA is recorded in this pass.
 
-**Main state (f3ba77f):** Open: the component state model (StateStyles, CommandButton, slider, swatch, drag well, History tile, canvas border rest) has not landed.
+**Main state (658a16f):** In progress on impl/m4-states, not merged to main. The component state model (StateStyles, CommandButton, slider, swatch, drag well, History tile, canvas border rest) is not on main yet.
 
 **Findings:** VF-13, VF-15. **Spec:** T6.
 
@@ -1255,11 +1255,11 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 ## OSN-045 · Iconography: every chrome icon through Font Awesome; semantic fallbacks; glyph hygiene
 
-`OSN-045 · P1 · M4 · Status: pending`
+`OSN-045 · P1 · M4 · Status: done`
 
-**Implementation (main f3ba77f):** no merge. Evidence: none. Open: Official Free FA vectors may be used where suitable; not yet applied.
+**Implementation (main 658a16f):** merge `439d734`; branch commits `637792d`, `3ca617d`, `8f66c62`, `515cab1`; Evidence: none. Open: Font Awesome Pro icon mode is dev-only and is not run in the harness.
 
-**Main state (f3ba77f):** Open: Q1 is answered (SF Symbols in release, Font Awesome Pro never committed or shipped), but the chrome icon pass has not landed and FA mode is unavailable in the harness.
+**Main state (658a16f):** Done: chrome icons resolve as Font Awesome Free 7.3.1 vectors compiled as path data (Sources/FontAwesomeFree.swift; no font files, no Pro material). The chain is Pro glyph (dev only), then Free vector, then SF Symbol, then none. Icons are CC BY 4.0, credited in THIRD_PARTY_NOTICES.md and reachable from About via "Third-party notices". Wipe uses the broom icon (SF fallback eraser.line.dashed); delete is trash. Menus keep SF Symbols (Q1). Merged in 439d734.
 
 **Findings:** VF-05, VF-25. **Spec:** T5.
 
@@ -1320,9 +1320,9 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 `OSN-050 · P1 · M5 · Status: done`
 
-**Implementation (main f3ba77f):** merge `f3ba77f`. Evidence: `docs/design/evidence/impl-2026-10-09/m5-capture`. Open: Live capture with a granted Screen Recording permission is not run (no grant in the agent environment).
+**Implementation (main 658a16f):** merge `f3ba77f`. Evidence: `docs/design/evidence/impl-2026-10-09/m5-capture`. Open: Live capture with a granted Screen Recording permission is not run (no grant in the agent environment).
 
-**Main state (f3ba77f):** Done: app-owned Screen Recording sheet with a pre-flight gate, drawn countdown with Reduce Motion and VoiceOver numerals, magnifier placeholder and flash at peak 0.7, merged in f3ba77f (75a9ee6 and round-2 commits).
+**Main state (658a16f):** Done: app-owned Screen Recording sheet with a pre-flight gate, drawn countdown with Reduce Motion and VoiceOver numerals, magnifier placeholder and flash at peak 0.7, merged in f3ba77f (75a9ee6 and round-2 commits).
 
 **Findings:** VF-16. **Spec:** T10.
 
@@ -1378,11 +1378,11 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 ## OSN-051 · Settings window rebuild: toolbar tabs, no Done, Escape closes, aligned grid
 
-`OSN-051 · P1 · M5 · Status: pending`
+`OSN-051 · P1 · M5 · Status: done`
 
-**Implementation (main f3ba77f):** no merge. Evidence: none. Open: Settings is still titled Preferences; toolbar tabs and the aligned grid are not started.
+**Implementation (main 658a16f):** no merge to main; Evidence: `docs/design/evidence/impl-2026-10-09/m5-settings/` (36 captures at a48d0df; on impl/m5-settings, pending merge). Open: Integrated at a79a1d8 on impl/m5-settings; not on main. Not claimed as done until the suite passes and the branch merges.
 
-**Main state (f3ba77f):** Open: Settings is still titled Preferences; the Classic rows are already gone (OSN-022).
+**Main state (658a16f):** In integration at a79a1d8 (branch impl/m5-settings, not on main yet; full suite running). App-owned 20 pt tab strip (General, Drawing, Capture, Upload) replaces the 13 pt toolbar tabs, with a gear icon, centred forms and scrolling on short screens. "Show capture flash" is bound to showCaptureFlash. Shortcuts are embedded live; Upload has a compact list and "Manage Destinations...". No Done button; Escape and Command-W close. The legacy GeneralPreferencesForm is retired. On main, Settings is still titled Preferences.
 
 **Findings:** VF-18. **Spec:** T8, T11.
 
@@ -1434,9 +1434,9 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 `OSN-052 · P1 · M5 · Status: done`
 
-**Implementation (main f3ba77f):** merge `f484d3e`. Evidence: none. Open: none.
+**Implementation (main 658a16f):** merge `f484d3e`. Evidence: none. Open: none.
 
-**Main state (f3ba77f):** Done: the Destinations sheet scrolls within the visible height, has Return and Escape, a Default pill and Upload wording, merged in f484d3e (3be3870, dd17d50).
+**Main state (658a16f):** Done: the Destinations sheet scrolls within the visible height, has Return and Escape, a Default pill and Upload wording, merged in f484d3e (3be3870, dd17d50).
 
 **Findings:** VF-19. **Spec:** T11.
 
@@ -1487,9 +1487,9 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 `OSN-053 · P1 · M5 · Status: done`
 
-**Implementation (main f3ba77f):** merge `f484d3e`. Evidence: none. Open: none.
+**Implementation (main 658a16f):** merge `f484d3e`. Evidence: none. Open: none.
 
-**Main state (f3ba77f):** Done: History is a content-first grid (16 pt gaps, 2, 3 and 4 columns at 880, 1000 and 1280) with check-badge selection, centred empty state, icon action row and .opensnap drag, merged in f484d3e.
+**Main state (658a16f):** Done: History is a content-first grid (16 pt gaps, 2, 3 and 4 columns at 880, 1000 and 1280) with check-badge selection, centred empty state, icon action row and .opensnap drag, merged in f484d3e.
 
 **Findings:** VF-20. **Spec:** T11.
 
@@ -1540,9 +1540,9 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 `OSN-054 · P1 · M5 · Status: pending`
 
-**Implementation (main f3ba77f):** no merge. Evidence: none. Open: none.
+**Implementation (main 658a16f):** no merge to main; Evidence: none. Open: AWS live validation on 2026-10-09 is recorded as validation evidence only (one synthetic object uploaded through OpenSnap's S3 path, read back over the CDN with identical bytes, then deleted through the app's delete path). The upload UX (progress, success, errors, announcements) is not built.
 
-**Main state (f3ba77f):** Open: upload progress, success and error presentation, with announcements, has not landed.
+**Main state (658a16f):** Open: upload progress, success and error presentation, with announcements, has not landed.
 
 **Findings:** VF-17, VF-26. **Spec:** T9, T11.
 
@@ -1596,9 +1596,9 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 `OSN-055 · P2 · M5 · Status: done`
 
-**Implementation (main f3ba77f):** merge `77bad0c`. Evidence: none. Open: Menu-bar strip titles stay OS-owned (D-TEXT).
+**Implementation (main 658a16f):** merge `77bad0c`. Evidence: none. Open: Menu-bar strip titles stay OS-owned (D-TEXT).
 
-**Main state (f3ba77f):** Done: OpenSnap menu wording, app-owned About window, and a status-item menu (Show or Hide, Snap, Settings, Quit at 20 pt) with the OpenSnap tooltip, merged in 77bad0c (51e37a9).
+**Main state (658a16f):** Done: OpenSnap menu wording, app-owned About window, and a status-item menu (Show or Hide, Snap, Settings, Quit at 20 pt) with the OpenSnap tooltip, merged in 77bad0c (51e37a9).
 
 **Findings:** VF-23. **Spec:** T12.
 
@@ -1644,9 +1644,9 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 `OSN-056 · P2 · M5 · Status: done`
 
-**Implementation (main f3ba77f):** merge `f3ba77f`. Evidence: `docs/design/evidence/impl-2026-10-09/m5-capture`. Open: none.
+**Implementation (main 658a16f):** merge `f3ba77f`. Evidence: `docs/design/evidence/impl-2026-10-09/m5-capture`. Open: none.
 
-**Main state (f3ba77f):** Done: the hover-hint bevel is opt-in and modernised, uses tokens, never covers the title bar or bars, and skips its fade under Reduce Motion (merged in f3ba77f, 8a9af59).
+**Main state (658a16f):** Done: the hover-hint bevel is opt-in and modernised, uses tokens, never covers the title bar or bars, and skips its fade under Reduce Motion (merged in f3ba77f, 8a9af59).
 
 **Findings:** VF-14, VF-23. **Spec:** T7, T12.
 
@@ -1692,9 +1692,9 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 `OSN-057 · P2 · M5 · Status: not-a-bug`
 
-**Implementation (main f3ba77f):** merge `8df7780`. Evidence: none. Open: none.
+**Implementation (main 658a16f):** merge `8df7780`. Evidence: none. Open: none.
 
-**Main state (f3ba77f):** Not a bug: the dark start cap is translucent yellow over the blue backdrop; a single composite was verified and a regression test was added (merged in 8df7780, 13c032c).
+**Main state (658a16f):** Not a bug: the dark start cap is translucent yellow over the blue backdrop; a single composite was verified and a regression test was added (merged in 8df7780, 13c032c).
 
 **Findings:** VF-28. **Spec:** none in the spec (canvas content rendering).
 
@@ -1741,9 +1741,9 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 `OSN-058 · P2 · M5 · Status: done`
 
-**Implementation (main f3ba77f):** merge `8df7780`. Evidence: none. Open: none.
+**Implementation (main 658a16f):** merge `8df7780`. Evidence: none. Open: none.
 
-**Main state (f3ba77f):** Done: Resize fields show whole pixels (half away from zero) and an untouched fractional source submits its displayed value, merged in 8df7780 (0ed44b4, fac0cc7).
+**Main state (658a16f):** Done: Resize fields show whole pixels (half away from zero) and an untouched fractional source submits its displayed value, merged in 8df7780 (0ed44b4, fac0cc7).
 
 **Findings:** VF-29. **Spec:** T11.
 
@@ -1792,9 +1792,9 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 `OSN-060 · P1 · M6 · Status: pending`
 
-**Implementation (main f3ba77f):** no merge. Evidence: none. Open: none.
+**Implementation (main 658a16f):** no merge. Evidence: none. Open: none.
 
-**Main state (f3ba77f):** Open: the keyboard pass (key-view loop, operable drag well, focus rings, Escape and Return in every sheet) has not landed.
+**Main state (658a16f):** Open: the keyboard pass (key-view loop, operable drag well, focus rings, Escape and Return in every sheet) has not landed.
 
 **Findings:** VF-14. **Spec:** T7.
 
@@ -1844,11 +1844,11 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 ## OSN-061 · Display-option consumers and an injected DisplayOptions capture mode
 
-`OSN-061 · P1 · M6 · Status: pending`
+`OSN-061 · P1 · M6 · Status: in-progress`
 
-**Implementation (main f3ba77f):** no merge. Evidence: none. Open: none.
+**Implementation (main 658a16f):** merge `accfedd`; branch commits `de21b6e`, `d0f8013`, `2dc613e`, `eaab72f`, `f975dfa`; Evidence: none. Open: Only part 1 is on main; the todo stays in-progress.
 
-**Main state (f3ba77f):** Open: display-option consumers and the injected DisplayOptions capture mode have not landed.
+**Main state (658a16f):** In progress: part 1 is on main (accfedd). A DisplayOptions model reads Reduce Motion, Reduce Transparency, Increase Contrast and Differentiate Without Color live and observes them. Consumers: countdown, flash and hint bevel; the glass consolidation (8015360) applies them to plates and borders. A harness-gated --display injection mode is in tools/eye-dump-audit.sh; a normal launch cannot use it. DisplayOptionsTests: 92 checks. OSN-061 stays in-progress.
 
 **Findings:** VF-10, VF-14. **Spec:** T7, T14.
 
@@ -1901,9 +1901,9 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 `OSN-062 · P1 · M6 · Status: pending`
 
-**Implementation (main f3ba77f):** no merge. Evidence: none. Open: none.
+**Implementation (main 658a16f):** no merge. Evidence: none. Open: none.
 
-**Main state (f3ba77f):** Open: VoiceOver labels, announcements and the recorded manual VoiceOver pass have not been done.
+**Main state (658a16f):** Open: VoiceOver labels, announcements and the recorded manual VoiceOver pass have not been done.
 
 **Findings:** VF-14. **Spec:** T7.
 
@@ -1956,11 +1956,11 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 ## OSN-070 · Regression gates in tools/test.py: font-floor walker, glass depth and budget, glyphs, original bytes, Skitch strings, layout fit at 980
 
-`OSN-070 · P0 · M7 · Status: pending`
+`OSN-070 · P0 · M7 · Status: in-progress`
 
-**Implementation (main f3ba77f):** no merge. Evidence: none. Open: Font-floor walker, glass depth and budget, and layout fit at 980 are not recorded as landed.
+**Implementation (main 658a16f):** merge `0996da5`; branch commits `90f70bc`, `2cbf59c`, `bb0659a`, `56393f8`, `8cdebcb`, `7852769`, `8c75d9e`, `b6658d2`; Evidence: none. Open: Not recorded as landed: G3 check-user-strings.py, the dynamic Skitch-string check, and a layout-fit-at-980 gate beyond the measured-width test. G5 and G9 status beyond what is listed above is not recorded in this pass.
 
-**Main state (f3ba77f):** Partly: check-no-original.py, check-clean-clone.sh, check-brand.py and check-tokens.py (report mode) are on main; the remaining gates in this todo are not recorded as landed.
+**Main state (658a16f):** Partial. On main from 0996da5: G6 tools/check-glyphs.py (decorative glyph scan, strict, 0 hits); G7 tools/check-eye-dump.py (harness output checker: PNG decode, clipping, rail absent, 12 pt margin, minimum sizes; contrast advisory); G11 tools/check-skip-budget.py; G4 font-floor walker tests/ViewTreeAudit.swift with ViewTreeAuditTests. The gates are wired into tools/test.py in efe2f68. Earlier on main: check-no-original.py, check-clean-clone.sh, check-brand.py and check-tokens.py (report mode). Not recorded as landed: G3 check-user-strings.py, the dynamic Skitch-string check, and a layout-fit-at-980 gate beyond the measured-width test in 658a16f.
 
 **Findings:** VF-01, VF-02, VF-03, VF-04, VF-05, VF-06, VF-07, VF-08, VF-09, VF-10, VF-11, VF-12, VF-13, VF-14, VF-15, VF-16, VF-17, VF-18, VF-19, VF-20, VF-21, VF-22, VF-23, VF-24, VF-25, VF-26, VF-27, VF-28, VF-29. **Spec:** T14.
 
@@ -2021,9 +2021,9 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 `OSN-071 · P0 · M7 · Status: pending`
 
-**Implementation (main f3ba77f):** no merge. Evidence: none. Open: none.
+**Implementation (main 658a16f):** no merge. Evidence: none. Open: none.
 
-**Main state (f3ba77f):** Open: the full visual acceptance gallery and the Opus sign-off have not been run on the implemented surfaces.
+**Main state (658a16f):** Open: the full visual acceptance gallery and the Opus sign-off have not been run on the implemented surfaces.
 
 **Findings:** VF-01, VF-02, VF-03, VF-04, VF-05, VF-06, VF-07, VF-08, VF-09, VF-10, VF-11, VF-12, VF-13, VF-14, VF-15, VF-16, VF-17, VF-18, VF-19, VF-20, VF-21, VF-22, VF-23, VF-24, VF-25, VF-26, VF-27, VF-28, VF-29. **Spec:** T14, T15 j.
 
@@ -2069,11 +2069,11 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 ## OSN-072 · WP7: migration verified on a copy of the owner's real store; clean-clone build, test and release dry run
 
-`OSN-072 · P0 · M7 · Status: pending`
+`OSN-072 · P0 · M7 · Status: in-progress`
 
-**Implementation (main f3ba77f):** no merge. Evidence: none. Open: Migration on a copy of the owner's real store is not authorized in this run. No push or release has been made.
+**Implementation (main 658a16f):** merge `0996da5`; branch commits `56393f8`, `8cdebcb`; Evidence: none. Open: Not done: migration on a copy of the owner's real store (not authorized in this run). Not done: no tag, push, upload or release. Release work is a dry run only. AWS live validation 2026-10-09 (partial evidence for the cdn upload dry run): OpenSnap's own S3 path, one synthetic object uploaded and deleted through the app; see progress.md.
 
-**Main state (f3ba77f):** Open: migration is not verified on a copy of the owner's real store (not authorized in this run), and the release dry run has not been done.
+**Main state (658a16f):** Partial. The synthetic migration dry run is on main from 0996da5: 58 documents, 2 destinations; the source manifest is unchanged and a re-run is a no-op. Release dry run in a temp clone: zip SHA-256 2b0e2268c7bdda3778ae8bcd1bac1571e6c492308c1604d6ef27dbc723582725; codesign verify OK; nothing tagged, pushed or uploaded. The AWS cdn upload dry run is partly satisfied by the 2026-10-09 live validation (see progress.md). Not done: migration on a copy of the owner's real store (not authorized in this run).
 
 **Findings:** VF-01, VF-03. **Spec:** T13.
 

@@ -16,7 +16,7 @@ enum FAIcon: String, CaseIterable, Sendable {
          eraser, text, arrowUpRight = "arrow-up-right", cropSimple = "crop-simple", crosshairs, frameViewfinder = "camera-viewfinder",
          xmark, font, arrowRotateLeft = "arrow-rotate-left", broom, rulerCombined = "ruler-combined",
          upload = "cloud-arrow-up", dragHand = "hand", check, warning = "circle-exclamation", xmarkCircle = "circle-xmark",
-         openExternal = "up-right-from-square", copy, link, globe, trash, linkSlash = "link-slash", circleCheck = "circle-check"
+         openExternal = "up-right-from-square", copy, link, globe, trash, linkSlash = "link-slash", circleCheck = "circle-check", gear
 
     var codepoint: UInt32 {
         switch self {
@@ -54,6 +54,7 @@ enum FAIcon: String, CaseIterable, Sendable {
         case .trash: return 0xF1F8
         case .linkSlash: return 0xF127
         case .circleCheck: return 0xF058
+        case .gear: return 0xF013
         }
     }
 
@@ -93,6 +94,7 @@ enum FAIcon: String, CaseIterable, Sendable {
         case .trash: return "trash"
         case .linkSlash: return "icloud.slash"
         case .circleCheck: return "checkmark.circle.fill"
+        case .gear: return "gearshape.fill"
         }
     }
 }
