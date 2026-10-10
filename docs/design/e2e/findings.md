@@ -36,7 +36,7 @@ Harness notes that affect how to read the evidence (not app defects):
 ### F-J1-004 · P2 · Return in the Resize sheet only previews; no default button is shown
 - **Surface:** Resize or Crop sheet (Resize and Limit modes)
 - **Steps:** open Resize…, type Width 400, press Return.
-- **Observed:** the document is previewed at 400 × 300 and the sheet stays open (`25-resize-sheet-after-return-still-open-doc-400x300.jpg`); Cancel reverts it. Neither Apply nor OK is drawn as the default button. The matrix expects Return = OK (apply and close). Same in Limit mode.
+- **Observed:** the document is previewed at 400 × 300 and the sheet stays open (`25-resize-sheet-after-return-still-open-doc-400x300.jpg`); Cancel reverts it. Neither Apply nor OK is drawn as the default button. The matrix expects Return = OK (apply and close). Same in Limit mode. By contrast the Rename sheet draws OK as the yellow default and Return commits (`72-file-rename-sheet-default-ok.jpg`).
 - **Expected:** Return commits and closes (OK is the default button); Apply is the non-default way to preview.
 - **Suggested fix:** give OK `keyEquivalent = "\r"` and make Apply a plain button.
 
@@ -82,9 +82,12 @@ Harness notes that affect how to read the evidence (not app defects):
 - **Observed:** after a drag the status says only "Crop · Unsaved changes" (`52-crop-tool-region-dimmed-no-apply-hint.jpg`). After an Undo and a Tab-driven switch to Brush the dim crop overlay is still drawn (`55-keyboard-trap-...jpg`).
 - **Suggested fix:** status "Crop: press Return to apply, Esc to cancel"; drop the overlay when the tool changes.
 
-### F-J1-012 · P2 · Drag well does nothing on Space or Return
+### F-J1-012 · P2 (plausible) · Drag well activation never shows an Export panel
 - **Surface:** Drag image to another app
-- **Observed:** with the well focused (ring visible, `58-drag-well-focused-space-does-nothing.jpg`) Space and Return open nothing; the source comment says they open the Export panel. (Re-checked in a clean session below.)
+- **Steps:** focus the well (ring visible), press Space; repeat on a clean drawing with the window key.
+- **Observed:** the app goes modal (AX tree empty until Esc), but no panel appears in a window capture or in a real-desktop screencapture 15 s later (`58-drag-well-focused-space-does-nothing.jpg`). The source comment says Space/Return open the Export panel. The same happens for the Save panel from the quit sheet. Likely the OS save-panel service is not shown to this harness, so this is unconfirmed.
+- **Expected:** the Export panel is visible.
+- **Suggested fix:** none until a human confirms with a real display.
 
 ### F-J1-013 · P3 · Photos sheet empty state is a large blank grid
 - **Observed:** a 850 × 420 pt empty box with the explanation only in a small line under it (`32-photos-sheet-empty-state.jpg`).
@@ -111,6 +114,34 @@ Harness notes that affect how to read the evidence (not app defects):
 
 ### F-J1-019 · P3 · Popovers disagree on dismissal
 - **Observed:** the Colour popover closes after a pick, the Size popover stays open after a preset (`12-size-popover-open-size7.jpg`, `13-...jpg`).
+
+### F-J1-020 · P3 · Undo is enabled on a blank document
+- **Observed:** on a fresh launch the Undo button is drawn enabled and AX has no `disabled`, while Wipe is correctly disabled (`00-brush-tool-selected.jpg`).
+- **Suggested fix:** disable Undo (and Edit › Undo) while the undo stack is empty.
+
+### F-J1-021 · P3 · Floppy-disk icon means "Save to History"
+- **Observed:** the Save button shows a floppy disk, which reads as "save a file", but its action is Save to History (`84-bottom-bar-save-button-saved-to-history.jpg`); the History button sits right next to it.
+- **Suggested fix:** use a tray/archive glyph so the two neighbours read as archive and browse.
+
+### F-J1-022 · P2 (plausible) · ⌘M does not hide the window
+- **Surface:** Window › Minimize (⌘M), Hide button tooltip "Hide (⌘M)"
+- **Observed:** the Hide button hides the window, but ⌘M left it on screen in four tries (the harness's menu pick three times, one real System Events keystroke with OpenSnap confirmed frontmost). Not reproduced by a human on a real keyboard.
+- **Suggested fix:** check `validateMenuItem`/`vanish` for the Minimize item.
+
+### F-J1-023 · P3 · Text editor exposes no AX selection
+- **Observed:** `AXSelectedTextRange` cannot be set on the in-place text editor (kimi-cu `select_text` returns -25205 although the replace worked through events).
+- **Suggested fix:** make the editor's text view an `NSTextView` with standard accessibility.
+
+### F-J1-024 · P3 · Option-Return then typing starts a second text box on top of the first
+- **Observed:** Option-Return finished the first text (as documented) and the next typed characters created a second text box that overlapped it (`60-text-option-return-finishes-and-new-box-starts.jpg`).
+- **Suggested fix:** after Option-Return ignore plain typing until a new click, or offset the new box.
+
+### F-J1-025 · P3 · Add Shadow does nothing visible without a snap
+- **Observed:** Image › Add Shadow is enabled but pressing it on a plain drawing changes nothing visible (`83-image-add-shadow-no-visible-change-without-snap.jpg`).
+- **Suggested fix:** disable it unless there is a snap.
+
+### F-J1-026 · P3 · Flip mirrors the text glyphs
+- **Observed:** Flip Horizontal mirrors annotation text so it reads backwards (`61-image-flip-horizontal.jpg`); Rotate keeps it readable.
 
 ## Notes (subjective, not findings)
 

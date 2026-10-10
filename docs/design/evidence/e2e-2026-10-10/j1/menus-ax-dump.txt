@@ -1,0 +1,14 @@
+AX dumps of the open menus (kimi-cu get_app_state, source 15d5ec2). Class: rendered (the item list and enabled state), not an interaction.
+Menu item height 29 pt, system menu font.
+
+File (14):      New, Open…, Photos…, Close, Save, Save As…, Rename…, Save to History, History, Export…, Publish…, Share…, Page Setup…, Print…   (all enabled)
+Edit (12 + sep): Undo, Redo, —, Cut, Copy, Copy Image, Paste, Delete, Select All, Duplicate, Wipe, Wipe Snap Only, Clear Annotations   (all enabled on a drawing)
+Image (17):     Actual Size (disabled without a snap), Resize…, Crop Selection, Crop Snap at Current Edges, Set Snap to Normal Size, Rotate Clockwise, Rotate Counterclockwise, Flip Horizontal, Flip Vertical, Transparent Background, White Background, Flatten, Add Shadow, Bring to Front, Send to Back, Group, Ungroup
+Drawing:        Filled Shapes, Shadow, —, Pencil Smoothing ▸ (Precise, Medium, Loose per source), Arrow Head ▸ (At Start, At End)
+Text:           Text Style…, Default Text Style, Toggle Text Outline, Toggle Text Shadow, Spelling ▸
+Window:         Fill (disabled), Center (disabled), —, Move & Resize ▸ (all disabled while the window is inactive/full screen: Halves, Left, Right, Top, Bottom, Quarters, Top Left, Top Right, Bottom Left, Bottom Right, Arrange, Left & Right, … Return to Previous Size), Full Screen Tile (disabled), —, Minimize, Focus Toolbar, Bring All to Front, Arrange in Front, Remove Window from Set (disabled), —, "Untitled (800 × 600 · 41 KB)"
+        No Enter/Exit Full Screen item in any menu.
+Toolbox pop-up (33 rows): About OpenSnap, Settings…, Quit OpenSnap, —, New, Open…, Photos…, Save to History, Export…, Save As…, Print…, —, Cut, Copy, Paste, Delete, Select All, Duplicate, Text Style…, —, Crosshair Snapshot, Fullscreen Snapshot, Frame Snapshot, Re-snap (Keep Pen), —, Set Snap to Normal Size, Flip Horizontal, Rotate Clockwise, Transparent Background, Crop Snap at Current Edges, Wipe Snap Only, —, More Commands ▸ (File, Image, Drawing, Text, Capture, Sharing Settings…, Capture Shortcuts…), Filled Shapes, Shadow
+Status-item menu: Show OpenSnap, —, Snap…, Settings…, —, Quit OpenSnap
+Zoom pop-up:    25%, 50%, 75%, 100%, 150%, 200%, —, Actual Size (disabled without a snap)
+Upload context menu (J2): WebDAV · demo, SFTP · e2e-host, FTPS · demo, S3 · example-bucket, —, Destination Settings…, Share with macOS…
