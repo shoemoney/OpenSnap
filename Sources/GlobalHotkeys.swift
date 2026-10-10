@@ -581,6 +581,8 @@ final class GlobalHotkeyForm: NSView {
     static let modifierSegments: [(GlobalHotkeyModifiers, String, String)] = [
         (.command, "\u{2318}", "Command"), (.option, "\u{2325}", "Option"), (.control, "\u{2303}", "Control"), (.shift, "\u{21E7}", "Shift")]
     static let idleLiveStatus = "Shortcuts are saved as you change them. They pause while this window is in front."
+    /// What the note says while the shortcuts really are paused, so the state is readable without firing one (F-J7-004).
+    static let pausedStatus = "Shortcuts are paused while this window is in front."
     static let keyPopupWidth: CGFloat = 120, modifierSegmentWidth: CGFloat = 44
 
     /// The label column is shared with the form it sits in, so its labels line up with the rows around it.
@@ -600,6 +602,16 @@ final class GlobalHotkeyForm: NSView {
     private(set) var clearButton: NSButton!
     /// The status line changed height, so the window holding the form may need a new size.
     var onResize: (() -> Void)?
+    /// Whether the manager has the shortcuts paused because this form is the thing in use. The note follows it (an error keeps the line
+    /// until the next accepted edit), and VoiceOver reads the same words.
+    private(set) var shortcutsPaused = false
+    private var showsError = false
+    private var liveStatus: String { shortcutsPaused ? Self.pausedStatus : Self.idleLiveStatus }
+    func setShortcutsPaused(_ paused: Bool) {
+        guard paused != shortcutsPaused else { return }
+        shortcutsPaused = paused
+        if !showsError { setStatus(liveStatus, isError: false) }
+    }
 
     func keyPopup(for action: GlobalHotkeyAction) -> NSPopUpButton { rows[action]!.key }
     func modifierControl(for action: GlobalHotkeyAction) -> NSSegmentedControl { rows[action]!.modifiers }
@@ -671,12 +683,13 @@ final class GlobalHotkeyForm: NSView {
     func reload() {
         guard let manager else { return }
         fill(manager.settings)
-        setStatus(manager.lastError.map { "Error: " + $0.localizedDescription } ?? Self.idleLiveStatus,
+        setStatus(manager.lastError.map { "Error: " + $0.localizedDescription } ?? liveStatus,
                   isError: manager.lastError != nil)
     }
 
     private func setStatus(_ text: String, isError: Bool) {
         let changed = statusField.stringValue != text
+        showsError = isError
         statusField.stringValue = text
         statusField.textColor = isError ? DesignTokens.Palette.feedbackError : DesignTokens.Palette.Text.primary
         if changed { invalidateIntrinsicContentSize(); needsLayout = true; onResize?() }
@@ -708,7 +721,7 @@ final class GlobalHotkeyForm: NSView {
     /// Applies the draft now. A rejected draft stays on screen beside its error.
     private func commit() {
         guard let manager else { return }
-        do { try manager.apply(draft()); setStatus(Self.idleLiveStatus, isError: false) }
+        do { try manager.apply(draft()); setStatus(liveStatus, isError: false) }
         catch { setStatus("Error: " + error.localizedDescription, isError: true) }
     }
 
