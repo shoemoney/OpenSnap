@@ -8,7 +8,11 @@ import UniformTypeIdentifiers
 /// runtime visual parity remain unverified; labels describe the recovered intervals.
 @MainActor
 final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
-    NSCollectionViewDelegate, NSSearchFieldDelegate, NSMenuItemValidation {
+    NSCollectionViewDelegate, NSSearchFieldDelegate, NSMenuItemValidation, NSWindowDelegate {
+    private typealias Typography = DesignTokens.Typography
+    private typealias Space = DesignTokens.Space
+    private typealias Palette = DesignTokens.Palette
+    enum DetailsPlacement { case beside, below }
     struct Item: Equatable {
         var id: UUID
         var name: String
@@ -23,7 +27,7 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
     }
     enum Category: Int, CaseIterable {
         case all, posted, savedDragged, archived
-        var title: String { ["All", "Posted to Web", "Saved/DragMe'd", "Archived"][rawValue] }
+        var title: String { ["All", "Posted to Web", "Saved", "Archived"][rawValue] }
         func includes(_ item: Item) -> Bool {
             switch self {
             case .all: return true
@@ -40,9 +44,32 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
     enum Action: Int, CaseIterable {
         case open, copy, copyLink, openLink, remove, deleteFiles, deleteRemote
         var title: String { ["Open", "Copy", "Copy Link", "Open Link", "Hide from History", "Move to Trash", "Delete from Web"][rawValue] }
+        /// The toolbar-style action row is icon-only; the title is the tooltip, the accessibility label and the context-menu text.
+        var symbolName: String { ["arrow.up.right.square", "doc.on.doc", "link", "safari", "eye.slash", "trash", "icloud.slash"][rawValue] }
     }
     struct Section { var day: Date; var title: String; var items: [Item] }
-    nonisolated static let dragFormats = ["png", "jpeg", "tiff", "pdf", "svg", "opensnap"]
+    /// Persisted keys. `jpeg` is the stored name for JPG, and `opensnap` is the editable document.
+    nonisolated static let dragFormats = ["png", "jpeg", "pdf", "tiff", "svg", "opensnap"]
+    nonisolated static func dragFormatTitle(_ format: String) -> String {
+        switch format {
+        case "jpeg": return "JPG"
+        case "opensnap": return ".opensnap document"
+        default: return format.uppercased()
+        }
+    }
+    static let defaultSize = NSSize(width: 1000, height: 720), minimumSize = NSSize(width: 880, height: 600)
+    /// Below this content width the details panel moves from beside the grid to under it.
+    static let detailsCollapseWidth: CGFloat = 760
+    static let tileSize = NSSize(width: 210, height: 234)
+    /// Space between neighbouring tiles, and the grid's side inset.
+    static let tileGap = DesignTokens.Space.s4, gridSideInset = DesignTokens.Space.s3
+    /// Tiles share the row width exactly: as many as fit at the minimum width, each stretched to fill, so the gap between
+    /// neighbours is always `tileGap` instead of the flow layout spreading fixed tiles to the far edges.
+    static func tileWidth(forGridWidth width: CGFloat) -> CGFloat {
+        let available = width - 2 * gridSideInset
+        let columns = max(1, ((available + tileGap) / (tileSize.width + tileGap)).rounded(.down))
+        return max(1, ((available - (columns - 1) * tileGap) / columns).rounded(.down))
+    }
     nonisolated static let dragFormatDefaultsKey = "OpenSnap.HistoryDragFormat"
 
     var onOpen: (([UUID]) -> Void)? { didSet { updateControls() } }
@@ -81,8 +108,23 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
     private let warning = NSTextField(wrappingLabelWithString: "")
     private let detailsImage = NSImageView()
     private var detailValues: [String: NSTextField] = [:]
+    private var detailPairs: [NSStackView] = []
+    private var detailLabelWidths: [NSLayoutConstraint] = []
+    private var detailsFields: NSStackView?
+    private let detailsHint = NSTextField(wrappingLabelWithString:"Select a snap to see its details.")
     private var buttons: [Action: NSButton] = [:]
     private var contextItems: [Action: NSMenuItem] = [:]
+    /// The grid's scroll view. Horizontal scrolling is off: the grid reflows instead.
+    private(set) var gridScrollView: NSScrollView?
+    /// The centred message over the grid when there is nothing to show.
+    let emptyState = NSStackView()
+    let emptyTitle = NSTextField(labelWithString: ""), emptyHint = NSTextField(wrappingLabelWithString: "")
+    let filterRow = NSStackView(), actionRow = NSStackView()
+    let detailsPanel = NSStackView()
+    private(set) var detailsPlacement: DetailsPlacement = .beside
+    private var besideConstraints: [NSLayoutConstraint] = [], belowConstraints: [NSLayoutConstraint] = []
+    /// The Save to History key equivalent as the empty state should show it, or nil when the menu has none. Tests replace it.
+    var saveShortcut: () -> String? = { HistoryBrowser.liveSaveToHistoryShortcut(menu: NSApp?.mainMenu) }
     private var selectionChanging = false
     private var selectedItems: [Item] {
         collection.selectionIndexPaths.sorted { a,b in a.section == b.section ? a.item < b.item : a.section < b.section }.compactMap(item)
@@ -91,11 +133,13 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
     convenience init() { self.init(defaults: .standard, calendar: .current, now: Date.init) }
     init(defaults: UserDefaults, calendar: Calendar, now: @escaping () -> Date) {
         self.defaults = defaults; self.calendar = calendar; self.now = now
-        let window = NSWindow(contentRect: NSRect(x:0,y:0,width:1180,height:900),
+        let window = NSWindow(contentRect: NSRect(origin:.zero,size:Self.defaultSize),
                               styleMask:[.titled,.closable,.miniaturizable,.resizable], backing:.buffered, defer:false)
-        window.title = "History"; window.minSize = NSSize(width:1120,height:850)
+        window.setFrame(NSRect(origin:.zero,size:Self.defaultSize),display:false)
+        window.title = "History"; window.minSize = Self.minimumSize
         window.isReleasedWhenClosed = false
         super.init(window:window)
+        window.delegate = self
         thumbnails.countLimit = 256; thumbnails.totalCostLimit = 64*1024*1024
         buildUI(); rebuild(keeping: [])
     }
@@ -251,85 +295,207 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
 
     private func buildUI() {
         guard let content = window?.contentView else { return }
-        let root = NSStackView(); root.orientation = .vertical; root.spacing = 8; root.alignment = .leading
+        let root = NSStackView(); root.orientation = .vertical; root.spacing = Space.s3; root.alignment = .leading
         root.translatesAutoresizingMaskIntoConstraints = false; content.addSubview(root)
-        NSLayoutConstraint.activate([root.leadingAnchor.constraint(equalTo:content.leadingAnchor,constant:20),root.trailingAnchor.constraint(equalTo:content.trailingAnchor,constant:-20),
-                                     root.topAnchor.constraint(equalTo:content.topAnchor,constant:18),root.bottomAnchor.constraint(equalTo:content.bottomAnchor,constant:-18)])
-        categoryControl.segmentCount = Category.allCases.count; categoryControl.trackingMode = .selectOne; categoryControl.font = .systemFont(ofSize:20)
+        NSLayoutConstraint.activate([root.leadingAnchor.constraint(equalTo:content.leadingAnchor,constant:Space.s4),root.trailingAnchor.constraint(equalTo:content.trailingAnchor,constant:-Space.s4),
+                                     root.topAnchor.constraint(equalTo:content.topAnchor,constant:Space.s4),root.bottomAnchor.constraint(equalTo:content.bottomAnchor,constant:-Space.s4)])
+
+        // Filter row: category, search, date. It lives in the content area.
+        categoryControl.segmentCount = Category.allCases.count; categoryControl.trackingMode = .selectOne
+        categoryControl.segmentDistribution = .fit; Typography.apply(.body,to:categoryControl)
         for value in Category.allCases { categoryControl.setLabel(value.title,forSegment:value.rawValue) }
         categoryControl.selectedSegment = 0; categoryControl.target = self; categoryControl.action = #selector(filtersChanged)
         categoryControl.setAccessibilityLabel("History category")
-        root.addArrangedSubview(categoryControl)
-        search.font = .systemFont(ofSize:20); search.placeholderString = "Search history"; search.delegate = self
+        Typography.apply(.body,to:search); search.placeholderString = "Search history"; search.delegate = self
         search.sendsSearchStringImmediately = true; search.setAccessibilityLabel("Search history")
-        datePopup.addItems(withTitles:DateFilter.allCases.map(\.title)); datePopup.font = .systemFont(ofSize:20); datePopup.menu?.font = .systemFont(ofSize:20)
+        search.widthAnchor.constraint(greaterThanOrEqualToConstant:160).isActive = true
+        search.setContentHuggingPriority(.defaultLow,for:.horizontal)
+        datePopup.addItems(withTitles:DateFilter.allCases.map(\.title)); Typography.apply(.body,to:datePopup)
         datePopup.target = self; datePopup.action = #selector(filtersChanged); datePopup.setAccessibilityLabel("History date filter")
-        let filters = row([search,datePopup]); search.widthAnchor.constraint(greaterThanOrEqualToConstant:480).isActive = true
-        root.addArrangedSubview(filters)
+        configure(filterRow,[categoryControl,search,datePopup]); root.addArrangedSubview(filterRow)
 
-        let layout = NSCollectionViewFlowLayout(); layout.itemSize = NSSize(width:210,height:234)
-        layout.minimumInteritemSpacing = 20; layout.minimumLineSpacing = 20; layout.headerReferenceSize = NSSize(width:1,height:52)
-        layout.sectionInset = NSEdgeInsets(top:8,left:12,bottom:20,right:12)
-        collection.frame = NSRect(x:0,y:0,width:1140,height:400); collection.autoresizingMask = [.width]
+        // Action row: the seven actions as a toolbar, plus the drag format. Disabled ones stay in place so the row does not jump.
+        let actions = Action.allCases.map { action -> NSButton in
+            let button = NSButton(title:"",target:self,action:#selector(actionInvoked(_:)))
+            button.tag = action.rawValue; button.bezelStyle = .rounded; Typography.apply(.body,to:button)
+            if let symbol = NSImage(systemSymbolName:action.symbolName,accessibilityDescription:action.title)?
+                .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize:Typography.iconInline,weight:.regular)) {
+                button.image = symbol; button.imagePosition = .imageOnly
+            } else { button.title = action.title }
+            button.toolTip = action.title; button.setAccessibilityLabel(action.title)
+            button.widthAnchor.constraint(greaterThanOrEqualToConstant:DesignTokens.Size.tool.width).isActive = true
+            button.heightAnchor.constraint(greaterThanOrEqualToConstant:DesignTokens.Size.control).isActive = true
+            buttons[action] = button; return button
+        }
+        let formatLabel = NSTextField(labelWithString:"Drag as"); Typography.apply(.body,to:formatLabel)
+        formatPopup.addItems(withTitles:Self.dragFormats.map(Self.dragFormatTitle)); Typography.apply(.body,to:formatPopup)
+        formatPopup.selectItem(at:Self.dragFormats.firstIndex(of:dragFormat) ?? 0)
+        formatPopup.target = self; formatPopup.action = #selector(formatChanged); formatPopup.setAccessibilityLabel("History drag export format")
+        let flexible = NSView(); flexible.setContentHuggingPriority(.init(1),for:.horizontal)
+        configure(actionRow,actions+[flexible,formatLabel,formatPopup]); actionRow.spacing = Space.s2
+        actionRow.setCustomSpacing(Space.s5,after:actions.last!)
+        root.addArrangedSubview(actionRow)
+
+        // Body: the grid, with the details panel beside it (or under it when narrow).
+        let body = NSView(); body.translatesAutoresizingMaskIntoConstraints = false; root.addArrangedSubview(body)
+        let layout = HistoryFlowLayout(); layout.itemSize = Self.tileSize
+        layout.minimumInteritemSpacing = Self.tileGap; layout.minimumLineSpacing = Space.s4; layout.headerReferenceSize = NSSize(width:1,height:52)
+        layout.sectionInset = NSEdgeInsets(top:Space.s2,left:Self.gridSideInset,bottom:Space.s5,right:Self.gridSideInset)
+        collection.frame = NSRect(x:0,y:0,width:640,height:400); collection.autoresizingMask = [.width]
         collection.collectionViewLayout = layout; collection.dataSource = self; collection.delegate = self
         collection.isSelectable = true; collection.allowsMultipleSelection = true; collection.allowsEmptySelection = true
-        collection.backgroundColors = [.controlBackgroundColor]; collection.setAccessibilityLabel("History thumbnail grid")
+        collection.backgroundColors = [Palette.Surface.content]; collection.setAccessibilityLabel("History thumbnail grid")
         collection.register(HistoryThumbnail.self,forItemWithIdentifier:HistoryThumbnail.identifier)
         collection.register(HistoryDayHeader.self,forSupplementaryViewOfKind:NSCollectionView.elementKindSectionHeader,withIdentifier:HistoryDayHeader.identifier)
         collection.setDraggingSourceOperationMask(.copy,forLocal:false); collection.setDraggingSourceOperationMask(.copy,forLocal:true)
         collection.browser = self
-        let menu = NSMenu(title:"History actions"); menu.font = .systemFont(ofSize:20)
+        let menu = NSMenu(title:"History actions"); menu.font = Typography.font(.body)
         for action in Action.allCases {
             let item = NSMenuItem(title:action.title,action:#selector(actionInvoked(_:)),keyEquivalent:"")
             item.tag = action.rawValue; item.target = self; menu.addItem(item); contextItems[action] = item
         }
         collection.menu = menu
-        let scroll = NSScrollView(frame:NSRect(x:0,y:0,width:1140,height:400)); scroll.documentView = collection; scroll.hasVerticalScroller = true; scroll.autohidesScrollers = true
+        let scroll = NSScrollView(frame:NSRect(x:0,y:0,width:640,height:400)); scroll.documentView = collection
+        scroll.hasVerticalScroller = true; scroll.hasHorizontalScroller = false; scroll.autohidesScrollers = true
         scroll.borderType = .bezelBorder; scroll.translatesAutoresizingMaskIntoConstraints = false
-        root.addArrangedSubview(scroll); scroll.heightAnchor.constraint(greaterThanOrEqualToConstant:240).isActive = true
-        scroll.setContentHuggingPriority(.defaultLow,for:.vertical)
-        status.font = .systemFont(ofSize:18); root.addArrangedSubview(status)
+        gridScrollView = scroll
+        body.addSubview(scroll)
+        body.setContentHuggingPriority(.defaultLow,for:.vertical); body.setContentCompressionResistancePriority(.init(100),for:.vertical)
+        body.heightAnchor.constraint(greaterThanOrEqualToConstant:240).isActive = true
 
-        detailsImage.imageScaling = .scaleProportionallyUpOrDown; detailsImage.setAccessibilityLabel("Selected history preview")
-        detailsImage.widthAnchor.constraint(equalToConstant:176).isActive = true; detailsImage.heightAnchor.constraint(equalToConstant:150).isActive = true
-        let details = NSStackView(); details.orientation = .vertical; details.alignment = .leading; details.spacing = 5
-        for name in ["Name","Date","Size","Action","Destination"] {
-            let label = NSTextField(labelWithString:name+":"); label.font = .systemFont(ofSize:18,weight:.semibold)
-            label.widthAnchor.constraint(equalToConstant:118).isActive = true
-            let value = NSTextField(wrappingLabelWithString:"—"); value.font = .systemFont(ofSize:20); value.isSelectable = true
-            value.maximumNumberOfLines = 2; value.setContentCompressionResistancePriority(.defaultLow,for:.horizontal)
-            value.setAccessibilityLabel(name); detailValues[name] = value
-            let line = row([label,value]); details.addArrangedSubview(line)
-            line.widthAnchor.constraint(equalTo:details.widthAnchor).isActive = true
-        }
-        root.addArrangedSubview(row([detailsImage,details]))
-        warning.font = .systemFont(ofSize:20); warning.textColor = .systemRed; root.addArrangedSubview(warning)
-        let actions = Action.allCases.map { action -> NSButton in
-            let button = NSButton(title:action.title,target:self,action:#selector(actionInvoked(_:)))
-            button.tag = action.rawValue; button.font = .systemFont(ofSize:20); button.bezelStyle = .rounded
-            buttons[action] = button; return button
-        }
-        root.addArrangedSubview(row(Array(actions.prefix(4))))
-        root.addArrangedSubview(row(Array(actions.suffix(3))))
-        let formatLabel = NSTextField(labelWithString:"Drag from History format:"); formatLabel.font = .systemFont(ofSize:18)
-        formatPopup.addItems(withTitles:Self.dragFormats.map { $0.uppercased() }); formatPopup.font = .systemFont(ofSize:20); formatPopup.menu?.font = .systemFont(ofSize:20)
-        formatPopup.selectItem(at:Self.dragFormats.firstIndex(of:dragFormat) ?? 0)
-        formatPopup.target = self; formatPopup.action = #selector(formatChanged); formatPopup.setAccessibilityLabel("History drag export format")
-        root.addArrangedSubview(row([formatLabel,formatPopup]))
+        buildDetails()
+        body.addSubview(detailsPanel)
+        besideConstraints = [scroll.leadingAnchor.constraint(equalTo:body.leadingAnchor),scroll.topAnchor.constraint(equalTo:body.topAnchor),
+                             scroll.bottomAnchor.constraint(equalTo:body.bottomAnchor),scroll.trailingAnchor.constraint(equalTo:detailsPanel.leadingAnchor,constant:-Space.s3),
+                             detailsPanel.trailingAnchor.constraint(equalTo:body.trailingAnchor),detailsPanel.topAnchor.constraint(equalTo:body.topAnchor),
+                             detailsPanel.bottomAnchor.constraint(lessThanOrEqualTo:body.bottomAnchor),detailsPanel.widthAnchor.constraint(equalToConstant:Self.detailsWidth)]
+        belowConstraints = [scroll.leadingAnchor.constraint(equalTo:body.leadingAnchor),scroll.trailingAnchor.constraint(equalTo:body.trailingAnchor),
+                            scroll.topAnchor.constraint(equalTo:body.topAnchor),scroll.bottomAnchor.constraint(equalTo:detailsPanel.topAnchor,constant:-Space.s3),
+                            detailsPanel.leadingAnchor.constraint(equalTo:body.leadingAnchor),detailsPanel.trailingAnchor.constraint(equalTo:body.trailingAnchor),
+                            detailsPanel.bottomAnchor.constraint(equalTo:body.bottomAnchor),detailsPanel.heightAnchor.constraint(equalToConstant:Self.detailsBelowHeight)]
+        NSLayoutConstraint.activate(besideConstraints)
+
+        buildEmptyState(over:scroll,in:body)
+
+        Typography.apply(.body,to:warning); warning.textColor = Palette.feedbackError; warning.maximumNumberOfLines = 0
+        root.addArrangedSubview(warning)
+        Typography.apply(.caption,to:status); status.textColor = Palette.Text.secondary; root.addArrangedSubview(status)
         for child in root.arrangedSubviews { child.widthAnchor.constraint(equalTo:root.widthAnchor).isActive = true }
         content.layoutSubtreeIfNeeded()
+        layoutDetails(forContentWidth:content.bounds.width)
     }
+    static let detailsWidth: CGFloat = 248, detailsBelowHeight: CGFloat = 176
+
+    private func configure(_ stack: NSStackView,_ views: [NSView]) {
+        stack.orientation = .horizontal; stack.alignment = .centerY; stack.spacing = Space.s3
+        views.forEach { stack.addArrangedSubview($0) }
+    }
+    private func buildDetails() {
+        detailsPanel.translatesAutoresizingMaskIntoConstraints = false
+        detailsPanel.orientation = .vertical; detailsPanel.alignment = .leading; detailsPanel.spacing = Space.s3
+        detailsImage.imageScaling = .scaleProportionallyUpOrDown; detailsImage.setAccessibilityLabel("Selected history preview")
+        let imageHeight = detailsImage.heightAnchor.constraint(equalToConstant:150); imageHeight.priority = .init(749); imageHeight.isActive = true
+        detailsImage.heightAnchor.constraint(greaterThanOrEqualToConstant:48).isActive = true
+        detailsImage.setContentHuggingPriority(.defaultLow,for:.horizontal)
+        let fields = NSStackView(); fields.orientation = .vertical; fields.alignment = .leading; fields.spacing = Space.s2
+        for name in ["Name","Date","Size","Action","Destination"] {
+            let label = NSTextField(labelWithString:name+":"); label.font = Typography.font(.bodyStrong)
+            let value = NSTextField(wrappingLabelWithString:"—"); value.font = Typography.font(.body); value.isSelectable = true
+            value.maximumNumberOfLines = 2; value.setContentCompressionResistancePriority(.defaultLow,for:.horizontal)
+            value.setAccessibilityLabel(name); detailValues[name] = value
+            let pair = NSStackView(views:[label,value]); pair.orientation = .vertical; pair.alignment = .leading; pair.spacing = 0
+            detailPairs.append(pair); fields.addArrangedSubview(pair)
+            detailLabelWidths.append(label.widthAnchor.constraint(equalToConstant:118))
+            pair.widthAnchor.constraint(equalTo:fields.widthAnchor).isActive = true
+        }
+        detailsFields = fields
+        detailsHint.font = Typography.font(.body); detailsHint.textColor = Palette.Text.secondary; detailsHint.maximumNumberOfLines = 0
+        detailsHint.preferredMaxLayoutWidth = Self.detailsWidth
+        detailsPanel.addArrangedSubview(detailsHint)
+        detailsPanel.addArrangedSubview(detailsImage); detailsPanel.addArrangedSubview(fields)
+        detailsImage.widthAnchor.constraint(equalTo:detailsPanel.widthAnchor).isActive = true
+        fields.widthAnchor.constraint(equalTo:detailsPanel.widthAnchor).isActive = true
+    }
+    private func buildEmptyState(over scroll: NSView,in body: NSView) {
+        emptyState.orientation = .vertical; emptyState.alignment = .centerX; emptyState.spacing = Space.s2
+        emptyState.translatesAutoresizingMaskIntoConstraints = false
+        emptyTitle.font = Typography.font(.headline); emptyTitle.textColor = Palette.Text.primary; emptyTitle.alignment = .center
+        emptyHint.font = Typography.font(.body); emptyHint.textColor = Palette.Text.secondary; emptyHint.alignment = .center
+        emptyHint.maximumNumberOfLines = 0; emptyHint.preferredMaxLayoutWidth = 360
+        emptyState.addArrangedSubview(emptyTitle); emptyState.addArrangedSubview(emptyHint)
+        body.addSubview(emptyState)
+        NSLayoutConstraint.activate([emptyState.centerXAnchor.constraint(equalTo:scroll.centerXAnchor),emptyState.centerYAnchor.constraint(equalTo:scroll.centerYAnchor),
+                                     emptyState.widthAnchor.constraint(lessThanOrEqualTo:scroll.widthAnchor,constant:-2*Space.s5)])
+        emptyState.setAccessibilityElement(true); emptyState.setAccessibilityRole(.staticText)
+    }
+
+    /// Moves the details panel beside the grid, or under it when the content is narrower than `detailsCollapseWidth`.
+    func layoutDetails(forContentWidth width: CGFloat) {
+        let placement: DetailsPlacement = width < Self.detailsCollapseWidth ? .below : .beside
+        guard placement != detailsPlacement else { return }
+        NSLayoutConstraint.deactivate(placement == .below ? besideConstraints : belowConstraints)
+        NSLayoutConstraint.activate(placement == .below ? belowConstraints : besideConstraints)
+        detailsPlacement = placement
+        // Below the grid the panel is a wide strip: preview on the left, fields on the right.
+        detailsPanel.orientation = placement == .below ? .horizontal : .vertical
+        detailsPanel.alignment = placement == .below ? .top : .leading
+        for pair in detailPairs { pair.orientation = placement == .below ? .horizontal : .vertical; pair.spacing = placement == .below ? Space.s2 : 0 }
+        for width in detailLabelWidths { width.isActive = placement == .below }
+        window?.contentView?.layoutSubtreeIfNeeded()
+    }
+    func windowDidResize(_ notification: Notification) {
+        if let width = window?.contentView?.bounds.width { layoutDetails(forContentWidth:width) }
+    }
+    override func cancelOperation(_ sender: Any?) { window?.performClose(sender) }
+
+    private func updateEmptyState() {
+        let nothingSaved = items.isEmpty
+        emptyState.isHidden = !visibleItems.isEmpty
+        emptyTitle.stringValue = nothingSaved ? "No history yet." : "No history items match these filters."
+        emptyHint.stringValue = nothingSaved ? Self.emptyHint(shortcut:saveShortcut()) : ""
+        emptyHint.isHidden = !nothingSaved
+        emptyState.setAccessibilityLabel([emptyTitle.stringValue,emptyHint.stringValue].filter { !$0.isEmpty }.joined(separator:" "))
+    }
+    /// A functional hint: the live shortcut when the menu has one, otherwise the command's name, never an invented key.
+    nonisolated static func emptyHint(shortcut: String?) -> String {
+        shortcut.map { "Press \($0) to save a snap" } ?? "Use Save to History to keep a snap"
+    }
+    /// Reads the live main menu for the Save to History item and describes its key equivalent, e.g. "⌘S"; nil when it has none.
+    static func liveSaveToHistoryShortcut(menu: NSMenu?) -> String? {
+        func find(in menu: NSMenu) -> NSMenuItem? {
+            for item in menu.items {
+                if item.action == NSSelectorFromString("saveHistory") { return item }
+                if let submenu = item.submenu, let found = find(in:submenu) { return found }
+            }
+            return nil
+        }
+        guard let menu, let item = find(in:menu), item.keyEquivalent.count == 1 else { return nil }
+        return shortcutDescription(keyEquivalent:item.keyEquivalent,modifiers:item.keyEquivalentModifierMask)
+    }
+    nonisolated static func shortcutDescription(keyEquivalent key: String,modifiers: NSEvent.ModifierFlags) -> String {
+        var flags = modifiers.intersection(.deviceIndependentFlagsMask)
+        if key != key.lowercased() { flags.insert(.shift) } // an uppercase key equivalent implies Shift
+        var text = ""
+        if flags.contains(.control) { text += "⌃" }
+        if flags.contains(.option) { text += "⌥" }
+        if flags.contains(.shift) { text += "⇧" }
+        if flags.contains(.command) { text += "⌘" }
+        return text + key.uppercased()
+    }
+
     private func row(_ views: [NSView]) -> NSStackView {
-        let stack = NSStackView(views:views); stack.orientation = .horizontal; stack.alignment = .centerY; stack.spacing = 12
+        let stack = NSStackView(views:views); stack.orientation = .horizontal; stack.alignment = .centerY; stack.spacing = Space.s3
         return stack
     }
     private func updateControls() {
         let selected = selectedItems
         for action in Action.allCases { buttons[action]?.isEnabled = canPerform(action) }
-        status.stringValue = visibleItems.isEmpty ? "No history items match these filters." : "\(visibleItems.count) items · \(selected.count) selected"
+        status.stringValue = visibleItems.isEmpty ? "" : "\(visibleItems.count) items · \(selected.count) selected"
+        updateEmptyState()
         let missingCount = selected.filter(\.missing).count
-        warning.stringValue = missingCount == 0 ? "" : "\(missingCount) selected \(missingCount == 1 ? "file is" : "files are") missing. You can remove the history entry or use its web link."
+        warning.stringValue = missingCount == 0 ? "" : "Error: \(missingCount) selected \(missingCount == 1 ? "file is" : "files are") missing. You can remove the history entry or use its web link."
         warning.isHidden = missingCount == 0
+        detailsHint.isHidden = !selected.isEmpty; detailsImage.isHidden = selected.isEmpty; detailsFields?.isHidden = selected.isEmpty
         guard let value = selected.first else {
             detailsImage.image = nil; detailValues.values.forEach { $0.stringValue = "—" }; return
         }
@@ -411,6 +577,7 @@ private final class HistoryGrid: NSCollectionView {
     }
     override func keyDown(with event: NSEvent) {
         if event.keyCode == 36 || event.keyCode == 76 { browser?.perform(.open); return }
+        if event.keyCode == 53 { browser?.cancelOperation(nil); return }
         if event.keyCode == 51 || event.keyCode == 117 { browser?.perform(.remove); return }
         if event.modifierFlags.contains(.command), event.charactersIgnoringModifiers?.lowercased() == "c" {
             browser?.perform(event.modifierFlags.contains(.shift) ? .copyLink : .copy); return
@@ -427,22 +594,25 @@ private final class HistoryThumbnail: NSCollectionViewItem {
     private let placeholder = NSTextField(wrappingLabelWithString:"Preview unavailable")
     private let preview = NSImageView()
     override func loadView() {
-        view = NSView(); view.wantsLayer = true; view.layer?.cornerRadius = 8
-        let stack = NSStackView(); stack.orientation = .vertical; stack.spacing = 5; stack.alignment = .leading
+        let tile = HistoryTileView(); view = tile
+        let stack = NSStackView(); stack.orientation = .vertical; stack.spacing = DesignTokens.Space.s1; stack.alignment = .leading
         stack.translatesAutoresizingMaskIntoConstraints = false; view.addSubview(stack)
-        NSLayoutConstraint.activate([stack.leadingAnchor.constraint(equalTo:view.leadingAnchor,constant:8),stack.trailingAnchor.constraint(equalTo:view.trailingAnchor,constant:-8),
-                                     stack.topAnchor.constraint(equalTo:view.topAnchor,constant:8),stack.bottomAnchor.constraint(equalTo:view.bottomAnchor,constant:-8)])
+        let inset = DesignTokens.Space.s2
+        NSLayoutConstraint.activate([stack.leadingAnchor.constraint(equalTo:view.leadingAnchor,constant:inset),stack.trailingAnchor.constraint(equalTo:view.trailingAnchor,constant:-inset),
+                                     stack.topAnchor.constraint(equalTo:view.topAnchor,constant:inset),stack.bottomAnchor.constraint(equalTo:view.bottomAnchor,constant:-inset)])
         let host = NSView(); host.translatesAutoresizingMaskIntoConstraints = false; host.heightAnchor.constraint(equalToConstant:126).isActive = true
         for child in [preview,placeholder] {
             child.translatesAutoresizingMaskIntoConstraints = false; host.addSubview(child)
             NSLayoutConstraint.activate([child.leadingAnchor.constraint(equalTo:host.leadingAnchor),child.trailingAnchor.constraint(equalTo:host.trailingAnchor),
                                          child.topAnchor.constraint(equalTo:host.topAnchor),child.bottomAnchor.constraint(equalTo:host.bottomAnchor)])
         }
-        preview.imageScaling = .scaleProportionallyUpOrDown; placeholder.font = .systemFont(ofSize:18); placeholder.alignment = .center
-        name.font = .systemFont(ofSize:20); name.maximumNumberOfLines = 2; name.lineBreakMode = .byTruncatingTail
-        action.font = .systemFont(ofSize:18); action.lineBreakMode = .byTruncatingTail
+        preview.imageScaling = .scaleProportionallyUpOrDown
+        placeholder.font = DesignTokens.Typography.font(.caption); placeholder.alignment = .center; placeholder.textColor = DesignTokens.Palette.Text.secondary
+        name.font = DesignTokens.Typography.font(.body); name.maximumNumberOfLines = 2; name.lineBreakMode = .byTruncatingTail
+        action.font = DesignTokens.Typography.font(.caption); action.lineBreakMode = .byTruncatingTail; action.textColor = DesignTokens.Palette.Text.secondary
         stack.addArrangedSubview(host); stack.addArrangedSubview(name); stack.addArrangedSubview(action)
         host.widthAnchor.constraint(equalTo:stack.widthAnchor).isActive = true
+        tile.addCheckBadge(over:host)
     }
     func configure(_ value: HistoryBrowser.Item,image: NSImage?) {
         _ = view
@@ -453,10 +623,55 @@ private final class HistoryThumbnail: NSCollectionViewItem {
     }
     override var isSelected: Bool { didSet { refreshSelection() } }
     private func refreshSelection() {
-        guard isViewLoaded else { return }
-        view.layer?.borderWidth = isSelected ? 2 : 0
-        view.layer?.borderColor = NSColor.controlAccentColor.cgColor
-        view.layer?.backgroundColor = (isSelected ? NSColor.controlAccentColor.withAlphaComponent(0.15) : .clear).cgColor
+        guard isViewLoaded, let tile = view as? HistoryTileView else { return }
+        tile.isTileSelected = isSelected
+    }
+}
+
+/// A flow layout whose tiles stretch to share the row exactly, so gaps stay equal at every window width.
+@MainActor
+private final class HistoryFlowLayout: NSCollectionViewFlowLayout {
+    private func fit(toGridWidth width: CGFloat) {
+        let size = NSSize(width:HistoryBrowser.tileWidth(forGridWidth:width),height:HistoryBrowser.tileSize.height)
+        if itemSize != size { itemSize = size }
+    }
+    override func prepare() {
+        if let width = collectionView?.bounds.width { fit(toGridWidth:width) }
+        super.prepare()
+    }
+    override func shouldInvalidateLayout(forBoundsChange newBounds: NSRect) -> Bool {
+        fit(toGridWidth:newBounds.width)
+        return super.shouldInvalidateLayout(forBoundsChange:newBounds)
+    }
+}
+
+/// A tile that says it is selected two ways: an accent border and fill, and a check badge, so colour is never the only cue.
+@MainActor
+final class HistoryTileView: NSView {
+    private(set) var checkBadge: NSImageView?
+    var isTileSelected = false { didSet { checkBadge?.isHidden = !isTileSelected; setAccessibilityValue(isTileSelected ? "Selected" : nil); needsDisplay = true } }
+    override init(frame: NSRect) {
+        super.init(frame:frame); wantsLayer = true; layer?.cornerRadius = DesignTokens.Radius.md
+    }
+    required init?(coder: NSCoder) { return nil }
+    override var wantsUpdateLayer: Bool { true }
+    override func updateLayer() {
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            layer?.borderWidth = isTileSelected ? 2 : 0
+            layer?.borderColor = DesignTokens.Palette.accent.cgColor
+            layer?.backgroundColor = (isTileSelected ? DesignTokens.Palette.State.selectedFill : NSColor.clear).cgColor
+        }
+    }
+    func addCheckBadge(over host: NSView) {
+        let badge = NSImageView(); badge.translatesAutoresizingMaskIntoConstraints = false
+        let size = DesignTokens.Typography.iconPrimary
+        badge.image = NSImage(systemSymbolName:"checkmark.circle.fill",accessibilityDescription:"Selected")?
+            .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize:size,weight:.semibold))
+        badge.contentTintColor = DesignTokens.Palette.accent; badge.isHidden = true
+        badge.setAccessibilityElement(false)
+        addSubview(badge); checkBadge = badge
+        NSLayoutConstraint.activate([badge.topAnchor.constraint(equalTo:host.topAnchor,constant:DesignTokens.Space.s1),
+                                     badge.trailingAnchor.constraint(equalTo:host.trailingAnchor,constant:-DesignTokens.Space.s1)])
     }
 }
 @MainActor
@@ -464,9 +679,9 @@ private final class HistoryDayHeader: NSView {
     static let identifier = NSUserInterfaceItemIdentifier("HistoryDayHeader")
     let label = NSTextField(labelWithString:"")
     override init(frame: NSRect) {
-        super.init(frame:frame); label.font = .systemFont(ofSize:20,weight:.semibold)
+        super.init(frame:frame); label.font = DesignTokens.Typography.font(.headline)
         label.translatesAutoresizingMaskIntoConstraints = false; addSubview(label)
-        NSLayoutConstraint.activate([label.leadingAnchor.constraint(equalTo:leadingAnchor,constant:12),label.trailingAnchor.constraint(equalTo:trailingAnchor,constant:-12),label.centerYAnchor.constraint(equalTo:centerYAnchor)])
+        NSLayoutConstraint.activate([label.leadingAnchor.constraint(equalTo:leadingAnchor,constant:DesignTokens.Space.s3),label.trailingAnchor.constraint(equalTo:trailingAnchor,constant:-DesignTokens.Space.s3),label.centerYAnchor.constraint(equalTo:centerYAnchor)])
     }
     required init?(coder: NSCoder) { return nil }
 }

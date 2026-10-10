@@ -145,6 +145,7 @@ struct CanvasTests {
         _ = NSApplication.shared
         let tests: [(String, () throws -> Void)] = [
             ("render orientation, alpha and zoom", render),
+            ("highlighter strokes composite once: the start cap matches the body", highlighterStartCap),
             ("crop background pixels and editable coordinates", crop),
             ("add shadow grows the canvas 27 x 27 with the picture at 14,6 in one undo", addShadow),
             ("border crop retains hidden raster and vectors across save and expansion", reframe),
@@ -252,6 +253,58 @@ struct CanvasTests {
         c.setBackgroundColor(.clear)
         try expect(try pixel(c, 90, 60).alphaComponent < 0.01, "Transparent background")
         try expect(c.renderedImage().size == c.canvasSize, "Rendered image uses document pixels")
+    }
+    /// OSN-057: a translucent stroke must be one composite everywhere. Sampled on the stroke's start cap, body and end cap,
+    /// over a transparent page and over a solid one, for the real Pencil gesture (with a retrace over its own start) and a `.brush` polyline.
+    static func highlighterStartCap() throws {
+        let yellow = NSColor(deviceRed: 1, green: 1, blue: 0, alpha: 0.35)
+        let width: CGFloat = 26, start = CGPoint(x: 40, y: 50), end = CGPoint(x: 360, y: 50)
+        func gesture() throws -> CanvasView {
+            let c = canvas(NSSize(width: 400, height: 100)); let window = host(c); defer { window.close() }
+            c.tool = .brush; c.strokeWidth = width; c.strokeColor = yellow
+            c.mouseDown(with: try mouse(c, .leftMouseDown, start))
+            for x in stride(from: start.x, through: end.x, by: 20) { c.mouseDragged(with: try mouse(c, .leftMouseDragged, CGPoint(x: x, y: 50))) }
+            for x in stride(from: end.x, through: start.x, by: -20) { c.mouseDragged(with: try mouse(c, .leftMouseDragged, CGPoint(x: x, y: 52))) }
+            c.mouseUp(with: try mouse(c, .leftMouseUp, start))
+            return c
+        }
+        func polyline() -> CanvasView {
+            let c = canvas(NSSize(width: 400, height: 100))
+            var element = SketchElement(kind: .brush)
+            element.color = SketchColor(yellow); element.strokeWidth = width
+            element.points = [start, end, CGPoint(x: start.x, y: 52)]
+            c.document.elements = [element]
+            return c
+        }
+        let backdrop = NSColor(deviceRed: 0.2, green: 0.3, blue: 0.6, alpha: 1)
+        for (name, make) in [("Pencil gesture", { try gesture() }), (".brush polyline", { polyline() })] as [(String, () throws -> CanvasView)] {
+            let c = try make()
+            try expect(!c.document.elements.isEmpty, "\(name): the stroke exists")
+            // transparent page: every pixel of the stroke carries one composite of the stroke alpha, the start cap included
+            c.setBackgroundColor(.clear)
+            let bitmap = try expectBitmap(c)
+            var strongest: CGFloat = 0
+            for y in 0..<bitmap.pixelsHigh { for x in 0..<bitmap.pixelsWide { strongest = max(strongest, bitmap.colorAt(x: x, y: y)?.alphaComponent ?? 0) } }
+            try expect(abs(strongest - 0.35) < 0.01, "\(name): the strongest pixel is \(strongest), a single composite is 0.35 (double is 0.58)")
+            // the start cap sits left of the first point; the body is the middle; the end cap right of the last point
+            for (label, x) in [("start cap", Int(start.x - width / 3)), ("body", 200), ("end cap", Int(end.x + width / 3))] {
+                let sample = try pixel(c, x, 50)
+                try expect(abs(sample.alphaComponent - 0.35) < 0.01 && sample.redComponent > 0.98 && sample.greenComponent > 0.98 && sample.blueComponent < 0.02,
+                           "\(name): \(label) is \(sample) over a transparent page, expected yellow at alpha 0.35")
+            }
+            // solid page: start cap, body and end cap are the same colour and equal one composite over the page
+            c.setBackgroundColor(backdrop)
+            let expected = (0.2 * 0.65 + 0.35, 0.3 * 0.65 + 0.35, 0.6 * 0.65)
+            for (label, x) in [("start cap", Int(start.x - width / 3)), ("body", 200), ("end cap", Int(end.x + width / 3))] {
+                let sample = try pixel(c, x, 50)
+                try expect(abs(sample.redComponent - expected.0) < 0.012 && abs(sample.greenComponent - expected.1) < 0.012 && abs(sample.blueComponent - expected.2) < 0.012,
+                           "\(name): \(label) is \(sample) over a solid page, expected (\(expected.0), \(expected.1), \(expected.2))")
+            }
+        }
+    }
+    static func expectBitmap(_ canvas: CanvasView) throws -> NSBitmapImageRep {
+        guard let bitmap = SketchRenderer.bitmap(document: canvas.document) else { throw Failure(description: "Cannot render the document") }
+        return bitmap
     }
     static func addShadow() throws {
         let c = canvas(NSSize(width: 100, height: 50))

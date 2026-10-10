@@ -94,7 +94,7 @@ private enum ResizePanelTests {
         area.edit(.width, text: "8002")
         try rejects { _ = try area.submission() }
         for initial in [CGSize.zero, CGSize(width: CGFloat.nan, height: 12),
-                        CGSize(width: 12.5, height: 10), CGSize(width: 16384, height: 16384)] {
+                        CGSize(width: 16384, height: 16384)] {
             var invalid = ResizePanelState(size: initial)
             invalid.setPreserveRatio(true)
             try expect(!invalid.locksProportions, "Invalid original cannot produce a ratio")
@@ -103,6 +103,18 @@ private enum ResizePanelTests {
             invalid.edit(.height, text: "600")
             try expect(try invalid.submission().size == CGSize(width: 800, height: 600), "Recover invalid original")
         }
+
+        // OSN-058 changed this rule on purpose: an untouched fractional source submits what the field shows (13 x 10),
+        // while a TYPED 12.5 is still rejected. The fractional original has no usable ratio, so the lock stays off.
+        var fractionalSource = ResizePanelState(size: CGSize(width: 12.5, height: 10))
+        fractionalSource.setPreserveRatio(true)
+        try expect(!fractionalSource.locksProportions, "Fractional original cannot produce a ratio")
+        try expect(try fractionalSource.submission().size == CGSize(width: 13, height: 10), "Untouched 12.5 x 10 submits the displayed 13 x 10")
+        fractionalSource.edit(.width, text: "12.5")
+        try rejects { _ = try fractionalSource.submission() }
+        fractionalSource.edit(.width, text: "800")
+        fractionalSource.edit(.height, text: "600")
+        try expect(try fractionalSource.submission().size == CGSize(width: 800, height: 600), "Recover fractional original")
 
         let titles = ["Top Left", "Top Center", "Top Right", "Middle Left", "Center", "Middle Right",
                       "Bottom Left", "Bottom Center", "Bottom Right"]
@@ -224,6 +236,99 @@ private enum ResizePanelTests {
         customState.selectPreset(custom)
         try expect(try customState.preset(id: custom.id, name: custom.name, format: custom.format) == custom,
                    "UI preserves all custom preset fields and opaque format metadata")
+        // OSN-058: the fields show whole pixels, rounded half away from zero; only the shown text is rounded.
+        for (value, shown) in [(CGFloat(1516.5), "1517"), (1516.4, "1516"), (1516, "1516"), (0.5, "1"), (1515.5, "1516"), (16384, "16384")] as [(CGFloat, String)] {
+            try expect(ResizePanelValidation.displayText(for: value) == shown, "\(value) displays as \(shown), got \(ResizePanelValidation.displayText(for: value))")
+        }
+        for value: CGFloat in [1516.5, 1234.567, 99999.75, 0.25, -3.5, .nan, .infinity, .greatestFiniteMagnitude] {
+            let text = ResizePanelValidation.displayText(for: value) // never traps on odd input
+            if value.isFinite && abs(value) < 1e15 { try expect(!text.contains("."), "\(value) shows no decimal point, got \(text)") }
+        }
+        let fractional = ResizePanelState(size: CGSize(width: 1516.5, height: 1000))
+        try expect(fractional.displayWidthText == "1517" && fractional.displayHeightText == "1000" && fractional.displayLimitText == "1517",
+                   "width, height and limit fields show whole pixels: \(fractional.displayWidthText) x \(fractional.displayHeightText), limit \(fractional.displayLimitText)")
+        try expect(fractional.widthText == "1516.5", "the text the validator reads is untouched: \(fractional.widthText)")
+        // the stored size is still 1516.5: limit mode scales from it (a size rounded to 1517 first gives a 999 high result)
+        var limited = fractional
+        limited.setMode(.limit); limited.limitText = "1516"
+        try expect(try limited.submission().size == CGSize(width: 1516, height: 1000), "limit math runs on the full-precision 1516.5, got \(try limited.submission().size)")
+        var rounded = ResizePanelState(size: CGSize(width: 1517, height: 1000))
+        rounded.setMode(.limit); rounded.limitText = "1516"
+        try expect(try rounded.submission().size == CGSize(width: 1516, height: 999), "a stored 1517 gives 999 here, so the case above really tells the two apart")
+        // typed values pass through untouched and are never re-rounded on display
+        var typed = fractional
+        typed.edit(.width, text: "1516")
+        try expect(typed.widthText == "1516" && typed.displayWidthText == "1516" && (try typed.submission().size.width) == 1516, "a typed 1516 stays 1516")
+        typed.edit(.height, text: "1.5")
+        try expect(typed.displayHeightText == "1.5", "typed text is shown exactly as typed, not rounded: \(typed.displayHeightText)")
+        typed.edit(.height, text: "1000")
+        try expect(typed.displayHeightText == "1000" && (try typed.submission().size) == CGSize(width: 1516, height: 1000), "a typed 1000 round-trips")
+        var whole = ResizePanelState(size: CGSize(width: 1516, height: 1000))
+        try expect(whole.displayWidthText == "1516" && whole.displayHeightText == "1000", "whole-pixel sources display unchanged")
+        whole.edit(.width, text: "758")
+        try expect(whole.widthText == "758" && whole.heightText == "500" && whole.displayHeightText == "500", "proportional math on a whole-pixel size is unchanged")
+        whole.edit(.height, text: "1000")
+        try expect(whole.widthText == "1516" && (try whole.submission().size) == CGSize(width: 1516, height: 1000), "a typed 1000 round-trips to the original 1516 x 1000")
+        // OSN-058 round 2: the panel must never reject a value it displays. Apply and OK both take the shown whole pixels.
+        let shown = CGSize(width: 1516.5, height: 1010.7)
+        var untouchedState = ResizePanelState(size: shown)
+        try expect(untouchedState.displayWidthText == "1517" && untouchedState.displayHeightText == "1011", "fractional source displays 1517 x 1011")
+        try expect(try untouchedState.submission().size == CGSize(width: 1517, height: 1011), "untouched fields submit the displayed 1517 x 1011")
+        for viaOK in [false, true] {
+            var previewed: [CGSize] = []
+            var committed: [CGSize] = []
+            let fractionalSession = ResizePanelSession(size: shown, onPreview: { previewed.append($0.size) }, onFinish: { _ in })
+            fractionalSession.onCompletion = { _ in }
+            if viaOK {
+                try expect(try fractionalSession.apply(), "OK on an untouched fractional source succeeds")
+                try expect(fractionalSession.isFinished && previewed == [CGSize(width: 1517, height: 1011)], "OK previews then commits the displayed 1517 x 1011")
+            } else {
+                try expect(try fractionalSession.preview(), "Apply on an untouched fractional source succeeds")
+                try expect(!fractionalSession.isFinished && previewed == [CGSize(width: 1517, height: 1011)], "Apply previews the displayed 1517 x 1011")
+                fractionalSession.cancel()
+            }
+            let delivering = ResizePanelSession(size: shown) { size, _, _ in committed.append(size) }
+            try expect(try delivering.apply(), "OK delivers for an untouched fractional source")
+            try expect(committed == [CGSize(width: 1517, height: 1011)], "OK callback receives 1517 x 1011, got \(committed)")
+        }
+        // typed values behave exactly as before: whole text is honoured, fractional or non-numeric text is still rejected
+        untouchedState.setPreserveRatio(false)
+        untouchedState.edit(.width, text: "1516")
+        try expect(try untouchedState.submission().size == CGSize(width: 1516, height: 1011), "typed 1516 stays 1516; the untouched partner submits its displayed 1011")
+        for bad in ["12.5", "abc", "1516.5"] {
+            var badState = ResizePanelState(size: shown)
+            badState.edit(.width, text: bad)
+            try rejects { _ = try badState.submission() }
+            var badHeight = ResizePanelState(size: shown)
+            badHeight.edit(.height, text: bad)
+            try rejects { _ = try badHeight.submission() }
+        }
+        // proportional lock: a fractional source has no usable ratio (validate rejects it), so the lock is off and the
+        // untouched partner's rounded display is the value that submits. On a whole-pixel source the lock is live and the
+        // partner is recomputed from the exact original ratio, so an untouched partner never feeds the math.
+        var locked = ResizePanelState(size: shown)
+        locked.setPreserveRatio(true)
+        try expect(!locked.locksProportions, "fractional source cannot lock proportions")
+        locked.edit(.width, text: "758")
+        try expect(locked.heightText == "1010.7" && (try locked.submission().size) == CGSize(width: 758, height: 1011), "fractional source: width edit leaves the partner untouched and it submits 1011")
+        var wholeLock = ResizePanelState(size: CGSize(width: 1516, height: 1010))
+        try expect(wholeLock.locksProportions, "whole source locks")
+        wholeLock.edit(.width, text: "758")
+        try expect(wholeLock.heightText == "505" && (try wholeLock.submission().size) == CGSize(width: 758, height: 505), "whole source: lock math unchanged")
+        wholeLock.edit(.height, text: "202")
+        try expect(wholeLock.widthText == "303" && (try wholeLock.submission().size) == CGSize(width: 303, height: 202), "height drives width from the exact ratio")
+        // unlocked: editing one field leaves the other untouched, and it submits its rounded display
+        var unlockedPartner = ResizePanelState(size: shown)
+        unlockedPartner.setPreserveRatio(false)
+        unlockedPartner.edit(.height, text: "400")
+        try expect(try unlockedPartner.submission().size == CGSize(width: 1517, height: 400), "untouched width submits its displayed 1517")
+        // limit mode: an untouched fractional limit field submits its displayed whole pixels too
+        var limitFractional = ResizePanelState(size: shown)
+        limitFractional.setMode(.limit)
+        try expect(limitFractional.displayLimitText == "1517", "limit field shows 1517")
+        try expect(try limitFractional.submission().size == CGSize(width: 1517, height: 1011), "untouched limit submits the displayed 1517 without erroring, got \(try limitFractional.submission().size)")
+        limitFractional.limitText = "12.5"
+        try rejects { _ = try limitFractional.submission() }
         print("ResizePanelTests: \(checks) checks passed (pure state; no desktop input)")
     }
 }

@@ -48,6 +48,9 @@ print("PASS", secrets_guard(), flush=True)
 subprocess.run([sys.executable, str(root / "tools" / "check-skitch-strings.py")], cwd=root, check=True)
 # The screenshot harness's protections (store guard, isolation of the launched copy, sandbox fence) must be able to fail.
 subprocess.run([sys.executable, "-I", str(root / "tools" / "test-eye-dump-audit-guard.py")], cwd=root, check=True)
+# G9: literal fonts, colours and radii outside the tokens. Report mode until the token sweeps land; the self-test proves --strict can fail.
+subprocess.run([sys.executable, str(root / "tools" / "check-tokens.py")], cwd=root, check=True)
+subprocess.run([sys.executable, str(root / "tools" / "check-tokens.py"), "--self-test"], cwd=root, check=True)
 snapshot = Path(tempfile.mkdtemp(prefix="test-snapshot.", dir=build))
 
 def current_inputs():
@@ -66,6 +69,8 @@ manifest = {str(path.relative_to(root)): hashlib.sha256(data).hexdigest() for pa
 (snapshot / "source-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
 
 def suite(name, sources, test, define=None, arguments=(), environment=None, optional=False):
+    # Every suite compiles the design tokens, so a file that adopts them never breaks its own suite.
+    sources = [*sources, "DesignTokens.swift"] if "DesignTokens.swift" not in sources else sources
     if optional:
         for needed in [*sources, test]:
             if not (snapshot / needed).exists():
@@ -122,6 +127,9 @@ suites = [
     ("migration-tests", ["SVGPath.swift", "LegacyReader.swift", "DocumentModel.swift", "VectorGeometry.swift", "StrokeFitting.swift", "ImageExport.swift", "Canvas.swift", "OpenSnapFile.swift", "HistoryStore.swift", "Migration.swift"], "MigrationTests.swift", "MIGRATION_TESTS", (), {"CFFIXED_USER_HOME": "@temp-home"}),
     ("capture-tests", ["OriginalCaptureTiming.swift", "OriginalCaptureMagnifier.swift", "OriginalCapturePicker.swift", "OriginalCaptureCountdown.swift", "OriginalCaptureFlash.swift", "Capture.swift"], "CaptureTests.swift", "CAPTURE_TESTS", ()),
     ("photo-browser-tests", ["PhotoBrowser.swift"], "PhotoBrowserTests.swift", None, ()),
+    ("typography-tests", [], "TypographyTests.swift", "TYPOGRAPHY_TESTS", ()),
+    ("palette-tests", [], "PaletteTests.swift", "PALETTE_TESTS", ()),
+    ("metrics-tests", [], "MetricsTests.swift", "METRICS_TESTS", ()),
 ]
 # Modern appearance suites are skipped, not failed, while their files are not in the tree yet.
 optional_suites = [
