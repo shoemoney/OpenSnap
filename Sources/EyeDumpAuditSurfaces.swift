@@ -1071,7 +1071,7 @@ extension AuditRun {
         var meta: [String: Any] = ["id": id, "slug": slug, "surface": surface, "state": state, "appearance": appearance, "file": stem + ".png",
             "pixelSize": [rep.pixelsWide, rep.pixelsHigh], "pointSize": [Double(view.bounds.width), Double(view.bounds.height)],
             "scale": Double(rep.pixelsWide) / Double(view.bounds.width), "method": "NSView.cacheDisplay (view only, not a window capture)", "sourceRefs": refs,
-            "sourceSha": sourceSha, "iconMode": iconMode, "windowSize": [Double(window.frame.width.rounded()), Double(window.frame.height.rounded())], "appActive": NSApp.isActive]
+            "sourceSha": sourceSha, "iconMode": iconMode, "displayOptions": displayOptionsJSON, "windowSize": [Double(window.frame.width.rounded()), Double(window.frame.height.rounded())], "appActive": NSApp.isActive]
         for (key, item) in extra { meta[key] = item }
         write(meta, to: "meta/\(stem).json")
     }
@@ -1273,8 +1273,11 @@ extension AuditRun {
     func s14() {
         guard let screen = window.screen ?? NSScreen.main else { gap("S14", "countdown", "no screen"); return }
         var tick: (@MainActor @Sendable () -> Void)?
+        // A plain run pins both options off. With --display the default seams run, so the capture shows what DisplayOptions.current drives.
+        var seam: OriginalCaptureCountdown.Flag?
+        if injectedDisplayOptions == nil { seam = { false } }
         let countdown = OriginalCaptureCountdown(scheduler: { _, action in tick = action; return { tick = nil } }, screenFrames: { [screen.visibleFrame] },
-                                                 reduceMotion: { false }, increaseContrast: { false }, announce: { _ in })
+                                                 reduceMotion: seam, increaseContrast: seam, announce: { _ in })
         let rect = window.frame.insetBy(dx: window.frame.width / 3, dy: window.frame.height / 3)
         countdown.start(rect: rect, parent: nil, delay: OriginalCaptureTiming.originalDelay, cue: {}, completion: {})
         var seen = Set<String>()

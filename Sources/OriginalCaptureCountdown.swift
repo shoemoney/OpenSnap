@@ -27,6 +27,8 @@ final class OriginalCaptureCountdown: CaptureCountdownPresenting {
         weak var parent: NSWindow?
         var panel: NSPanel?
         var imageView: NSImageView?
+        /// The numeral on screen, so a display-option change can redraw it.
+        var number = 3
         var cancelTimer: Cancellation?
         let reduceMotion: Bool
         var announced: Int?
@@ -45,20 +47,22 @@ final class OriginalCaptureCountdown: CaptureCountdownPresenting {
     private let reduceMotion: Flag
     private let announce: Announcer
     private var session: Session?
+    private var displayObservation: DisplayOptions.Observation?
     private var cleaningUp = false
     private var lifetime: OriginalCaptureCountdown?
     var isRunning: Bool { session != nil }
 
     /// Frames and rect use AppKit global bottom-left coordinates. Supply VISIBLE
     /// screen frames in NSScreen order. Test factories must suppress window ordering.
-    /// `reduceMotion`, `increaseContrast` and `announce` default to the system; tests force them. Reduce Motion is read once per
-    /// countdown so a setting flipped mid-count cannot change how that count looks.
+    /// `reduceMotion`, `increaseContrast` and `announce` default to `DisplayOptions.current` and the system; tests force them.
+    /// Reduce Motion is read once per countdown so a setting flipped mid-count cannot change how that count looks; Increase
+    /// Contrast redraws the numeral on screen the moment it changes.
     init(panelFactory: PanelFactory? = nil, images: Images? = nil,
          scheduler: Scheduler? = nil, screenFrames: ScreenFrames? = nil,
          reduceMotion: Flag? = nil, increaseContrast: Flag? = nil, announce: Announcer? = nil) {
-        self.reduceMotion = reduceMotion ?? { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
+        self.reduceMotion = reduceMotion ?? { DisplayOptions.current.reduceMotion }
         self.announce = announce ?? Self.postAnnouncement
-        let increaseContrast = increaseContrast ?? { NSWorkspace.shared.accessibilityDisplayShouldIncreaseContrast }
+        let increaseContrast = increaseContrast ?? { DisplayOptions.current.increaseContrast }
         self.panelFactory = panelFactory ?? { rect in
             OriginalCountdownPanel(contentRect: rect, styleMask: [.borderless, .nonactivatingPanel],
                                    backing: .buffered, defer: true)
@@ -114,6 +118,10 @@ final class OriginalCaptureCountdown: CaptureCountdownPresenting {
             view.setAccessibilityRole(.image)
             view.setAccessibilityLabel("Capture countdown: 3")
             request.imageView = view
+            displayObservation = DisplayOptions.observe { [weak self, weak request] _ in
+                guard let self, let request, self.session === request, let view = request.imageView else { return }
+                view.image = self.images(request.number)
+            }
             panel.contentView = view
             request.parent = parent
             if let parent { parent.addChildWindow(panel, ordered: .above) }
@@ -205,6 +213,7 @@ final class OriginalCaptureCountdown: CaptureCountdownPresenting {
         if frame.playCue {
             let image = images(frame.imageNumber)
             guard session === request else { return }
+            request.number = frame.imageNumber
             request.imageView?.image = image
             request.imageView?.setAccessibilityLabel("Capture countdown: \(frame.imageNumber)")
             speak(frame.imageNumber, in: request)
@@ -222,6 +231,8 @@ final class OriginalCaptureCountdown: CaptureCountdownPresenting {
         // Defer expiry completion until we can invalidate that token first.
         if complete && request.registering { request.completionPending = true; return }
         session = nil // Reject stale ticks before calling injected/native code.
+        displayObservation?.invalidate()
+        displayObservation = nil
         cleaningUp = true
         let cancellation = request.cancelTimer
         request.cancelTimer = nil

@@ -134,6 +134,8 @@ enum OriginalCaptureCountdownTests {
         reentrantCallbacks()
         registrationAndProviderReentry()
         reduceMotionKeepsNumeralSteady()
+        displayOptionsDriveTheDefaults()
+        displayOptionsObservedWhileVisible()
         announcements()
         boundaryInputs(artwork: true)
         drawnNumerals()
@@ -338,6 +340,72 @@ enum OriginalCaptureCountdownTests {
     }
 
     /// Draws the numeral at 1x into a known bitmap so pixel checks do not depend on the display's scale.
+    /// A countdown built with NO reduceMotion/increaseContrast seams reads `DisplayOptions.current`: injected values reach it.
+    private static func displayOptionsDriveTheDefaults() {
+        let saved = DisplayOptions.override
+        defer { DisplayOptions.override = saved }
+        func bare(_ h: Harness) -> OriginalCaptureCountdown {
+            OriginalCaptureCountdown(panelFactory: { [h] rect in
+                let panel = Panel(contentRect: rect, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: true)
+                panel.events = h.events; h.panels.append(panel)
+                return panel
+            }, scheduler: { [h] interval, tick in h.clock.schedule(interval, tick) }, screenFrames: { [h] in h.screens },
+            announce: { _ in })
+        }
+        // Reduce Motion injected: the alpha tick sequence is the single final value.
+        DisplayOptions.override = DisplayOptions(reduceMotion: true)
+        let steady = Harness(), still = bare(steady)
+        still.start(rect: rect, parent: nil, delay: 3, cue: {}, completion: {})
+        var alphas = [steady.panels[0].alphaValue]
+        for _ in 1..<31 { steady.clock.fire(); alphas.append(steady.panels[0].alphaValue) }
+        expect(Set(alphas) == [1], "Injected Reduce Motion: every tick is alpha 1, got \(Set(alphas).sorted())")
+        // Reduce Motion not injected: the same untouched seams blink.
+        DisplayOptions.override = DisplayOptions.none
+        let moving = Harness(), blink = bare(moving)
+        blink.start(rect: rect, parent: nil, delay: 3, cue: {}, completion: {})
+        var moved = [moving.panels[0].alphaValue]
+        for _ in 1..<31 { moving.clock.fire(); moved.append(moving.panels[0].alphaValue) }
+        expect(Set(moved).count > 1 && moved.first == 0, "Without it the numeral blinks, got \(Set(moved).sorted())")
+        // Increase Contrast injected: the plate on screen is the 0.8 one.
+        for (options, alpha) in [(DisplayOptions(increaseContrast: true), 0.8), (DisplayOptions.none, 0.55)] {
+            DisplayOptions.override = options
+            let h = Harness(), countdown = bare(h)
+            countdown.start(rect: rect, parent: nil, delay: 3, cue: {}, completion: {})
+            let view = h.panels[0].contentView as! NSImageView
+            let edge = render(view.image!).colorAt(x: 6, y: 70)!.usingColorSpace(.deviceRGB)!
+            expect(abs(edge.alphaComponent - alpha) < 0.02, "Injected \(options.activeNames): plate alpha \(alpha), got \(edge.alphaComponent)")
+            countdown.cancel()
+        }
+    }
+
+    /// The numeral on screen follows a display-option change at once, not at the next tick, and stops following when it is gone.
+    private static func displayOptionsObservedWhileVisible() {
+        func post() {
+            NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: NSWorkspace.shared)
+        }
+        let h = Harness(), countdown = h.make()
+        var cues = 0
+        countdown.start(rect: rect, parent: nil, delay: 3, cue: { cues += 1 }, completion: {})
+        expect(h.requestedImages == [3], "The first numeral is drawn once, got \(h.requestedImages)")
+        post()
+        expect(h.requestedImages == [3, 3], "A display-option change redraws the numeral on screen, got \(h.requestedImages)")
+        // Advance to numeral 2 (cue ticks are 1, 11, 21; the image changes on each cue).
+        for _ in 0..<11 { h.clock.fire() }
+        let drawn = h.requestedImages.count, current = h.requestedImages.last!
+        expect(current == 2, "The countdown moved on to 2, got \(h.requestedImages)")
+        post()
+        expect(h.requestedImages.count == drawn + 1 && h.requestedImages.last == 2, "The redraw uses the numeral now showing, got \(h.requestedImages)")
+        countdown.cancel()
+        post()
+        expect(h.requestedImages.count == drawn + 1, "After the countdown ends nothing redraws, got \(h.requestedImages)")
+        // A finished countdown does not leave an observer behind for the next one.
+        let second = Harness(), again = second.make()
+        again.start(rect: rect, parent: nil, delay: 3, cue: {}, completion: {})
+        post()
+        expect(second.requestedImages == [3, 3] && h.requestedImages.count == drawn + 1, "Each countdown observes only itself")
+        again.cancel()
+    }
+
     private static func render(_ image: NSImage) -> NSBitmapImageRep {
         let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(image.size.width), pixelsHigh: Int(image.size.height),
                                    bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
