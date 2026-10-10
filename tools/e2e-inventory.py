@@ -512,8 +512,8 @@ def build_hotkeys():
             add("HOT", s, "Save", "control", f"{where} › Save", what("Applies the draft and closes (Return)"), shortcut="Return", rendered=["S18"], **retired)
     add("HOT", "Capture shortcuts (live)", "Menu entry: Capture Shortcuts…", "menu item", "Menu bar › OpenSnap › Capture Shortcuts…", "Opens the Settings window on the Capture tab (no separate sheet since d9ed8b7)",
         shortcut=None, rendered=["S18"])
-    add("HOT", "Capture shortcuts (live)", "Shortcuts pause while the Capture tab is open", "state", "Settings › Capture", "Saved shortcuts are unregistered while the tab is on screen and registered again when it is left or Settings is closed, so a half-entered chord never goes live",
-        proof=proof("SettingsWindowTests.swift", "opening Settings on Capture pauses every shortcut"))
+    add("HOT", "Capture shortcuts (live)", "Shortcuts pause while the Capture tab is in front", "state", "Settings › Capture", "Saved shortcuts are unregistered only while Settings is the key window on the Capture tab and the app is active; another window or app in front, another tab, hiding or closing Settings registers them again, so a half-entered chord never goes live",
+        proof=proof("SettingsWindowTests.swift", "Settings key and the app active on Capture pauses every shortcut"))
     for action in ("Screen region", "Window", "Full screen", "Frame", "Upload", "Show OpenSnap"):
         add("HOT", "Global hotkey firing", f"{action} (fires while backgrounded)", "shortcut", "Another app frontmost › the bound chord", "OpenSnap performs the action without being frontmost",
             prereq="A binding saved", ex="gap", gap="global-hotkey-background")

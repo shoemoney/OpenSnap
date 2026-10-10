@@ -369,6 +369,7 @@ extension AuditRun {
             step("S41", "audit batch 3a: what the J1 fixes change") { s41() }
             step("S42", "audit batch 3c: App-side J1 and J2 fixes") { s42() }
             step("S43", "audit batch 3c round 2: sheets at the minimum window, handles at 25%, Delete from Web off") { s43() }
+            step("S44", "audit batch 6: Original size, Resize Apply, footer at 980, Hide and Trash, Toolbox") { s44() }
             step("S13", "capture picker") { s13() }
             step("S14", "countdown") { s14() }
             step("S15", "capture flash") { s15() }
