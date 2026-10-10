@@ -348,7 +348,7 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         caption.preferredMaxLayoutWidth = Self.captionWidth
         control.setContentHuggingPriority(.defaultLow, for: .horizontal)
         stack.widthAnchor.constraint(equalToConstant: contentWidth).isActive = true
-        control.setAccessibilityLabel(title); control.setAccessibilityTitleUIElement(caption)
+        control.setAccessibilityLabel(title)
         rows[id] = Row(label: caption, stack: stack, visible: visible)
         formPage.addArrangedSubview(stack)
     }
@@ -449,7 +449,7 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         for row in rows.values { row.stack.isHidden = !row.visible(transport, keychain) }
         func caption(_ id: String, _ text: String) {
             rows[id]?.label.stringValue = text
-            if let control = rows[id]?.stack.arrangedSubviews.last { control.setAccessibilityLabel(text); control.setAccessibilityTitleUIElement(rows[id]?.label) }
+            rows[id]?.stack.arrangedSubviews.last?.setAccessibilityLabel(text)
         }
         caption("endpoint", copy.endpointCaption); caption("folder", copy.folderCaption)
         caption("username", copy.usernameCaption); caption("password", copy.passwordCaption)

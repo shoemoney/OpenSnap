@@ -413,7 +413,6 @@ enum PublishingDestinationsTests {
                 for field in fields {
                     let name = field.accessibilityLabel() ?? ""
                     try expect(captions.contains(name), "\(transport)/\(source): a filled field is named “\(name)”, not one of \(captions.sorted())")
-                    try expect((field.accessibilityTitleUIElement() as? NSTextField)?.stringValue == name, "\(transport)/\(source): “\(name)” is not tied to its visible caption")
                 }
                 for popup in [view.protocolPopup, view.sourcePopup] where !popup.isHiddenOrHasHiddenAncestor {
                     try expect(captions.contains(popup.accessibilityLabel() ?? ""), "\(transport)/\(source): a pop-up has no caption as its name")

@@ -154,7 +154,9 @@ private enum AboutWindowTests {
         expect(window.titleVisibility == .visible && window.title == "About OpenSnap", "The About window shows its title")
         // The real files: the shipped LICENSE has no line left that is a fragment of a paragraph, and the notices match the icon source.
         let here = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-        let root = [here.deletingLastPathComponent(), here].first { FileManager.default.fileExists(atPath: $0.appendingPathComponent("LICENSE").path) }
+        // The suite runs from a flattened snapshot (tools/test.py, working directory = the repo) or from tests/ directly.
+        let root = [URL(fileURLWithPath: FileManager.default.currentDirectoryPath), here.deletingLastPathComponent(), here]
+            .first { FileManager.default.fileExists(atPath: $0.appendingPathComponent("LICENSE").path) }
         guard let root, let license = try? String(contentsOf: root.appendingPathComponent("LICENSE"), encoding: .utf8),
               let notices = try? String(contentsOf: root.appendingPathComponent("THIRD_PARTY_NOTICES.md"), encoding: .utf8),
               let icons = try? String(contentsOf: root.appendingPathComponent("Sources/FontAwesomeFree.swift"), encoding: .utf8) else {
