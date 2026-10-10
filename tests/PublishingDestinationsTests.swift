@@ -528,6 +528,27 @@ enum PublishingDestinationsTests {
         panel.contentView?.layoutSubtreeIfNeeded()
         let successFrame = box(view.formResult)
         try expect(successFrame.minY >= buttonsTop() - 0.5 && successFrame.height < errorFrame.height, "a success is shorter than the error and still clear of the buttons: \(successFrame)")
+        // F-J7-001: every WebDAV Test note that can come back, with a login and without, is shown whole at the narrowest and the widest
+        // sheet: the field's wrapped height at its laid-out width equals its frame, so nothing is cut with an ellipsis.
+        func webDAV(_ code: String, user: String) -> String { PublishingConnectionTest.webDAVOutcome(stdout: code, exitCode: 0, stderr: "", username: user, password: user.isEmpty ? "" : "pw").message }
+        let notes = [webDAV("207", user: "me"), webDAV("200", user: ""), webDAV("405", user: "me"), webDAV("501", user: "")]
+        try expect(notes[0].hasSuffix("Nothing was uploaded.") && notes[0].contains("(HTTP 207)"), "the login note ends with its closing sentence: \(notes[0])")
+        for (hostWidth, label) in [(CGFloat(640), "640"), (CGFloat(900), "900")] {
+            let (widthPanel, widthView) = publisher.buildEditor(editing: nil, visibleFrame: screen, hostWidth: hostWidth)
+            defer { widthPanel.orderOut(nil) }
+            widthView.showForm(for: nil); widthView.protocolPopup.selectItem(withTitle: PublishingProtocol.webDAV.title); widthView.formChanged()
+            for note in notes {
+                widthView.showTestResult(ok: true, message: note)
+                widthPanel.contentView?.layoutSubtreeIfNeeded()
+                let field = widthView.formResult.detail
+                // Measured without the field's own line cap, so a note that needs a fourth line cannot hide behind it.
+                let natural = (note as NSString).boundingRect(with: NSSize(width: field.frame.width, height: 10_000), options: .usesLineFragmentOrigin, attributes: [.font: try unwrap(field.font)])
+                let captionLine = ceil(NSLayoutManager().defaultLineHeight(for: DesignTokens.Typography.font(.caption)))
+                try expect(natural.height <= 3 * captionLine + 1, "the note needs more than three lines at \(label) pt: \(natural.height) pt for “\(note)”")
+                try expect(field.frame.height >= natural.height - 0.5 && field.stringValue == note && field.maximumNumberOfLines >= 3,
+                           "the whole note is visible at \(label) pt (frame \(field.frame.height) pt, needs \(natural.height) pt): “\(note)”")
+            }
+        }
         // A result for a form is gone with the form: the band returns to its one idle line and the form its room.
         view.showForm(for: nil); view.protocolPopup.selectItem(withTitle: PublishingProtocol.s3.title); view.formChanged()
         panel.contentView?.layoutSubtreeIfNeeded()
