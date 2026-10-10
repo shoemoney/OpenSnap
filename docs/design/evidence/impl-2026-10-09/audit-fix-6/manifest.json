@@ -3,7 +3,7 @@
  "bundleId": "merged",
  "iconMode": "sf",
  "faMode": "FA unavailable: no FontAwesome7Pro subset fonts are bundled in this build, so every capture uses SF Symbols (nothing was faked)",
- "captureCount": 76,
+ "captureCount": 78,
  "unavailable": [],
  "gaps": [],
  "captures": [
@@ -1745,9 +1745,71 @@
   },
   {
    "id": "S44",
+   "slug": "footer-w1440-error",
+   "surface": "Bottom bar",
+   "state": "1440 wide with Original size showing, a failed upload: the 61-character line does not fit the slot, so it reads Upload failed · HTTP 403, not a cut sentence",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    120
+   ],
+   "pointSize": [
+    1440,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "1e5cb33",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S44-footer-w1440-error-dark@1e5cb33.png",
+   "storedPixelSize": [
+    1200,
+    50
+   ],
+   "downscaled": true,
+   "layout": "layout/S44-footer-w1440-error-dark@1e5cb33.json",
+   "before": null
+  },
+  {
+   "id": "S44",
+   "slug": "footer-w1440-error",
+   "surface": "Bottom bar",
+   "state": "1440 wide with Original size showing, a failed upload: the 61-character line does not fit the slot, so it reads Upload failed · HTTP 403, not a cut sentence",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    120
+   ],
+   "pointSize": [
+    1440,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "1e5cb33",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S44-footer-w1440-error-light@1e5cb33.png",
+   "storedPixelSize": [
+    1200,
+    50
+   ],
+   "downscaled": true,
+   "layout": "layout/S44-footer-w1440-error-light@1e5cb33.json",
+   "before": null
+  },
+  {
+   "id": "S44",
    "slug": "footer-w980-error",
    "surface": "Bottom bar",
-   "state": "980 wide, a failed upload: the message without an Error: lead, Retry and Details beside it (R2-014)",
+   "state": "980 wide, a failed upload: the message without an Error: lead, or Upload failed · and its code, never a cut sentence; Retry and Details beside it (R2-014)",
    "appearance": "dark",
    "iconMode": "sf",
    "windowSize": [
@@ -1763,22 +1825,22 @@
     60
    ],
    "scale": 2,
-   "sourceSha": "cc764dc",
+   "sourceSha": "1e5cb33",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S44-footer-w980-error-dark@cc764dc.png",
+   "file": "S44-footer-w980-error-dark@1e5cb33.png",
    "storedPixelSize": [
     1200,
     73
    ],
    "downscaled": true,
-   "layout": "layout/S44-footer-w980-error-dark@cc764dc.json",
+   "layout": "layout/S44-footer-w980-error-dark@1e5cb33.json",
    "before": null
   },
   {
    "id": "S44",
    "slug": "footer-w980-error",
    "surface": "Bottom bar",
-   "state": "980 wide, a failed upload: the message without an Error: lead, Retry and Details beside it (R2-014)",
+   "state": "980 wide, a failed upload: the message without an Error: lead, or Upload failed · and its code, never a cut sentence; Retry and Details beside it (R2-014)",
    "appearance": "light",
    "iconMode": "sf",
    "windowSize": [
@@ -1794,15 +1856,15 @@
     60
    ],
    "scale": 2,
-   "sourceSha": "cc764dc",
+   "sourceSha": "1e5cb33",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S44-footer-w980-error-light@cc764dc.png",
+   "file": "S44-footer-w980-error-light@1e5cb33.png",
    "storedPixelSize": [
     1200,
     73
    ],
    "downscaled": true,
-   "layout": "layout/S44-footer-w980-error-light@cc764dc.json",
+   "layout": "layout/S44-footer-w980-error-light@1e5cb33.json",
    "before": null
   },
   {
