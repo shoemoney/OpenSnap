@@ -193,11 +193,23 @@ final class AuditRun {
     /// `crop` is in points, top-left origin, relative to the first window's frame.
     @discardableResult
     func shoot(_ id: String, _ slug: String, surface: String, state: String, windows: [NSWindow]? = nil, crop: CGRect? = nil,
-               refs: [String], settle: TimeInterval = 0.45, extra: [String: Any] = [:], includeMenus: Bool = false) -> String? {
+               refs: [String], settle: TimeInterval = 0.45, extra: [String: Any] = [:], includeMenus: Bool = false, drawn: NSTextField? = nil) -> String? {
         let targets = windows ?? [window]
         if targets.contains(where: { $0.windowNumber <= 0 }) { gap(id, surface + " / " + state, "the window has no window-server window number (not on screen), so it cannot be imaged"); return nil }
         pump(settle)
         for target in targets { target.contentView?.layoutSubtreeIfNeeded(); target.displayIfNeeded() }
+        var extra = extra
+        // A shot of a label's text waits until the window server shows that text, or fails loudly rather than save the stale frame (F-R-001).
+        if let drawn, let host = targets.first {
+            let settled = settleDrawnText(drawn, in: host)
+            extra["drawnText"] = ["text": settled.text, "matched": settled.ok, "attempts": settled.attempts, "match": settled.match?.json as Any]
+            if !settled.ok {
+                let reason = "the window server never showed the label's text \"\(settled.text)\" within the wait (last match \(settled.match.map { "precision \($0.precision), recall \($0.recall)" } ?? "none"), \(settled.attempts) attempts); the capture would be a stale frame"
+                fputs("EYE-DUMP FAIL \(id)/\(slug): \(reason)\n", stderr)
+                gap(id, surface + " / " + state, reason)
+                return nil
+            }
+        }
         guard var (image, method) = grab(targets) else {
             gap(id, surface + " / " + state, "no image could be produced for the window (not on screen?)")
             return nil
