@@ -986,7 +986,7 @@ The pasteboard held 14 bytes of text before the run; it was saved to a temp file
 
 **Round 1 status, as the reviewer stated it:** R1-005 (Toolbox icons) and R1-023 (model and tool names in committed files) are **reopened**; R1-017 (Settings › Capture cleanup) has a **regression**, tracked as R2-001; every other round 1 item stays as recorded in the round 1 section above.
 
-**Findings** (severity · ID · surface · finding · status). All findings are described below; routing as decided by the orchestrator, and their text stays with the reviewer's report.
+**Findings** (severity · ID · surface · finding · status). All eighteen findings are described below, with the lane each was routed to.
 
 - P2 · R2-001 · Settings › Capture / global shortcuts · the batch-5 pause (`isShown && selectedIndex == captureTab`, SettingsWindow.swift ~1046, GlobalHotkeys.swift ~492) keeps every global capture shortcut off while Settings is merely shown on the Capture tab, even after switching to another app · batch 6 (pause only while Settings is key and the app active; resume on resign key, deactivate, hide, close).
 - P2 · R2-002 · document size · deeper cause of F-J6-001: `Canvas.renderSize` holds both the chosen Resize result and the auto-fit presentation size, so refits can overwrite a Resize; with Original size ticked export used `document.size` and ignored it; `dragAtOriginalSize` depended on the current screen (`isLargeShot`) · batch 6 (separate the chosen output size from the view fit; decide from the document).
