@@ -13,6 +13,22 @@ REPO = pathlib.Path(__file__).resolve().parent.parent
 WIDTHS = {"980xmin": "980", "1024x740": "1024", "1280x800": "1280", "1440x900": "1440"}
 
 
+# Audit fix 3a: the BEFORE of a surface the J1 real-click journey saw is that E2E screenshot (dark appearance only), referenced by path.
+J1 = "docs/design/evidence/e2e-2026-10-10/j1/"
+E2E_BEFORE = {
+    ("S41", "color-popover-blue-checked-w980"): J1 + "07-color-popover-after-blue-no-check.jpg",
+    ("S41", "color-popover-only-blue-checked-w980"): J1 + "07-color-popover-after-blue-no-check.jpg",
+    ("S41", "colors-panel-at-current-colour"): J1 + "10-colors-panel-opens-showing-blue.jpg",
+    ("S41", "footer-blank-w980"): J1 + "00-brush-tool-selected.jpg",
+    ("S41", "footer-drawn-w980"): J1 + "84-bottom-bar-save-button-saved-to-history.jpg",
+    ("S41", "text-size-committed-w980"): J1 + "12-size-popover-open-size7.jpg",
+    ("S41", "text-size-selected-w980"): J1 + "13-size-popover-preset12-text-frame-balloons.jpg",
+    ("S41", "crop-hint-w980"): J1 + "52-crop-tool-region-dimmed-no-apply-hint.jpg",
+    ("S41", "crop-dropped-w980"): J1 + "55-keyboard-trap-tab-in-canvas-toggles-brush-crop-overlay-lingers.jpg",
+    ("S41", "window-menu-open"): J1 + "45-fullscreen-entered-green-button.jpg",
+}
+
+
 def before_stem(c):
     """Stem (without appearance/sha) of the pre-rail-removal capture that shows the same thing, or None."""
     i, slug = c["id"], c["slug"]
@@ -123,8 +139,8 @@ def main():
             layout_rel = f"layout/{stem}@{args.sha}.json"
             (out / layout_rel).write_text(json.dumps(json.loads(layout_src.read_text()), separators=(",", ":"), ensure_ascii=False))
         # The mapped twin first, then the same id and slug: later runs keep the slug, so an earlier folder may hold exactly that capture.
-        before_rel = None
-        stems = [x for x in (before_stem(c), f"{c['id']}-{c['slug']}") if x]
+        before_rel = E2E_BEFORE.get((c["id"], c["slug"]))
+        stems = [x for x in (before_stem(c), f"{c['id']}-{c['slug']}") if x and not before_rel]
         for bs in stems:
             # Older evidence folders hold some twins without the @sha suffix.
             cand = next((p for p in (before / f"{bs}-{c['appearance']}@{args.before_sha}.png", before / f"{bs}-{c['appearance']}.png") if p.is_file()), None)
