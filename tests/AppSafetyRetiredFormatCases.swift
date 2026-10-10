@@ -139,7 +139,7 @@ extension AppSafetyTests {
         walk(main)
         try expect(main.items.count > 3 && main.items[0].submenu?.items.contains { $0.title == "About OpenSnap" } == true, "App menu is About OpenSnap")
         func visit(_ view: NSView) {
-            check(view.toolTip, "tooltip"); check(view.accessibilityLabel(), "accessibility label"); check(view.accessibilityHelp(), "accessibility help")
+            check(view.toolTip, "tooltip"); check(AppToolTip.text(for: view), "app tooltip"); check(view.accessibilityLabel(), "accessibility label"); check(view.accessibilityHelp(), "accessibility help")
             check((view as? NSTextField)?.stringValue, "text"); check((view as? NSButton)?.title, "button")
             for child in view.subviews { visit(child) }
         }

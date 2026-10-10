@@ -388,9 +388,9 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
     private func buildContent(in panel: NSPanel) {
         let content = NSView()
         panel.contentView = content
-        let heading = label("Resize or Crop", size: 26, weight: .semibold)
+        let heading = label("Resize or Crop", style: .title)
         let presetChoice = NSPopUpButton(frame: .zero, pullsDown: false)
-        presetChoice.font = .systemFont(ofSize: 20)
+        presetChoice.font = DesignTokens.Typography.font(.body)
         presetChoice.target = self; presetChoice.action = #selector(selectPreset(_:))
         presetChoice.setAccessibilityLabel("Size preset")
         presetPopup = presetChoice
@@ -405,13 +405,13 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         reloadPresets()
         let mode = NSSegmentedControl(labels: ["Resize", "Crop", "Limit"], trackingMode: .selectOne,
                                       target: self, action: #selector(changeMode(_:)))
-        mode.font = .systemFont(ofSize: 20)
+        mode.font = DesignTokens.Typography.font(.body)
         mode.selectedSegment = session.state.mode.rawValue
         mode.setAccessibilityLabel("Size operation")
         modeControl = mode
 
         let help = NSTextField(wrappingLabelWithString: "")
-        help.font = .systemFont(ofSize: 20)
+        help.font = DesignTokens.Typography.font(.body)
         helpLabel = help
         let width = dimensionField(value: session.state.displayWidthText, name: "Width in pixels")
         let height = dimensionField(value: session.state.displayHeightText, name: "Height in pixels")
@@ -427,7 +427,7 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         let limit = dimensionField(value: session.state.displayLimitText, name: "Size limit in pixels")
         limitField = limit
         let limitChoice = NSPopUpButton(frame: .zero, pullsDown: false)
-        limitChoice.font = .systemFont(ofSize: 20)
+        limitChoice.font = DesignTokens.Typography.font(.body)
         limitChoice.addItems(withTitles: ResizePanelLimitMode.allCases.map(\.title))
         limitChoice.target = self; limitChoice.action = #selector(changeLimit(_:))
         limitChoice.setAccessibilityLabel("Limit by")
@@ -438,14 +438,14 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
 
         let ratio = NSButton(checkboxWithTitle: "Lock proportions", target: self,
                              action: #selector(changeRatio(_:)))
-        ratio.font = .systemFont(ofSize: 20)
+        ratio.font = DesignTokens.Typography.font(.body)
         ratioButton = ratio
         let popup = NSPopUpButton(frame: .zero, pullsDown: false)
-        popup.font = .systemFont(ofSize: 20)
+        popup.font = DesignTokens.Typography.font(.body)
         popup.addItems(withTitles: ResizePanelAnchor.allCases.map(\.title))
         for item in popup.itemArray {
             item.attributedTitle = NSAttributedString(string: item.title,
-                attributes: [.font: NSFont.systemFont(ofSize: 20)])
+                attributes: [.font: DesignTokens.Typography.font(.body)])
         }
         popup.target = self
         popup.action = #selector(changeAnchor(_:))
@@ -457,8 +457,8 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         anchorRow = anchor
 
         let error = NSTextField(wrappingLabelWithString: "")
-        error.font = .systemFont(ofSize: 20)
-        error.textColor = .systemRed
+        error.font = DesignTokens.Typography.font(.body)
+        error.textColor = DesignTokens.Palette.feedbackError
         error.setAccessibilityLabel("Dimension validation")
         errorLabel = error
         let cancel = button("Cancel", action: #selector(cancelSheet(_:)))
@@ -519,16 +519,15 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         mode.nextKeyView = width
     }
 
-    private func label(_ text: String, size: CGFloat = 20,
-                       weight: NSFont.Weight = .regular) -> NSTextField {
+    private func label(_ text: String, style: DesignTokens.Typography.Style = .body) -> NSTextField {
         let label = NSTextField(labelWithString: text)
-        label.font = .systemFont(ofSize: size, weight: weight)
+        label.font = DesignTokens.Typography.font(style)
         return label
     }
 
     private func dimensionField(value: String, name: String) -> NSTextField {
         let field = NSTextField(string: value)
-        field.font = .systemFont(ofSize: 20)
+        field.font = DesignTokens.Typography.font(.body)
         field.delegate = self
         field.setAccessibilityLabel(name)
         return field
@@ -537,7 +536,7 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
     private func button(_ title: String, action: Selector) -> NSButton {
         let button = NSButton(title: title, target: self, action: action)
         button.bezelStyle = .rounded
-        button.font = .systemFont(ofSize: 20)
+        button.font = DesignTokens.Typography.font(.body)
         return button
     }
 
@@ -625,7 +624,7 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
             popup.addItem(withTitle: preset.name); popup.lastItem?.representedObject = preset.id
         }
         for item in popup.itemArray {
-            item.attributedTitle = NSAttributedString(string: item.title, attributes: [.font: NSFont.systemFont(ofSize: 20)])
+            item.attributedTitle = NSAttributedString(string: item.title, attributes: [.font: DesignTokens.Typography.font(.body)])
         }
         if let id = selectedPresetID, let item = popup.itemArray.first(where: { ($0.representedObject as? String) == id }) { popup.select(item) }
         else { popup.selectItem(at: 0) }

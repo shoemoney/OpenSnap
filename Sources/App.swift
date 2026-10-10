@@ -54,7 +54,7 @@ final class DragExportView: NSView, NSDraggingSource, NSFilePromiseProviderDeleg
         }
         if let overview { overview.draw(in: bounds.insetBy(dx: 4, dy: 4), from: .zero, operation: .sourceOver, fraction: 0.2) }
         let title = "Drag Me"
-        let attrs: [NSAttributedString.Key: Any] = [.font: NSFont.boldSystemFont(ofSize: 20), .foregroundColor: NSColor.labelColor]
+        let attrs = DesignTokens.Typography.attributes(.bodyStrong)
         let size = title.size(withAttributes: attrs)
         title.draw(at: NSPoint(x: (bounds.width-size.width)/2, y: (bounds.height-size.height)/2), withAttributes: attrs)
     }
@@ -188,6 +188,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     var preferencesWindow: NSWindow?
     var preferencesForm: GeneralPreferencesForm?
     var helpBevel: OriginalHelpBevel?
+    /// Controls the hover-hint bevel describes (weak): their tooltip yields to the bevel while it is enabled.
+    let hintTrackedViews = NSHashTable<NSView>.weakObjects()
     private var hintEventMonitor: Any?
     let photoBrowser = PhotoBrowserCoordinator()
     let nameField = DocumentNameField(string: "Untitled")
@@ -201,7 +203,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     private var colorHoverDismissal: DispatchWorkItem?
     var presetColorButtons: [BezelColorButton] = []
     var sizeUndoGrouping = false
-    var customDrawingColor = NSColor(calibratedRed: 0, green: 1, blue: 1, alpha: 1)
+    var customDrawingColor = NSColor(calibratedRed: 0, green: 1, blue: 1, alpha: 1) // token-exempt: drawing colour data, not chrome
     let zoomControl = ZoomPopUpButton(frame: .zero, pullsDown: false)
     let dragFormatToggle = NSSegmentedControl(labels: FormatToggle.titles, trackingMode: .selectOne, target: nil, action: nil)
     let dragOriginalControl = NSButton(checkboxWithTitle: "Export at original size", target: nil, action: nil)
@@ -432,6 +434,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             if entered { self.helpBevel?.hover(owner: owner, message: message()) }
             else { self.helpBevel?.exit(owner: owner) }
         }
+        hintTrackedViews.add(view)
         view.addSubview(tracking)
         NSLayoutConstraint.activate([tracking.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tracking.trailingAnchor.constraint(equalTo: view.trailingAnchor),
@@ -619,8 +622,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         sender.reply(toOpenOrPrint: .success)
     }
 
-    func label(_ text: String) -> NSTextField { let f = NSTextField(labelWithString: text); f.font = .systemFont(ofSize: 18); return f }
-    func button(_ title: String, _ action: Selector) -> NSButton { let b = OriginalActionButton(title: title, target: self, action: action); b.font = .systemFont(ofSize: 18); return b }
+    func label(_ text: String) -> NSTextField { let f = NSTextField(labelWithString: text); f.font = DesignTokens.Typography.font(.body); return f }
+    func button(_ title: String, _ action: Selector) -> NSButton { let b = OriginalActionButton(title: title, target: self, action: action); b.font = DesignTokens.Typography.font(.body); return b }
     /// A live copy of the main-menu item for `action`, so a popup never carries wording of its own.
     func copiedMainMenuItem(_ action: Selector) -> NSMenuItem? {
         func find(_ menu: NSMenu) -> NSMenuItem? {
@@ -639,7 +642,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     /// The Toolbox is a subset of the main menu by action: every row is a copy of the menu-bar item, so titles, keys and symbols match.
     func bezelToolbox() -> NSPopUpButton {
         let control = NSPopUpButton(frame: .zero, pullsDown: true)
-        control.font = .systemFont(ofSize: 20)
+        control.font = DesignTokens.Typography.font(.body)
         let choices = NSMenu(title: "Toolbox")
         choices.addItem(withTitle: "Toolbox", action: nil, keyEquivalent: "")
         let groups: [[Selector]] = [
@@ -671,7 +674,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         }
         MenuTypography.apply(to: choices)
         control.menu = choices; control.setAccessibilityLabel("Toolbox")
-        control.toolTip = "Common drawing and capture commands; additional actions are in More Commands"
+        AppToolTip.setText("Common drawing and capture commands; additional actions are in More Commands", for: control)
         return control
     }
     func buildWindow() {
@@ -699,7 +702,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             if self.activeDragID == id { self.activeDragID = nil }
             self.restoreDragThumbnail(id)
         }
-        drag.setAccessibilityElement(true); drag.setAccessibilityLabel("Drag Me"); drag.toolTip = "Drag the drawing into Finder or another application"
+        drag.setAccessibilityElement(true); drag.setAccessibilityLabel("Drag Me"); AppToolTip.setText("Drag the drawing into Finder or another application", for: drag)
         trackHint(drag, owner: "drag-me") { OriginalHintMessages.hover(actionTag: 40) }
     }
     func wireEditorChrome(scroll: NSScrollView) {
@@ -720,6 +723,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         canvas.arrowHeadPreference = UserDefaults.standard.integer(forKey: OriginalArrowGeometry.preferenceKey)
         helpBevel = OriginalHelpBevel(host: window)
         helpBevel?.enabled = generalPreferences.state.showKeyboardTips
+        // The opt-in hover-hint bevel replaces the tooltip on the controls it covers: never both.
+        AppToolTip.shared.suppressed = { [weak self] view in
+            guard let self, self.helpBevel?.enabled == true else { return false }
+            return self.hintTrackedViews.contains(view)
+        }
         canvas.onHintModifiers = { [weak self] flags in self?.hintModifiers(flags) }
         canvas.onHintHover = { [weak self] entered in
             guard let self else { return }
@@ -826,8 +834,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             let selected = choice == tool
             button.state = selected ? .on : .off
             button.bezelColor = selected ? .controlAccentColor : nil
-            button.toolTip = choice.rawValue.capitalized + (selected ? " tool (selected)" : " tool")
-            if choice == .arrow { button.toolTip! += "; Option reverses direction, Shift constrains the angle" }
+            let tip = choice.rawValue.capitalized + (selected ? " tool (selected)" : " tool")
+            AppToolTip.setText(choice == .arrow ? tip + "; Option reverses direction, Shift constrains the angle" : tip, for: button)
             button.needsDisplay = true
         }
     }
@@ -863,13 +871,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         widthControl.doubleValue = Double(canvas.strokeWidth)
         sizeLabel.stringValue = "Size · " + String(format: "%.0f", widthControl.doubleValue.rounded())
         // Modern has no visible Size text; the slider carries the value in its tooltip (VoiceOver reads its accessibilityValue).
-        widthControl.toolTip = "Size " + String(format: "%.0f", widthControl.doubleValue.rounded())
+        AppToolTip.setText("Size " + String(format: "%.0f", widthControl.doubleValue.rounded()), for: widthControl)
         let indicatorColor = canvas.strokeColor
         let swatchSize = NSSize(width: 28, height: 22)
         paletteButton.image = NSImage(size: swatchSize, flipped: false) { rect in
             NSColor.white.setFill(); rect.fill()
             indicatorColor.setFill(); rect.insetBy(dx: 1, dy: 1).fill()
-            NSColor.darkGray.setStroke(); NSBezierPath(rect: rect.insetBy(dx: 0.5, dy: 0.5)).stroke(); return true
+            DesignTokens.Palette.SwatchOutline.rest.setStroke(); NSBezierPath(rect: rect.insetBy(dx: 0.5, dy: 0.5)).stroke(); return true
         }
         let chosen = SketchColor(canvas.strokeColor)
         for button in presetColorButtons {
@@ -922,15 +930,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         presetColorButtons.removeAll()
         for (index, preset) in OriginalDrawingControls.presets.enumerated() {
             let button = BezelColorButton(frame: NSRect(x: CGFloat(12+(index%5)*44), y: CGFloat(68-(index/5)*34), width: 42, height: 32))
-            button.title = ""; button.isBordered = false; button.font = .systemFont(ofSize: 18)
+            button.title = ""; button.isBordered = false; button.font = DesignTokens.Typography.font(.body)
             button.drawingColor = preset.swatchColor; button.tag = preset.tag
             button.target = self; button.action = #selector(choosePresetColor(_:))
-            button.setAccessibilityLabel(preset.name); button.toolTip = preset.name + "; Shift changes the background"
+            button.setAccessibilityLabel(preset.name); AppToolTip.setText(preset.name + "; Shift changes the background", for: button)
             trackHint(button, owner: "color-" + String(preset.tag)) { OriginalHintMessages.hover(actionTag: preset.tag) }
             presetColorButtons.append(button); view.addSubview(button)
         }
-        let custom = button("Custom color…", #selector(chooseCustomColor(_:))); custom.font = .systemFont(ofSize: 20)
+        let custom = button("Custom color…", #selector(chooseCustomColor(_:))); custom.font = DesignTokens.Typography.font(.body)
         custom.frame = NSRect(x: 12, y: 2, width: 222, height: 30); custom.tag = 110; view.addSubview(custom)
+        AppToolTip.install(on: view)
         let controller = NSViewController(); controller.view = view
         let popover = NSPopover(); popover.behavior = .transient; popover.contentViewController = controller
         colorPopover = popover; syncDrawingControls()
@@ -974,7 +983,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         }
         if let custom = OriginalDrawingControls.legacyColor(drawingDefaults.values["customColor"], alpha: drawingDefaults.values["customColorAlpha"]) {
             let rgba = SketchColor(custom)
-            customDrawingColor = NSColor(calibratedRed: rgba.red, green: rgba.green, blue: rgba.blue, alpha: rgba.alpha)
+            customDrawingColor = NSColor(calibratedRed: rgba.red, green: rgba.green, blue: rgba.blue, alpha: rgba.alpha) // token-exempt: drawing colour data, not chrome
         }
         if let size = Double(drawingDefaults.values["brushSize"] ?? ""), size.isFinite {
             canvas.strokeWidth = CGFloat(OriginalDrawingControls.size(size, continuous: true))
@@ -985,6 +994,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     @objc func toggleBezelFill(_ sender: NSMenuItem) { canvas.filled.toggle(); canvas.applyStyleToSelection() }
     @objc func toggleBezelShadow(_ sender: NSMenuItem) { canvas.shadowed.toggle(); canvas.applyStyleToSelection() }
     @objc func changeZoom(_ sender: NSPopUpButton) {
+        AppToolTip.setText(sender.selectedItem?.toolTip, for: sender)
         guard !isActualSize, let scale = sender.selectedItem?.representedObject as? Double else { return }
         canvas.setZoom(CGFloat(scale)); updateStatus()
     }
@@ -1003,6 +1013,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         let percent = "\(Int((canvas.zoom*100).rounded()))%"
         let item = NSMenuItem(title: percent, action: nil, keyEquivalent: "")
         item.toolTip = "\(label), \(percent)"
+        AppToolTip.setText("\(label), \(percent)", for: zoomControl)
         item.tag = 999; item.representedObject = Double(canvas.zoom); zoomControl.menu?.insertItem(item, at: 0); zoomControl.select(item)
     }
     func changed() {
@@ -1049,7 +1060,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             }
         }
         status.setVariants(variants)
-        status.toolTip = variants[0]
+        AppToolTip.setText(variants[0], for: status, mirrorsToAccessibility: false)
         status.setAccessibilityHelp(nil)
     }
     var dragFormat: String {
@@ -1266,6 +1277,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
                 historyBrowser = browser
             }
             refreshHistory(); historyBrowser?.showWindow(nil); historyBrowser?.window?.makeKeyAndOrderFront(nil)
+            if let content = historyBrowser?.window?.contentView { AppToolTip.install(on: content) }
         } catch { self.error(error) }
     }
     struct HistoryEditorState {
@@ -1447,7 +1459,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     /// Left-click uploads to the default destination; right-click or Control-click shows the destination menu.
     func configureWebpostButton(_ button: NSButton) {
         webpostButton = button
-        button.toolTip = Self.webpostHelp
+        AppToolTip.setText(Self.webpostHelp, for: button)
         let menu = NSMenu(); menu.autoenablesItems = false; menu.delegate = self; MenuTypography.apply(to: menu)
         button.menu = menu
         (button as? OriginalActionButton)?.showMenuOnLeftClick = false
@@ -1733,13 +1745,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         snapButton.cancelOperation(nil)
         snapButton.title = "Snap Frame"
         (snapButton as? OriginalActionButton)?.alternateAction = nil
-        snapButton.toolTip = "Capture the area inside the frame; hold Shift for a six-second timer"
+        AppToolTip.setText("Capture the area inside the frame; hold Shift for a six-second timer", for: snapButton)
         cancelFrameButton.isHidden = false
         setModernFrameMode(true)
         updateViewportChrome()
         let fullStatus = keepingAnnotations ? "Frame preview · Snap Frame replaces the picture and keeps your drawing" : "Frame: position the window, then Snap"
         status.stringValue = keepingAnnotations ? "Frame: Snap keeps your drawing" : "Frame: position, then Snap"
-        status.toolTip = fullStatus
+        AppToolTip.setText(fullStatus, for: status, mirrorsToAccessibility: false)
         status.spokenValue = fullStatus; status.setAccessibilityHelp(fullStatus)
     }
     @objc func cancelFrame() {
@@ -1761,7 +1773,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         canvas.enclosingScrollView?.hasHorizontalScroller = frameScrollersShown.horizontal; canvas.enclosingScrollView?.hasVerticalScroller = frameScrollersShown.vertical
         snapButton.title = "Snap"
         (snapButton as? OriginalActionButton)?.alternateAction = #selector(fullscreenSnap)
-        snapButton.toolTip = "Drag an area or click a window; right-click or Control-click for Fullscreen"
+        AppToolTip.setText("Drag an area or click a window; right-click or Control-click for Fullscreen", for: snapButton)
         cancelFrameButton.isHidden = true
         setModernFrameMode(false)
         updateStatus()
@@ -1855,7 +1867,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmed.isEmpty { nameField.stringValue = trimmed }
     }
-    func prompt(_ title: String, text: String, value: String) -> String? { let a = NSAlert(); a.messageText = title; a.informativeText = text; let field = NSTextField(string: value); field.font = .systemFont(ofSize: 20); field.frame = NSRect(x: 0,y: 0,width: 340,height: 32); a.accessoryView = field; a.addButton(withTitle: "OK"); a.addButton(withTitle: "Cancel"); return a.runModal() == .alertFirstButtonReturn ? field.stringValue : nil }
+    func prompt(_ title: String, text: String, value: String) -> String? { let a = NSAlert(); a.messageText = title; a.informativeText = text; let field = NSTextField(string: value); field.font = DesignTokens.Typography.font(.body); field.frame = NSRect(x: 0,y: 0,width: 340,height: 32); a.accessoryView = field; a.addButton(withTitle: "OK"); a.addButton(withTitle: "Cancel"); return a.runModal() == .alertFirstButtonReturn ? field.stringValue : nil }
     @objc func chooseFont() {
         guard !terminationStarted else { return }
         if let panel = fontPanel, panel.isVisible { panel.orderOut(nil); fontPanelRefreshTimer?.invalidate(); return }
@@ -1908,7 +1920,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         guard fontPanel != nil, !applyingFontChange else { return }
         let selected = canvas.selectedTextElements
         let first = selected.first
-        let source = NSFont(name: first?.fontName ?? canvas.fontName, size: first?.fontSize ?? canvas.fontSize) ?? .boldSystemFont(ofSize: 24)
+        let source = NSFont(name: first?.fontName ?? canvas.fontName, size: first?.fontSize ?? canvas.fontSize) ?? .boldSystemFont(ofSize: 24) // token-exempt: annotation text fallback face (document content)
         // Original displayFontScale is output/logical height; editor zoom is a
         // view transform and must not change the point size in the Fonts panel.
         let scale = canvas.outputSize.height / canvas.canvasSize.height
@@ -1931,7 +1943,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             return manager.convert(changed, toSize: changed.pointSize / scale)
         }
         let first = canvas.selectedTextElements.first
-        let source = NSFont(name: first?.fontName ?? canvas.fontName, size: first?.fontSize ?? canvas.fontSize) ?? .boldSystemFont(ofSize: 24)
+        let source = NSFont(name: first?.fontName ?? canvas.fontName, size: first?.fontSize ?? canvas.fontSize) ?? .boldSystemFont(ofSize: 24) // token-exempt: annotation text fallback face (document content)
         guard let future = convert(source), future.pointSize.isFinite, future.pointSize > 0, future.pointSize <= 4096,
               future.pointSize >= 18 || future.pointSize == source.pointSize else { return }
         applyingFontChange = true
@@ -1997,6 +2009,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     @objc func about() {
         let panel = aboutWindow ?? AboutWindow(icon: NSApp.applicationIconImage, info: Bundle.main.infoDictionary)
         aboutWindow = panel
+        if let content = panel.contentView { AppToolTip.install(on: content) }
         NSApp.activate(ignoringOtherApps: true)
         panel.makeKeyAndOrderFront(nil)
     }
