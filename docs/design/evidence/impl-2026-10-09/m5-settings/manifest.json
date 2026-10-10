@@ -1,0 +1,1310 @@
+{
+  "sourceSha": "4da64be",
+  "bundleId": "com.shoemoney.opensnap.eyedump-57357",
+  "injectedDisplayOptions": [],
+  "captureCount": 36,
+  "captures": [
+    {
+      "id": "S17",
+      "slug": "settings-capture-1280x800",
+      "surface": "Settings: Capture",
+      "state": "Capture tab: flash on, shortcuts enabled, every action None, sized for a 1280 x 800 screen (706 pt visible)",
+      "appearance": "dark",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1280,
+        1208
+      ],
+      "pointSize": [
+        640,
+        604
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "SettingsWindow.swift|final class SettingsWindowController",
+        "SettingsWindow.swift|final class SettingsTabViewController"
+      ],
+      "file": "raw-sf/S17-settings-capture-1280x800-dark.png"
+    },
+    {
+      "id": "S17",
+      "slug": "settings-capture-1280x800",
+      "surface": "Settings: Capture",
+      "state": "Capture tab: flash on, shortcuts enabled, every action None, sized for a 1280 x 800 screen (706 pt visible)",
+      "appearance": "light",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1280,
+        1208
+      ],
+      "pointSize": [
+        640,
+        604
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "SettingsWindow.swift|final class SettingsWindowController",
+        "SettingsWindow.swift|final class SettingsTabViewController"
+      ],
+      "file": "raw-sf/S17-settings-capture-1280x800-light.png"
+    },
+    {
+      "id": "S17",
+      "slug": "settings-capture",
+      "surface": "Settings: Capture",
+      "state": "Capture tab: flash on, shortcuts enabled, every action None",
+      "appearance": "dark",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1280,
+        1208
+      ],
+      "pointSize": [
+        640,
+        604
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "SettingsWindow.swift|final class SettingsWindowController",
+        "SettingsWindow.swift|final class SettingsTabViewController"
+      ],
+      "file": "raw-sf/S17-settings-capture-dark.png"
+    },
+    {
+      "id": "S17",
+      "slug": "settings-capture-error-1280x800",
+      "surface": "Settings: Capture",
+      "state": "Capture tab with a refused shortcut (a key with no Command or Control), sized for a 1280 x 800 screen (706 pt visible)",
+      "appearance": "dark",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1280,
+        1304
+      ],
+      "pointSize": [
+        640,
+        652
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "SettingsWindow.swift|final class SettingsWindowController",
+        "SettingsWindow.swift|final class SettingsTabViewController"
+      ],
+      "file": "raw-sf/S17-settings-capture-error-1280x800-dark.png"
+    },
+    {
+      "id": "S17",
+      "slug": "settings-capture-error-1280x800",
+      "surface": "Settings: Capture",
+      "state": "Capture tab with a refused shortcut (a key with no Command or Control), sized for a 1280 x 800 screen (706 pt visible)",
+      "appearance": "light",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1280,
+        1304
+      ],
+      "pointSize": [
+        640,
+        652
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "SettingsWindow.swift|final class SettingsWindowController",
+        "SettingsWindow.swift|final class SettingsTabViewController"
+      ],
+      "file": "raw-sf/S17-settings-capture-error-1280x800-light.png"
+    },
+    {
+      "id": "S17",
+      "slug": "settings-capture-error",
+      "surface": "Settings: Capture",
+      "state": "Capture tab with a refused shortcut (a key with no Command or Control)",
+      "appearance": "dark",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1280,
+        1304
+      ],
+      "pointSize": [
+        640,
+        652
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "SettingsWindow.swift|final class SettingsWindowController",
+        "SettingsWindow.swift|final class SettingsTabViewController"
+      ],
+      "file": "raw-sf/S17-settings-capture-error-dark.png"
+    },
+    {
+      "id": "S17",
+      "slug": "settings-capture-error",
+      "surface": "Settings: Capture",
+      "state": "Capture tab with a refused shortcut (a key with no Command or Control)",
+      "appearance": "light",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1280,
+        1304
+      ],
+      "pointSize": [
+        640,
+        652
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "SettingsWindow.swift|final class SettingsWindowController",
+        "SettingsWindow.swift|final class SettingsTabViewController"
+      ],
+      "file": "raw-sf/S17-settings-capture-error-light.png"
+    },
+    {
+      "id": "S17",
+      "slug": "settings-capture",
+      "surface": "Settings: Capture",
+      "state": "Capture tab: flash on, shortcuts enabled, every action None",
+      "appearance": "light",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1280,
+        1208
+      ],
+      "pointSize": [
+        640,
+        604
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "SettingsWindow.swift|final class SettingsWindowController",
+        "SettingsWindow.swift|final class SettingsTabViewController"
+      ],
+      "file": "raw-sf/S17-settings-capture-light.png"
+    },
+    {
+      "id": "S17",
+      "slug": "settings-drawing-1280x800",
+      "surface": "Settings: Drawing",
+      "state": "Drawing tab, default values, sized for a 1280 x 800 screen (706 pt visible)",
+      "appearance": "dark",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1280,
+        474
+      ],
+      "pointSize": [
+        640,
+        237
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "SettingsWindow.swift|final class SettingsWindowController",
+        "SettingsWindow.swift|final class SettingsTabViewController"
+      ],
+      "file": "raw-sf/S17-settings-drawing-1280x800-dark.png"
+    },
+    {
+      "id": "S17",
+      "slug": "settings-drawing-1280x800",
+      "surface": "Settings: Drawing",
+      "state": "Drawing tab, default values, sized for a 1280 x 800 screen (706 pt visible)",
+      "appearance": "light",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1280,
+        474
+      ],
+      "pointSize": [
+        640,
+        237
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "SettingsWindow.swift|final class SettingsWindowController",
+        "SettingsWindow.swift|final class SettingsTabViewController"
+      ],
+      "file": "raw-sf/S17-settings-drawing-1280x800-light.png"
+    },
+    {
+      "id": "S17",
+      "slug": "settings-drawing-alt-1280x800",
+      "surface": "Settings: Drawing",
+      "state": "Drawing tab, alternate values (Loose, Start), sized for a 1280 x 800 screen (706 pt visible)",
+      "appearance": "dark",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1280,
+        474
+      ],
+      "pointSize": [
+        640,
+        237
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "SettingsWindow.swift|final class SettingsWindowController",
+        "SettingsWindow.swift|final class SettingsTabViewController"
+      ],
+      "file": "raw-sf/S17-settings-drawing-alt-1280x800-dark.png"
+    },
+    {
+      "id": "S17",
+      "slug": "settings-drawing-alt-1280x800",
+      "surface": "Settings: Drawing",
+      "state": "Drawing tab, alternate values (Loose, Start), sized for a 1280 x 800 screen (706 pt visible)",
+      "appearance": "light",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1280,
+        474
+      ],
+      "pointSize": [
+        640,
+        237
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "SettingsWindow.swift|final class SettingsWindowController",
+        "SettingsWindow.swift|final class SettingsTabViewController"
+      ],
+      "file": "raw-sf/S17-settings-drawing-alt-1280x800-light.png"
+    },
+    {
+      "id": "S17",
+      "slug": "settings-drawing-alt",
+      "surface": "Settings: Drawing",
+      "state": "Drawing tab, alternate values (Loose, Start)",
+      "appearance": "dark",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1280,
+        474
+      ],
+      "pointSize": [
+        640,
+        237
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "SettingsWindow.swift|final class SettingsWindowController",
+        "SettingsWindow.swift|final class SettingsTabViewController"
+      ],
+      "file": "raw-sf/S17-settings-drawing-alt-dark.png"
+    },
+    {
+      "id": "S17",
+      "slug": "settings-drawing-alt",
+      "surface": "Settings: Drawing",
+      "state": "Drawing tab, alternate values (Loose, Start)",
+      "appearance": "light",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1280,
+        474
+      ],
+      "pointSize": [
+        640,
+        237
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "SettingsWindow.swift|final class SettingsWindowController",
+        "SettingsWindow.swift|final class SettingsTabViewController"
+      ],
+      "file": "raw-sf/S17-settings-drawing-alt-light.png"
+    },
+    {
+      "id": "S17",
+      "slug": "settings-drawing",
+      "surface": "Settings: Drawing",
+      "state": "Drawing tab, default values",
+      "appearance": "dark",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1280,
+        474
+      ],
+      "pointSize": [
+        640,
+        237
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "SettingsWindow.swift|final class SettingsWindowController",
+        "SettingsWindow.swift|final class SettingsTabViewController"
+      ],
+      "file": "raw-sf/S17-settings-drawing-dark.png"
+    },
+    {
+      "id": "S17",
+      "slug": "settings-drawing",
+      "surface": "Settings: Drawing",
+      "state": "Drawing tab, default values",
+      "appearance": "light",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1280,
+        474
+      ],
+      "pointSize": [
+        640,
+        237
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "SettingsWindow.swift|final class SettingsWindowController",
+        "SettingsWindow.swift|final class SettingsTabViewController"
+      ],
+      "file": "raw-sf/S17-settings-drawing-light.png"
+    },
+    {
+      "id": "S17",
+      "slug": "settings-general-1280x800",
+      "surface": "Settings: General",
+      "state": "General tab, default values, sized for a 1280 x 800 screen (706 pt visible)",
+      "appearance": "dark",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1280,
+        592
+      ],
+      "pointSize": [
+        640,
+        296
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "SettingsWindow.swift|final class SettingsWindowController",
+        "SettingsWindow.swift|final class SettingsTabViewController"
+      ],
+      "file": "raw-sf/S17-settings-general-1280x800-dark.png"
+    },
+    {
+      "id": "S17",
+      "slug": "settings-general-1280x800",
+      "surface": "Settings: General",
+      "state": "General tab, default values, sized for a 1280 x 800 screen (706 pt visible)",
+      "appearance": "light",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1280,
+        592
+      ],
+      "pointSize": [
+        640,
+        296
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "SettingsWindow.swift|final class SettingsWindowController",
+        "SettingsWindow.swift|final class SettingsTabViewController"
+      ],
+      "file": "raw-sf/S17-settings-general-1280x800-light.png"
+    },
+    {
+      "id": "S17",
+      "slug": "settings-general-alt-1280x800",
+      "surface": "Settings: General",
+      "state": "General tab, alternate values (Menu bar, snap window off, both hint options on), sized for a 1280 x 800 screen (706 pt visible)",
+      "appearance": "dark",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1280,
+        592
+      ],
+      "pointSize": [
+        640,
+        296
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "SettingsWindow.swift|final class SettingsWindowController",
+        "SettingsWindow.swift|final class SettingsTabViewController"
+      ],
+      "file": "raw-sf/S17-settings-general-alt-1280x800-dark.png"
+    },
+    {
+      "id": "S17",
+      "slug": "settings-general-alt-1280x800",
+      "surface": "Settings: General",
+      "state": "General tab, alternate values (Menu bar, snap window off, both hint options on), sized for a 1280 x 800 screen (706 pt visible)",
+      "appearance": "light",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1280,
+        592
+      ],
+      "pointSize": [
+        640,
+        296
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "SettingsWindow.swift|final class SettingsWindowController",
+        "SettingsWindow.swift|final class SettingsTabViewController"
+      ],
+      "file": "raw-sf/S17-settings-general-alt-1280x800-light.png"
+    },
+    {
+      "id": "S17",
+      "slug": "settings-general-alt",
+      "surface": "Settings: General",
+      "state": "General tab, alternate values (Menu bar, snap window off, both hint options on)",
+      "appearance": "dark",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1280,
+        592
+      ],
+      "pointSize": [
+        640,
+        296
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "SettingsWindow.swift|final class SettingsWindowController",
+        "SettingsWindow.swift|final class SettingsTabViewController"
+      ],
+      "file": "raw-sf/S17-settings-general-alt-dark.png"
+    },
+    {
+      "id": "S17",
+      "slug": "settings-general-alt",
+      "surface": "Settings: General",
+      "state": "General tab, alternate values (Menu bar, snap window off, both hint options on)",
+      "appearance": "light",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1280,
+        592
+      ],
+      "pointSize": [
+        640,
+        296
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "SettingsWindow.swift|final class SettingsWindowController",
+        "SettingsWindow.swift|final class SettingsTabViewController"
+      ],
+      "file": "raw-sf/S17-settings-general-alt-light.png"
+    },
+    {
+      "id": "S17",
+      "slug": "settings-general",
+      "surface": "Settings: General",
+      "state": "General tab, default values",
+      "appearance": "dark",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1280,
+        592
+      ],
+      "pointSize": [
+        640,
+        296
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "SettingsWindow.swift|final class SettingsWindowController",
+        "SettingsWindow.swift|final class SettingsTabViewController"
+      ],
+      "file": "raw-sf/S17-settings-general-dark.png"
+    },
+    {
+      "id": "S17",
+      "slug": "settings-general",
+      "surface": "Settings: General",
+      "state": "General tab, default values",
+      "appearance": "light",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1280,
+        592
+      ],
+      "pointSize": [
+        640,
+        296
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "SettingsWindow.swift|final class SettingsWindowController",
+        "SettingsWindow.swift|final class SettingsTabViewController"
+      ],
+      "file": "raw-sf/S17-settings-general-light.png"
+    },
+    {
+      "id": "S17",
+      "slug": "settings-upload-1280x800",
+      "surface": "Settings: Upload",
+      "state": "Upload tab: three saved destinations, the first is the default, sized for a 1280 x 800 screen (706 pt visible)",
+      "appearance": "dark",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1280,
+        790
+      ],
+      "pointSize": [
+        640,
+        395
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "SettingsWindow.swift|final class SettingsWindowController",
+        "SettingsWindow.swift|final class SettingsTabViewController"
+      ],
+      "file": "raw-sf/S17-settings-upload-1280x800-dark.png"
+    },
+    {
+      "id": "S17",
+      "slug": "settings-upload-1280x800",
+      "surface": "Settings: Upload",
+      "state": "Upload tab: three saved destinations, the first is the default, sized for a 1280 x 800 screen (706 pt visible)",
+      "appearance": "light",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1280,
+        790
+      ],
+      "pointSize": [
+        640,
+        395
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "SettingsWindow.swift|final class SettingsWindowController",
+        "SettingsWindow.swift|final class SettingsTabViewController"
+      ],
+      "file": "raw-sf/S17-settings-upload-1280x800-light.png"
+    },
+    {
+      "id": "S17",
+      "slug": "settings-upload",
+      "surface": "Settings: Upload",
+      "state": "Upload tab: three saved destinations, the first is the default",
+      "appearance": "dark",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1280,
+        790
+      ],
+      "pointSize": [
+        640,
+        395
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "SettingsWindow.swift|final class SettingsWindowController",
+        "SettingsWindow.swift|final class SettingsTabViewController"
+      ],
+      "file": "raw-sf/S17-settings-upload-dark.png"
+    },
+    {
+      "id": "S17",
+      "slug": "settings-upload-empty-1280x800",
+      "surface": "Settings: Upload",
+      "state": "Upload tab, no destination saved, sized for a 1280 x 800 screen (706 pt visible)",
+      "appearance": "dark",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1280,
+        562
+      ],
+      "pointSize": [
+        640,
+        281
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "SettingsWindow.swift|final class SettingsWindowController",
+        "SettingsWindow.swift|final class SettingsTabViewController"
+      ],
+      "file": "raw-sf/S17-settings-upload-empty-1280x800-dark.png"
+    },
+    {
+      "id": "S17",
+      "slug": "settings-upload-empty-1280x800",
+      "surface": "Settings: Upload",
+      "state": "Upload tab, no destination saved, sized for a 1280 x 800 screen (706 pt visible)",
+      "appearance": "light",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1280,
+        562
+      ],
+      "pointSize": [
+        640,
+        281
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "SettingsWindow.swift|final class SettingsWindowController",
+        "SettingsWindow.swift|final class SettingsTabViewController"
+      ],
+      "file": "raw-sf/S17-settings-upload-empty-1280x800-light.png"
+    },
+    {
+      "id": "S17",
+      "slug": "settings-upload-empty",
+      "surface": "Settings: Upload",
+      "state": "Upload tab, no destination saved",
+      "appearance": "dark",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1280,
+        562
+      ],
+      "pointSize": [
+        640,
+        281
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "SettingsWindow.swift|final class SettingsWindowController",
+        "SettingsWindow.swift|final class SettingsTabViewController"
+      ],
+      "file": "raw-sf/S17-settings-upload-empty-dark.png"
+    },
+    {
+      "id": "S17",
+      "slug": "settings-upload-empty",
+      "surface": "Settings: Upload",
+      "state": "Upload tab, no destination saved",
+      "appearance": "light",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1280,
+        562
+      ],
+      "pointSize": [
+        640,
+        281
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "SettingsWindow.swift|final class SettingsWindowController",
+        "SettingsWindow.swift|final class SettingsTabViewController"
+      ],
+      "file": "raw-sf/S17-settings-upload-empty-light.png"
+    },
+    {
+      "id": "S17",
+      "slug": "settings-upload",
+      "surface": "Settings: Upload",
+      "state": "Upload tab: three saved destinations, the first is the default",
+      "appearance": "light",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1280,
+        790
+      ],
+      "pointSize": [
+        640,
+        395
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "SettingsWindow.swift|final class SettingsWindowController",
+        "SettingsWindow.swift|final class SettingsTabViewController"
+      ],
+      "file": "raw-sf/S17-settings-upload-light.png"
+    },
+    {
+      "id": "S18",
+      "slug": "hotkeys-sheet",
+      "surface": "Preferences: Hotkeys",
+      "state": "Capture Shortcuts sheet (all actions None)",
+      "appearance": "dark",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1554,
+        1444
+      ],
+      "pointSize": [
+        777,
+        722
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "GlobalHotkeys.swift|final class GlobalHotkeyForm",
+        "GlobalHotkeys.swift|func present(attachedTo",
+        "App.swift|@objc func shortcutSettings()"
+      ],
+      "file": "raw-sf/S18-hotkeys-sheet-dark.png"
+    },
+    {
+      "id": "S18",
+      "slug": "hotkeys-sheet-in-context",
+      "surface": "Preferences: Hotkeys",
+      "state": "Capture Shortcuts sheet (all actions None) (parent window + sheet composite)",
+      "appearance": "dark",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        2048,
+        1544
+      ],
+      "pointSize": [
+        1024,
+        772
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+      "sourceRefs": [
+        "GlobalHotkeys.swift|final class GlobalHotkeyForm",
+        "GlobalHotkeys.swift|func present(attachedTo",
+        "App.swift|@objc func shortcutSettings()"
+      ],
+      "file": "raw-sf/S18-hotkeys-sheet-in-context-dark.png"
+    },
+    {
+      "id": "S18",
+      "slug": "hotkeys-sheet-in-context",
+      "surface": "Preferences: Hotkeys",
+      "state": "Capture Shortcuts sheet (all actions None) (parent window + sheet composite)",
+      "appearance": "light",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        2048,
+        1544
+      ],
+      "pointSize": [
+        1024,
+        772
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+      "sourceRefs": [
+        "GlobalHotkeys.swift|final class GlobalHotkeyForm",
+        "GlobalHotkeys.swift|func present(attachedTo",
+        "App.swift|@objc func shortcutSettings()"
+      ],
+      "file": "raw-sf/S18-hotkeys-sheet-in-context-light.png"
+    },
+    {
+      "id": "S18",
+      "slug": "hotkeys-sheet",
+      "surface": "Preferences: Hotkeys",
+      "state": "Capture Shortcuts sheet (all actions None)",
+      "appearance": "light",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1024,
+        772
+      ],
+      "pixelSize": [
+        1554,
+        1444
+      ],
+      "pointSize": [
+        777,
+        722
+      ],
+      "scale": 2,
+      "sourceSha": "4da64be",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "GlobalHotkeys.swift|final class GlobalHotkeyForm",
+        "GlobalHotkeys.swift|func present(attachedTo",
+        "App.swift|@objc func shortcutSettings()"
+      ],
+      "file": "raw-sf/S18-hotkeys-sheet-light.png"
+    }
+  ],
+  "unavailable": [],
+  "gaps": []
+}
