@@ -25,12 +25,15 @@ private final class FakeHistoryDeletionAdapter: HistoryRemoteDeletionAdapter {
     func sshSourceFingerprint() throws -> String { lock.lock(); defer { lock.unlock() }; return source }
     func capabilities(cancellation: PublishingCancellation) throws -> PublishingCapabilities {
         guard toolAvailable else { throw PublishingFailure("Injected unsupported tool.") }
-        return try PublishingCapabilities(versionOutput: "curl fake\nProtocols: http https\nFeatures: SSL\n")
+        return try PublishingCapabilities(versionOutput: "curl 8.7.1 fake\nProtocols: http https\nFeatures: SSL\n")
     }
     func inspectSSH(_ plan: PublishingSFTPPlan, cancellation: PublishingCancellation) throws -> HistoryDeletionSSHConfiguration {
         inspectHook?(); return try HistoryDeletionSSHConfiguration(output: Self.ssh)
     }
     func password(credentialID: String) throws -> String { passwordReads += 1; return passwordValue }
+    var s3Keys = S3Credentials(accessKeyID: "AKIASYNTHETICKEY0000", secretAccessKey: "synthetic-s3-secret-7171", sessionToken: "")
+    var s3Reads = 0
+    func s3Credentials(settings: PublishingSettings) throws -> S3Credentials { s3Reads += 1; return s3Keys }
     func execute(_ command: HistoryRemoteDeletionCommand, cancellation: PublishingCancellation) throws -> PublishingProcess.Output {
         lock.lock(); commands.append(command); lock.unlock()
         try executeHook?(cancellation); return response
@@ -78,6 +81,7 @@ enum HistoryRemoteDeletionTests {
             try configDrift()
             try dictionaryAndSSHValidation()
             try webDAVResultsAndSecurity()
+            try s3BindingAndDeletion()
             try queuedAndBusyCancellation()
             try sshSourceSnapshot()
             print("History remote deletion checks passed: \(checks). Only fake adapters ran; no network, deletion tools, Keychain or UI.")
@@ -197,6 +201,54 @@ enum HistoryRemoteDeletionTests {
         adapter.executeHook = nil; adapter.toolAvailable = false
         let previousCount = adapter.capturedCommands().count
         try expect(!succeeded(try delete(coordinator, binding: binding)) && adapter.capturedCommands().count == previousCount, "unsupported system curl refused before deletion")
+    }
+    static func s3Settings() -> PublishingSettings {
+        var settings = PublishingSettings(); settings.transport = .s3
+        settings.credentialID = "00000000-0000-0000-0000-000000000003"
+        settings.remoteFolder = "pics"; settings.publicBaseURL = "https://cdn.example.test/pics/"
+        var options = S3Options(); options.region = "us-east-1"; options.bucket = "cdn.example.test"; options.credentialsProfile = ""
+        settings.s3 = options; settings.username = "AKIASYNTHETICKEY0000"
+        return settings
+    }
+    /// F-J2-002: an S3 destination used to fail binding capture (the mapping-only curl had no version for S3 signing), so its uploads were saved
+    /// with no binding and the app could never delete them. Capture now works, and Delete from Web removes the one object with one signed DELETE.
+    static func s3BindingAndDeletion() throws {
+        let adapter = FakeHistoryDeletionAdapter(s3Settings())
+        let coordinator = HistoryRemoteDeletionCoordinator(adapter: adapter)
+        let name = "Shot 1-abc.png", publicURL = URL(string: "https://cdn.example.test/pics/Shot-1-abc.png")!
+        let before = try coordinator.captureBinding(fileName: name)
+        let after = try coordinator.captureBinding(for: publicURL)
+        try expect(before == after && before["publicURL"] == publicURL.absoluteString && before["sshConfigSHA256"] == nil, "S3 binding is captured before and after publication, and the two agree (the safe file name is the public one)")
+        try expect(!before.values.joined().contains("AKIASYNTHETICKEY0000") && !before.values.joined().contains(adapter.s3Keys.secretAccessKey), "the S3 binding persists no key")
+        for status in ["204", "200", "202", "301", "403", "404", "500", ""] {
+            adapter.response = PublishingProcess.Output(stdout: status + "\n", stderr: "", code: 0)
+            try expect(succeeded(try delete(coordinator, url: publicURL, binding: before)) == ["200", "204"].contains(status), "only an S3 200 or 204 confirms deletion (\(status))")
+        }
+        let command = adapter.capturedCommands()[0], config = String(decoding: command.input, as: UTF8.self)
+        try expect(command.executable == "/usr/bin/curl" && command.arguments == ["--disable", "--config", "-"] && command.timeout == 40 && !command.allowsSSHAgent, "bounded curl config on stdin")
+        try expect(config.contains("request = \"DELETE\"") && config.contains("url = \"https://s3.us-east-1.amazonaws.com/cdn.example.test/pics/Shot-1-abc.png\""),
+                   "one signed DELETE of exactly the planned object: \(config)")
+        try expect(config.contains("aws-sigv4") && !config.contains("upload-file") && !command.arguments.joined().contains(adapter.s3Keys.secretAccessKey) && config.contains(adapter.s3Keys.secretAccessKey),
+                   "the key pair is only in the stdin config, and nothing is uploaded")
+        try expect(adapter.s3Reads >= 8 && adapter.passwordReads == 0, "S3 reads its own credentials, not the WebDAV password")
+        adapter.response = PublishingProcess.Output(stdout: "", stderr: "curl: (7) " + adapter.s3Keys.secretAccessKey + " " + adapter.s3Keys.accessKeyID, code: 7)
+        guard case .failure(let error) = try delete(coordinator, url: publicURL, binding: before) else { throw PublishingFailure("Expected an S3 failure.") }
+        try expect(error.localizedDescription.hasPrefix("The S3 object could not be deleted.") && !error.localizedDescription.contains(adapter.s3Keys.secretAccessKey)
+                   && !error.localizedDescription.contains(adapter.s3Keys.accessKeyID), "an S3 failure is reported with the keys redacted: \(error.localizedDescription)")
+        // Anything that moved since the upload refuses before a command exists.
+        let count = adapter.capturedCommands().count
+        var moved = s3Settings(); moved.s3?.bucket = "other-bucket"; adapter.setSettings(moved)
+        try expect(!succeeded(try delete(coordinator, url: publicURL, binding: before)) && adapter.capturedCommands().count == count, "a changed bucket refuses deletion before any command")
+        adapter.setSettings(s3Settings())
+        try expect(!succeeded(try delete(coordinator, url: URL(string: "https://cdn.example.test/pics/another.png")!, binding: before)) && adapter.capturedCommands().count == count, "a binding cannot authorize another object")
+        adapter.toolAvailable = true
+        // The old capture string could not validate S3: the guard that would have caught it.
+        let oldCapabilities = try PublishingCapabilities(versionOutput: "curl mapping-validator\nProtocols: http https\nFeatures: SSL\n")
+        try rejects("S3 with a curl that reports no version") { _ = try PublishingPlan(settings: s3Settings(), fileName: "x.png", capabilities: oldCapabilities) }
+        try expect((try? PublishingPlan(settings: s3Settings(), fileName: "x.png", capabilities: HistoryRemoteDeletionCoordinator.mappingCapabilities)) != nil, "the capture capabilities carry a version S3 signing accepts")
+        // FTP stays unsupported.
+        var ftp = s3Settings(); ftp.transport = .ftp; ftp.endpoint = "ftp://example.test/up"; ftp.s3 = nil
+        try rejects("FTP deletion") { _ = try HistoryRemoteDeletionCoordinator(adapter: FakeHistoryDeletionAdapter(ftp)).captureBinding(for: publicURL) }
     }
     static func queuedAndBusyCancellation() throws {
         let queue = DispatchQueue(label: "history.deletion.fake.queued"), adapter = FakeHistoryDeletionAdapter(sftpSettings())
