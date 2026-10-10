@@ -784,3 +784,42 @@ An independent review found class inflation in `coverage-matrix.md`. Changes (th
 **Live verification of the fix.** Panel service 77-94 MB at its peak for Open, Save, Export in the app and for ⌘O, ⌘E, ⌘S, ⇧⌘S under the driver; CPU 0 % once drawn; watchdog kills 0 in every session. The service does **not** exit within a second of the panel closing: it idles at ~80-90 MB until the app exits (the earlier probe's "gone within a second" was measured after the probe process exited). Matrix rows E2E-KEY-004..007 now carry `E2E` evidence (`docs/design/evidence/e2e-2026-10-10/panelfix/`); the ⌘O screenshot lists the owner's Documents folder and is deliberately not stored.
 
 **Still open / notes for the next person.** The OS bug itself is unfixed on 27.2 (26B5101f): any app launched with a non-normalized CFFIXED_USER_HOME hangs its first Open/Save panel. OpenSnap cannot trigger it for a user (a real launch has a normal home). Two other scripts build session paths the same way but never open a panel and were left alone: `tools/test-app-safety.sh` and `tools/check-clean-clone.sh`; any new harness that opens a system panel must canonicalize its home first.
+
+## Independent review round 1 (pinned e41f0c2)
+
+**Verdict:** needs fixes.
+
+**Strengths noted:**
+
+- No real Keychain, UserDefaults or Application Support access, and no outside network, in the new tests.
+- All 39 Font Awesome Free paths match the official 7.3.1 data byte for byte.
+- No app-owned text below 18 pt in source.
+
+**Findings** (severity · ID · surface · finding · status):
+
+- P1 · R1-001 · evidence · private text visible in a harness capture (m4-glass S01 dark rt-ic); harness window accepted real input · capture withdrawn from the tree and replaced (b09ecc6); OCR sweep tool added (tools/evidence-ocr-sweep.py, 1849 images, no other leak); harness input fence added; history cleanup owned by root before any push.
+- P1 · R1-002 · Upload · upload sent the fitted size while title/status/tooltip promise the picture's own pixel size when "Original size" is ticked · batch 5.
+- P2 · R1-003 · Resize sheet · opens in output points (e.g. 1517×1011) under a title showing pixel size (2400×1600) · batch 5.
+- P2 · R1-004 · build / E2E sessions · default dev builds bundled Font Awesome Pro and E2E copies didn't strip it · fixed b09ecc6 (Pro opt-in only; sessions strip Pro and print the icon mode).
+- P2 · R1-005 · Toolbox pull-down · icons unverified in a real menu; batch-4 capture overclaimed; near-identical symbols for Actual Size/Full Screen/Resize and Close/Cancel Snapshot · batch 5.
+- P2 · R1-006 · bottom bar · Resize glyph reads as expand/full screen · batch 5 (decision: "Resize…" text button if it fits at 980).
+- P2 · R1-007 · ledger · rows still described the removed Capture Shortcuts sheet and old History tab names · fixed b09ecc6 (rows retired, new entry-path row, generator updated).
+- P2 · R1-008 · ledger · class inflation: 23 rendered rows were AX listings only; 4 E2E rows lacked a screenshot of the claim; 5 rows used a substituted entry path · fixed b09ecc6 (reclassified/annotated).
+- P2 · R1-009 · process · batch 4 had no real-click retest · J6 pending after batch 5.
+- P2 · R1-010 · Delete from Web · re-saving a destination changed its credential id and fingerprint, so older entries refused deletion with a still-enabled button · batch 5.
+- P2 · R1-011 · Settings › Upload · duplicated the Destinations sheet · batch 5 (decision: single surface in Settings › Upload).
+- P2 · R1-012 · History toolbar · seven unlabeled glyphs beside empty space; eye-slash meaning differs from the editor · batch 5.
+- P2 · R1-013 · status line · repeated the title's size/format/bytes, starving it at 980 · batch 5.
+- P2 · R1-014 · status line · 980 upload success showed "Link copied · cdn.exa…" · batch 5.
+- P3 · R1-015 · empty states/copy · Destinations empty list had no text; punctuation/units inconsistencies · batch 5.
+- P3 · R1-016 · Actual Size navigator · full-height column mostly empty · deferred.
+- P3 · R1-017 · Settings › Capture · redundant Disable All / Reset Defaults; edits go live mid-entry; 69-item key pop-up (record field not built) · batch 5 (cleanup), record field deferred.
+- P3 · R1-018 · Settings tab strip · Differentiate Without Color outline didn't update live · batch 5.
+- P3 · R1-019 · tests · six weak/tautological assertions · batch 5.
+- P3 · R1-020 · Window › Full Screen · acted on the editor while another window was key or after Hide · batch 5.
+- P3 · R1-021 · eraser · drops the shadow from the whole remaining shape · batch 5 stretch.
+- P3 · R1-022 · misc · WebDAV Test accepted 3xx/unauthenticated OPTIONS; clearRemote left publishedSize; notices hid upload status; Capture Shortcuts… enabled under a sheet; weak SF fallbacks · batch 5.
+- P2 · R1-023 · docs/tooling · model and AI-tool names in committed docs/tooling · fixed b09ecc6 except root-owned files (the audit plan, the presentation page) and the vendored tool-skills folder (owner decision).
+- — · R1-024 · F-J5-005 judgement · reviewer saw no app cause; root cause later found in the launchers (non-normalized CFFIXED_USER_HOME triggering a macOS 27.2 panel-service loop) and fixed in fa4715f.
+
+**Ledger-honesty sample.** 25 E2E, 15 rendered and 15 unverified rows were sampled. All cited files existed. Overclaims were found and corrected in b09ecc6: BAR-034/035, SHEET-017 (weak), MENU-011 and SET-010 (partial), DEST-036 and DEST-010 (stale), 6 AX-only rendered rows, SHEET-003, and HOT-014. No row claims VoiceOver speech or live capture as proven.
