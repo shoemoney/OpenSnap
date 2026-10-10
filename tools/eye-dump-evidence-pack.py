@@ -26,13 +26,24 @@ E2E_BEFORE = {
     ("S41", "crop-hint-w980"): J1 + "52-crop-tool-region-dimmed-no-apply-hint.jpg",
     ("S41", "crop-dropped-w980"): J1 + "55-keyboard-trap-tab-in-canvas-toggles-brush-crop-overlay-lingers.jpg",
     ("S41", "window-menu-open"): J1 + "45-fullscreen-entered-green-button.jpg",
+    # Audit fix 3c: the surfaces without a harness twin are compared with the E2E screenshot that showed the defect (dark appearance only).
+    ("S42", "resize-crop"): J1 + "27-resize-sheet-crop-mode-anchor-popup.jpg",
+    ("S42", "resize-crop-in-context"): J1 + "27-resize-sheet-crop-mode-anchor-popup.jpg",
+    ("S42", "resize-limit"): J1 + "29-resize-sheet-limit-mode.jpg",
+    ("S42", "resize-limit-in-context"): J1 + "29-resize-sheet-limit-mode.jpg",
+    ("S42", "toolbox-menu-open"): J1 + "37-toolbox-menu-open-33-rows-no-leading-icons.jpg",
+    ("S42", "photos-empty"): J1 + "32-photos-sheet-empty-state.jpg",
+    ("S42", "status-notice"): J1 + "33-save-to-history-status-confirms.jpg",
+    ("S42", "status-after-notice"): J1 + "47-fullscreen-exited-status-text-stale.jpg",
 }
 
 
 def before_stem(c):
     """Stem (without appearance/sha) of the pre-rail-removal capture that shows the same thing, or None."""
     i, slug = c["id"], c["slug"]
-    special = {("S15", "flash-peak"): "S15-flash-full", ("S15", "flash-half"): "S15-flash-full",
+    special = {("S42", "resize-resize"): "S08-resize-panel", ("S42", "resize-resize-in-context"): "S08-resize-panel-in-context",
+               ("S42", "history-hide-on-history"): "S26-history-hide",
+               ("S15", "flash-peak"): "S15-flash-full", ("S15", "flash-half"): "S15-flash-full",
                ("S16", "permission-sheet"): "S16-permission-alert",
                # OSN-043: the alerts were system NSAlerts in a modal window; they are app-owned sheets now.
                ("S39", "discard-sheet"): "S26-close-unsaved", ("S39", "upload-error-sheet"): "S21-publish-error",

@@ -87,7 +87,7 @@ extension AppSafetyTests {
         let main = menuItems(try NSApp.mainMenu.unwrap("main")).filter { $0.action != nil && $0.submenu == nil }
         // The first row of a pull-down is the button's own title, not a command.
         let toolbox = menuItems(try toolboxMenu(app)).dropFirst().filter { $0.action != nil && $0.submenu == nil }
-        try expect(toolbox.count >= 25, "The Toolbox has its rows (\(toolbox.count))")
+        try expect(toolbox.count == 18, "The Toolbox has its short list of drawing-session rows (\(toolbox.count))")
         for row in toolbox {
             let sameAction = main.filter { $0.action == row.action }
             try expect(!sameAction.isEmpty, "Toolbox row '\(row.title)' has no main-menu row with action \(String(describing: row.action))")
@@ -137,8 +137,6 @@ extension AppSafetyTests {
             try expect(MenuTypography.menus(under: menu).allSatisfy { $0.font.pointSize >= 20 }, "\(label) menu and its submenus render at 20 pt")
             try expect(MenuTypography.belowReadableMinimum(in: menu).isEmpty, "\(label): \(MenuTypography.belowReadableMinimum(in: menu))")
         }
-        let more = try menuItems(try toolboxMenu(app)).first { $0.title == "More Commands" }.unwrap("More Commands")
-        try expect(more.submenu?.font.pointSize == 20, "More Commands is 20 pt")
         // OSN-041: the zoom face is body text now, 20 pt like the menu it opens.
         try expect(app.zoomControl.font?.pointSize == 20 && app.zoomControl.menu?.font.pointSize == 20, "The zoom popup face and its menu are 20 pt body text")
     }

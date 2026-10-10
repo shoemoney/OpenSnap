@@ -185,6 +185,10 @@ struct CanvasTests {
             ("native brush dot, freehand and keyboard delete", brushAndKeyboard),
             ("native text edit, doubleclick and text undo", textEditing),
             ("clipboard editable selection and image paste", clipboard),
+            ("paste returns to the spot it was copied from (nudged); a copy from elsewhere lands in the middle of what the window shows (F-J1-015)", pasteWhere),
+            ("flip moves annotation text to the mirrored place without mirroring its glyphs; shapes still mirror (F-J1-026)", flipKeepsText),
+            ("selection handles shrink with a small selection, corners first, and hit-testing follows what is drawn (F-J1-016)", smallSelectionHandles),
+            ("after a text box is finished from the keyboard, typing starts nothing until the pointer is used (F-J1-024)", typingAfterKeyboardFinish),
             ("editable cubic paths, font flags and old version-1 fields", paths),
             ("native image/document drag acceptance", drop),
             ("pending typing dirty notifications, recovery snapshots and active undo", pendingTextRecovery),
@@ -1415,6 +1419,91 @@ struct CanvasTests {
         c.selection.removeAll(); c.copySelection(); c.paste()
         try expect(c.document.elements.count == 3 && c.document.elements.last?.kind == .raster,
                    "Copy without a selection includes the whole composite/background as an image")
+    }
+    /// Runs `body` with the general pasteboard put back afterwards, as the clipboard case does.
+    private static func keepingPasteboard(_ body: (NSPasteboard) throws -> Void) throws {
+        let board = NSPasteboard.general
+        let original: [[NSPasteboard.PasteboardType: Data]] = (board.pasteboardItems ?? []).map { item in
+            Dictionary(uniqueKeysWithValues: item.types.compactMap { type in item.data(forType: type).map { (type, $0) } })
+        }
+        defer {
+            board.clearContents()
+            board.writeObjects(original.map { data -> NSPasteboardItem in
+                let item = NSPasteboardItem(); for (type, bytes) in data { item.setData(bytes, forType: type) }; return item
+            })
+        }
+        try body(board)
+    }
+    static func pasteWhere() throws {
+        try keepingPasteboard { _ in
+            let c = canvas(NSSize(width: 800, height: 700))
+            c.document.elements = [rectangle(CGRect(x: 200, y: 150, width: 40, height: 20))]
+            c.selectAll(); c.copySelection(); c.paste()
+            let first = c.document.elements[1].bounds
+            try expect(abs(first.minX - 212) < 0.5 && abs(first.minY - 162) < 0.5,
+                       "A paste of this drawing's own copy lands where it came from plus the nudge, not at the top-left (\(first))")
+            c.paste()
+            try expect(abs(c.document.elements[2].bounds.minX - 224) < 0.5, "The next paste nudges again (\(c.document.elements[2].bounds))")
+
+            // A copy made in another drawing is not placed by where it sat there: it goes to the middle of the visible area.
+            let other = canvas(NSSize(width: 800, height: 700))
+            other.document.elements = [rectangle(CGRect(x: 700, y: 600, width: 40, height: 20))]
+            other.selectAll(); other.copySelection()
+            let target = canvas(NSSize(width: 800, height: 700)); let window = host(target); defer { window.close() }
+            (target.enclosingScrollView?.contentView).map { $0.scroll(to: CGPoint(x: 150, y: 150)); target.enclosingScrollView?.reflectScrolledClipView($0) }
+            let shown = target.visibleRect
+            target.paste()
+            let landed = target.document.elements[0].bounds
+            try expect(abs(landed.midX - (shown.midX + 12)) < 6 && abs(landed.midY - (shown.midY + 12)) < 6,
+                       "A foreign copy lands in the middle of the visible area \(shown), not at its old place or the top-left (\(landed))")
+        }
+    }
+    static func flipKeepsText() throws {
+        let c = canvas(NSSize(width: 100, height: 80))
+        var text = SketchElement(kind: .text); text.text = "Hi"; text.rect = CGRect(x: 10, y: 10, width: 30, height: 20)
+        c.document.elements = [text, rectangle(CGRect(x: 60, y: 10, width: 20, height: 10))]
+        let initial = c.document
+        c.flip(horizontal: true)
+        let flipped = c.document.elements[0].transform
+        try expect(flipped.a == 1 && flipped.b == 0 && flipped.c == 0 && flipped.d == 1, "Flipping leaves the text's glyphs unmirrored (\(flipped))")
+        let centre = flipped.applying(CGPoint(x: 25, y: 20))
+        try expect(abs(centre.x - 75) < 0.001 && abs(centre.y - 20) < 0.001, "The text sits at the mirrored place (\(centre))")
+        try expect(c.document.elements[1].bounds.minX == 20, "A shape is mirrored as before (\(c.document.elements[1].bounds))")
+        c.undo(); try expect(c.document == initial, "Undo restores the flip exactly")
+        c.flip(horizontal: false)
+        let vertical = c.document.elements[0].transform
+        try expect(vertical.d == 1 && abs(vertical.applying(CGPoint(x: 25, y: 20)).y - 60) < 0.001, "A vertical flip keeps the glyphs upright and mirrors the position (\(vertical))")
+    }
+    static func smallSelectionHandles() throws {
+        let large = CanvasView.handleLayout(forViewSize: CGSize(width: 300, height: 200))
+        try expect(large.side == CanvasView.handleSide && large.shown == Array(0..<8), "A large selection keeps the full 10 pt handles, all eight (\(large))")
+        let small = CanvasView.handleLayout(forViewSize: CGSize(width: 24, height: 12))
+        try expect(small.side < CanvasView.handleSide && small.side >= 6 && small.shown == [0, 2, 4, 6],
+                   "A selection of 24 x 12 points shows smaller corner handles only (\(small))")
+        try expect(small.side * 3.5 <= 12 + 0.001 || small.side == 6, "No handle is wider than a third of the shortest side, down to the 6 pt floor (\(small))")
+    }
+    static func typingAfterKeyboardFinish() throws {
+        let c = canvas(NSSize(width: 700, height: 400)); let window = host(c); defer { window.close() }
+        var text = SketchElement(kind: .text); text.text = "Before"; text.rect = CGRect(x: 50, y: 50, width: 250, height: 70)
+        c.document.elements = [text]; c.tool = .select
+        c.mouseDown(with: try mouse(c, .leftMouseDown, CGPoint(x: 60, y: 60), clicks: 2))
+        let editor = c.subviews.compactMap { $0 as? NSTextView }.first!
+        func characterEvent(_ characters: String, code: UInt16, flags: NSEvent.ModifierFlags = []) throws -> NSEvent {
+            guard let event = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: flags, timestamp: 0, windowNumber: window.windowNumber,
+                context: nil, characters: characters, charactersIgnoringModifiers: characters, isARepeat: false, keyCode: code) else { throw Failure(description: "Key event allocation") }
+            return event
+        }
+        editor.keyDown(with: try characterEvent("\r", code: 36, flags: .option))
+        try expect(window.firstResponder === c && !c.subviews.contains { $0 is NSTextView }, "Option-Return finished the text and gave the keyboard back to the canvas")
+        let count = c.document.elements.count
+        c.keyDown(with: try characterEvent("x", code: 7))
+        try expect(c.document.elements.count == count && !c.subviews.contains { $0 is NSTextView },
+                   "Typing right after Option-Return starts no second text box on top of the first")
+        c.mouseDown(with: try mouse(c, .leftMouseDown, CGPoint(x: 400, y: 300)))
+        c.mouseUp(with: try mouse(c, .leftMouseUp, CGPoint(x: 400, y: 300)))
+        window.makeFirstResponder(c)
+        c.keyDown(with: try characterEvent("y", code: 16))
+        try expect(c.document.elements.count == count + 1, "After a click, typing starts a text box again (\(c.document.elements.count) elements)")
     }
     static func paths() throws {
         let c = canvas()

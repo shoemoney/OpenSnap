@@ -202,6 +202,13 @@ enum PhotoBrowserTests {
                 try expect(newCallbacks == 1 && decoded && !session.accepts(currentID), "Current callback lost, repeated, or missing its original photo")
                 try expect(!FileManager.default.fileExists(atPath: currentLease.url.path), "Delivered copy leaked")
             }),
+            ("the Photos sheet is 900 x 700 where there is room and always inside a small window's content", {
+                let roomy = PhotoBrowserCoordinator.sheetSize(in: NSSize(width: 1561, height: 1100)), minimum = PhotoBrowserCoordinator.sheetSize(in: NSSize(width: 980, height: 590))
+                try expect(roomy == NSSize(width: 900, height: 700), "A roomy window keeps the full sheet (\(roomy))")
+                try expect(minimum.height <= 590 - 16 && minimum.width <= 980 - 40 && minimum.height >= 540 - 4, "At the 980 x 640 minimum window the sheet hangs inside the content, not 60 pt below it (\(minimum))")
+                let tiny = PhotoBrowserCoordinator.sheetSize(in: NSSize(width: 10, height: 10))
+                try expect(tiny.width >= 1 && tiny.height >= 1, "A degenerate window never yields an empty sheet")
+            }),
             ("shutdown reentered during cleanup suppresses the queued callback", {
                 let session = PhotoBrowserSession()
                 var callbacks = 0

@@ -288,9 +288,12 @@ struct PublishingS3Plan {
 enum PublishingS3Operations {
     /// The only argv curl ever receives: the key pair and session token ride in the stdin config.
     static let curlArguments = ["--disable", "--config", "-"]
+    /// Runs the system curl with the config on stdin. A test replaces it with a recorder, so no test touches a network.
+    static var curlRunner: (_ config: Data, _ timeout: TimeInterval, _ cancellation: PublishingCancellation) throws -> PublishingProcess.Output = { config, timeout, cancellation in
+        try PublishingProcess.run(executable: "/usr/bin/curl", arguments: curlArguments, input: config, timeout: timeout, cancellation: cancellation)
+    }
     private static func runCurl(config: Data, timeout: TimeInterval, cancellation: PublishingCancellation) throws -> PublishingProcess.Output {
-        try PublishingProcess.run(executable: "/usr/bin/curl", arguments: curlArguments,
-                                  input: config, timeout: timeout, cancellation: cancellation)
+        try curlRunner(config, timeout, cancellation)
     }
     private static func body(_ file: URL) -> String {
         guard let data = try? Data(contentsOf: file, options: .mappedIfSafe) else { return "" }

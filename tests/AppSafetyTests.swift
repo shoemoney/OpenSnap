@@ -1098,11 +1098,13 @@ enum AppSafetyTests {
         let historySnapshot = try historyDrawing("Archived B after cancelled Close", color: .green)
         let historyID = try store.archive(historySnapshot, name: "History B", action: .archived)
         let historyPrompts = AppSafetyAlert.seen.count, prior = try app.historyEditorState()
+        // The draft has unsaved changes, so History Open asks first (F-J2-003); Don't Save lets it go, and Undo still brings it back.
+        AppSafetyAlert.answers.append(.init(title: "Save your drawing?", response: .alertThirdButtonReturn))
         app.openHistory(historyID)
         try expect(try app.canvas.snapshotDocumentData() == OpenSnapFile.decode(historySnapshot.native).canvasData &&
-                   app.currentArchiveID == historyID && app.currentURL == nil && app.dirty &&
-                   AppSafetyAlert.seen.count == historyPrompts,
-                   "History UUID Open after cancelled Close is undoable and does not prompt to discard the prior draft")
+                   app.currentArchiveID == historyID && app.currentURL == nil && !app.dirty &&
+                   AppSafetyAlert.seen.count == historyPrompts + 1,
+                   "History UUID Open after cancelled Close asks about the unsaved draft first, is undoable, and the opened entry is clean (F-J2-005)")
         app.undo()
         try expectHistoryState(app, prior, "Undo History after cancelled main Close restores all prior pending text, identity and dirty flags")
         try expect(try Data(contentsOf: recovery) == recovered && Data(contentsOf: a) == savedA,
@@ -1738,8 +1740,8 @@ enum AppSafetyTests {
         app.openHistory(idB)
         let opened = try app.historyEditorState(), fileB = try OpenSnapFile.decode(snapshotB.native)
         try expect(try opened.data == fileB.canvasData && opened.drawingDefaults == fileB.drawingDefaults && opened.name == "B filename" &&
-                   opened.url == nil && opened.archiveID == idB && opened.dirty,
-                   "History Open restores B's full native state as an unsaved independent destination")
+                   opened.url == nil && opened.archiveID == idB && !opened.dirty,
+                   "History Open restores B's full native state as an independent destination with nothing unsaved (the archive already holds it)")
         app.undo(); try expectHistoryState(app, prior, "Undo History Open restores A's raw pan, metadata, filename, URL, archive and clean flags")
         app.redo(); try expectHistoryState(app, opened, "Redo History Open restores B's complete identity and dirty flags")
         app.undo(); app.undo()
@@ -1760,6 +1762,7 @@ enum AppSafetyTests {
         app.dirty = false; app.window.isDocumentEdited = false
         let pending = try app.canvas.snapshotDocumentData(), metadata = app.drawingDefaults
         let id = try store.archive(historyDrawing("Pending B"), name: "B", action: .archived)
+        AppSafetyAlert.answers.append(.init(title: "Save your drawing?", response: .alertThirdButtonReturn))
         app.openHistory(id); app.undo()
         try expect(try app.canvas.snapshotDocumentData() == pending && app.drawingDefaults == metadata &&
                    app.currentURL == destination && app.nameField.stringValue == "Pending A" && app.currentArchiveID == nil &&
@@ -1770,8 +1773,8 @@ enum AppSafetyTests {
         app.redo(); try expect(try app.canvas.snapshotDocumentData() == pending, "Redo restores exact text from the pending snapshot")
         app.redo(); try expect(app.currentArchiveID == id && app.currentURL == nil && app.drawingDefaults.values["futureHistorySetting"] == "Pending B",
                                "Redo History after typing Undo restores B's metadata and save destination policy")
-        try expect(try Data(contentsOf: destination) == original && AppSafetyAlert.seen.isEmpty,
-                   "Undoable History Open neither silently saves the prior file nor asks to discard its recoverable edits")
+        try expect(try Data(contentsOf: destination) == original && AppSafetyAlert.seen == ["Save your drawing?"],
+                   "Undoable History Open never silently saves the prior file; it asks once about the unsaved edits (F-J2-003) and Don't Save leaves the file alone")
     }
     static func historyFollowReplacement() throws {
         for replacement in ["new", "native", "capture"] {
@@ -3757,19 +3760,18 @@ enum AppSafetyTests {
                 try expect(!controls.contains { ($0 as? NSButton)?.action == #selector(AppDelegate.frameSnap) },
                            "Frame remains a menu command instead of a permanent capture button")
                 guard let toolbox = controls.compactMap({ $0 as? NSPopUpButton }).first(where: { $0.accessibilityLabel() == "Toolbox menu" }), let choices = toolbox.menu else { throw Failure(description: "Recovered Toolbox") }
-                let more = choices.items.first { $0.title == "More Commands" }!.submenu!
-                for title in ["File", "Image", "Drawing", "Text", "Capture"] {
-                    try expect(more.items.contains { $0.title == title && $0.submenu != nil }, "Additional commands retain the \(title) entry point")
-                }
-                let expected: [Selector] = [#selector(AppDelegate.about), #selector(AppDelegate.showPreferences), #selector(AppDelegate.quit),
-                    #selector(AppDelegate.newFile), #selector(AppDelegate.openFile), #selector(AppDelegate.showPhotos), #selector(AppDelegate.saveHistory),
-                    #selector(AppDelegate.exportFile), #selector(AppDelegate.saveAs), #selector(AppDelegate.printImage), #selector(AppDelegate.cut), #selector(AppDelegate.copyArtwork),
-                    #selector(AppDelegate.paste), #selector(AppDelegate.deleteSelection), #selector(AppDelegate.selectAll), #selector(AppDelegate.duplicate),
-                    #selector(AppDelegate.chooseFont), #selector(AppDelegate.screenSnap), #selector(AppDelegate.fullscreenSnap), #selector(AppDelegate.frameSnap),
-                    #selector(AppDelegate.resnap), #selector(AppDelegate.normalSize), #selector(AppDelegate.flipH),
-                    #selector(AppDelegate.rotateCW), #selector(AppDelegate.transparent), #selector(AppDelegate.trimSnap), #selector(AppDelegate.wipeSnap)]
-                let actual = choices.items.compactMap(\.action).filter { expected.contains($0) }
-                try expect(actual == expected, "Original common commands are direct Toolbox items in original group order")
+                // F-J1-009: a drawing session's commands only. The app, settings and file plumbing live in the menu bar, not here.
+                let expected: [Selector] = [#selector(AppDelegate.saveHistory), #selector(AppDelegate.exportFile),
+                    #selector(AppDelegate.copyArtwork), #selector(AppDelegate.paste), #selector(AppDelegate.duplicate), #selector(AppDelegate.deleteSelection), #selector(AppDelegate.selectAll),
+                    #selector(AppDelegate.screenSnap), #selector(AppDelegate.fullscreenSnap), #selector(AppDelegate.frameSnap), #selector(AppDelegate.resnap),
+                    #selector(AppDelegate.rotateCW), #selector(AppDelegate.flipH), #selector(AppDelegate.trimSnap), #selector(AppDelegate.wipeSnap),
+                    #selector(AppDelegate.toggleBezelFill(_:)), #selector(AppDelegate.toggleBezelShadow(_:)), #selector(AppDelegate.chooseFont)]
+                let commands = choices.items.dropFirst().filter { !$0.isSeparatorItem }
+                try expect(commands.compactMap(\.action) == expected, "The Toolbox holds exactly the drawing-session commands, in group order: \(commands.map(\.title))")
+                try expect(commands.count <= 20 && choices.items.allSatisfy { $0.submenu == nil }, "The Toolbox is a short menu with no submenus (\(commands.count) rows)")
+                let plumbing: [Selector] = [#selector(AppDelegate.about), #selector(AppDelegate.showPreferences), #selector(AppDelegate.quit), #selector(AppDelegate.newFile),
+                    #selector(AppDelegate.openFile), #selector(AppDelegate.saveAs), #selector(AppDelegate.printImage), #selector(AppDelegate.showPhotos)]
+                try expect(!commands.contains { $0.action.map(plumbing.contains) == true }, "No About, Settings, Quit or file plumbing is copied into the Toolbox")
                 func menuTitles(_ menu: NSMenu) -> [String] { menu.items.flatMap { [$0.title] + ($0.submenu.map(menuTitles) ?? []) } }
                 try expect(!menuTitles(choices).contains { $0.lowercased().contains("cam") },
                            "No Cam or Camera item exists anywhere in the Toolbox menus; OpenSnap is screen capture only")
@@ -3780,8 +3782,7 @@ enum AppSafetyTests {
                     try expect(item.target === app && (choices.font?.pointSize ?? 0) >= 20, "Direct Toolbox command \(item.title) retains its real native target and readable menu type")
                 }
                 let source = NSApp.mainMenu!.items.first { $0.submenu?.title == "Image" }!.submenu!
-                let copy = more.items.first { $0.title == "Image" }!.submenu!
-                try expect(source !== copy && source.items.map(\.action) == copy.items.map(\.action), "Toolbox menu copies preserve real image actions without stealing the menu-bar submenu")
+                try expect(choices.items.allSatisfy { copy in copy.isSeparatorItem || copy.action == nil || !source.items.contains { $0 === copy } }, "Toolbox rows are copies: none steals a menu-bar item")
                 for size in [app.window.frame.size, app.window.minSize] {
                     app.window.setFrame(NSRect(origin: app.window.frame.origin, size: size), display: false)
                     content.layoutSubtreeIfNeeded()
@@ -3863,7 +3864,7 @@ enum AppSafetyTests {
         ]
         // Development aid: APP_SAFETY_FILTER=<text> runs only the cases whose title contains it. Unset, every case runs.
         let filter = ProcessInfo.processInfo.environment["APP_SAFETY_FILTER"]
-        let tests = (sharedCases + Self.modernCases + Self.webpostCases + Self.retiredFormatCases + Self.menuCases + Self.windowChromeCases + Self.uploadCases + Self.accessibilityCases + Self.auditCases).filter { filter.map($0.0.contains) ?? true }
+        let tests = (sharedCases + Self.modernCases + Self.webpostCases + Self.retiredFormatCases + Self.menuCases + Self.windowChromeCases + Self.uploadCases + Self.accessibilityCases + Self.auditCases + Self.batch3cCases + Self.s3EndToEndCases).filter { filter.map($0.0.contains) ?? true }
         var results: [[String: Any]] = [], failures = 0
         for (name, test) in tests {
             AppSafetyAlert.reset(); AppSafetyAlert.install(); AppSafetyEvents.current = nil
