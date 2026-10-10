@@ -365,6 +365,7 @@ extension AuditRun {
             step("S38", "app tooltips") { s38() }
             step("S39", "titled window and alert sheets") { s39() }
             step("S40", "component states") { s40() }
+            step("S41", "audit batch 3a: what the J1 fixes change") { s41() }
             step("S13", "capture picker") { s13() }
             step("S14", "countdown") { s14() }
             step("S15", "capture flash") { s15() }
@@ -768,6 +769,95 @@ extension AuditRun {
             }
             app.applyChosenColor(OriginalDrawingControls.presets[0].color, modifiers: [])
         }
+    }
+
+    /// Audit fix batch 3a (E2E journey J1): the colour popover after Blue is picked, the bottom bar blank and drawn (Undo dimmed, the archive Save
+    /// icon), selected text after a size change, the crop hint, the Colors panel opened over a stale colour, and the Window menu with Full Screen.
+    func s41() {
+        guard loadThenPlace("980xmin", size: CGSize(width: 1000, height: 700), name: "Audit 3a", surface: "S41") != nil else { return }
+        let blue = OriginalDrawingControls.presets[2].color
+        // 1. Picking Blue, then reopening the popover: Blue is checked and drawn in the colour the toolbar swatch shows.
+        app.presentDrawingColors(hover: false)
+        pump(0.5)
+        if let swatch = app.presetColorButtons.first(where: { $0.tag == OriginalDrawingControls.presets[2].tag }) { app.choosePresetColor(swatch) }
+        app.presentDrawingColors(hover: false)
+        pump(0.7)
+        let popoverWindow = app.colorPopover?.contentViewController?.view.window
+        popoverWindow?.orderFrontRegardless()
+        if popoverWindow == nil { gap("S41", "Colour popover", "the popover window did not appear") }
+        var extra = popoverMetrics(popoverWindow, anchor: app.paletteButton)
+        extra["checkedPresets"] = app.presetColorButtons.filter { $0.state == .on }.map { $0.accessibilityLabel() ?? "" }
+        extra["swatchColours"] = app.presetColorButtons.map { SketchColor($0.drawingColor).red }
+        shoot("S41", "color-popover-blue-checked-w980", surface: "Colour popover", state: "Blue picked, popover reopened: Blue is checked and drawn in the colour the toolbar swatch shows (F-J1-002)",
+              windows: popoverWindow.map { [window, $0] } ?? [window], refs: ["App.swift|func presentDrawingColors", "BezelDrawingControls.swift|var drawingColor"], settle: 0.2, extra: extra)
+        if let popoverWindow {
+            shoot("S41", "color-popover-only-blue-checked-w980", surface: "Colour popover", state: "the popover window alone, Blue checked", windows: [popoverWindow], refs: ["App.swift|func presentDrawingColors"], settle: 0.1)
+        }
+        app.closeDrawingColors(); pump(0.3)
+        // 2. The Colors panel opens on the colour in use, whatever it showed last, and applying nothing (F-J1-003).
+        app.applyChosenColor(OriginalDrawingControls.presets[8].color, modifiers: [])
+        NSColorPanel.shared.color = NSColor(calibratedRed: 0, green: 0, blue: 1, alpha: 1)
+        let before = SketchColor(canvas.strokeColor)
+        app.chooseCustomColor(app.paletteButton)
+        pump(0.8)
+        if NSColorPanel.shared.isVisible {
+            shoot("S41", "colors-panel-at-current-colour", surface: "Colors panel", state: "Custom color… with Black current and the shared panel last left on blue: it opens on Black and the drawing colour is untouched (F-J1-003)",
+                  windows: [NSColorPanel.shared], refs: ["App.swift|func chooseCustomColor"],
+                  extra: ["strokeColourUnchanged": SketchColor(canvas.strokeColor) == before])
+            NSColorPanel.shared.orderOut(nil)
+        } else { gap("S41", "Colors panel", "NSColorPanel did not become visible") }
+        app.applyChosenColor(blue, modifiers: [])
+        // 3. The bottom bar on a blank drawing (Undo and Clear dimmed, the archive Save icon beside History), then with something to undo (F-J1-020, F-J1-021).
+        canvas.newBlank(size: CGSize(width: 900, height: 600))
+        canvas.editingUndoManager.removeAllActions(); app.updateStatus(); app.updateWipeButton()
+        shoot("S41", "footer-blank-w980", surface: "Bottom bar", state: "a blank drawing: Undo and Clear image are dimmed; Save to History is the archive box beside the History clock (F-J1-020, F-J1-021)", crop: footerCrop(),
+              refs: ["App.swift|func updateUndoButton", "ModernEditorChrome.swift|saveButton = make"])
+        _ = addAllAnnotationKinds(scale: 1)
+        canvas.setBackgroundColor(.green); app.updateStatus(); app.updateWipeButton()
+        shoot("S41", "footer-drawn-w980", surface: "Bottom bar", state: "the same bar once the drawing has something to undo: Undo is live", crop: footerCrop(),
+              refs: ["App.swift|func updateUndoButton"])
+        // 4. Text typed, recoloured and resized while it is still open, committed, then resized again as a selection (F-J1-005): glyphs and frame together.
+        canvas.newBlank(size: CGSize(width: 900, height: 600)); canvas.editingUndoManager.removeAllActions()
+        app.widthControl.performValueChange(OriginalDrawingControls.initialSize, continuous: true)
+        app.setTool(.text)
+        if let down = mouse(.leftMouseDown, docPoint: CGPoint(x: 80, y: 200)), let up = mouse(.leftMouseUp, docPoint: CGPoint(x: 80, y: 200)) {
+            canvas.mouseDown(with: down); canvas.mouseUp(with: up)
+        }
+        pump(0.3)
+        (window.firstResponder as? NSTextView)?.insertText("Hello OpenSnap", replacementRange: NSRange(location: NSNotFound, length: 0))
+        app.applyChosenColor(blue, modifiers: [])
+        app.widthControl.performValueChange(OriginalDrawingControls.maximum, continuous: false)
+        canvas.commitPendingTextEditing()
+        pump(0.3)
+        func textFacts() -> [String: Any] {
+            let element = canvas.document.elements.first(where: { $0.kind == .text })
+            return ["docFontSize": Double(element?.fontSize ?? 0), "docRect": rectJSON(element?.rect ?? .zero), "canvasSubviews": canvas.subviews.map { String(describing: type(of: $0)) },
+                    "tool": canvas.tool.rawValue, "stagedTextStyles": canvas.hasStagedTextStyles, "firstResponder": window.firstResponder.map { String(describing: type(of: $0)) } ?? "none"]
+        }
+        if let text = canvas.document.elements.first(where: { $0.kind == .text }) {
+            canvas.selection = [text.id]
+            shoot("S41", "text-size-committed-w980", surface: "Selected text", state: "text typed at the smallest size, recoloured and resized while open, then committed and selected (before the second size change)",
+                  refs: ["Canvas.swift|func finishTextEditing"], extra: textFacts())
+            app.widthControl.performValueChange(OriginalDrawingControls.sizeSteps[3], continuous: false)
+            pump(0.3)
+            let size = canvas.document.elements.first(where: { $0.kind == .text })?.fontSize ?? 0
+            shoot("S41", "text-size-selected-w980", surface: "Selected text", state: "...then resized as a selection (\(Int(size)) pt): the glyphs fill the frame (F-J1-005)",
+                  refs: ["Canvas.swift|func convertSelectedTextFonts"], extra: textFacts())
+        } else { gap("S41", "Selected text", "no text element was created") }
+        canvas.selection = []
+        // 5. The Crop tool says what Return and Esc do (F-J1-011).
+        loadSynthetic(size: CGSize(width: 1000, height: 700), name: "Audit 3a crop")
+        app.setTool(.crop)
+        canvas.cropRect = CGRect(x: 220, y: 150, width: 560, height: 380)
+        window.makeFirstResponder(canvas)
+        shoot("S41", "crop-hint-w980", surface: "Crop hint", state: "a pending crop: the status line reads \(app.status.stringValue) (F-J1-011)", refs: ["App.swift|func refreshStatusText"], extra: ["statusVariants": app.status.variants])
+        app.setTool(.brush)
+        shoot("S41", "crop-dropped-w980", surface: "Crop hint", state: "after choosing the Brush tool the dim crop overlay and its hint are gone", refs: ["Canvas.swift|var tool: SketchTool"], extra: ["cropRectIsNil": canvas.cropRect == nil])
+        // 6. The Window menu with Enter Full Screen (F-J1-008).
+        if let windowMenu = NSApp.windowsMenu, let content = window.contentView {
+            captureTrackedMenu("S41", "window-menu-open", surface: "menus", state: "Window menu open: Minimize, Focus Toolbar, Enter Full Screen (F-J1-008)", refs: ["App.swift|let fullScreen = NSMenuItem"],
+                               dismiss: { windowMenu.cancelTracking() }, trigger: { windowMenu.popUp(positioning: nil, at: NSPoint(x: 60, y: content.bounds.height - 60), in: content) })
+        } else { gap("S41", "Window menu", "no Window menu was found") }
     }
 
     /// A shot big enough that the Original-size checkbox shows (`isLargeShot`), growing the synthetic size until the app agrees.

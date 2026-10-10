@@ -208,6 +208,7 @@ SEM = {
     "toggleBezelFill": (D, "Toggles Filled Shapes; checkmark follows", "e2e", None, "app"),
     "toggleBezelShadow": (D, "Toggles Shadow for shapes; checkmark follows", "e2e", None, "app"),
     "vanish": (D, "Minimizes the editor to the Dock", "e2e", None, "app"),
+    "toggleFullScreen": (D, "Enters or leaves full screen; the title reads Enter Full Screen or Exit Full Screen and follows the window; disabled in Frame mode", "e2e", None, "app"),
 }
 SYSTEM_MENU = {  # items wired to system selectors or added after the menu(...) calls
     ("OpenSnap", "Hide Others", "⌥⌘H", "Other apps hide", "os"),
@@ -217,6 +218,7 @@ SYSTEM_MENU = {  # items wired to system selectors or added after the menu(...) 
 EXTRA_MENU = [  # inserted by buildMenus after the generic menu(...) calls
     ("OpenSnap", "Hide OpenSnap", "toggleVisible", "h"), ("File", "Close", "closeCurrentWindow", "w"), ("File", "Page Setup…", "pageSetup", "P"),
     ("File", "Rename…", "renameDocument", ""), ("Window", "Minimize", "vanish", "m"),
+    ("Window", "Enter Full Screen", "toggleFullScreen", "f"),
 ]
 SUBMENUS = [  # (menu, submenu, items, selector for validation/semantics, expected)
     ("Drawing", "Pencil Smoothing", ["Precise", "Medium", "Loose"], "Sets pencil smoothing; checkmark follows; mirrors Settings > Drawing > Drawing precision"),
@@ -239,7 +241,7 @@ def build_menus():
         seen.add((menu, name))
         prereq, expected, ex, gap, owner = SEM[selector]
         add("MENU", f"Menu bar › {menu}", name, "menu item", f"Menu bar › {menu} › {name}", expected, prereq=prereq, icon=symbols.get(selector),
-            ex=ex, gap=gap, owner=owner, shortcut=shortcut_text(key, "⌥" if name == "Hide Others" else ""), rendered=["S12", "S16", "S17"],
+            ex=ex, gap=gap, owner=owner, shortcut=shortcut_text(key, "⌥" if name == "Hide Others" else ("⌃" if name == "Enter Full Screen" else "")), rendered=["S12", "S16", "S17"],
             note=None if ex == "e2e" else f"Selector {selector}")
     for menu, name, key, expected, owner in sorted(SYSTEM_MENU):
         add("MENU", f"Menu bar › {menu}", name, "menu item", f"Menu bar › {menu} › {name}", expected, prereq="Other apps running" if name != "Bring All to Front" else D,
@@ -283,7 +285,7 @@ def build_toolbox(parsed):
 
 # ------------------------------------------------------------------------------------------------------------------- icons
 FA_WHERE = {  # entry path for each icon, kept beside the source-derived "used in" list
-    "eyeSlash": "Top bar › Hide; History › Hide from History", "toolbox": "Top bar › Toolbox", "images": "Top bar › Photos", "floppyDisk": "Bottom bar › Save",
+    "eyeSlash": "Top bar › Hide; History › Hide from History", "toolbox": "Top bar › Toolbox", "images": "Top bar › Photos", "boxArchive": "Bottom bar › Save",
     "clockRotateLeft": "Bottom bar › History", "arrowPointer": "Top bar › Select tool", "paintbrush": "Top bar › Brush tool; Settings › Drawing tab",
     "slashForward": "Top bar › Line tool", "circle": "Top bar › Ellipse tool", "square": "Top bar › Rectangle tool", "fillDrip": "Top bar › Fill tool",
     "eraser": "Top bar › Eraser tool", "text": "Top bar › Text tool", "arrowUpRight": "Top bar › Arrow tool", "cropSimple": "Top bar › Crop tool",
@@ -350,7 +352,7 @@ def build_chrome():
         ("Canvas zoom", "control", None, "Pop-up: 25, 50, 75, 100, 150, 200 %, Actual Size; face shows the percentage; Fit adds a computed entry", "S07"),
         ("Resize…", "toolbar button", "ruler-combined", "Resize or Crop sheet; disabled in Actual Size and Frame mode", "S08"),
         ("Status line", "control", None, "Names the tool, saved state and size; truncates in the middle only at the minimum width", "S09"),
-        ("Save", "toolbar button", "floppy-disk", "Saves to History (tooltip Save to History); status confirms", "S09"),
+        ("Save", "toolbar button", "box-archive", "Saves to History (tooltip Save to History); status confirms", "S09"),
         ("History", "toolbar button", "clock-rotate-left", "Opens the History window", "S09"),
         ("Image format (PNG | JPG)", "control", None, "Two-segment capsule; choice persists and drives drag, export and upload format", "S09"),
         ("Drag image to another app", "control", "hand", "The Drag Me well (accessibility label Drag image to another app): drag the drawing to Finder or another app; the file is frozen at drag start", "S09"),
@@ -424,7 +426,7 @@ def build_canvas():
         ("Return (Crop tool)", "shortcut", "Crops to the selection"),
         ("Option-Return or keypad Enter in a text editor", "shortcut", "Finishes text editing"),
         ("Space (held)", "gesture", "Space-held modifier: the cursor changes while it is down and the drag pans instead of drawing (Canvas.spaceHeld)"),
-        ("Tab", "gesture", "Switches to the Brush tool and back to the previous tool (pencil toggle)"),
+        ("Tab", "gesture", "Control-Tab switches to the Brush tool and back to the previous tool (pencil toggle); plain Tab moves the keyboard to the next control, and does the pencil toggle only while the bars are not tab stops (Full Keyboard Access off)"),
         ("Pinch / scroll in Actual Size", "gesture", "Scrolls the viewport; the navigator follows"),
         ("Drop a picture or .opensnap onto the window", "gesture", "Accepts file URLs, PNG, TIFF and the native pasteboard type; only pictures, PDFs and .opensnap load, other file types are refused"),
         ("Drag the drawing out via Drag Me", "gesture", "Exports a file in the chosen format; History records Exported/Dragged"),
@@ -639,8 +641,9 @@ def build_status():
 def build_keys(parsed):
     for menu, name, selector, key in parsed + [(m, n, s, k) for m, n, s, k in EXTRA_MENU]:
         if key:
-            add("KEY", f"Menu key equivalents › {menu}", f"{shortcut_text(key)} {name}", "shortcut", f"Press {shortcut_text(key)} with the editor key", f"Runs {name}",
-                prereq=SEM[selector][0], shortcut=shortcut_text(key), ex="e2e", rendered=["S12"])
+            chord = shortcut_text(key, "⌃" if name == "Enter Full Screen" else "")
+            add("KEY", f"Menu key equivalents › {menu}", f"{chord} {name}", "shortcut", f"Press {chord} with the editor key", f"Runs {name}",
+                prereq=SEM[selector][0], shortcut=chord, ex="e2e", rendered=["S12"])
     for chord, expected, kind in [
             ("Shift on Snap Frame", "Six-second timer instead of an instant frame snap", "gesture"), ("Option-click a capture control", "Keeps OpenSnap visible during the snap", "gesture"),
             ("Shift-click a colour swatch", "Sets the canvas background colour instead of the pen", "gesture"), ("Option while drawing an arrow", "Reverses arrow direction", "gesture"),

@@ -221,6 +221,9 @@ struct CanvasTests {
             ("Option key arms the Line polygon, release commits one element and one Undo step", linePolygon),
             ("shadows fall down-right on screen and in export", shadowDirection),
             ("text editor group shadow and grip chrome shadow fall downward", editorShadowDirection),
+            ("eraser fragments never cast a shadow into the gap they leave (audit F-J1-001)", eraserLeavesNoShadow),
+            ("a size change re-lays out selected and editing text so glyphs and frame follow together (audit F-J1-005)", textSizeKeepsGlyphsAndFrame),
+            ("changing tool drops a pending crop overlay (audit F-J1-011)", toolChangeClearsCrop),
             ("native canvas visual proof", visualProof)
         ]
         let selectedTests = tests.filter { name, _ in
@@ -1230,6 +1233,100 @@ struct CanvasTests {
         try expect(retained.redComponent > 0.9 && retained.greenComponent < 0.1, "Un-erased portion remains")
         c.setBackgroundColor(.clear)
         try expect(try pixel(c, 40, 30).alphaComponent < 0.01, "Eraser did not fake clearing with white ink")
+    }
+    /// F-J1-001: the eraser cuts a slot through a shadowed filled shape. Each fragment kept the shadow flag, so the cut edges cast a grey halo into
+    /// the slot. The slot must reveal the (transparent) background; a cut that touches nothing leaves the shadow alone.
+    static func eraserLeavesNoShadow() throws {
+        let c = canvas(NSSize(width: 200, height: 150))
+        c.setBackgroundColor(.clear)
+        var box = rectangle(CGRect(x: 40, y: 40, width: 100, height: 60)); box.shadowed = true
+        c.document.elements = [box]
+        c.eraseStroke(points: [CGPoint(x: 30, y: 70), CGPoint(x: 150, y: 70)], width: 16)
+        let fragments = c.document.elements.filter { $0.kind == .path }
+        try expect(fragments.count == 2, "The slot splits the box into two fragments (\(fragments.count))")
+        let top = fragments.min { $0.bounds.minY < $1.bounds.minY }!, bottom = fragments.max { $0.bounds.minY < $1.bounds.minY }!
+        let firstRow = Int(top.bounds.maxY.rounded(.up)) + 1, lastRow = Int(bottom.bounds.minY.rounded(.down)) - 1
+        try expect(lastRow - firstRow >= 8, "The slot is wide enough to measure (\(firstRow)...\(lastRow))")
+        var halo: CGFloat = 0
+        for row in firstRow...lastRow { halo = max(halo, try pixel(c, 90, row).alphaComponent) }
+        try expect(halo < 0.01, "Nothing is painted inside the erased slot; its strongest pixel has alpha \(halo)")
+        // A stroke that only brushes the shape's bounding box does not touch the shape, so the shadow stays.
+        var ring = SketchElement(kind: .ellipse)
+        ring.rect = CGRect(x: 40, y: 40, width: 80, height: 80); ring.color = SketchColor(.red); ring.strokeWidth = 4; ring.shadowed = true
+        c.document.elements = [ring]
+        c.eraseStroke(points: [CGPoint(x: 42, y: 42), CGPoint(x: 44, y: 42)], width: 4)
+        try expect(c.document.elements.allSatisfy(\.shadowed), "An eraser stroke in the corner of the bounds, off the ellipse, keeps the shadow")
+    }
+    /// F-J1-005: choosing a size for selected text changed the frame but left the glyphs behind; Duplicate then drew the copy larger. The
+    /// size must reach the glyphs the user sees (live editor or committed text) and the frame together, in one undo step.
+    static func textSizeKeepsGlyphsAndFrame() throws {
+        func ink(_ bitmap: NSBitmapImageRep) -> CGRect {
+            var box = CGRect.null
+            for y in 0..<bitmap.pixelsHigh { for x in 0..<bitmap.pixelsWide {
+                guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB) else { continue }
+                if color.redComponent > 0.95 && color.greenComponent < 0.05 && color.blueComponent > 0.95 && color.alphaComponent > 0.9 {
+                    box = box.union(CGRect(x: x, y: y, width: 1, height: 1))
+                }
+            } }
+            return box
+        }
+        // The third arm is the real defect: the shared Colors panel echoes the editor's colour back (NSTextView.updateFontPanel does, whenever it takes
+        // focus or changes selection) as a colour choice, and one arrived while the box was being committed. It staged a style for the box after the
+        // commit had cleared them, and that stale style kept repainting the committed text at the size it had then (found with the screenshot harness).
+        for (editing, echo) in [(false, false), (true, false), (true, true)] {
+            let c = canvas(NSSize(width: 800, height: 400)); let window = host(c); defer { window.close() }
+            var text = SketchElement(kind: .text); text.text = "Hello OpenSnap"; text.fontName = "Helvetica-Bold"; text.fontSize = 24
+            text.outlined = false; text.shadowed = false; text.color = SketchColor(NSColor(deviceRed: 1, green: 0, blue: 1, alpha: 1))
+            text.rect = CGRect(origin: CGPoint(x: 40, y: 40), size: OriginalTextGeometry.size(for: text))
+            c.document.elements = [text]; c.selection = [text.id]; c.tool = .select
+            c.editingUndoManager.removeAllActions()
+            if editing { c.mouseDown(with: try mouse(c, .leftMouseDown, CGPoint(x: 50, y: 50), clicks: 2)) }
+            let label = editing ? (echo ? "while editing, with a colour echo at commit" : "while editing") : "selected"
+            let small = SketchRenderer.bitmap(document: c.document).map(ink)?.height ?? 0
+            c.fontSize = 60; c.strokeWidth = 12
+            try expect(c.convertSelectedTextFonts({ NSFont(name: $0.fontName, size: 60) }, name: "Change Text Size"), "\(label): the size is accepted")
+            if echo {
+                var fired = false
+                c.onTextStyleContextChange = { [unowned c] in if !fired { fired = true; c.applyColorToSelection(NSColor(deviceRed: 0, green: 0, blue: 1, alpha: 1)) } }
+            }
+            if editing { c.commitPendingTextEditing() }
+            c.onTextStyleContextChange = nil
+            try expect(!c.hasStagedTextStyles, "\(label): no style stays staged once the box is committed")
+            try expect(c.document.elements[0].color == text.color, "\(label): the echo did not recolour the committed text")
+            try expect(c.document.elements[0].fontSize == 60, "\(label): the element carries the new size (\(c.document.elements[0].fontSize))")
+            try expect(c.document.elements[0].rect.size == OriginalTextGeometry.size(for: c.document.elements[0]), "\(label): the frame is the natural size of the new text")
+            let exported = SketchRenderer.bitmap(document: c.document).map(ink) ?? .null
+            let live = SketchRenderer.bitmap(size: c.bounds.size) { c.draw(c.bounds) }.map(ink) ?? .null
+            try expect(exported.height > small * 2, "\(label): the exported glyphs grew with the size (\(small) -> \(exported.height))")
+            try expect(abs(live.height - exported.height) <= 2 && abs(live.width - exported.width) <= 2,
+                       "\(label): the glyphs on screen match the document (live \(live.size), exported \(exported.size))")
+            // The next size change, on the committed and selected text, reaches the glyphs as well as the frame.
+            c.selection = [text.id]
+            try expect(c.convertSelectedTextFonts({ NSFont(name: $0.fontName, size: 30) }, name: "Change Text Size"), "\(label): a second size is accepted")
+            let again = SketchRenderer.bitmap(size: c.bounds.size) { c.draw(c.bounds) }.map(ink) ?? .null
+            let exportedAgain = SketchRenderer.bitmap(document: c.document).map(ink) ?? .null
+            try expect(abs(again.height - exportedAgain.height) <= 2 && exportedAgain.height < exported.height,
+                       "\(label): the second size shrinks the glyphs on screen with the document (live \(again.size), exported \(exportedAgain.size))")
+            let duplicate = canvas(NSSize(width: 800, height: 400)); duplicate.document = c.document; duplicate.selection = [text.id]
+            duplicate.duplicateSelection()
+            try expect(duplicate.document.elements.count == 2 && duplicate.document.elements[1].fontSize == duplicate.document.elements[0].fontSize,
+                       "\(label): a duplicate is the same size as its original")
+            c.undo()
+            try expect(c.document.elements[0].fontSize == 60, "\(label): one Undo restores the previous size (\(c.document.elements[0].fontSize))")
+        }
+    }
+    /// F-J1-011: the dim crop overlay stayed after the tool changed.
+    static func toolChangeClearsCrop() throws {
+        let c = canvas(NSSize(width: 200, height: 150)); let window = host(c); defer { window.close() }
+        c.tool = .crop
+        try drag(c, from: CGPoint(x: 20, y: 20), to: CGPoint(x: 120, y: 90))
+        try expect(c.cropRect != nil, "Dragging with the crop tool leaves a pending crop")
+        c.tool = .brush
+        try expect(c.cropRect == nil, "Choosing another tool drops the crop overlay")
+        c.tool = .crop
+        try drag(c, from: CGPoint(x: 20, y: 20), to: CGPoint(x: 120, y: 90))
+        c.keyDown(with: try key(c, 48))
+        try expect(c.cropRect == nil, "A Tab swap to the pencil drops it too")
     }
     static func mouseInteraction() throws {
         let c = canvas(NSSize(width: 200, height: 150)); let window = host(c); defer { window.close() }

@@ -209,7 +209,7 @@ final class ModernEditorChrome: NSView {
         }
         hideButton = make("Hide", .eyeSlash, actions.hide, shortcut: Self.menuShortcut(for: actions.hide))
         photosButton = make("Photos", .images, actions.photos)
-        saveButton = make("Save", .floppyDisk, actions.saveHistory, toolTip: "Save to History")
+        saveButton = make("Save", .boxArchive, actions.saveHistory, toolTip: "Save to History")
         historyButton = make("History", .clockRotateLeft, actions.showHistory)
         snapButton = make("Snap", .crosshairs, actions.snap, toolTip: Self.snapToolTip, pointSize: GlassChrome.Metrics.primaryIconPointSize)
         cancelFrameButton = make("Cancel", .xmark, actions.cancelFrame)

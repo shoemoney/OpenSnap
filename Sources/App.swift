@@ -285,6 +285,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     var presetColorButtons: [BezelColorButton] = []
     weak var customColorButton: BezelCustomColorButton?
     var sizeUndoGrouping = false
+    /// The system Colors panel; a test hands in a panel that is never ordered on screen.
+    var colorPanelProvider: () -> NSColorPanel = { NSColorPanel.shared }
+    /// True from Custom color… until the Colors panel is closed. The panel is shared and AppKit pushes colours into it (a text box does, whenever it
+    /// takes focus or changes selection), so a colour that arrives while it is not ours is an echo, never a choice.
+    var customColorPanelOpen = false
+    private var colorPanelCloseObserver: NSObjectProtocol?
     var customDrawingColor = NSColor(calibratedRed: 0, green: 1, blue: 1, alpha: 1) // token-exempt: drawing colour data, not chrome
     let zoomControl = ZoomPopUpButton(frame: .zero, pullsDown: false)
     let dragFormatToggle = SegmentedToggle(titles: FormatToggle.titles)
@@ -397,6 +403,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         installHintMonitoring()
         NSColorPanel.shared.showsAlpha = true
         canvas.onChange = { [weak self] in self?.changed() }
+        canvas.tabNavigatesFocus = { KeyboardNavigation.fullKeyboardAccess() }
+        canvas.onPendingCropChange = { [weak self] in self?.updateStatus() }
+        // Undo is dimmed while there is nothing to undo: the canvas history and a text box's typing history both count.
+        for name in [NSNotification.Name.NSUndoManagerDidUndoChange, .NSUndoManagerDidRedoChange, .NSUndoManagerDidCloseUndoGroup] {
+            NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.updateUndoButton() }
+            }
+        }
         canvas.onTextStyleRequested = { [weak self] in self?.chooseFont() }
         canvas.onTextStyleContextChange = { [weak self] in self?.syncFontPanelSelection(); self?.updateWipeButton() }
         canvas.onViewportEditCancelled = { [weak self] in
@@ -574,11 +588,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     func windowWillMiniaturize(_ notification: Notification) {
         if (notification.object as? NSWindow) === window { helpBevel?.clear() }
     }
+    /// Minimize and the Hide button: a visible editor always goes away. (The toggle below raises an inactive editor instead, which is right
+    /// for Hide OpenSnap and the status item, but a command that says Minimize must never do the opposite of its name.)
     @objc func vanish() {
         guard window.isVisible else { return }
-        toggleVisible()
+        hideOrShowEditor(hidingWhenInactive: true)
     }
-    @objc func toggleVisible() {
+    @objc func toggleVisible() { hideOrShowEditor(hidingWhenInactive: false) }
+    func hideOrShowEditor(hidingWhenInactive: Bool) {
         guard !terminationStarted, !frameCaptureInProgress, window.attachedSheet == nil else { return }
         widthControl.dismissPopover(); widthControl.endTracking(); closeDrawingColors(); helpBevel?.clear()
         if windowZoom != nil { makeVisible(); return }
@@ -595,7 +612,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             }
             writeLayoutEvidence(); return
         }
-        if !window.isVisible || window.isMiniaturized || !NSApp.isActive {
+        if !window.isVisible || window.isMiniaturized || (!NSApp.isActive && !hidingWhenInactive) {
             makeVisible()
         } else {
             saveRecovery()
@@ -912,6 +929,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         // The bars are not an NSToolbar, so the system's Move-focus-to-toolbar shortcut has nothing to find: this command is the way in.
         let focusItem = NSMenuItem(title: "Focus Toolbar", action: #selector(focusToolbar), keyEquivalent: "t")
         focusItem.keyEquivalentModifierMask = [.command, .option]; focusItem.target = self; windows.insertItem(focusItem, at: 1)
+        // The standard full-screen command, so the green button is not the only way in or out.
+        let fullScreen = NSMenuItem(title: "Enter Full Screen", action: #selector(toggleFullScreen(_:)), keyEquivalent: "f")
+        fullScreen.keyEquivalentModifierMask = [.command, .control]; fullScreen.target = self; windows.insertItem(fullScreen, at: 2)
         for m in [appMenu, file, edit, image, drawing, text, snap, windows] { let i = NSMenuItem(); i.submenu = m; bar.addItem(i) }
         MenuSymbols.apply(to: bar)
         MenuTypography.applyToDropdowns(of: bar)
@@ -928,7 +948,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         UserDefaults.standard.set(sender.tag, forKey: OriginalArrowGeometry.preferenceKey)
         settingsController?.synchronize(generalPreferences.state)
     }
+    @objc func toggleFullScreen(_ sender: Any?) {
+        guard !terminationStarted else { return }
+        window.toggleFullScreen(sender)
+    }
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        if menuItem.action == #selector(toggleFullScreen(_:)) {
+            menuItem.title = isFullScreen ? "Exit Full Screen" : "Enter Full Screen"
+            // Frame mode takes the window out of the full-screen collection behaviour, so there is no way in while it is up.
+            return !terminationStarted && (isFullScreen || !frameMode)
+        }
         if menuItem.action == #selector(statusShowHide) { menuItem.title = statusShowHideTitle; return !terminationStarted }
         if menuItem.action == #selector(cancelSnapshot) { return !terminationStarted && capture.isCapturing }
         if menuItem.action == #selector(showPreferences) { return !terminationStarted && !frameCaptureInProgress && window?.attachedSheet == nil }
@@ -1065,7 +1094,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         for (index, preset) in OriginalDrawingControls.presets.enumerated() {
             let button = BezelColorButton(frame: NSRect(x: CGFloat(12+(index%5)*45), y: CGFloat(78-(index/5)*34), width: 42, height: 32))
             button.title = ""; button.isBordered = false; button.font = DesignTokens.Typography.font(.body)
-            button.drawingColor = preset.swatchColor; button.tag = preset.tag
+            button.drawingColor = preset.color; button.tag = preset.tag
             button.target = self; button.action = #selector(choosePresetColor(_:))
             button.setAccessibilityLabel(preset.name); AppToolTip.setText(preset.name + "; Shift changes the background", for: button)
             trackHint(button, owner: "color-" + String(preset.tag)) { OriginalHintMessages.hover(actionTag: preset.tag) }
@@ -1094,14 +1123,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     @objc func chooseCustomColor(_ sender: NSButton) {
         guard !terminationStarted, !frameCaptureInProgress else { return }
         closeDrawingColors()
-        guard let chosen = OriginalDrawingControls.drawingColor(from: customDrawingColor) else { return }
-        applyChosenColor(chosen, modifiers: NSApp.currentEvent?.modifierFlags ?? [])
-        let panel = NSColorPanel.shared; panel.showsAlpha = true; panel.isContinuous = true
+        // The panel opens on the colour in use and applies nothing: only a change the user makes while it is open (the target and action
+        // below) becomes the drawing colour, so opening or closing it can never repaint anything.
+        let panel = colorPanelProvider(); panel.showsAlpha = true; panel.isContinuous = true
+        customColorPanelOpen = false
+        panel.setTarget(nil); panel.setAction(nil)
+        panel.color = canvas.strokeColor
         panel.setTarget(self); panel.setAction(#selector(changeCustomColor(_:)))
-        panel.color = customDrawingColor; panel.orderFront(sender)
+        customColorPanelOpen = true
+        if let colorPanelCloseObserver { NotificationCenter.default.removeObserver(colorPanelCloseObserver) }
+        colorPanelCloseObserver = NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: panel, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.releaseCustomColorPanel(panel) }
+        }
+        panel.orderFront(sender)
+    }
+    /// The panel is closed: it stops talking to the editor, and nothing it is later told (by a text box, say) reaches the drawing.
+    func releaseCustomColorPanel(_ panel: NSColorPanel) {
+        customColorPanelOpen = false
+        panel.setTarget(nil); panel.setAction(nil)
+        if let colorPanelCloseObserver { NotificationCenter.default.removeObserver(colorPanelCloseObserver); self.colorPanelCloseObserver = nil }
     }
     @objc func changeCustomColor(_ sender: NSColorPanel) {
-        guard !terminationStarted, !frameCaptureInProgress else { return }
+        guard !terminationStarted, !frameCaptureInProgress, customColorPanelOpen, sender.isVisible else { return }
         guard let chosen = OriginalDrawingControls.drawingColor(from: sender.color) else { return }
         customDrawingColor = sender.color
         applyChosenColor(chosen, modifiers: NSApp.currentEvent?.modifierFlags ?? [])
@@ -1130,8 +1173,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         }
         syncDrawingControls()
     }
-    @objc func toggleBezelFill(_ sender: NSMenuItem) { canvas.filled.toggle(); canvas.applyStyleToSelection() }
-    @objc func toggleBezelShadow(_ sender: NSMenuItem) { canvas.shadowed.toggle(); canvas.applyStyleToSelection() }
+    /// The two Drawing toggles set a pen default and change only that one flag on the selection; they never restyle it with the pen.
+    @objc func toggleBezelFill(_ sender: NSMenuItem) { canvas.filled.toggle(); canvas.setFilledOnSelection(canvas.filled) }
+    @objc func toggleBezelShadow(_ sender: NSMenuItem) { canvas.shadowed.toggle(); canvas.setShadowOnSelection(canvas.shadowed) }
     @objc func changeZoom(_ sender: NSPopUpButton) {
         AppToolTip.setText(sender.selectedItem?.toolTip, for: sender)
         guard !isActualSize, let scale = sender.selectedItem?.representedObject as? Double else { return }
@@ -1174,6 +1218,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         if button.title != stage.actionName { button.title = stage.actionName }
         if button.isEnabled != stage.isEnabled { button.isEnabled = stage.isEnabled }
         if AppToolTip.text(for: button) != stage.toolTip { AppToolTip.setText(stage.toolTip, for: button) }
+        updateUndoButton()
+    }
+    /// The Undo button follows the same history as Edit > Undo, so a blank document shows it dimmed.
+    func updateUndoButton() {
+        guard let button = (modernChrome as? ModernEditorChrome)?.undoButton else { return }
+        let available = activeUndoManager.canUndo
+        if button.isEnabled != available { button.isEnabled = available }
     }
     private func findWipeButton(in view: NSView?) -> NSButton? {
         guard let view else { return nil }
@@ -1184,6 +1235,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     func updateStatus() {
         expireStaleUploadFailure()
         refreshStatusText()
+        updateUndoButton()
         updateViewportChrome(); scheduleDragPreview() }
     /// The one status line: tool, saved state and the export size and bytes the drag preview last measured.
     /// A narrow window shows the longest of these that fits whole (bytes go first, then the tool, never the state);
@@ -1192,7 +1244,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         guard !frameMode else { return }
         let variants: [String]
         if !uploadState.statusVariants.isEmpty { variants = uploadState.statusVariants }
-        else {
+        else if canvas.tool == .crop && canvas.hasPendingCrop {
+            // The crop is applied by Return and dropped by Esc; say so, shortest last, never the state alone first.
+            variants = ["Crop: press Return to apply, Esc to cancel", "Crop: Return applies, Esc cancels", "Return applies, Esc cancels", dirty ? "Unsaved changes" : "Saved"]
+        } else {
             let tool = canvas.tool.rawValue.capitalized, state = dirty ? "Unsaved changes" : "Saved"
             let detail = dragSizeLabel.stringValue
             if detail.isEmpty { variants = ["\(tool) · \(state)", state] }

@@ -58,7 +58,7 @@ enum OriginalHintMessagesTests {
     }
 
     static func main() throws {
-        let prefix = "Command selects. Control erases. Tab switches to the pen.\n"
+        let prefix = "Command selects. Control erases. Control-Tab switches to the pen.\n"
         try expect(OriginalHintMessages.toolHoverPrefix == prefix, "Exact hover prefix, including Apple glyph/newline")
 
         for fixture in tools {

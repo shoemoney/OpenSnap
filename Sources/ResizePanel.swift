@@ -576,6 +576,17 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         schedulePreview()
     }
 
+    /// Return in a size field commits like the OK button and Escape cancels, whether or not the sheet's key equivalents are live: the field editor
+    /// is where the keyboard is while someone types a size, so it answers for them (the preset name field keeps Return for its own text).
+    func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+        guard control === widthField || control === heightField || control === limitField else { return false }
+        switch commandSelector {
+        case #selector(NSResponder.insertNewline(_:)): applySheet(nil); return true
+        case #selector(NSResponder.cancelOperation(_:)): cancelSheet(nil); return true
+        default: return false
+        }
+    }
+
     @objc private func changeMode(_ sender: NSSegmentedControl) {
         guard let mode = ResizePanelMode(rawValue: sender.selectedSegment) else { return }
         panel?.makeFirstResponder(nil)
