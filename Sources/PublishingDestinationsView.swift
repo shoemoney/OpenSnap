@@ -448,7 +448,7 @@ final class DestinationStatusRow: NSStackView {
         let textWidth = width - DesignTokens.Typography.iconRegular - DesignTokens.Space.s2
         text.preferredMaxLayoutWidth = textWidth; detail.preferredMaxLayoutWidth = textWidth
         // A bounded row cuts its last line with an ellipsis; the whole message stays in the accessibility label and the field's text.
-        text.maximumNumberOfLines = maxLines; detail.maximumNumberOfLines = maxLines == 0 ? 0 : 2
+        text.maximumNumberOfLines = maxLines; detail.maximumNumberOfLines = maxLines
         text.lineBreakMode = .byWordWrapping; (text.cell as? NSTextFieldCell)?.truncatesLastVisibleLine = true
         (detail.cell as? NSTextFieldCell)?.truncatesLastVisibleLine = true
         detail.textColor = Palette.Text.secondary

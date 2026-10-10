@@ -48,9 +48,12 @@ enum HistoryStoreTests {
             // R1-002: the size recorded is the size that went out (the picture's own pixels when Original size applied), not the editable copy's output size.
             let original = try published.archive(sent, name: "Original", action: .shared, destination: "S3", remoteURL: link, remoteBinding: ["destination": "fixture"], publishedSize: CGSize(width: 2400, height: 1600))
             try expect(published.entry(original)?.publishedSize == CGSize(width: 2400, height: 1600) && published.entry(original)?.size == CGSize(width: 800, height: 600), "An upload keeps the published size it is given, apart from the copy's own size")
-            // R1-022: taking the post down takes its published size with it; nothing is left claiming an image that is gone.
+            // F-J7-003: taking the post down removes the link and the binding, never the size the entry was shared at, so Details does not swap to the
+            // editable copy's size (which moves with every edit) under an unchanged selection.
+            try published.follow(original, snapshot: resized, name: "Original resized")
             try published.clearRemote(original)
-            try expect(published.entry(original)?.remoteURL == nil && published.entry(original)?.publishedSize == nil, "Delete from Web clears the published size too")
+            try expect(published.entry(original)?.remoteURL == nil && published.entry(original)?.remoteBinding == nil, "Delete from Web removes the link and the binding")
+            try expect(published.entry(original)?.publishedSize == CGSize(width: 2400, height: 1600) && published.entry(original)?.size == CGSize(width: 1011, height: 758), "...and keeps the published size apart from the copy's own size")
             try expect(try HistoryStore(directory: root.appendingPathComponent("Published")).entry(shared)?.publishedSize == CGSize(width: 800, height: 600), "The published size survives a reload")
             let whole = try HistoryStore.Snapshot(canvasData: { var d = SketchDocument(size: CGSize(width: 2400, height: 1600)); d.renderSize = CGSize(width: 1444.285714, height: 1011); return try d.encoded() }(), drawingDefaults: .init(), preview: nil)
             try expect(whole.size == CGSize(width: 1444, height: 1011), "A stored fractional output size is archived as whole pixels (\(whole.size))")

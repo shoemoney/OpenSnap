@@ -36,8 +36,8 @@ enum UploadState: Equatable {
     }
 
     /// The first line of the error whole; narrower, "Upload failed · HTTP 403" when the message carries a short code worth reading; narrowest,
-    /// "Upload failed", which always fits. The footer only ever shows text that means something: a sentence is never cut a few characters at
-    /// a time ("The server r… refused it."). There is no "Error:" lead in the footer: the red text, the Retry button and the Details button
+    /// "Upload failed"; narrowest of all, "Failed", which fits beside the checkbox and both commands at 980 pt. The footer only ever shows text
+    /// that means something: a sentence is never cut a few characters at a time ("The server r… refused it."). There is no "Error:" lead in the footer: the red text, the Retry button and the Details button
     /// already say it, and the lead cost the line twelve characters at 980 pt (R2-014). The tooltip, the spoken help and Details keep the whole message.
     static func errorVariants(for message: String) -> [String] {
         let line = firstLine(of: message)
@@ -47,15 +47,18 @@ enum UploadState: Equatable {
             if line.count > coded.count { variants.append(coded) }
         }
         if line.count > "Upload failed".count { variants.append("Upload failed") }
+        // The bare word is the last rung, for the slot that also holds the Original size checkbox and both commands at 980 pt (F-J7-006).
+        if let last = variants.last, last.count > "Failed".count { variants.append("Failed") }
         return variants
     }
 
-    /// A short code a person can search for, taken only from a form that cannot be anything else: an HTTP status ("HTTP 403", "403 Forbidden"),
+    /// A short code a person can search for, taken only from a form that cannot be anything else: an HTTP status ("HTTP 403", "403 Forbidden", "returned status 403"),
     /// a curl exit code ("curl: (6)", "curl exit code 6"), or an OSStatus ("(-25300)", "OSStatus -25300"). Nil when the message has none.
     static func errorCode(in line: String) -> String? {
         let patterns: [(String, String)] = [
             (#"\bHTTP[ /]?(?:\d(?:\.\d)? )?([1-5]\d\d)(?!\d)"#, "HTTP "),
             (#"(?<![\d.])([45]\d\d) [A-Z][a-z]+"#, "HTTP "),
+            (#"\bstatus (?:code )?([45]\d\d)(?!\d)"#, "HTTP "),
             (#"\bcurl\b(?::| error| exit(?:ed)?(?: with)?(?: status)?(?: code)?| failed with(?: exit)?(?: code)?)? ?\(?(\d{1,3})(?![\d.])"#, "curl "),
             (#"(?:\(|\bOSStatus:? ?\(?)(-\d{2,6})\)?"#, ""),
         ]

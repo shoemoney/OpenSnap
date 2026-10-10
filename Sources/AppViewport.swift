@@ -30,7 +30,11 @@ extension AppDelegate {
             }
             let current = (output: self.canvas.outputSize, source: self.canvas.canvasSize)
             let basis = baseline.map { (output: $0.output, source: $0.source) } ?? current
-            let preview = try ResizePanelGeometry.preview(source: basis.source, output: basis.output, displayed: displayed, atPictureSize: atPictureSize, request: request)
+            // One rule (F-J7-005): a Resize or Limit on a snap rewrites the picture itself, with the box ticked or not, so the picture ends at the
+            // size that was asked for and ticking Original size afterwards never brings back an older, larger one. A request for the size already
+            // shown changes nothing, and a Crop keeps the picture's resolution as it always did.
+            let rewritesPicture = atPictureSize || (self.canvas.document.backgroundPNG != nil && !request.isCrop && SketchDocument.wholePixels(request.size) != displayed)
+            let preview = try ResizePanelGeometry.preview(source: basis.source, output: basis.output, displayed: displayed, atPictureSize: rewritesPicture, request: request)
             if baseline == nil {
                 // A request that leaves the picture as it is (Apply or OK straight after an Apply) starts no edit.
                 let unchanged: Bool

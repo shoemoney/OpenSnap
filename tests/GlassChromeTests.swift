@@ -1387,6 +1387,10 @@ private enum GlassChromeTests {
 
     /// Audit fix 1 (item 3): the Original size checkbox steps aside during an upload only where the measured slot cannot hold it beside the
     /// status minimum and the commands. At 980 it cannot (in every state); at 1440 it can, and everything then fits without overlap.
+    private static func unwrapState(_ value: String?) throws -> String {
+        guard let value else { throw NSError(domain: "GlassChromeTests", code: 1) }
+        return value
+    }
     private static func adaptiveCheckboxChecks(_ tag: String, minimum: NSSize) {
         let url = URL(string: "https://cdn.example.com/pics/x.png")!
         let states: [(String, UploadState)] = [("uploading", .uploading(name: String(repeating: "A long screenshot name ", count: 4))), ("Link copied", .success(url: url, copied: true)),
@@ -1407,7 +1411,13 @@ private enum GlassChromeTests {
                 shared.status.invalidateIntrinsicContentSize()
                 rig.content.layoutSubtreeIfNeeded()
                 let status = rect(shared.status, in: rig), box = rect(shared.dragOriginalControl, in: rig)
-                if width == 980 {
+                if width == 980 && state.isFailure {
+                    // F-J7-006: an error gives up its words, not the checkbox. Its narrowest form is "Failed", and the slot holds that beside the box and both commands.
+                    let narrowest = try! unwrapState(state.statusVariants.last)
+                    expect(fits, "\(label): at 980 the \(Int(chrome.statusSlotWidth())) pt slot holds the checkbox (\(Int(checkbox)) pt) with the error at its narrowest and the commands (\(Int(chrome.slotNeed(for: state))) pt)")
+                    expect(narrowest == "Failed" && chrome.statusCellWidth(of: narrowest) <= status.width + 0.5, "\(label): the status (\(Int(status.width)) pt) holds \"\(narrowest)\" whole (\(Int(chrome.statusCellWidth(of: narrowest))) pt)")
+                    expect(box.intersection(status).width <= 0.5 && box.maxX <= status.minX + 0.5 && box.width >= checkbox - 0.5, "\(label): the checkbox stands whole and clear of the status (\(box) vs \(status))")
+                } else if width == 980 {
                     expect(!fits, "\(label): at 980 the \(Int(chrome.statusSlotWidth())) pt slot cannot hold the checkbox (\(Int(checkbox)) pt) with the status minimum and commands (\(Int(chrome.slotNeed(for: state))) pt)")
                     expect(status.width < ModernEditorChrome.minimumUploadStatusWidth, "\(label): the rule is not vacuous, with the checkbox forced on the status would drop to \(Int(status.width)) pt")
                 } else {
@@ -1422,7 +1432,7 @@ private enum GlassChromeTests {
         var previous = false
         for width in stride(from: 980 as CGFloat, through: 1500, by: 20) {
             let rig = makeRig(NSSize(width: width, height: 740))
-            let state = UploadState.failure(message: "x")
+            let state = UploadState.failure(message: "Upload to Example S3 failed: the connection was refused.")
             let fits = rig.chrome.slotHasRoomForCheckbox(during: state)
             let need = rig.chrome.slotNeed(for: state) + 12 + rig.controls.dragOriginalControl.fittingSize.width
             expect(fits == (rig.chrome.statusSlotWidth() >= need) && (fits || !previous), "\(tag) \(Int(width)): the answer is the measured comparison and never flips back as the window grows")
@@ -1498,12 +1508,14 @@ private enum GlassChromeTests {
         let failure = UploadState.failure(message: long)
         let variants = failure.statusVariants
         expect(variants.first == "The publishing password could not be read from macOS Keychain (-25300).", "The longest variant is the whole first line (\(variants.first ?? ""))")
-        expect(variants == [long.components(separatedBy: "\n")[0], "Upload failed · -25300", "Upload failed"], "The sentence whole, then its code, then the plain fallback (\(variants))")
+        expect(variants == [long.components(separatedBy: "\n")[0], "Upload failed · -25300", "Upload failed", "Failed"], "The sentence whole, then its code, then the plain fallback, then the bare word (\(variants))")
         expect(variants.allSatisfy { !$0.contains("…") && !$0.hasPrefix("Error: ") }, "No error variant is a cut sentence or spends twelve characters on an Error: lead (R2-014)")
         let samples: [(String, String?)] = [
             ("The server returned HTTP 403 for this request and refused it.", "HTTP 403"),
             ("Upload to the bucket failed: 403 Forbidden", "HTTP 403"),
             ("http/1.1 503 Service Unavailable while sending the file to the destination", "HTTP 503"),
+            ("HTTP PUT returned status 403; a completed upload was not confirmed.", "HTTP 403"),
+            ("S3 returned status 507; the upload was not confirmed.", "HTTP 507"),
             ("curl: (6) Could not resolve host: uploads.example.com and no fallback was set", "curl 6"),
             ("curl exited with status 28 after waiting for the destination to answer", "curl 28"),
             ("The publishing password could not be read from macOS Keychain (-25300).", "-25300"),
@@ -1515,18 +1527,19 @@ private enum GlassChromeTests {
         for (message, code) in samples {
             expect(UploadState.errorCode(in: message) == code, "\(code ?? "no code") is read from \"\(message)\" (got \(UploadState.errorCode(in: message) ?? "none"))")
             let steps = UploadState.failure(message: message).statusVariants
-            expect(steps == [message] + (code.map { ["Upload failed · " + $0] } ?? []) + ["Upload failed"] && steps.allSatisfy { !$0.contains("…") }, "\"\(message)\" has the sentence, its code if any, then Upload failed; never an ellipsis (\(steps))")
+            expect(steps == [message] + (code.map { ["Upload failed · " + $0] } ?? []) + ["Upload failed", "Failed"] && steps.allSatisfy { !$0.contains("…") }, "\"\(message)\" has the sentence, its code if any, then Upload failed; never an ellipsis (\(steps))")
         }
-        expect(UploadState.failure(message: "HTTP 403 Forbidden for the upload").statusVariants == ["HTTP 403 Forbidden for the upload", "Upload failed · HTTP 403", "Upload failed"], "A code already in the sentence is still offered when the sentence no longer fits")
-        expect(UploadState.failure(message: "HTTP 403").statusVariants == ["HTTP 403"] && UploadState.failure(message: "Upload failed").statusVariants == ["Upload failed"], "A line no longer than its fallback is shown alone")
-        expect(UploadState.failure(message: "No.").statusVariants == ["No."] && UploadState.failure(message: "Error: Prefixed.\nMore").statusVariants == ["Prefixed."], "A short error is one sentence, and a message that carries Error: loses it from the footer")
+        expect(UploadState.failure(message: "HTTP 403 Forbidden for the upload").statusVariants == ["HTTP 403 Forbidden for the upload", "Upload failed · HTTP 403", "Upload failed", "Failed"], "A code already in the sentence is still offered when the sentence no longer fits")
+        expect(UploadState.failure(message: "Upload failed · HTTP 403\ncurl: (22) The requested URL returned error: 403").statusVariants == ["Upload failed · HTTP 403", "Upload failed", "Failed"], "A transfer refused with an HTTP status reads Upload failed · HTTP 403 in the footer (F-J7-002)")
+        expect(UploadState.failure(message: "HTTP 403").statusVariants == ["HTTP 403", "Failed"] && UploadState.failure(message: "Upload failed").statusVariants == ["Upload failed", "Failed"], "A line no longer than its fallback offers only the bare word below it")
+        expect(UploadState.failure(message: "No.").statusVariants == ["No."] && UploadState.failure(message: "Error: Prefixed.\nMore").statusVariants == ["Prefixed.", "Failed"], "A short error is one sentence, and a message that carries Error: loses it from the footer")
         let field = StatusTextField(labelWithString: "")
         field.font = DesignTokens.Typography.font(.body); field.lineBreakMode = .byTruncatingTail
         field.setVariants(variants)
         func shown(_ width: CGFloat) -> String { field.setFrameSize(NSSize(width: width, height: 24)); return field.stringValue }
         expect(shown(2000) == variants.first, "A wide slot shows the whole error")
         let narrow = shown(420)
-        expect(narrow == "Upload failed · -25300" && !narrow.contains("…") && shown(150) == "Upload failed", "A narrower slot gives the code, a narrower still the plain fallback (\(narrow))")
+        expect(narrow == "Upload failed · -25300" && !narrow.contains("…") && shown(150) == "Upload failed" && shown(70) == "Failed" && field.spokenValue == long.components(separatedBy: "\n")[0], "A narrower slot gives the code, then the plain fallback, then the bare word, and VoiceOver still gets the whole line (\(narrow))")
         // The Details sheet's text drops the prefix its title makes redundant; the tooltip and VoiceOver help keep it.
         expect(failure.failureBody == long && UploadState.failure(message: "Error: Twice.").failureBody == "Twice.", "The Details text has no leading Error:")
         expect(failure.failureDetail == "Error: " + long && UploadState.idle.failureBody == nil, "The tooltip text still leads with Error:")
@@ -1675,8 +1688,8 @@ private enum GlassChromeTests {
             }
             expect(surfaces(rig).count == 8 && surfaces(rig).allSatisfy { $0.identifier?.rawValue != "GlassUploadCommands" }, "\(tag): the upload adds no glass plate; the bars still hold eight")
             let spinnerPart: CGFloat = state.isUploading ? UploadStatusControls.spinnerSide + ModernEditorChrome.statusRowSpacing : 0
-            expect(abs(chrome.slotNeed(for: state) - (ModernEditorChrome.minimumUploadStatusWidth + spinnerPart + CGFloat(commands.count) * (GlassChrome.Metrics.iconButton.width + ModernEditorChrome.statusRowSpacing))) < 0.5,
-                   "\(tag): slotNeed counts the message minimum, the spinner and each command with its gap")
+            expect(abs(chrome.slotNeed(for: state) - (chrome.minimumMessageWidth(for: state) + spinnerPart + CGFloat(commands.count) * (GlassChrome.Metrics.iconButton.width + ModernEditorChrome.statusRowSpacing))) < 0.5,
+                   "\(tag): slotNeed counts the message minimum (an error counts its narrowest form), the spinner and each command with its gap")
             let status = rect(shared.status, in: rig)
             occupied.append(("status", status))
             for (index, a) in occupied.enumerated() {

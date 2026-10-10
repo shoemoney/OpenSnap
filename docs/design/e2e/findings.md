@@ -1028,6 +1028,102 @@ Movement: 27 retired rows left their classes (10 E2E: HOT-017, HOT-032, HOT-033,
 
 STAT-001, TOOL-012, TOOL-013, TOOL-015, TOOL-016, TOOL-017, TOOL-018, TOOL-019, TOOL-021, TOOL-029, CAP-001, CAP-004, CAP-005, CAP-006, CAP-007, SET-006, DEST-014, DEST-016, DEST-022, DEST-025, SHEET-002, SHEET-003, SHEET-005, SHEET-026, SHEET-036, SHEET-037, SHEET-044, ICON-025, ICON-027, ICON-031, ICON-100, ICON-101, ICON-102, ICON-106, STATE-002, STATE-003, STATE-009, STATE-010, STATE-011, STATE-014, STATE-015, STATE-016, STATE-017, STATE-018, STATE-019, STATE-020, STATE-021, STATE-022
 
+## J7 real-input validation (5b30929)
+
+J7 lane, build 5b30929 (main after batch 6 and batch 7), two isolated sessions through `tools/e2e-session.sh`, driven only with the computer-use driver: pid 60030 (seed `all`, no AWS) and pid 35679 (seed `history` plus `--aws`, the two uploads). Both stopped with 0 panel-service watchdog kills and an unchanged store digest (`dbde037ac2085108` before and after). Both `stop` runs still printed `RESULT STORES CHANGED` for one reason: a file named `com.shoemoney.opensnap.eyedump-<pid>.plist` in `~/Library/Preferences`, left by the parallel render lane's `eye-dump-audit` run (pids 25143 and 76389, running at that time), not by these sessions; the watched real files hash identically. No system Open, Save, Export or Print panel was opened. A local synthetic page (`http://127.0.0.1:8765/`, gradient, red rounded rectangle, the words "J7 synthetic page, fixture, nothing personal") served Snap from Link for the 2560 × 1800 snap, and a throwaway local WebDAV stand-in on 127.0.0.1:8766 (207 for PROPFIND, 403 for PUT) served the Test wording and the footer error; both were stopped and deleted. Evidence is `docs/design/evidence/e2e-2026-10-10/j7/` (34 jpg, numbers below are the file prefixes); the AWS steps are in `j7-aws-log.md`. Result key as in J4 and J6: PASS = the corrected behaviour was seen in a screenshot I looked at; PARTIAL = part of it; FAIL = the fix did not hold; unverified = not reachable, reason given.
+
+### Result table
+
+| Item | Result | Evidence | Note |
+|---|---|---|---|
+| 1 R2-001 shortcut pause lifecycle | PARTIAL / unverified (firing part: unsafe) | `02`, `04`, `05` | Settings › Capture note reads "Shortcuts are saved as you change them. They pause while this window is in front." (new wording). Making the editor the front window left it unchanged, close then reopen landed on Capture with the same note. There is no visible or AX readout of the pause state (F-J7-004), and pressing a real global shortcut would start a capture of the real display, so the pause and its end are unverified (`gap: unsafe`). In this driver neither window was key most of the time, so no key/resign transition could be asserted either. |
+| 2a F-J6-001 / R2-002 Resize with Original size ticked | **PASS** | `10`, `11`, `12`, `13`, `22`, `j7-aws-log.md` | 2560 × 1800 snap, Resize 1200 × 844: title 1200 × 844 behind the sheet and after Apply, after OK; full-screen footer `Rectangle · Unsaved changes · 1200 × 844 · PNG · 377 KB`; Edit › Copy Image left a TIFF of 1200 × 844 on the pasteboard (readout, not a screenshot); Upload produced a **1200 × 844** object (J6: 2560 × 1800). |
+| 2b Original size unticked | **PASS** | `14`, `23` | Title fitted 1438 × 1011 at once (no lag, J6 had one); the object is **1438 × 1011**. Unticked then Resize 1200 × 844: title 1200 × 844 (sheet open and after OK). |
+| 2c Crop and Limit | PARTIAL | `15` | Limit, Longest side 800: title 800 × 563 and the window narrowed to 980. Crop mode was not run. |
+| 2d Apply then Cancel keeps the size (F-J6-007) | PASS | `11`, `12` | Apply put 1200 × 844 in the title and enabled Undo; Cancel kept it. The button is still named Apply for what is a commit. |
+| 2e Export accessory, drag | unverified | none | Export is an OS-owned panel (not opened, privacy); a drag out of the app is not possible with this driver. |
+| 3 R2-003 no Original size without a snap picture | PASS (blank canvas) / PARTIAL (after Remove Snap Picture) | `00`, `18` | The blank 800 × 600 launch canvas has no checkbox (`00`). After Toolbox › Remove Snap Picture the checkbox is gone, but the 980 footer was showing an upload error, which also hides it (F-J7-006), so `18` does not isolate the fix. |
+| 4 R2-004 Toolbox | **PASS** | `01` | The open menu starts below its button; the button, Photos and the tools stay uncovered. All rows have an icon, Filled Shapes and Shadow included (R1-005 closed). AX: AXMenuButton, label Toolbox, no Value (F-J6-009 closed). On macOS 27 the system adds an "Ask Siri" row to the top of the open menu; that row is not the app's. |
+| 5 R2-005 / F-J6-006 History at 880 | **PASS** | `19`, `20`, `21` | Dragging the right edge from 1000 reached 880 × 720 (J6 stopped at 945). At 880 Open, Copy, Copy Link and Open Link are icon-only; Hide, Trash and Delete from Web keep their words. |
+| 6 R2-014 / batch 7 980 footer | PASS (one exception) | `15`, `16`, `17` | At 980 the format toggle shows only the selected format (PNG) and the status `Unsaved changes` is whole. An upload failure reads `Upload failed (curl 22).` on one whole line with retry and details buttons, no `Error:` prefix; the Details dialog names `HTTP 403` (a WebDAV stand-in, never the real bucket). The form is `(curl 22)`, not `· HTTP 403` (F-J7-002). |
+| 7 F-J6-003 Delete from Web recomputes | **PASS** | `24`, `26`, `27`, `28`, `29`, `30` | Key prefix `pics` to `pics-j7x`, Save: Delete from Web disabled at once with its reason, no reselect. Prefix restored to `pics`, Save: enabled at once. The app then deleted both uploads (head-object 404 for each); the CLI fallback was not needed. |
+| 8a R2-015 Drag as width, Destination hidden | PASS | `19`, `20`, `21` | Drag as is a normal pop-up at 1000 and at 880. A never-shared Saved entry shows Name, Date, Size, Action and no Destination row. |
+| 8b R2-016 Settings › Upload | PASS / PARTIAL | `06`, `09`, `25` | Full-width list under a Destinations heading, outlined Default pill on the yellow selected row, pill moves with Make Default, a single destination keeps its pill. The hint "hidden when empty" was not run (needs an empty list). |
+| 8c R2-017 empty-field Test error | **PASS** | `07` | `Error: Endpoint URL is empty. Enter the server address, such as https://example.com/uploads.` with the field outlined. |
+| 8d R2-018 WebDAV wording | PARTIAL | `08` | The note no longer says the login was accepted ("it did not reject the login … does not prove the login was checked") but the band cuts it at "answe…" and the closing "Nothing was uploaded." is lost (F-J7-001). |
+
+### Re-check rows
+
+`E2E-DEST-014`, `016` and `022` moved from rendered to E2E (the live S3 edit form was opened with real input, `31`; their R2-009 re-check note is cleared). 31 further rows carry an appended J7 note and keep their class: TOOLBOX-001, 053, 054, 055, BAR-002, 024, 025, 028, 030, 031, SHEET-007, 009, 017, 018, 019, HIST-023, 025, 034, 041, SET-004, 019, 029, 030, HOT-044 (stays unit/source, only the note was observable), DEST-007, 013, 026, 029, 031, 036 and MENU-021 (stays unverified; the J6 pasteboard finding F-J6-002 no longer reproduces: 1200 × 844 after a ticked Resize, `gap: text readout only` unchanged).
+
+### New findings
+
+### F-J7-001 · P3 · The WebDAV 2xx Test note is cut at three lines
+- **Surface:** Settings › Upload › Add…/Edit… (WebDAV) › Test, result band.
+- **Steps:** WebDAV endpoint `http://127.0.0.1:8766/` (a stand-in answering 207), a user name and password, Test.
+- **Observed:** `Connected` with `Reached the server (HTTP 207); it did not reject the login and the folder was not refused. A server that never asks for a login answe…` (`08`). The tail of the caveat and the sentence `Nothing was uploaded.` never show.
+- **Expected:** the whole note, or a shorter one that fits.
+- **Suggested fix:** shorten to `Reached the server (HTTP 207). A server with no login answers the same way, so the login is not proven. Nothing was uploaded.` or let the result band grow to four lines.
+
+### F-J7-002 · P4 · The footer error shows curl's exit code, not the status the server sent
+- **Surface:** bottom bar at 980, upload error.
+- **Observed:** a WebDAV PUT answered with 403 reads `Upload failed (curl 22).` in the footer (`16`); `HTTP 403` appears only in the Details dialog (`17`). Batch 7's own target form is `Upload failed · <code>` (the S3 case, `HTTP 403`).
+- **Expected:** `Upload failed · HTTP 403` for every protocol that has an HTTP status.
+- **Suggested fix:** map curl 22 to the HTTP code it carries (`--write-out %{http_code}`) before building the footer line.
+
+### F-J7-003 · P3 · A shared entry's Details Size changes after Delete from Web
+- **Surface:** History › Details, Size.
+- **Steps:** upload with a ticked Resize to 1200 × 844, open History, select that entry, Delete from Web (confirm).
+- **Observed:** before, Size `1200 × 844` and a Destination ending `…afc6c576.png` (`24`); right after the delete, with the same entry still selected (Destination still `…afc6c576.png`, AX text names the same object key), Size reads `1438 × 1011` (`29`), the size of the second upload's document. The History copy's size and the published size are two different numbers and the panel switches between them.
+- **Expected:** one size per entry (the published size, or the editable copy's, with a label), not a change on delete.
+- **Suggested fix:** keep showing the published size for a Shared entry after the web copy is gone, or relabel the field once it is the History copy's.
+
+### F-J7-004 · P4 (observation) · Nothing shows whether global shortcuts are paused
+- **Surface:** Settings › Capture.
+- **Observed:** the note is static; the pause state set by `updateShortcutEditing` has no readout (no label, no AX value), so R2-001 can only be proven by firing a real shortcut, which is unsafe on a real display (`02`, `04`, `05`).
+- **Suggested fix:** expose the state, for example the note changing to `Shortcuts are paused while this window is in front` and back, or an AX value on the Enable checkbox, so the lifecycle can be tested without a capture.
+
+### F-J7-005 · P4 · Original size behaves differently after a ticked and an unticked Resize
+- **Surface:** bottom bar Original size after Resize.
+- **Observed:** ticked, Resize 1200 × 844 rewrites the picture and hides the checkbox (`12`). Unticked, Resize 1200 × 844 keeps the checkbox; ticking it makes the title jump to `2560 × 1800` (`32`) and unticking brings `1200 × 844` back (`33`); nothing says that the chosen size is held in the background, and Undo stays enabled.
+- **Expected:** one rule, for example Resize always rewrites the picture, or the checkbox says what ticking will discard.
+- **Suggested fix:** hide the checkbox after any applied Resize, or show `Resized to 1200 × 844` and keep it.
+
+### F-J7-006 · P4 · An upload error hides the Original size checkbox at 980
+- **Surface:** bottom bar at 980.
+- **Observed:** with `Upload failed (curl 22).`, Retry and Details showing, the Original size checkbox is not in the bar (`16`, `18`); it is there with an idle status (`15`). The checkbox cannot be changed while the error is up.
+- **Suggested fix:** let the error line and the checkbox share the row (the format toggle already gave up width), or clear the error when the checkbox is toggled.
+
+### Observations that are not findings
+
+- The editor and the Settings window showed grey traffic lights for most of the run (driver-side focus); plain clicks on Toolbox rows, the Resize sheet's mode segments and the Delete from Web sheet were swallowed, while AX presses and keyboard navigation (Up and Return on an open menu) always landed.
+- Snap from Link on a document with changes asks Save your drawing; Don't Save was pressed on the throwaway fixture only.
+- Dates in History Details read `1:03PM` with no visible space.
+
+### Harness notes for the next driver (J7 additions)
+
+- The Toolbox opens only through `perform_secondary_action AXShowMenu` (it answers "did not open a menu" but opens); then `press_key up up up up` and `Return` commits Remove Snap Picture. Clicking its rows does nothing.
+- The Resize sheet is its own window id; `type_text "1200\t"` into it reaches the Width field, `Return` presses OK, and the Limit segment needs an AX press taken from the editor window's tree.
+- `get_app_state` indexes shift by one between calls; query with `ax_filter`, press in the next call with the returned `snapshot_id`.
+- Menu-bar picks work when the menu item is queried right after the menu bar item was pressed, from the window that owns the focus.
+
+### Class counts (matrix at 5b30929, 597 rows)
+
+| Evidence class | before J7 | after J7 |
+|---|---|---|
+| E2E | 309 | 312 |
+| rendered | 48 | 45 |
+| unit/source | 93 | 93 |
+| unverified | 120 | 120 |
+| retired | 27 | 27 |
+| total | 597 | 597 |
+
+3 rows moved to E2E (DEST-014, 016, 022, all from rendered). Every unverified row still carries exactly one gap reason.
+
+### Clipboard
+
+The pasteboard held 13 bytes of text before the run; it was saved to a temp file (not printed), replaced by Edit › Copy Image and the two upload links, restored byte for byte (`cmp` identical) after the last session, and the temp file was deleted.
+
 ## Final render pass (5b30929)
 
 Source revision `5b30929` (main after audit batch 7), built with `sh tools/build.sh`; this section closes review round 2 (R2-009 stale rendered rows, R2-010 display options after batches 5 and 6, R2-011 the mistimed S42 capture). Harness captures only (`tools/eye-dump-audit.sh`, throwaway copies, `--icons sf`; Font Awesome Pro is not bundled, so every icon is an SF Symbol). Nothing here is a real-click result, and no `Sources/` or `tests/` file was edited. The packed set is `docs/design/evidence/impl-2026-10-09/final-render/` (122 PNGs, 18 layout JSONs, 143 files, 7.05 MB; `python3 tools/check-eye-dump.py` on it: 0 failures). Raw runs stayed in `/tmp/fr/` (not committed).

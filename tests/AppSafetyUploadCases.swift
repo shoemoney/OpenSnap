@@ -16,7 +16,7 @@ extension AppSafetyTests {
             ("A second click while uploading changes nothing; an unconfigured destination opens Settings and stays idle", uploadSecondClickAndUnconfigured),
             ("Upload status commands are named for VoiceOver, are 36 pt icon buttons with a rest plate, and only the commands of the current state are shown", uploadCommandsAreLabelled),
             ("Link copied shows the link itself (full URL on the tooltip and as VoiceOver help) and gives it up to the width the slot has", uploadLinkInStatus),
-            ("The Original size checkbox steps aside during an upload only where the measured slot cannot hold it: hidden at 980, kept at 1440, following a resize", uploadCheckboxFollowsWidth),
+            ("The Original size checkbox steps aside during an upload or a link only where the measured slot cannot hold it, and an error at 980 keeps it with the message at its narrowest (F-J7-006)", uploadCheckboxFollowsWidth),
             ("Upload with no destination says so in the status line and opens Settings › Upload, whose empty list offers Add… (F-J5-004)", uploadWithoutDestinationExplains),
             ("The upload result keeps the end of the file name at 980, 1024 and 1440, narrowing to Copied · …name (R1-014)", uploadStatusAtWidths),
             ("Upload sends the picture at its own pixel size when Original size is ticked and as shown when it is not, and History records the size that went out (R1-002)", uploadHonoursOriginalSize)
@@ -352,7 +352,9 @@ extension AppSafetyTests {
                 app.uploadState = state
                 let fits = chrome.slotHasRoomForCheckbox(during: state)
                 try expect(app.dragOriginalControl.isHidden == !fits, "\(Int(width)) \(state): the checkbox is \(fits ? "kept" : "hidden") where the \(Int(chrome.statusSlotWidth())) pt slot \(fits ? "holds" : "cannot hold") it")
-                try expect(fits == (width > 1000), "\(Int(width)) \(state): \(width > 1000 ? "1440 has room" : "980 has none")")
+                // F-J7-006: an error gives up its words ("Failed") before the checkbox leaves; an upload under way and a link keep the old rule.
+                let expectsRoom = width > 1000 || state.isFailure
+                try expect(fits == expectsRoom, "\(Int(width)) \(state): \(expectsRoom ? "there is room" : "980 has none")")
                 chrome.window?.contentView?.layoutSubtreeIfNeeded()
                 let status = chrome.convert(app.status.bounds, from: app.status), box = chrome.convert(app.dragOriginalControl.bounds, from: app.dragOriginalControl)
                 if fits { try expect(!app.dragOriginalControl.isHidden && box.maxX <= status.minX + 0.5, "\(Int(width)) \(state): the checkbox stands clear of the message") }
@@ -362,9 +364,15 @@ extension AppSafetyTests {
         // A resize while the error is up moves the checkbox with the width.
         app.uploadState = .failure(message: "Server said no.")
         try resizeWindow(app, contentWidth: 1440)
-        try expect(!app.dragOriginalControl.isHidden, "Widening the window while an error shows brings the checkbox back")
+        try expect(!app.dragOriginalControl.isHidden, "An error at 1440 shows the checkbox")
         try resizeWindow(app, contentWidth: ModernEditorChrome.minimumWindowWidth)
-        try expect(app.dragOriginalControl.isHidden, "Narrowing it again takes the checkbox out of the way")
+        try expect(!app.dragOriginalControl.isHidden, "...and narrowing to 980 keeps it: the error gives up its words, not the checkbox (F-J7-006)")
+        // The error line at 980 is a whole form, never a cut sentence, and the box is whole and clear of it.
+        app.uploadState = .failure(message: "Upload failed · HTTP 403\ncurl: (22) The requested URL returned error: 403")
+        chrome.window?.contentView?.layoutSubtreeIfNeeded()
+        let status980 = chrome.convert(app.status.bounds, from: app.status), box980 = chrome.convert(app.dragOriginalControl.bounds, from: app.dragOriginalControl)
+        try expect(!app.dragOriginalControl.isHidden && box980.maxX <= status980.minX + 0.5 && ["Upload failed · HTTP 403", "Upload failed", "Failed"].contains(app.status.stringValue),
+                   "At 980 with an error the checkbox is shown clear of a whole error form (\(app.status.stringValue), box \(box980), status \(status980))")
         app.uploadState = .idle
         try expect(!app.dragOriginalControl.isHidden, "and idle brings it back")
         stub.gate.signal()
