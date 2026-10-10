@@ -203,9 +203,11 @@ extension AppDelegate {
     /// Used only for newly imported raster images and ordinary captures. Native
     /// documents retain their saved output size; their Fit control is view-only.
     func adoptRasterViewport() {
+        // The fit scale is a view concern: the stored output size is whole pixels, so the title, History and the Resize
+        // sheet read integers and an export has exactly that many pixels.
         guard !isActualSize, let capacity = maximumNormalCanvas,
-              let output = WindowSizingPolicy.fittedOutput(source: canvas.fullResolutionOutputSize, available: capacity),
-              canvas.setPresentationOutputSize(output) else { fitCanvasToWindow(); return }
+              let fitted = WindowSizingPolicy.fittedOutput(source: canvas.fullResolutionOutputSize, available: capacity),
+              canvas.setPresentationOutputSize(SketchDocument.wholePixels(fitted)) else { fitCanvasToWindow(); return }
         setCanvasDisplayZoom(1, label: "Output")
         sizeNormalWindowToCanvas()
         canvas.enclosingScrollView?.contentView.scroll(to: .zero)

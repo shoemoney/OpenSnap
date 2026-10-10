@@ -1307,7 +1307,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     func updateDragPreview() {
         dragPreviewTimer?.invalidate(); dragPreviewTimer = nil
         let original = dragAtOriginalSize
-        let size = original && canvas.document.backgroundPNG != nil ? canvas.canvasSize : canvas.outputSize
+        let size = SketchDocument.wholePixels(original && canvas.document.backgroundPNG != nil ? canvas.canvasSize : canvas.outputSize)
         if let data = try? exportData(format: dragFormat, originalSize: original, jpegQuality: dragQuality) {
             dragSizeLabel.stringValue = "\(Int(size.width)) × \(Int(size.height)) · " + (dragFormat == "jpeg" ? "JPG" : "PNG") + " · " + ByteCountFormatter.string(fromByteCount: Int64(data.count), countStyle: .file)
             window?.subtitle = dragSizeLabel.stringValue
@@ -1717,7 +1717,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             panel.allowedContentTypes = [UTType(filenameExtension: options.format) ?? .data]
             let stem = (panel.nameFieldStringValue as NSString).deletingPathExtension
             panel.nameFieldStringValue = (stem.isEmpty ? self.safeName() : stem) + "." + options.format
-            let size = options.originalSize && self.canvas.document.backgroundPNG != nil ? self.canvas.canvasSize : self.canvas.outputSize
+            let size = SketchDocument.wholePixels(options.originalSize && self.canvas.document.backgroundPNG != nil ? self.canvas.canvasSize : self.canvas.outputSize)
             let data = try? self.exportPanelData(options)
             options.updateByteCount(data?.count, size: size)
         }
