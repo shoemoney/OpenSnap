@@ -14,7 +14,7 @@ final class FrameChromeView: NSView {
             chrome.appendRect(hole)
             chrome.windingRule = .evenOdd
         }
-        NSColor.windowBackgroundColor.setFill(); chrome.fill()
+        DesignTokens.Palette.Surface.window.setFill(); chrome.fill()
     }
     override func layout() { super.layout(); if showsCanvasHole { needsDisplay = true } }
 }
@@ -38,7 +38,7 @@ final class DragExportView: NSView, NSDraggingSource, NSFilePromiseProviderDeleg
     private var activeProvider: ObjectIdentifier?
     /// Modern lets the glass surface behind the view be the plate.
     var drawsBackground = true { didSet { needsDisplay = true } }
-    /// Modern shows only an open-hand icon: no thumbnail and no text. The thumbnail still feeds the drag image and the canvas bleed.
+    /// Modern shows only an open-hand icon: no thumbnail and no text. The thumbnail still feeds the drag image.
     var showsHandIconOnly = false { didSet { needsDisplay = true } }
     static let handSymbolName = "hand.raised"
     override func draw(_ dirtyRect: NSRect) {
@@ -1095,7 +1095,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             let scale = min(1, 128 / max(document.size.width, document.size.height))
             dragExportView?.overview = ImageExport.image(document: document, size: CGSize(width: max(1, ceil(document.size.width * scale)), height: max(1, ceil(document.size.height * scale))))
         }
-        feedCanvasBleed()
     }
     func safeName() -> String { let s = nameField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines); return (s.isEmpty ? "OpenSnap" : s).replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ":", with: "-") }
     func applyFrameWindowValues() {
