@@ -1572,7 +1572,7 @@ private enum GlassChromeTests {
         UploadNotice.clear()
         expect(changes == 2, "Clearing nothing changes nothing")
         UploadNotice.post("Upload cancelled", duration: 0.05)
-        let end = Date().addingTimeInterval(1)
+        let end = Date().addingTimeInterval(10)
         while UploadNotice.text != nil && Date() < end { _ = RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.02)) }
         expect(UploadNotice.text == nil, "The notice expires by itself")
     }

@@ -8,16 +8,20 @@
 //   tests/TestDefaults.swift tests/ViewTreeAudit.swift tests/SettingsWindowTests.swift -o build/settings-window-tests
 #if SETTINGS_WINDOW_TESTS
 import AppKit
+import Carbon
 
 @MainActor
 private final class FakeHotkeyBackend: GlobalHotkeyBackend {
     var bindings: [UInt32: GlobalHotkeyBinding] = [:]
     /// Another app has taken the key: registering fails while this is set.
     var failRegister = false
+    /// The status Carbon answers with for a key another app holds, put through the app's own mapping to words.
+    var failRegisterStatus: OSStatus?
     var registeredIDs: Set<UInt32> { Set(bindings.keys) }
     func installHandler(onEvent: @escaping @MainActor @Sendable (UInt32) -> Void) throws {}
     func systemReservedBindings() throws -> Set<GlobalHotkeyBinding> { [] }
     func register(_ binding: GlobalHotkeyBinding, id: UInt32) throws {
+        if let failRegisterStatus { throw carbonHotkeyFailure("RegisterEventHotKey for \(binding.displayName)", failRegisterStatus, shortcut: binding.displayName) }
         if failRegister { throw NSError(domain: "FakeHotkeyBackend", code: 1, userInfo: [NSLocalizedDescriptionKey: "That key is already taken by another app."]) }
         bindings[id] = binding
     }
@@ -406,24 +410,44 @@ private enum SettingsWindowTests {
         expect(heights[0] < heights[3] && heights[1] < heights[2] && heights[0] < heights[2] && Set(heights.map { $0.rounded() }).count >= 3,
                "the tabs are different heights, each its own: \(heights)")
         // The window follows the tab with an animation, its top edge fixed the whole way.
+        // The animation runs on a clock the test owns: each frame is asked for at a chosen moment and waited for as a condition, so no
+        // assertion depends on how many timer ticks a loaded machine happens to deliver in a fixed time.
+        var now = Date(timeIntervalSinceReferenceDate: 1_000)
+        controller.clock = { now }
         controller.reduceMotion = { false }; controller.animatesWhenHidden = true
-        controller.select(0); spin(0.4)
+        func settle(_ what: String, _ condition: () -> Bool) {
+            spin(10, until: condition)
+            expect(condition(), "timed out waiting for \(what) (height \(window.frame.height))")
+        }
+        func finishAnimation(toTabAt index: Int) {
+            now = now.addingTimeInterval(SettingsWindowController.resizeDuration + 1)
+            settle("the window to reach tab \(index)'s height") { abs(window.frame.height - controller.windowHeight(forTabAt: index)) < 0.5 }
+        }
+        controller.select(0); finishAnimation(toTabAt: 0)
         let top = window.frame.maxY, startHeight = window.frame.height
         let targetHeight = controller.windowHeight(forTabAt: 3)
         controller.select(3)
-        var sawBetween = false
-        for _ in 0..<8 {
-            spin(0.02)
+        let began = now
+        for fraction in [0.25, 0.5, 0.75] {
+            now = began.addingTimeInterval(SettingsWindowController.resizeDuration * fraction)
+            let eased = CGFloat(fraction * fraction * (3 - 2 * fraction))
+            let expected = startHeight + (targetHeight - startHeight) * eased
+            settle("the frame \(Int(fraction * 100))% of the way (\(expected))") { abs(window.frame.height - expected) < 1 }
+            expect(window.frame.height > startHeight + 1 && window.frame.height < targetHeight - 1, "the resize is animated, not a jump (\(window.frame.height) between \(startHeight) and \(targetHeight))")
             expect(abs(window.frame.maxY - top) < 0.5, "the title bar stays put while the window resizes (top \(window.frame.maxY) vs \(top))")
-            if window.frame.height > startHeight + 1 && window.frame.height < targetHeight - 1 { sawBetween = true }
         }
-        spin(0.5)
-        expect(sawBetween, "the resize is animated, not a jump")
+        finishAnimation(toTabAt: 3)
         expect(abs(window.frame.height - targetHeight) < 0.5 && abs(window.frame.maxY - top) < 0.5, "the animation lands on the tab's height with the top where it was")
         // A tab picked mid-animation replaces the one before it and the last choice wins.
-        controller.select(2); spin(0.03); controller.select(1); spin(0.5)
+        controller.select(2)
+        now = now.addingTimeInterval(SettingsWindowController.resizeDuration * 0.5)
+        let midway = window.frame.height
+        settle("a frame on the way to tab 2") { abs(window.frame.height - midway) > 0.5 }
+        controller.select(1)
+        finishAnimation(toTabAt: 1)
         expect(abs(window.frame.height - controller.windowHeight(forTabAt: 1)) < 0.5 && abs(window.frame.maxY - top) < 0.5, "the last tab chosen mid-animation sets the final size")
-        controller.select(0); spin(0.5)
+        controller.select(0); finishAnimation(toTabAt: 0)
+        controller.clock = Date.init
         // Reduce Motion: the size changes at once.
         controller.reduceMotion = { true }
         controller.select(2)
@@ -454,7 +478,8 @@ private enum SettingsWindowTests {
         let k = GlobalHotkeyKeys.choices.firstIndex { $0.name == "K" }! + 1
         let popup = form.keyPopup(for: .screen)
         popup.selectItem(at: k); _ = popup.target?.perform(popup.action, with: popup)
-        spin(0.3) { abs(window.frame.height - idle) > 0.5 }
+        let errorHeight = { window.frameRect(forContentRect: NSRect(x: 0, y: 0, width: SettingsLayout.contentWidth, height: SettingsContentView.chromeHeight + controller.capture.fittingHeight)).height }
+        spin(10) { form.statusField.stringValue.hasPrefix("Error: ") && abs(window.frame.height - errorHeight()) < 0.5 }
         window.contentView?.layoutSubtreeIfNeeded()
         let withError = form.statusField.stringValue
         expect(withError.hasPrefix("Error: "), "the refused key shows an error: '\(withError)'")
@@ -467,8 +492,8 @@ private enum SettingsWindowTests {
                "the whole wrapped message sits inside the tab: \(box) in \(controller.capture.view.bounds)")
         // Choosing None again clears the error and the window gives the room back.
         popup.selectItem(at: 0); _ = popup.target?.perform(popup.action, with: popup)
-        spin(0.3) { abs(window.frame.height - wanted) > 0.5 || field.stringValue == GlobalHotkeyForm.idleLiveStatus }
-        spin(0.1)
+        let refitHeight = { abs(window.frame.height - controller.windowHeight(forTabAt: 2)) < 0.5 }
+        spin(10) { field.stringValue == GlobalHotkeyForm.idleLiveStatus && refitHeight() }
         expect(abs(window.frame.height - controller.windowHeight(forTabAt: 2)) < 0.5, "the Capture tab refits when the error goes: \(window.frame.height)")
     }
 
@@ -1023,8 +1048,24 @@ private enum SettingsWindowTests {
         expect(note().hasPrefix("Error: ") && note().contains("already taken") && (form().statusField.accessibilityValue() as? String) == note(),
                "the note and its accessibility value carry the manager's error when the pause lifts (\(note()))")
         expect(form().statusField.textColor == DesignTokens.Palette.feedbackError, "…in the error colour")
-        // Once the key is free the next pause and release restores the plain note.
+        // R4: the real Carbon status reads as words on the note, with the call and the raw status kept on the help, not as "OSStatus -9878".
         backend.failRegister = false
+        backend.failRegisterStatus = OSStatus(eventHotKeyExistsErr)
+        controller.activityChanged(key: true, appActive: true)
+        controller.activityChanged(key: false)
+        let screenName = (manager.settings.screen).displayName
+        expect(note() == "Error: \(screenName) is already used by another app. Choose a different shortcut." && !note().contains("OSStatus") && !note().contains("RegisterEventHotKey"),
+               "an exclusive-key conflict reads in plain words (\(note()))")
+        expect(form().statusField.accessibilityHelp()?.contains("RegisterEventHotKey for \(screenName) failed (OSStatus -9878)") == true,
+               "…and the raw call and status ride on the spoken help (\(String(describing: form().statusField.accessibilityHelp())))")
+        backend.failRegisterStatus = OSStatus(eventHotKeyInvalidErr)
+        controller.activityChanged(key: true, appActive: true)
+        controller.activityChanged(key: false)
+        expect(note() == "Error: macOS cannot register \(screenName). Choose a different shortcut.", "an invalid-key status reads in words too (\(note()))")
+        expect(carbonHotkeyFailure("Op", -50).localizedDescription == "Op failed (OSStatus -50)." && carbonHotkeyFailure("Op", -50).hotkeyTechnicalDetail == "Op failed (OSStatus -50).",
+               "a status with no plain-word copy keeps the raw message")
+        // Once the key is free the next pause and release restores the plain note.
+        backend.failRegisterStatus = nil
         controller.activityChanged(key: true, appActive: true)
         controller.activityChanged(key: false)
         expect(!manager.editing && manager.lastError == nil && note() == GlobalHotkeyForm.idleLiveStatus, "a later successful release clears the error from the note (\(note()))")

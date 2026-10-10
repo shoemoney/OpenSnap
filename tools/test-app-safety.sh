@@ -52,7 +52,7 @@ if (root / 'tests/TestDefaults.swift').exists():
     paths.append(root / 'tests/TestDefaults.swift')
 if (root / 'tests/AppSafetyWindowChromeCases.swift').exists():
     paths.append(root / 'tests/AppSafetyWindowChromeCases.swift')
-for extra in ('AppSafetyUploadCases.swift', 'AppSafetyAccessibilityCases.swift', 'AppSafetyAuditCases.swift', 'AppSafetyBatch3cCases.swift', 'AppSafetyBatch4Cases.swift', 'AppSafetyBatch6Cases.swift', 'AppSafetyBatch10Cases.swift', 'AppSafetyS3EndToEndCases.swift', 'AccessibilityAudit.swift', 'ContrastProbe.swift'):
+for extra in ('AppSafetyUploadCases.swift', 'AppSafetyAccessibilityCases.swift', 'AppSafetyAuditCases.swift', 'AppSafetyBatch3cCases.swift', 'AppSafetyBatch4Cases.swift', 'AppSafetyBatch6Cases.swift', 'AppSafetyBatch10Cases.swift', 'AppSafetyBatch11Cases.swift', 'AppSafetyS3EndToEndCases.swift', 'AccessibilityAudit.swift', 'ContrastProbe.swift'):
     if (root / 'tests' / extra).exists():
         paths.append(root / 'tests' / extra)
 inputs = [(p.name, app_source if p.name == 'App.swift' else p) for p in paths]

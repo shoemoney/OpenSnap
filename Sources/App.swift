@@ -321,6 +321,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         let generation: UUID
         let outputSize: CGSize
         let zoom: CGFloat
+        /// The automatic zoom-to-fit in force when Actual Size began, so leaving puts both back (R4-001).
+        let pictureFit: CGFloat?
         let windowFrame: CGRect
         let scrollOrigin: CGPoint
         var savedWhileActive = false
@@ -334,6 +336,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         let zoom: CGFloat
         let windowFrame: CGRect
         let handle: CanvasBorderHandle
+        /// A corner drag with Original size ticked: the title counts the picture's own pixels, so release scales those (R4-003).
+        var scalesPicture = false
     }
     var windowGesture: WindowGesture?
     var adjustingWindowFrame = false
@@ -1230,8 +1234,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         guard let scroll = canvas.enclosingScrollView else { return }
         let viewport = scroll.contentView.bounds.size, size = canvas.outputSize
         let scale = min(maximumScale, max(0.05, min((viewport.width-20)/size.width, (viewport.height-20)/size.height)))
-        pictureFitZoom = nil
         setCanvasDisplayZoom(scale, label: "Fit")
+        // A window fit of a snap is the automatic zoom, so a later Resize down brings it back to 100% (R4-004); full screen's own fit
+        // leaves the window's record alone, and the way out restores the zoom it sits at.
+        if maximumScale <= 1 { pictureFitZoom = canvas.document.backgroundPNG != nil && canvas.zoom < 1 ? canvas.zoom : nil }
         scroll.contentView.scroll(to: .zero); scroll.reflectScrolledClipView(scroll.contentView)
     }
     func setCanvasDisplayZoom(_ scale: CGFloat, label: String) {
@@ -1344,7 +1350,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         SketchDocument.wholePixels(originalSize && canvas.document.backgroundPNG != nil ? canvas.canvasSize : canvas.outputSize)
     }
     /// The size the title shows, the Resize sheet opens at, and drag, export and upload produce.
-    var titlePixelSize: CGSize { exportPixelSize(originalSize: dragAtOriginalSize) }
+    var titlePixelSize: CGSize {
+        // Mid-drag on the ticked box the title already says what the release will leave.
+        if let gesture = windowGesture, gesture.scalesPicture, gesture.generation == documentGeneration, case .corner = gesture.handle {
+            return cornerDragPictureSize(gesture)
+        }
+        return exportPixelSize(originalSize: dragAtOriginalSize)
+    }
     /// "W × H · PNG": the size and format the next export of the live document has, in whole pixels. Bytes are measured later.
     func dragSizeHead() -> String {
         let size = titlePixelSize
@@ -1770,6 +1782,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             originalSize: dragAtOriginalSize,
             jpegQuality: UserDefaults.standard.object(forKey: "ExportQuality") as? Double ?? 0.7)
         options.fixedJPEGQuality = FormatToggle.jpgQuality
+        options.offersOriginalSize = isLargeShot
         return options
     }
     func exportPanelData(_ options: ExportAccessory) throws -> Data {
@@ -2191,6 +2204,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         AppToolTip.setText("Drag an area or click a window; right-click or Control-click for Fullscreen", for: snapButton)
         cancelFrameButton.isHidden = true
         setModernFrameMode(false)
+        // A size change made while Frame was up (an Undo) is fitted now that the window is the editor's again.
+        if refitPictureZoom() { sizeNormalWindowToCanvas(centered: false) }
         updateStatus()
     }
     /// The visible area of the canvas view, in global bottom-left coordinates. For a canvas at least as large as the

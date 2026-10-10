@@ -380,6 +380,7 @@ extension AuditRun {
             step("S44", "audit batch 6: Original size, Resize Apply, footer at 980, Hide and Trash, Toolbox") { s44() }
             step("S45", "audit batch 8: WebDAV note, footer error with the box, pause note, Details size, Resize unticked") { s45() }
             step("S46", "audit batch 10: oversized Resize, corner drag, Export accessory, selected Upload row, Capture note error, Details after delete") { s46() }
+            step("S47", "audit batch 11: Actual Size after an oversized Resize, native-width Resize, ticked corner drag, Export accessory when nothing differs") { s47() }
             step("S13", "capture picker") { s13() }
             step("S14", "countdown") { s14() }
             step("S15", "capture flash") { s15() }

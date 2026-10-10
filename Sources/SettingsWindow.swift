@@ -948,7 +948,9 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     private var hasSavedFrame = false
     private var observers: [NSObjectProtocol] = []
     private var resizeTimer: Timer?
-    private static let resizeDuration: TimeInterval = 0.2
+    static let resizeDuration: TimeInterval = 0.2
+    /// The animation's clock. A test replaces it, so the frames of the resize are asked for at chosen moments instead of waited for.
+    var clock: () -> Date = Date.init
     /// A window that is not on screen resizes at once; a test turns this on to watch the animation without ordering a window front.
     var animatesWhenHidden = false
     /// Under Reduce Motion the window changes size at once. A test replaces it.
@@ -1165,11 +1167,11 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         resizeTimer?.invalidate(); resizeTimer = nil
         let start = window.frame
         guard animated, start != target else { window.setFrame(target, display: true); return }
-        let began = Date()
+        let began = clock()
         resizeTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60, repeats: true) { [weak self] timer in
             MainActor.assumeIsolated {
                 guard let self else { timer.invalidate(); return }
-                let progress = min(1, Date().timeIntervalSince(began) / Self.resizeDuration)
+                let progress = min(1, self.clock().timeIntervalSince(began) / Self.resizeDuration)
                 let eased = CGFloat(progress * progress * (3 - 2 * progress))
                 func mix(_ from: CGFloat, _ to: CGFloat) -> CGFloat { from + (to - from) * eased }
                 self.window.setFrame(NSRect(x: mix(start.minX, target.minX), y: mix(start.minY, target.minY),

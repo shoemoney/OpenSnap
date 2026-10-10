@@ -241,6 +241,27 @@ private enum ResizePanelTests {
         let plain = try ResizePanelGeometry.preview(source: own, output: fitted, request: ResizePanelSubmission(size: CGSize(width: 800, height: 100), isCrop: false, anchor: .zero))
         try expect(same.output == plain.output && same.rect == plain.rect, "Fields seeded with the output size behave as before")
         try rejects { _ = try ResizePanelGeometry.preview(source: own, output: fitted, displayed: CGSize(width: 0, height: 1600), request: try opened.submission()) }
+        // R4-002: typing the picture's own width on a snap shown smaller asks for the picture itself, not a resample a pixel short, whether the
+        // shown size is an exact fit (768 × 540) or a rounded one (996 × 700).
+        let snap = CGSize(width: 2560, height: 1800)
+        for shown in [CGSize(width: 768, height: 540), CGSize(width: 996, height: 700)] {
+            var typing = ResizePanelState(size: shown)
+            typing.edit(.width, text: "2560")
+            let native = try ResizePanelGeometry.preview(source: snap, output: shown, displayed: shown, atPictureSize: true, request: try typing.submission())
+            try expect(native.picture == ResizePicturePlan(scaleTo: nil, crop: nil, size: snap), "Typing 2560 on a snap shown at \(shown) is the picture itself (\(String(describing: native.picture)))")
+        }
+        // …while a size merely near the picture's is still a resize, and so is a one-pixel step on a small picture.
+        let small = CGSize(width: 100, height: 100)
+        var step = ResizePanelState(size: small); step.edit(.width, text: "101")
+        let stepped = try ResizePanelGeometry.preview(source: small, output: small, displayed: small, atPictureSize: true, request: try step.submission())
+        try expect(stepped.picture == ResizePicturePlan(scaleTo: CGSize(width: 101, height: 101), crop: nil, size: CGSize(width: 101, height: 101)), "101 on a 100 square resizes (\(String(describing: stepped.picture)))")
+        // A Limit lands on its number even when the partner side rounds down by half a pixel: 1981 × 953 at 1400 pairs 673, and fitting
+        // 1981 × 673 by its smaller ratio used to come out 1399 wide.
+        for (odd, limitText) in [(CGSize(width: 1981, height: 953), "1400"), (CGSize(width: 2425, height: 900), "1400"), (CGSize(width: 2351, height: 900), "1200")] {
+            var limiting = ResizePanelState(size: odd); limiting.setMode(.limit); limiting.limitText = limitText
+            let limited = try ResizePanelGeometry.preview(source: odd, output: odd, displayed: odd, atPictureSize: true, request: try limiting.submission())
+            try expect(limited.picture?.size.width == CGFloat(Int(limitText)!), "A Limit of \(limitText) on \(odd) lands on \(limitText) wide (\(String(describing: limited.picture)))")
+        }
         try expect(ResizePanelValidation.wholePixel(1516.5) == 1517 && ResizePanelValidation.wholePixel(1516.4) == 1516 && ResizePanelValidation.wholePixel(0.2) == 1
                    && ResizePanelValidation.displayText(for: 1516.5) == "1517", "One rounding rule: halves up, never below 1")
         for preset in ResizePreset.builtins {
