@@ -46,8 +46,11 @@ private enum MenuSymbolsTests {
         let text = files.compactMap { try? String(contentsOf: $0, encoding: .utf8) }.joined(separator: "\n")
         for selector in MenuSymbols.map.keys {
             let name = NSStringFromSelector(selector)
-            let regex = try! NSRegularExpression(pattern: "@objc\\s+func\\s+\(NSRegularExpression.escapedPattern(for: name))\\(\\)")
-            expect(regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)) != nil, "@objc func \(name)() exists in Sources")
+            // A selector with one argument (toggleFullScreen:) is declared as `func toggleFullScreen(_ sender: ...)`.
+            let oneArgument = name.hasSuffix(":")
+            let base = oneArgument ? String(name.dropLast()) : name
+            let regex = try! NSRegularExpression(pattern: "@objc\\s+func\\s+\(NSRegularExpression.escapedPattern(for: base))\\(" + (oneArgument ? "_ " : "\\)"))
+            expect(regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)) != nil, "@objc func \(base)(\(oneArgument ? "_:" : "")) exists in Sources")
         }
     }
 

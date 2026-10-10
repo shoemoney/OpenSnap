@@ -1272,6 +1272,8 @@ extension AppSafetyTests {
         try expect(surfaces.count == 8, "Both bars have their eight plates (\(surfaces.count))")
         let snap = chrome.snapButton, arrow = try (app.toolButtons[.arrow] as? CommandButton).unwrap("arrow"), undo = chrome.undoButton
         for button in buttons { button.appearance = NSAppearance(named: .aqua) }
+        // Undo is dimmed on a blank document (audit F-J1-020) and a dimmed button shows no hover fill: give it something to undo.
+        app.canvas.setBackgroundColor(.blue)
         undo.setHovered(true)
         try expect(buttons.allSatisfy { $0.plate.accessibility == .none && $0.plate.lastAnimationDuration == StatePlate.animationDuration }, "Buttons start with no display options and animate")
         try expect(abs((undo.plate.style.fill?.alphaComponent ?? 0) - 0.08) < 0.001 && snap.plate.style.fill?.alphaComponent == 1, "Baseline hover fill and primary accent")

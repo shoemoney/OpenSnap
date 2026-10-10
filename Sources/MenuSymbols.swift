@@ -27,6 +27,7 @@ enum MenuSymbols {
         ("fullscreenSnap", "rectangle.inset.filled"), ("windowSnap", "macwindow"), ("frameSnap", "viewfinder"),
         ("resnap", "arrow.triangle.2.circlepath"), ("cancelFrame", "xmark"), ("timedSnap", "timer"),
         ("cancelSnapshot", "xmark.circle"), ("webSnap", "link"), ("focusToolbar", "menubar.rectangle"),
+        ("toggleFullScreen:", "arrow.up.backward.and.arrow.down.forward"),
     ].map { (Selector($0.0), $0.1) })
 
     /// Test seam for a symbol that is missing on the host.

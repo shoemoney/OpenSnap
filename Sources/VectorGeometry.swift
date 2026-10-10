@@ -91,7 +91,14 @@ enum VectorGeometry {
     static func subtract(element original: SketchElement, eraser: CGPath) -> [SketchElement]? {
         guard let source = paintedPath(for: original), source.boundingBoxOfPath.intersects(eraser.boundingBoxOfPath) else { return nil }
         let remaining = components(of: source.subtracting(eraser))
-        return remaining.map { path in element(path: path, style: original) }
+        // A cut edge must not cast the original's drop shadow into the gap the eraser opened (a grey halo round the slot). A stroke that
+        // only shares a bounding box with the shape cuts nothing, so that shape keeps its shadow.
+        let cut = source.intersects(eraser)
+        return remaining.map { path in
+            var fragment = element(path: path, style: original)
+            if cut { fragment.shadowed = false }
+            return fragment
+        }
     }
 
     static func regroup(elements: [SketchElement], affectedGroups: Set<UUID>) -> [SketchElement] {

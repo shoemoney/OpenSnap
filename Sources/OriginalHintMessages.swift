@@ -78,7 +78,7 @@ enum OriginalHintMessages {
     }
 
     /// Shown above a tool's own hint when hovering a tool button.
-    static let toolHoverPrefix = "Command selects. Control erases. Tab switches to the pen.\n"
+    static let toolHoverPrefix = "Command selects. Control erases. Control-Tab switches to the pen.\n"
 
     /// Parent routing API: nil clears the bevel for Crop.
     static func hover(tool: SketchTool) -> String? {

@@ -11,10 +11,6 @@ enum OriginalDrawingControls {
             // A calibrated swatch converted to deviceRGB would alter them.
             return NSColor(deviceRed: rgba[0], green: rgba[1], blue: rgba[2], alpha: rgba[3]) // token-exempt: original preset colour data
         }
-        var swatchColor: NSColor {
-            let rgba = bits.map { CGFloat(Float(bitPattern: $0)) }
-            return NSColor(calibratedRed: rgba[0], green: rgba[1], blue: rgba[2], alpha: rgba[3]) // token-exempt: original preset colour data
-        }
     }
     // Original __GLOBAL__I_a at0x001dc570 initializes tags100...110.
     static let presets: [Preset] = [

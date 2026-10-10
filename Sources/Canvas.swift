@@ -265,6 +265,8 @@ final class CanvasView: NSView, NSTextViewDelegate {
         didSet {
             finishTextEditing(); needsDisplay = true; resetCursorRects()
             if oldValue != tool {
+                // The dim overlay belongs to the Crop tool; it must not outlive it.
+                cropRect = nil
                 endPolygon(commit: true)
                 if !togglingPencil { pencilReturnTool = nil }
                 onToolChange?(tool)
@@ -312,6 +314,8 @@ final class CanvasView: NSView, NSTextViewDelegate {
     /// Called after an in-flight viewport edit has been cancelled and cleared.
     var onViewportEditCancelled: (() -> Void)?
     var onHistoryRestored: ((CGSize) -> Void)?
+    /// Whether Tab can move the keyboard off the canvas: true when the bars are tab stops. The app answers from Full Keyboard Access and Focus Toolbar.
+    var tabNavigatesFocus: () -> Bool = { false }
     var onToolChange: ((SketchTool) -> Void)?
     var onColorChange: ((NSColor) -> Void)?
     var onHintModifiers: ((NSEvent.ModifierFlags) -> Void)?
@@ -327,6 +331,8 @@ final class CanvasView: NSView, NSTextViewDelegate {
         guard let editor = textEditor, window?.firstResponder === editor else { return nil }
         return editor.undoManager
     }
+    /// Style changes staged for a text box that is still open; they never outlive the box.
+    var hasStagedTextStyles: Bool { !pendingTextStyles.isEmpty }
     var hasPendingTextChanges: Bool {
         guard textEditor != nil, let before = textBeforeEditing else { return false }
         var pending = state
@@ -358,7 +364,17 @@ final class CanvasView: NSView, NSTextViewDelegate {
 
     // Internal access also makes the executable tests independent of a visible window.
     var selection: Set<UUID> = [] { didSet { needsDisplay = true; onTextStyleContextChange?() } }
-    var cropRect: CGRect? { didSet { needsDisplay = true } }
+    /// Fires when a crop appears or goes away (not while it is dragged), so the status line can say what Return and Esc do with it.
+    var onPendingCropChange: (() -> Void)?
+    var cropRect: CGRect? {
+        didSet {
+            needsDisplay = true
+            if Self.isPending(oldValue) != hasPendingCrop { onPendingCropChange?() }
+        }
+    }
+    /// A crop with some area: a bare click with the Crop tool starts one of no size, which is nothing to apply.
+    var hasPendingCrop: Bool { Self.isPending(cropRect) }
+    private static func isPending(_ rect: CGRect?) -> Bool { rect.map { !$0.isEmpty && !$0.isNull } ?? false }
     private var preview: SketchElement?
     private var marquee: CGRect?
     private var gestureStart: CGPoint = .zero
@@ -835,9 +851,29 @@ final class CanvasView: NSView, NSTextViewDelegate {
             }
         }
     }
+    /// The Shadow toggle changes only the shadow flag of the selection; colour, width, fill and text style stay as they are.
+    func setShadowOnSelection(_ shadowed: Bool) {
+        edit("Change Shadow") {
+            for index in document.elements.indices where selection.contains(document.elements[index].id) && document.elements[index].kind != .raster {
+                document.elements[index].shadowed = shadowed
+            }
+        }
+    }
+    /// The Filled Shapes toggle changes only the fill flag of the selected shapes.
+    func setFilledOnSelection(_ filled: Bool) {
+        edit("Change Fill") {
+            for index in document.elements.indices where selection.contains(document.elements[index].id) &&
+                document.elements[index].kind != .raster && document.elements[index].kind != .text {
+                document.elements[index].filled = filled
+            }
+        }
+    }
     /// A color choice changes only color, preserving mixed stroke/font/effects.
     /// Pending typing and selected text colors stay in the existing text edit.
     func applyColorToSelection(_ color: NSColor) {
+        // While a text box is being committed AppKit echoes the box's own colour back through the Colors panel; that is not a choice, and
+        // staging it now would leave a style behind for a box that no longer exists (it then repaints the committed text).
+        guard !isFinishingText else { return }
         let chosen = SketchColor(color)
         if let editor = textEditor {
             let caret = editor.selectedRange()
@@ -897,6 +933,8 @@ final class CanvasView: NSView, NSTextViewDelegate {
     @discardableResult
     func convertSelectedTextFonts(_ convert: ((NSFont) -> NSFont?)?, outline: Bool? = nil,
                                   shadow: Bool? = nil, name: String = "Change Text Style") -> Bool {
+        // The same echo through the Fonts panel while a box is being committed: drop it rather than stage a style for a closed box.
+        guard !isFinishingText else { return true }
         let selected = selectedTextElements
         var styles: [UUID: PendingTextStyle] = [:]
         for element in selected {
@@ -2043,8 +2081,10 @@ final class CanvasView: NSView, NSTextViewDelegate {
         if !event.modifierFlags.contains(.command) && event.keyCode == 49 {
             spaceHeld = true; onHintModifiers?(event.modifierFlags); window?.invalidateCursorRects(for: self); return
         }
-        // Control-Tab leaves the canvas, as it leaves a text view; plain Tab stays the pencil swap.
-        if event.keyCode == 48 && event.modifierFlags.contains(.control) && !event.modifierFlags.contains(.command) {
+        // Tab belongs to the key-view loop wherever the loop can go, so the canvas is never a trap: Tab moves the keyboard on, Shift-Tab back.
+        // The legacy "Tab = Pen" swap is Control-Tab then, which is what a text view does with a literal tab where Tab moves focus. When the
+        // bars are not tab stops (Full Keyboard Access off) Tab has nowhere to go, so it keeps the swap.
+        if event.keyCode == 48 && !event.modifierFlags.contains(.command) && !event.modifierFlags.contains(.control) && dragMode == .none && tabNavigatesFocus() {
             if event.modifierFlags.contains(.shift) { window?.selectPreviousKeyView(self) } else { window?.selectNextKeyView(self) }
             return
         }
