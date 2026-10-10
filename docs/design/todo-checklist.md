@@ -1136,7 +1136,7 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 **Open items**
 
-- Minimum height is not decided. T15 sets a 608 pt minimum content height (492 pt viewport). T8 sets a 680 pt window minimum. Decide which governs before the minimum-height captures are taken (technical-spec T8 and T15; not settled in visual-audit section 9).
+- Minimum height decided (orchestrator, impl/m4-window): T15 governs. The window minimum stays 640 pt (608 pt of content under the 32 pt title bar, 492 pt viewport); T8's 680 pt is not adopted, because every 980 x 640 fit and capture is measured there. The minimum width is computed from the live bars (`ModernEditorChrome.requiredWindowWidth()`), floored at 980; at 20 pt it is 980.
 
 **Findings:** VF-08, VF-21. **Spec:** T8.
 

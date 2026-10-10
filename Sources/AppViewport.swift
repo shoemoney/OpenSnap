@@ -188,7 +188,8 @@ extension AppDelegate {
     }
 
     func setWindowFrame(_ frame: CGRect) {
-        guard let window else { return }
+        // A full-screen window fills its Space; fitting it to a document is for the windowed editor.
+        guard let window, !isFullScreen else { return }
         adjustingWindowFrame = true
         window.setFrame(frame, display: true)
         window.contentView?.layoutSubtreeIfNeeded()

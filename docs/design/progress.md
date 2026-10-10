@@ -49,6 +49,25 @@ Each row is a todo that is done, verified, or not-a-bug. Commits in brackets are
 
 Suite counts are the ones the sources record. No other counts are claimed.
 
+## OSN-043 and OSN-041 step 5 (branch `impl/m4-window`, not merged)
+
+Unified window chrome and app-owned alerts. Evidence: `evidence/impl-2026-10-09/m4-window/` (50 captures, source `7bf20f8`).
+
+**Decisions**
+
+- **Titlebar stays separate** (orchestrator). A full-size-content title bar would cost about 78 pt beside the traffic lights and break the 980 Frame fit (16 pt slack). Measured result: `titlebarSeparatorStyle = .none` plus the surface window colour was not enough (the opaque title bar is 41/40/39 over a 30/30/30 window in dark, with a 1 pt line), so the title bar is transparent outside Frame mode and opaque again inside it; no layout cost. Title and subtitle text are system-drawn (OS limit).
+- **Frame and full screen exclude each other by refusal.** Entering Frame in full screen shows "Exit full screen to use Frame"; while Frame is up the window drops `.fullScreenPrimary`; a stray full-screen entry ends Frame. Refusing was chosen over "exit full screen first" because `toggleFullScreen` is an animated, cancellable transition, so entering Frame afterwards needs a deferred state machine with several failure modes, and Frame is a see-through window over the desktop, which a full-screen Space cannot show.
+- **Minimum height stays 640** (608 content), not T8's 680; width is measured from the live bars, floored at 980.
+- **Sheets, not modals,** for every document-scoped question. A question from New, Open or a capture is single at a time (a sheet does not stop the menu bar); Quit may always ask, stacks on the open sheet, and answers AppKit later through `reply(toApplicationShouldTerminate:)`. A hidden or minimised editor cannot carry a sheet, so the alert is a panel of its own and Quit never waits on an unseen question.
+- The save panel names the document: a file the user just named in Save As becomes the document's name and title. Saving in place keeps the name.
+- The Discard button is now "Don’t Save" (Command-D, destructive styling), as macOS words it.
+
+**Alert sites converted** (all in `App.swift`, now `AppAlert` sheets): `error(_:)` (every open, save, export, upload, capture and history failure), `confirmDiscard` (was `allowDiscard`, used by New, Open, captures, Frame completion and Quit), `removeHistory` (Hide, Move to Trash), `deleteHistoryRemote` (Delete from Web), and `prompt` (Rename, Timed Snapshot, Snap from Link). `NSOpenPanel`, `NSSavePanel`, the export panel and `NSPageLayout` stay system modals. Left to the other worker: `PublishingDestinationsView.swift` (remove-destination confirmation).
+
+**OS-owned limitations:** Save, Open, Export and Page Setup panels (their accessories are already 20 pt); the title-bar title and subtitle; traffic-light tooltips.
+
+**Tests:** app-safety 166 (154 before; 12 new window-chrome cases, one existing Frame-prompt case changed on purpose: the Discard prompt is now a sheet on the Frame window, so it no longer runs with the pre-Frame level), `AppAlertTests` 77 checks, `GlassChromeTests` 13544 checks. Twelve can-fail mutations each fail the suite that should catch them and were reverted.
+
 ## Open items and gaps
 
 - **Unsafe tool still on main:** `tools/test-native-startup.py` launches the real bundle id in place. The fix is in progress on `impl/m4-type`. Do not run it until that is merged.

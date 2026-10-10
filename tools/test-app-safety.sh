@@ -48,6 +48,10 @@ if (root / 'tests/AppSafetyRetiredFormatCases.swift').exists():
     paths.append(root / 'tests/AppSafetyRetiredFormatCases.swift')
 if (root / 'tests/AppSafetyMenuCases.swift').exists():
     paths.append(root / 'tests/AppSafetyMenuCases.swift')
+if (root / 'tests/TestDefaults.swift').exists():
+    paths.append(root / 'tests/TestDefaults.swift')
+if (root / 'tests/AppSafetyWindowChromeCases.swift').exists():
+    paths.append(root / 'tests/AppSafetyWindowChromeCases.swift')
 inputs = [(p.name, app_source if p.name == 'App.swift' else p) for p in paths]
 for attempt in range(3):
     snapshot = {name: (p, p.read_bytes()) for name, p in inputs}
@@ -81,7 +85,6 @@ for name, (path, data) in snapshot.items():
         text = text.replace('!DisplayOptions.current.reduceMotion', '!AppSafetyAnimations.reduceMotion')
         text = text.replace('statusItem?.button?.window?.frame ?? .zero', 'AppSafetyMenuDestination.rect')
         replacements = {
-            'NSAlert(': 'AppSafetyAlert(',
             'NSWindow(': 'AppSafetyWindow(',
             'NSSavePanel(': 'AppSafetySavePanel(',
             'NSOpenPanel(': 'AppSafetyOpenPanel(',
@@ -102,7 +105,7 @@ for name, (path, data) in snapshot.items():
         text = text.replace('NSPanel(contentRect: rect, styleMask: [.borderless]', 'AppSafetyDragPanel(contentRect: rect, styleMask: [.borderless]')
         if 'NSPageLayout(' in text:
             raise SystemExit('Unrecognized live Page Setup construction; refusing to run.')
-        text = text.replace('NSApp.reply(toApplicationShouldTerminate: approved)', 'AppSafetyTermination.reply(approved)')
+        text = re.sub(r'NSApp\.reply\(toApplicationShouldTerminate: ([^)]+)\)', r'AppSafetyTermination.reply(\1)', text)
         if re.search(r'\bGlobalHotkeyManager\b', text):
             raise SystemExit('Unrecognized live hotkey-manager construction; refusing to run.')
         target.write_text(text)
