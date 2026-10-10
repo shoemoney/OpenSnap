@@ -1249,7 +1249,7 @@ extension AuditRun {
                 if let move = NSEvent.mouseEvent(with: .mouseMoved, location: point, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: panel.windowNumber, context: nil, eventNumber: 0, clickCount: 0, pressure: 0) {
                     selection.mouseMoved(with: move)
                 }
-                shoot("S13", "picker-no-recording-grant-edge-\(corner)", surface: "capture picker / crosshair + magnifier", state: "magnifier with the pointer at the \(corner) corner of the display (placeholder lens): lens and size label both stay on screen, 4 pt apart",
+                shoot("S13", "picker-no-recording-grant-edge-\(corner)", surface: "capture picker / crosshair + magnifier", state: "magnifier with the pointer at the \(corner) corner of the display (placeholder lens): lens and size label both stay on screen, the label 4 pt below the lens border",
                       windows: [panel], refs: ["OriginalCaptureMagnifier.swift|static func labelRect", "OriginalCaptureMagnifier.swift|static func placementFrame"], settle: 0.4)
             }
         } else { gap("S13", "capture picker (screen edge)", "picker did not create an overlay panel") }

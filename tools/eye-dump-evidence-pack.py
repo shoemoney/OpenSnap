@@ -105,7 +105,7 @@ def main():
 
     L = [f"# {args.title}", "", f"Source `{args.sha}`; icon mode **sf** (FA unavailable); {len(packed)} captures, every PNG scaled to at most {args.max_width} px wide.",
          f"Pre-change twins are referenced from `{before}` at `{args.before_sha}`; they are not copied.", "",
-         "| Capture | Appearance | Window pt | What it shows | Layout JSON | BEFORE (pre-rail-removal) |", "|---|---|---|---|---|---|"]
+         "| Capture | Appearance | Window pt | What it shows | Layout JSON | BEFORE (pre-change) |", "|---|---|---|---|---|---|"]
     for e in packed:
         win = "×".join(str(int(v)) for v in e["windowSize"]) if e.get("windowSize") else "—"
         L.append(f"| `{e['file']}` | {e['appearance']} | {win} | {e['state'].replace('|', '/')} | `{e['layout'] or '—'}` | {('`' + e['before'] + '`') if e['before'] else '—'} |")
