@@ -3,7 +3,7 @@
     "project": "OpenSnap",
     "round": 2,
     "generated": "2026-10-09",
-    "statusNote": "Implementation progress at main 658a16f (baseline bad6617): 24 done, 2 verified, 1 not-a-bug, 5 in-progress, 4 pending, of 36 todos. Each todo's status, mainState and implementation block record main at 658a16f, or the branch named in its mainState. Audit findings and priority counts are unchanged.",
+    "statusNote": "Implementation progress at main 284f028 (baseline bad6617): 29 done, 2 verified, 1 not-a-bug, 3 in-progress, 1 pending, of 36 todos. OSN-044, OSN-054, OSN-060 and OSN-061 are done at merges 3ee9503, 7c8bdb1 and accfedd; OSN-062 stays in-progress (manual VoiceOver pass not recorded). Each todo's status, mainState and implementation block record its main state at the SHA named there. Audit findings and priority counts are unchanged.",
     "auditedShas": {
       "briefed": "b9319c4",
       "drift": [
@@ -1764,8 +1764,8 @@
       "title": "Component state model: StateStyles, CommandButton, slider, swatch, drag well, History tile, canvas border rest",
       "priority": "P1",
       "milestone": "M4",
-      "status": "in-progress",
-      "mainState": "In progress on impl/m4-states, not merged to main. The component state model (StateStyles, CommandButton, slider, swatch, drag well, History tile, canvas border rest) is not on main yet.",
+      "status": "done",
+      "mainState": "Done on main at 3ee9503 (merge of impl/m4-states): StateStyles, CommandButton, the app-owned PNG | JPG toggle, swatch check, keyboard drag well and the hairline canvas border at rest. OSN-061 part 2 (Differentiate Without Color and Increase Contrast consumers) came in the same merge.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -1822,13 +1822,11 @@
       ],
       "decisions": [],
       "implementation": {
-        "mergeCommit": null,
+        "mergeCommit": "3ee9503",
         "branchCommits": [],
-        "tests": "none recorded",
-        "evidence": null,
-        "openItems": [
-          "Branch impl/m4-states is not merged; no branch SHA is recorded in this pass."
-        ]
+        "tests": "merge changes 7 files under tests/ (+1013/-68); counts not recorded in this pass",
+        "evidence": "docs/design/evidence/impl-2026-10-09/m4-states/ (158 captures, source cc97054)",
+        "openItems": []
       }
     },
     {
@@ -2181,8 +2179,8 @@
       "title": "Upload progress, success and error presentation, with announcements",
       "priority": "P1",
       "milestone": "M5",
-      "status": "pending",
-      "mainState": "Open: upload progress, success and error presentation, with announcements, has not landed.",
+      "status": "done",
+      "mainState": "Done on main at 7c8bdb1 (merge of impl/m5-upload-a11y): UploadState in the status slot with a spinner, Link copied (with the link, cut in the middle), inline Error with Retry and Details…, announcements. Adaptive Original-size checkbox and the audit batch 1 fixes followed (1b0fa61, merged in 529af8b). AWS live validation (2026-10-09) is recorded as validation evidence.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -2233,13 +2231,14 @@
       ],
       "decisions": [],
       "implementation": {
-        "mergeCommit": null,
-        "branchCommits": [],
-        "tests": "none (not started)",
-        "evidence": null,
-        "openItems": [
-          "AWS live validation on 2026-10-09 is recorded as validation evidence only (one synthetic object uploaded through OpenSnap's S3 path, read back over the CDN with identical bytes, then deleted through the app's delete path). The upload UX (progress, success, errors, announcements) is not built."
-        ]
+        "mergeCommit": "7c8bdb1",
+        "branchCommits": [
+          "fc61ac7",
+          "fbe4d67"
+        ],
+        "tests": "merge changes 12 files (+753/-52); counts not recorded in this pass; end-to-end real-click check in J2 and J4 (one live S3 upload, Link copied)",
+        "evidence": "docs/design/evidence/impl-2026-10-09/m5-upload/ (30 captures, source fc61ac7); audit-fix-1 (74 captures, 8e7a37d)",
+        "openItems": []
       }
     },
     {
@@ -2474,8 +2473,8 @@
       "title": "Keyboard: key-view loop, operable drag well, focus rings, Escape and Return in every sheet",
       "priority": "P1",
       "milestone": "M6",
-      "status": "pending",
-      "mainState": "Open: the keyboard pass (key-view loop, operable drag well, focus rings, Escape and Return in every sheet) has not landed.",
+      "status": "done",
+      "mainState": "Done on main at 7c8bdb1 (merge of impl/m5-upload-a11y, with 4fca729 for the sheet Return and Escape pass): key-view loop with initialFirstResponder on the canvas, Focus Toolbar in the Window menu, exterior focus rings, drag well operable from the keyboard (3ee9503), Escape and Return in the sheets.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -2521,10 +2520,12 @@
       ],
       "decisions": [],
       "implementation": {
-        "mergeCommit": null,
-        "branchCommits": [],
-        "tests": "none (not started)",
-        "evidence": null,
+        "mergeCommit": "7c8bdb1",
+        "branchCommits": [
+          "4fca729"
+        ],
+        "tests": "AccessibilityAuditTests key-loop and Escape and Return tests (T7 tests 3 and 4); DragExportView Space and Return",
+        "evidence": "E2E J1 real-click tab walk (F-J1-007 PASS) and J4 retest; see progress.md E2E audit",
         "openItems": []
       }
     },
@@ -2533,8 +2534,8 @@
       "title": "Display-option consumers and an injected DisplayOptions capture mode",
       "priority": "P1",
       "milestone": "M6",
-      "status": "in-progress",
-      "mainState": "In progress: part 1 is on main (accfedd). A DisplayOptions model reads Reduce Motion, Reduce Transparency, Increase Contrast and Differentiate Without Color live and observes them. Consumers: countdown, flash and hint bevel; the glass consolidation (8015360) applies them to plates and borders. A harness-gated --display injection mode is in tools/eye-dump-audit.sh; a normal launch cannot use it. DisplayOptionsTests: 92 checks. OSN-061 stays in-progress.",
+      "status": "done",
+      "mainState": "Done on main: part 1 at accfedd (DisplayOptions model, countdown, flash, hint bevel) and part 2 at 3ee9503 (Differentiate Without Color and Increase Contrast consumers on the states work). The harness-gated --display injection in tools/eye-dump-audit.sh is the capture path; a normal launch cannot use it. J3 ran positive controls for all four options (rendered only).",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -2593,11 +2594,9 @@
           "eaab72f",
           "f975dfa"
         ],
-        "tests": "DisplayOptionsTests: 92 checks",
-        "evidence": null,
-        "openItems": [
-          "Only part 1 is on main; the todo stays in-progress."
-        ]
+        "tests": "DisplayOptionsTests: 92 checks (part 1); part 2 merge changes 7 files under tests/",
+        "evidence": "J3 rendered matrix, docs/design/evidence/e2e-2026-10-10/j3/ (111 captures, source 3194247); m4-states (part 2)",
+        "openItems": []
       }
     },
     {
@@ -2605,10 +2604,12 @@
       "title": "VoiceOver labels, announcements, and a recorded manual VoiceOver pass",
       "priority": "P1",
       "milestone": "M6",
-      "status": "pending",
-      "mainState": "Open: VoiceOver labels, announcements and the recorded manual VoiceOver pass have not been done.",
+      "status": "in-progress",
+      "mainState": "In progress: labels, Announcer announcements and the G10 accessibility audit walker (32 surfaces, 0 violations) are on main at 7c8bdb1 and 4fca729. The recorded manual VoiceOver pass is not done: VoiceOver speech was not run in any lane and stays on the gap list.",
       "remainingWork": null,
-      "openItems": [],
+      "openItems": [
+        "Manual VoiceOver pass not recorded (the todo requires it). VoiceOver speech is outside what the harness can prove."
+      ],
       "findings": [
         "VF-14"
       ],
@@ -2651,11 +2652,15 @@
       ],
       "decisions": [],
       "implementation": {
-        "mergeCommit": null,
-        "branchCommits": [],
-        "tests": "none (not started)",
-        "evidence": null,
-        "openItems": []
+        "mergeCommit": "7c8bdb1",
+        "branchCommits": [
+          "4fca729"
+        ],
+        "tests": "AccessibilityAuditTests (G10 walker, 32 surfaces); labels and announcements in the upload merge",
+        "evidence": "none for the manual pass",
+        "openItems": [
+          "Manual VoiceOver pass not recorded."
+        ]
       }
     },
     {
