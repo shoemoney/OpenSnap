@@ -1,6 +1,6 @@
 # docs/design: index
 
-Design docs for the OpenSnap visual and cosmetic audit (2026-10-09, final). Start with `roadmap.md` for the plan, then `todo-checklist.md` for the work items. `backlog.json` is the same work in machine-readable form. Implementation progress at main `658a16f` (baseline `bad6617`) is in `progress.md`.
+Design docs for the OpenSnap visual and cosmetic audit (2026-10-09, final). Start with `roadmap.md` for the plan, then `todo-checklist.md` for the work items. `backlog.json` is the same work in machine-readable form. Implementation progress at main `3b453b3` (baseline `bad6617`) is in `progress.md`.
 
 Open [audit-overview.html](audit-overview.html) for the self-contained interactive roadmap and evidence gallery: milestone filtering, task details, shortlisting, side-by-side comparisons, and downloads. It embeds ECharts and a selected set of ten evidence images, including placement mocks explicitly labelled as unimplemented. The full evidence set remains below. Viewer text was checked at 728 and 360 CSS px widths with an 18 px minimum; filtering, previews, shortlisting and comparison were exercised in the browser.
 
@@ -12,7 +12,7 @@ Open [audit-overview.html](audit-overview.html) for the self-contained interacti
 | `roadmap.md` | docs child C (round 2) | Summary, drift, owner decisions, findings, milestones, lane and file ownership, estimates, gates, risks, outward-facing steps, source inconsistencies. |
 | `todo-checklist.md` | docs child C (round 2) | One section per todo (36 todos, OSN-001 to OSN-072 as numbered in `visual-audit.md` section 9), in milestone order: main state, substeps, files, prerequisites, estimates, acceptance, visual checks with BEFORE stems, and tests. |
 | `backlog.json` | docs child C (round 2), implementation update | The same backlog as JSON: `meta`, `decisions` (10), `milestones` (8), `todos` (36), `findings` (29). Each todo has a `status`, a `mainState` and an `implementation` block at `658a16f`. Each decision has a `resolution`. |
-| `progress.md` | implementation docs writer | Implementation progress at `33743c5`: baseline and merge map (18 merges), E2E audit (journeys, fix batches, finding resolution index, coverage, evidence index, gaps), todo to commit to test to evidence table, AWS live validation, OS-owned limitations, open items and gaps. |
+| `progress.md` | implementation docs writer | Implementation progress at `3b453b3`: baseline and merge map (18 merges), E2E audit (journeys, fix batches, finding resolution index, coverage, evidence index, gaps), todo to commit to test to evidence table, AWS live validation, OS-owned limitations, open items and gaps. |
 | `visual-audit.md` | orchestrator | Source, read-only here. FINAL audit: summary, drift (section 0), coverage (section 5), findings VF-01 to VF-29 (section 6, with status at `dc1eb26` in 6.0), reconciliation (section 7), owner layout (section 8), backlog (section 9). |
 | `technical-spec.md` | source and spec child B | Source, read-only here. Decisions Q1 to Q5 (section 0), implementation specs T1 to T15, file ownership map (section O). |
 | `source-inventory.md` | source and spec child B | Source, read-only here. File and line inventory at `4b2ae0f`. |
@@ -66,7 +66,7 @@ Owner-authorized end-to-end audit (2026-10-09 to 2026-10-10): every option, icon
 |---|---|
 | `e2e-audit-plan.md` | The audit plan and its phases. |
 | `e2e/README.md` | The method, the evidence classes, the inventory and the launcher. |
-| `e2e/findings.md` | Findings for J1 to J8 (93 IDs), review round 1 (R1-001 to 024), review round 2 (R2-001 to 018), the final render pass (F-R-001 to 005), the J4 retest table, the J5 gap closure and the F-J5-005 panel-service investigation. |
+| `e2e/findings.md` | Findings for J1 to J8 (93 IDs), review round 1 (R1-001 to 024), review round 2 (R2-001 to 018), review rounds 3 to 5 (R3-001 to 009, R4-001 to 007, R5-001 to 004), the final render pass (F-R-001 to 005), the J4 retest table, the J5 gap closure and the F-J5-005 panel-service investigation. |
 | `e2e/coverage-matrix.md` | One row per audit ID (597 rows): E2E 312, rendered 45, unit/source 93, unverified 120 (one gap reason each), retired 27. See `progress.md`. |
 | `e2e/inventory.json` | The 597 audit entries, generated from the sources and the harness. |
 | `e2e/j4-aws-log.md` | The live S3 log for the F-J2-002 retest (J4): one synthetic upload and its delete through the app. |
@@ -82,6 +82,7 @@ Owner-authorized end-to-end audit (2026-10-09 to 2026-10-10): every option, icon
 | `evidence/e2e-2026-10-10/panelfix/` | Panel-service check after the F-J5-005 fix (real-click, 4 images and the service log). |
 | `evidence/impl-2026-10-09/audit-fix-1` to `audit-fix-4`, `audit-fix-3b-before` | Visual acceptance for fix batches 1, 2, 3a, 3b (and its before twins), 3c and 4 (`audit-fix-4`: 147 captures, rendered only). |
 | `evidence/impl-2026-10-09/audit-fix-5`, `audit-fix-6`, `audit-fix-8` | Visual acceptance for fix batches 5 (249 captures), 6 (78) and the batch 8 J7 findings (24). Rendered only, icon mode `sf`. |
+| `evidence/impl-2026-10-09/audit-fix-9`, `audit-fix-10`, `audit-fix-11` | Visual acceptance for fix batches 9 (52 captures), 10 (44) and 11 (36). Rendered only, icon mode `sf`. Batch 12 has no capture folder; its evidence is the test set in `tests/AppSafetyBatch11Cases.swift`. |
 | `evidence/impl-2026-10-09/final-render/` | Final render pass at `5b30929`: display options on current surfaces with positive controls (122 captures). Rendered only. |
 
 The full index with the source SHA for each folder is in `progress.md`, section E2E audit.
@@ -136,7 +137,7 @@ Full list in `evidence/2026-10-09/gaps.md` and section 5 of the audit. Summary:
 | Todos new in round 2 | 3: OSN-014, OSN-057, OSN-058 |
 | Owner decisions | 10: Q1 to Q5, D-TEXT, D-HINT, D-T15-1 to D-T15-3. Each has a recommended default. All ten are resolved; Q3 is option B (custom bars), Q4 is implemented in OSN-043. |
 | Estimate | 18.0 d numeric across 18 todos, plus 17.5 d of unsplit spec figures, total 35.5 d (`roadmap.md` section 8) |
-| Status at `33743c5` | 29 done, 2 verified, 1 not-a-bug, 3 in-progress, 1 pending (`progress.md`; roadmap section 2b). Unchanged since `284f028`. |
+| Status at `3b453b3` | 29 done, 2 verified, 1 not-a-bug, 3 in-progress, 1 pending (`progress.md`; roadmap section 2b). Unchanged since `284f028`. |
 
 ## Validating the files
 

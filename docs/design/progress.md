@@ -1,7 +1,7 @@
 # OpenSnap implementation progress
 
 **Baseline:** `bad6617`, when implementation began (the rename and migration were already merged in `f7ff86b` and `d2dc3c9`).
-**Main now:** `33743c5`. The eighteen implementation merges below are followed by the E2E audit merges since `284f028`, listed in the E2E audit section.
+**Main now:** `3b453b3`. The eighteen implementation merges below are followed by the E2E audit merges since `284f028`, listed in the E2E audit section.
 **Status of 36 todos:** 29 done, 2 verified, 1 not-a-bug, 3 in-progress, 1 pending.
 
 Per-todo state is in `backlog.json` (`status`, `mainState`, `implementation`). The roadmap has the milestone table (section 2b). Findings statuses in the roadmap (section 4) are still as at `dc1eb26`.
@@ -156,7 +156,7 @@ Recorded as validation evidence under OSN-054 and OSN-072. It partly satisfies O
 
 Owner authorization: Jeremy, 2026-10-09 23:27 CDT: audit every option and every icon, and ask whether each looks as good as it can and uses space well. The plan is [`e2e-audit-plan.md`](e2e-audit-plan.md). The method, inventory and launcher are in [`e2e/README.md`](e2e/README.md).
 
-**Evidence classes are never merged.** `E2E` is a real click or key in an isolated session copy, with the result seen in a screenshot or an AX read. `rendered` is a harness capture (`tools/eye-dump-audit.sh`): the app drew the state in-process, which shows how it looks, not that a user can reach it. `unit/source` is a named existing test. `unverified` is a row the audit could not exercise; it carries exactly one gap reason. `retired` is a row whose surface the app removed or replaced; it is counted in no other class.
+**Evidence classes are never merged.** `E2E` is a real click or key in an isolated session copy, with the result seen in a screenshot (viewed, not only listed) or an AX read. `rendered` is a harness capture (`tools/eye-dump-audit.sh`): the app drew the state in-process, which shows how it looks, not that a user can reach it. `unit/source` is a named existing test or source check. `unverified` is a row the audit could not exercise; it carries exactly one audited `gap reason`. `retired` is a row whose surface the app removed or replaced; it is counted in no other class. The `reachability note` column is the generator's static prediction of what may stand in the way; it is not evidence and is not counted.
 
 ### Merges since 284f028
 
@@ -178,6 +178,12 @@ Merges to main, in merge order. Merges of main into the batch and probe branches
 | `87abbfd` | fix/audit-batch-8 | Batch 8: Resize always rewrites the picture, visible shortcut-pause note, stable published size, HTTP status in upload errors, checkbox kept beside an error at 980 |
 | `7f0a767` | audit/final-render | Final render pass: display options on current surfaces with positive controls, 48 stale rendered rows refreshed, F-R-001 to 005 |
 | `33743c5` | audit/e2e-j8 | J8 real-input validation of batch 8: visible shortcut-pause lifecycle, Resize one rule, stable published size, 980 error keeps the checkbox; F-J8-001 and 002 |
+| `02d4ca5` | fix/ledger-gap-column | Ledger: the gap column splits into a static `reachability note` (generator prediction) and the audited `gap reason`, with `--check` rules and can-fail proofs (`2649cce`). Every unverified row now carries exactly one audited reason |
+| `76cbe52` | fix/tooltip-flake | Tooltip suite waits on events instead of a fixed 0.3 s spin, so a frozen process no longer trips the SIGTRAP; a freeze check that can fail (`05cd86e`). Test-only |
+| `d1d24c0` | fix/audit-batch-9 | Batch 9: Increase Contrast reaches unselected tool glyphs and disabled controls; non-colour cue on the selected Upload row; S42 notice and S44 footer wait for the label's text; Toolbox menu capture retries once; input fence counts per kind. F-R-001 to 005 (`227a471`, `2567b89`, `6cc0b37`, `32b4a03`, `e14b985`); evidence `16a8e09` |
+| `4f8b5d9` | fix/audit-batch-10 | Batch 10: oversized Resize and corner drags rewrite the picture, so title and outputs agree; Export accessory follows the footer; DWC row bar; hotkey pause errors reach the note; `(deleted)` Destination. R3-001 to 009 (`0fd7dfa`); harness surface S46 (`a601d7e`, `9faf5c0`); evidence `8802c2e` |
+| `748f352` | fix/audit-batch-11 | Batch 11: Actual Size after an oversized Resize; native-width Resize; ticked corner drag in picture pixels; exact Limit; fit-zoom tracking; Export box only when it differs; plain-words hotkey error; Settings timing on an injectable clock. R4-001 to 007 (`61bea34`); harness surface S47 (`21113c9`); evidence `audit-fix-11`, docs `4c6927e` |
+| `3b453b3` | fix/audit-batch-12 | Batch 12: full-screen Cancel restores the zoom record; Actual Size refits after Undo or a full-screen change; ticked corner drag clamps at the supported size; Limit lands on its number with no snap. R5-001 to 004 (`2045fcd`). Tests only, no evidence folder |
 
 ### Journeys
 
@@ -213,7 +219,26 @@ Notes on counts that the sources disagree on:
 | 6 | `fix/audit-batch-6` | `5989fa0` | `impl-2026-10-09/audit-fix-6/` (78, `cc764dc`) |
 | 7 | `fix/audit-batch-7` | `5b30929` | no folder of its own; checked in `e2e-2026-10-10/j7/` (34) and in the final render (`5b30929`) |
 | 8 | `fix/audit-batch-8` | `87abbfd` | `impl-2026-10-09/audit-fix-8/` (24, `ee89d7b`); checked in `e2e-2026-10-10/j8/` (19) |
-| 9 | not merged; branch not recorded in the sources | in progress | F-R-001 to 005, see the resolution index |
+| 9 | `fix/audit-batch-9` | `d1d24c0` | `impl-2026-10-09/audit-fix-9/` (52, `16a8e09`). F-R-001 to 005; rendered and harness checks, not real-click |
+| 10 | `fix/audit-batch-10` | `4f8b5d9` | `impl-2026-10-09/audit-fix-10/` (44, `8802c2e`, S46 at `9faf5c0`). Rendered, icon mode `sf`. R3-001 to 009 |
+| 11 | `fix/audit-batch-11` | `748f352` | `impl-2026-10-09/audit-fix-11/` (36, `4c6927e`, S47 at `21113c9`). Rendered, icon mode `sf`. R4-001 to 007 |
+| 12 | `fix/audit-batch-12` | `3b453b3` | no evidence folder; checked by tests in `tests/AppSafetyBatch11Cases.swift` (each with a can-fail proof, the fix reverted in a scratch copy). R5-001 to 004 |
+
+Batches 9 to 12 are rendered or test-checked. No real-click pass is recorded for them.
+
+### Review rounds
+
+Independent reviews of the batch branches. Each round's findings are in `e2e/findings.md`; the round's fixes are in the batch named.
+
+| Round | Pinned at | Scope | Findings | Outcome |
+|---|---|---|---|---|
+| 3 | `5af9ac0` | Focused: the round 2 regression fixes (pause lifecycle, size paths, Toolbox placement, session-only watchdogs, ledger categories, fresh evidence) | R3-001 to 009 (2 × P2, 2 × P3, 5 × P4) | Verdict: needs fixes. Every item fixed in batch 10 (`4f8b5d9`). A reviewer pass at `4f8b5d9` produced round 4 |
+| 4 | `4f8b5d9` | Narrow: the batch 10 fixes and their follow-ups | R4-001 to 007 (3 × P3, 4 × P4; R4-005 and R4-006 are ledger and evidence) | Every item fixed in batch 11 (`748f352`). The orchestrator decided R4-003 (ticked corner drag in picture pixels) |
+| 5 | `e084f15` | Confirmation of batch 11 | R5-001 to 004 (all P4) | Every item fixed in batch 12 (`3b453b3`) |
+| 6 | `3b453b3` | Confirmation of batch 12 | **IN PROGRESS** | Orchestrator records the result here |
+| Final gates | `3b453b3` | Gates after round 6 | **IN PROGRESS** | Orchestrator records the result here; OSN-071 waits on it |
+
+Round 3's objections, accepted with the decision recorded in the findings: R1-016, R1-021, the record-shortcut field, F-J1-012 (OS-owned panel), the upload-percentage item (no byte progress), F-J8-001, F-J8-002, and the final render's two historic menu gaps. Accepted with conditions: F-J1-023 is next in line; the deactivation pause stays unit-tested only, now with the real did-resign-active notification posted in the test (R3-008).
 
 ### Finding dispositions
 
@@ -238,7 +263,7 @@ Notes on the table:
 
 ### Finding resolution index
 
-Every finding ID from J1 to J8 (93), every review round 1 ID R1-001 to R1-024 (24), every review round 2 ID R2-001 to R2-018 (18) and every final render ID F-R-001 to F-R-005 (5): 140 in all. Status key: **fixed** (merge or batch named, and not contradicted by a later real-input result); **partial** (part of the item passed under real input, or the fix holds only in the rendered harness); **deferred**; **gap** (outside what the harness or the isolated session can prove); **doc-only**; **open** (no fix recorded in the sources; listed, not scheduled); **in progress** (batch 9, F-R-001 to 005); **accepted trade-off** (recorded as acceptable by the journey that found it). R1 rows take their titles from the round 1 record in `docs/design/e2e/findings.md`.
+Every finding ID from J1 to J8 (93), every review round 1 ID R1-001 to R1-024 (24), every review round 2 ID R2-001 to R2-018 (18), every review round 3 ID R3-001 to R3-009 (9), round 4 R4-001 to R4-007 (7), round 5 R5-001 to R5-004 (4) and every final render ID F-R-001 to F-R-005 (5): **160 in all**. Status key: **fixed** (merge or batch named, and not contradicted by a later real-input result); **partial** (part of the item passed under real input, or the fix holds only in the rendered harness or in a test); **deferred**; **gap** (outside what the harness or the isolated session can prove); **doc-only**; **open** (no fix recorded in the sources; listed, not scheduled); **accepted trade-off** (recorded as acceptable by the journey that found it). R1 rows take their titles from the round 1 record in `docs/design/e2e/findings.md`. Rounds 3 to 5 and F-R-001 to 005 are fixed in the batch the responses name; round 6 and the final gates are not yet recorded and no row depends on them.
 
 #### Journey findings (F-J1 to F-J5)
 
@@ -297,7 +322,7 @@ Every finding ID from J1 to J8 (93), every review round 1 ID R1-001 to R1-024 (2
 | F-J3-001 | fixed | batch 4 `6d833a8`; rendered | Differentiate Without Color outlines the selected PNG/JPG |
 | F-J3-002 | fixed | batch 4; rendered (inferred) | Blank column in History's empty and no-match states (evidence "History empty" in `495ff6b`) |
 | F-J3-003 | fixed | batch 4 `d9ed8b7`; rendered (inferred) | Destination forms fit their protocol, not the S3 height |
-| F-J3-004 | partial | batch 4 `6d833a8`; rendered | Borders and the Snap outline strengthen under Increase Contrast; glyph and disabled contrast do not (F-R-002, batch 9) |
+| F-J3-004 | partial | batch 4 `6d833a8`; batch 9 `227a471` (F-R-002); rendered | Borders and the Snap outline strengthen under Increase Contrast; batch 9 raises unselected glyphs and disabled controls, measured in the render only. Stays partial until a real-display check |
 | F-J3-005 | partial | batch 4 `1d8c3d3`; J6 partial | Zoom and Original size explain what they measure (text readout); the tooltips were not captured |
 | F-J3-006 | fixed | batch 4 `d9ed8b7`; J7 item 2a pass | Whole-pixel sizes; the Resize result that broke them is fixed (F-J6-001) |
 | F-J3-007 | fixed | batch 4 `1d8c3d3`; batch 7 `5b30929`; J7 item 6 pass | Status keeps the tool or size longest; the 980 status reads whole (F-J6-004) |
@@ -380,8 +405,8 @@ Real-click retest of batches 4 and 5 (`14d4d9f`). Batch column names the fix whe
 | R2-008 | P3 | Retired rows still counted as rendered or E2E | fixed | review round 2 lane `0b03903` | New `retired` class, 27 rows |
 | R2-009 | P3 | Rendered rows drawn before batches 4 and 5 describe old chrome | fixed | final render pass `7f0a767` | 48 rows refreshed from `5b30929`, flag dropped |
 | R2-010 | P3 | Display options not re-rendered after batch 6 | fixed | final render pass `7f0a767` | Positive controls on the current surfaces (rendered, not real input) |
-| R2-011 | P3 | S42 status-notice capture mistimed; captions wrong | partial | review round 2 lane `0b03903` | Captions corrected. A correct dark notice capture is still missing (F-R-001, batch 9) |
-| R2-012 | P3 | Harness input fence: no event counts, no hover fence | partial | batch 6 `29481af` (record) | The swallowed count is recorded; no split by event kind (F-R-005, batch 9) |
+| R2-011 | P3 | S42 status-notice capture mistimed; captions wrong | fixed | review round 2 lane `0b03903`; batch 9 `6cc0b37` (F-R-001) | Captions corrected in `0b03903`. Batch 9 waits for the label's text before the shot; round 3 re-measured the notice claims and confirmed them |
+| R2-012 | P3 | Harness input fence: no event counts, no hover fence | partial | batch 6 `29481af` (record); batch 9 `e14b985` (F-R-005) | The swallowed count is recorded, and batch 9 splits it by kind (keyboard, button, pointer). Hover fence not recorded in the sources |
 | R2-013 | P3 | Panel watchdogs killed other apps' services; cleanup touched the real Preferences | fixed | review round 2 lane `0b03903` | Watchdogs consider only the session environment; the real-home cleanup is gone |
 | R2-014 | P3 | Bottom bar at 980: status squeezed by the format toggle and zoom | fixed | batches 6 and 7 | J7 item 6 pass (one exception, F-J7-002) |
 | R2-015 | P3 | History tiles, Drag as width and "Destination: —" | fixed | batch 6 `90b8be6` | J7 item 8a pass |
@@ -404,11 +429,54 @@ Real-click retest of batches 4 and 5 (`14d4d9f`). Batch column names the fix whe
 
 | ID | Priority | Title | Status | Batch or merge | Note |
 |---|---|---|---|---|---|
-| F-R-001 | P3 | S42 status-notice captures show the stale status | in progress (batch 9) | batch 9 | Notice in 2 of 21 attempts (light only); the layout JSON says Saved to History |
-| F-R-002 | P3 | Increase Contrast does not raise glyph or disabled contrast | in progress (batch 9) | batch 9 | Glyph 4.00:1 unchanged; disabled Undo 1.47:1 to 1.57:1 (F-J3-004 still open) |
-| F-R-003 | P3 | Differentiate Without Color leaves the Upload list selection colour-only | in progress (batch 9) | batch 9 | Selected row 1.10:1 fill, no cue under the option; the tab does gain one |
-| F-R-004 | P3 | Toolbox menu capture fails intermittently and passes silently | in progress (batch 9) | batch 9 | 12 of 30 first-set menu captures dropped; the count of PNGs looked like a pass |
-| F-R-005 | P3 | Input-fence count cannot tell a parked pointer from typing | in progress (batch 9) | batch 9 | The fence records no event kinds; menu runs swallow 11 to 70 events |
+| F-R-001 | P3 | S42 status-notice captures show the stale status | fixed | batch 9 `6cc0b37` | Notice in 2 of 21 attempts (light only) before the fix; the shot now waits for the label's text. Round 3 re-measured it |
+| F-R-002 | P3 | Increase Contrast does not raise glyph or disabled contrast | fixed | batch 9 `227a471` | Glyph 4.00:1 before; 20.9:1 light and 10.7:1 dark after (round 3). Rendered only. F-J3-004 stays partial |
+| F-R-003 | P3 | Differentiate Without Color leaves the Upload list selection colour-only | fixed | batch 9 `2567b89`; R3-007 | Selected row gets a 2 pt edge and a leading bar (edge 16:1 under Differentiate, per the batch 9 evidence message) |
+| F-R-004 | P3 | Toolbox menu capture fails intermittently and passes silently | fixed | batch 9 `32b4a03` | The capture retries once; check-eye-dump fails an unexplained menu gap |
+| F-R-005 | P3 | Input-fence count cannot tell a parked pointer from typing | fixed | batch 9 `e14b985` | Counts per kind; only typing and buttons flag a run |
+
+#### Review round 3 (R3-001 to 009)
+
+Focused review at `5af9ac0`. Fixed in batch 10 (`4f8b5d9`, code `0fd7dfa`).
+
+| ID | Priority | Title | Status | Batch or merge | Note |
+|---|---|---|---|---|---|
+| R3-001 | P2 | Resize past the window's room: the picture stays, the title and outputs keep the fitted size | fixed | batch 10 `0fd7dfa` | A Resize or Limit above the room makes the picture the output, shown by display zoom; title, export, upload, copy, drag and History say the typed size (`b10OversizedResize`) |
+| R3-002 | P2 | Corner drag on a snap changes only the shown size | fixed | batch 10 `0fd7dfa`; refined by R4-003 | A corner drag on a snap is a Resize of the picture: one Undo step (`b10CornerDragResizesPicture`) |
+| R3-003 | P3 | File › Export seeds Original size from its own default, not the footer box | fixed | batch 10 `0fd7dfa` | Export seeds from the footer box and hands the answer back (`b10ExportAccessoryMatchesFooter`) |
+| R3-004 | P3 | Ledger: E2E-STATE-018 and 019 describe the pre-batch-9 state; STATE-019 cites the wrong finding | fixed | batch 10 `0fd7dfa` | Rewritten for the batch 9 re-render; STATE-019 cites R3-007. Batch 11 corrected its SHA (R4-005) |
+| R3-005 | P4 | "Selection-style pop-up" wording survives for the Toolbox | fixed | batch 10 `0fd7dfa` | Replaced in harness and inventory text |
+| R3-006 | P4 | Gap-reason vocabulary accepts `retired` on an unverified row | fixed | batch 10 `0fd7dfa` | `--check` rule and can-fail proof in `tools/test.py` |
+| R3-007 | P4 | Selected Upload row under Differentiate uses the Default pill's check glyph | fixed | batch 10 `0fd7dfa` | Selected row: 2 pt edge plus a leading bar; the check stays the Default pill's |
+| R3-008 | P4 | Capture pause: failed re-registration not shown; no test posts the real deactivation notification; one path orders Settings out without marking it hidden | fixed | batch 10 `0fd7dfa` | The failure shows on the Capture note and its spoken value; the test posts the real did-resign-active notification |
+| R3-009 | P4 | History Details: a dead link after Delete from Web shows nothing saying it was deleted | fixed | batch 10 `0fd7dfa` | Details marks the address `(deleted)` beside the published size |
+
+#### Review round 4 (R4-001 to 007)
+
+Narrow review at `4f8b5d9`. Fixed in batch 11 (`748f352`, branch commits `61bea34` and `21113c9`, `e4dcb06`, `2930ad2`, docs `4c6927e`).
+
+| ID | Priority | Title | Status | Batch or merge | Note |
+|---|---|---|---|---|---|
+| R4-001 | P3 | Actual Size disabled after an oversized Resize, though the picture is bigger than its window | fixed | batch 11 `61bea34` | `canToggleActualSize` holds for a snap shown below 100%; the saved zoom returns on leaving Actual Size (`b11ActualSizeAfterOversizedResize`) |
+| R4-002 | P3 | Unticked, typing the picture's own width does nothing or resamples a pixel short | fixed | batch 11 `61bea34` | Exact native size; a proportional request within a pixel snaps to the picture (`b11NativeWidthWhileUnticked`; `ResizePanelTests`) |
+| R4-003 | P3 | Ticked corner drag collapsed the picture to the shown size | fixed | batch 11 `61bea34`; clamped by R5-003 | Drag scales the picture's own pixels by its proportion of the shown size, by the orchestrator's decision (`b11CornerDragTicked`) |
+| R4-004 | P4 | Automatic zoom-to-fit not tracked on every path | fixed | batch 11 `61bea34` | Window fits, full screen and Frame undo all keep the record (`b11FitZoomIsTracked`) |
+| R4-005 | P4 | Ledger: no round 3 responses; STATE-019 cites one SHA for three SHAs; reviewer cells stale | fixed | batch 11 `4c6927e` | This section and the STATE-019 SHA list; matrix regenerated, `--check` passes |
+| R4-006 | P4 | Evidence text: audit-fix-10 captions give the wrong snap size; footer captions claim size; Export shots say "Not available" | fixed | batch 11 `4c6927e`; harness `21113c9`, `e4dcb06` | Captions corrected; the export step refreshes the accessory before the shot; the two accessory shots recaptured in audit-fix-11 |
+| R4-007 | P4 | File › Export always offers "Export at original size" | fixed | batch 11 `61bea34` | Checkbox offered only when the picture differs (`b11ExportOffersOriginalOnlyWhenItDiffers`) |
+
+Also in batch 11, with no R-number: a Limit one pixel short (pre-existing; a Limit of 1400 on 1981 × 953 came out 1399 wide, fixed by a model of 2,700 sizes, 712 failures before and 0 after), the capture-note error copy in words, and Settings timing tests on an injectable clock (`2930ad2`).
+
+#### Review round 5 (R5-001 to 004)
+
+Confirmation review at `e084f15`. Fixed in batch 12 (`3b453b3`, commit `2045fcd`).
+
+| ID | Priority | Title | Status | Batch or merge | Note |
+|---|---|---|---|---|---|
+| R5-001 | P4 | Full screen: Cancel of a Resize preview left full screen's zoom record moved, so the exit skipped the zoom | fixed | batch 12 `2045fcd` | The Resize baseline holds the full-screen zoom record and Cancel puts it back (full-screen preview, Cancel, exit: 100%) |
+| R5-002 | P4 | Undo or an edit in Actual Size restored a saved zoom without refitting | fixed | batch 12 `2045fcd` | Leaving Actual Size fits the picture that is back; full screen entered or left meanwhile fits the window it is in (`b11ActualSizeAfterOversizedResize`) |
+| R5-003 | P4 | Ticked corner drag past 32 M pixels showed an impossible size and cancelled silently on release | fixed | batch 12 `2045fcd` | Stops the scale at the supported size, so the title shows what release applies (`b12OversizedTickedDrag`) |
+| R5-004 | P4 | Limit one-pixel fix lived only in the snap path | fixed | batch 12 `2045fcd` | One shared rule serves the snap and generic proportional paths (`b12LimitWithoutSnap`) |
 
 #### J8 findings (F-J8-001 to 002)
 
@@ -419,19 +487,19 @@ Real-click retest of batches 4 and 5 (`14d4d9f`). Batch column names the fix whe
 
 #### Totals by status
 
-| Status | F-J1 to F-J8 (93) | R1 (24) | R2 (18) | F-R (5) | All (140) |
-|---|---|---|---|---|---|
-| fixed | 70 | 20 | 13 | 0 | 103 |
-| partial | 11 | 2 | 5 | 0 | 18 |
-| deferred | 1 | 1 | 0 | 0 | 2 |
-| gap | 5 | 0 | 0 | 0 | 5 |
-| doc-only | 1 | 0 | 0 | 0 | 1 |
-| open | 3 | 1 | 0 | 0 | 4 |
-| in progress (batch 9) | 0 | 0 | 0 | 5 | 5 |
-| accepted trade-off | 2 | 0 | 0 | 0 | 2 |
-| **Total** | **93** | **24** | **18** | **5** | **140** |
+| Status | F-J1 to F-J8 (93) | R1 (24) | R2 (18) | R3 (9) | R4 (7) | R5 (4) | F-R (5) | All (160) |
+|---|---|---|---|---|---|---|---|---|
+| fixed | 70 | 20 | 14 | 9 | 7 | 4 | 5 | 129 |
+| partial | 11 | 2 | 4 | 0 | 0 | 0 | 0 | 17 |
+| deferred | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 2 |
+| gap | 5 | 0 | 0 | 0 | 0 | 0 | 0 | 5 |
+| doc-only | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 1 |
+| open | 3 | 1 | 0 | 0 | 0 | 0 | 0 | 4 |
+| accepted trade-off | 2 | 0 | 0 | 0 | 0 | 0 | 0 | 2 |
+| in progress | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **Total** | **93** | **24** | **18** | **9** | **7** | **4** | **5** | **160** |
 
-Check: 103 + 18 + 2 + 5 + 1 + 4 + 5 + 2 = 140.
+Check: 129 + 17 + 2 + 5 + 1 + 4 + 2 + 0 = 160. Changes since the last count (140): batch 9 closed F-R-001 to 005 (5 fixed); R2-011 moved from partial to fixed (its dark notice capture and the stale-status fix are in batch 9, confirmed in round 3); rounds 3, 4 and 5 add 20 fixed. Still partial (17): F-J3-004 (rendered only), R2-001 (firing a shortcut and deactivation not run for real), and the rest as listed above.
 
 ### Coverage summary
 
@@ -454,9 +522,9 @@ Evidence classes are never merged:
 | `retired` (surface removed or replaced) | 27 |
 | **Total** | **597** |
 
-How the class moved (rows, 597 throughout): at `14d4d9f` (J6) E2E 322, rendered 64, unit/source 93, unverified 118. After review round 2 (R2-007, R2-008) E2E 309, rendered 48, unverified 120, retired 27. After J7 (three rendered rows, DEST-014, 016 and 022, became E2E) E2E 312, rendered 45. J8 changed no class.
+How the class moved (rows, 597 throughout): at `14d4d9f` (J6) E2E 322, rendered 64, unit/source 93, unverified 118. After review round 2 (R2-007, R2-008) E2E 309, rendered 48, unverified 120, retired 27. After J7 (three rendered rows, DEST-014, 016 and 022, became E2E) E2E 312, rendered 45. J8, batches 9 to 12, the ledger split (`02d4ca5`) and rounds 3 to 5 changed no class count. Recounted at `3b453b3` with the class counts above and the gap reasons below.
 
-Gap reasons of the 120 `unverified` rows, counted from the observed cell (each row has exactly one):
+Gap reasons of the 120 `unverified` rows, from the audited `gap reason` column, which matches the observed cell on every row (each row has exactly one):
 
 | Gap reason | Rows | What it covers |
 |---|---|---|
@@ -470,11 +538,12 @@ Gap reasons of the 120 `unverified` rows, counted from the observed cell (each r
 | `gap: AX value only` | 2 | zoom entries 75% and 100% |
 | **Total** | **120** | |
 
-Matrix housekeeping, which this lane does not edit (`e2e/` is the e2e lane's):
+Ledger columns (`02d4ca5`, which replaced the earlier mixed gap column):
 
-- The row's separate **gap column** does not match the observed cell in some rows: 72 are blank, 32 read `e2e-partial:` (the reason is in the observed cell), and 16 give a second label (for example MENU-016 reads `AX presence only` in the observed cell and `printer` in the gap column). The observed cell is what the counts above use.
+- **`reachability note`** is the generator's static prediction (`e2e-partial: os-panel`, `gap: printer`). It is filled on 105 of 597 rows: 48 unverified, 11 E2E, 13 rendered, 6 unit/source and all 27 retired. A note is a prediction, not evidence, and it is not counted in any class.
+- **`gap reason`** is the audited reason. It is filled on exactly the 120 unverified rows, using the eight values above, and empty on every other row. The `--check` rule fails when an unverified row lacks a reason, another class carries one, or the two columns disagree with the observed cell.
+- The earlier mixed gap column (72 blank, 32 `e2e-partial:`, 16 second labels) and the prose counts from before the ledger work (590 rows; 597 rows at J6 with 322 / 64 / 93 / 118) are superseded by these counts.
 - Three rows contain an escaped pipe in a cell. Column-splitting without escape handling miscounts them; the counts above split on unescaped pipes only.
-- The earlier prose counts (590 rows, 303 / 71 / 91 / 125; 597 rows at J6 with 322 / 64 / 93 / 118) are superseded by the counts above.
 
 ### Evidence index
 
@@ -501,6 +570,10 @@ Paths are under `docs/design/evidence/` unless stated. Counts are image files (`
 | `impl-2026-10-09/audit-fix-5/` | 249 | Batch 5 visual acceptance at `f7f68be`, rendered, icon mode `sf`: Toolbox icons, labelled History at 880 and wide, Settings › Upload, editor sheet on Settings. Has `captures.md`, `manifest.json`, `safety.txt`, `layout/` |
 | `impl-2026-10-09/audit-fix-6/` | 78 | Batch 6 visual acceptance at `cc764dc`, rendered, icon mode `sf`: Original size and Resize, footer at 980 states (S44), compact format toggle, Toolbox below its button, Hide and Trash Cancel-first, History at 880 |
 | `impl-2026-10-09/audit-fix-8/` | 24 | Batch 8 visual acceptance at `ee89d7b`, rendered, icon mode `sf`: the J7 findings (pause note, Resize one rule, published size, footer error with the checkbox kept) |
+| `impl-2026-10-09/audit-fix-9/` | 52 | Batch 9 visual acceptance at `16a8e09`, rendered, icon mode `sf`: Increase Contrast glyphs and disabled controls (21:1 for the Select glyph), the Upload row edge under Differentiate (16:1), the S42 notice and the Toolbox menu captures |
+| `impl-2026-10-09/audit-fix-10/` | 44 | Batch 10 visual acceptance at `8802c2e` (S46 harness surface at `9faf5c0`), rendered, icon mode `sf`: oversized Resize and corner drags (picture pixels, title and outputs), the Export accessory and its footer, the Capture note error, Details after delete. Caption corrections for R4-006 are in `captures.md` |
+| `impl-2026-10-09/audit-fix-11/` | 36 | Batch 11 visual acceptance (S47 harness surface at `21113c9`), rendered, icon mode `sf`: Actual Size after an oversized Resize, native-width Resize, the ticked corner drag, the Export accessory with real dimensions. `captures.md` and `manifest.json` list each capture with its source SHA |
+| `impl-2026-10-09/audit-fix-12` | none | Batch 12 has no capture folder. Its evidence is the test set in `tests/AppSafetyBatch11Cases.swift`, each case with a can-fail proof |
 | `impl-2026-10-09/final-render/` | 122 | Final render pass at `5b30929`, rendered only: display options on the current surfaces with positive controls, 48 stale rows refreshed; `captures.md`, `manifest.json`, `safety.txt`, `layout/` |
 | `impl-2026-10-09/audit-fix-4/` | 147 | Batch 4 visual acceptance at `1026e58`, rendered, icon mode `sf`: `dwc/` 16, `ic/` 12, `plain/` 119; each with `captures.md` and `layout/` |
 | `impl-2026-10-09/m1-rail/` | 80 | Rail removal, 80 captures at `fef46c7` |
@@ -515,35 +588,50 @@ Also outside `evidence/`: `e2e/panel-probe/` holds `probe.swift` (the throwaway 
 
 The rendered folders (`j3`, `j3-diffs`, `audit-fix-*`, `final-render`, `m*`) are harness renders. Do not read them as real-click proof. The `panelfix` and `j1`, `j2`, `j4`, `j5`, `j6`, `j7` and `j8` folders are the real-click evidence. `panelfix/` was already listed above and is unchanged.
 
-### E2E audit gaps (not proven by this audit)
+### Known gaps and decisions
 
-These are outside what the harness or the isolated session could prove. They are listed, not waived.
+Outside what the harness or the isolated session could prove, or decided and not built. Listed, not waived. Gaps first, then decisions, then what the owner handles before any push.
 
-1. **VoiceOver speech.** The AX dumps and the G10 walker are structural checks.
+**Gaps (not proven by this audit)**
+
+1. **VoiceOver speech.** No manual VoiceOver pass is recorded. The AX dumps and the G10 walker are structural checks. OSN-062 stays in progress.
 2. **Live Screen Recording capture of the real display.** Not run; it needs the owner's display.
-3. **Global capture shortcuts actually firing.** Unsafe on the real display. The pause lifecycle is verified through the visible note (J8 1a to 1e), not through a fired shortcut.
-4. **The app deactivation path of the pause.** Not run: deactivating the app brings another app forward, which could be the owner's.
+3. **Global capture shortcuts actually firing.** Unsafe on the real display. The pause lifecycle is verified through the visible note (J8 1a to 1e) and unit tests, including the real did-resign-active notification (R3-008).
+4. **App-deactivation pause path.** Unit-tested only. Not run for real, because deactivating the app brings another app forward, which could be the owner's.
 5. **1x and multi-display.** The only display was 2x Retina.
-6. **Photos library.** The Photos sheet was opened in its empty state only; the populated browser reads the real library.
+6. **Photos library.** The Photos sheet was opened in its empty state only; the populated browser was not read.
 7. **Printer.** Nothing was printed.
-8. **OS-owned panels' internals:** Open, Save, Export, Print, Share and Colors. The panels are OS-owned; the app-owned parts are driven and checked.
-9. **Native tooltips.**
-10. **Synthetic right-click context menus.** Not reachable by the synthetic click.
-11. **Held-modifier gestures**, such as a drag made while holding Shift or Option.
-12. **Drag out of the app.** The driver cannot drag to another app.
-13. **⌘1 to ⌘4 with the real keyboard in Settings** (F-J2-011). The harness maps the chords to menu items, and ⌘2 would start a real full-screen capture of the owner's display.
-14. **Window title text and system radios and checkboxes.** OS-owned (F-J3-008, F-J3-010).
-15. **Font Awesome Pro is not bundled by default** (R1-004). No capture exercises Pro icons; the evidence is icon mode `sf`.
-16. **The macOS 27.2 panel-service bug** (F-J5-005) is an OS bug. It is mitigated by the launchers canonicalizing the session path (`fa4715f`); real users are not affected.
-17. **The manual VoiceOver pass for OSN-062** is not recorded. OSN-062 stays in progress.
-18. **History cleanup of a withdrawn capture.** The leaked capture (R1-001) is out of the tree but still in history, owned by root. The cleanup must happen before any push.
+8. **OS-owned panel internals:** Open, Save, Export, Print, Share and Colors. The app-owned parts are driven and checked.
+9. **Native tooltips.** Drawn by the OS.
+10. **Synthetic right-click context menus.** The synthetic click does not reach them.
+11. **Held-modifier gestures**, such as a drag made while Shift or Option is held.
+12. **Drag out of the app.** The driver cannot drop onto another app.
+13. **⌘1 to ⌘4 with the real keyboard in Settings** (F-J2-011). The harness maps the chords to menu items; ⌘2 would start a real full-screen capture of the owner's display.
+14. **Window title text, and system radios and checkboxes.** OS-owned (F-J3-008, F-J3-010).
+15. **Live full-screen exit animation.** The tests call the full-screen notification handlers directly; their interplay with the animation was not run.
+16. **macOS 27.2 panel-service bug** (F-J5-005, OS build 26B5101f). Unfixed in the OS. The trigger was a `//` in the session path the launchers built; they now canonicalize it (`fa4715f`), and the session-scoped watchdog (R2-013, `0b03903`) bounds any growth. The app code is unchanged.
+17. **Font Awesome Pro is not bundled by default** (R1-004). Every capture since batch 4 is icon mode `sf`, so no capture shows the Font Awesome Free glyphs in use (the Toolbox icons, F-J1-009; the Resize arrows, F-J3-011).
+18. **Still not run from earlier passes:** FTP and FTPS destination forms (F-J2-014); the timed upload states, the 12 s success hold, the Retrying label and the cancel notice (F-J2-022, needs a slow network); field names in the destination forms (F-J2-017, the AX tool cannot show an explicit label); Edit › Copy Image for an unresized Original-size picture (F-J6-002).
 
-Also still open from earlier passes:
+**Decisions (deferred or accepted; not built)**
 
-- FTP and FTPS destination forms were not opened (F-J2-014); WebDAV and SFTP copy was checked (F-J2-015).
-- Timed UI states: the 12 s success-line hold, the Retrying label and the Upload cancelled notice (F-J2-022). Needs a slow network.
-- Field names in the destination forms (F-J2-017): the AX tool cannot show whether an explicit label exists.
-- Font Awesome Free glyphs: every batch 4 and later capture is icon mode `sf`, so the Toolbox icons have no FA-mode capture (F-J1-009).
+- **Navigator column** in Actual Size (R1-016): deferred.
+- **Eraser shadow on cut fragments** (R1-021, open; F-J4-007, a design question): a format change, not made.
+- **Record-shortcut field:** the 69-item key pop-up remains (F-J2-020, partial). UX debt, deferred.
+- **Text editor accessibility selection** (F-J1-023): deferred; next in line.
+- **Drag-well Export panel** (F-J1-012): OS-owned panel, never retested. A gap.
+- **Upload percentage:** no byte progress exists to show. Accepted in the round 3 record, which cites it as R2-014. In this index R2-014 is the 980 bottom bar (fixed), so the percentage item has no row here of its own.
+- **"Failed" at 980** with the HTTP code in AX help and Details (F-J8-001): accepted trade-off. The owner may want `HTTP 403` in the footer.
+- **Pause note only on the Capture tab** (F-J8-002): accepted trade-off; an AX value on the tab group would serve testing.
+- **Small and empty documents use 4 to 41% of a large window** (F-J3-009): open, no fix recorded.
+- **Previous document's size shown briefly after History › Open** (F-J4-006): open.
+- **The final render manifest's two historic menu gaps:** accepted in round 3.
+
+**Owner, before any push (root-owned)**
+
+- **History cleanup of the withdrawn capture** (R1-001). Out of the tree, still in history, owned by root. Must happen before any push.
+- **Model and tool names** in `e2e-audit-plan.md` and `audit-overview.html` (round 3 record). Remove before any push.
+- **Vendored tool-skills folder and its `.gitignore` entry.** Handle before any push.
 
 ### Panel-service investigation (F-J5-005)
 
@@ -571,12 +659,11 @@ App-specific alerts are no longer NSAlert: they are app-owned sheets at 20 pt (O
 
 ## Open items and gaps
 
-- **Batch 9 (in progress):** F-R-001 to 005. F-R-002: Increase Contrast must raise inactive glyph and disabled contrast (F-J3-004 stays partial). F-R-003: Differentiate Without Color needs a cue on the Settings › Upload selection. F-R-001: the S42 status notice must be captured from the layout the capture reports. F-R-004: the Toolbox menu capture must open every time or fail the run. F-R-005: the input fence must record keyboard, button and pointer events separately. Harness timing, menu and fence-count fixes are in the same batch. Branch not recorded in the sources.
-- **Independent review round 3 (pending):** focused on the review round 2 regression fixes (R2-001 to R2-005, R2-014 to R2-018). OSN-071 waits on it.
-- **Final gates (pending):** after batch 9 and review round 3. OSN-071 and OSN-072 depend on them.
-- **Open with no fix recorded:** F-J3-009, F-J4-006, F-J4-007 and R1-021 (stretch goal). Partial: F-J6-002 (the Copy Image path for an unresized Original-size picture was not re-run). Gaps listed in the resolution index: F-J1-012, F-J2-011, F-J2-017, F-J3-008, F-J3-010.
+- **Batches 9 to 12 and review rounds 3 to 5: done.** Fixes and their evidence are in the fix batches table and the resolution index. Batch 12 has no capture folder; its evidence is the test set.
+- **Round 6 confirmation of batch 12 (`3b453b3`): IN PROGRESS.** The orchestrator records its result in the review rounds table. Round 3 is done (batch 10).
+- **Final gates: IN PROGRESS** after round 6 (`3b453b3`). OSN-071 and OSN-072 depend on them. Not recorded here; the orchestrator fills the result. OSN-062 stays in progress and OSN-071 stays pending until then.
+- **Open with no fix recorded:** F-J3-009, F-J4-006, F-J4-007 and R1-021 (stretch goal). Partial: the 17 partial IDs, listed in the totals table with their notes. Gaps listed in the resolution index: F-J1-012, F-J2-011, F-J2-017, F-J3-008, F-J3-010.
 - **R1-001 history cleanup:** the withdrawn capture is out of the tree but still in history. The cleanup is owned by root and must happen before any push.
-- **Matrix housekeeping (e2e lane, next regenerate):** the gap column disagrees with the observed cell in 16 rows and is blank in 72; 32 rows read `e2e-partial:` in it. Counts in this file use the observed cell.
 - **Font Awesome glyphs:** every capture since batch 4 is icon mode `sf` (Font Awesome Pro is not bundled). The Toolbox icons (F-J1-009) still need one FA-mode capture.
 - **Round-1 incident (OSN-001):** a can-fail proof deleted the owner's real `com.shoemoney.opensnap` defaults plist. Cause: a cleanup trap was installed before an id refusal. Fixed in `db973a6`. The SkitchRedux store and `com.shoemoney.skitch-redux.plist` hashed unchanged. The migration marker is a file in the absent OpenSnap folder, so the parked migration is unaffected.
 - **Unsafe tool, resolved:** `tools/test-native-startup.py` now runs only a throwaway-id temp copy, behind a store guard (`efe2f68`). The warning from the earlier pass no longer applies.

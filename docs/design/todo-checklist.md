@@ -1,6 +1,6 @@
 # OpenSnap todo checklist (visual audit, 2026-10-09, final)
 
-Status of every todo at main `33743c5` (implementation baseline `bad6617`): **29 done, 2 verified, 1 not-a-bug, 3 in-progress, 1 pending.** Unchanged since `284f028`. Each todo has an Implementation note (merge, evidence, open items). Counts and the commit map are in `progress.md`. IDs, priorities, milestones, dependencies and Lane A match `visual-audit.md` section 9 exactly. Each section records the main state at the SHA in its own note; sections with a **Since 284f028** line add the E2E audit merges. The audit's section 9 state at `dc1eb26` is in `visual-audit.md`. This file is generated from the same data as `backlog.json`. Edit the source, not the output.
+Status of every todo at main `3b453b3` (implementation baseline `bad6617`): **29 done, 2 verified, 1 not-a-bug, 3 in-progress, 1 pending.** Unchanged since `284f028`. Each todo has an Implementation note (merge, evidence, open items). Counts and the commit map are in `progress.md`. IDs, priorities, milestones, dependencies and Lane A match `visual-audit.md` section 9 exactly. Each section records the main state at the SHA in its own note; sections with a **Since 284f028** line add the E2E audit merges. The audit's section 9 state at `dc1eb26` is in `visual-audit.md`. This file is generated from the same data as `backlog.json`. Edit the source, not the output.
 
 Snapshot: briefed at `b9319c4`; drift to `4b2ae0f` and then `dc1eb26` (checked 11:01 CDT). WP4 (rename) merged before the implementation baseline (`f7ff86b`, `d2dc3c9`). Reconcile each todo against main before starting it (roadmap section 2a). Line numbers, counts and words such as 'today' in substeps and acceptance describe the `4b2ae0f` source unless a todo says otherwise. Estimates are in d, following the round-1 method (one implementer-day). Lane A means the todo edits `Sources/App.swift`, which is serial.
 
@@ -49,7 +49,7 @@ Visual validation checklists cite BEFORE capture stems from `evidence/2026-10-09
 
 Counts: 36 todos. P0 12, P1 20, P2 4. M0 2, M1 5, M2 5, M3 3, M4 6, M5 9, M6 3, M7 3. Lane A 22.
 
-Status at `284f028`, `fa4715f` and `33743c5`: 29 done, 2 verified, 1 not-a-bug, 3 in-progress (OSN-062, OSN-070, OSN-072), 1 pending (OSN-071). OSN-044, OSN-054, OSN-060 and OSN-061 landed on main in `3ee9503`, `7c8bdb1` and `accfedd`; OSN-062 stays in-progress until the manual VoiceOver pass is recorded.
+Status at `284f028`, `fa4715f`, `33743c5` and `3b453b3`: 29 done, 2 verified, 1 not-a-bug, 3 in-progress (OSN-062, OSN-070, OSN-072), 1 pending (OSN-071). OSN-044, OSN-054, OSN-060 and OSN-061 landed on main in `3ee9503`, `7c8bdb1` and `accfedd`; OSN-062 stays in-progress until the manual VoiceOver pass is recorded.
 
 ---
 
@@ -2035,7 +2035,7 @@ Status at `284f028`, `fa4715f` and `33743c5`: 29 done, 2 verified, 1 not-a-bug, 
 
 **Main state (658a16f):** Open: the full visual acceptance gallery and the independent visual sign-off have not been run on the implemented surfaces.
 
-**Since 284f028:** Pending. The E2E audit and review rounds 1 and 2 do not close this todo; it waits for independent review round 3, focused on the round 2 regression fixes, and the final gates.
+**Since 284f028:** Pending. The E2E audit and review rounds 1 to 5 do not close this todo; it waits for the round 6 confirmation of batch 12 (`3b453b3`) and the final gates, both in progress.
 
 **Findings:** VF-01, VF-02, VF-03, VF-04, VF-05, VF-06, VF-07, VF-08, VF-09, VF-10, VF-11, VF-12, VF-13, VF-14, VF-15, VF-16, VF-17, VF-18, VF-19, VF-20, VF-21, VF-22, VF-23, VF-24, VF-25, VF-26, VF-27, VF-28, VF-29. **Spec:** T14, T15 j.
 
