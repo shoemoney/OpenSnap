@@ -474,7 +474,7 @@ Result key: PASS = the original steps no longer reproduce the defect and the cor
 | F-J1-016 handles at 25% | PARTIAL | `24` | Handles are about 12 px at 25% as at 100% (fixed screen size); on an 85 px selection they are still large. |
 | F-J1-017 command naming | PASS | AX | Edit has Arrange as a submenu and Remove Annotations / Remove Snap Picture; Image no longer holds the arrange commands (AX read of the live menus, not visible in a capture). |
 | F-J1-018 full-screen layout | PASS | `18` | Canvas fits at 200%; chrome capped and grouped. |
-| F-J1-019 popover dismissal | PASS | `05` | Both popovers close after a pick. |
+| F-J1-019 popover dismissal | PARTIAL | `05` | `05` shows the Size popover open with its preset buttons, not closed after a pick; no J4 capture shows either popover dismissing, so the fix is not evidenced yet. |
 | F-J1-020 Undo enabled | PASS | `00` | Undo and Remove annotations disabled on a blank canvas. |
 | F-J1-021 floppy icon | PASS | `00` | Save is the box-archive glyph. |
 | F-J1-022 ⌘M | PASS | `20`, `21` | ⌘M (harness maps it to the menu item) hid the window (tool: window exists but is not on-screen); the status item read Show OpenSnap and restored it. No capture of the hidden state is possible. |
@@ -486,7 +486,7 @@ Result key: PASS = the original steps no longer reproduce the defect and the cor
 | F-J2-003 dirty-document guard | **PASS (P1)** | `33`, `34` | Open with unsaved changes asks Save your drawing? on History; Cancel keeps everything. |
 | F-J2-004 copy confirmation | PASS | `36`, `37` | "Link copied" and "Image copied" in the History footer. |
 | F-J2-005 Unsaved on open | PASS | `35` | Opened entry reads "Saved". |
-| F-J2-006 dim canvas | PASS | `35` | Bright after every sheet; not reproduced (it was plausible only). |
+| F-J2-006 dim canvas | PASS | `35` | Bright after every sheet; not reproduced (no defect seen; the finding was plausible only, so this is an absence of the symptom, not a verified fix). |
 | F-J2-007 vocabulary | PASS | `29` | Tabs All, Shared, Exported, Saved match the tiles. |
 | F-J2-008 empty states | PASS | `38`, `39` | No-match shows Clear filters and the footer "0 of 5 items". |
 | F-J2-009 space | PARTIAL | `29` | The right column now holds a summary; the 880 × 600 minimum reflow was not reachable (no window resize tool). |
@@ -726,3 +726,14 @@ Growth is roughly linear at **1.1-1.2 GB per second** at 100 % CPU, starting the
 4. **Matrix.** ⌘E, ⌘O, ⌘S and ⇧⌘S (E2E-KEY-007, -004, -005, -006) are `gap: harness`: an open/save panel cannot be viewed or dismissed through the real-click driver until the cause is found. They are not marked E2E because nothing was viewed. Until an app-side cause is known, do not describe this as an OpenSnap defect or as a macOS defect.
 
 Evidence: `panel-probe/trials/` holds the two sample logs, the sampler and the watchdog's kill log.
+
+## Ledger corrections after review round 1
+
+An independent review found class inflation in `coverage-matrix.md`. Changes (the generator keeps the edited cells; `python3 -I tools/e2e-inventory.py --check` passes):
+
+- **AX presence is not a render.** 23 rows classed `rendered` that cite only `j1/menus-ax-dump.txt` ("present … not pressed") are now `unverified` with "gap: AX presence only": MENU-007, 009, 010, 013, 014, 015, 016, 020, 021, 023, 029, 030, 032, 033, 039, 047, 048, 049, 062, 063, 068, 069, 076.
+- **No screenshot of the claim.** BAR-034 and BAR-035 (AX value only; the cited image shows 50%), BAR-041 and A11Y-003 (cite only a text readout) moved from `E2E` to `unverified` with the reason in `observed`.
+- **Entry path substituted.** MENU-001, 006, 019, 022 and 059 were pressed through the Toolbox pop-up, not the menu bar item; the rows now say so.
+- **Stale rows.** DEST-036 now records the J4 pass (the app deleted its own S3 upload from History › Delete from Web; `j4/69`–`71`, `j4-aws-log.md`) beside the J2 refusal. DEST-010 is marked "re-check after batch 4" (pre-batch-4 SFTP form). SHEET-002 to SHEET-006 said "pending batch 3c": they now say they were drawn on the pre-3c sheet and need a re-check. MENU-004 is `unverified` (it observed the Capture Shortcuts sheet, removed in d9ed8b7; the entry now opens Settings › Capture). HOT-001 to HOT-018 (the removed sheet) are marked retired, and HOT-041 is the new row for the menu entry. HIST-003 to HIST-005 keep their IDs and evidence under the current tab names (Shared, Exported, Saved).
+- **J4 retest table.** F-J1-019 is PARTIAL (the cited image shows the popover open). F-J2-006 reads "not reproduced (no defect seen)", which is an absence of the symptom, not a verified fix.
+- **Class counts** (589 rows): `E2E` 304 → 299, `rendered` 94 → 71, `unit/source` 91 → 91, `unverified` 101 → 129.
