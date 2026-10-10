@@ -14,7 +14,7 @@ final class FrameChromeView: NSView {
             chrome.appendRect(hole)
             chrome.windingRule = .evenOdd
         }
-        NSColor.windowBackgroundColor.setFill(); chrome.fill()
+        DesignTokens.Palette.Surface.window.setFill(); chrome.fill()
     }
     override func layout() { super.layout(); if showsCanvasHole { needsDisplay = true } }
 }
@@ -38,14 +38,13 @@ final class DragExportView: NSView, NSDraggingSource, NSFilePromiseProviderDeleg
     private var activeProvider: ObjectIdentifier?
     /// Modern lets the glass surface behind the view be the plate.
     var drawsBackground = true { didSet { needsDisplay = true } }
-    /// Modern shows only an open-hand icon: no thumbnail and no text. The thumbnail still feeds the drag image and the canvas bleed.
+    /// Modern shows only an open-hand icon: no thumbnail and no text. The thumbnail still feeds the drag image.
     var showsHandIconOnly = false { didSet { needsDisplay = true } }
     static let handSymbolName = "hand.raised"
     override func draw(_ dirtyRect: NSRect) {
         if drawsBackground { NSColor.controlBackgroundColor.setFill(); NSBezierPath(roundedRect: bounds.insetBy(dx: 2, dy: 2), xRadius: 8, yRadius: 8).fill() }
         if showsHandIconOnly {
-            let configuration = NSImage.SymbolConfiguration(pointSize: 22, weight: .semibold)
-            guard let hand = NSImage(systemSymbolName: Self.handSymbolName, accessibilityDescription: nil)?.withSymbolConfiguration(configuration) else { return }
+            guard let hand = ChromeIcons.resolve(.dragHand, family: .solid, pointSize: 22).image else { return }
             let tinted = NSImage(size: hand.size, flipped: false) { rect in
                 hand.draw(in: rect); NSColor.labelColor.setFill(); rect.fill(using: .sourceAtop); return true
             }
@@ -216,7 +215,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     var windowZoom: WindowZoomAnimation?
     var windowZoomID: UUID?
     var visibilityZoomOrigin: CGRect?
-    var animatesWindowZoom: Bool { !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
+    var animatesWindowZoom: Bool { !DisplayOptions.current.reduceMotion }
     var resizeButton: NSButton?
     let navigator = CanvasNavigator(frame: NSRect(x: 0, y: 0, width: 180, height: 170))
     var navigatorWindow: NSPanel?
@@ -1095,7 +1094,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             let scale = min(1, 128 / max(document.size.width, document.size.height))
             dragExportView?.overview = ImageExport.image(document: document, size: CGSize(width: max(1, ceil(document.size.width * scale)), height: max(1, ceil(document.size.height * scale))))
         }
-        feedCanvasBleed()
     }
     func safeName() -> String { let s = nameField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines); return (s.isEmpty ? "OpenSnap" : s).replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ":", with: "-") }
     func applyFrameWindowValues() {

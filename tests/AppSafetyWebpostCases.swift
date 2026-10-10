@@ -312,8 +312,7 @@ extension AppSafetyTests {
                    && button.image?.accessibilityDescription == "Upload", "It shows icloud.and.arrow.up")
         try expect(button.accessibilityLabel() == "Upload to destination", "VoiceOver reads the label, not the symbol name")
         try expect(button.action == #selector(AppDelegate.share(_:)) && button.menu != nil, "It uploads on click and carries the destination menu")
-        let width = chrome.surface(for: button)?.fixedSize?.width ?? 999
-        try expect(width <= 48 && chrome.surface(for: button)?.fixedSize?.height == 36, "It is a compact circle-sized pill, not a labelled capsule (\(width))")
+        try expect(button.frame.width <= 48 && button.frame.height == 36 && button.frame.height >= DesignTokens.Size.hitMin, "It is a compact icon button, not a labelled capsule (\(button.frame.size))")
     }
 }
 

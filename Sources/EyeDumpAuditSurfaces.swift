@@ -484,30 +484,28 @@ extension AuditRun {
         for tool in SketchTool.allCases {
             app.setTool(tool)
             shoot("S04", "tool-\(tool.rawValue)", surface: "tool states", state: "\(tool.rawValue) tool selected", crop: headerCrop(),
-                  refs: ["App.swift|func updateToolButtons", "GlassChrome.swift|private func resolvedTint"], settle: 0.3)
+                  refs: ["App.swift|func updateToolButtons", "GlassChrome.swift|static func resolveStyle"], settle: 0.3)
         }
         app.setTool(.brush)
         guard #available(macOS 26, *), let chrome = app.modernChrome as? ModernEditorChrome else { return }
-        if let surface = chrome.surface(for: chrome.toolButtons["rectangle"]!) {
-            surface.setHovered(true)
-            shoot("S04", "tool-hover", surface: "tool states", state: "Rectangle tool hovered (GlassSurfaceView.setHovered), Brush selected", crop: headerCrop(),
+        if let tool = chrome.toolButtons["rectangle"] {
+            tool.setHovered(true)
+            shoot("S04", "tool-hover", surface: "tool states", state: "Rectangle tool hovered (GlassChromeButton.setHovered: a 0.08 fill on the group plate), Brush selected", crop: headerCrop(),
                   refs: ["GlassChrome.swift|func setHovered"], settle: 0.4)
-            surface.setHovered(false)
-            surface.isPressed = true
-            shoot("S04", "tool-pressed", surface: "tool states", state: "Rectangle tool pressed (GlassSurfaceView.isPressed), Brush selected", crop: headerCrop(),
-                  refs: ["GlassChrome.swift|var isPressed"], settle: 0.4)
-            surface.isPressed = false
+            tool.setHovered(false)
+            tool.highlight(true)
+            shoot("S04", "tool-pressed", surface: "tool states", state: "Rectangle tool pressed (GlassChromeButton.highlight: a 0.16 fill on the group plate), Brush selected", crop: headerCrop(),
+                  refs: ["GlassChrome.swift|override func highlight"], settle: 0.4)
+            tool.highlight(false)
         }
         chrome.resizeButton.isEnabled = false
         chrome.undoButton.isEnabled = false
-        shoot("S04", "controls-disabled", surface: "tool states", state: "Resize + Undo disabled (isEnabled=false as Frame/Actual mode does)", refs: ["AppViewport.swift|resizeButton?.isEnabled", "GlassChrome.swift|isDisabled"], settle: 0.4)
+        shoot("S04", "controls-disabled", surface: "tool states", state: "Resize + Undo disabled (isEnabled=false as Frame/Actual mode does)", refs: ["AppViewport.swift|resizeButton?.isEnabled", "GlassChrome.swift|disabled: !isEnabled"], settle: 0.4)
         chrome.resizeButton.isEnabled = true; chrome.undoButton.isEnabled = true
-        if let surface = chrome.surface(for: chrome.snapButton) {
-            surface.setHovered(true)
-            shoot("S04", "snap-hover", surface: "tool states", state: "Snap (primary, accent) hovered", crop: headerCrop(),
-                  refs: ["GlassChrome.swift|enum Prominence"], settle: 0.4)
-            surface.setHovered(false)
-        }
+        chrome.snapButton.setHovered(true)
+        shoot("S04", "snap-hover", surface: "tool states", state: "Snap (primary, accent) hovered", crop: headerCrop(),
+              refs: ["GlassChrome.swift|var isPrimary"], settle: 0.4)
+        chrome.snapButton.setHovered(false)
     }
 
     func s05() {

@@ -9,11 +9,6 @@ extension AppDelegate {
         if !on { AppToolTip.setText(nil, for: status); status.spokenValue = nil; status.setAccessibilityHelp(nil) }
     }
 
-    /// The Drag Me thumbnail doubles as the canvas bleed under the bars.
-    func feedCanvasBleed() {
-        (modernChrome as? ModernEditorChrome)?.updateCanvasBleed(dragExportView?.overview)
-    }
-
     /// Modern has no name field: the window title is the document name.
     func showDocumentName(_ name: String) {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)

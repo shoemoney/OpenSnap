@@ -144,6 +144,9 @@ private enum GlassChromeTests {
         return [converted.redComponent, converted.greenComponent, converted.blueComponent]
     }
 
+    /// The accent as an aqua view resolves it; a dynamic colour converted outside a drawing context follows the process appearance instead.
+    private static var accentAqua: NSColor { DesignTokens.Palette.resolve(NSColor.controlAccentColor, for: NSAppearance(named: .aqua)!) }
+
     private static func sameColor(_ a: NSColor?, _ b: NSColor?, tolerance: CGFloat = 0.01) -> Bool {
         guard let x = rgb(a), let y = rgb(b) else { return a == nil && b == nil }
         return zip(x, y).allSatisfy { abs($0 - $1) <= tolerance }
@@ -208,16 +211,20 @@ private enum GlassChromeTests {
         let blank = GlassChromeButton(title: "Plain", target: nil, action: nil)
         expect(blank.iconSource == .none && blank.image == nil && blank.imagePosition == .noImage, "Without an icon the title stands alone")
 
-        // contentTintColor per state.
+        // contentTintColor per state: a selected button is only a 0.20 accent fill, so its glyph is the accent itself;
+        // the one primary button sits on a saturated fill and contrasts with it.
         let accentContrast = GlassChromeButton.textColor(on: .controlAccentColor)
         let tinted = GlassChromeButton(title: "Snap", target: nil, action: nil)
         tinted.setButtonType(.toggle)
         tinted.icon = .crosshairs
         expect(sameColor(tinted.contentTintColor, .labelColor), "Normal content uses the label color")
         tinted.state = .on
-        expect(sameColor(tinted.contentTintColor, accentContrast), "Selected content contrasts with the accent")
+        expect(sameColor(tinted.contentTintColor, .controlAccentColor), "A selected glyph is the accent")
+        tinted.accessibility = contrast
+        expect(sameColor(tinted.contentTintColor, .labelColor), "Increase Contrast keeps the selected glyph in the label color")
+        tinted.accessibility = plain
         tinted.selectionTints = false
-        expect(sameColor(tinted.contentTintColor, .labelColor), "A glyph-only toggle keeps the label color when on")
+        expect(sameColor(tinted.contentTintColor, .labelColor) && tinted.plate.style == .none, "A glyph-only toggle keeps the label color and no fill when on")
         tinted.selectionTints = true
         tinted.state = .off
         tinted.isPrimary = true
@@ -228,23 +235,56 @@ private enum GlassChromeTests {
         tinted.isPrimary = false
         expect(sameColor(tinted.contentTintColor, .labelColor), "Re-enabling restores the label color")
 
-        // Notifications.
-        let watched = GlassChromeButton(title: "Wipe", target: nil, action: nil)
-        var snapshots: [(pressing: Bool, enabled: Bool, on: Bool, hidden: Bool)] = []
-        watched.onInteractionChange = { button in snapshots.append((button.isPressing, button.isEnabled, button.state == .on, button.isHidden)) }
-        watched.highlight(true)
-        expect(snapshots.count == 1 && snapshots[0].pressing, "highlight(true) notifies a press")
-        watched.highlight(false)
-        expect(snapshots.count == 2 && !snapshots[1].pressing && !watched.isPressing, "highlight(false) notifies the release")
-        watched.state = .on
-        expect(snapshots.count == 3 && snapshots[2].on, "State changes notify")
-        watched.isEnabled = false
-        expect(snapshots.count == 4 && !snapshots[3].enabled, "Disabling notifies")
-        watched.isHidden = true
-        expect(snapshots.count == 5 && snapshots[4].hidden, "Hiding notifies")
-        watched.isHidden = false
-        watched.isEnabled = true
-        expect(snapshots.count == 7, "Showing and enabling notify")
+        // The button draws its own state fill on a rounded layer; no surface is involved.
+        let fill = GlassChromeButton(title: "", target: nil, action: nil)
+        fill.setButtonType(.toggle)
+        fill.icon = .paintbrush
+        fill.appearance = NSAppearance(named: .aqua)
+        expect(fill.layer != nil && fill.layer?.cornerRadius == 12 && fill.layer?.backgroundColor == nil, "A button is layer backed with a 12 pt radius and no fill at rest")
+        fill.setHovered(true)
+        expect(abs((fill.plate.style.fill?.alphaComponent ?? 0) - 0.08) < 0.001 && fill.layer?.backgroundColor != nil, "Hover is a 0.08 label-color fill")
+        fill.highlight(true)
+        expect(abs((fill.plate.style.fill?.alphaComponent ?? 0) - 0.16) < 0.001, "Press is a 0.16 label-color fill")
+        fill.highlight(false)
+        fill.setHovered(false)
+        expect(fill.plate.style == .none && fill.layer?.backgroundColor == nil, "Back to no fill")
+        fill.state = .on
+        expect(abs((fill.plate.style.fill?.alphaComponent ?? 0) - 0.20) < 0.001 && fill.layer?.borderWidth == 1, "Selected is a 0.20 accent fill with a 1 pt border")
+        expect(sameColor(fill.plate.style.border, accentAqua) && sameColor(fill.plate.style.fill, accentAqua), "Both are the accent")
+        fill.setHovered(true)
+        expect(abs((fill.plate.style.fill?.alphaComponent ?? 0) - 0.20) < 0.001, "Hover does not wash out a selected button")
+        fill.highlight(true)
+        expect(abs((fill.plate.style.fill?.alphaComponent ?? 0) - 0.32) < 0.001, "Pressing a selected button deepens it")
+        fill.highlight(false)
+        fill.setHovered(false)
+        fill.accessibility = contrast
+        expect(abs((fill.plate.style.fill?.alphaComponent ?? 0) - 0.32) < 0.001 && fill.layer?.borderWidth == 1, "Increase Contrast strengthens the selected fill")
+        fill.accessibility = plain
+        fill.state = .off
+        expect(fill.layer?.borderWidth == 0 && fill.layer?.backgroundColor == nil, "Deselecting removes fill and border")
+        fill.isPrimary = true
+        expect(fill.plate.style.fill?.alphaComponent == 1 && fill.layer?.borderWidth == 0, "Primary is the one saturated accent and never gets the selection border")
+        fill.isPrimary = false
+        fill.isEnabled = false
+        fill.setHovered(true)
+        fill.highlight(true)
+        expect(fill.plate.style == .none && fill.alphaValue == 0.5, "Disabled ignores hover and press and dims through alpha")
+        fill.highlight(false)
+        fill.setHovered(false)
+        fill.isEnabled = true
+        expect(fill.alphaValue == 1, "Enabling restores alpha")
+        let animated = GlassChromeButton(title: "", target: nil, action: nil)
+        animated.setHovered(true)
+        expect(animated.plate.lastAnimationDuration == 0.15, "State changes animate over 0.15 s")
+        animated.accessibility = calm
+        expect(animated.plate.lastAnimationDuration == 0, "Reduce Motion makes state changes instant")
+        animated.accessibility = ChromeAccessibility(reduceTransparency: true, increaseContrast: false, reduceMotion: false)
+        expect(animated.plate.lastAnimationDuration == 0.15, "Reduce Transparency alone keeps the animation")
+        animated.setHovered(false)
+        let hidden = GlassChromeButton(title: "", target: nil, action: nil)
+        hidden.setHovered(true)
+        hidden.isHidden = true
+        expect(!hidden.isHovered, "Hiding a button clears hover")
 
         // Focus ring mask follows the host shape and vanishes while disabled.
         let ring = GlassChromeButton(title: "", target: nil, action: nil)
@@ -278,7 +318,7 @@ private enum GlassChromeTests {
         click.frame = NSRect(x: 10, y: 10, width: 120, height: 40)
         content.addSubview(click)
         var pressing: [Bool] = []
-        click.onInteractionChange = { pressing.append($0.isPressing) }
+        click.plate.onApply = { _ in pressing.append(click.isPressing) }
         let down = event(.leftMouseDown, in: content.window!, at: NSPoint(x: 30, y: 30))
         NSApp.postEvent(event(.leftMouseUp, in: content.window!, at: NSPoint(x: 30, y: 30)), atStart: false)
         click.mouseDown(with: down)
@@ -293,7 +333,7 @@ private enum GlassChromeTests {
         content.addSubview(secondary)
         target.hits.removeAll()
         var secondaryPress: [Bool] = []
-        secondary.onInteractionChange = { secondaryPress.append($0.isPressing) }
+        secondary.plate.onApply = { _ in secondaryPress.append(secondary.isPressing) }
         secondary.rightMouseDown(with: event(.rightMouseDown, in: content.window!, number: 2))
         expect(secondary.isPressing && target.hits.isEmpty, "Secondary press highlights without dispatching")
         secondary.rightMouseUp(with: event(.rightMouseUp, in: content.window!, number: 2))
@@ -508,171 +548,119 @@ private enum GlassChromeTests {
         slider.removeFromSuperview()
     }
 
-    // MARK: GlassSurfaceView
+    // MARK: GlassSurfaceView (one plate per group) and ChromeFillCell
 
-    private static func surface(_ accessibility: ChromeAccessibility = plain, shape: GlassShape = .capsule, interactive: Bool = true, content: NSView = NSView()) -> GlassSurfaceView {
-        GlassSurfaceView(content: content, shape: shape, interactive: interactive, accessibility: accessibility)
+    private static func button(_ title: String = "", size: NSSize = GlassChrome.Metrics.iconButton) -> GlassChromeButton {
+        let button = GlassChromeButton(title: title, target: nil, action: nil)
+        button.setButtonType(.toggle)
+        button.icon = .crosshairs
+        GlassChrome.fix(button, size)
+        return button
     }
 
-    private static func expectTint(_ surface: GlassSurfaceView, _ base: NSColor?, _ alpha: CGFloat, _ message: String) {
-        guard let base else {
-            expect(surface.currentTint == nil && surface.tintColor == nil, message + " (untinted)")
-            return
-        }
-        expect(surface.currentTint.map { sameColor($0, base) && abs($0.alphaComponent - alpha) < 0.001 } == true, message + " (computed)")
-        expect(surface.tintColor.map { sameColor($0, base) && abs($0.alphaComponent - alpha) < 0.001 } == true, message + " (applied)")
+    private static func borderAlpha(_ layer: CALayer?) -> CGFloat {
+        layer?.borderColor.flatMap { NSColor(cgColor: $0)?.alphaComponent } ?? -1
     }
 
     private static func surfaceTests() {
-        for increased in [false, true] {
-            let acc = increased ? contrast : plain
-            let name = increased ? "IC " : ""
-            let glass = surface(acc)
-            expectTint(glass, nil, 0, name + "Normal")
-            expect(glass.alphaValue == 1 && !glass.showsContrastRing, name + "Normal is opaque and ringless")
-            glass.setHovered(true)
-            expectTint(glass, .labelColor, increased ? 0.16 : 0.08, name + "Hover")
-            glass.isPressed = true
-            expectTint(glass, .labelColor, increased ? 0.28 : 0.16, name + "Pressed")
-            glass.isPressed = false
-            glass.setHovered(false)
-            expectTint(glass, nil, 0, name + "Back to normal")
-            glass.isSelected = true
-            expectTint(glass, .controlAccentColor, increased ? 1.0 : 0.85, name + "Selected")
-            expect(glass.showsContrastRing == increased && glass.layer?.borderWidth == (increased ? 1 : 0), name + "Selected ring only with Increase Contrast")
-            expect(increased ? sameColor(NSColor(cgColor: glass.layer?.borderColor ?? NSColor.clear.cgColor), .labelColor, tolerance: 0.05) : true, name + "Ring is the label color")
-            glass.setHovered(true)
-            expectTint(glass, .controlAccentColor, increased ? 1.0 : 0.85, name + "Hover does not wash out a selected surface")
-            glass.isPressed = true
-            expectTint(glass, .controlAccentColor, 1.0, name + "Pressing a selected surface deepens it")
-            glass.isPressed = false
-            glass.setHovered(false)
-            glass.isSelected = false
-            expect(glass.layer?.borderWidth == 0, name + "Deselecting removes the ring")
-            glass.prominence = .primary
-            expectTint(glass, .controlAccentColor, increased ? 1.0 : 0.85, name + "Primary")
-            expect(!glass.showsContrastRing && glass.layer?.borderWidth == 0, name + "Primary never rings")
-            glass.prominence = .neutral
-            expectTint(glass, nil, 0, name + "Neutral again")
-            glass.isDisabled = true
-            expect(glass.alphaValue == 0.5, name + "Disabled dims through alpha")
-            glass.setHovered(true)
-            glass.isPressed = true
-            expectTint(glass, nil, 0, name + "Disabled ignores hover and press")
-            glass.isPressed = false
-            glass.setHovered(false)
-            glass.isSelected = true
-            expectTint(glass, .controlAccentColor, increased ? 1.0 : 0.85, name + "Disabled selection keeps its tint")
-            expect(glass.alphaValue == 0.5, name + "Disabled selection is still dimmed")
-            glass.isDisabled = false
-            expect(glass.alphaValue == 1, name + "Enabling restores alpha")
-        }
-
-        // Accessibility injection re-evaluates the live state.
-        let live = surface()
-        live.setHovered(true)
-        expectTint(live, .labelColor, 0.08, "Hover before injection")
-        live.accessibility = contrast
-        expectTint(live, .labelColor, 0.16, "Hover after Increase Contrast is injected")
-        live.accessibility = plain
-        expectTint(live, .labelColor, 0.08, "Hover after it is removed")
-
-        // Animation: 0.15 s, zero under Reduce Motion.
-        let animated = surface(plain)
-        animated.isSelected = true
-        expect(animated.lastAnimationDuration == 0.15, "State changes animate over 0.15 s")
-        animated.accessibility = calm
-        animated.isSelected = false
-        expect(animated.lastAnimationDuration == 0, "Reduce Motion makes state changes instant")
-        animated.accessibility = ChromeAccessibility(reduceTransparency: true, increaseContrast: false, reduceMotion: false)
-        animated.isSelected = true
-        expect(animated.lastAnimationDuration == 0.15, "Reduce Transparency alone keeps the animation")
-
-        // Shape: capsule radius is half the short side after layout; rounded keeps its radius.
+        typealias M = GlassChrome.Metrics
         let (_, content) = window(NSSize(width: 400, height: 200))
-        let wide = surface(shape: .capsule), square = surface(shape: .circle), tool = surface(shape: .rounded(12)), tall = surface(shape: .capsule)
-        wide.setSize(NSSize(width: 148, height: 36))
-        square.setSize(NSSize(width: 36, height: 36))
-        tool.setSize(NSSize(width: 48, height: 40))
-        tall.setSize(NSSize(width: 40, height: 90))
-        var x: CGFloat = 10
-        for glass in [wide, square, tool, tall] {
-            content.addSubview(glass)
-            glass.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: x).isActive = true
-            glass.topAnchor.constraint(equalTo: content.topAnchor, constant: 10).isActive = true
-            x += 60
+        func place(_ plate: GlassSurfaceView, y: CGFloat) {
+            content.addSubview(plate)
+            plate.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: 10).isActive = true
+            plate.topAnchor.constraint(equalTo: content.topAnchor, constant: y).isActive = true
         }
+        let first = button(), second = button()
+        let plate = GlassChrome.plate([first, second], identifier: "Pair", accessibility: plain)
+        place(plate, y: 10)
         content.layoutSubtreeIfNeeded()
-        expect(wide.frame.size == NSSize(width: 148, height: 36) && wide.cornerRadius == 18, "Capsule radius is half of the 36 pt command height after layout")
-        expect(square.cornerRadius == 18, "Circle radius is half the side")
-        expect(tool.cornerRadius == 12, "Rounded keeps its radius")
-        expect(tall.cornerRadius == 20, "A tall capsule rounds to half its 40 pt width")
-        expect(wide.layer?.cornerRadius == 18, "The ring layer follows the corner radius")
-        wide.shape = .rounded(14)
-        expect(wide.cornerRadius == 14, "Changing the shape updates the radius")
-        wide.shape = .capsule
-        expect(wide.cornerRadius == 18, "Changing back restores the capsule radius")
-        expect(GlassShape.rounded(99).radius(for: NSSize(width: 48, height: 40)) == 20, "A radius never exceeds half the short side")
-
-        // effectIsInteractive exists only on macOS 27.
+        expect(plate.identifier?.rawValue == "Pair" && plate.arrangedViews.count == 2, "A plate carries its identifier and its controls")
+        expect(plate.frame.size == NSSize(width: M.groupInset * 2 + 48 * 2 + M.groupSpacing, height: 44), "A plate hugs its controls: 4 pt inset, 2 pt between (\(plate.frame.size))")
+        expect(plate.cornerRadius == DesignTokens.Radius.xl && plate.layer?.cornerRadius == 16, "A group plate is rounded at Radius.xl (16)")
+        expect(first.layer?.cornerRadius == DesignTokens.Radius.concentric(outer: plate.cornerRadius, inset: M.groupInset), "The fills inside are concentric with the plate: 16 - 4 = 12")
+        expect(abs(first.frame.minX - M.groupInset) < 0.5 && abs(first.frame.minY - M.groupInset) < 0.5 && first.frame.size == M.iconButton, "A control sits 4 pt inside the plate at its own size")
+        expect(plate.style == .regular && plate.tintColor == nil, "One glass variant, never tinted")
         if #available(macOS 27, *) {
-            expect(surface(interactive: true).effectIsInteractive, "Interactive surfaces opt into system press feedback on macOS 27")
-            expect(!surface(interactive: false).effectIsInteractive, "Static surfaces stay static")
+            expect(plate.effectIsInteractive, "A plate holds interactive controls, so it opts into the system press response on macOS 27")
         } else {
             notes.append("effectIsInteractive (macOS 27 only)")
         }
-        expect(surface().style == .regular, "One glass variant: Regular")
+        expect(plate.transparencyPlate == nil && plate.layer?.borderWidth == 0, "Default: material glass, no plate, no border")
+        expect(plate.contentView?.subviews.contains { $0 is NSGlassEffectView } == false, "No glass inside the plate")
 
-        // A button inside a surface fills it and drives the state from its own interaction.
-        let button = GlassChromeButton(title: "Snap", target: nil, action: nil)
-        button.setButtonType(.toggle)
-        button.icon = .crosshairs
-        let host = surface(shape: .capsule, content: button)
-        host.setSize(NSSize(width: 148, height: 36))
-        content.addSubview(host)
-        host.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: 10).isActive = true
-        host.topAnchor.constraint(equalTo: content.topAnchor, constant: 100).isActive = true
+        // A hidden control leaves no slot: the plate narrows and the first control does not move.
+        second.isHidden = true
         content.layoutSubtreeIfNeeded()
-        expect(button.frame.size == host.bounds.size, "The control fills its surface")
-        expect(button.focusShape == .capsule, "The button's focus ring takes the surface shape")
-        button.state = .on
-        expect(host.isSelected && host.currentTint != nil, "A selected button selects its surface")
-        button.state = .off
-        button.highlight(true)
-        expect(host.isPressed, "A pressed button presses its surface")
-        button.highlight(false)
-        button.isEnabled = false
-        expect(host.isDisabled && host.alphaValue == 0.5, "A disabled button disables its surface")
-        button.isEnabled = true
-        button.isHidden = true
-        expect(host.isHidden, "Hiding the button hides its surface")
-        button.isHidden = false
-        expect(!host.isHidden, "Showing the button shows its surface")
-        host.prominence = .primary
-        expect(button.isPrimary, "Primary prominence reaches the button's label color")
-        host.prominence = .neutral
-        host.setHovered(true)
-        host.isHidden = true
-        expect(!host.isHovered, "Hiding a surface clears hover")
-        host.isHidden = false
-        let before = host.fixedSize
-        host.setSize(NSSize(width: 100, height: 36))
-        expect(before == NSSize(width: 148, height: 36) && host.fixedSize == NSSize(width: 100, height: 36), "Resizing replaces the explicit constraints")
+        expect(plate.frame.width == M.groupInset * 2 + 48 && first.frame.minX == M.groupInset, "A hidden control collapses out of the plate without moving its neighbour (\(plate.frame.width))")
+        second.isHidden = false
         content.layoutSubtreeIfNeeded()
-        expect(host.frame.width == 100, "Replaced constraints take effect")
+        expect(plate.frame.width == M.groupInset * 2 + 48 * 2 + M.groupSpacing, "Showing it widens the plate again")
 
-        // The factory sizes every surface explicitly and groups hold surfaces in one container.
-        let made = GlassChrome.surface(GlassChromeButton(title: "Hide", target: nil, action: nil), shape: .capsule, accessibility: plain)
-        expect(made.fixedSize.map { $0.height == GlassChrome.Metrics.commandHeight && $0.width >= GlassChrome.Metrics.commandHeight } == true, "The factory always sets an explicit command-height size")
-        let circle = GlassChrome.surface(NSView(), shape: .circle, accessibility: plain)
-        expect(circle.fixedSize == NSSize(width: 36, height: 36), "A circle is a command-height square")
-        let group = GlassChrome.group([made, circle], orientation: .horizontal, identifier: "Test")
-        expect(group.identifier?.rawValue == "Test" && group.spacing == GlassChrome.Metrics.containerSpacing, "Group carries its identifier and the container spacing")
-        let stack = group.contentView as? NSStackView
-        expect(stack?.arrangedSubviews.count == 2 && stack?.spacing == GlassChrome.Metrics.surfaceSpacing && stack?.orientation == .horizontal, "Group stacks its surfaces")
-        let metrics = GlassChrome.Metrics.self
-        expect(metrics.toolButton == NSSize(width: 44, height: 40) && metrics.commandHeight == 36 && metrics.headerHeight == 44 && metrics.groupGap == 12, "Metrics match the plan with Apple's 36 pt Extra Large commands and 44 pt tool tiles")
-        expect(metrics.iconPointSize == 22 && metrics.surfaceSpacing == 6 && metrics.containerSpacing == 2, "Spacing and type metrics match the plan")
+        // Increase Contrast: a 1 pt label-color border at 0.6 on the plate.
+        plate.accessibility = contrast
+        expect(plate.showsContrastBorder && plate.layer?.borderWidth == 1 && abs(borderAlpha(plate.layer) - 0.6) < 0.01, "Increase Contrast borders the plate: 1 pt, label color at 0.6")
+        expect(plate.transparencyPlate == nil, "Increase Contrast alone keeps the glass")
+        plate.accessibility = plain
+        expect(plate.layer?.borderWidth == 0, "Clearing Increase Contrast removes the border")
+
+        // Reduce Transparency: no tint, an opaque content-colored plate with a 1 pt separator border, same radius.
+        let calmer = ChromeAccessibility(reduceTransparency: true, increaseContrast: false, reduceMotion: false)
+        plate.appearance = NSAppearance(named: .aqua)
+        plate.accessibility = calmer
+        content.layoutSubtreeIfNeeded()
+        expect(plate.tintColor == nil && plate.style == .regular, "Reduce Transparency: regular style, no tint")
+        guard let solid = plate.transparencyPlate else { expect(false, "Reduce Transparency inserts a solid plate"); return }
+        expect(!solid.isHidden && solid.layer?.backgroundColor?.alpha == 1, "The solid plate is opaque")
+        expect(sameColor(solid.layer?.backgroundColor.flatMap { NSColor(cgColor: $0) }, DesignTokens.Palette.resolve(DesignTokens.Palette.Surface.content, for: NSAppearance(named: .aqua)!)), "The plate is surface.content")
+        expect(solid.layer?.borderWidth == 1 && solid.layer?.cornerRadius == plate.cornerRadius, "It has a 1 pt border and the plate's radius")
+        expect(solid.frame == plate.contentView?.bounds && plate.contentView?.subviews.first === solid, "It sits behind the content and fills the plate")
+        plate.accessibility = ChromeAccessibility(reduceTransparency: true, increaseContrast: true, reduceMotion: false)
+        expect(plate.transparencyPlate != nil && plate.layer?.borderWidth == 1, "Both options: the solid plate and the contrast border")
+        plate.accessibility = plain
+        expect(plate.transparencyPlate == nil && solid.isHidden, "Clearing Reduce Transparency hides the plate again")
+
+        // Shape: a radius never exceeds half the short side.
+        expect(GlassShape.rounded(99).radius(for: NSSize(width: 48, height: 40)) == 20 && GlassShape.capsule.radius(for: NSSize(width: 148, height: 36)) == 18, "Shapes clamp: rounded to half the short side, capsule is height / 2")
+        plate.shape = .capsule
+        expect(plate.cornerRadius == 22, "A capsule plate rounds to half its 44 pt height")
+        plate.shape = .rounded(16)
+        expect(plate.cornerRadius == 16, "Changing the shape updates the radius")
+
+        // ChromeFillCell: invisible at rest, the same 0.08 hover fill as a button, explicit size.
+        let swatch = NSView()
+        let cell = ChromeFillCell(swatch, size: M.iconButton)
+        let (_, cellContent) = window(NSSize(width: 100, height: 60))
+        cellContent.addSubview(cell)
+        cell.appearance = NSAppearance(named: .aqua)
+        cellContent.layoutSubtreeIfNeeded()
+        expect(cell.frame.size == M.iconButton && swatch.frame == cell.bounds, "A cell has its explicit size and its control fills it")
+        expect(cell.layer?.backgroundColor == nil && cell.layer?.cornerRadius == 12, "A cell draws nothing at rest and is 12 pt round")
+        cell.setHovered(true)
+        expect(abs((cell.plate.style.fill?.alphaComponent ?? 0) - 0.08) < 0.001 && cell.layer?.backgroundColor != nil, "Hover is the 0.08 label-color fill")
+        cell.accessibility = contrast
+        expect(abs((cell.plate.style.fill?.alphaComponent ?? 0) - 0.16) < 0.001, "Increase Contrast doubles it")
+        cell.accessibility = plain
+        cell.setHovered(false)
+        expect(cell.layer?.backgroundColor == nil, "Leaving clears the fill")
+        let popup = NSPopUpButton(frame: .zero, pullsDown: false)
+        popup.addItems(withTitles: ["100%"])
+        let centered = ChromeFillCell(popup, size: NSSize(width: 70, height: 36), fit: .centered(inset: 4))
+        cellContent.addSubview(centered)
+        centered.frame.origin = NSPoint(x: 0, y: 20)
+        cellContent.layoutSubtreeIfNeeded()
+        expect(abs(popup.frame.minX - 4) < 0.5 && abs(popup.frame.midY - 18) < 1 && abs(popup.frame.maxX - 66) < 0.5, "A centred cell insets the control horizontally and centres it vertically")
+        centered.setHovered(true)
+        centered.isHidden = true
+        expect(!centered.isHovered, "Hiding a cell clears hover")
+
+        // The factory: a plate is the only glass; the container around a bar only groups plates.
+        let bar = NSView()
+        let container = GlassChrome.container(around: bar, identifier: "Bar")
+        expect(container.identifier?.rawValue == "Bar" && container.spacing == M.containerSpacing && container.contentView === bar, "A bar container holds the bar view with the container spacing")
+        expect(M.containerSpacing < M.groupGap, "Container spacing stays below the group gap so plates never fuse")
+        expect(M.toolButton == NSSize(width: 44, height: 36) && M.iconButton == NSSize(width: 48, height: 36) && M.commandHeight == 36 && M.headerHeight == 44 && M.groupGap == 12,
+               "Metrics match the plan: 36 pt controls on 44 pt plates")
+        expect(M.iconPointSize == 22 && M.groupSpacing == 2 && M.groupInset == 4 && DesignTokens.Size.hitMin == 36, "Spacing, inset and type metrics match the plan; every control keeps a 36 pt hit height")
     }
 
     // MARK: ModernEditorChrome
@@ -808,28 +796,36 @@ private enum GlassChromeTests {
                 expect(overlap.isNull || overlap.width <= 0.5 || overlap.height <= 0.5, "\(label): \(describe(a)) overlaps \(describe(b)) by \(overlap)")
             }
         }
-        for glass in surfaces(rig) {
+        let plates = surfaces(rig)
+        expect(plates.count == 8, "\(label): eight glass plates, one per group (\(plates.count))")
+        for glass in plates {
             let frame = rect(glass, in: rig)
-            expect(rig.content.bounds.insetBy(dx: -0.5, dy: -0.5).contains(frame), "\(label): surface around \(describe(glass.contentView ?? glass)) lies inside the content")
-            if let fixed = glass.fixedSize {
-                expect(abs(frame.height - fixed.height) < 0.5 && frame.width >= fixed.width - 0.5, "\(label): surface around \(describe(glass.contentView ?? glass)) kept its explicit size \(frame.size) vs \(fixed)")
+            expect(rig.content.bounds.insetBy(dx: -0.5, dy: -0.5).contains(frame), "\(label): plate \(describe(glass)) lies inside the content")
+            expect(abs(frame.height - 44) < 0.5, "\(label): plate \(describe(glass)) is the 44 pt bar row (\(frame.height))")
+            expect(frame.height >= 36 && frame.width >= 36, "\(label): no plate collapsed below 36 pt \(frame.size)")
+            let want = glass.arrangedViews.filter { !$0.isHidden }.map { $0.frame.width }.reduce(0, +) + CGFloat(max(0, glass.arrangedViews.filter { !$0.isHidden }.count - 1)) * GlassChrome.Metrics.groupSpacing + 2 * GlassChrome.Metrics.groupInset
+            expect(abs(frame.width - want) < 0.5, "\(label): plate \(describe(glass)) hugs its controls (\(frame.width) vs \(want))")
+            for control in glass.arrangedViews where !control.isHidden {
+                expect(control.frame.height <= frame.height - 2 * GlassChrome.Metrics.groupInset + 0.5, "\(label): \(describe(control)) is inset 4 pt inside its plate")
             }
-            expect(frame.height >= 36 && frame.width >= 36, "\(label): no surface collapsed below 36 pt \(frame.size)")
-            expect(glass.contentView.map { abs($0.frame.width - glass.bounds.width) < 0.5 && abs($0.frame.height - glass.bounds.height) < 0.5 } == true, "\(label): the content fills its surface")
         }
         let scroll = rect(chrome.scrollView, in: rig)
         expect(scroll.width > 300 && scroll.height > 300, "\(label): the canvas keeps room \(scroll.size)")
         let glassContainers = containers(rig)
-        expect(glassContainers.count >= 8, "\(label): glass groups exist (\(glassContainers.count))")
+        expect(glassContainers.count == 2, "\(label): exactly two glass containers, one per bar (\(glassContainers.count))")
         for container in glassContainers {
             let frame = rect(container, in: rig)
             let overlap = frame.intersection(scroll)
             expect(overlap.isNull || overlap.width <= 0.5 || overlap.height <= 0.5, "\(label): scroll view is disjoint from \(describe(container)) \(frame) vs \(scroll)")
         }
-        for (index, a) in glassContainers.enumerated() {
-            for b in glassContainers[(index + 1)...] {
+        for glass in plates {
+            let overlap = rect(glass, in: rig).intersection(scroll)
+            expect(overlap.isNull || overlap.width <= 0.5 || overlap.height <= 0.5, "\(label): no plate touches the canvas well (\(describe(glass)))")
+        }
+        for (index, a) in plates.enumerated() {
+            for b in plates[(index + 1)...] {
                 let overlap = rect(a, in: rig).intersection(rect(b, in: rig))
-                expect(overlap.isNull || overlap.width <= 0.5 || overlap.height <= 0.5, "\(label): glass groups \(describe(a)) and \(describe(b)) are disjoint")
+                expect(overlap.isNull || overlap.width <= 0.5 || overlap.height <= 0.5, "\(label): glass plates \(describe(a)) and \(describe(b)) are disjoint")
             }
         }
         // Order: top bar left to right (capture, tools, annotation), then bottom bar left to right (document, view, output).
@@ -855,13 +851,14 @@ private enum GlassChromeTests {
             expect(bottomBar.contains(rect(view, in: rig).insetBy(dx: 0.5, dy: 0.5)), "\(label): \(describe(view)) sits inside the bottom bar")
         }
         let formatControl = rig.controls.dragFormatControl, formatFit = formatControl.fittingSize.width
-        let formatWidth = rect(chrome.surface(for: formatControl)!, in: rig).width
-        expect(formatWidth >= formatFit && formatWidth <= formatFit + 12, "\(label): the format toggle hugs its segments (\(formatWidth) pt for a \(formatFit) pt popup)")
+        let formatWidth = rect(formatControl, in: rig).width
+        expect(formatWidth >= formatFit - 0.5 && formatWidth <= formatFit + 2, "\(label): the format toggle hugs its segments (\(formatWidth) pt for a \(formatFit) pt control)")
+        expect(formatControl.superview is NSStackView && chrome.surface(for: formatControl)?.identifier?.rawValue == "GlassFooterRow", "\(label): PNG | JPG sits on the footer plate itself, with no plate or cell of its own")
         let footerY = rect(chrome.shareButton, in: rig).midY
         expect(abs(footerY - rect(rig.controls.dragExportView, in: rig).midY) < 0.5 && abs(footerY - rect(rig.controls.zoomControl, in: rig).midY) < 3, "\(label): footer controls share a baseline")
         // The canvas border lives where classic puts it, beside the scroll view and above everything.
         expect(rig.controls.canvasBorder.superview === chrome.scrollView.superview && chrome.subviews.last === rig.controls.canvasBorder, "\(label): the canvas border is a topmost sibling of the scroll view")
-        expect(chrome.scrollView.documentView === rig.controls.canvas && !chrome.scrollView.drawsBackground && !chrome.scrollView.contentView.drawsBackground, "\(label): the scroll view hosts the canvas without a background")
+        expect(chrome.scrollView.documentView === rig.controls.canvas && chrome.wellIsSolid == !chrome.frameMode, "\(label): the scroll view hosts the canvas on a solid well (a hole in Frame mode)")
     }
 
     private static func chromeTests(glyphs: Bool) {
@@ -871,6 +868,9 @@ private enum GlassChromeTests {
             let label = "\(tag) \(Int(size.width))x\(Int(size.height))"
             let rig = makeRig(size)
             verifyLayout(rig, label)
+            glassDepthChecks(rig, label)
+            tintChecks(rig, label)
+            displayOptionChecks(rig, label)
             semantics(rig, label)
             glassNeckChecks(rig, label)
             redesignChecks(rig, label)
@@ -878,6 +878,7 @@ private enum GlassChromeTests {
             relocatedControlChecks(rig, label, frame: false)
             rig.chrome.frameMode = true
             verifyLayout(rig, label + " frame mode")
+            glassDepthChecks(rig, label + " frame mode")
             frameModeChecks(rig, label)
             relocatedControlChecks(rig, label + " frame mode", frame: true)
             rig.chrome.frameMode = false
@@ -886,8 +887,8 @@ private enum GlassChromeTests {
             canvasCentreChecks(rig, label)
             if size == minimum {
                 widthBudgetChecks(rig, label)
-                bleedChecks(rig, label)
                 accessibilityChecks(rig, label)
+                wellChecks(rig, label)
             }
         }
         canvasReachesMarginChecks(tag, minimum: minimum)
@@ -895,8 +896,8 @@ private enum GlassChromeTests {
 
     // MARK: T15 regression tests (each fails if the rail, its blank column or an overflow comes back)
 
-    private static func group(_ rig: Rig, _ id: String) -> NSGlassEffectContainerView {
-        guard let found = containers(rig).first(where: { $0.identifier?.rawValue == id }) else { preconditionFailure("No glass group " + id); }
+    private static func group(_ rig: Rig, _ id: String) -> GlassSurfaceView {
+        guard let found = surfaces(rig).first(where: { $0.identifier?.rawValue == id }) else { preconditionFailure("No glass group " + id); }
         return found
     }
 
@@ -905,7 +906,7 @@ private enum GlassChromeTests {
         let chrome = rig.chrome
         let names = Set(descendantsOf(chrome).compactMap { $0.identifier?.rawValue })
         expect(names.isDisjoint(with: ["GlassDrawingGroup", "GlassHistoryGroup", "GlassToolRail", "GlassHeaderTrailing"]), "\(label): no rail or vertical group exists (\(names.sorted()))")
-        expect(chrome.subviews.count == 6, "\(label): the chrome holds backdrop, bleed, canvas, top bar, bottom bar and border only (\(chrome.subviews.count))")
+        expect(chrome.subviews.count == 4, "\(label): the chrome holds the canvas, the two bars and the border only (\(chrome.subviews.count))")
         for view in chrome.subviews {
             let frame = view.frame
             expect(!(abs(frame.width - 64) < 0.5 && abs(frame.maxX - (chrome.bounds.width - 12)) < 0.5), "\(label): \(describe(view)) is not a 64 pt strip against the trailing margin")
@@ -956,8 +957,8 @@ private enum GlassChromeTests {
             }
         }
         for (name, view) in everything where view !== shared.dragOriginalControl && view !== shared.status {
-            // A popup or segmented control sits centred in its glass capsule; the capsule is the 36 pt target.
-            let target = chrome.surface(for: view).map { rect($0, in: rig) } ?? rect(view, in: rig)
+            // A popup sits centred in its cell and a segmented control is 36 pt itself; the cell is the 36 pt target.
+            let target = rect((view.superview as? ChromeFillCell) ?? view, in: rig)
             expect(target.height >= 36, "\(label): \(name) has a hit target at least 36 pt tall (\(target.height))")
         }
         if rig.size.width <= ModernEditorChrome.minimumWindowWidth + 0.5 {
@@ -965,20 +966,21 @@ private enum GlassChromeTests {
         }
     }
 
-    /// The sums of the width budget, from live Metrics and from the real laid-out groups; the minimum window width must cover the worst case.
+    /// The sums of the width budget, from live Metrics and from the real laid-out plates; the minimum window width must cover the worst case.
     private static func widthBudgetChecks(_ rig: Rig, _ label: String) {
         typealias M = GlassChrome.Metrics
         let chrome = rig.chrome, shared = rig.controls
         let tools = CGFloat(toolOrder.count)
-        let leading = 2 * M.iconButton.width + M.toolboxButton.width + 2 * M.surfaceSpacing
-        let capture = M.primaryButton.width, captureFrame = capture + M.surfaceSpacing + M.iconButton.width
-        let toolRow = tools * M.toolButton.width + (tools - 1) * M.toolSpacing
-        let annotation = 3 * M.iconButton.width + 2 * M.surfaceSpacing
+        let pad = 2 * M.groupInset, spacing = M.groupSpacing
+        let leading = pad + 2 * M.iconButton.width + M.toolboxButton.width + 2 * spacing
+        let capture = pad + M.primaryButton.width, captureFrame = capture + spacing + M.iconButton.width
+        let toolRow = pad + tools * M.toolButton.width + (tools - 1) * spacing
+        let annotation = pad + 3 * M.iconButton.width + 2 * spacing
         let usable = ModernEditorChrome.minimumWindowWidth - 24
         let normal = leading + capture + toolRow + annotation + 3 * M.groupGap, frame = leading + captureFrame + toolRow + annotation + 3 * M.groupGap
         expect(normal <= usable && frame <= usable, "\(label): the top bar needs \(normal) (Frame \(frame)) of \(usable) usable points")
-        // The real groups match the arithmetic, so a metric changed without the oracle cannot slip through.
-        let measured = ["GlassHeaderLeading": leading, "GlassCaptureGroup": capture, "GlassToolBar": toolRow, "GlassAnnotationGroup": annotation].mapValues { $0 }
+        // The real plates match the arithmetic, so a metric changed without the oracle cannot slip through.
+        let measured = ["GlassHeaderLeading": leading, "GlassCaptureGroup": capture, "GlassToolBar": toolRow, "GlassAnnotationGroup": annotation]
         for (id, expected) in measured {
             expect(abs(rect(group(rig, id), in: rig).width - expected) < 0.5, "\(label): \(id) is \(expected) pt wide (is \(rect(group(rig, id), in: rig).width))")
         }
@@ -990,11 +992,11 @@ private enum GlassChromeTests {
         rig.content.layoutSubtreeIfNeeded()
         expect(topFrameSlack >= -0.5, "\(label): the Frame-mode top bar fits at the minimum with \(topFrameSlack) pt to spare")
         // Bottom bar, measured: the checkbox and a 120 pt status are the worst case.
-        let zoomWidth = rect(chrome.surface(for: shared.zoomControl)!, in: rig).width
-        let formatWidth = rect(chrome.surface(for: shared.dragFormatControl)!, in: rig).width
+        let zoomWidth = rect(shared.zoomControl.superview!, in: rig).width
+        let formatWidth = rect(shared.dragFormatControl, in: rig).width
         let checkbox = shared.dragOriginalControl.fittingSize.width
-        let icons = 2 * M.iconButton.width + M.surfaceSpacing
-        let bottom = icons + (zoomWidth + M.surfaceSpacing + M.iconButton.width) + icons + (formatWidth + 2 * M.surfaceSpacing + 2 * M.iconButton.width)
+        let icons = pad + 2 * M.iconButton.width + spacing
+        let bottom = icons + (pad + zoomWidth + spacing + M.iconButton.width) + icons + (pad + formatWidth + 2 * spacing + 2 * M.iconButton.width)
             + 4 * M.groupGap + checkbox + 12 + 120
         expect(bottom <= usable, "\(label): the bottom bar with the checkbox and a 120 pt status needs \(bottom) of \(usable) (zoom \(zoomWidth), format \(formatWidth), checkbox \(checkbox))")
         expect(ModernEditorChrome.minimumWindowWidth >= max(frame, bottom) + 24, "\(label): the minimum window width \(ModernEditorChrome.minimumWindowWidth) covers the worst case \(max(frame, bottom) + 24)")
@@ -1016,7 +1018,7 @@ private enum GlassChromeTests {
         let frame = gaps(), shift = rect(group(rig, "GlassToolBar"), in: rig).minX - toolsBefore
         expect(abs(rect(chrome.snapButton, in: rig).minX - snapBefore) < 0.5, "\(label): Snap does not move when Cancel appears")
         expect(abs(frame.before - frame.after) <= 0.5 && frame.before >= GlassChrome.Metrics.groupGap, "\(label): still balanced in Frame mode (\(frame))")
-        let half = (GlassChrome.Metrics.iconButton.width + GlassChrome.Metrics.surfaceSpacing) / 2
+        let half = (GlassChrome.Metrics.iconButton.width + GlassChrome.Metrics.groupSpacing) / 2
         expect(abs(shift - half) < 0.5, "\(label): the tool row shifts by half of Cancel's slot (\(shift) vs \(half))")
         chrome.frameMode = false
         rig.content.layoutSubtreeIfNeeded()
@@ -1059,7 +1061,7 @@ private enum GlassChromeTests {
             let parts = [chrome.undoButton, chrome.wipeButton, rig.controls.zoomControl, chrome.resizeButton, rig.controls.status, chrome.saveButton, chrome.historyButton,
                          rig.controls.dragFormatControl, rig.controls.dragExportView, chrome.shareButton] as [NSView]
             for part in parts { expect(ancestors(part).contains { $0 === footer }, "\(label): \(describe(part)) is in the single footer row") }
-            expect(footer.subviews.count == 5 && footer.frame.height <= 44.5, "\(label): the footer is one row of four glass groups and the status row (\(footer.frame.height) pt)")
+            expect(footer.subviews.count == 5 && footer.frame.height <= 44.5, "\(label): the footer is one row of four glass plates and the status row (\(footer.frame.height) pt)")
             let known = Set(parts.map(ObjectIdentifier.init) + [ObjectIdentifier(rig.controls.dragOriginalControl)])
             let leaves = descendants(footer).filter { ($0 is NSControl) && !($0 is NSStackView) && $0.window != nil && !$0.isHidden }
             let strays = leaves.filter { leaf in !known.contains(ObjectIdentifier(leaf)) && !ancestors(leaf).contains { known.contains(ObjectIdentifier($0)) } }
@@ -1069,28 +1071,25 @@ private enum GlassChromeTests {
         expect(!allButtons(in: chrome).contains { $0.title.contains("Actual Size") || $0.title.contains("Normal View") }, "\(label): the Actual Size button is gone")
         let frames = rect(chrome.header, in: rig)
         let ids = ["GlassHeaderLeading", "GlassCaptureGroup", "GlassToolBar", "GlassAnnotationGroup"]
-        let groups = containers(rig).filter { ids.contains($0.identifier?.rawValue ?? "") }
-        expect(groups.count == 4 && groups.allSatisfy { frames.contains(rect($0, in: rig).insetBy(dx: 0.5, dy: 0.5)) }, "\(label): the four top bar groups fit inside the bar with no clipping")
-        expect(chrome.header.subviews.count == 4, "\(label): the top bar holds exactly its four groups (\(chrome.header.subviews.count))")
+        let groups = surfaces(rig).filter { ids.contains($0.identifier?.rawValue ?? "") }
+        expect(groups.count == 4 && groups.allSatisfy { frames.contains(rect($0, in: rig).insetBy(dx: 0.5, dy: 0.5)) }, "\(label): the four top bar plates fit inside the bar with no clipping")
+        expect(chrome.header.subviews.count == 4, "\(label): the top bar holds exactly its four plates (\(chrome.header.subviews.count))")
         let bottomIds = ["GlassUndoWipeGroup", "GlassViewGroup", "GlassSaveGroup", "GlassFooterRow"]
-        expect(containers(rig).filter { bottomIds.contains($0.identifier?.rawValue ?? "") }.count == 4, "\(label): the four bottom bar groups exist")
+        expect(surfaces(rig).filter { bottomIds.contains($0.identifier?.rawValue ?? "") }.count == 4, "\(label): the four bottom bar plates exist")
     }
 
     /// Glass shapes fuse into a "neck" when their container's spacing reaches the gap between them.
     private static func glassNeckChecks(_ rig: Rig, _ label: String) {
-        func containers(in view: NSView) -> [NSGlassEffectContainerView] {
-            (view as? NSGlassEffectContainerView).map { [$0] + (($0.contentView).map(containers) ?? []) } ?? view.subviews.flatMap(containers)
-        }
-        let found = containers(in: rig.chrome)
-        expect(found.count >= 6, "\(label): the chrome builds its glass groups (found \(found.count))")
+        let found = containers(rig)
+        expect(found.count == 2, "\(label): the chrome builds one glass container per bar (found \(found.count))")
         for container in found {
             let id = container.identifier?.rawValue ?? "?"
-            guard let stack = container.contentView as? NSStackView else { expect(false, "\(label): \(id) wraps a stack"); continue }
-            var smallest = stack.spacing
-            for (index, view) in stack.arrangedSubviews.enumerated() where index < stack.arrangedSubviews.count - 1 {
-                smallest = min(smallest, stack.customSpacing(after: view))
-            }
-            expect(container.spacing < smallest, "\(label): \(id) container spacing \(container.spacing) stays below its smallest gap \(smallest) so neighbours do not fuse")
+            guard let bar = container.contentView else { expect(false, "\(label): \(id) wraps its bar"); continue }
+            let plates = bar.subviews.compactMap { $0 as? GlassSurfaceView }.filter { !$0.isHidden }.sorted { $0.frame.minX < $1.frame.minX }
+            expect(plates.count == 4, "\(label): \(id) holds four plates")
+            var smallest = CGFloat.greatestFiniteMagnitude
+            for (index, plate) in plates.enumerated() where index < plates.count - 1 { smallest = min(smallest, plates[index + 1].frame.minX - plate.frame.maxX) }
+            expect(container.spacing < smallest, "\(label): \(id) container spacing \(container.spacing) stays below its smallest plate gap \(smallest) so neighbours do not fuse")
         }
     }
 
@@ -1106,11 +1105,12 @@ private enum GlassChromeTests {
             expect(button.imagePosition == .imageOnly && button.image != nil, "\(label): tool \(id) is icon only")
             expect(button.action == #selector(ActionTarget.chooseTool(_:)) && button.target === rig.target, "\(label): tool \(id) sends chooseTool")
             expect(button.isEnabled && !button.isHidden, "\(label): tool \(id) is live")
-            expect(chrome.surface(for: button) != nil && chrome.surface(for: button) === button.superview?.superview, "\(label): tool \(id) has its own surface")
-            expect(chrome.surface(for: button)?.shape == .rounded(12) && chrome.surface(for: button)?.fixedSize == NSSize(width: 44, height: 40), "\(label): tool \(id) surface is 44x40 r=12")
-            expect(abs(rect(button, in: rig).width - 44) < 0.5 && abs(rect(button, in: rig).height - 40) < 0.5, "\(label): tool \(id) button is 44x40")
+            expect(chrome.surface(for: button)?.identifier?.rawValue == "GlassToolBar" && button.superview is NSStackView, "\(label): tool \(id) sits on the shared tool plate, not on glass of its own")
+            expect(button.plate.style == .none || id == "arrow", "\(label): tool \(id) has no fill at rest")
+            expect(button.layer?.cornerRadius == 12 && abs(rect(button, in: rig).width - 44) < 0.5 && abs(rect(button, in: rig).height - 36) < 0.5, "\(label): tool \(id) is 44x36 with a 12 pt fill")
+            expect(rect(button, in: rig).height >= DesignTokens.Size.hitMin, "\(label): tool \(id) keeps a 36 pt hit height")
         }
-        expect(Set(chrome.toolButtons.values.compactMap { chrome.surface(for: $0).map(ObjectIdentifier.init) }).count == 10, "\(label): tool surfaces are distinct")
+        expect(Set(chrome.toolButtons.values.compactMap { chrome.surface(for: $0).map(ObjectIdentifier.init) }).count == 1, "\(label): the ten tools share one plate")
         for (button, title, hit) in [(chrome.hideButton, "Hide", "hide"), (chrome.photosButton, "Photos", "photos"), (chrome.saveButton, "Save", "saveHistory"),
                                      (chrome.historyButton, "History", "showHistory"), (chrome.snapButton, "Snap", "snap"),
                                      (chrome.cancelFrameButton, "Cancel", "cancelFrame"), (chrome.fontButton, "Font", "font"), (chrome.undoButton, "Undo", "undo"),
@@ -1121,22 +1121,22 @@ private enum GlassChromeTests {
             expect(button.icon != nil && button.image != nil && button.imagePosition == .imageOnly && button.visibleTitle.isEmpty, "\(label): \(title) is icon-only")
             expect(button.identifier == nil, "\(label): \(title) has no identifier, as in classic")
             let size = button === chrome.snapButton ? GlassChrome.Metrics.primaryButton : GlassChrome.Metrics.iconButton
-            expect(chrome.surface(for: button)?.shape == .capsule, "\(label): \(title) is a capsule")
-            expect(chrome.surface(for: button)?.fixedSize == size && abs(rect(button, in: rig).height - size.height) < 0.5 && abs(rect(button, in: rig).width - size.width) < 0.5, "\(label): \(title) is one consistent glass size \(size)")
+            expect(chrome.surface(for: button)?.cornerRadius == 16, "\(label): \(title) sits on a 16 pt group plate")
+            expect(abs(rect(button, in: rig).height - size.height) < 0.5 && (button === chrome.cancelFrameButton && button.isHidden || abs(rect(button, in: rig).width - size.width) < 0.5), "\(label): \(title) is one consistent size \(size)")
             rig.target.hits.removeAll()
             button.performClick(nil)
             expect(rig.target.hits == [hit], "\(label): \(title) sends its action (\(rig.target.hits))")
-            expect(chrome.surface(for: button)?.isSelected == false, "\(label): clicking \(title) never leaves its glass selected")
+            expect(!button.plate.isSelected, "\(label): clicking \(title) never leaves it selected")
         }
         expect(chrome.shareButton.accessibilityLabel() == "Upload to destination" && chrome.shareButton.title.isEmpty && chrome.shareButton.imagePosition == .imageOnly,
                "\(label): the upload button is icon-only with an explicit label")
         rig.target.hits.removeAll(); chrome.shareButton.performClick(nil)
         expect(rig.target.hits == ["share"], "\(label): the upload button sends its action")
         expect(AppToolTip.text(for: chrome.snapButton) == snapToolTip, "\(label): Snap keeps its classic tooltip")
-        expect(chrome.surface(for: chrome.snapButton)?.prominence == .primary && chrome.snapButton.isPrimary, "\(label): Snap is the single primary command")
-        let primaries = surfaces(rig).filter { $0.prominence == .primary }
-        expect(primaries.count == 1, "\(label): exactly one primary surface")
-        expect(chrome.cancelFrameButton.isHidden && chrome.surface(for: chrome.cancelFrameButton)?.isHidden == true, "\(label): Cancel starts hidden")
+        expect(chrome.snapButton.isPrimary, "\(label): Snap is the primary command")
+        let primaries = allButtons(in: chrome).compactMap { $0 as? GlassChromeButton }.filter { $0.isPrimary }
+        expect(primaries.count == 1 && primaries[0] === chrome.snapButton, "\(label): exactly one primary control")
+        expect(chrome.cancelFrameButton.isHidden, "\(label): Cancel starts hidden")
         expect(!chrome.frameMode, "\(label): starts outside Frame mode")
         let controlTitles = allButtons(in: chrome).flatMap { [$0.title, $0.accessibilityLabel() ?? "", AppToolTip.text(for: $0) ?? ""] }
         expect(!controlTitles.contains { $0.lowercased().contains("cam") }, "\(label): no Cam/Camera button exists in the Modern rail (screen capture only)")
@@ -1150,16 +1150,16 @@ private enum GlassChromeTests {
             expect(control.controlSize == .extraLarge && (control.font?.pointSize ?? 0) >= 18, "\(label): \(describe(control)) is Extra Large and keeps its readable font")
         }
         expect(shared.toolbox.imagePosition == .imageOnly && shared.toolbox.itemArray.first?.image != nil, "\(label): Toolbox shows its icon")
-        expect(shared.sizeLabel.superview == nil && chrome.surface(for: shared.widthControl)?.shape == .capsule, "\(label): the Size pill has a capsule surface and the Size text is not shown")
+        expect(shared.sizeLabel.superview == nil && chrome.surface(for: shared.widthControl)?.identifier?.rawValue == "GlassAnnotationGroup", "\(label): the Size pill sits on the annotation plate and the Size text is not shown")
         expect(abs(rect(shared.widthControl, in: rig).width - 48) < 0.5 && abs(rect(shared.widthControl, in: rig).height - 36) < 0.5, "\(label): the Size pill is 48 x 36, like the other icon pills")
-        expect(chrome.surface(for: shared.dragExportView)?.shape == .capsule, "\(label): Drag Me is a compact capsule surface")
-        expect(chrome.surface(for: shared.dragFormatControl)?.shape == .capsule, "\(label): the format toggle sits in a glass capsule")
-        expect(chrome.surface(for: shared.paletteButton) != nil && chrome.surface(for: chrome.fontButton) != nil, "\(label): Color and Font have surfaces")
+        expect(chrome.surface(for: shared.dragExportView)?.identifier?.rawValue == "GlassFooterRow" && shared.dragExportView.superview is ChromeFillCell, "\(label): Drag Me is a compact cell on the footer plate")
+        expect(chrome.surface(for: shared.dragFormatControl)?.identifier?.rawValue == "GlassFooterRow", "\(label): the format toggle sits on the footer plate")
+        expect(chrome.surface(for: shared.paletteButton)?.identifier?.rawValue == "GlassAnnotationGroup" && chrome.surface(for: chrome.fontButton)?.identifier?.rawValue == "GlassAnnotationGroup", "\(label): Color and Font share the annotation plate")
         for plainControl in [shared.dragOriginalControl, shared.status] as [NSControl] {
             expect(chrome.surface(for: plainControl) == nil, "\(label): \(describe(plainControl)) stays plain, outside any glass")
             expect(plainControl.superview is NSStackView && !(plainControl.superview?.superview is GlassSurfaceView), "\(label): \(describe(plainControl)) lives in the plain status row")
         }
-        expect(chrome.surface(for: shared.zoomControl)?.shape == .capsule && chrome.surface(for: shared.zoomControl)?.fixedSize?.height == 36, "\(label): the zoom popup sits in a glass capsule")
+        expect(chrome.surface(for: shared.zoomControl)?.identifier?.rawValue == "GlassViewGroup" && (shared.zoomControl.superview as? ChromeFillCell)?.fixedSize.height == 36, "\(label): the zoom popup sits in a 36 pt cell on the view plate")
         if let zoom = shared.zoomControl as? ZoomPopUpButton {
             let item = NSMenuItem(title: "83%", action: nil, keyEquivalent: "")
             item.toolTip = "Fit, 83%"
@@ -1177,29 +1177,29 @@ private enum GlassChromeTests {
         expect(!insideGlass, "\(label): no glass above the canvas")
         let order = chrome.subviews
         func position(_ view: NSView?) -> Int { view.flatMap { order.firstIndex(of: $0) } ?? -1 }
-        let backdrop = order.first { $0 is NSVisualEffectView }, bleed = order.first { $0 is NSBackgroundExtensionView }
-        expect(position(backdrop) == 0 && position(bleed) == 1 && position(chrome.scrollView) == 2 && position(chrome.header) == 3, "\(label): backdrop, bleed, canvas, then glass")
-        expect((backdrop as? NSVisualEffectView).map { $0.material == .underWindowBackground && $0.blendingMode == .behindWindow && $0.state == .followsWindowActiveState } == true, "\(label): backdrop material")
-        expect(chrome.backdropIsVisible, "\(label): backdrop shows")
+        expect(!order.contains { $0 is NSVisualEffectView || $0 is NSBackgroundExtensionView }, "\(label): no material backdrop and no canvas bleed")
+        expect(position(chrome.scrollView) == 0 && containers(rig).count == 2 && position(containers(rig)[0]) == 1, "\(label): canvas, then glass")
         expect(!surfaces(rig).contains { $0.contentView === rig.controls.canvas || $0.contentView === chrome.scrollView }, "\(label): glass never wraps the scroll view")
         expect(surfaces(rig).allSatisfy { $0.style == .regular }, "\(label): one glass variant")
 
-        // Selecting a tool tints its surface and flips its glyph; the others stay quiet.
-        chrome.toolButtons["brush"]?.state = .on
-        let selected = chrome.surface(for: chrome.toolButtons["brush"]!)
-        expect(selected?.isSelected == true && selected?.currentTint != nil, "\(label): the selected tool's surface is tinted")
-        expect(chrome.toolButtons["brush"]?.activeFamily == .solid, "\(label): the selected tool uses the solid family")
-        expect(sameColor(chrome.toolButtons["brush"]?.contentTintColor, GlassChromeButton.textColor(on: .controlAccentColor)), "\(label): the selected glyph contrasts with the accent")
-        expect(toolOrder.filter { $0 != "brush" }.allSatisfy { chrome.surface(for: chrome.toolButtons[$0]!)?.isSelected == false }, "\(label): other tools stay untinted")
-        chrome.toolButtons["brush"]?.state = .off
-        expect(selected?.isSelected == false && selected?.currentTint == nil, "\(label): deselecting clears the tint")
+        // Selecting a tool fills its button with accent at 0.20 plus a 1 pt accent border and flips its glyph; the others stay quiet.
+        let brush = chrome.toolButtons["brush"]!
+        brush.appearance = NSAppearance(named: .aqua)
+        brush.state = .on
+        expect(brush.plate.isSelected && abs((brush.plate.style.fill?.alphaComponent ?? 0) - 0.20) < 0.001 && brush.layer?.borderWidth == 1, "\(label): the selected tool has a 0.20 accent fill and a 1 pt border")
+        expect(brush.activeFamily == .solid, "\(label): the selected tool uses the solid family (not colour alone)")
+        expect(sameColor(brush.contentTintColor, .controlAccentColor), "\(label): the selected glyph is the accent")
+        expect(toolOrder.filter { $0 != "brush" }.allSatisfy { !(chrome.toolButtons[$0]!.plate.isSelected) }, "\(label): other tools stay unfilled")
+        brush.state = .off
+        expect(!brush.plate.isSelected && brush.plate.style == .none, "\(label): deselecting clears the fill")
 
-        // Hiding a button hides its glass wherever the caller does it.
+        // Hiding Cancel leaves no slot: Snap's plate narrows and nothing glass is left behind in the capture group.
         chrome.cancelFrameButton.isHidden = false
-        expect(chrome.surface(for: chrome.cancelFrameButton)?.isHidden == false, "\(label): a shown Cancel returns with its glass")
+        expect(!chrome.cancelFrameButton.isHidden, "\(label): a shown Cancel returns")
         chrome.cancelFrameButton.isHidden = true
-        expect(chrome.surface(for: chrome.cancelFrameButton)?.isHidden == true, "\(label): a hidden Cancel leaves no empty glass")
-        for toolbox in [shared.toolbox] { expect(chrome.surface(for: toolbox)?.fixedSize == GlassChrome.Metrics.toolboxButton, "\(label): the Toolbox surface is wide enough for its glyph and chevron") }
+        let captureGlass = descendantsOf(group(rig, "GlassCaptureGroup")).filter { $0 is NSGlassEffectView }
+        expect(captureGlass.isEmpty, "\(label): the capture group holds no glass surface inside its plate, hidden or not (phantom capsule)")
+        expect((shared.toolbox.superview as? ChromeFillCell)?.fixedSize == GlassChrome.Metrics.toolboxButton, "\(label): the Toolbox cell is wide enough for its glyph and chevron")
     }
 
     /// Every Modern command is icon-only, with a tooltip (name plus real shortcut) and the old title as its VoiceOver label.
@@ -1232,83 +1232,168 @@ private enum GlassChromeTests {
         let chrome = rig.chrome
         expect(chrome.snapButton.title == "Snap Frame" && chrome.snapButton.icon == .frameViewfinder, "\(label): Snap becomes Snap Frame with the viewfinder")
         expect(AppToolTip.text(for: chrome.snapButton) == snapFrameToolTip, "\(label): Snap Frame tooltip")
-        expect(chrome.snapButton.isPrimary && chrome.surface(for: chrome.snapButton)?.prominence == .primary, "\(label): Snap Frame stays primary")
-        expect(!chrome.cancelFrameButton.isHidden && chrome.surface(for: chrome.cancelFrameButton)?.isHidden == false, "\(label): Cancel appears in Frame mode")
-        expect(!chrome.backdropIsVisible && !chrome.bleedIsVisible, "\(label): backdrop and bleed give way to the Frame hole")
+        expect(chrome.snapButton.isPrimary, "\(label): Snap Frame stays primary")
+        expect(!chrome.cancelFrameButton.isHidden, "\(label): Cancel appears in Frame mode")
+        expect(!chrome.wellIsSolid && !chrome.scrollView.drawsBackground && !chrome.scrollView.contentView.drawsBackground, "\(label): the solid well gives way to the Frame hole")
         let cancel = rect(chrome.cancelFrameButton, in: rig), snap = rect(chrome.snapButton, in: rig)
         expect(abs(cancel.width - 48) < 0.5 && abs(cancel.height - 36) < 0.5 && cancel.minX >= snap.maxX && abs(cancel.midY - snap.midY) < 0.5, "\(label): Cancel is an icon pill to the right of Snap Frame")
-        expect(abs(snap.width - 56) < 0.5 && abs(snap.height - 44) < 0.5, "\(label): Snap Frame keeps the larger primary glass")
+        expect(abs(snap.width - 56) < 0.5 && abs(snap.height - 36) < 0.5, "\(label): Snap Frame keeps the wider primary button")
         expect(chrome.snapButton.accessibilityLabel() == "Snap Frame" && chrome.snapButton.visibleTitle.isEmpty, "\(label): Snap Frame is read aloud, never drawn")
         expect(rig.controls.canvas.window === rig.window && chrome.scrollView.frame.size != .zero, "\(label): the canvas stays in place in Frame mode")
     }
 
-    private static func bleedChecks(_ rig: Rig, _ label: String) {
+    // MARK: G5 glass depth (OSN-042): one plate per group, no nested glass, a solid well, display-option fallbacks
+
+    private static func allGlass(in view: NSView) -> [NSGlassEffectView] {
+        ((view as? NSGlassEffectView).map { [$0] } ?? []) + view.subviews.flatMap { allGlass(in: $0) }
+    }
+
+    private static func fillOwners(in view: NSView) -> [NSView] {
+        (view is GlassChromeButton || view is ChromeFillCell ? [view] : []) + view.subviews.flatMap { fillOwners(in: $0) }
+    }
+
+    private static func plateOf(_ view: NSView) -> StatePlate? { (view as? GlassChromeButton)?.plate ?? (view as? ChromeFillCell)?.plate }
+
+    /// (1) depth, (2) budget, (3) no overlap with the canvas well. Run in every window state.
+    private static func glassDepthChecks(_ rig: Rig, _ label: String) {
         let chrome = rig.chrome
-        expect(!GlassChrome.usesCanvasBleed, "\(label): bleed defaults off")
-        expect(!chrome.bleedIsVisible, "\(label): bleed is hidden until there is a thumbnail")
-        let thumbnail = NSImage(size: NSSize(width: 8, height: 8), flipped: false) { rect in NSColor.systemPink.setFill(); rect.fill(); return true }
-        chrome.updateCanvasBleed(thumbnail)
-        expect(!chrome.bleedIsVisible, "\(label): a thumbnail does not show the bleed by default")
-        chrome.updateCanvasBleed(nil)
-        GlassChrome.usesCanvasBleed = true
-        defer { GlassChrome.usesCanvasBleed = false; chrome.updateCanvasBleed(nil) }
-        chrome.updateCanvasBleed(thumbnail)
-        expect(chrome.bleedIsVisible && chrome.backdropIsVisible, "\(label): a thumbnail shows the bleed")
         rig.content.layoutSubtreeIfNeeded()
-        let bleed = chrome.subviews.compactMap { $0 as? NSBackgroundExtensionView }.first
-        expect(bleed?.alphaValue == 0.6, "\(label): bleed is drawn at 0.6")
-        expect(bleed.map { $0.contentView?.frame == chrome.scrollView.frame } == true, "\(label): the thumbnail sits exactly on the canvas area; only its extension reaches under the rails")
-        chrome.frameMode = true
-        expect(!chrome.bleedIsVisible, "\(label): Frame mode hides the bleed")
-        chrome.frameMode = false
-        expect(chrome.bleedIsVisible, "\(label): leaving Frame mode brings the bleed back")
-        chrome.updateCanvasBleed(nil)
-        expect(!chrome.bleedIsVisible, "\(label): no image, no bleed")
-        chrome.updateCanvasBleed(thumbnail)
-        GlassChrome.usesCanvasBleed = false
-        chrome.updateCanvasBleed(thumbnail)
-        expect(!chrome.bleedIsVisible, "\(label): the flag disables the bleed")
-        GlassChrome.usesCanvasBleed = true
-        chrome.updateCanvasBleed(thumbnail)
-        expect(chrome.bleedIsVisible, "\(label): re-enabling the flag restores it")
-        chrome.updateCanvasBleed(nil)
+        let glass = allGlass(in: chrome)
+        expect(glass.count <= 8, "\(label): at most 8 glass surfaces in the window (\(glass.count))")
+        expect(glass.count == 8 && glass.allSatisfy { $0 is GlassSurfaceView }, "\(label): they are exactly the eight group plates (\(glass.count))")
+        for view in glass {
+            var ancestor = view.superview
+            while let current = ancestor {
+                expect(!(current is NSGlassEffectView), "\(label): \(describe(view)) has a glass ancestor \(describe(current))")
+                ancestor = current.superview
+            }
+            expect(allGlass(in: view.contentView ?? view).isEmpty, "\(label): \(describe(view)) has a glass descendant")
+        }
+        let containerCount = containers(rig).count
+        expect(containerCount <= 2, "\(label): the plates live in at most the two bar containers (\(containerCount))")
+        for view in glass {
+            var inContainer = false
+            var ancestor = view.superview
+            while let current = ancestor { if current is NSGlassEffectContainerView { inContainer = true }; ancestor = current.superview }
+            expect(inContainer, "\(label): plate \(describe(view)) sits inside a glass container")
+        }
+        let scroll = rect(chrome.scrollView, in: rig)
+        for view in glass where !view.isHiddenOrHasHiddenAncestor {
+            let overlap = rect(view, in: rig).intersection(scroll)
+            expect(overlap.isNull || overlap.width <= 0.5 || overlap.height <= 0.5, "\(label): glass \(describe(view)) \(rect(view, in: rig)) never overlaps the canvas well \(scroll)")
+        }
+        expect(!descendantsOf(chrome).contains { $0 is NSVisualEffectView }, "\(label): no NSVisualEffectView anywhere in the chrome")
+        expect(!chrome.subviews.contains { $0 is NSVisualEffectView }, "\(label): no NSVisualEffectView behind the canvas")
+    }
+
+    /// (6) exactly one saturated accent at rest (Snap), the selected tool at 0.20 with a border, hover and press never saturated.
+    private static func tintChecks(_ rig: Rig, _ label: String) {
+        let chrome = rig.chrome
+        let owners = fillOwners(in: chrome)
+        for view in owners { (view as? ChromeFillCell)?.setHovered(false); (view as? GlassChromeButton)?.setHovered(false) }
+        for button in chrome.toolButtons.values { button.state = .off }
+        func saturated() -> [NSView] { owners.filter { ($0.isHiddenOrHasHiddenAncestor == false) && (plateOf($0)?.style.fill?.alphaComponent ?? 0) > 0.5 } }
+        expect(saturated().count == 1 && saturated()[0] === chrome.snapButton, "\(label): at rest exactly one saturated accent exists: Snap (\(saturated().map(describe)))")
+        expect(chrome.snapButton.plate.style.fill?.alphaComponent == 1, "\(label): Snap's fill is the accent at 1.0")
+        for view in owners where view !== chrome.snapButton {
+            expect(plateOf(view)?.style.fill == nil, "\(label): \(describe(view)) has no fill at rest")
+        }
+        chrome.toolButtons["ellipse"]?.appearance = NSAppearance(named: .aqua)
+        chrome.toolButtons["ellipse"]?.state = .on
+        let tool = chrome.toolButtons["ellipse"]!
+        expect(abs((tool.plate.style.fill?.alphaComponent ?? 0) - 0.20) < 0.001 && tool.layer?.borderWidth == 1 && sameColor(tool.plate.style.border, accentAqua), "\(label): the selected tool is accent 0.20 with a 1 pt accent border")
+        expect(saturated().count == 1, "\(label): selecting a tool adds no second saturated element")
+        for view in owners { (view as? GlassChromeButton)?.setHovered(true); (view as? ChromeFillCell)?.setHovered(true) }
+        expect(saturated().count == 1 && owners.filter { plateOf($0)?.style.fill != nil }.count == owners.count, "\(label): hovering everything fills everything faintly but adds no saturated accent")
+        for view in owners { (view as? GlassChromeButton)?.setHovered(false); (view as? ChromeFillCell)?.setHovered(false) }
+        tool.state = .off
+    }
+
+    /// (4) Reduce Transparency and (5) Increase Contrast, by injection.
+    private static func displayOptionChecks(_ rig: Rig, _ label: String) {
+        let chrome = rig.chrome
+        let plates = surfaces(rig)
+        chrome.accessibility = ChromeAccessibility(reduceTransparency: true, increaseContrast: false, reduceMotion: false)
+        for plate in plates {
+            let solid = plate.transparencyPlate
+            expect(plate.tintColor == nil, "\(label): Reduce Transparency: \(describe(plate)) has no tint")
+            expect(solid != nil && !solid!.isHidden && solid!.layer?.backgroundColor?.alpha == 1 && solid!.layer?.borderWidth == 1, "\(label): Reduce Transparency: \(describe(plate)) has an opaque plate with a 1 pt border")
+            expect(solid?.layer?.cornerRadius == plate.cornerRadius, "\(label): the plate matches \(describe(plate))'s radius")
+        }
+        chrome.accessibility = ChromeAccessibility(reduceTransparency: false, increaseContrast: true, reduceMotion: false)
+        for plate in plates {
+            expect(plate.layer?.borderWidth == 1 && abs(borderAlpha(plate.layer) - 0.6) < 0.01, "\(label): Increase Contrast: \(describe(plate)) has a 1 pt label-color border")
+            expect(plate.transparencyPlate == nil, "\(label): Increase Contrast alone keeps the glass on \(describe(plate))")
+        }
+        let snapFill = chrome.snapButton.plate.style.fill
+        expect(snapFill?.alphaComponent == 1, "\(label): Increase Contrast keeps Snap saturated")
+        chrome.accessibility = .none
+        expect(plates.allSatisfy { $0.transparencyPlate == nil && $0.layer?.borderWidth == 0 }, "\(label): clearing the options restores the glass")
+    }
+
+    /// (7) The well is solid: the scroll view and its clip view draw `surface.canvasWell`, opaque, scroller corner included.
+    private static func wellChecks(_ rig: Rig, _ label: String) {
+        let chrome = rig.chrome
+        let scroll = chrome.scrollView
+        expect(chrome.wellIsSolid && scroll.drawsBackground && scroll.contentView.drawsBackground, "\(label): the scroll view and its clip view both draw the well")
+        for name in [NSAppearance.Name.aqua, .darkAqua] {
+            let appearance = NSAppearance(named: name)!
+            let well = DesignTokens.Palette.resolve(DesignTokens.Palette.Surface.canvasWell, for: appearance)
+            let used = DesignTokens.Palette.resolve(scroll.backgroundColor, for: appearance)
+            let clip = DesignTokens.Palette.resolve(scroll.contentView.backgroundColor, for: appearance)
+            expect(well.alphaComponent == 1 && sameColor(used, well, tolerance: 0.002) && sameColor(clip, well, tolerance: 0.002), "\(label): the well is the opaque canvasWell colour in \(name.rawValue)")
+        }
+        // The legacy scroller's corner box takes the well colour instead of white.
+        rig.window.appearance = NSAppearance(named: .aqua)
+        scroll.scrollerStyle = .legacy
+        rig.content.layoutSubtreeIfNeeded()
+        scroll.tile()
+        guard let rep = scroll.bitmapImageRepForCachingDisplay(in: scroll.bounds) else { expect(false, "\(label): the well renders"); return }
+        scroll.cacheDisplay(in: scroll.bounds, to: rep)
+        let scale = CGFloat(rep.pixelsWide) / scroll.bounds.width
+        func pixel(_ x: CGFloat, fromBottom y: CGFloat) -> NSColor? {
+            rep.colorAt(x: Int(x * scale), y: rep.pixelsHigh - 1 - Int(y * scale))?.usingColorSpace(.sRGB)
+        }
+        let well = DesignTokens.Palette.resolve(DesignTokens.Palette.Surface.canvasWell, for: NSAppearance(named: .aqua)!)
+        if scroll.verticalScroller?.isHidden == false && scroll.horizontalScroller?.isHidden == false, let vertical = scroll.verticalScroller, let horizontal = scroll.horizontalScroller {
+            let corner = pixel(vertical.frame.midX, fromBottom: horizontal.frame.midY)
+            expect(corner.map { sameColor($0, well, tolerance: 0.03) } == true, "\(label): the scroller corner is the well colour (\(String(describing: corner)) vs \(well))")
+        } else {
+            expect(false, "\(label): both legacy scrollers show in the rig, so the corner exists to test")
+        }
+        scroll.scrollerStyle = NSScroller.preferredScrollerStyle
+        rig.window.appearance = nil
     }
 
     private static func accessibilityChecks(_ rig: Rig, _ label: String) {
         let chrome = rig.chrome
-        let thumbnail = NSImage(size: NSSize(width: 8, height: 8), flipped: false) { rect in NSColor.systemPink.setFill(); rect.fill(); return true }
-        GlassChrome.usesCanvasBleed = true
-        defer { GlassChrome.usesCanvasBleed = false }
-        chrome.updateCanvasBleed(thumbnail)
-        expect(chrome.bleedIsVisible, "\(label): bleed visible before injection")
-        let hovered = chrome.surface(for: chrome.undoButton)!
+        let hovered = chrome.undoButton
+        hovered.appearance = NSAppearance(named: .aqua)
         hovered.setHovered(true)
-        expect(abs((hovered.currentTint?.alphaComponent ?? 0) - 0.08) < 0.001, "\(label): hover tint before injection")
+        expect(abs((hovered.plate.style.fill?.alphaComponent ?? 0) - 0.08) < 0.001, "\(label): hover fill before injection")
         chrome.toolButtons["line"]?.state = .on
-        let selected = chrome.surface(for: chrome.toolButtons["line"]!)!
-        expect(!selected.showsContrastRing, "\(label): no ring before Increase Contrast")
+        let selected = chrome.toolButtons["line"]!
+        selected.appearance = NSAppearance(named: .aqua)
+        expect(abs((selected.plate.style.fill?.alphaComponent ?? 0) - 0.20) < 0.001, "\(label): selected fill before Increase Contrast")
 
         chrome.accessibility = ChromeAccessibility(reduceTransparency: true, increaseContrast: true, reduceMotion: true)
-        expect(!chrome.bleedIsVisible, "\(label): Reduce Transparency hides the bleed")
-        expect(abs((hovered.currentTint?.alphaComponent ?? 0) - 0.16) < 0.001, "\(label): Increase Contrast strengthens the hover tint")
-        expect(selected.showsContrastRing && selected.layer?.borderWidth == 1, "\(label): Increase Contrast rings the selected tool")
-        expect(surfaces(rig).allSatisfy { $0.accessibility.increaseContrast && $0.accessibility.reduceMotion && $0.accessibility.reduceTransparency }, "\(label): every surface receives the injected options")
-        expect(hovered.lastAnimationDuration == 0, "\(label): Reduce Motion reaches the surfaces")
-        chrome.updateCanvasBleed(thumbnail)
-        expect(!chrome.bleedIsVisible, "\(label): a new thumbnail stays hidden under Reduce Transparency")
+        expect(abs((hovered.plate.style.fill?.alphaComponent ?? 0) - 0.16) < 0.001, "\(label): Increase Contrast strengthens the hover fill")
+        expect(abs((selected.plate.style.fill?.alphaComponent ?? 0) - 0.32) < 0.001 && selected.layer?.borderWidth == 1, "\(label): Increase Contrast strengthens the selected fill (0.32) and keeps its border")
+        expect(surfaces(rig).allSatisfy { $0.accessibility.increaseContrast && $0.accessibility.reduceMotion && $0.accessibility.reduceTransparency }, "\(label): every plate receives the injected options")
+        expect(fillOwners(in: chrome).allSatisfy { plateOf($0)?.accessibility == chrome.accessibility }, "\(label): every button and cell receives them too")
+        expect(hovered.plate.lastAnimationDuration == 0, "\(label): Reduce Motion reaches the fills")
         chrome.accessibility = .none
-        expect(chrome.bleedIsVisible && abs((hovered.currentTint?.alphaComponent ?? 0) - 0.08) < 0.001 && !selected.showsContrastRing, "\(label): clearing the options restores everything")
+        expect(abs((hovered.plate.style.fill?.alphaComponent ?? 0) - 0.08) < 0.001 && abs((selected.plate.style.fill?.alphaComponent ?? 0) - 0.20) < 0.001, "\(label): clearing the options restores everything")
         hovered.setHovered(false)
         chrome.toolButtons["line"]?.state = .off
 
         // The live path: the provider is read again when the system posts a display-options change.
         rig.box.value = ChromeAccessibility(reduceTransparency: true, increaseContrast: false, reduceMotion: false)
         NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: NSWorkspace.shared)
-        expect(chrome.accessibility.reduceTransparency && !chrome.bleedIsVisible, "\(label): the display-options notification re-reads the provider")
+        expect(chrome.accessibility.reduceTransparency && surfaces(rig).allSatisfy { $0.transparencyPlate != nil }, "\(label): the display-options notification re-reads the provider")
         rig.box.value = .none
         NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: NSWorkspace.shared)
-        expect(chrome.accessibility == .none && chrome.bleedIsVisible, "\(label): and again when the options clear")
-        chrome.updateCanvasBleed(nil)
+        expect(chrome.accessibility == .none && surfaces(rig).allSatisfy { $0.transparencyPlate == nil }, "\(label): and again when the options clear")
     }
 }
 

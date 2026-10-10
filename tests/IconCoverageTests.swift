@@ -18,7 +18,7 @@ private enum IconCoverageTests {
 
     /// Icons whose only user is a control another owner still has to switch over (T5 hunks in ModernEditorChrome and App.swift,
     /// and the T7 error cue). Each leaves this list in the same change that makes a control use it; the test fails the other way too.
-    private static let pendingUsers: Set<FAIcon> = [.dragHand, .warning]
+    private static let pendingUsers: Set<FAIcon> = [.warning]
     /// Icons Free cannot draw. Empty today: the four Pro-only icons use a Free stand-in. A new Pro-only icon must be listed here.
     private static let freeLess: Set<FAIcon> = []
     /// Names that exist only in Font Awesome Pro. None of them may appear as embedded Free path data.
