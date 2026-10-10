@@ -282,9 +282,11 @@ final class AppToolTip: NSObject {
             return nil
         }
 
-        @objc func mouseMoved(with event: NSEvent) { AppToolTip.shared.hover(over: tipView(for: event)) }
-        @objc func mouseEntered(with event: NSEvent) { AppToolTip.shared.hover(over: tipView(for: event)) }
-        @objc func mouseExited(with event: NSEvent) { AppToolTip.shared.hover(over: nil) }
+        // An NSTrackingArea owner is sent `mouseEntered:`, `mouseExited:` and `mouseMoved:`. Swift would export these as
+        // `mouseEnteredWith:` and so on, so the selectors are spelled out; a mismatch is an unrecognized-selector crash on first hover.
+        @objc(mouseMoved:) func mouseMoved(with event: NSEvent) { AppToolTip.shared.hover(over: tipView(for: event)) }
+        @objc(mouseEntered:) func mouseEntered(with event: NSEvent) { AppToolTip.shared.hover(over: tipView(for: event)) }
+        @objc(mouseExited:) func mouseExited(with event: NSEvent) { AppToolTip.shared.hover(over: nil) }
     }
 }
 
