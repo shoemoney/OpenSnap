@@ -886,7 +886,20 @@ public final class PublishingCoordinator: NSObject {
         if let parent = panel.sheetParent {
             endingSheets.insert(ObjectIdentifier(panel))
             parent.endSheet(panel)
+            releaseEndingSheet(panel, attemptsLeft: 30)
         } else { panel.orderOut(nil) }
+    }
+    /// The completion handler from `beginSheet` normally clears the sheet from `endingSheets`. A sheet begun some other way has no
+    /// such handler, and Quit would wait on it forever, so once the panel is really off its parent it is released here.
+    private func releaseEndingSheet(_ panel: NSPanel, attemptsLeft: Int) {
+        let id = ObjectIdentifier(panel)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [self, weak panel] in
+            guard endingSheets.contains(id) else { return }
+            if let panel, panel.sheetParent != nil, attemptsLeft > 0 { releaseEndingSheet(panel, attemptsLeft: attemptsLeft - 1); return }
+            panel?.orderOut(nil)
+            endingSheets.remove(id)
+            flushQuiescenceCallbacks()
+        }
     }
 
     public static var settingsFileURL: URL { PublishingDestinationStore.system.file }

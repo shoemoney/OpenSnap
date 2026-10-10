@@ -41,6 +41,8 @@ final class AppAlert: NSObject {
     private weak var host: NSWindow?
     private var completion: (@MainActor (NSApplication.ModalResponse) -> Void)?
     private var presentedAsSheet = false
+    /// Closing the panel or the window it hangs from ends the alert; removed as soon as it has been answered.
+    private var closeObservers: [NSObjectProtocol] = []
 
     init(title: String, message: String = "", buttons: [Button] = [Button(title: "OK")], accessoryView: NSView? = nil) {
         typealias Typography = DesignTokens.Typography
@@ -160,8 +162,11 @@ final class AppAlert: NSObject {
             self.host = parent
             presentedAsSheet = true
             panel.setAccessibilityRole(.sheet)
-            parent.beginSheet(panel)
+            watchForClose(of: [parent, panel])
+            // Whoever ends the sheet (endSheet, a window close) answers it; only a button used to.
+            parent.beginSheet(panel) { [weak self] _ in self?.endedWithoutAnswer() }
         } else {
+            watchForClose(of: [panel])
             panel.setAccessibilityRole(.window)
             panel.setAccessibilitySubrole(.dialog)
             panel.level = .modalPanel
@@ -187,9 +192,28 @@ final class AppAlert: NSObject {
         else if buttons.count == 1 { dismiss(withButton: 0) }
     }
 
+    /// What the alert answers when it ends with no button chosen: Cancel, else the only button, else plain `.cancel`
+    /// (an alert with no Cancel button never chooses for the user; callers treat anything but the first button as "no").
+    var unansweredResponse: NSApplication.ModalResponse {
+        let index = buttons.firstIndex(where: \.answersEscape) ?? (buttons.count == 1 ? 0 : nil)
+        return index.map { NSApplication.ModalResponse(rawValue: NSApplication.ModalResponse.alertFirstButtonReturn.rawValue + $0) } ?? .cancel
+    }
+
+    private func endedWithoutAnswer() { finish(unansweredResponse) }
+
+    private func watchForClose(of windows: [NSWindow]) {
+        closeObservers = windows.map { window in
+            NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: window, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.endedWithoutAnswer() }
+            }
+        }
+    }
+
     private func finish(_ answer: NSApplication.ModalResponse) {
         guard response == nil else { return }
         response = answer
+        for observer in closeObservers { NotificationCenter.default.removeObserver(observer) }
+        closeObservers = []
         if presentedAsSheet, let host, host.attachedSheet === panel { host.endSheet(panel) }
         panel.orderOut(nil)
         Self.live.removeAll { $0 === self }
