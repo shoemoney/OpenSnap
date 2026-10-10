@@ -1123,3 +1123,101 @@ J7 lane, build 5b30929 (main after batch 6 and batch 7), two isolated sessions t
 ### Clipboard
 
 The pasteboard held 13 bytes of text before the run; it was saved to a temp file (not printed), replaced by Edit › Copy Image and the two upload links, restored byte for byte (`cmp` identical) after the last session, and the temp file was deleted.
+
+## Final render pass (5b30929)
+
+Source revision `5b30929` (main after audit batch 7), built with `sh tools/build.sh`; this section closes review round 2 (R2-009 stale rendered rows, R2-010 display options after batches 5 and 6, R2-011 the mistimed S42 capture). Harness captures only (`tools/eye-dump-audit.sh`, throwaway copies, `--icons sf`; Font Awesome Pro is not bundled, so every icon is an SF Symbol). Nothing here is a real-click result, and no `Sources/` or `tests/` file was edited. The packed set is `docs/design/evidence/impl-2026-10-09/final-render/` (122 PNGs, 18 layout JSONs, 143 files, 7.05 MB; `python3 tools/check-eye-dump.py` on it: 0 failures). Raw runs stayed in `/tmp/fr/` (not committed).
+
+### Runs (all sequential, all `--icons sf --sha 5b30929 --no-wait-gui`, command shown after `sh tools/eye-dump-audit.sh /tmp/fr/<run>`)
+
+| Run | Arguments (every `fc-base`, `fa-*` and `fb-*` run also passed `--sizes 980xmin,1440x900,full`, which only S11M consumes) | Role |
+|---|---|---|
+| fc-base | `--surfaces S03,S08,S09,S11,S17,S20,S40,S07,S12,S13,S14,S15,S16,S19,S24,S25,S29,S31,S34,S11M --appearances light,dark --sizes 980xmin,1440x900,full` | clean baseline and the row-refresh surfaces |
+| fc-s10 | `--surfaces S10 --appearances light,dark` | export accessory (the real Save panel is opened by S10) |
+| fa-dwc, fa-ic, fa-rt, fa-all | `--surfaces S03,S08,S09,S11,S17,S20,S40 --appearances light,dark --sizes 980xmin,1440x900,full --display differentiateWithoutColor` / `increaseContrast` / `reduceTransparency` / `reduceTransparency,increaseContrast,differentiateWithoutColor,reduceMotion` | display options on the non-menu surfaces |
+| rm | `--surfaces S40 --appearances light,dark --display reduceMotion` | Reduce Motion |
+| fb-base, fb-dwc, fb-ic, fb-rt, fb-all | `--surfaces S42,S44 --appearances light,dark [--display …]` (same four option values) | the surfaces that open the Toolbox menu (S42 Toolbox menu, status notice, Resize variants; S44 footer states at 980 and 1440) |
+| s42-2 | `--surfaces S42 --appearances light` | the one run whose status-notice capture shows the notice |
+
+Earlier runs of the same surfaces (`base`, `base2`, `dwc`, `dwc2`, `ic`, `rt`, `all`, `rows`, `s42-1..3`, `s42d-1..4`, `m-*`, `f-*`, `g-*`) were used to find problems and are not cited. Two of them taught the validity rules below: the first baseline's light run had **0 of 115** captures taken with the app active (yellow default buttons and the Original size tick render grey, so a pixel diff against it is meaningless), and the first Differentiate Without Color dark run had 98 of 117 inactive. Every cited run has `appActive` true for every capture.
+
+Validity checks:
+- **Determinism:** `fc-base` against an earlier all-active baseline (`base2`): 118 of 180 shared captures identical; the differences are History's date line (about 2,300 px in every populated History capture) and the S40 swatch states, so S20 numbers below are noise-level by construction.
+- **Real stores:** the guard digest (`dbde037ac2085108`, 122 files and 2 defaults plists) was identical before and after every cited run (`RESULT stores unchanged`). The first baseline reported `STORES CHANGED` solely because of `com.shoemoney.opensnap.e2e-60011.plist`, a throwaway plist from the J7 lane's live E2E session (app pid 60030, watchdog pid 60071 running from `.todo-worktrees/j7`); it was left alone and is gone from the later runs.
+- **Input fence:** `fc-base`, `fa-dwc`, `fa-ic`, `fa-rt`, `fa-all` and `rm` swallowed **0** real events (6 runs, each with a light and a dark appearance). The Toolbox-menu runs `fb-*` swallowed 61 to 70 per appearance, `fc-s10` 11, `s42-2` 17. A per-surface sweep (S07, S08, S09, S10, S11, S11M, S12 to S17, S19, S20, S24, S25, S29, S31, S34, S44) found the events only in S44, S42 and S10, every other surface 0; the pointer sat at one screen point (909, 910) in three samples. So the count is the menu tracking loop and the Save panel reading the parked pointer, not typing, but that is an inference (the fence records a count, not event kinds): see F-R-005. The captures in those runs were looked at and OCR-swept (below).
+- **OCR sweep:** `uv run --with pyobjc-framework-Vision --with pyobjc-framework-Quartz python3 tools/evidence-ocr-sweep.py docs/design/evidence/impl-2026-10-09/final-render --report /tmp/fr/ocr-final.txt`: 122 images, 10 with flagged lines, 0 unreadable. Every flagged line is fixture text (the Lorem ipsum lines, "Ship it today!", the `AKIAEXAMPLEEXAMPLE0` fixture key, misreads of the S3 help paragraph); the S07, S11M and S19 captures behind them were viewed. Nothing private.
+
+### Positive controls (does each display option change the render where it must?)
+
+Pixel diff = pixels whose luma differs by more than 8 between the untagged baseline and the same capture with the option (same run family, same size and appearance, both active). S42 and S44 use `fb-*`, the rest `fa-*`.
+
+| Capture | Appearance | DWC | IC | RT | all four |
+|---|---|---|---|---|---|
+| S11 width 980 | light | 1,804 (0.06%) | 12,295 (0.39%) | 2,157 (0.07%) | 15,782 (0.50%) |
+| S11 width 980 | dark | 1,773 (0.06%) | 24,090 (0.76%) | 208,064 (6.54%) | 206,914 (6.50%) |
+| S11 width 1440 | light / dark | 1,804 / 1,774 | 13,961 / 25,754 | 2,157 / 218,826 | 17,447 / 218,233 |
+| S09 footer | light | 1,676 (0.47%) | 9,109 (2.55%) | 1,073 (0.30%) | 11,625 (3.26%) |
+| S09 footer | dark | 1,645 (0.46%) | 16,088 (4.50%) | 94,044 (26.33%) | 94,763 (26.54%) |
+| S44 footer error 980 | light / dark | 1,676 / 1,644 | 20,298 / 27,201 | 1,077 / 84,703 | 22,776 / 97,593 |
+| S42 Toolbox menu open | light / dark | 1,804 / 1,774 | 14,303 / 26,189 | 2,075 / 214,281 | 17,738 / 214,061 |
+| S03 top bar | light / dark | 128 / 128 | 5,583 / 10,409 | 1,080 / 124,181 | 6,551 / 123,456 |
+| S08 Resize in context | light / dark | 1,774 / 1,726 | 12,907 / 11,887 | 600 / 208,355 | 15,060 / 207,353 |
+| S17 Settings, Upload list | light / dark | 2,584 / 2,540 | **0 / 0** | **0 / 0** | 2,584 / 2,540 |
+| S17 Settings, General | light / dark | 2,680 / 2,636 | **0 / 0** | **0 / 0** | 2,680 / 2,636 |
+| S20 History 880 selected | light / dark | 2,289 / 2,065 | 2,294 / 2,353 | 2,137 / 2,193 | 2,087 / 2,334 |
+| S20 History populated | light / dark | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
+| S40 pressed tool (strip) | light / dark | 2,208 / 2,208 | 13,601 / 17,526 | 3,110 / 128,521 | 14,448 / 123,231 |
+
+| Option | Where it must change | Measured | Verdict |
+|---|---|---|---|
+| Differentiate Without Color | a non-colour selection cue on PNG \| JPG, the Settings tab strip, the Upload list selection and the Default pill | **PNG \| JPG:** the selected PNG segment gains a black outline and an underline (footer 1,676 px, light and dark; was 0 px at 3194247, F-J3-001). **Settings tab:** the selected tab gains a black outline (2,584 px, the only change in the Upload tab capture). **Selected tool:** the 128 px underline as before. **Upload list row:** unchanged, but the row already has a fill and a 1 pt border and the Default pill already carries a check and an outline, so a cue exists, only a weak one (F-R-003). | **Pass.** F-J3-001 is fixed at the format toggle. |
+| Increase Contrast | stronger glyph and border contrast | every plate gains a hairline, Snap a black outline, the JPG segment an outline (footer 2.55% light, 4.50% dark; S44 error footer 8.63% / 11.57%; the open Toolbox menu 14,303 / 26,189 px). Glyph contrast is **not** raised (F-R-002); Settings, History and the destination form change by 0 px (stock AppKit controls follow the real system option, harness limit as in F-J3-004). | **Pass for the editor chrome**, no change in the stock-control windows. |
+| Reduce Transparency | opaque plates | dark plates turn opaque (S11 980 dark 6.54%, footer 26.33%, S44 error footer 36.01%, S40 strip 38.12%); light changes 0.05 to 0.07% because the glass already reads as white over white. Settings and History 0 px (no glass). | **Pass** (strong in dark, near invisible in light). |
+| All four | all effects together, no conflict | additive: S11 980 dark 206,914 px; nothing clipped or overlapping in any combined capture (`check-eye-dump` clean); the PNG outline, underline, solid plates and borders show together (`S09-footer-*-rt-ic-dwc-rm`). | **Pass** |
+| Reduce Motion | no decorative motion | the pressed tool glyph no longer scales down: S40 strip 504 px, both appearances (`rm` run); motion itself is not provable from stills. | **Pass, indirect** |
+
+No option shows an absent change where one is required, so no dead-option finding is filed; the weaknesses are F-R-002 and F-R-003.
+
+### Refreshed rows (48, all class `rendered`, source SHA now `5b30929`, "Re-check after batch 6" flag dropped)
+
+STAT-001, TOOL-012, TOOL-013, TOOL-015, TOOL-016, TOOL-017, TOOL-018, TOOL-019, TOOL-021, TOOL-029, CAP-001, CAP-004, CAP-005, CAP-006, CAP-007, SET-006, DEST-014, DEST-016, DEST-022, DEST-025, SHEET-002, SHEET-003, SHEET-005, SHEET-026, SHEET-036, SHEET-037, SHEET-044, ICON-025, ICON-027, ICON-031, ICON-100, ICON-101, ICON-102, ICON-106, STATE-002, STATE-003, STATE-009, STATE-010, STATE-011, STATE-014, STATE-015, STATE-016, STATE-017, STATE-018, STATE-019, STATE-020, STATE-021, STATE-022.
+
+Three rows changed meaning, not just evidence: **STATE-002** (re-measured from the layout JSON: 270 pt free in the bottom bar for the empty "Arrow · Saved" editor, 48 pt for the populated worst case at 980 with Original size shown and the compact format toggle, minimum gap 12 pt, no overlaps; the old 82 pt is gone), **STATE-003** (at 2056 pt the bars are a centred 1440 pt column, 451 pt free, instead of pinned to the edges with 891 pt free) and **STATE-010** (a 4800 x 3000 shot fitted into 1618 x 1011 pt, the zoom face still 100%). **STATE-019** gained the PNG segment outline and the Settings tab outline. **SHEET-003 and SHEET-005** record that Manage is collapsed in the render, so the preset name field and Save Preset are visible only in the J6 real-click screenshots (57, 59); the harness has no expanded-Manage capture. Class counts after regeneration (`python3 -I tools/e2e-inventory.py` then `--check`: PASS): E2E 309, rendered 48, unit/source 93, unverified 120, retired 27, total 597 (unchanged, no row gained or lost a class).
+
+### What was looked at
+
+Light 980 and dark 1440 (or the nearest size the surface has) were viewed for: editor empty and populated, top and bottom bars and the footer in every option, Settings General and Upload (list, Default pill, tab strip) and the destination form (S3 form light, Test error dark), History (880 selected, 880 none, populated dark), Toolbox menu open (dark), S44 footer states at 980 and 1440 in both appearances, Resize in context, export accessory, Frame at 980, picker lens, countdown, flash, permission sheet, About, help bevel, colour popover, Actual Size, large fit, small canvas at 1440, the maximised and 980-minimum matrices, and the S42 status notice. The remaining packed captures (S17 Drawing, the other S19 forms, S42 Resize variants, S44 History sheets) were not viewed one by one; they passed `check-eye-dump` and the OCR sweep. Judged as good as it can look: the compact footer, the centred full-screen column, the labelled History actions (all seven labelled at the default width, the three destructive ones at 880, glyphs only below that, measured from the live buttons), the 5 x 2 colour popover and the footer error line (`Upload failed · HTTP 403`, Retry and Details beside it). Still open from earlier rounds and re-observed unchanged: F-J3-005 (zoom face 100% while the picture is drawn at about 34%), F-J3-009 (the 300 x 180 shot is 4.2% of a 1440 x 900 window), F-J3-010 (unselected radios and checkboxes 1.25:1, e.g. the Dock radio and Make uploads public-read).
+
+### Findings
+
+### F-R-001 · P3 · Harness · S42 status-notice captures the stale status
+- **Surface:** `S42-status-notice` (bottom bar crop), `Sources/EyeDumpAuditSurfacesBatch3c.swift` (the step posts "Saved to History", then shoots with `settle: 0.2`).
+- **Observed:** of 21 attempts at 5b30929 the PNG shows the notice in 2 (both light: `s42-2` and `fb-dwc`); the other 19 show the normal status "Arrow · Unsaved changes" and a grey Original size tick while the capture's own layout JSON reads `Saved to History`. All 11 dark attempts are stale, as are `S42-status-notice-*@cc764dc` (both appearances, `audit-fix-6/captures.md`) and the light copy at `f7f68be`. The window server frame is read before the footer repaints.
+- **Expected:** the capture shows what the layout JSON says.
+- **Suggested fix:** force the footer to display (or pump until the label's drawn string matches `status.stringValue`) before shooting; compare the cropped pixels with the string as a self-check. Until then `S42-status-notice-light@5b30929.png` (from `s42-2`) is the only correct copy; there is no correct dark one.
+
+### F-R-002 · P3 · Increase Contrast does not raise glyph or disabled contrast (F-J3-004 still open)
+- **Surface:** editor chrome, `S11-width-980-*-ic` against `S11-width-980-*`.
+- **Observed (sampled from the PNGs):** the unselected Select-tool glyph is 4.00:1 on white in baseline and with the option; in dark 4.57:1 baseline, 4.50:1 with the option. Disabled Undo 1.47:1 → 1.57:1 (light), 1.63:1 → 1.78:1 (dark). The zoom text is unchanged. Only borders and the Snap outline strengthen.
+- **Expected:** inactive glyphs reach at least 7:1 under the option and no label loses contrast; disabled controls stay legible.
+- **Suggested fix:** resolve inactive glyph and disabled colours through the same Increase Contrast branch that draws the plate border.
+
+### F-R-003 · P3 · Differentiate Without Color leaves the Upload list selection and radios at colour-only strength
+- **Surface:** Settings › Upload destination list, `S17-settings-upload-many-light-dwc` against `S17-settings-upload-many-light`; Settings › General radios.
+- **Observed:** the selected row is a pale yellow fill (`#FDF4DC`, 1.10:1 against white) with a 1 pt border (`#DDB546`, 1.95:1 against white in light; 11:1 in dark); under the option the only change in the capture is the black outline on the selected tab (2,584 px), so the row is identical. The unselected radio discs stay 1.25:1 (F-J3-010).
+- **Expected:** with the option on, a selected row has a cue that does not rely on hue, at least 3:1 (a dark border or a leading mark), as the tab strip and the format toggle now do.
+- **Suggested fix:** thicken and darken the row border (or add a check) when `DisplayOptions.current.differentiateWithoutColor`, the way `SettingsWindow.swift:667` already does for the tab.
+
+### F-R-004 · P3 · Harness · the Toolbox menu capture fails intermittently
+- **Surface:** S23, S42, S44 "Toolbox menu open".
+- **Observed:** in the first set of runs 12 of 30 menu captures failed with "menu tracking returned before the capture timer fired (menu did not open)" (for example the light S23 and S42 baseline, the dark S42 under Reduce Transparency); the ten `fb-*` runs of S42 and S44 (20 captures) had 0 failures, and a re-run of each missing combination opened the menu first time. A capture that silently drops looks like a pass in a count of PNGs.
+- **Expected:** the menu opens every time or the run fails.
+- **Suggested fix:** arm the capture timer before `popUp`, retry once on the gap, and have `check-eye-dump` fail a run with an unexplained menu gap.
+
+### F-R-005 · P3 · Harness · the input-fence count cannot tell a parked pointer from typing
+- **Surface:** `Sources/EyeDumpAuditInputGuard.swift` (a local monitor counting every event).
+- **Observed:** runs that open a menu or the Save panel swallow 11 to 70 events per appearance (S44 38 in a single-surface run; S42 15 to 19; S10 11), every other surface 0, with the pointer parked at (909, 910). The count is correct as a count, but "somebody used the machine" printed beside it is wrong for these runs, and a reader cannot tell. The fence records no event kinds.
+- **Expected:** the safety record separates key and button events from move, enter and cursor-update events.
+- **Suggested fix:** keep one counter per kind in `record()` and print "keyboard 0, buttons 0, pointer moves N".
+
+**Not captured:** the light and dark S42 status notice in the form the row asked for exists only for light (F-R-001); the Resize sheet with Manage expanded (no harness step); real Font Awesome icons (Pro fonts not bundled in this build); the status item on a real menu bar (transparent capture only); native tooltips and the Share picker (recorded harness gaps).
