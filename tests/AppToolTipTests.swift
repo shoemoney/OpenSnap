@@ -15,6 +15,15 @@ private enum AppToolTipTests {
 
     private static func spin(_ seconds: TimeInterval) { RunLoop.main.run(until: Date().addingTimeInterval(seconds)) }
 
+    /// Runs the loop until `condition` holds. A fixed `spin` is wrong for "the timer has fired": when the process is descheduled
+    /// for the whole spin (a cold full run starts dozens of compiles at once), the run loop times out with the due timer unfired.
+    /// A timer that is merely late still fires on the next pass, so this waits for the event and only a real failure runs out the 10 s.
+    private static func wait(_ condition: @autoclosure () -> Bool, _ message: String, within seconds: TimeInterval = 10) {
+        let deadline = Date().addingTimeInterval(seconds)
+        while !condition(), Date() < deadline { RunLoop.main.run(until: Date().addingTimeInterval(0.01)) }
+        expect(condition(), message)
+    }
+
     private struct Rig {
         let window: NSWindow, root: NSView, plain: NSButton, nested: NSButton, segmented: NSSegmentedControl, bare: NSButton
     }
@@ -238,27 +247,29 @@ private enum AppToolTipTests {
         let tip = fresh()
         let r = rig()
         AppToolTip.install(on: r.root)
+        // tools/test-tooltip-stall.py freezes the process while this wait is in flight; it keys on this line.
+        FileHandle.standardError.write(Data("AppToolTipTests: hover wait begins\n".utf8))
         tip.hover(over: r.plain)
         expect(tip.isPending && !tip.isShown && tip.pendingTarget === r.plain, "Hovering starts a wait, it does not show at once")
-        spin(0.3)
-        expect(tip.isShown && tip.target === r.plain && !tip.isPending, "After the hover delay the plate is shown")
+        wait(tip.isShown, "After the hover delay the plate is shown")
+        expect(tip.target === r.plain && !tip.isPending, "The plate is shown for the hovered control and nothing is pending")
         tip.hover(over: nil)
         expect(!tip.isShown && !tip.isPending, "Moving off the control (mouse exit) hides the plate")
 
         tip.hover(over: r.plain)
         tip.hover(over: nil)
-        spin(0.3)
+        spin(0.3)  // a cancelled timer stays cancelled however long the process is frozen, so a fixed spin cannot flake here
         expect(!tip.isShown, "Leaving before the delay cancels the pending tooltip")
 
         tip.hover(over: r.bare)
         expect(!tip.isPending && !tip.isShown, "A control with no text never starts a tooltip")
 
         tip.hover(over: r.plain)
-        spin(0.3)
+        wait(tip.target === r.plain, "The first control's plate is shown before moving on")
         tip.hover(over: r.nested)
         expect(!tip.isShown && tip.pendingTarget === r.nested, "Moving to another control hides the first and waits for the second")
-        spin(0.3)
-        expect(tip.target === r.nested && tip.shownText == "Nested tip", "The second control's text is shown")
+        wait(tip.target === r.nested, "The second control's plate is shown")
+        expect(tip.shownText == "Nested tip", "The second control's text is shown")
 
         // The root's tracking area drives the same machine: moved over a control waits, then shows; exit hides.
         // Events go through the Objective-C runtime to the tracking area's owner, the way AppKit delivers them. Calling the
@@ -284,13 +295,11 @@ private enum AppToolTipTests {
         tip.dismiss()
         deliver("mouseMoved:", pointer(40, 250))
         expect(tip.isPending && tip.pendingTarget === r.plain, "The tracking area's pointer move over a control starts its tooltip")
-        spin(0.3)
-        expect(tip.target === r.plain, "The tooltip appears for the control under the pointer")
+        wait(tip.target === r.plain, "The tooltip appears for the control under the pointer")
         deliver("mouseMoved:", pointer(590, 5))
         expect(!tip.isShown, "Moving onto empty space hides the plate")
         deliver("mouseMoved:", pointer(40, 250))
-        spin(0.3)
-        expect(tip.isShown, "The plate shows again on re-entry")
+        wait(tip.isShown, "The plate shows again on re-entry")
         deliver("mouseExited:", pointer(40, 250, .mouseExited))
         expect(!tip.isShown && !tip.isPending, "The tracking area's mouse exit hides the plate")
         deliver("mouseEntered:", pointer(40, 250, .mouseEntered))
@@ -312,12 +321,10 @@ private enum AppToolTipTests {
         }
         tip.show(for: r.plain)
         NotificationCenter.default.post(name: NSWindow.didResignKeyNotification, object: r.window)
-        spin(0.05)
-        expect(!tip.isShown, "A window resigning key hides the plate")
+        wait(!tip.isShown, "A window resigning key hides the plate")
         tip.show(for: r.plain)
         NotificationCenter.default.post(name: NSApplication.didResignActiveNotification, object: NSApp)
-        spin(0.05)
-        expect(!tip.isShown, "The app resigning active hides the plate")
+        wait(!tip.isShown, "The app resigning active hides the plate")
 
         // After a click the control stays quiet until the pointer leaves it and comes back.
         tip.hover(over: nil)
