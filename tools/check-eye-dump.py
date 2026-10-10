@@ -15,6 +15,8 @@ Hard checks (a failure exits 1):
              (the harness's own slack.overlaps and frameHole.controlsOverlappingHole must be empty too)
   size       a main-editor capture (one that records a topBar) is at least the minimum window: width from
              minimumWindowWidth in Sources/ModernEditorChrome.swift (980), height 640 (the window's minSize)
+  gap        a menu capture the harness could not take (gapsraw/*.json or the manifest's gaps) fails the run unless a capture of the
+             same id, appearance and icon mode or an `explained` note covers it
   rail       where the layout JSON has a `rail` field it is "absent", railChecks report nothing retired or stray, and the
              viewport's trailing margin is 12 +/- 0.5 measured from its recorded rect against the window width, not just the
              harness's own boolean
@@ -475,6 +477,40 @@ def check_manifest(folder, results):
     return problems
 
 
+MENU_GAP = "menu tracking returned before the capture timer fired"
+
+
+def check_menu_gaps(folder):
+    """[problem] one per menu capture the harness could not take and nothing explains (F-R-004).
+
+    A gap is a record the harness wrote instead of a PNG (a raw run's gapsraw/*.json, or the gaps of a packed manifest.json). A menu gap
+    is explained when the same capture exists in the folder (same id, appearance and icon mode, and the gap names its state: a re-run
+    filled it) or when the record carries an `explained` note. A dropped menu capture otherwise looks like a pass in a count of PNGs.
+    """
+    gaps, captures = [], []
+    manifest_path = folder / "manifest.json"
+    if manifest_path.is_file():
+        try:
+            manifest = json.loads(manifest_path.read_text())
+            gaps += manifest.get("gaps", [])
+            captures += manifest.get("captures", [])
+        except ValueError:
+            pass
+    for path in sorted(folder.glob("raw-*/gapsraw/*.json")) + sorted(folder.glob("gapsraw/*.json")):
+        gaps += json.loads(path.read_text())
+    for path in sorted(folder.glob("raw-*/meta/*.json")) + sorted(folder.glob("meta/*.json")):
+        captures.append(json.loads(path.read_text()))
+    problems = []
+    for gap in gaps:
+        if MENU_GAP not in str(gap.get("reason", "")) or gap.get("explained"):
+            continue
+        filled = any(c.get("id") == gap.get("id") and c.get("appearance") == gap.get("appearance") and c.get("iconMode", gap.get("iconMode")) == gap.get("iconMode")
+                     and str(c.get("state", "")) and str(c.get("state", "")) in str(gap.get("surface", "")) for c in captures)
+        if not filled:
+            problems.append(f"gap: {gap.get('id')} {gap.get('appearance')} {gap.get('surface')}: the menu never opened and no capture or note explains it")
+    return problems
+
+
 def run(folder, jobs, strict, strict_contrast):
     folder = folder.resolve()
     pairs, orphans = pair_layouts(folder)
@@ -492,6 +528,7 @@ def run(folder, jobs, strict, strict_contrast):
         advisories += [f"{name}: {a}" for a in result["advisories"]]
         notes += [f"{name}: {n}" for n in result["notes"]]
     problems += check_manifest(folder, results)
+    problems += check_menu_gaps(folder)
     problems += [f"layout: {path.relative_to(folder)} has no PNG" for path in orphans]
     laid_out = sum(1 for layout in pairs.values() if layout)
     for line in problems:
@@ -613,6 +650,26 @@ def self_test():
             ("manifest omits a PNG", lambda m: m.update(captures=[]) or m.update(captureCount=0) or m, 1),
         ]:
             (folder / "manifest.json").write_text(json.dumps(edit(json.loads(json.dumps(manifest)))))
+            got = subprocess.run([sys.executable, script, str(folder), "--jobs", "1"], capture_output=True).returncode
+            print(f"  self-test {label}: exit {got} (expected {expected})")
+            failed |= got != expected
+        # menu gaps (F-R-004): a dropped menu capture fails the run unless a capture or a note explains it
+        gap = {"id": "S42", "surface": "menus / Toolbox menu open", "appearance": "light", "iconMode": "sf", "reason": MENU_GAP + " (menu did not open), twice"}
+        taken = {"id": "S42", "slug": "toolbox-menu-open", "state": "Toolbox menu open", "appearance": "light", "iconMode": "sf"}
+        for label, gaps, captures, expected in [
+            ("no gap", [], [], 0),
+            ("unexplained menu gap", [gap], [], 1),
+            ("menu gap filled by a re-run capture", [gap], [taken], 0),
+            ("menu gap, the capture is another appearance", [gap], [dict(taken, appearance="dark")], 1),
+            ("menu gap with an explained note", [dict(gap, explained="the sandbox refuses the pop-up here")], [], 0),
+            ("a different gap is not this check's business", [dict(gap, reason="the sheet did not attach to its parent window")], [], 0),
+        ]:
+            folder = Path(workdir) / re.sub(r"\W+", "-", "gaps " + label)
+            (folder / "raw-sf" / "gapsraw").mkdir(parents=True)
+            (folder / "raw-sf" / "meta").mkdir()
+            (folder / "case.png").write_bytes(good)
+            (folder / "raw-sf" / "gapsraw" / "gaps.json").write_text(json.dumps(gaps))
+            (folder / "raw-sf" / "meta" / "S42.json").write_text(json.dumps(captures[0] if captures else {}))
             got = subprocess.run([sys.executable, script, str(folder), "--jobs", "1"], capture_output=True).returncode
             print(f"  self-test {label}: exit {got} (expected {expected})")
             failed |= got != expected

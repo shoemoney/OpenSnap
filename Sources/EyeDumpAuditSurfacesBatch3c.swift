@@ -53,9 +53,9 @@ extension AuditRun {
         // 5. A transient status message, then its expiry.
         app.updateStatus()
         app.postStatusNotice("Saved to History")
-        shoot("S42", "status-notice", surface: "Bottom bar", state: "a transient message in the status slot (F-J1-010)", crop: footerCrop(), refs: ["App+StatusNotice.swift|func postStatusNotice"], settle: 0.2)
+        shoot("S42", "status-notice", surface: "Bottom bar", state: "a transient message in the status slot (F-J1-010)", crop: footerCrop(), refs: ["App+StatusNotice.swift|func postStatusNotice"], settle: 0.2, drawn: app.status)
         app.clearStatusNotice(); pump(0.3)
-        shoot("S42", "status-after-notice", surface: "Bottom bar", state: "the normal status back, now naming the export format (F-J1-010)", crop: footerCrop(), refs: ["App+StatusNotice.swift|func clearStatusNotice"], settle: 0.2)
+        shoot("S42", "status-after-notice", surface: "Bottom bar", state: "the normal status back, now naming the export format (F-J1-010)", crop: footerCrop(), refs: ["App+StatusNotice.swift|func clearStatusNotice"], settle: 0.2, drawn: app.status)
         // Leave the small blank drawing behind, so the full-screen capture that may follow shows a small drawing in a large Space (F-J1-018).
         canvas.newBlank(size: CGSize(width: 800, height: 600)); canvas.editingUndoManager.removeAllActions()
         app.fitCanvasToWindow(); app.updateStatus()

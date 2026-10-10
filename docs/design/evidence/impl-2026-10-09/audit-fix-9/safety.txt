@@ -1,0 +1,44 @@
+sourceSha        6cc0b37
+note             merged from six harness runs (base, ic, dwc, menu1, menu2, menu3); each run used a throwaway bundle id, scratch HOME and the sandbox, and each guard compare read RESULT stores unchanged
+== run base
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+display options  none (simulated inside the throwaway copy only; no system setting is written)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+input fence      keyboard 0, buttons 0, pointer 146 real input events swallowed across 2 runs; clean: pointer events only (a parked cursor during menu tracking or the Save panel)
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+== run ic
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+display options  increaseContrast (simulated inside the throwaway copy only; no system setting is written)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+input fence      keyboard 0, buttons 0, pointer 156 real input events swallowed across 2 runs; clean: pointer events only (a parked cursor during menu tracking or the Save panel)
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+== run dwc
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+display options  differentiateWithoutColor (simulated inside the throwaway copy only; no system setting is written)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+input fence      keyboard 0, buttons 0, pointer 136 real input events swallowed across 2 runs; clean: pointer events only (a parked cursor during menu tracking or the Save panel)
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+== run menu1
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+display options  none (simulated inside the throwaway copy only; no system setting is written)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+input fence      keyboard 0, buttons 0, pointer 50 real input events swallowed across 2 runs; clean: pointer events only (a parked cursor during menu tracking or the Save panel)
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+== run menu2
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+display options  none (simulated inside the throwaway copy only; no system setting is written)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+input fence      keyboard 0, buttons 0, pointer 48 real input events swallowed across 2 runs; clean: pointer events only (a parked cursor during menu tracking or the Save panel)
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+== run menu3
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+display options  none (simulated inside the throwaway copy only; no system setting is written)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+input fence      keyboard 0, buttons 0, pointer 46 real input events swallowed across 2 runs; clean: pointer events only (a parked cursor during menu tracking or the Save panel)
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged

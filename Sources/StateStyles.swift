@@ -12,7 +12,7 @@ struct StateStyle: Equatable {
     var content: NSColor
     var border: NSColor?
     var borderWidth: CGFloat
-    /// 1 at rest; 0.38 when disabled. A view applies it to the whole control, so a disabled Snap reads as the accent at 0.38.
+    /// 1 at rest; 0.38 when disabled (0.55 under Increase Contrast). A view applies it to the whole control, so a disabled Snap reads as the accent at 0.38.
     var contentAlpha: CGFloat
     /// The 2 x 16 pt capsule under the glyph: the non-colour cue for a selected command (Differentiate Without Color).
     var indicator: Bool
@@ -51,6 +51,10 @@ enum StateStyles {
     typealias Palette = DesignTokens.Palette
 
     static let disabledAlpha: CGFloat = 0.38
+    /// Increase Contrast lifts the disabled dimming so a disabled glyph still reaches 3:1 against its plate (0.38 lands near 2.7:1);
+    /// it stays far from the 21:1 of an enabled one, so the state still reads without colour.
+    static let highContrastDisabledAlpha: CGFloat = 0.55
+    static func disabledAlpha(highContrast: Bool) -> CGFloat { highContrast ? highContrastDisabledAlpha : disabledAlpha }
     static let pressedGlyphScale: CGFloat = 0.96
     /// Snap brightens by this fraction of white on hover and darkens by this fraction of black while pressed.
     static let primaryHoverBrightness: CGFloat = 0.08, primaryPressedDarkening: CGFloat = 0.12
@@ -102,7 +106,7 @@ enum StateStyles {
         let arm = arm(for: appearance, highContrast: highContrast)
         let disabled = state == .disabled
         let ring = focused && !disabled
-        let alpha = disabled ? disabledAlpha : 1
+        let alpha = disabled ? disabledAlpha(highContrast: highContrast) : 1
         let window = resolve(Palette.Surface.window, arm)
 
         if primary {
@@ -164,7 +168,7 @@ enum StateStyles {
         }
         return StateStyle(fill: fill, content: highContrast ? label(alpha: 1, arm) : Palette.Text.primary,
                           border: highContrast ? label(alpha: 0.6, arm) : nil, borderWidth: highContrast ? 1 : 0,
-                          contentAlpha: state == .disabled ? disabledAlpha : 1, indicator: false,
+                          contentAlpha: state == .disabled ? disabledAlpha(highContrast: highContrast) : 1, indicator: false,
                           glyphScale: 1, focusRing: ring, strongText: false)
     }
 
@@ -182,7 +186,7 @@ enum StateStyles {
                           // A hairline ring keeps the knob's edge visible when the accent is close to the track colour.
                           knobBorder: highContrast ? label(alpha: 1, arm) : nil,
                           highlight: state == .pressed ? accent(alpha: highContrast ? 0.45 : 0.30, arm) : nil,
-                          alpha: state == .disabled ? disabledAlpha : 1)
+                          alpha: state == .disabled ? disabledAlpha(highContrast: highContrast) : 1)
     }
 
     // MARK: colour swatch
@@ -196,7 +200,7 @@ enum StateStyles {
         case .hover: return SwatchStyle(outline: hover, outlineWidth: 1, fill: nil, check: false, alpha: 1)
         case .pressed: return SwatchStyle(outline: hover, outlineWidth: 1, fill: resolve(Palette.State.pressed, arm), check: false, alpha: 1)
         case .selected: return SwatchStyle(outline: resolve(Palette.accent, arm), outlineWidth: selectedSwatchOutlineWidth, fill: nil, check: true, alpha: 1)
-        case .disabled: return SwatchStyle(outline: rest, outlineWidth: 1, fill: nil, check: false, alpha: disabledAlpha)
+        case .disabled: return SwatchStyle(outline: rest, outlineWidth: 1, fill: nil, check: false, alpha: disabledAlpha(highContrast: highContrast))
         }
     }
 

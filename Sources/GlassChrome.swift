@@ -172,11 +172,21 @@ class CommandButton: OriginalActionButton, ChromeFillable {
         configureAppearance()
     }
 
+    /// The state plate and `contentTintColor` own every colour here. A toggle cell would still dim its own image on top (an unselected
+    /// tool drew at about half the tint, whatever Increase Contrast asked for) and a disabled cell would dim it again under the alpha.
+    private func stopCellDimming() {
+        guard let cell = cell as? NSButtonCell else { return }
+        cell.showsStateBy = []
+        cell.highlightsBy = []
+        cell.imageDimsWhenDisabled = false
+    }
+
     private func configureAppearance() {
         isBordered = false
         focusRingType = .exterior
         imageHugsTitle = true
         imageScaling = .scaleProportionallyDown
+        stopCellDimming()
         if (font?.pointSize ?? 0) < DesignTokens.Typography.readableMinimum { font = DesignTokens.Typography.font(.body) }
         syncPlate()
     }
@@ -251,6 +261,7 @@ class CommandButton: OriginalActionButton, ChromeFillable {
 
     override func setButtonType(_ type: NSButton.ButtonType) {
         super.setButtonType(type)
+        stopCellDimming()
         tracksState = [.toggle, .pushOnPushOff, .onOff, .switch, .radio].contains(type)
     }
 

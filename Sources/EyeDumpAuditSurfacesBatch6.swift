@@ -45,29 +45,29 @@ extension AuditRun {
         app.dragOriginalControl.state = .on; app.setTool(.arrow)
         app.dirty = true; app.updateStatus(); pump(0.3)
         shoot("S44", "footer-w980-unsaved", surface: "Bottom bar", state: "980 wide, Original size showing, unsaved: the state reads whole (F-J6-004); the format is one compact button (R2-014)", crop: footerCrop(),
-              refs: ["App.swift|static func shortState", "GlassChrome.swift|var isCompact"], settle: 0.2, extra: ["status": app.status.stringValue, "variants": app.status.variants])
+              refs: ["App.swift|static func shortState", "GlassChrome.swift|var isCompact"], settle: 0.2, extra: ["status": app.status.stringValue, "variants": app.status.variants], drawn: app.status)
         app.dirty = false; app.updateStatus(); pump(0.2)
-        shoot("S44", "footer-w980-saved", surface: "Bottom bar", state: "980 wide, saved", crop: footerCrop(), refs: ["App.swift|func refreshStatusText"], settle: 0.2, extra: ["status": app.status.stringValue])
+        shoot("S44", "footer-w980-saved", surface: "Bottom bar", state: "980 wide, saved", crop: footerCrop(), refs: ["App.swift|func refreshStatusText"], settle: 0.2, extra: ["status": app.status.stringValue], drawn: app.status)
         app.postStatusNotice(AppDelegate.nothingToSaveNotice); pump(0.3)
         shoot("S44", "footer-w980-nothing-to-save", surface: "Bottom bar", state: "980 wide, Save to History on a blank canvas: the notice reads whole (F-J6-004)", crop: footerCrop(),
-              refs: ["App.swift|static func noticeVariants"], settle: 0.2, extra: ["status": app.status.stringValue, "variants": app.status.variants])
+              refs: ["App.swift|static func noticeVariants"], settle: 0.2, extra: ["status": app.status.stringValue, "variants": app.status.variants], drawn: app.status)
         app.clearStatusNotice()
         app.uploadState = .failure(message: "The server returned HTTP 403 for this request and refused it."); pump(0.4)
         shoot("S44", "footer-w980-error", surface: "Bottom bar", state: "980 wide, a failed upload: the message without an Error: lead, or Upload failed · and its code, never a cut sentence; Retry and Details beside it (R2-014)", crop: footerCrop(),
-              refs: ["UploadStatus.swift|static func errorVariants"], settle: 0.2, extra: ["status": app.status.stringValue, "variants": app.status.variants])
+              refs: ["UploadStatus.swift|static func errorVariants"], settle: 0.2, extra: ["status": app.status.stringValue, "variants": app.status.variants], drawn: app.status)
         app.uploadState = .idle
         app.uploadState = .uploading(name: "Audit-6-3f2a9c0e-5b1d-4c77-9a0e-7d6c1b2f8a44.png"); pump(0.4)
         shoot("S44", "footer-w980-uploading", surface: "Bottom bar", state: "980 wide, an upload running: the verb whole, not a cut file name (R2-014)", crop: footerCrop(),
-              refs: ["UploadStatus.swift|case .uploading"], settle: 0.2, extra: ["status": app.status.stringValue, "variants": app.status.variants])
+              refs: ["UploadStatus.swift|case .uploading"], settle: 0.2, extra: ["status": app.status.stringValue, "variants": app.status.variants], drawn: app.status)
         app.uploadState = .idle; app.dirty = true; app.updateStatus()
         if let wide = windowSize(for: "1440x900", surface: "S44") {
             placeWindow(wide); pump(0.4)
             app.uploadState = .failure(message: "The server returned HTTP 403 for this request and refused it."); pump(0.4)
             shoot("S44", "footer-w1440-error", surface: "Bottom bar", state: "1440 wide with Original size showing, a failed upload: the 61-character line does not fit the slot, so it reads Upload failed · HTTP 403, not a cut sentence", crop: footerCrop(),
-                  refs: ["UploadStatus.swift|static func errorVariants"], settle: 0.2, extra: ["status": app.status.stringValue, "variants": app.status.variants])
+                  refs: ["UploadStatus.swift|static func errorVariants"], settle: 0.2, extra: ["status": app.status.stringValue, "variants": app.status.variants], drawn: app.status)
             app.uploadState = .idle; app.updateStatus(); pump(0.2)
             shoot("S44", "footer-w1440-unsaved", surface: "Bottom bar", state: "1440 wide: both format segments, the whole status", crop: footerCrop(), refs: ["ModernEditorChrome.swift|static let compactFormatBelow"],
-                  settle: 0.2, extra: ["status": app.status.stringValue])
+                  settle: 0.2, extra: ["status": app.status.stringValue], drawn: app.status)
         }
         placeWindow(windowSize(for: "980xmin", surface: "S44") ?? CGSize(width: 980, height: window.minSize.height))
         // 4. History's Hide and Move to Trash questions: the same order, Cancel first and the default.
