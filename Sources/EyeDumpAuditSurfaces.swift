@@ -1193,7 +1193,8 @@ extension AuditRun {
 
     /// These sheets are begun on the window directly, not through the coordinator, so ending the sheet first keeps the
     /// coordinator's quit barrier from waiting forever for a dismissal callback it never registered. Every surface that
-    /// begins a Destinations sheet itself closes it here (S19, S21, S26D), the way pressing Cancel would.
+    /// begins a Destinations sheet itself closes it here (S19, S26D), the way pressing Cancel would. The whole audit runs inside
+    /// one main-queue block, so a completion handler queued by AppKit could never run before the quit that ends the run.
     func closeHarnessSheet(_ panel: NSPanel) {
         window.endSheet(panel); pump(0.4)
         app.publishing.cancelSettings(); pump(0.3)

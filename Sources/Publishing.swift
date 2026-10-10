@@ -792,6 +792,8 @@ public final class PublishingCoordinator: NSObject {
     private var isCancellationPending = false
     private var isPreparingPublish = false
     private var transferActive = false
+    /// Sheets begun through `beginSheet(_:relativeTo:)`, whose completion handler reports the dismissal, and those being dismissed now.
+    private var coordinatedSheets: Set<ObjectIdentifier> = []
     private var endingSheets: Set<ObjectIdentifier> = []
     private var quiescenceResult: Result<Void, Error>?
     private var quiescenceCallbacks: [(Result<Void, Error>) -> Void] = []
@@ -876,30 +878,21 @@ public final class PublishingCoordinator: NSObject {
         successfulCallbacks.forEach { $0() }
     }
     private func beginSheet(_ panel: NSPanel, relativeTo window: NSWindow) {
+        coordinatedSheets.insert(ObjectIdentifier(panel))
         window.beginSheet(panel) { [self] _ in
             panel.orderOut(nil)
+            coordinatedSheets.remove(ObjectIdentifier(panel))
             endingSheets.remove(ObjectIdentifier(panel))
             flushQuiescenceCallbacks()
         }
     }
     private func dismissSheet(_ panel: NSPanel) {
         if let parent = panel.sheetParent {
-            endingSheets.insert(ObjectIdentifier(panel))
+            // Quit waits only for a dismissal that will report back: a sheet begun some other way has no completion handler, so
+            // waiting on it would hold Quit forever.
+            if coordinatedSheets.contains(ObjectIdentifier(panel)) { endingSheets.insert(ObjectIdentifier(panel)) }
             parent.endSheet(panel)
-            releaseEndingSheet(panel, attemptsLeft: 30)
         } else { panel.orderOut(nil) }
-    }
-    /// The completion handler from `beginSheet` normally clears the sheet from `endingSheets`. A sheet begun some other way has no
-    /// such handler, and Quit would wait on it forever, so once the panel is really off its parent it is released here.
-    private func releaseEndingSheet(_ panel: NSPanel, attemptsLeft: Int) {
-        let id = ObjectIdentifier(panel)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [self, weak panel] in
-            guard endingSheets.contains(id) else { return }
-            if let panel, panel.sheetParent != nil, attemptsLeft > 0 { releaseEndingSheet(panel, attemptsLeft: attemptsLeft - 1); return }
-            panel?.orderOut(nil)
-            endingSheets.remove(id)
-            flushQuiescenceCallbacks()
-        }
     }
 
     public static var settingsFileURL: URL { PublishingDestinationStore.system.file }
