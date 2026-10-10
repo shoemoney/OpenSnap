@@ -1,3 +1,5 @@
+> Current completed gates, privacy cleanup and coverage limits: [final-verification.md](final-verification.md).
+
 # End-to-end audit: method, inventory and launcher
 
 Owner authorization (2026-10-09 23:27 CDT): audit every option and every icon, ask whether each looks as good as it can and uses space well, act autonomously. The plan is `docs/design/e2e-audit-plan.md`; this folder is its infrastructure.
@@ -78,5 +80,5 @@ sh tools/e2e-session.sh stop [SESSION_ID|APP_PID]
 ## Known limits
 
 - Light appearance, Reduce Transparency, Increase Contrast, Differentiate Without Color and Reduce Motion cannot be changed in an E2E session (no global accessibility or appearance changes). The harness injects them inside its throwaway copy; that is `rendered` evidence only.
-- `tools/real_store_guard.py` does not list the `e2e-` prefix among its throwaway-plist prefixes, so its "left behind" check does not cover this launcher; `stop` makes the same check itself for its own id.
+- `tools/real_store_guard.py` includes the `e2e-` throwaway-plist prefix; `stop` also validates and cleans only its own session identity.
 - The History glass/text polish request in `QUEUE.md` is deferred: audit History fully, but do not activate that feature.

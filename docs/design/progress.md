@@ -1,3 +1,5 @@
+> Current result: [Final local verification](e2e/final-verification.md) at the rewritten candidate `41700b3`, with the exact tested tree of `1ea366c`. The historical tables below retain their original source labels. Final integration gates passed; complete E2E coverage remains partial.
+
 # OpenSnap implementation progress
 
 **Baseline:** `bad6617`, when implementation began (the rename and migration were already merged in `f7ff86b` and `d2dc3c9`).
@@ -235,8 +237,8 @@ Independent reviews of the batch branches. Each round's findings are in `e2e/fin
 | 3 | `5af9ac0` | Focused: the round 2 regression fixes (pause lifecycle, size paths, Toolbox placement, session-only watchdogs, ledger categories, fresh evidence) | R3-001 to 009 (2 × P2, 2 × P3, 5 × P4) | Verdict: needs fixes. Every item fixed in batch 10 (`4f8b5d9`). A reviewer pass at `4f8b5d9` produced round 4 |
 | 4 | `4f8b5d9` | Narrow: the batch 10 fixes and their follow-ups | R4-001 to 007 (3 × P3, 4 × P4; R4-005 and R4-006 are ledger and evidence) | Every item fixed in batch 11 (`748f352`). The orchestrator decided R4-003 (ticked corner drag in picture pixels) |
 | 5 | `e084f15` | Confirmation of batch 11 | R5-001 to 004 (all P4) | Every item fixed in batch 12 (`3b453b3`) |
-| 6 | `3b453b3` | Confirmation of batch 12 | **IN PROGRESS** | Orchestrator records the result here |
-| Final gates | `3b453b3` | Gates after round 6 | **IN PROGRESS** | Orchestrator records the result here; OSN-071 waits on it |
+| 6 | `3b453b3` | Confirmation of batch 12 | R6-001 and R6-002 (P4) | Both fixed in batch 13; regression tests failed on old code and pass on the candidate |
+| Final gates | `1ea366c` → `41700b3` (same tree) | Gates after batch 13 | **PASS** | Cold build, two full suites, clean clone and no-Pro-font gate passed; OCR executed with flags; see final-verification.md |
 
 Round 3's objections, accepted with the decision recorded in the findings: R1-016, R1-021, the record-shortcut field, F-J1-012 (OS-owned panel), the upload-percentage item (no byte progress), F-J8-001, F-J8-002, and the final render's two historic menu gaps. Accepted with conditions: F-J1-023 is next in line; the deactivation pause stays unit-tested only, now with the real did-resign-active notification posted in the test (R3-008).
 
@@ -610,7 +612,7 @@ Outside what the harness or the isolated session could prove, or decided and not
 14. **Window title text, and system radios and checkboxes.** OS-owned (F-J3-008, F-J3-010).
 15. **Live full-screen exit animation.** The tests call the full-screen notification handlers directly; their interplay with the animation was not run.
 16. **macOS 27.2 panel-service bug** (F-J5-005, OS build 26B5101f). Unfixed in the OS. The trigger was a `//` in the session path the launchers built; they now canonicalize it (`fa4715f`), and the session-scoped watchdog (R2-013, `0b03903`) bounds any growth. The app code is unchanged.
-17. **Font Awesome Pro is not bundled by default** (R1-004). Every capture since batch 4 is icon mode `sf`, so no capture shows the Font Awesome Free glyphs in use (the Toolbox icons, F-J1-009; the Resize arrows, F-J3-011).
+17. **Font Awesome Pro is not bundled by default** (R1-004). The `sf` harness label means Pro subsets were stripped; it does not bypass embedded Free vectors. The root candidate render review confirms default Free icons; Pro mode remains untested.
 18. **Still not run from earlier passes:** FTP and FTPS destination forms (F-J2-014); the timed upload states, the 12 s success hold, the Retrying label and the cancel notice (F-J2-022, needs a slow network); field names in the destination forms (F-J2-017, the AX tool cannot show an explicit label); Edit › Copy Image for an unresized Original-size picture (F-J6-002).
 
 **Decisions (deferred or accepted; not built)**
@@ -629,7 +631,7 @@ Outside what the harness or the isolated session could prove, or decided and not
 
 **Owner, before any push (root-owned)**
 
-- **History cleanup of the withdrawn capture** (R1-001). Out of the tree, still in history, owned by root. Must happen before any push.
+- **History cleanup of the withdrawn capture** (R1-001): completed locally by root; exact exposed blob removed from all local refs and the primary object database.
 - **Model and tool names** in `e2e-audit-plan.md` and `audit-overview.html` (round 3 record). Remove before any push.
 - **Vendored tool-skills folder and its `.gitignore` entry.** Handle before any push.
 
@@ -660,11 +662,11 @@ App-specific alerts are no longer NSAlert: they are app-owned sheets at 20 pt (O
 ## Open items and gaps
 
 - **Batches 9 to 12 and review rounds 3 to 5: done.** Fixes and their evidence are in the fix batches table and the resolution index. Batch 12 has no capture folder; its evidence is the test set.
-- **Round 6 confirmation of batch 12 (`3b453b3`): IN PROGRESS.** The orchestrator records its result in the review rounds table. Round 3 is done (batch 10).
-- **Final gates: IN PROGRESS** after round 6 (`3b453b3`). OSN-071 and OSN-072 depend on them. Not recorded here; the orchestrator fills the result. OSN-062 stays in progress and OSN-071 stays pending until then.
+- **Round 6: completed.** R6-001 and R6-002 were fixed in batch 13; see the response table in findings.md and final-verification.md.
+- **Final integration gates: passed** on the byte-identical candidate `1ea366c` → `41700b3`. OSN-062 and the complete visual acceptance matrix stay in progress for explicit remaining gaps.
 - **Open with no fix recorded:** F-J3-009, F-J4-006, F-J4-007 and R1-021 (stretch goal). Partial: the 17 partial IDs, listed in the totals table with their notes. Gaps listed in the resolution index: F-J1-012, F-J2-011, F-J2-017, F-J3-008, F-J3-010.
-- **R1-001 history cleanup:** the withdrawn capture is out of the tree but still in history. The cleanup is owned by root and must happen before any push.
-- **Font Awesome glyphs:** every capture since batch 4 is icon mode `sf` (Font Awesome Pro is not bundled). The Toolbox icons (F-J1-009) still need one FA-mode capture.
+- **R1-001 history cleanup: complete in the local repository.** The exact exposed blob is absent from all refs and the primary object database; fresh remote refs never contained it. The tested tree is unchanged.
+- **Font Awesome glyphs:** default Free vectors are shown in root candidate captures. The old `sf` label reflects absence of Pro fonts, not actual per-icon resolution. Optional Pro mode is still untested.
 - **Round-1 incident (OSN-001):** a can-fail proof deleted the owner's real `com.shoemoney.opensnap` defaults plist. Cause: a cleanup trap was installed before an id refusal. Fixed in `db973a6`. The SkitchRedux store and `com.shoemoney.skitch-redux.plist` hashed unchanged. The migration marker is a file in the absent OpenSnap folder, so the parked migration is unaffected.
 - **Unsafe tool, resolved:** `tools/test-native-startup.py` now runs only a throwaway-id temp copy, behind a store guard (`efe2f68`). The warning from the earlier pass no longer applies.
 - **OSN-042 (merged in `8015360`):** the phantom capsule under Snap and the full-screen salmon tint are gone (no per-button glass, no backdrop or bleed). Open: the legacy-scroller corner is slightly lighter than the well (AppKit draws it; there is no public API). Controls are 36 pt tall inside 44 pt bars; to be reviewed at sign-off (OSN-071). Evidence: `evidence/impl-2026-10-09/m4-glass/`.
@@ -681,3 +683,9 @@ App-specific alerts are no longer NSAlert: they are app-owned sheets at 20 pt (O
 - **OSN-023:** manual 1x and 2x menu-bar check not done.
 - **Alert check count reconciled:** the full integration run at `a79a1d8` prints `AppAlertTests: 77 checks passed`; the `2cc0415` commit message figure (74) predates later additions.
 - **Not done:** no push and no release. The first real launch and migration on the owner's machine is parked by the owner.
+
+## Final root handoff
+
+See [final-verification.md](e2e/final-verification.md) for completed gates, the local history rewrite, refreshed default Free-icon renders and remaining limits. The earlier 160-ID totals exclude R6-001/R6-002; the current finding index has 162 IDs, 131 fixed, with the other status totals unchanged. This is a local candidate with a partial E2E matrix.
+
+Final root packaging checks: both fresh evidence packs pass `check-eye-dump.py` (90 PNGs; no hard failures or advisories; 20 core contrast samples skipped). The offline gallery interaction checks pass; previews at 728px/light and 360px/dark have no readable text below 18px and no page overflow. The temporary private-history backup and derived private OCR files created for the scrub were removed after integrity and blob-absence verification. The private commit map remains in `.git/`.

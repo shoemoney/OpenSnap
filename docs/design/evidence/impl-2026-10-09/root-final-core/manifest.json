@@ -1,0 +1,1933 @@
+{
+ "sourceSha": "1ea366c",
+ "bundleId": "com.shoemoney.opensnap.eyedump-29095",
+ "iconMode": "sf",
+ "faMode": "FA unavailable: no FontAwesome7Pro subset fonts are bundled in this build, so every capture uses SF Symbols (nothing was faked)",
+ "captureCount": 62,
+ "unavailable": [],
+ "gaps": [],
+ "captures": [
+  {
+   "id": "S01",
+   "slug": "editor-empty",
+   "surface": "editor, empty",
+   "state": "fresh blank canvas, default window",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S01-editor-empty-darkroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": "layout/S01-editor-empty-darkroot-final@1ea366c.json",
+   "before": "docs/design/evidence/2026-10-09/S01-editor-empty-dark@dc1eb26.png"
+  },
+  {
+   "id": "S01",
+   "slug": "editor-empty",
+   "surface": "editor, empty",
+   "state": "fresh blank canvas, default window",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S01-editor-empty-lightroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": "layout/S01-editor-empty-lightroot-final@1ea366c.json",
+   "before": "docs/design/evidence/2026-10-09/S01-editor-empty-light@dc1eb26.png"
+  },
+  {
+   "id": "S02",
+   "slug": "populated",
+   "surface": "editor, populated",
+   "state": "synthetic 1200x800 background + arrow, line, rectangle (open+filled), ellipse, brush, highlighter, fill, text (outline+shadow, plain), SVG path, raster",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    2358
+   ],
+   "pointSize": [
+    1561,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S02-populated-darkroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    906
+   ],
+   "downscaled": true,
+   "layout": "layout/S02-populated-darkroot-final@1ea366c.json",
+   "before": "docs/design/evidence/2026-10-09/S02-populated-dark@dc1eb26.png"
+  },
+  {
+   "id": "S02",
+   "slug": "populated",
+   "surface": "editor, populated",
+   "state": "synthetic 1200x800 background + arrow, line, rectangle (open+filled), ellipse, brush, highlighter, fill, text (outline+shadow, plain), SVG path, raster",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    2358
+   ],
+   "pointSize": [
+    1561,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S02-populated-lightroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    906
+   ],
+   "downscaled": true,
+   "layout": "layout/S02-populated-lightroot-final@1ea366c.json",
+   "before": "docs/design/evidence/2026-10-09/S02-populated-light@dc1eb26.png"
+  },
+  {
+   "id": "S12",
+   "slug": "frame-mode",
+   "surface": "Frame mode",
+   "state": "Frame mode: clear canvas hole, Snap Frame + Cancel, window alpha 0.8",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-mode-darkroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-mode-darkroot-final@1ea366c.json",
+   "before": "docs/design/evidence/2026-10-09/S12-frame-mode-dark@dc1eb26.png"
+  },
+  {
+   "id": "S12",
+   "slug": "frame-mode",
+   "surface": "Frame mode",
+   "state": "Frame mode: clear canvas hole, Snap Frame + Cancel, window alpha 0.8",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-mode-lightroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-mode-lightroot-final@1ea366c.json",
+   "before": "docs/design/evidence/2026-10-09/S12-frame-mode-light@dc1eb26.png"
+  },
+  {
+   "id": "S12",
+   "slug": "frame-resnap",
+   "surface": "Frame mode",
+   "state": "Re-snap (keep pen) Frame mode over existing annotations",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-resnap-darkroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-resnap-darkroot-final@1ea366c.json",
+   "before": "docs/design/evidence/2026-10-09/S12-frame-resnap-dark@dc1eb26.png"
+  },
+  {
+   "id": "S12",
+   "slug": "frame-resnap",
+   "surface": "Frame mode",
+   "state": "Re-snap (keep pen) Frame mode over existing annotations",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-resnap-lightroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-resnap-lightroot-final@1ea366c.json",
+   "before": "docs/design/evidence/2026-10-09/S12-frame-resnap-light@dc1eb26.png"
+  },
+  {
+   "id": "S12",
+   "slug": "frame-w1024",
+   "surface": "Frame mode",
+   "state": "Frame mode at window width 1024 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    2048,
+    2358
+   ],
+   "pointSize": [
+    1024,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-w1024-darkroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    1382
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-w1024-darkroot-final@1ea366c.json",
+   "before": "docs/design/evidence/2026-10-09/S12-frame-w1024-dark@dc1eb26.png"
+  },
+  {
+   "id": "S12",
+   "slug": "frame-w1024",
+   "surface": "Frame mode",
+   "state": "Frame mode at window width 1024 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    2048,
+    2358
+   ],
+   "pointSize": [
+    1024,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-w1024-lightroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    1382
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-w1024-lightroot-final@1ea366c.json",
+   "before": "docs/design/evidence/2026-10-09/S12-frame-w1024-light@dc1eb26.png"
+  },
+  {
+   "id": "S12",
+   "slug": "frame-w1280",
+   "surface": "Frame mode",
+   "state": "Frame mode at window width 1280 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    1179
+   ],
+   "pixelSize": [
+    2560,
+    2358
+   ],
+   "pointSize": [
+    1280,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-w1280-darkroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    1105
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-w1280-darkroot-final@1ea366c.json",
+   "before": null
+  },
+  {
+   "id": "S12",
+   "slug": "frame-w1280",
+   "surface": "Frame mode",
+   "state": "Frame mode at window width 1280 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    1179
+   ],
+   "pixelSize": [
+    2560,
+    2358
+   ],
+   "pointSize": [
+    1280,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-w1280-lightroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    1105
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-w1280-lightroot-final@1ea366c.json",
+   "before": null
+  },
+  {
+   "id": "S12",
+   "slug": "frame-w980",
+   "surface": "Frame mode",
+   "state": "Frame mode at window width 980 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    1179
+   ],
+   "pixelSize": [
+    1960,
+    2358
+   ],
+   "pointSize": [
+    980,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-w980-darkroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    1444
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-w980-darkroot-final@1ea366c.json",
+   "before": "docs/design/evidence/2026-10-09/S12-frame-w980-dark@dc1eb26.png"
+  },
+  {
+   "id": "S12",
+   "slug": "frame-w980",
+   "surface": "Frame mode",
+   "state": "Frame mode at window width 980 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    1179
+   ],
+   "pixelSize": [
+    1960,
+    2358
+   ],
+   "pointSize": [
+    980,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-w980-lightroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    1444
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-w980-lightroot-final@1ea366c.json",
+   "before": "docs/design/evidence/2026-10-09/S12-frame-w980-light@dc1eb26.png"
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture",
+   "surface": "Settings: Capture",
+   "state": "Capture tab: flash on, shortcuts enabled, every action None",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1202
+   ],
+   "pointSize": [
+    640,
+    601
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-darkroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    1127
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture",
+   "surface": "Settings: Capture",
+   "state": "Capture tab: flash on, shortcuts enabled, every action None",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1202
+   ],
+   "pointSize": [
+    640,
+    601
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-lightroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    1127
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture-1280x800",
+   "surface": "Settings: Capture",
+   "state": "Capture tab: flash on, shortcuts enabled, every action None, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1202
+   ],
+   "pointSize": [
+    640,
+    601
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-1280x800-darkroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    1127
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture-1280x800",
+   "surface": "Settings: Capture",
+   "state": "Capture tab: flash on, shortcuts enabled, every action None, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1202
+   ],
+   "pointSize": [
+    640,
+    601
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-1280x800-lightroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    1127
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture-error",
+   "surface": "Settings: Capture",
+   "state": "Capture tab with a refused shortcut (a key with no Command or Control)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1250
+   ],
+   "pointSize": [
+    640,
+    625
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-error-darkroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    1172
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture-error",
+   "surface": "Settings: Capture",
+   "state": "Capture tab with a refused shortcut (a key with no Command or Control)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1250
+   ],
+   "pointSize": [
+    640,
+    625
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-error-lightroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    1172
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture-error-1280x800",
+   "surface": "Settings: Capture",
+   "state": "Capture tab with a refused shortcut (a key with no Command or Control), sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1250
+   ],
+   "pointSize": [
+    640,
+    625
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-error-1280x800-darkroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    1172
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture-error-1280x800",
+   "surface": "Settings: Capture",
+   "state": "Capture tab with a refused shortcut (a key with no Command or Control), sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1250
+   ],
+   "pointSize": [
+    640,
+    625
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-error-1280x800-lightroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    1172
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture-modifiers",
+   "surface": "Settings: Capture",
+   "state": "Capture tab with Option-Control-K chosen for Screen region: the selected modifier segments are in the accent",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1202
+   ],
+   "pointSize": [
+    640,
+    601
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-modifiers-darkroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    1127
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture-modifiers",
+   "surface": "Settings: Capture",
+   "state": "Capture tab with Option-Control-K chosen for Screen region: the selected modifier segments are in the accent",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1202
+   ],
+   "pointSize": [
+    640,
+    601
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-modifiers-lightroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    1127
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture-modifiers-1280x800",
+   "surface": "Settings: Capture",
+   "state": "Capture tab with Option-Control-K chosen for Screen region: the selected modifier segments are in the accent, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1202
+   ],
+   "pointSize": [
+    640,
+    601
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-modifiers-1280x800-darkroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    1127
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture-modifiers-1280x800",
+   "surface": "Settings: Capture",
+   "state": "Capture tab with Option-Control-K chosen for Screen region: the selected modifier segments are in the accent, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1202
+   ],
+   "pointSize": [
+    640,
+    601
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-modifiers-1280x800-lightroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    1127
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-drawing",
+   "surface": "Settings: Drawing",
+   "state": "Drawing tab, default values",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    484
+   ],
+   "pointSize": [
+    640,
+    242
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-drawing-darkroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    454
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-drawing",
+   "surface": "Settings: Drawing",
+   "state": "Drawing tab, default values",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    484
+   ],
+   "pointSize": [
+    640,
+    242
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-drawing-lightroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    454
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-drawing-1280x800",
+   "surface": "Settings: Drawing",
+   "state": "Drawing tab, default values, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    484
+   ],
+   "pointSize": [
+    640,
+    242
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-drawing-1280x800-darkroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    454
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-drawing-1280x800",
+   "surface": "Settings: Drawing",
+   "state": "Drawing tab, default values, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    484
+   ],
+   "pointSize": [
+    640,
+    242
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-drawing-1280x800-lightroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    454
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-drawing-alt",
+   "surface": "Settings: Drawing",
+   "state": "Drawing tab, alternate values (Loose, Start)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    484
+   ],
+   "pointSize": [
+    640,
+    242
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-drawing-alt-darkroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    454
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-drawing-alt",
+   "surface": "Settings: Drawing",
+   "state": "Drawing tab, alternate values (Loose, Start)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    484
+   ],
+   "pointSize": [
+    640,
+    242
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-drawing-alt-lightroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    454
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-drawing-alt-1280x800",
+   "surface": "Settings: Drawing",
+   "state": "Drawing tab, alternate values (Loose, Start), sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    484
+   ],
+   "pointSize": [
+    640,
+    242
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-drawing-alt-1280x800-darkroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    454
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-drawing-alt-1280x800",
+   "surface": "Settings: Drawing",
+   "state": "Drawing tab, alternate values (Loose, Start), sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    484
+   ],
+   "pointSize": [
+    640,
+    242
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-drawing-alt-1280x800-lightroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    454
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-general",
+   "surface": "Settings: General",
+   "state": "General tab, default values",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    602
+   ],
+   "pointSize": [
+    640,
+    301
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-general-darkroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    564
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-general",
+   "surface": "Settings: General",
+   "state": "General tab, default values",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    602
+   ],
+   "pointSize": [
+    640,
+    301
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-general-lightroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    564
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-general-1280x800",
+   "surface": "Settings: General",
+   "state": "General tab, default values, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    602
+   ],
+   "pointSize": [
+    640,
+    301
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-general-1280x800-darkroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    564
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-general-1280x800",
+   "surface": "Settings: General",
+   "state": "General tab, default values, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    602
+   ],
+   "pointSize": [
+    640,
+    301
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-general-1280x800-lightroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    564
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-general-alt",
+   "surface": "Settings: General",
+   "state": "General tab, alternate values (Menu bar, snap window off, both hint options on)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    602
+   ],
+   "pointSize": [
+    640,
+    301
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-general-alt-darkroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    564
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-general-alt",
+   "surface": "Settings: General",
+   "state": "General tab, alternate values (Menu bar, snap window off, both hint options on)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    602
+   ],
+   "pointSize": [
+    640,
+    301
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-general-alt-lightroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    564
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-general-alt-1280x800",
+   "surface": "Settings: General",
+   "state": "General tab, alternate values (Menu bar, snap window off, both hint options on), sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    602
+   ],
+   "pointSize": [
+    640,
+    301
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-general-alt-1280x800-darkroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    564
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-general-alt-1280x800",
+   "surface": "Settings: General",
+   "state": "General tab, alternate values (Menu bar, snap window off, both hint options on), sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    602
+   ],
+   "pointSize": [
+    640,
+    301
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-general-alt-1280x800-lightroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    564
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload",
+   "surface": "Settings: Upload",
+   "state": "Upload tab: three saved destinations, the first is the default",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    880
+   ],
+   "pointSize": [
+    640,
+    440
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-darkroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    825
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload",
+   "surface": "Settings: Upload",
+   "state": "Upload tab: three saved destinations, the first is the default",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    880
+   ],
+   "pointSize": [
+    640,
+    440
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-lightroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    825
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-1280x800",
+   "surface": "Settings: Upload",
+   "state": "Upload tab: three saved destinations, the first is the default, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    880
+   ],
+   "pointSize": [
+    640,
+    440
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-1280x800-darkroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    825
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-1280x800",
+   "surface": "Settings: Upload",
+   "state": "Upload tab: three saved destinations, the first is the default, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    880
+   ],
+   "pointSize": [
+    640,
+    440
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-1280x800-lightroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    825
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-empty",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, no destination saved",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    554
+   ],
+   "pointSize": [
+    640,
+    277
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-empty-darkroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    519
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-empty",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, no destination saved",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    554
+   ],
+   "pointSize": [
+    640,
+    277
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-empty-lightroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    519
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-empty-1280x800",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, no destination saved, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    554
+   ],
+   "pointSize": [
+    640,
+    277
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-empty-1280x800-darkroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    519
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-empty-1280x800",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, no destination saved, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    554
+   ],
+   "pointSize": [
+    640,
+    277
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-empty-1280x800-lightroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    519
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-many",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, eight saved destinations, all listed: the list is as tall as the screen allows and scrolls past that; Add…, Edit…, Remove, Make Default and the caption in view",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1450
+   ],
+   "pointSize": [
+    640,
+    725
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-many-darkroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    1359
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-many",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, eight saved destinations, all listed: the list is as tall as the screen allows and scrolls past that; Add…, Edit…, Remove, Make Default and the caption in view",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1450
+   ],
+   "pointSize": [
+    640,
+    725
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-many-lightroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    1359
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-many-1280x800",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, eight saved destinations, all listed: the list is as tall as the screen allows and scrolls past that; Add…, Edit…, Remove, Make Default and the caption in view, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1412
+   ],
+   "pointSize": [
+    640,
+    706
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-many-1280x800-darkroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    1324
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-many-1280x800",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, eight saved destinations, all listed: the list is as tall as the screen allows and scrolls past that; Add…, Edit…, Remove, Make Default and the caption in view, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1412
+   ],
+   "pointSize": [
+    640,
+    706
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-many-1280x800-lightroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    1324
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-many-440",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, eight destinations on a very short 440 pt visible height: the list scrolls inside, the caption stays in view",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    880
+   ],
+   "pointSize": [
+    640,
+    440
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-many-440-darkroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    825
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-many-440",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, eight destinations on a very short 440 pt visible height: the list scrolls inside, the caption stays in view",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    880
+   ],
+   "pointSize": [
+    640,
+    440
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-many-440-lightroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    825
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-many-640",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, eight destinations on a 640 pt tall screen (616 pt visible): same window, list capped",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1232
+   ],
+   "pointSize": [
+    640,
+    616
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-many-640-darkroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    1155
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-many-640",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, eight destinations on a 640 pt tall screen (616 pt visible): same window, list capped",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1232
+   ],
+   "pointSize": [
+    640,
+    616
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-many-640-lightroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    1155
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S23",
+   "slug": "canvas-text-context-open",
+   "surface": "menus",
+   "state": "canvas context menu on a text annotation",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 3 own windows) + 1 open menu window(s) of this process",
+   "file": "S23-canvas-text-context-open-darkroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": "layout/S23-canvas-text-context-open-darkroot-final@1ea366c.json",
+   "before": null
+  },
+  {
+   "id": "S23",
+   "slug": "canvas-text-context-open",
+   "surface": "menus",
+   "state": "canvas context menu on a text annotation",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 3 own windows) + 1 open menu window(s) of this process",
+   "file": "S23-canvas-text-context-open-lightroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": "layout/S23-canvas-text-context-open-lightroot-final@1ea366c.json",
+   "before": null
+  },
+  {
+   "id": "S23",
+   "slug": "toolbox-menu-open",
+   "surface": "menus",
+   "state": "Toolbox menu open (a menu button; rows open below it, each with its icon)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2366
+   ],
+   "pointSize": [
+    1488,
+    1183
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 3 own windows) + 1 open menu window(s) of this process",
+   "file": "S23-toolbox-menu-open-darkroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    954
+   ],
+   "downscaled": true,
+   "layout": "layout/S23-toolbox-menu-open-darkroot-final@1ea366c.json",
+   "before": null
+  },
+  {
+   "id": "S23",
+   "slug": "toolbox-menu-open",
+   "surface": "menus",
+   "state": "Toolbox menu open (a menu button; rows open below it, each with its icon)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2366
+   ],
+   "pointSize": [
+    1488,
+    1183
+   ],
+   "scale": 2,
+   "sourceSha": "1ea366c",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 3 own windows) + 1 open menu window(s) of this process",
+   "file": "S23-toolbox-menu-open-lightroot-final@1ea366c.png",
+   "storedPixelSize": [
+    1200,
+    954
+   ],
+   "downscaled": true,
+   "layout": "layout/S23-toolbox-menu-open-lightroot-final@1ea366c.json",
+   "before": null
+  }
+ ]
+}

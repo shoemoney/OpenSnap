@@ -1,6 +1,8 @@
+> Current candidate and audit result: [Final local verification](e2e/final-verification.md). Use the [interactive gallery](audit-overview.html) to review representative final renders and drill into coverage. All remaining gaps are explicit.
+
 # docs/design: index
 
-Design docs for the OpenSnap visual and cosmetic audit (2026-10-09, final). Start with `roadmap.md` for the plan, then `todo-checklist.md` for the work items. `backlog.json` is the same work in machine-readable form. Implementation progress at main `3b453b3` (baseline `bad6617`) is in `progress.md`.
+Design docs for the OpenSnap visual and cosmetic audit (2026-10-09, final). Start with `roadmap.md` for the plan, then `todo-checklist.md` for the work items. `backlog.json` is the same work in machine-readable form. Current verification is at candidate `41700b3` (baseline `bad6617`); `progress.md` retains the phased history and original evidence labels.
 
 Open [audit-overview.html](audit-overview.html) for the self-contained interactive roadmap and evidence gallery: milestone filtering, task details, shortlisting, side-by-side comparisons, and downloads. It embeds ECharts and a selected set of ten evidence images, including placement mocks explicitly labelled as unimplemented. The full evidence set remains below. Viewer text was checked at 728 and 360 CSS px widths with an 18 px minimum; filtering, previews, shortlisting and comparison were exercised in the browser.
 

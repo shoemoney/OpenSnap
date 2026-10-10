@@ -4,7 +4,7 @@ Owner authorization: Jeremy, 2026-10-09 23:27 CDT. “When done do a complete e2
 
 ## Execution and ownership
 
-Opus 5.5 orchestrates the existing implementation and this final audit. Sonnet 5.5 implements fixes and meaningful workflow checks; Haiku 5.5 maintains coverage, findings and evidence writeups. Keep the available agent slots occupied with dependency-ready, non-overlapping work. Inventory preparation may overlap implementation; final product verdicts require an integrated source revision. Serialize shared desktop capture, App.swift ownership and final integration tests. Root owns the audit-overview.html presentation.
+The integration owner orchestrates the existing implementation and this final audit. Implementation workers implement fixes and meaningful workflow checks; the documentation worker maintains coverage, findings and evidence writeups. Keep the available agent slots occupied with dependency-ready, non-overlapping work. Inventory preparation may overlap implementation; final product verdicts require an integrated source revision. Serialize shared desktop capture, App.swift ownership and final integration tests. Root owns the audit-overview.html presentation.
 
 ## Phases and completion conditions
 

@@ -1,0 +1,879 @@
+{
+ "sourceSha": "41700b3",
+ "bundleId": "com.shoemoney.opensnap.eyedump-31632",
+ "iconMode": "sf",
+ "faMode": "FA unavailable: no FontAwesome7Pro subset fonts are bundled in this build, so every capture uses SF Symbols (nothing was faked)",
+ "captureCount": 28,
+ "unavailable": [],
+ "gaps": [],
+ "captures": [
+  {
+   "id": "S08",
+   "slug": "crop-mode",
+   "surface": "crop mode",
+   "state": "crop tool with a 640x420 crop rectangle",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    2358
+   ],
+   "pointSize": [
+    1561,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "41700b3",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S08-crop-mode-darkroot-final@41700b3.png",
+   "storedPixelSize": [
+    1200,
+    906
+   ],
+   "downscaled": true,
+   "layout": "layout/S08-crop-mode-darkroot-final@41700b3.json",
+   "before": "docs/design/evidence/2026-10-09/S08-crop-mode-dark.png"
+  },
+  {
+   "id": "S08",
+   "slug": "crop-mode",
+   "surface": "crop mode",
+   "state": "crop tool with a 640x420 crop rectangle",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    2358
+   ],
+   "pointSize": [
+    1561,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "41700b3",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S08-crop-mode-lightroot-final@41700b3.png",
+   "storedPixelSize": [
+    1200,
+    906
+   ],
+   "downscaled": true,
+   "layout": "layout/S08-crop-mode-lightroot-final@41700b3.json",
+   "before": "docs/design/evidence/2026-10-09/S08-crop-mode-light.png"
+  },
+  {
+   "id": "S08",
+   "slug": "resize-panel",
+   "surface": "Resize panel",
+   "state": "Resize sheet with built-in + two synthetic presets",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    1240,
+    862
+   ],
+   "pointSize": [
+    620,
+    431
+   ],
+   "scale": 2,
+   "sourceSha": "41700b3",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S08-resize-panel-darkroot-final@41700b3.png",
+   "storedPixelSize": [
+    1200,
+    834
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/2026-10-09/S08-resize-panel-dark.png"
+  },
+  {
+   "id": "S08",
+   "slug": "resize-panel",
+   "surface": "Resize panel",
+   "state": "Resize sheet with built-in + two synthetic presets",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    1240,
+    862
+   ],
+   "pointSize": [
+    620,
+    431
+   ],
+   "scale": 2,
+   "sourceSha": "41700b3",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S08-resize-panel-lightroot-final@41700b3.png",
+   "storedPixelSize": [
+    1200,
+    834
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/2026-10-09/S08-resize-panel-light.png"
+  },
+  {
+   "id": "S08",
+   "slug": "resize-panel-in-context",
+   "surface": "Resize panel",
+   "state": "Resize sheet with built-in + two synthetic presets (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    2358
+   ],
+   "pointSize": [
+    1561,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "41700b3",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S08-resize-panel-in-context-darkroot-final@41700b3.png",
+   "storedPixelSize": [
+    1200,
+    906
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/2026-10-09/S08-resize-panel-in-context-dark.png"
+  },
+  {
+   "id": "S08",
+   "slug": "resize-panel-in-context",
+   "surface": "Resize panel",
+   "state": "Resize sheet with built-in + two synthetic presets (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    2358
+   ],
+   "pointSize": [
+    1561,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "41700b3",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S08-resize-panel-in-context-lightroot-final@41700b3.png",
+   "storedPixelSize": [
+    1200,
+    906
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/2026-10-09/S08-resize-panel-in-context-light.png"
+  },
+  {
+   "id": "S20",
+   "slug": "history-1120x850-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 1120 x 850: grid reflow, check badge, details beside the grid",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    2240,
+    1700
+   ],
+   "pointSize": [
+    1120,
+    850
+   ],
+   "scale": 2,
+   "sourceSha": "41700b3",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-1120x850-selected-darkroot-final@41700b3.png",
+   "storedPixelSize": [
+    1200,
+    911
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-1120x850-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 1120 x 850: grid reflow, check badge, details beside the grid",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    2240,
+    1700
+   ],
+   "pointSize": [
+    1120,
+    850
+   ],
+   "scale": 2,
+   "sourceSha": "41700b3",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-1120x850-selected-lightroot-final@41700b3.png",
+   "storedPixelSize": [
+    1200,
+    911
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-1280x800-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 1280 x 800: grid reflow, check badge, details beside the grid",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "41700b3",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-1280x800-selected-darkroot-final@41700b3.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-1280x800-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 1280 x 800: grid reflow, check badge, details beside the grid",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "41700b3",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-1280x800-selected-lightroot-final@41700b3.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-880x600-none",
+   "surface": "History browser",
+   "state": "880 x 600, nothing selected: the details column shows the summary instead of a blank hint; tiles sized to their preview",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    1760,
+    1200
+   ],
+   "pointSize": [
+    880,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "41700b3",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-880x600-none-darkroot-final@41700b3.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-880x600-none",
+   "surface": "History browser",
+   "state": "880 x 600, nothing selected: the details column shows the summary instead of a blank hint; tiles sized to their preview",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    1760,
+    1200
+   ],
+   "pointSize": [
+    880,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "41700b3",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-880x600-none-lightroot-final@41700b3.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-880x600-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 880 x 600: grid reflow, check badge, details beside the grid",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    1760,
+    1200
+   ],
+   "pointSize": [
+    880,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "41700b3",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-880x600-selected-darkroot-final@41700b3.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-880x600-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 880 x 600: grid reflow, check badge, details beside the grid",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    1760,
+    1200
+   ],
+   "pointSize": [
+    880,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "41700b3",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-880x600-selected-lightroot-final@41700b3.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-empty",
+   "surface": "History browser",
+   "state": "History window with no entries",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "41700b3",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-empty-darkroot-final@41700b3.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/2026-10-09/S20-history-empty-dark.png"
+  },
+  {
+   "id": "S20",
+   "slug": "history-empty",
+   "surface": "History browser",
+   "state": "History window with no entries",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "41700b3",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-empty-lightroot-final@41700b3.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/2026-10-09/S20-history-empty-light.png"
+  },
+  {
+   "id": "S20",
+   "slug": "history-link-copied",
+   "surface": "History browser",
+   "state": "a Shared entry selected after Copy Link: the footer confirms, and the destination link is cut in its middle with the full text in its tooltip",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    1760,
+    1298
+   ],
+   "pointSize": [
+    880,
+    649
+   ],
+   "scale": 2,
+   "sourceSha": "41700b3",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-link-copied-darkroot-final@41700b3.png",
+   "storedPixelSize": [
+    1200,
+    885
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-link-copied",
+   "surface": "History browser",
+   "state": "a Shared entry selected after Copy Link: the footer confirms, and the destination link is cut in its middle with the full text in its tooltip",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    1760,
+    1298
+   ],
+   "pointSize": [
+    880,
+    649
+   ],
+   "scale": 2,
+   "sourceSha": "41700b3",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-link-copied-lightroot-final@41700b3.png",
+   "storedPixelSize": [
+    1200,
+    885
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-no-match",
+   "surface": "History browser",
+   "state": "filters that match nothing at 880 x 600: centred message, no save hint",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    1760,
+    1200
+   ],
+   "pointSize": [
+    880,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "41700b3",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-no-match-darkroot-final@41700b3.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-no-match",
+   "surface": "History browser",
+   "state": "filters that match nothing at 880 x 600: centred message, no save hint",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    1760,
+    1200
+   ],
+   "pointSize": [
+    880,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "41700b3",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-no-match-lightroot-final@41700b3.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-no-match-footer",
+   "surface": "History browser",
+   "state": "filters that match nothing: the footer stays (0 of 6 items) and Clear filters offers the way out",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    1760,
+    1298
+   ],
+   "pointSize": [
+    880,
+    649
+   ],
+   "scale": 2,
+   "sourceSha": "41700b3",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-no-match-footer-darkroot-final@41700b3.png",
+   "storedPixelSize": [
+    1200,
+    885
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-no-match-footer",
+   "surface": "History browser",
+   "state": "filters that match nothing: the footer stays (0 of 6 items) and Clear filters offers the way out",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    1760,
+    1298
+   ],
+   "pointSize": [
+    880,
+    649
+   ],
+   "scale": 2,
+   "sourceSha": "41700b3",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-no-match-footer-lightroot-final@41700b3.png",
+   "storedPixelSize": [
+    1200,
+    885
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-populated",
+   "surface": "History browser",
+   "state": "six synthetic entries across dates and actions (Saved/Exported/Shared)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "41700b3",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-populated-darkroot-final@41700b3.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/2026-10-09/S20-history-populated-dark.png"
+  },
+  {
+   "id": "S20",
+   "slug": "history-populated",
+   "surface": "History browser",
+   "state": "six synthetic entries across dates and actions (Saved/Exported/Shared)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "41700b3",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-populated-lightroot-final@41700b3.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/2026-10-09/S20-history-populated-light.png"
+  },
+  {
+   "id": "S20",
+   "slug": "history-selected",
+   "surface": "History browser",
+   "state": "one entry selected (action buttons enabled)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "41700b3",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-selected-darkroot-final@41700b3.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/2026-10-09/S20-history-selected-dark.png"
+  },
+  {
+   "id": "S20",
+   "slug": "history-selected",
+   "surface": "History browser",
+   "state": "one entry selected (action buttons enabled)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "41700b3",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-selected-lightroot-final@41700b3.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/2026-10-09/S20-history-selected-light.png"
+  },
+  {
+   "id": "S20",
+   "slug": "history-tile-hover",
+   "surface": "History browser",
+   "state": "one entry selected (accent fill, border, check badge) and another tile hovered (label 0.08 fill)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "41700b3",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-tile-hover-darkroot-final@41700b3.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/2026-10-09/S20-history-selected-dark.png"
+  },
+  {
+   "id": "S20",
+   "slug": "history-tile-hover",
+   "surface": "History browser",
+   "state": "one entry selected (accent fill, border, check badge) and another tile hovered (label 0.08 fill)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "41700b3",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-tile-hover-lightroot-final@41700b3.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/2026-10-09/S20-history-selected-light.png"
+  }
+ ]
+}

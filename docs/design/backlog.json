@@ -3,7 +3,7 @@
     "project": "OpenSnap",
     "round": 2,
     "generated": "2026-10-09",
-    "statusNote": "Implementation progress at main 3b453b3 (baseline bad6617): 29 done, 2 verified, 1 not-a-bug, 3 in-progress, 1 pending, of 36 todos. Statuses are unchanged since 284f028. The E2E audit merges since then changed evidence notes only, on OSN-045, OSN-051, OSN-053 and OSN-061: panel-service fix fa4715f; batches 5 to 8 (0bd6f94, 5989fa0, 5b30929, 87abbfd); journeys J6, J7 and J8 (14d4d9f, 5310a2c, 33743c5); review round 2 tools and ledger (0b03903); final render pass (7f0a767); fix batches 9 to 12 (d1d24c0, 4f8b5d9, 748f352, 3b453b3) with review rounds 3 to 5, and the ledger split (02d4ca5) and tooltip-suite fix (76cbe52), which changed no todo status. OSN-044, OSN-054, OSN-060 and OSN-061 are done at merges 3ee9503, 7c8bdb1 and accfedd; OSN-062 stays in-progress (manual VoiceOver pass not recorded); OSN-071 stays pending until the round 6 confirmation of batch 12 and the final gates are recorded (both in progress). Each todo's status, mainState and implementation block record its main state at the SHA named there. Audit findings and priority counts are unchanged.",
+    "statusNote": "Local candidate 41700b3 has the exact tested tree of 1ea366c. Cold build, two full suites and clean-clone build/test passed. Audit fixes through batch 13 and reviews through round 6 are integrated. 29 done, 2 verified, 1 not-a-bug, 4 in-progress of 36 todos; OSN-071 is partial with a representative final gallery and explicit hardware/permission/manual gaps. See e2e/final-verification.md for the current result; prior capture labels retain pre-rewrite provenance.",
     "auditedShas": {
       "briefed": "b9319c4",
       "drift": [
@@ -156,7 +156,10 @@
       "OSN-070"
     ],
     "implementationBaseline": "bad6617",
-    "implementationMainSha": "e124f77"
+    "implementationMainSha": "41700b3",
+    "candidateBeforePrivacyRewrite": "1ea366c2db089069c7e5443bdc2800929ca53895",
+    "candidateAfterPrivacyRewrite": "41700b3cba3453e928a065fa013fb6b93d833e70",
+    "verificationReport": "docs/design/e2e/final-verification.md"
   },
   "decisions": [
     {
@@ -2777,10 +2780,13 @@
       "title": "Visual acceptance run: full gallery, light and dark, widths, states, icon modes, and independent visual sign-off",
       "priority": "P0",
       "milestone": "M7",
-      "status": "pending",
-      "mainState": "Pending: the full visual acceptance gallery and the independent visual sign-off have not been run on the implemented surfaces. The E2E audit and review rounds 1 to 5 do not close this todo; it waits for the round 6 confirmation of batch 12 (3b453b3) and the final gates, which are in progress.",
-      "remainingWork": null,
-      "openItems": [],
+      "status": "in-progress",
+      "mainState": "Partial: phased rendered evidence and independent reviews through round 6, fixes through batch 13, final integration gates passed, and root representative gallery refreshed. Full per-mode matrix and manual/hardware-dependent coverage are not complete; no unqualified visual sign-off.",
+      "remainingWork": "Complete the remaining manual and per-mode acceptance checks before unqualified sign-off.",
+      "openItems": [
+        "Spoken VoiceOver and hardware/permission-dependent paths remain unverified.",
+        "Full acceptance matrix is partial; see coverage-matrix.md and final-verification.md."
+      ],
       "findings": [
         "VF-01",
         "VF-02",
@@ -2849,11 +2855,14 @@
       ],
       "decisions": [],
       "implementation": {
-        "mergeCommit": null,
+        "mergeCommit": "41700b3",
         "branchCommits": [],
-        "tests": "none (not started)",
-        "evidence": null,
-        "openItems": []
+        "tests": "Cold build; tools/test.py twice; clean-clone build/test; fresh representative renders; inventory check. See e2e/final-verification.md.",
+        "evidence": "docs/design/audit-overview.html",
+        "openItems": [
+          "Spoken VoiceOver and hardware/permission-dependent paths remain unverified.",
+          "Full acceptance matrix is partial; see coverage-matrix.md and final-verification.md."
+        ]
       }
     },
     {
@@ -2918,7 +2927,8 @@
         "openItems": [
           "Not done: migration on a copy of the owner's real store (not authorized in this run).",
           "Not done: no tag, push, upload or release. Release work is a dry run only.",
-          "AWS live validation 2026-10-09 (partial evidence for the cdn upload dry run): OpenSnap's own S3 path, one synthetic object uploaded and deleted through the app; see progress.md."
+          "AWS live validation 2026-10-09 (partial evidence for the cdn upload dry run): OpenSnap's own S3 path, one synthetic object uploaded and deleted through the app; see progress.md.",
+          "Final clean-clone build and test passed at the byte-identical final candidate; installation, real-store-copy migration and release remain outside this completed check."
         ]
       }
     }
