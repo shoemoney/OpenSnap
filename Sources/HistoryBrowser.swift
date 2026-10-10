@@ -649,6 +649,28 @@ private final class HistoryFlowLayout: NSCollectionViewFlowLayout {
 final class HistoryTileView: NSView {
     private(set) var checkBadge: NSImageView?
     var isTileSelected = false { didSet { checkBadge?.isHidden = !isTileSelected; setAccessibilityValue(isTileSelected ? "Selected" : nil); needsDisplay = true } }
+    /// A hover fill (`state.hover`) on a tile that is not selected; a selected tile keeps its stronger fill and check badge.
+    private(set) var isHovered = false
+    private var hoverArea: NSTrackingArea?
+    func setHovered(_ hovered: Bool) {
+        guard isHovered != hovered else { return }
+        isHovered = hovered
+        needsDisplay = true
+    }
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let hoverArea { removeTrackingArea(hoverArea) }
+        let area = NSTrackingArea(rect: .zero, options: [.mouseEnteredAndExited, .activeInActiveApp, .inVisibleRect], owner: self, userInfo: nil)
+        addTrackingArea(area)
+        hoverArea = area
+    }
+    override func mouseEntered(with event: NSEvent) { setHovered(true) }
+    override func mouseExited(with event: NSEvent) { setHovered(false) }
+    override func viewDidHide() { super.viewDidHide(); setHovered(false) }
+    override func viewWillMove(toWindow newWindow: NSWindow?) {
+        if newWindow == nil { setHovered(false) }
+        super.viewWillMove(toWindow: newWindow)
+    }
     override init(frame: NSRect) {
         super.init(frame:frame); wantsLayer = true; layer?.cornerRadius = DesignTokens.Radius.md
     }
@@ -658,7 +680,7 @@ final class HistoryTileView: NSView {
         effectiveAppearance.performAsCurrentDrawingAppearance {
             layer?.borderWidth = isTileSelected ? 2 : 0
             layer?.borderColor = DesignTokens.Palette.accent.cgColor
-            layer?.backgroundColor = (isTileSelected ? DesignTokens.Palette.State.selectedFill : NSColor.clear).cgColor
+            layer?.backgroundColor = (isTileSelected ? DesignTokens.Palette.State.selectedFill : (isHovered ? DesignTokens.Palette.State.hover : NSColor.clear)).cgColor
         }
     }
     func addCheckBadge(over host: NSView) {

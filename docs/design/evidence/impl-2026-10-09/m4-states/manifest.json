@@ -1,0 +1,7141 @@
+{
+ "sourceSha": "cc97054",
+ "bundleId": "com.shoemoney.opensnap.eyedump-27341",
+ "iconMode": "sf",
+ "faMode": "FA unavailable: no FontAwesome7Pro subset fonts are bundled in this build, so every capture uses SF Symbols (nothing was faked)",
+ "captureCount": 230,
+ "unavailable": [],
+ "gaps": [],
+ "captures": [
+  {
+   "id": "S01",
+   "slug": "editor-empty",
+   "surface": "editor, empty",
+   "state": "fresh blank canvas, default window",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S01-editor-empty-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": "layout/S01-editor-empty-dark@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-window/S01-editor-empty-dark@7bf20f8.png"
+  },
+  {
+   "id": "S01",
+   "slug": "editor-empty",
+   "surface": "editor, empty",
+   "state": "fresh blank canvas, default window",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S01-editor-empty-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": "layout/S01-editor-empty-light@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-window/S01-editor-empty-light@7bf20f8.png"
+  },
+  {
+   "id": "S03",
+   "slug": "bottombar",
+   "surface": "bottom bar",
+   "state": "Undo, Wipe | Zoom, Resize | status | Save, History | PNG|JPG, Drag, Upload",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    120
+   ],
+   "pointSize": [
+    1489,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S03-bottombar-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S03-bottombar-dark@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-bottombar-dark@da2738d.png"
+  },
+  {
+   "id": "S03",
+   "slug": "bottombar",
+   "surface": "bottom bar",
+   "state": "Undo, Wipe | Zoom, Resize | status | Save, History | PNG|JPG, Drag, Upload",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    120
+   ],
+   "pointSize": [
+    1489,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S03-bottombar-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S03-bottombar-light@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-bottombar-light@da2738d.png"
+  },
+  {
+   "id": "S03",
+   "slug": "topbar",
+   "surface": "top bar",
+   "state": "Hide, Toolbox, Photos | Snap | ten tools | Color, Size, Font; title shows document name",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S03-topbar-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S03-topbar-dark@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-topbar-dark@da2738d.png"
+  },
+  {
+   "id": "S03",
+   "slug": "topbar",
+   "surface": "top bar",
+   "state": "Hide, Toolbox, Photos | Snap | ten tools | Color, Size, Font; title shows document name",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S03-topbar-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S03-topbar-light@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-topbar-light@da2738d.png"
+  },
+  {
+   "id": "S04",
+   "slug": "controls-disabled",
+   "surface": "tool states",
+   "state": "Resize + Undo disabled (isEnabled=false as Frame/Actual mode does)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    2358
+   ],
+   "pointSize": [
+    1489,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S04-controls-disabled-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    950
+   ],
+   "downscaled": true,
+   "layout": "layout/S04-controls-disabled-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-controls-disabled-dark.png"
+  },
+  {
+   "id": "S04",
+   "slug": "controls-disabled",
+   "surface": "tool states",
+   "state": "Resize + Undo disabled (isEnabled=false as Frame/Actual mode does)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    2358
+   ],
+   "pointSize": [
+    1489,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S04-controls-disabled-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    950
+   ],
+   "downscaled": true,
+   "layout": "layout/S04-controls-disabled-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-controls-disabled-light.png"
+  },
+  {
+   "id": "S04",
+   "slug": "snap-hover",
+   "surface": "tool states",
+   "state": "Snap (primary, accent) hovered",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S04-snap-hover-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S04-snap-hover-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-snap-hover-dark.png"
+  },
+  {
+   "id": "S04",
+   "slug": "snap-hover",
+   "surface": "tool states",
+   "state": "Snap (primary, accent) hovered",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S04-snap-hover-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S04-snap-hover-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-snap-hover-light.png"
+  },
+  {
+   "id": "S04",
+   "slug": "tool-arrow",
+   "surface": "tool states",
+   "state": "arrow tool selected",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S04-tool-arrow-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S04-tool-arrow-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-arrow-dark.png"
+  },
+  {
+   "id": "S04",
+   "slug": "tool-arrow",
+   "surface": "tool states",
+   "state": "arrow tool selected",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S04-tool-arrow-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S04-tool-arrow-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-arrow-light.png"
+  },
+  {
+   "id": "S04",
+   "slug": "tool-brush",
+   "surface": "tool states",
+   "state": "brush tool selected",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S04-tool-brush-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S04-tool-brush-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-brush-dark.png"
+  },
+  {
+   "id": "S04",
+   "slug": "tool-brush",
+   "surface": "tool states",
+   "state": "brush tool selected",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S04-tool-brush-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S04-tool-brush-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-brush-light.png"
+  },
+  {
+   "id": "S04",
+   "slug": "tool-crop",
+   "surface": "tool states",
+   "state": "crop tool selected",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S04-tool-crop-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S04-tool-crop-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-crop-dark.png"
+  },
+  {
+   "id": "S04",
+   "slug": "tool-crop",
+   "surface": "tool states",
+   "state": "crop tool selected",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S04-tool-crop-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S04-tool-crop-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-crop-light.png"
+  },
+  {
+   "id": "S04",
+   "slug": "tool-ellipse",
+   "surface": "tool states",
+   "state": "ellipse tool selected",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S04-tool-ellipse-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S04-tool-ellipse-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-ellipse-dark.png"
+  },
+  {
+   "id": "S04",
+   "slug": "tool-ellipse",
+   "surface": "tool states",
+   "state": "ellipse tool selected",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S04-tool-ellipse-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S04-tool-ellipse-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-ellipse-light.png"
+  },
+  {
+   "id": "S04",
+   "slug": "tool-eraser",
+   "surface": "tool states",
+   "state": "eraser tool selected",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S04-tool-eraser-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S04-tool-eraser-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-eraser-dark.png"
+  },
+  {
+   "id": "S04",
+   "slug": "tool-eraser",
+   "surface": "tool states",
+   "state": "eraser tool selected",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S04-tool-eraser-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S04-tool-eraser-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-eraser-light.png"
+  },
+  {
+   "id": "S04",
+   "slug": "tool-fill",
+   "surface": "tool states",
+   "state": "fill tool selected",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S04-tool-fill-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S04-tool-fill-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-fill-dark.png"
+  },
+  {
+   "id": "S04",
+   "slug": "tool-fill",
+   "surface": "tool states",
+   "state": "fill tool selected",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S04-tool-fill-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S04-tool-fill-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-fill-light.png"
+  },
+  {
+   "id": "S04",
+   "slug": "tool-hover",
+   "surface": "tool states",
+   "state": "Rectangle tool hovered (CommandButton.setHovered: a 0.08 fill on the group plate), Brush selected",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S04-tool-hover-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S04-tool-hover-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-hover-dark.png"
+  },
+  {
+   "id": "S04",
+   "slug": "tool-hover",
+   "surface": "tool states",
+   "state": "Rectangle tool hovered (CommandButton.setHovered: a 0.08 fill on the group plate), Brush selected",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S04-tool-hover-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S04-tool-hover-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-hover-light.png"
+  },
+  {
+   "id": "S04",
+   "slug": "tool-line",
+   "surface": "tool states",
+   "state": "line tool selected",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S04-tool-line-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S04-tool-line-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-line-dark.png"
+  },
+  {
+   "id": "S04",
+   "slug": "tool-line",
+   "surface": "tool states",
+   "state": "line tool selected",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S04-tool-line-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S04-tool-line-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-line-light.png"
+  },
+  {
+   "id": "S04",
+   "slug": "tool-pressed",
+   "surface": "tool states",
+   "state": "Rectangle tool pressed (CommandButton.highlight: a 0.16 fill on the group plate), Brush selected",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S04-tool-pressed-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S04-tool-pressed-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-pressed-dark.png"
+  },
+  {
+   "id": "S04",
+   "slug": "tool-pressed",
+   "surface": "tool states",
+   "state": "Rectangle tool pressed (CommandButton.highlight: a 0.16 fill on the group plate), Brush selected",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S04-tool-pressed-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S04-tool-pressed-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-pressed-light.png"
+  },
+  {
+   "id": "S04",
+   "slug": "tool-rectangle",
+   "surface": "tool states",
+   "state": "rectangle tool selected",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S04-tool-rectangle-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S04-tool-rectangle-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-rectangle-dark.png"
+  },
+  {
+   "id": "S04",
+   "slug": "tool-rectangle",
+   "surface": "tool states",
+   "state": "rectangle tool selected",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S04-tool-rectangle-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S04-tool-rectangle-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-rectangle-light.png"
+  },
+  {
+   "id": "S04",
+   "slug": "tool-select",
+   "surface": "tool states",
+   "state": "select tool selected",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S04-tool-select-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S04-tool-select-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-select-dark.png"
+  },
+  {
+   "id": "S04",
+   "slug": "tool-select",
+   "surface": "tool states",
+   "state": "select tool selected",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S04-tool-select-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S04-tool-select-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-select-light.png"
+  },
+  {
+   "id": "S04",
+   "slug": "tool-text",
+   "surface": "tool states",
+   "state": "text tool selected",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S04-tool-text-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S04-tool-text-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-text-dark.png"
+  },
+  {
+   "id": "S04",
+   "slug": "tool-text",
+   "surface": "tool states",
+   "state": "text tool selected",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S04-tool-text-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S04-tool-text-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-text-light.png"
+  },
+  {
+   "id": "S09",
+   "slug": "footer",
+   "surface": "footer",
+   "state": "zoom, status, format, drag well, upload",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    120
+   ],
+   "pointSize": [
+    1489,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S09-footer-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S09-footer-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-footer-dark@dc1eb26.png"
+  },
+  {
+   "id": "S09",
+   "slug": "footer",
+   "surface": "footer",
+   "state": "zoom, status, format, drag well, upload",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    120
+   ],
+   "pointSize": [
+    1489,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S09-footer-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S09-footer-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-footer-light@dc1eb26.png"
+  },
+  {
+   "id": "S09",
+   "slug": "footer-long-status",
+   "surface": "footer",
+   "state": "very long status text",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    120
+   ],
+   "pointSize": [
+    1489,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S09-footer-long-status-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S09-footer-long-status-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-footer-long-status-dark@dc1eb26.png"
+  },
+  {
+   "id": "S09",
+   "slug": "footer-long-status",
+   "surface": "footer",
+   "state": "very long status text",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    120
+   ],
+   "pointSize": [
+    1489,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S09-footer-long-status-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S09-footer-long-status-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-footer-long-status-light@dc1eb26.png"
+  },
+  {
+   "id": "S09",
+   "slug": "format-toggle-jpg",
+   "surface": "footer",
+   "state": "PNG | JPG segmented toggle with JPG selected",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    120
+   ],
+   "pointSize": [
+    1489,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S09-format-toggle-jpg-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S09-format-toggle-jpg-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-format-toggle-jpg-dark@dc1eb26.png"
+  },
+  {
+   "id": "S09",
+   "slug": "format-toggle-jpg",
+   "surface": "footer",
+   "state": "PNG | JPG segmented toggle with JPG selected",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    120
+   ],
+   "pointSize": [
+    1489,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S09-format-toggle-jpg-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S09-format-toggle-jpg-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-format-toggle-jpg-light@dc1eb26.png"
+  },
+  {
+   "id": "S09",
+   "slug": "format-toggle-png",
+   "surface": "footer",
+   "state": "PNG | JPG segmented toggle with PNG selected",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    120
+   ],
+   "pointSize": [
+    1489,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S09-format-toggle-png-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S09-format-toggle-png-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-format-toggle-png-dark@dc1eb26.png"
+  },
+  {
+   "id": "S09",
+   "slug": "format-toggle-png",
+   "surface": "footer",
+   "state": "PNG | JPG segmented toggle with PNG selected",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    120
+   ],
+   "pointSize": [
+    1489,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S09-format-toggle-png-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S09-format-toggle-png-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-format-toggle-png-light@dc1eb26.png"
+  },
+  {
+   "id": "S20",
+   "slug": "history-1120x850-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 1120 x 850: grid reflow, check badge, details beside the grid",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2240,
+    1700
+   ],
+   "pointSize": [
+    1120,
+    850
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-1120x850-selected-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    911
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-1120x850-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 1120 x 850: grid reflow, check badge, details beside the grid",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2240,
+    1700
+   ],
+   "pointSize": [
+    1120,
+    850
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-1120x850-selected-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    911
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-1280x800-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 1280 x 800: grid reflow, check badge, details beside the grid",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-1280x800-selected-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-1280x800-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 1280 x 800: grid reflow, check badge, details beside the grid",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-1280x800-selected-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-880x600-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 880 x 600: grid reflow, check badge, details beside the grid",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    1760,
+    1328
+   ],
+   "pointSize": [
+    880,
+    664
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-880x600-selected-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    905
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-880x600-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 880 x 600: grid reflow, check badge, details beside the grid",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    1760,
+    1328
+   ],
+   "pointSize": [
+    880,
+    664
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-880x600-selected-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    905
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-empty",
+   "surface": "History browser",
+   "state": "History window with no entries",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-empty-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/2026-10-09/S20-history-empty-dark.png"
+  },
+  {
+   "id": "S20",
+   "slug": "history-empty",
+   "surface": "History browser",
+   "state": "History window with no entries",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-empty-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/2026-10-09/S20-history-empty-light.png"
+  },
+  {
+   "id": "S20",
+   "slug": "history-no-match",
+   "surface": "History browser",
+   "state": "filters that match nothing at 880 x 600: centred message, no save hint",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    1760,
+    1200
+   ],
+   "pointSize": [
+    880,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-no-match-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-no-match",
+   "surface": "History browser",
+   "state": "filters that match nothing at 880 x 600: centred message, no save hint",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    1760,
+    1200
+   ],
+   "pointSize": [
+    880,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-no-match-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-populated",
+   "surface": "History browser",
+   "state": "six synthetic entries across dates and actions (Saved/Exported/Shared)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-populated-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/2026-10-09/S20-history-populated-dark.png"
+  },
+  {
+   "id": "S20",
+   "slug": "history-populated",
+   "surface": "History browser",
+   "state": "six synthetic entries across dates and actions (Saved/Exported/Shared)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-populated-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/2026-10-09/S20-history-populated-light.png"
+  },
+  {
+   "id": "S20",
+   "slug": "history-selected",
+   "surface": "History browser",
+   "state": "one entry selected (action buttons enabled)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-selected-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/2026-10-09/S20-history-selected-dark.png"
+  },
+  {
+   "id": "S20",
+   "slug": "history-selected",
+   "surface": "History browser",
+   "state": "one entry selected (action buttons enabled)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-selected-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/2026-10-09/S20-history-selected-light.png"
+  },
+  {
+   "id": "S20",
+   "slug": "history-tile-hover",
+   "surface": "History browser",
+   "state": "one entry selected (accent fill, border, check badge) and another tile hovered (label 0.08 fill)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-tile-hover-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/2026-10-09/S20-history-selected-dark.png"
+  },
+  {
+   "id": "S20",
+   "slug": "history-tile-hover",
+   "surface": "History browser",
+   "state": "one entry selected (accent fill, border, check badge) and another tile hovered (label 0.08 fill)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-tile-hover-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/2026-10-09/S20-history-selected-light.png"
+  },
+  {
+   "id": "S28",
+   "slug": "focus-footer-upload",
+   "surface": "keyboard focus",
+   "state": "Upload button is first responder",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    120
+   ],
+   "pointSize": [
+    1489,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S28-focus-footer-upload-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S28-focus-footer-upload-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S28-focus-footer-upload-dark.png"
+  },
+  {
+   "id": "S28",
+   "slug": "focus-footer-upload",
+   "surface": "keyboard focus",
+   "state": "Upload button is first responder",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    120
+   ],
+   "pointSize": [
+    1489,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S28-focus-footer-upload-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S28-focus-footer-upload-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S28-focus-footer-upload-light.png"
+  },
+  {
+   "id": "S28",
+   "slug": "focus-footer-zoom",
+   "surface": "keyboard focus",
+   "state": "Zoom popup is first responder",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    120
+   ],
+   "pointSize": [
+    1489,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S28-focus-footer-zoom-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S28-focus-footer-zoom-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S28-focus-footer-zoom-dark.png"
+  },
+  {
+   "id": "S28",
+   "slug": "focus-footer-zoom",
+   "surface": "keyboard focus",
+   "state": "Zoom popup is first responder",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    120
+   ],
+   "pointSize": [
+    1489,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S28-focus-footer-zoom-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S28-focus-footer-zoom-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S28-focus-footer-zoom-light.png"
+  },
+  {
+   "id": "S28",
+   "slug": "focus-topbar-hide",
+   "surface": "keyboard focus",
+   "state": "Hide button is first responder",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S28-focus-topbar-hide-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S28-focus-topbar-hide-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S28-focus-topbar-hide-dark.png"
+  },
+  {
+   "id": "S28",
+   "slug": "focus-topbar-hide",
+   "surface": "keyboard focus",
+   "state": "Hide button is first responder",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S28-focus-topbar-hide-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S28-focus-topbar-hide-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S28-focus-topbar-hide-light.png"
+  },
+  {
+   "id": "S28",
+   "slug": "focus-topbar-snap",
+   "surface": "keyboard focus",
+   "state": "Snap (primary) is first responder",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S28-focus-topbar-snap-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S28-focus-topbar-snap-dark@cc97054.json",
+   "before": null
+  },
+  {
+   "id": "S28",
+   "slug": "focus-topbar-snap",
+   "surface": "keyboard focus",
+   "state": "Snap (primary) is first responder",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S28-focus-topbar-snap-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S28-focus-topbar-snap-light@cc97054.json",
+   "before": null
+  },
+  {
+   "id": "S28",
+   "slug": "focus-topbar-tool",
+   "surface": "keyboard focus",
+   "state": "Brush tool button is first responder (focus ring)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S28-focus-topbar-tool-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S28-focus-topbar-tool-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S28-focus-topbar-tool-dark.png"
+  },
+  {
+   "id": "S28",
+   "slug": "focus-topbar-tool",
+   "surface": "keyboard focus",
+   "state": "Brush tool button is first responder (focus ring)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S28-focus-topbar-tool-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S28-focus-topbar-tool-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S28-focus-topbar-tool-light.png"
+  },
+  {
+   "id": "S30",
+   "slug": "size-popover-w1280",
+   "surface": "Size popover",
+   "state": "Size popover open below the pill at window width 1280x800, value 6.75, Brush tool",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2726,
+    1600
+   ],
+   "pointSize": [
+    1363,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S30-size-popover-w1280-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    704
+   ],
+   "downscaled": true,
+   "layout": "layout/S30-size-popover-w1280-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S06-size-mid-dark.png"
+  },
+  {
+   "id": "S30",
+   "slug": "size-popover-w1280",
+   "surface": "Size popover",
+   "state": "Size popover open below the pill at window width 1280x800, value 6.75, Brush tool",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2726,
+    1600
+   ],
+   "pointSize": [
+    1363,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S30-size-popover-w1280-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    704
+   ],
+   "downscaled": true,
+   "layout": "layout/S30-size-popover-w1280-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S06-size-mid-light.png"
+  },
+  {
+   "id": "S30",
+   "slug": "size-popover-w980",
+   "surface": "Size popover",
+   "state": "Size popover open below the pill at window width 980xmin, value 6.75, Brush tool",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    2126,
+    1280
+   ],
+   "pointSize": [
+    1063,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S30-size-popover-w980-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    722
+   ],
+   "downscaled": true,
+   "layout": "layout/S30-size-popover-w980-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S06-size-mid-dark.png"
+  },
+  {
+   "id": "S30",
+   "slug": "size-popover-w980",
+   "surface": "Size popover",
+   "state": "Size popover open below the pill at window width 980xmin, value 6.75, Brush tool",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    2126,
+    1280
+   ],
+   "pointSize": [
+    1063,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S30-size-popover-w980-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    722
+   ],
+   "downscaled": true,
+   "layout": "layout/S30-size-popover-w980-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S06-size-mid-light.png"
+  },
+  {
+   "id": "S31",
+   "slug": "color-popover-only-w980",
+   "surface": "Colour popover",
+   "state": "the popover window alone",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    544,
+    332
+   ],
+   "pointSize": [
+    272,
+    166
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S31-color-popover-only-w980-dark@cc97054.png",
+   "storedPixelSize": [
+    544,
+    332
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S31-color-popover-only-w980-dark@da2738d.png"
+  },
+  {
+   "id": "S31",
+   "slug": "color-popover-only-w980",
+   "surface": "Colour popover",
+   "state": "the popover window alone",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    544,
+    332
+   ],
+   "pointSize": [
+    272,
+    166
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S31-color-popover-only-w980-light@cc97054.png",
+   "storedPixelSize": [
+    544,
+    332
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S31-color-popover-only-w980-light@da2738d.png"
+  },
+  {
+   "id": "S31",
+   "slug": "color-popover-w980",
+   "surface": "Colour popover",
+   "state": "Drawing colours popover open below the top-bar swatch at window width 980",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S31-color-popover-w980-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S31-color-popover-w980-dark@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S31-color-popover-w980-dark@da2738d.png"
+  },
+  {
+   "id": "S31",
+   "slug": "color-popover-w980",
+   "surface": "Colour popover",
+   "state": "Drawing colours popover open below the top-bar swatch at window width 980",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S31-color-popover-w980-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S31-color-popover-w980-light@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S31-color-popover-w980-light@da2738d.png"
+  },
+  {
+   "id": "S37",
+   "slug": "format-jpg-w980",
+   "surface": "PNG | JPG at 980",
+   "state": "JPG selected at window width 980 with the large-shot bottom bar; footer group width 242.0 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S37-format-jpg-w980-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S37-format-jpg-w980-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-format-toggle-jpg-dark@dc1eb26.png"
+  },
+  {
+   "id": "S37",
+   "slug": "format-jpg-w980",
+   "surface": "PNG | JPG at 980",
+   "state": "JPG selected at window width 980 with the large-shot bottom bar; footer group width 242.0 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S37-format-jpg-w980-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S37-format-jpg-w980-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-format-toggle-jpg-light@dc1eb26.png"
+  },
+  {
+   "id": "S37",
+   "slug": "format-png-w980",
+   "surface": "PNG | JPG at 980",
+   "state": "PNG selected at window width 980 with the large-shot bottom bar; footer group width 242.0 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S37-format-png-w980-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S37-format-png-w980-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-format-toggle-png-dark@dc1eb26.png"
+  },
+  {
+   "id": "S37",
+   "slug": "format-png-w980",
+   "surface": "PNG | JPG at 980",
+   "state": "PNG selected at window width 980 with the large-shot bottom bar; footer group width 242.0 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S37-format-png-w980-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S37-format-png-w980-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-format-toggle-png-light@dc1eb26.png"
+  },
+  {
+   "id": "S40",
+   "slug": "border-crop-tool",
+   "surface": "component states",
+   "state": "Crop tool chosen: the handles stay on without hover",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1084,
+    768
+   ],
+   "pixelSize": [
+    2168,
+    1536
+   ],
+   "pointSize": [
+    1084,
+    768
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S40-border-crop-tool-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    850
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-border-crop-tool-dark@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-window/S01-editor-empty-dark@7bf20f8.png"
+  },
+  {
+   "id": "S40",
+   "slug": "border-crop-tool",
+   "surface": "component states",
+   "state": "Crop tool chosen: the handles stay on without hover",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1084,
+    768
+   ],
+   "pixelSize": [
+    2168,
+    1536
+   ],
+   "pointSize": [
+    1084,
+    768
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S40-border-crop-tool-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    850
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-border-crop-tool-light@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-window/S01-editor-empty-light@7bf20f8.png"
+  },
+  {
+   "id": "S40",
+   "slug": "border-hover",
+   "surface": "component states",
+   "state": "Pointer over the border: the accent outline and the four corner handles",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1084,
+    768
+   ],
+   "pixelSize": [
+    2168,
+    1536
+   ],
+   "pointSize": [
+    1084,
+    768
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S40-border-hover-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    850
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-border-hover-dark@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-window/S01-editor-empty-dark@7bf20f8.png"
+  },
+  {
+   "id": "S40",
+   "slug": "border-hover",
+   "surface": "component states",
+   "state": "Pointer over the border: the accent outline and the four corner handles",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1084,
+    768
+   ],
+   "pixelSize": [
+    2168,
+    1536
+   ],
+   "pointSize": [
+    1084,
+    768
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S40-border-hover-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    850
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-border-hover-light@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-window/S01-editor-empty-light@7bf20f8.png"
+  },
+  {
+   "id": "S40",
+   "slug": "border-rest",
+   "surface": "component states",
+   "state": "Canvas border at rest: a separator hairline, no handles",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1084,
+    768
+   ],
+   "pixelSize": [
+    2168,
+    1536
+   ],
+   "pointSize": [
+    1084,
+    768
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S40-border-rest-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    850
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-border-rest-dark@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-window/S01-editor-empty-dark@7bf20f8.png"
+  },
+  {
+   "id": "S40",
+   "slug": "border-rest",
+   "surface": "component states",
+   "state": "Canvas border at rest: a separator hairline, no handles",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1084,
+    768
+   ],
+   "pixelSize": [
+    2168,
+    1536
+   ],
+   "pointSize": [
+    1084,
+    768
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S40-border-rest-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    850
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-border-rest-light@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-window/S01-editor-empty-light@7bf20f8.png"
+  },
+  {
+   "id": "S40",
+   "slug": "drag-focus",
+   "surface": "component states",
+   "state": "Drag well keyboard-focused (Space or Return opens the Export panel)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-drag-focus-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-drag-focus-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S28-focus-footer-upload-dark.png"
+  },
+  {
+   "id": "S40",
+   "slug": "drag-focus",
+   "surface": "component states",
+   "state": "Drag well keyboard-focused (Space or Return opens the Export panel)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-drag-focus-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-drag-focus-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S28-focus-footer-upload-light.png"
+  },
+  {
+   "id": "S40",
+   "slug": "drag-hover",
+   "surface": "component states",
+   "state": "Drag well hovered: the cell takes the label 0.08 fill; the pointer is an open hand",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-drag-hover-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-drag-hover-dark@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-bottombar-dark@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "drag-hover",
+   "surface": "component states",
+   "state": "Drag well hovered: the cell takes the label 0.08 fill; the pointer is an open hand",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-drag-hover-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-drag-hover-light@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-bottombar-light@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "drag-pressed",
+   "surface": "component states",
+   "state": "Drag well held: the cell takes the 0.16 fill; the pointer is a closed hand",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-drag-pressed-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-drag-pressed-dark@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-bottombar-dark@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "drag-pressed",
+   "surface": "component states",
+   "state": "Drag well held: the cell takes the 0.16 fill; the pointer is a closed hand",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-drag-pressed-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-drag-pressed-light@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-bottombar-light@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "drag-rest",
+   "surface": "component states",
+   "state": "Drag well at rest: the open-hand glyph, no plate",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-drag-rest-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-drag-rest-dark@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-bottombar-dark@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "drag-rest",
+   "surface": "component states",
+   "state": "Drag well at rest: the open-hand glyph, no plate",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-drag-rest-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-drag-rest-light@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-bottombar-light@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "size-pill-disabled",
+   "surface": "component states",
+   "state": "Size pill disabled: stroke dimmed to 0.38, no fill, not draggable",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-size-pill-disabled-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-size-pill-disabled-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-controls-disabled-dark.png"
+  },
+  {
+   "id": "S40",
+   "slug": "size-pill-disabled",
+   "surface": "component states",
+   "state": "Size pill disabled: stroke dimmed to 0.38, no fill, not draggable",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-size-pill-disabled-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-size-pill-disabled-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-controls-disabled-light.png"
+  },
+  {
+   "id": "S40",
+   "slug": "size-pill-focus",
+   "surface": "component states",
+   "state": "Size pill keyboard-focused",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-size-pill-focus-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-size-pill-focus-dark@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-topbar-dark@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "size-pill-focus",
+   "surface": "component states",
+   "state": "Size pill keyboard-focused",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-size-pill-focus-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-size-pill-focus-light@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-topbar-light@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "size-pill-hover",
+   "surface": "component states",
+   "state": "Size pill hovered: the cell takes the label 0.08 fill",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-size-pill-hover-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-size-pill-hover-dark@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-topbar-dark@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "size-pill-hover",
+   "surface": "component states",
+   "state": "Size pill hovered: the cell takes the label 0.08 fill",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-size-pill-hover-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-size-pill-hover-light@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-topbar-light@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "size-pill-pressed",
+   "surface": "component states",
+   "state": "Size pill pressed: the cell takes the 0.16 fill and the stroke is drawn 0.96 shorter",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-size-pill-pressed-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-size-pill-pressed-dark@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-topbar-dark@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "size-pill-pressed",
+   "surface": "component states",
+   "state": "Size pill pressed: the cell takes the 0.16 fill and the stroke is drawn 0.96 shorter",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-size-pill-pressed-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-size-pill-pressed-light@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-topbar-light@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "size-pill-rest",
+   "surface": "component states",
+   "state": "Size pill at rest: the stroke is the current thickness (6.75)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-size-pill-rest-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-size-pill-rest-dark@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-topbar-dark@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "size-pill-rest",
+   "surface": "component states",
+   "state": "Size pill at rest: the stroke is the current thickness (6.75)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-size-pill-rest-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-size-pill-rest-light@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-topbar-light@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "size-preset-hover",
+   "surface": "component states",
+   "state": "Size popover, the smallest preset hovered (command hover fill) beside the selected one",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    2126,
+    1280
+   ],
+   "pointSize": [
+    1063,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S40-size-preset-hover-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    722
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-size-preset-hover-dark@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S30-size-popover-w980-dark@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "size-preset-hover",
+   "surface": "component states",
+   "state": "Size popover, the smallest preset hovered (command hover fill) beside the selected one",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    2126,
+    1280
+   ],
+   "pointSize": [
+    1063,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S40-size-preset-hover-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    722
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-size-preset-hover-light@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S30-size-popover-w980-light@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "size-track-hover",
+   "surface": "component states",
+   "state": "Size popover, pointer over the track: the knob grows to 1.15",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    2126,
+    1280
+   ],
+   "pointSize": [
+    1063,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S40-size-track-hover-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    722
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-size-track-hover-dark@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S30-size-popover-w980-dark@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "size-track-hover",
+   "surface": "component states",
+   "state": "Size popover, pointer over the track: the knob grows to 1.15",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    2126,
+    1280
+   ],
+   "pointSize": [
+    1063,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S40-size-track-hover-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    722
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-size-track-hover-light@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S30-size-popover-w980-light@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "size-track-pressed",
+   "surface": "component states",
+   "state": "Size popover, knob held: the knob at 1.25 and an accent 0.3 wash over the track",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    2126,
+    1280
+   ],
+   "pointSize": [
+    1063,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S40-size-track-pressed-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    722
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-size-track-pressed-dark@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S30-size-popover-w980-dark@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "size-track-pressed",
+   "surface": "component states",
+   "state": "Size popover, knob held: the knob at 1.25 and an accent 0.3 wash over the track",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    2126,
+    1280
+   ],
+   "pointSize": [
+    1063,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S40-size-track-pressed-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    722
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-size-track-pressed-light@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S30-size-popover-w980-light@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "snap-disabled",
+   "surface": "component states",
+   "state": "Snap disabled: the accent dimmed to 0.38",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-snap-disabled-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-snap-disabled-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-controls-disabled-dark.png"
+  },
+  {
+   "id": "S40",
+   "slug": "snap-disabled",
+   "surface": "component states",
+   "state": "Snap disabled: the accent dimmed to 0.38",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-snap-disabled-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-snap-disabled-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-controls-disabled-light.png"
+  },
+  {
+   "id": "S40",
+   "slug": "snap-focus",
+   "surface": "component states",
+   "state": "Snap keyboard-focused",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-snap-focus-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-snap-focus-dark@cc97054.json",
+   "before": null
+  },
+  {
+   "id": "S40",
+   "slug": "snap-focus",
+   "surface": "component states",
+   "state": "Snap keyboard-focused",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-snap-focus-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-snap-focus-light@cc97054.json",
+   "before": null
+  },
+  {
+   "id": "S40",
+   "slug": "snap-hover",
+   "surface": "component states",
+   "state": "Snap hovered: the accent brightened 8 %",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-snap-hover-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-snap-hover-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-snap-hover-dark.png"
+  },
+  {
+   "id": "S40",
+   "slug": "snap-hover",
+   "surface": "component states",
+   "state": "Snap hovered: the accent brightened 8 %",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-snap-hover-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-snap-hover-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-snap-hover-light.png"
+  },
+  {
+   "id": "S40",
+   "slug": "snap-pressed",
+   "surface": "component states",
+   "state": "Snap pressed: the accent darkened 12 % and the glyph at 0.96",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-snap-pressed-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-snap-pressed-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-snap-hover-dark.png"
+  },
+  {
+   "id": "S40",
+   "slug": "snap-pressed",
+   "surface": "component states",
+   "state": "Snap pressed: the accent darkened 12 % and the glyph at 0.96",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-snap-pressed-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-snap-pressed-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-snap-hover-light.png"
+  },
+  {
+   "id": "S40",
+   "slug": "snap-rest",
+   "surface": "component states",
+   "state": "Snap at rest: opaque accent fill, glyph colour computed against it",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-snap-rest-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-snap-rest-dark@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-topbar-dark@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "snap-rest",
+   "surface": "component states",
+   "state": "Snap at rest: opaque accent fill, glyph colour computed against it",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-snap-rest-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-snap-rest-light@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-topbar-light@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "swatch-states",
+   "surface": "component states",
+   "state": "Colour popover: Red selected (3 pt accent outline and check glyph), Blue hovered (label 0.5 outline), Translucent gray pressed (0.16 fill)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    544,
+    332
+   ],
+   "pointSize": [
+    272,
+    166
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S40-swatch-states-dark@cc97054.png",
+   "storedPixelSize": [
+    544,
+    332
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S31-color-popover-w980-dark@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "swatch-states",
+   "surface": "component states",
+   "state": "Colour popover: Red selected (3 pt accent outline and check glyph), Blue hovered (label 0.5 outline), Translucent gray pressed (0.16 fill)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    544,
+    332
+   ],
+   "pointSize": [
+    272,
+    166
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S40-swatch-states-light@cc97054.png",
+   "storedPixelSize": [
+    544,
+    332
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S31-color-popover-w980-light@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "toggle-disabled",
+   "surface": "component states",
+   "state": "PNG | JPG disabled: both segments' content at 0.38",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-toggle-disabled-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-toggle-disabled-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-format-toggle-png-dark@dc1eb26.png"
+  },
+  {
+   "id": "S40",
+   "slug": "toggle-disabled",
+   "surface": "component states",
+   "state": "PNG | JPG disabled: both segments' content at 0.38",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-toggle-disabled-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-toggle-disabled-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-format-toggle-png-light@dc1eb26.png"
+  },
+  {
+   "id": "S40",
+   "slug": "toggle-focus",
+   "surface": "component states",
+   "state": "PNG | JPG keyboard-focused (Left, Right and Space change the format)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-toggle-focus-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-toggle-focus-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-format-toggle-png-dark@dc1eb26.png"
+  },
+  {
+   "id": "S40",
+   "slug": "toggle-focus",
+   "surface": "component states",
+   "state": "PNG | JPG keyboard-focused (Left, Right and Space change the format)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-toggle-focus-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-toggle-focus-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-format-toggle-png-light@dc1eb26.png"
+  },
+  {
+   "id": "S40",
+   "slug": "toggle-hover",
+   "surface": "component states",
+   "state": "PNG selected, JPG hovered: label 0.08 plate",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-toggle-hover-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-toggle-hover-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-format-toggle-png-dark@dc1eb26.png"
+  },
+  {
+   "id": "S40",
+   "slug": "toggle-hover",
+   "surface": "component states",
+   "state": "PNG selected, JPG hovered: label 0.08 plate",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-toggle-hover-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-toggle-hover-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-format-toggle-png-light@dc1eb26.png"
+  },
+  {
+   "id": "S40",
+   "slug": "toggle-jpg",
+   "surface": "component states",
+   "state": "PNG | JPG with JPG selected",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-toggle-jpg-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-toggle-jpg-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-format-toggle-jpg-dark@dc1eb26.png"
+  },
+  {
+   "id": "S40",
+   "slug": "toggle-jpg",
+   "surface": "component states",
+   "state": "PNG | JPG with JPG selected",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-toggle-jpg-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-toggle-jpg-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-format-toggle-jpg-light@dc1eb26.png"
+  },
+  {
+   "id": "S40",
+   "slug": "toggle-png",
+   "surface": "component states",
+   "state": "PNG | JPG with PNG selected: accent 0.20 plate, 1 pt border, bodyStrong text; JPG on its faint plate",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-toggle-png-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-toggle-png-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-format-toggle-png-dark@dc1eb26.png"
+  },
+  {
+   "id": "S40",
+   "slug": "toggle-png",
+   "surface": "component states",
+   "state": "PNG | JPG with PNG selected: accent 0.20 plate, 1 pt border, bodyStrong text; JPG on its faint plate",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-toggle-png-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-toggle-png-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-format-toggle-png-light@dc1eb26.png"
+  },
+  {
+   "id": "S40",
+   "slug": "toggle-pressed",
+   "surface": "component states",
+   "state": "PNG selected, JPG pressed: label 0.16 plate",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-toggle-pressed-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-toggle-pressed-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-format-toggle-png-dark@dc1eb26.png"
+  },
+  {
+   "id": "S40",
+   "slug": "toggle-pressed",
+   "surface": "component states",
+   "state": "PNG selected, JPG pressed: label 0.16 plate",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-toggle-pressed-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-toggle-pressed-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-format-toggle-png-light@dc1eb26.png"
+  },
+  {
+   "id": "S40",
+   "slug": "tool-disabled",
+   "surface": "component states",
+   "state": "Rectangle tool disabled: no fill, content dimmed to 0.38",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-disabled-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-disabled-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-controls-disabled-dark.png"
+  },
+  {
+   "id": "S40",
+   "slug": "tool-disabled",
+   "surface": "component states",
+   "state": "Rectangle tool disabled: no fill, content dimmed to 0.38",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-disabled-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-disabled-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-controls-disabled-light.png"
+  },
+  {
+   "id": "S40",
+   "slug": "tool-focus",
+   "surface": "component states",
+   "state": "Rectangle tool keyboard-focused: AppKit's focus ring drawn through the button's own rounded mask",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-focus-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-focus-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S28-focus-topbar-tool-dark.png"
+  },
+  {
+   "id": "S40",
+   "slug": "tool-focus",
+   "surface": "component states",
+   "state": "Rectangle tool keyboard-focused: AppKit's focus ring drawn through the button's own rounded mask",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-focus-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-focus-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S28-focus-topbar-tool-light.png"
+  },
+  {
+   "id": "S40",
+   "slug": "tool-hover",
+   "surface": "component states",
+   "state": "Rectangle tool hovered: a label 0.08 fill (0.16 under Increase Contrast); Brush still selected",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-hover-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-hover-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-hover-dark.png"
+  },
+  {
+   "id": "S40",
+   "slug": "tool-hover",
+   "surface": "component states",
+   "state": "Rectangle tool hovered: a label 0.08 fill (0.16 under Increase Contrast); Brush still selected",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-hover-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-hover-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-hover-light.png"
+  },
+  {
+   "id": "S40",
+   "slug": "tool-pressed",
+   "surface": "component states",
+   "state": "Rectangle tool pressed: a label 0.16 fill (0.28 under Increase Contrast) and the glyph drawn at 0.96",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-pressed-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-pressed-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-pressed-dark.png"
+  },
+  {
+   "id": "S40",
+   "slug": "tool-pressed",
+   "surface": "component states",
+   "state": "Rectangle tool pressed: a label 0.16 fill (0.28 under Increase Contrast) and the glyph drawn at 0.96",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-pressed-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-pressed-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-pressed-light.png"
+  },
+  {
+   "id": "S40",
+   "slug": "tool-selected-focus",
+   "surface": "component states",
+   "state": "Brush (selected) keyboard-focused: the ring around the selection fill",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-selected-focus-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-selected-focus-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S28-focus-topbar-tool-dark.png"
+  },
+  {
+   "id": "S40",
+   "slug": "tool-selected-focus",
+   "surface": "component states",
+   "state": "Brush (selected) keyboard-focused: the ring around the selection fill",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-selected-focus-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-selected-focus-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S28-focus-topbar-tool-light.png"
+  },
+  {
+   "id": "S40",
+   "slug": "tool-selected-hover",
+   "surface": "component states",
+   "state": "Brush (selected) hovered: hover does not wash out the selection",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-selected-hover-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-selected-hover-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-hover-dark.png"
+  },
+  {
+   "id": "S40",
+   "slug": "tool-selected-hover",
+   "surface": "component states",
+   "state": "Brush (selected) hovered: hover does not wash out the selection",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-selected-hover-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-selected-hover-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-hover-light.png"
+  },
+  {
+   "id": "S40",
+   "slug": "tool-selected-pressed",
+   "surface": "component states",
+   "state": "Brush (selected) pressed: the selected fill deepens by 0.12",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-selected-pressed-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-selected-pressed-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-pressed-dark.png"
+  },
+  {
+   "id": "S40",
+   "slug": "tool-selected-pressed",
+   "surface": "component states",
+   "state": "Brush (selected) pressed: the selected fill deepens by 0.12",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-selected-pressed-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-selected-pressed-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-pressed-light.png"
+  },
+  {
+   "id": "S40",
+   "slug": "tool-selected-rest",
+   "surface": "component states",
+   "state": "Brush selected (accent 0.20 fill, 1 pt accent border, computed glyph colour; a 2 x 16 pt capsule under Differentiate Without Color); the other nine tools at rest",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-selected-rest-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-selected-rest-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-brush-dark.png"
+  },
+  {
+   "id": "S40",
+   "slug": "tool-selected-rest",
+   "surface": "component states",
+   "state": "Brush selected (accent 0.20 fill, 1 pt accent border, computed glyph colour; a 2 x 16 pt capsule under Differentiate Without Color); the other nine tools at rest",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-selected-rest-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-selected-rest-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-brush-light.png"
+  },
+  {
+   "id": "S40",
+   "slug": "undo-focus",
+   "surface": "component states",
+   "state": "Undo keyboard-focused",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-undo-focus-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-undo-focus-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S28-focus-footer-zoom-dark.png"
+  },
+  {
+   "id": "S40",
+   "slug": "undo-focus",
+   "surface": "component states",
+   "state": "Undo keyboard-focused",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-undo-focus-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-undo-focus-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S28-focus-footer-zoom-light.png"
+  },
+  {
+   "id": "S40",
+   "slug": "undo-hover",
+   "surface": "component states",
+   "state": "Undo hovered: label 0.08 fill",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-undo-hover-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-undo-hover-dark@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-bottombar-dark@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "undo-hover",
+   "surface": "component states",
+   "state": "Undo hovered: label 0.08 fill",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-undo-hover-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-undo-hover-light@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-bottombar-light@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "undo-wipe-disabled",
+   "surface": "component states",
+   "state": "Undo and Wipe disabled: no fill, content at 0.38",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-undo-wipe-disabled-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-undo-wipe-disabled-dark@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-controls-disabled-dark.png"
+  },
+  {
+   "id": "S40",
+   "slug": "undo-wipe-disabled",
+   "surface": "component states",
+   "state": "Undo and Wipe disabled: no fill, content at 0.38",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-undo-wipe-disabled-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-undo-wipe-disabled-light@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-controls-disabled-light.png"
+  },
+  {
+   "id": "S40",
+   "slug": "wipe-pressed",
+   "surface": "component states",
+   "state": "Wipe pressed: label 0.16 fill, glyph at 0.96",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-wipe-pressed-dark@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-wipe-pressed-dark@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-bottombar-dark@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "wipe-pressed",
+   "surface": "component states",
+   "state": "Wipe pressed: label 0.16 fill, glyph at 0.96",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-wipe-pressed-light@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-wipe-pressed-light@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-bottombar-light@da2738d.png"
+  },
+  {
+   "id": "S03",
+   "slug": "bottombar",
+   "surface": "bottom bar",
+   "state": "Undo, Wipe | Zoom, Resize | status | Save, History | PNG|JPG, Drag, Upload",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    120
+   ],
+   "pointSize": [
+    1489,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S03-bottombar-dark-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S03-bottombar-dark-dwc@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-bottombar-dark@da2738d.png"
+  },
+  {
+   "id": "S03",
+   "slug": "bottombar",
+   "surface": "bottom bar",
+   "state": "Undo, Wipe | Zoom, Resize | status | Save, History | PNG|JPG, Drag, Upload",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    120
+   ],
+   "pointSize": [
+    1489,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S03-bottombar-light-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S03-bottombar-light-dwc@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-bottombar-light@da2738d.png"
+  },
+  {
+   "id": "S03",
+   "slug": "topbar",
+   "surface": "top bar",
+   "state": "Hide, Toolbox, Photos | Snap | ten tools | Color, Size, Font; title shows document name",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S03-topbar-dark-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S03-topbar-dark-dwc@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-topbar-dark@da2738d.png"
+  },
+  {
+   "id": "S03",
+   "slug": "topbar",
+   "surface": "top bar",
+   "state": "Hide, Toolbox, Photos | Snap | ten tools | Color, Size, Font; title shows document name",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S03-topbar-light-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S03-topbar-light-dwc@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-topbar-light@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "border-hover",
+   "surface": "component states",
+   "state": "Pointer over the border: the accent outline and the four corner handles",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1084,
+    768
+   ],
+   "pixelSize": [
+    2168,
+    1536
+   ],
+   "pointSize": [
+    1084,
+    768
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S40-border-hover-dark-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    850
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-border-hover-dark-dwc@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-window/S01-editor-empty-dark@7bf20f8.png"
+  },
+  {
+   "id": "S40",
+   "slug": "border-hover",
+   "surface": "component states",
+   "state": "Pointer over the border: the accent outline and the four corner handles",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1084,
+    768
+   ],
+   "pixelSize": [
+    2168,
+    1536
+   ],
+   "pointSize": [
+    1084,
+    768
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S40-border-hover-light-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    850
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-border-hover-light-dwc@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-window/S01-editor-empty-light@7bf20f8.png"
+  },
+  {
+   "id": "S40",
+   "slug": "drag-focus",
+   "surface": "component states",
+   "state": "Drag well keyboard-focused (Space or Return opens the Export panel)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-drag-focus-dark-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-drag-focus-dark-dwc@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S28-focus-footer-upload-dark.png"
+  },
+  {
+   "id": "S40",
+   "slug": "drag-focus",
+   "surface": "component states",
+   "state": "Drag well keyboard-focused (Space or Return opens the Export panel)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-drag-focus-light-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-drag-focus-light-dwc@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S28-focus-footer-upload-light.png"
+  },
+  {
+   "id": "S40",
+   "slug": "size-pill-pressed",
+   "surface": "component states",
+   "state": "Size pill pressed: the cell takes the 0.16 fill and the stroke is drawn 0.96 shorter",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-size-pill-pressed-dark-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-size-pill-pressed-dark-dwc@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-topbar-dark@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "size-pill-pressed",
+   "surface": "component states",
+   "state": "Size pill pressed: the cell takes the 0.16 fill and the stroke is drawn 0.96 shorter",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-size-pill-pressed-light-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-size-pill-pressed-light-dwc@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-topbar-light@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "size-pill-rest",
+   "surface": "component states",
+   "state": "Size pill at rest: the stroke is the current thickness (6.75)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-size-pill-rest-dark-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-size-pill-rest-dark-dwc@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-topbar-dark@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "size-pill-rest",
+   "surface": "component states",
+   "state": "Size pill at rest: the stroke is the current thickness (6.75)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-size-pill-rest-light-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-size-pill-rest-light-dwc@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-topbar-light@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "size-track-pressed",
+   "surface": "component states",
+   "state": "Size popover, knob held: the knob at 1.25 and an accent 0.3 wash over the track",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    2126,
+    1280
+   ],
+   "pointSize": [
+    1063,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S40-size-track-pressed-dark-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    722
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-size-track-pressed-dark-dwc@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S30-size-popover-w980-dark@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "size-track-pressed",
+   "surface": "component states",
+   "state": "Size popover, knob held: the knob at 1.25 and an accent 0.3 wash over the track",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    2126,
+    1280
+   ],
+   "pointSize": [
+    1063,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S40-size-track-pressed-light-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    722
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-size-track-pressed-light-dwc@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S30-size-popover-w980-light@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "snap-hover",
+   "surface": "component states",
+   "state": "Snap hovered: the accent brightened 8 %",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-snap-hover-dark-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-snap-hover-dark-dwc@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-snap-hover-dark.png"
+  },
+  {
+   "id": "S40",
+   "slug": "snap-hover",
+   "surface": "component states",
+   "state": "Snap hovered: the accent brightened 8 %",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-snap-hover-light-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-snap-hover-light-dwc@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-snap-hover-light.png"
+  },
+  {
+   "id": "S40",
+   "slug": "snap-rest",
+   "surface": "component states",
+   "state": "Snap at rest: opaque accent fill, glyph colour computed against it",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-snap-rest-dark-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-snap-rest-dark-dwc@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-topbar-dark@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "snap-rest",
+   "surface": "component states",
+   "state": "Snap at rest: opaque accent fill, glyph colour computed against it",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-snap-rest-light-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-snap-rest-light-dwc@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-topbar-light@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "swatch-states",
+   "surface": "component states",
+   "state": "Colour popover: Red selected (3 pt accent outline and check glyph), Blue hovered (label 0.5 outline), Translucent gray pressed (0.16 fill)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    544,
+    332
+   ],
+   "pointSize": [
+    272,
+    166
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S40-swatch-states-dark-dwc@cc97054.png",
+   "storedPixelSize": [
+    544,
+    332
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S31-color-popover-w980-dark@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "swatch-states",
+   "surface": "component states",
+   "state": "Colour popover: Red selected (3 pt accent outline and check glyph), Blue hovered (label 0.5 outline), Translucent gray pressed (0.16 fill)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    544,
+    332
+   ],
+   "pointSize": [
+    272,
+    166
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S40-swatch-states-light-dwc@cc97054.png",
+   "storedPixelSize": [
+    544,
+    332
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S31-color-popover-w980-light@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "toggle-focus",
+   "surface": "component states",
+   "state": "PNG | JPG keyboard-focused (Left, Right and Space change the format)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-toggle-focus-dark-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-toggle-focus-dark-dwc@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-format-toggle-png-dark@dc1eb26.png"
+  },
+  {
+   "id": "S40",
+   "slug": "toggle-focus",
+   "surface": "component states",
+   "state": "PNG | JPG keyboard-focused (Left, Right and Space change the format)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-toggle-focus-light-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-toggle-focus-light-dwc@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-format-toggle-png-light@dc1eb26.png"
+  },
+  {
+   "id": "S40",
+   "slug": "toggle-jpg",
+   "surface": "component states",
+   "state": "PNG | JPG with JPG selected",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-toggle-jpg-dark-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-toggle-jpg-dark-dwc@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-format-toggle-jpg-dark@dc1eb26.png"
+  },
+  {
+   "id": "S40",
+   "slug": "toggle-jpg",
+   "surface": "component states",
+   "state": "PNG | JPG with JPG selected",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-toggle-jpg-light-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-toggle-jpg-light-dwc@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-format-toggle-jpg-light@dc1eb26.png"
+  },
+  {
+   "id": "S40",
+   "slug": "toggle-png",
+   "surface": "component states",
+   "state": "PNG | JPG with PNG selected: accent 0.20 plate, 1 pt border, bodyStrong text; JPG on its faint plate",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-toggle-png-dark-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-toggle-png-dark-dwc@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-format-toggle-png-dark@dc1eb26.png"
+  },
+  {
+   "id": "S40",
+   "slug": "toggle-png",
+   "surface": "component states",
+   "state": "PNG | JPG with PNG selected: accent 0.20 plate, 1 pt border, bodyStrong text; JPG on its faint plate",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-toggle-png-light-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-toggle-png-light-dwc@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-format-toggle-png-light@dc1eb26.png"
+  },
+  {
+   "id": "S40",
+   "slug": "tool-hover",
+   "surface": "component states",
+   "state": "Rectangle tool hovered: a label 0.08 fill (0.16 under Increase Contrast); Brush still selected",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-hover-dark-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-hover-dark-dwc@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-hover-dark.png"
+  },
+  {
+   "id": "S40",
+   "slug": "tool-hover",
+   "surface": "component states",
+   "state": "Rectangle tool hovered: a label 0.08 fill (0.16 under Increase Contrast); Brush still selected",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-hover-light-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-hover-light-dwc@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-hover-light.png"
+  },
+  {
+   "id": "S40",
+   "slug": "tool-pressed",
+   "surface": "component states",
+   "state": "Rectangle tool pressed: a label 0.16 fill (0.28 under Increase Contrast) and the glyph drawn at 0.96",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-pressed-dark-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-pressed-dark-dwc@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-pressed-dark.png"
+  },
+  {
+   "id": "S40",
+   "slug": "tool-pressed",
+   "surface": "component states",
+   "state": "Rectangle tool pressed: a label 0.16 fill (0.28 under Increase Contrast) and the glyph drawn at 0.96",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-pressed-light-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-pressed-light-dwc@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-pressed-light.png"
+  },
+  {
+   "id": "S40",
+   "slug": "tool-selected-focus",
+   "surface": "component states",
+   "state": "Brush (selected) keyboard-focused: the ring around the selection fill",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-selected-focus-dark-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-selected-focus-dark-dwc@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S28-focus-topbar-tool-dark.png"
+  },
+  {
+   "id": "S40",
+   "slug": "tool-selected-focus",
+   "surface": "component states",
+   "state": "Brush (selected) keyboard-focused: the ring around the selection fill",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-selected-focus-light-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-selected-focus-light-dwc@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S28-focus-topbar-tool-light.png"
+  },
+  {
+   "id": "S40",
+   "slug": "tool-selected-rest",
+   "surface": "component states",
+   "state": "Brush selected (accent 0.20 fill, 1 pt accent border, computed glyph colour; a 2 x 16 pt capsule under Differentiate Without Color); the other nine tools at rest",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-selected-rest-dark-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-selected-rest-dark-dwc@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-brush-dark.png"
+  },
+  {
+   "id": "S40",
+   "slug": "tool-selected-rest",
+   "surface": "component states",
+   "state": "Brush selected (accent 0.20 fill, 1 pt accent border, computed glyph colour; a 2 x 16 pt capsule under Differentiate Without Color); the other nine tools at rest",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-selected-rest-light-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-selected-rest-light-dwc@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-brush-light.png"
+  },
+  {
+   "id": "S40",
+   "slug": "undo-wipe-disabled",
+   "surface": "component states",
+   "state": "Undo and Wipe disabled: no fill, content at 0.38",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-undo-wipe-disabled-dark-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-undo-wipe-disabled-dark-dwc@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-controls-disabled-dark.png"
+  },
+  {
+   "id": "S40",
+   "slug": "undo-wipe-disabled",
+   "surface": "component states",
+   "state": "Undo and Wipe disabled: no fill, content at 0.38",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-undo-wipe-disabled-light-dwc@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-undo-wipe-disabled-light-dwc@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-controls-disabled-light.png"
+  },
+  {
+   "id": "S03",
+   "slug": "bottombar",
+   "surface": "bottom bar",
+   "state": "Undo, Wipe | Zoom, Resize | status | Save, History | PNG|JPG, Drag, Upload",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    120
+   ],
+   "pointSize": [
+    1489,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S03-bottombar-dark-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S03-bottombar-dark-ic@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-bottombar-dark@da2738d.png"
+  },
+  {
+   "id": "S03",
+   "slug": "bottombar",
+   "surface": "bottom bar",
+   "state": "Undo, Wipe | Zoom, Resize | status | Save, History | PNG|JPG, Drag, Upload",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    120
+   ],
+   "pointSize": [
+    1489,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S03-bottombar-light-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S03-bottombar-light-ic@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-bottombar-light@da2738d.png"
+  },
+  {
+   "id": "S03",
+   "slug": "topbar",
+   "surface": "top bar",
+   "state": "Hide, Toolbox, Photos | Snap | ten tools | Color, Size, Font; title shows document name",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S03-topbar-dark-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S03-topbar-dark-ic@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-topbar-dark@da2738d.png"
+  },
+  {
+   "id": "S03",
+   "slug": "topbar",
+   "surface": "top bar",
+   "state": "Hide, Toolbox, Photos | Snap | ten tools | Color, Size, Font; title shows document name",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1489,
+    1179
+   ],
+   "pixelSize": [
+    2978,
+    172
+   ],
+   "pointSize": [
+    1489,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S03-topbar-light-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S03-topbar-light-ic@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-topbar-light@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "border-hover",
+   "surface": "component states",
+   "state": "Pointer over the border: the accent outline and the four corner handles",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1084,
+    768
+   ],
+   "pixelSize": [
+    2168,
+    1536
+   ],
+   "pointSize": [
+    1084,
+    768
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S40-border-hover-dark-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    850
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-border-hover-dark-ic@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-window/S01-editor-empty-dark@7bf20f8.png"
+  },
+  {
+   "id": "S40",
+   "slug": "border-hover",
+   "surface": "component states",
+   "state": "Pointer over the border: the accent outline and the four corner handles",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1084,
+    768
+   ],
+   "pixelSize": [
+    2168,
+    1536
+   ],
+   "pointSize": [
+    1084,
+    768
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S40-border-hover-light-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    850
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-border-hover-light-ic@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-window/S01-editor-empty-light@7bf20f8.png"
+  },
+  {
+   "id": "S40",
+   "slug": "drag-focus",
+   "surface": "component states",
+   "state": "Drag well keyboard-focused (Space or Return opens the Export panel)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-drag-focus-dark-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-drag-focus-dark-ic@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S28-focus-footer-upload-dark.png"
+  },
+  {
+   "id": "S40",
+   "slug": "drag-focus",
+   "surface": "component states",
+   "state": "Drag well keyboard-focused (Space or Return opens the Export panel)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-drag-focus-light-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-drag-focus-light-ic@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S28-focus-footer-upload-light.png"
+  },
+  {
+   "id": "S40",
+   "slug": "size-pill-pressed",
+   "surface": "component states",
+   "state": "Size pill pressed: the cell takes the 0.16 fill and the stroke is drawn 0.96 shorter",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-size-pill-pressed-dark-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-size-pill-pressed-dark-ic@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-topbar-dark@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "size-pill-pressed",
+   "surface": "component states",
+   "state": "Size pill pressed: the cell takes the 0.16 fill and the stroke is drawn 0.96 shorter",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-size-pill-pressed-light-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-size-pill-pressed-light-ic@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-topbar-light@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "size-pill-rest",
+   "surface": "component states",
+   "state": "Size pill at rest: the stroke is the current thickness (6.75)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-size-pill-rest-dark-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-size-pill-rest-dark-ic@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-topbar-dark@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "size-pill-rest",
+   "surface": "component states",
+   "state": "Size pill at rest: the stroke is the current thickness (6.75)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-size-pill-rest-light-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-size-pill-rest-light-ic@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-topbar-light@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "size-track-pressed",
+   "surface": "component states",
+   "state": "Size popover, knob held: the knob at 1.25 and an accent 0.3 wash over the track",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    2126,
+    1280
+   ],
+   "pointSize": [
+    1063,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S40-size-track-pressed-dark-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    722
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-size-track-pressed-dark-ic@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S30-size-popover-w980-dark@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "size-track-pressed",
+   "surface": "component states",
+   "state": "Size popover, knob held: the knob at 1.25 and an accent 0.3 wash over the track",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    2126,
+    1280
+   ],
+   "pointSize": [
+    1063,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S40-size-track-pressed-light-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    722
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-size-track-pressed-light-ic@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S30-size-popover-w980-light@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "snap-hover",
+   "surface": "component states",
+   "state": "Snap hovered: the accent brightened 8 %",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-snap-hover-dark-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-snap-hover-dark-ic@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-snap-hover-dark.png"
+  },
+  {
+   "id": "S40",
+   "slug": "snap-hover",
+   "surface": "component states",
+   "state": "Snap hovered: the accent brightened 8 %",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-snap-hover-light-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-snap-hover-light-ic@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-snap-hover-light.png"
+  },
+  {
+   "id": "S40",
+   "slug": "snap-rest",
+   "surface": "component states",
+   "state": "Snap at rest: opaque accent fill, glyph colour computed against it",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-snap-rest-dark-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-snap-rest-dark-ic@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-topbar-dark@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "snap-rest",
+   "surface": "component states",
+   "state": "Snap at rest: opaque accent fill, glyph colour computed against it",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-snap-rest-light-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-snap-rest-light-ic@cc97054.json",
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S03-topbar-light@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "swatch-states",
+   "surface": "component states",
+   "state": "Colour popover: Red selected (3 pt accent outline and check glyph), Blue hovered (label 0.5 outline), Translucent gray pressed (0.16 fill)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    544,
+    332
+   ],
+   "pointSize": [
+    272,
+    166
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S40-swatch-states-dark-ic@cc97054.png",
+   "storedPixelSize": [
+    544,
+    332
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S31-color-popover-w980-dark@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "swatch-states",
+   "surface": "component states",
+   "state": "Colour popover: Red selected (3 pt accent outline and check glyph), Blue hovered (label 0.5 outline), Translucent gray pressed (0.16 fill)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    544,
+    332
+   ],
+   "pointSize": [
+    272,
+    166
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S40-swatch-states-light-ic@cc97054.png",
+   "storedPixelSize": [
+    544,
+    332
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/m4-glass/S31-color-popover-w980-light@da2738d.png"
+  },
+  {
+   "id": "S40",
+   "slug": "toggle-focus",
+   "surface": "component states",
+   "state": "PNG | JPG keyboard-focused (Left, Right and Space change the format)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-toggle-focus-dark-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-toggle-focus-dark-ic@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-format-toggle-png-dark@dc1eb26.png"
+  },
+  {
+   "id": "S40",
+   "slug": "toggle-focus",
+   "surface": "component states",
+   "state": "PNG | JPG keyboard-focused (Left, Right and Space change the format)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-toggle-focus-light-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-toggle-focus-light-ic@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-format-toggle-png-light@dc1eb26.png"
+  },
+  {
+   "id": "S40",
+   "slug": "toggle-jpg",
+   "surface": "component states",
+   "state": "PNG | JPG with JPG selected",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-toggle-jpg-dark-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-toggle-jpg-dark-ic@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-format-toggle-jpg-dark@dc1eb26.png"
+  },
+  {
+   "id": "S40",
+   "slug": "toggle-jpg",
+   "surface": "component states",
+   "state": "PNG | JPG with JPG selected",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-toggle-jpg-light-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-toggle-jpg-light-ic@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-format-toggle-jpg-light@dc1eb26.png"
+  },
+  {
+   "id": "S40",
+   "slug": "toggle-png",
+   "surface": "component states",
+   "state": "PNG | JPG with PNG selected: accent 0.20 plate, 1 pt border, bodyStrong text; JPG on its faint plate",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-toggle-png-dark-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-toggle-png-dark-ic@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-format-toggle-png-dark@dc1eb26.png"
+  },
+  {
+   "id": "S40",
+   "slug": "toggle-png",
+   "surface": "component states",
+   "state": "PNG | JPG with PNG selected: accent 0.20 plate, 1 pt border, bodyStrong text; JPG on its faint plate",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-toggle-png-light-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-toggle-png-light-ic@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S09-format-toggle-png-light@dc1eb26.png"
+  },
+  {
+   "id": "S40",
+   "slug": "tool-hover",
+   "surface": "component states",
+   "state": "Rectangle tool hovered: a label 0.08 fill (0.16 under Increase Contrast); Brush still selected",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-hover-dark-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-hover-dark-ic@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-hover-dark.png"
+  },
+  {
+   "id": "S40",
+   "slug": "tool-hover",
+   "surface": "component states",
+   "state": "Rectangle tool hovered: a label 0.08 fill (0.16 under Increase Contrast); Brush still selected",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-hover-light-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-hover-light-ic@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-hover-light.png"
+  },
+  {
+   "id": "S40",
+   "slug": "tool-pressed",
+   "surface": "component states",
+   "state": "Rectangle tool pressed: a label 0.16 fill (0.28 under Increase Contrast) and the glyph drawn at 0.96",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-pressed-dark-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-pressed-dark-ic@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-pressed-dark.png"
+  },
+  {
+   "id": "S40",
+   "slug": "tool-pressed",
+   "surface": "component states",
+   "state": "Rectangle tool pressed: a label 0.16 fill (0.28 under Increase Contrast) and the glyph drawn at 0.96",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-pressed-light-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-pressed-light-ic@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-pressed-light.png"
+  },
+  {
+   "id": "S40",
+   "slug": "tool-selected-focus",
+   "surface": "component states",
+   "state": "Brush (selected) keyboard-focused: the ring around the selection fill",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-selected-focus-dark-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-selected-focus-dark-ic@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S28-focus-topbar-tool-dark.png"
+  },
+  {
+   "id": "S40",
+   "slug": "tool-selected-focus",
+   "surface": "component states",
+   "state": "Brush (selected) keyboard-focused: the ring around the selection fill",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-selected-focus-light-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-selected-focus-light-ic@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S28-focus-topbar-tool-light.png"
+  },
+  {
+   "id": "S40",
+   "slug": "tool-selected-rest",
+   "surface": "component states",
+   "state": "Brush selected (accent 0.20 fill, 1 pt accent border, computed glyph colour; a 2 x 16 pt capsule under Differentiate Without Color); the other nine tools at rest",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-selected-rest-dark-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-selected-rest-dark-ic@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-brush-dark.png"
+  },
+  {
+   "id": "S40",
+   "slug": "tool-selected-rest",
+   "surface": "component states",
+   "state": "Brush selected (accent 0.20 fill, 1 pt accent border, computed glyph colour; a 2 x 16 pt capsule under Differentiate Without Color); the other nine tools at rest",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    172
+   ],
+   "pointSize": [
+    980,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-tool-selected-rest-light-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    105
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-tool-selected-rest-light-ic@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-tool-brush-light.png"
+  },
+  {
+   "id": "S40",
+   "slug": "undo-wipe-disabled",
+   "surface": "component states",
+   "state": "Undo and Wipe disabled: no fill, content at 0.38",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-undo-wipe-disabled-dark-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-undo-wipe-disabled-dark-ic@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-controls-disabled-dark.png"
+  },
+  {
+   "id": "S40",
+   "slug": "undo-wipe-disabled",
+   "surface": "component states",
+   "state": "Undo and Wipe disabled: no fill, content at 0.38",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cc97054",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S40-undo-wipe-disabled-light-ic@cc97054.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S40-undo-wipe-disabled-light-ic@cc97054.json",
+   "before": "docs/design/evidence/2026-10-09/S04-controls-disabled-light.png"
+  }
+ ]
+}

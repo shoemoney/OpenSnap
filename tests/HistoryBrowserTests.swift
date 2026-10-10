@@ -434,6 +434,32 @@ struct HistoryBrowserTests {
                     }
                 }
             }),
+            ("A tile fills on hover with state.hover; a selected tile keeps its stronger fill and its badge", {
+                try browser { browser,_ in
+                    let a = item("Hovered"); browser.update(items:[a]); laidOut(browser,width:1000,height:720)
+                    let grid = try grid(browser)
+                    let cell = browser.collectionView(grid,itemForRepresentedObjectAt:IndexPath(item:0,section:0))
+                    guard let tile = cell.view as? HistoryTileView else { throw Failure("The tile is not a HistoryTileView") }
+                    tile.appearance = NSAppearance(named:.aqua)
+                    @MainActor func fillAlpha() -> CGFloat? { tile.updateLayer(); return tile.layer?.backgroundColor.flatMap { NSColor(cgColor:$0)?.alphaComponent } }
+                    @MainActor func fillColor() -> NSColor? { tile.updateLayer(); return tile.layer?.backgroundColor.flatMap { NSColor(cgColor:$0)?.usingColorSpace(.sRGB) } }
+                    try expect(!tile.isHovered && (fillAlpha() ?? 0) < 0.001,"A resting tile has no fill")
+                    tile.updateTrackingAreas()
+                    try expect(tile.trackingAreas.contains { $0.options.contains(.mouseEnteredAndExited) && $0.options.contains(.inVisibleRect) },"The tile tracks the pointer over its visible rect")
+                    tile.mouseEntered(with:NSEvent.mouseEvent(with:.mouseMoved,location:.zero,modifierFlags:[],timestamp:0,windowNumber:0,context:nil,eventNumber:0,clickCount:0,pressure:0)!)
+                    try expect(tile.isHovered && abs((fillAlpha() ?? 0) - 0.08) < 0.004,"Hover is the 0.08 label fill: \(fillAlpha() ?? -1)")
+                    try expect(tile.layer?.borderWidth == 0 && tile.checkBadge?.isHidden == true,"Hover adds no border and no badge")
+                    cell.isSelected = true
+                    let accent = DesignTokens.Palette.resolve(DesignTokens.Palette.accent,for:tile.effectiveAppearance)
+                    try expect(abs((fillAlpha() ?? 0) - 0.20) < 0.004 && abs((fillColor()?.blueComponent ?? 0) - accent.blueComponent) < 0.02,"A hovered selected tile keeps the 0.20 accent fill, not the hover wash")
+                    try expect(tile.checkBadge?.isHidden == false && tile.layer?.borderWidth == 2,"The check badge and border stay")
+                    cell.isSelected = false
+                    tile.mouseExited(with:NSEvent.mouseEvent(with:.mouseMoved,location:.zero,modifierFlags:[],timestamp:0,windowNumber:0,context:nil,eventNumber:0,clickCount:0,pressure:0)!)
+                    try expect(!tile.isHovered && (fillAlpha() ?? 0) < 0.001,"Leaving clears the fill")
+                    tile.setHovered(true); tile.viewDidHide()
+                    try expect(!tile.isHovered,"Hiding clears hover")
+                }
+            }),
             ("Empty state is centred and its hint follows the live Save to History shortcut", {
                 try browser { browser,_ in
                     laidOut(browser,width:1000,height:720)

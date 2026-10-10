@@ -6,6 +6,14 @@
 #if CANVAS_BORDER_TESTS
 import AppKit
 
+private extension Optional {
+    func unwrap(_ message: String) throws -> Wrapped {
+        guard let value = self else { throw CanvasBorderTestsFailure(description: message) }
+        return value
+    }
+}
+private struct CanvasBorderTestsFailure: Error, CustomStringConvertible { let description: String }
+
 @main @MainActor
 private enum CanvasBorderTests {
     struct Failure: Error, CustomStringConvertible { let description: String }
@@ -343,6 +351,72 @@ private enum CanvasBorderTests {
                    "Escape before any drag cancels once without a commit")
     }
 
+    /// The pixels the view draws, as an RGBA bitmap at the view's own scale.
+    private static func raster(_ border: CanvasBorderView) throws -> NSBitmapImageRep {
+        let rep = try border.bitmapImageRepForCachingDisplay(in: border.bounds).unwrap("bitmap")
+        border.cacheDisplay(in: border.bounds, to: rep)
+        return rep
+    }
+
+    /// OSN-044: a separator hairline at rest, the accent outline and the four handles only on hover or for the crop tool.
+    private static func restAndRevealedDrawing() throws {
+        let f = Fixture()
+        f.border.appearance = NSAppearance(named: .aqua)
+        let b = CanvasBorderView.border
+        func scale(_ rep: NSBitmapImageRep) -> CGFloat { CGFloat(rep.pixelsWide) / f.border.bounds.width }
+        func pixel(_ rep: NSBitmapImageRep, _ x: CGFloat, _ y: CGFloat) -> NSColor? {
+            rep.colorAt(x: Int(x * scale(rep)), y: Int(y * scale(rep)))?.usingColorSpace(.sRGB)
+        }
+        // The border is flipped, so y counts from the top. The outline is inset by half the border; the left edge sits at x = 4.
+        let edge = CGPoint(x: b / 2 - 0.25, y: f.border.bounds.height / 2), corner = CGPoint(x: 1.5, y: 1.5)
+        try expect(!f.border.revealsHandles && !f.border.showsHandles && !f.border.isHovered, "A new border is at rest")
+        let rest = try raster(f.border)
+        let restEdge = try pixel(rest, edge.x, edge.y).unwrap("rest edge pixel"), restCorner = try pixel(rest, corner.x, corner.y).unwrap("rest corner pixel")
+        try expect(restEdge.alphaComponent > 0.03 && restEdge.alphaComponent < 0.5, "At rest the outline is a faint hairline, not invisible and not bold (alpha \(restEdge.alphaComponent))")
+        try expect(restCorner.alphaComponent < 0.01, "At rest no handle is drawn in the corner (alpha \(restCorner.alphaComponent))")
+        // No accent anywhere at rest: the hairline is the separator, a neutral.
+        let separator = DesignTokens.Palette.resolve(DesignTokens.Palette.separator, for: f.border.effectiveAppearance)
+        try expect(abs(restEdge.redComponent - separator.redComponent) < 0.08 && abs(restEdge.blueComponent - separator.blueComponent) < 0.08, "The rest hairline is the separator colour, not the accent")
+        var coloured = 0
+        for x in 0..<rest.pixelsWide { for y in 0..<rest.pixelsHigh {
+            guard let color = rest.colorAt(x: x, y: y)?.usingColorSpace(.sRGB), color.alphaComponent > 0.01 else { continue }
+            if abs(color.redComponent - color.blueComponent) > 0.15 { coloured += 1 }
+        } }
+        try expect(coloured == 0, "No pixel at rest is tinted: \(coloured) coloured pixels")
+
+        f.border.setHovered(true)
+        try expect(f.border.revealsHandles && f.border.isHovered, "Hover reveals the handles")
+        let hover = try raster(f.border)
+        let hoverEdge = try pixel(hover, edge.x, edge.y).unwrap("hover edge pixel"), hoverCorner = try pixel(hover, corner.x, corner.y).unwrap("hover corner pixel")
+        try expect(hoverEdge.alphaComponent > restEdge.alphaComponent + 0.1, "The revealed outline is stronger than the hairline (\(hoverEdge.alphaComponent) vs \(restEdge.alphaComponent))")
+        try expect(hoverCorner.alphaComponent > 0.9, "The corner handle is drawn when revealed (alpha \(hoverCorner.alphaComponent))")
+        f.border.setHovered(false)
+        try expect(!f.border.revealsHandles, "Leaving hides them again")
+
+        f.border.showsHandles = true
+        let crop = try raster(f.border)
+        let cropCorner = try pixel(crop, corner.x, corner.y).unwrap("crop corner")
+        try expect(cropCorner.alphaComponent > 0.9, "The crop tool keeps the handles showing without hover")
+        f.border.showsHandles = false
+        let back = try raster(f.border)
+        let backCorner = try pixel(back, corner.x, corner.y).unwrap("back corner")
+        try expect(backCorner.alphaComponent < 0.01, "And clears them again")
+
+        // Hover follows the pointer over a border strip, not over the canvas centre; the gestures are untouched by it.
+        let strip = try mouse(.mouseMoved, location: f.border.convert(CGPoint(x: 2, y: 80), to: nil), windowNumber: 0)
+        let centre = try mouse(.mouseMoved, location: f.border.convert(CGPoint(x: 120, y: 80), to: nil), windowNumber: 0)
+        f.border.mouseMoved(with: strip)
+        try expect(f.border.isHovered, "The pointer over an edge hovers the border")
+        f.border.mouseMoved(with: centre)
+        try expect(!f.border.isHovered, "The pointer over the canvas does not")
+        f.border.mouseEntered(with: strip)
+        try expect(f.border.isHovered, "Entering at an edge hovers")
+        f.border.mouseExited(with: strip)
+        try expect(!f.border.isHovered, "Exiting clears hover")
+        f.border.updateTrackingAreas()
+        try expect(f.border.trackingAreas.contains { $0.options.contains(.mouseMoved) && $0.options.contains(.inVisibleRect) }, "The border tracks the pointer over its whole visible rect")
+    }
+
     static func main() throws {
         try hitTesting()
         try beginAndCommit()
@@ -350,6 +424,7 @@ private enum CanvasBorderTests {
         try screenDeltasAndDynamicFlags()
         try windowMovesDuringBegin()
         try escapeCancellation()
+        try restAndRevealedDrawing()
         print("CanvasBorderTests: \(checks) checks passed (internal events; hidden window; no desktop input)")
     }
 }

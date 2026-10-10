@@ -28,6 +28,20 @@ def before_stem(c):
                ("S39", "titlebar-crop-w980"): "S01-editor-empty", ("S39", "titlebar-crop-w1280"): "S01-editor-empty"}
     if (i, slug) in special:
         return special[(i, slug)]
+    if i == "S40":
+        # OSN-044: each state capture is compared with the closest pre-change capture of the same control.
+        s40 = {"tool-selected-rest": "S04-tool-brush", "tool-hover": "S04-tool-hover", "tool-pressed": "S04-tool-pressed", "tool-disabled": "S04-controls-disabled",
+               "tool-focus": "S28-focus-topbar-tool", "tool-selected-focus": "S28-focus-topbar-tool", "tool-selected-hover": "S04-tool-hover", "tool-selected-pressed": "S04-tool-pressed",
+               "snap-rest": "S03-topbar", "snap-hover": "S04-snap-hover", "snap-pressed": "S04-snap-hover", "snap-disabled": "S04-controls-disabled", "snap-focus": "S28-focus-topbar-snap",
+               "size-pill-rest": "S03-topbar", "size-pill-hover": "S03-topbar", "size-pill-pressed": "S03-topbar", "size-pill-disabled": "S04-controls-disabled", "size-pill-focus": "S03-topbar",
+               "size-track-hover": "S30-size-popover-w980", "size-track-pressed": "S30-size-popover-w980", "size-preset-hover": "S30-size-popover-w980",
+               "swatch-states": "S31-color-popover-w980", "undo-hover": "S03-bottombar", "wipe-pressed": "S03-bottombar", "undo-wipe-disabled": "S04-controls-disabled",
+               "undo-focus": "S28-focus-footer-zoom", "drag-rest": "S03-bottombar", "drag-hover": "S03-bottombar", "drag-pressed": "S03-bottombar", "drag-focus": "S28-focus-footer-upload",
+               "toggle-png": "S09-format-toggle-png", "toggle-jpg": "S09-format-toggle-jpg", "toggle-hover": "S09-format-toggle-png", "toggle-pressed": "S09-format-toggle-png",
+               "toggle-focus": "S09-format-toggle-png", "toggle-disabled": "S09-format-toggle-png", "border-rest": "S01-editor-empty", "border-hover": "S01-editor-empty", "border-crop-tool": "S01-editor-empty"}
+        return s40.get(slug)
+    if (i, slug) == ("S20", "history-tile-hover"):
+        return "S20-history-selected"
     if i in ("S13", "S14", "S29"):
         return f"{i}-{slug}"  # capture-surface runs keep the same slug; a missing twin just prints a dash
     if i == "S11E":
@@ -95,9 +109,10 @@ def main():
         if layout_src.is_file():
             layout_rel = f"layout/{stem}@{args.sha}.json"
             (out / layout_rel).write_text(json.dumps(json.loads(layout_src.read_text()), separators=(",", ":"), ensure_ascii=False))
-        bs = before_stem(c)
+        # The mapped twin first, then the same id and slug: later runs keep the slug, so an earlier folder may hold exactly that capture.
         before_rel = None
-        if bs:
+        stems = [x for x in (before_stem(c), f"{c['id']}-{c['slug']}") if x]
+        for bs in stems:
             # Older evidence folders hold some twins without the @sha suffix.
             cand = next((p for p in (before / f"{bs}-{c['appearance']}@{args.before_sha}.png", before / f"{bs}-{c['appearance']}.png") if p.is_file()), None)
             for extra in args.before_also:
@@ -106,6 +121,7 @@ def main():
                 cand = next((p for p in sorted(d.glob(f"{bs}-{c['appearance']}@*.png")) + [d / f"{bs}-{c['appearance']}.png"] if p.is_file()), None)
             if cand:
                 before_rel = str(cand.relative_to(REPO)) if cand.is_absolute() and str(cand).startswith(str(REPO)) else str(cand)
+                break
         entry = {k: c[k] for k in ("id", "slug", "surface", "state", "appearance", "iconMode", "windowSize", "pixelSize", "pointSize", "scale", "sourceSha", "method")}
         entry.update({"file": dst.name, "storedPixelSize": stored, "downscaled": stored != c["pixelSize"], "layout": layout_rel, "before": before_rel})
         packed.append(entry)

@@ -73,7 +73,7 @@ BUNDLE=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$(dirname "$0")
 printf 'native startup, .opensnap editable save/load, PNG export succeeded' > "$E/smoke-result.txt"
 printf '{"format": "com.shoemoney.opensnap.document"}' > "$E/smoke.opensnap"
 printf '\\211PNG\\r\\n\\032\\n0000' > "$E/smoke.png"
-printf '{"modernChrome": true, "toolButtonClass": "GlassChromeButton", "glassSurfaces": 7}' > "$E/smoke-appearance.json"
+printf '{"modernChrome": true, "toolButtonClass": "CommandButton", "glassSurfaces": 7}' > "$E/smoke-appearance.json"
 TAMPER="$(dirname "$0")/../Resources/tamper.txt"
 if [ -f "$TAMPER" ]; then while IFS= read -r target; do printf 'tampered' >> "$target" 2>/dev/null || true; done < "$TAMPER"; fi
 """)

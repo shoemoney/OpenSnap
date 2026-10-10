@@ -41,8 +41,147 @@ extension AppSafetyTests {
             ("OSN-041: controls are 20 pt body text; only the status line is the 18 pt caption", modernBodyType),
             ("The chrome's tooltips are app-owned at 20 pt: none left on the system, VoiceOver keeps the words, dynamic text stays live", modernAppToolTips),
             ("The two bars render in light and dark, normal and Frame mode, with the Size popover, and the bitmaps land in the evidence folder", modernLayoutBitmaps),
-            ("Modern footer is a [PNG | JPG] toggle: PNG on a fresh install, JPG encodes drag, export and upload at 0.75, and a stored JPEG row reads as JPG", modernFormatToggle)
+            ("Modern footer is a [PNG | JPG] toggle: PNG on a fresh install, JPG encodes drag, export and upload at 0.75, and a stored JPEG row reads as JPG", modernFormatToggle),
+            ("OSN-044: the drag well is a keyboard-operable button: it takes focus, Space and Return open the Export panel, VoiceOver presses it, hover and press change its cursor and cell", modernDragWellKeyboard),
+            ("OSN-044: the PNG | JPG toggle takes Left, Right and Space and a click through changeDragOptions and stores the same format as before", modernFormatToggleInput),
+            ("OSN-044: the canvas border is a hairline at rest and shows its handles on hover or while the crop tool is chosen", modernBorderHandlesFollowTool),
+            ("OSN-044: Differentiate Without Color and Increase Contrast reach the real tool buttons, the toggle and the Snap button", modernStateOptionsReachControls)
         ]
+    }
+
+    private static func keyDown(_ code: UInt16, in app: AppDelegate) throws -> NSEvent {
+        try (NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0, windowNumber: app.window.windowNumber, context: nil,
+                              characters: "", charactersIgnoringModifiers: "", isARepeat: false, keyCode: code)).unwrap("key event")
+    }
+
+    private static func modernDragWellKeyboard() throws {
+        let (fixture, _) = try modernFixture()
+        let app = fixture.app
+        let drag = try (app.dragExportView).unwrap("drag well")
+        try expect(drag.acceptsFirstResponder && drag.isAccessibilityElement() && drag.accessibilityRole() == .button && drag.accessibilityLabel() == DragExportView.accessibilityName
+                   && DragExportView.accessibilityName == "Drag image to another app", "The drag well is a button named for what it does")
+        try expect(app.window.makeFirstResponder(drag) && app.window.firstResponder === drag, "The drag well takes keyboard focus")
+        try expect(drag.focusRingType == .exterior && !drag.focusRingMaskBounds.isEmpty, "It draws a focus ring through its mask")
+        drag.updateTrackingAreas()
+        try expect(drag.trackingAreas.contains { $0.options.contains(.mouseEnteredAndExited) && $0.options.contains(.inVisibleRect) }, "It tracks the pointer over its visible rect")
+
+        // The real wiring: Space and Return reach the Export panel; the fake panel consumes the one answer queued for it.
+        AppSafetyFilePanel.answers = [.init(response: .cancel), .init(response: .cancel), .init(response: .cancel)]
+        try expect(drag.onActivate != nil, "The app wires the drag well to the Export panel")
+        drag.keyDown(with: try keyDown(49, in: app))
+        try expect(AppSafetyFilePanel.answers.count == 2, "Space opens the Export panel")
+        drag.keyDown(with: try keyDown(36, in: app))
+        try expect(AppSafetyFilePanel.answers.count == 1, "Return opens the Export panel")
+        try expect(drag.accessibilityPerformPress() && AppSafetyFilePanel.answers.isEmpty, "VoiceOver's press opens the Export panel")
+        AppSafetyFilePanel.answers = [.init(response: .cancel)]
+        app.frameCaptureInProgress = true
+        drag.keyDown(with: try keyDown(49, in: app))
+        app.frameCaptureInProgress = false
+        try expect(AppSafetyFilePanel.answers.count == 1, "Space does nothing while a Frame capture is running")
+        AppSafetyFilePanel.answers = []
+
+        // The seam, so Space, Return and keypad Enter are each exactly one press and other keys are not.
+        var presses = 0
+        let original = drag.onActivate
+        drag.onActivate = { presses += 1 }
+        for code: UInt16 in [49, 36, 76] { drag.keyDown(with: try keyDown(code, in: app)) }
+        try expect(presses == 3, "Space, Return and Enter each press once (\(presses))")
+        drag.keyDown(with: try keyDown(0, in: app))
+        try expect(presses == 3 && drag.accessibilityPerformPress() && presses == 4, "Other keys do nothing; the assistive press runs the same action")
+        drag.onActivate = nil
+        try expect(!drag.accessibilityPerformPress(), "With nothing wired the press reports failure")
+        drag.onActivate = original
+
+        // Hover and press: open hand, closed hand, and the cell behind the well fills for the press.
+        let cell = try (drag.superview as? ChromeFillCell).unwrap("the well's cell")
+        try expect(drag.wellCursor === NSCursor.openHand && !cell.plate.isPressed, "At rest the pointer is an open hand")
+        let down = try (NSEvent.mouseEvent(with: .leftMouseDown, location: .zero, modifierFlags: [], timestamp: 0, windowNumber: app.window.windowNumber, context: nil, eventNumber: 1, clickCount: 1, pressure: 1)).unwrap("mouse down")
+        drag.mouseEntered(with: down)
+        try expect(drag.isHovered, "Hover is tracked by the well")
+        drag.mouseExited(with: down)
+        try expect(!drag.isHovered, "And cleared on exit")
+        drag.mouseDown(with: down)
+        try expect(drag.isPressed && drag.wellCursor === NSCursor.closedHand && cell.plate.isPressed && abs((cell.plate.style.fill?.alphaComponent ?? 0) - 0.16) < 0.004, "Held, the pointer is a closed hand and the cell shows the pressed fill")
+        drag.mouseUp(with: down)
+        try expect(!drag.isPressed && drag.wellCursor === NSCursor.openHand && !cell.plate.isPressed, "Released, it is open again")
+    }
+
+    private static func modernFormatToggleInput() throws {
+        let defaults = UserDefaults.standard, key = FormatToggle.defaultsKey
+        let saved = defaults.object(forKey: key)
+        defer { if let saved { defaults.set(saved, forKey: key) } else { defaults.removeObject(forKey: key) } }
+        defaults.removeObject(forKey: key)
+        let (fixture, _) = try modernFixture()
+        let app = fixture.app, toggle = app.dragFormatToggle
+        try expect(toggle.target === app && toggle.action == #selector(AppDelegate.changeDragOptions(_:)), "The toggle still routes to changeDragOptions")
+        try expect(app.window.makeFirstResponder(toggle) && app.window.firstResponder === toggle, "The toggle takes keyboard focus")
+        try expect(toggle.selectedSegment == 0 && app.dragFormat == "png" && app.dragQuality == 1.0, "PNG is the default and keeps transparency (quality 1)")
+        toggle.keyDown(with: try keyDown(124, in: app))
+        try expect(toggle.selectedSegment == 1 && app.dragFormat == "jpeg" && app.dragQuality == 0.75 && defaults.integer(forKey: key) == FormatToggle.jpgStoredChoice, "Right chooses JPG at 0.75 and stores a JPEG row")
+        toggle.keyDown(with: try keyDown(123, in: app))
+        try expect(toggle.selectedSegment == 0 && app.dragFormat == "png" && defaults.integer(forKey: key) == 0, "Left chooses PNG and stores row 0")
+        toggle.keyDown(with: try keyDown(49, in: app))
+        try expect(app.dragFormat == "jpeg" && defaults.integer(forKey: key) == FormatToggle.jpgStoredChoice, "Space switches to JPG")
+        toggle.keyDown(with: try keyDown(49, in: app))
+        try expect(app.dragFormat == "png", "Space switches back")
+        func click(_ segment: Int) throws {
+            let point = toggle.convert(NSPoint(x: toggle.segmentRect(segment).midX, y: toggle.bounds.midY), to: nil)
+            for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
+                let event = try (NSEvent.mouseEvent(with: type, location: point, modifierFlags: [], timestamp: 0, windowNumber: app.window.windowNumber, context: nil, eventNumber: 1, clickCount: 1, pressure: 1)).unwrap("click")
+                type == .leftMouseDown ? toggle.mouseDown(with: event) : toggle.mouseUp(with: event)
+            }
+        }
+        try click(1)
+        try expect(toggle.selectedSegment == 1 && app.dragFormat == "jpeg" && defaults.integer(forKey: key) == FormatToggle.jpgStoredChoice, "A click on JPG chooses it")
+        try click(0)
+        try expect(toggle.selectedSegment == 0 && app.dragFormat == "png", "A click on PNG chooses it")
+        // A finer stored JPEG row is kept when the segment is already JPG.
+        defaults.set(4, forKey: key)
+        toggle.selectedSegment = 1
+        toggle.keyDown(with: try keyDown(123, in: app)); toggle.keyDown(with: try keyDown(124, in: app))
+        try expect(defaults.integer(forKey: key) == FormatToggle.jpgStoredChoice, "Going PNG then JPG stores the standard JPEG row")
+        // The footer must not grow: the toggle is narrower than the capsule it replaces.
+        try expect(toggle.fittingSize.width <= 149 && toggle.fittingSize.height == 36, "The toggle is no wider than the 149 pt system capsule (\(toggle.fittingSize))")
+    }
+
+    private static func modernBorderHandlesFollowTool() throws {
+        let (fixture, chrome) = try modernFixture()
+        let app = fixture.app, border = app.canvasBorder
+        app.setTool(.arrow)
+        try expect(!border.showsHandles && !border.revealsHandles, "At rest with the arrow tool the border is a hairline")
+        try (chrome.toolButtons["crop"]).unwrap("crop tool").performClick(nil)
+        try expect(app.canvas.tool == .crop && border.showsHandles && border.revealsHandles, "Choosing the crop tool shows the handles")
+        app.setTool(.brush)
+        try expect(!border.showsHandles && !border.revealsHandles, "Leaving the crop tool hides them")
+        app.canvas.tool = .crop
+        try expect(border.showsHandles, "A tool change that does not come from the toolbar (Tab) counts too")
+        app.canvas.tool = .arrow
+        try expect(!border.showsHandles, "And back")
+        border.setHovered(true)
+        try expect(border.revealsHandles && !border.showsHandles, "Hovering the border reveals the handles without the crop tool")
+        border.setHovered(false)
+        try expect(!border.revealsHandles, "Moving away hides them")
+    }
+
+    private static func modernStateOptionsReachControls() throws {
+        let (fixture, chrome) = try modernFixture()
+        let app = fixture.app
+        let buttons = collect(CommandButton.self, in: app.window.contentView!)
+        for button in buttons { button.appearance = NSAppearance(named: .aqua) }
+        app.dragFormatToggle.appearance = NSAppearance(named: .aqua)
+        app.setTool(.brush)
+        let brush = try (app.toolButtons[.brush] as? CommandButton).unwrap("brush")
+        try expect(!brush.showsIndicator && abs((app.dragFormatToggle.style(ofSegment: 0).fill?.alphaComponent ?? 0) - 0.20) < 0.004, "Without options: no capsule, a 0.20 toggle fill")
+        DisplayOptions.override = DisplayOptions(increaseContrast: true, differentiateWithoutColor: true)
+        defer { DisplayOptions.override = nil }
+        NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
+        try expect(brush.showsIndicator && brush.indicatorLayer.frame.size == NSSize(width: 16, height: 3), "The selected tool shows the capsule, 3 pt tall under Increase Contrast")
+        try expect(abs((brush.plate.style.fill?.alphaComponent ?? 0) - 0.32) < 0.004, "Its fill is the strong 0.32")
+        try expect(chrome.snapButton.layer?.borderWidth == 1 && !chrome.snapButton.showsIndicator, "Snap gains an Increase Contrast outline and no capsule")
+        try expect(abs((app.dragFormatToggle.style(ofSegment: 0).fill?.alphaComponent ?? 0) - 0.32) < 0.004 && app.dragFormatToggle.accessibility.increaseContrast, "The toggle re-resolves for Increase Contrast")
+        DisplayOptions.override = DisplayOptions.none
+        NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
+        try expect(!brush.showsIndicator && chrome.snapButton.layer?.borderWidth == 0 && abs((app.dragFormatToggle.style(ofSegment: 0).fill?.alphaComponent ?? 0) - 0.20) < 0.004, "Clearing the options clears all three")
     }
 
     private static func modernFormatToggle() throws {
@@ -56,8 +195,10 @@ extension AppSafetyTests {
         let (fresh, chrome) = try modernFixture()
         let app = fresh.app, toggle = app.dragFormatToggle
         try expect(toggle.segmentCount == 2 && toggle.label(forSegment: 0) == "PNG" && toggle.label(forSegment: 1) == "JPG", "The toggle has exactly the PNG and JPG segments")
-        try expect(toggle.trackingMode == .selectOne && toggle.accessibilityLabel() == "Image format" && AppToolTip.text(for: toggle) == "Format for drag, export and upload", "Selection mode, label and tooltip")
-        try expect((toggle.font?.pointSize ?? 0) >= 18 && toggle.superview != nil && chrome.surface(for: toggle) != nil, "Text is at least 18 pt and the toggle sits in the glass footer")
+        let segments = try (toggle.accessibilityChildren() as? [NSAccessibilityElement]).unwrap("the toggle's accessibility children")
+        try expect(toggle.accessibilityRole() == .radioGroup && toggle.accessibilityLabel() == "Image format" && AppToolTip.text(for: toggle) == "Format for drag, export and upload", "Group role, label and tooltip")
+        try expect(segments.map { $0.accessibilityLabel() ?? "" } == ["PNG", "JPG"] && segments.allSatisfy { $0.accessibilityRole() == .radioButton }, "VoiceOver reads two radio buttons, PNG and JPG, under Image format")
+        try expect((0..<2).allSatisfy { toggle.textFont(forSegment: $0).pointSize >= 18 } && toggle.superview != nil && chrome.surface(for: toggle) != nil, "Text is at least 18 pt and the toggle sits in the glass footer")
         try expect(toggle.selectedSegment == 0 && app.dragFormat == "png", "PNG is selected on a fresh defaults domain")
 
         app.canvas.setBackgroundColor(.clear)
@@ -466,7 +607,7 @@ extension AppSafetyTests {
                    && app.resizeButton === chrome.resizeButton, "AppDelegate controls Snap, Cancel and Resize through the chrome's buttons")
         let tools = toolOrder.compactMap { SketchTool(rawValue: $0).flatMap { app.toolButtons[$0] } }
         try expect(tools.count == 10 && app.toolButtons.count == 10, "All ten tools, Crop included, are registered")
-        try expect(tools.allSatisfy { $0 is GlassChromeButton }, "Tools are glass buttons")
+        try expect(tools.allSatisfy { $0 is CommandButton }, "Tools are glass buttons")
         try expect(tools.map { $0.identifier?.rawValue ?? "" } == toolOrder, "Tool identifiers keep the archive order and raw values")
         let across = tools.sorted { $0.convert($0.bounds, to: content).minX < $1.convert($1.bounds, to: content).minX }
         try expect(across.map { $0.identifier?.rawValue ?? "" } == toolOrder, "The top bar runs the tools left to right in archive order with Crop last")
@@ -513,7 +654,7 @@ extension AppSafetyTests {
             "axLabel.undo": "Undo",
             "axLabel.wipe": "Blank",
             "buttons": "Blank|Cancel|Color…|Font|Hide|History|Original size|Photos|Resize…|Save|Snap|Undo",
-            "drag.label": "Drag Me",
+            "drag.label": "Drag image to another app",
             "drag.tip": "Drag the drawing into Finder or another app",
             "format.label": "Image format",
             "name.placeholder": "Image name",
@@ -565,7 +706,7 @@ extension AppSafetyTests {
             .map { "\($0): expected '\(expectedFacts[$0] ?? "")' but found '\(modern[$0] ?? "<missing>")'" }
         try expect(differing.isEmpty && modern.count == expectedFacts.count, "Control strings differ from the recovered ones (\(modern.count) vs \(expectedFacts.count) facts): " + differing.joined(separator: "; "))
         try expect(modern["tool.arrow.label"] == "Arrow" && modern["tool.crop.tip"] == "Crop tool"
-                   && modern["toolbox.label"] == "Toolbox" && modern["drag.label"] == "Drag Me" && modern["format.label"] == "Image format", "The strings are the recovered ones, not merely equal to each other")
+                   && modern["toolbox.label"] == "Toolbox" && modern["drag.label"] == "Drag image to another app" && modern["format.label"] == "Image format", "The strings are the recovered ones, not merely equal to each other")
         // At launch Wipe reads its Blank stage; every other command reads its title (the icon-only upload button is checked on its own).
         let spoken = ["hide": "Hide", "photos": "Photos", "save": "Save", "history": "History", "snap": "Snap", "cancel": "Cancel", "font": "Font",
                       "undo": "Undo", "wipe": "Blank", "resize": "Resize…"]
@@ -596,7 +737,7 @@ extension AppSafetyTests {
             let buttons = collect(NSButton.self, in: content)
             for (action, name, tip) in expected {
                 let button = try buttons.first { $0.action == action }.unwrap("\(name) button")
-                try expect(button.imagePosition == .imageOnly && ((button as? GlassChromeButton)?.visibleTitle ?? button.title).isEmpty, "\(label): \(name) shows no title text")
+                try expect(button.imagePosition == .imageOnly && ((button as? CommandButton)?.visibleTitle ?? button.title).isEmpty, "\(label): \(name) shows no title text")
                 try expect(AppToolTip.text(for: button) == tip, "\(label): \(name) tooltip is '\(tip)', not '\(AppToolTip.text(for: button) ?? "nil")'")
                 try expect(button.accessibilityLabel() == name, "\(label): \(name) VoiceOver label, not '\(button.accessibilityLabel() ?? "nil")'")
             }
@@ -620,7 +761,7 @@ extension AppSafetyTests {
         app.canvas.strokeWidth = 3; app.syncDrawingControls()
         try expect(AppToolTip.text(for: app.widthControl) == "Size " + String(format: "%.0f", app.widthControl.doubleValue.rounded()) && AppToolTip.text(for: app.widthControl) != before, "The Size tooltip follows the slider (\(AppToolTip.text(for: app.widthControl) ?? "nil"))")
         let drag = try (app.dragExportView).unwrap("drag well")
-        try expect(drag.showsHandIconOnly && AppToolTip.text(for: drag) == "Drag the drawing into Finder or another app" && drag.accessibilityLabel() == "Drag Me", "The drag well is an open-hand icon with a tooltip and keeps its VoiceOver label")
+        try expect(drag.showsHandIconOnly && AppToolTip.text(for: drag) == "Drag the drawing into Finder or another app" && drag.accessibilityLabel() == "Drag image to another app" && drag.accessibilityRole() == .button, "The drag well is an open-hand icon with a tooltip and a button role named for what it does")
         try expect(NSImage(systemSymbolName: DragExportView.handSymbolName, accessibilityDescription: nil) != nil, "The hand symbol exists")
         try expect(drag.prepare != nil && drag.onBegin != nil && drag.onEnd != nil, "The icon-only well is still the drag source")
         let size = NSSize(width: 48, height: 36)
@@ -826,7 +967,7 @@ extension AppSafetyTests {
         let app = fixture.app
         func verify(_ selected: SketchTool, _ label: String) throws {
             for tool in SketchTool.allCases {
-                guard let button = app.toolButtons[tool] as? GlassChromeButton else { throw Failure(description: "\(label): \(tool) is not a glass button") }
+                guard let button = app.toolButtons[tool] as? CommandButton else { throw Failure(description: "\(label): \(tool) is not a glass button") }
                 let isOn = tool == selected
                 try expect(button.state == (isOn ? .on : .off), "\(label): \(tool) state")
                 try expect(button.plate.isSelected == isOn, "\(label): \(tool) selection")
@@ -835,7 +976,11 @@ extension AppSafetyTests {
                 try expect(AppToolTip.text(for: button)?.contains("(selected)") == isOn, "\(label): \(tool) tooltip '\(AppToolTip.text(for: button) ?? "")'")
                 if isOn {
                     try expect(abs((button.plate.style.fill?.alphaComponent ?? 0) - 0.20) < 0.001 && button.layer?.borderWidth == 1, "\(label): \(tool) carries the 0.20 accent fill and a 1 pt border")
-                    try expect(sameColor(button.contentTintColor, .controlAccentColor), "\(label): \(tool) glyph is the accent")
+                    typealias P = DesignTokens.Palette
+                    let arm = P.arm(for: button.effectiveAppearance)
+                    let blended = P.blend(P.resolve(P.accent, arm: arm), alpha: 0.20, over: P.resolve(P.Surface.window, arm: arm))
+                    let glyph = P.contrastRatio(P.resolve(button.contentTintColor ?? .clear, for: button.effectiveAppearance), blended)
+                    try expect(glyph >= 4.5, "\(label): \(tool) glyph reads at \(glyph):1 on its blended accent fill")
                     let free = button.icon.flatMap { FontAwesomeFree.glyph(for: $0, family: .solid) }
                     let expected: ChromeIconSource = FontAwesomeFont.isAvailable(.solid) ? .fontAwesome(.solid) : free.map { .fontAwesomeFree($0.name) } ?? .sfSymbol(button.icon?.sfSymbolFallback ?? "")
                     try expect(button.iconSource == expected, "\(label): \(tool) icon source \(button.iconSource)")
@@ -848,7 +993,7 @@ extension AppSafetyTests {
         try verify(.brush, "setTool")
         app.canvas.tool = .ellipse
         try verify(.ellipse, "canvas tool change")
-        guard let rectangle = app.toolButtons[.rectangle] as? GlassChromeButton else { throw Failure(description: "Rectangle button") }
+        guard let rectangle = app.toolButtons[.rectangle] as? CommandButton else { throw Failure(description: "Rectangle button") }
         rectangle.performClick(nil)
         try verify(.rectangle, "click")
         rectangle.performClick(nil)
@@ -975,11 +1120,11 @@ extension AppSafetyTests {
             }
             let capture = try surface(chrome, chrome.snapButton)
             try expect(capture.identifier?.rawValue == "GlassCaptureGroup" && glass(in: capture.contentView ?? capture).isEmpty, "\(label): no glass capsule hides in the capture group (phantom)")
-            let owners = collect(GlassChromeButton.self, in: content).filter { !$0.isHiddenOrHasHiddenAncestor }.map { $0.plate } + collect(ChromeFillCell.self, in: content).map { $0.plate }
-            let saturated = collect(GlassChromeButton.self, in: content).filter { !$0.isHiddenOrHasHiddenAncestor && ($0.plate.style.fill?.alphaComponent ?? 0) > 0.5 }
+            let owners = collect(CommandButton.self, in: content).filter { !$0.isHiddenOrHasHiddenAncestor }.map { $0.plate } + collect(ChromeFillCell.self, in: content).map { $0.plate }
+            let saturated = collect(CommandButton.self, in: content).filter { !$0.isHiddenOrHasHiddenAncestor && ($0.plate.style.fill?.alphaComponent ?? 0) > 0.5 }
             try expect(saturated.count == 1 && saturated[0] === chrome.snapButton, "\(label): Snap is the only saturated accent at rest (\(saturated.count))")
             try expect(owners.count > 20, "\(label): the state fills were found (\(owners.count))")
-            let selected = app.toolButtons.values.compactMap { $0 as? GlassChromeButton }.filter { $0.plate.isSelected }
+            let selected = app.toolButtons.values.compactMap { $0 as? CommandButton }.filter { $0.plate.isSelected }
             try expect(selected.count == 1 && abs((selected[0].plate.style.fill?.alphaComponent ?? 0) - 0.20) < 0.001 && selected[0].layer?.borderWidth == 1, "\(label): the one selected tool is the 0.20 fill with a border")
         }
         try check("default size")
@@ -1119,9 +1264,9 @@ extension AppSafetyTests {
         let (fixture, chrome) = try modernFixture()
         let app = fixture.app
         let surfaces = collect(GlassSurfaceView.self, in: app.window.contentView!)
-        let buttons = collect(GlassChromeButton.self, in: app.window.contentView!)
+        let buttons = collect(CommandButton.self, in: app.window.contentView!)
         try expect(surfaces.count == 8, "Both bars have their eight plates (\(surfaces.count))")
-        let snap = chrome.snapButton, arrow = try (app.toolButtons[.arrow] as? GlassChromeButton).unwrap("arrow"), undo = chrome.undoButton
+        let snap = chrome.snapButton, arrow = try (app.toolButtons[.arrow] as? CommandButton).unwrap("arrow"), undo = chrome.undoButton
         for button in buttons { button.appearance = NSAppearance(named: .aqua) }
         undo.setHovered(true)
         try expect(buttons.allSatisfy { $0.plate.accessibility == .none && $0.plate.lastAnimationDuration == StatePlate.animationDuration }, "Buttons start with no display options and animate")
@@ -1143,7 +1288,7 @@ extension AppSafetyTests {
     private static func modernActionRouting() throws {
         let (fixture, chrome) = try modernFixture()
         let app = fixture.app
-        let routes: [(String, GlassChromeButton, Selector)] = [
+        let routes: [(String, CommandButton, Selector)] = [
             ("Hide", chrome.hideButton, #selector(AppDelegate.vanish)), ("Photos", chrome.photosButton, #selector(AppDelegate.showPhotos)),
             ("Save", chrome.saveButton, #selector(AppDelegate.saveHistory)), ("History", chrome.historyButton, #selector(AppDelegate.showHistory)),
             ("Snap", chrome.snapButton, #selector(AppDelegate.snapButtonPressed)),
@@ -1186,7 +1331,7 @@ extension AppSafetyTests {
         func reads(_ title: String, _ enabled: Bool) -> Bool {
             button.title == title && button.isEnabled == enabled && button.accessibilityLabel() == title
                 && button.isAccessibilityEnabled() == enabled
-                && button.plate.isDisabled == !enabled && button.alphaValue == (enabled ? 1 : 0.5) && button.plate.style.fill == nil
+                && button.plate.isDisabled == !enabled && button.alphaValue == (enabled ? 1 : 0.38) && button.plate.style.fill == nil
         }
         func detail() -> String {
             "title '\(button.title)', enabled \(button.isEnabled), VoiceOver '\(button.accessibilityLabel() ?? "nil")' enabled \(button.isAccessibilityEnabled()), "
