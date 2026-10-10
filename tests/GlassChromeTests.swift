@@ -76,7 +76,7 @@ private final class NonorderingWindow: NSWindow {
 @main
 @MainActor
 private enum GlassChromeTests {
-    private static var checks = 0, notes: [String] = []
+    private static var checks = 0, notes: [String] = [], faNotes: [String] = []
     private static func expect(_ value: @autoclosure () -> Bool, _ message: String) {
         precondition(value(), message)
         checks += 1
@@ -115,10 +115,10 @@ private enum GlassChromeTests {
                 chromeTests(glyphs: true)
                 FontAwesomeFont.resetForTesting()
             } else {
-                notes.append("glyph branch (no OPENSNAP_FA_FONT_DIR or build/fonts)")
+                faNotes.append("glyph branch")
             }
         }
-        let note = notes.isEmpty ? "" : "; SKIPPED: " + notes.joined(separator: ", ")
+        let note = (faNotes.isEmpty ? "" : "; SKIPPED (FA not bundled): " + faNotes.joined(separator: ", ")) + (notes.isEmpty ? "" : "; SKIPPED (macOS < 27): " + notes.joined(separator: ", "))
         print("GlassChromeTests: \(checks) checks passed (offscreen; no desktop input)\(note)")
     }
 

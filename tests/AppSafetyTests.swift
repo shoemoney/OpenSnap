@@ -1997,7 +1997,7 @@ enum AppSafetyTests {
         let data = try app.canvas.snapshotDocumentData(), history = app.canvas.editingUndoManager
         let undo = history.undoActionName, redo = history.redoActionName, dirty = app.dirty
         let menu = NSApp.mainMenu!.items.compactMap(\.submenu).first { $0.title == "OpenSnap" }!
-        let command = menu.items.first { $0.title == "Preferences…" }!
+        let command = menu.items.first { $0.title == "Settings…" }!
         try expect(command.keyEquivalent == "," && command.action == #selector(AppDelegate.showPreferences), "Command-comma opens real Preferences")
         app.showPreferences()
         let panel = app.preferencesWindow!, form = app.preferencesForm!
@@ -3791,7 +3791,7 @@ enum AppSafetyTests {
         ]
         // Development aid: APP_SAFETY_FILTER=<text> runs only the cases whose title contains it. Unset, every case runs.
         let filter = ProcessInfo.processInfo.environment["APP_SAFETY_FILTER"]
-        let tests = (sharedCases + Self.modernCases + Self.webpostCases + Self.retiredFormatCases).filter { filter.map($0.0.contains) ?? true }
+        let tests = (sharedCases + Self.modernCases + Self.webpostCases + Self.retiredFormatCases + Self.menuCases).filter { filter.map($0.0.contains) ?? true }
         var results: [[String: Any]] = [], failures = 0
         for (name, test) in tests {
             AppSafetyAlert.answers = []; AppSafetyAlert.seen = []; AppSafetyAlert.unexpected = []

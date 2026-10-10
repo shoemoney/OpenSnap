@@ -197,7 +197,7 @@ for mode in $ICON_MODES; do
     mkdir -p "$OUT/raw-$mode"
     if [ "$mode" = fa ] && ! have_fa_fonts; then
         printf '{"requested":"fa","effective":"none","reason":"FA unavailable: no FontAwesome7Pro-*-subset.ttf in %s (build with OPENSNAP_FETCH_FONTAWESOME=1 and your own token)"}\n' "$APP_SRC" > "$OUT/raw-fa/icon-mode-unavailable.json"
-        echo "icons fa: FA unavailable, skipped" | tee -a "$OUT/safety.txt"
+        echo "icons fa: FA unavailable, SKIPPED (FA not bundled)" | tee -a "$OUT/safety.txt"
         continue
     fi
     prepare_copy "$mode"

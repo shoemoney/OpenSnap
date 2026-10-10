@@ -264,3 +264,10 @@ enum DesignTokens {
         }
     }
 }
+
+extension DesignTokens {
+    /// The one product name. Menus, About, the status item and window titles read it; tools/check-brand.py holds Info.plist to it.
+    enum Brand {
+        static let name = "OpenSnap"
+    }
+}

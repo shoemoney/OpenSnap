@@ -8,7 +8,7 @@ import AppKit
 @main
 @MainActor
 private enum MenuSymbolsTests {
-    private static var checks = 0, skipped: [String] = []
+    private static var checks = 0
     private static func expect(_ value: @autoclosure () -> Bool, _ message: String) {
         precondition(value(), message)
         checks += 1
@@ -23,8 +23,7 @@ private enum MenuSymbolsTests {
         mapping()
         sourceActions()
         application()
-        let note = skipped.isEmpty ? "" : "; SKIPPED: " + skipped.joined(separator: ", ")
-        print("MenuSymbolsTests: \(checks) checks passed (standalone menus; no desktop input)\(note)")
+        print("MenuSymbolsTests: \(checks) checks passed (standalone menus; no desktop input)")
     }
 
     private static func mapping() {
@@ -42,7 +41,7 @@ private enum MenuSymbolsTests {
         let candidates = [here, here.deletingLastPathComponent().appendingPathComponent("Sources", isDirectory: true)]
         guard let directory = candidates.first(where: { FileManager.default.fileExists(atPath: $0.appendingPathComponent("App.swift").path) }),
               let files = try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil).filter({ $0.pathExtension == "swift" }) else {
-            skipped.append("action names (App.swift not found)"); return
+            expect(false, "App.swift was not found next to the tests; the action-name check must not skip"); return
         }
         let text = files.compactMap { try? String(contentsOf: $0, encoding: .utf8) }.joined(separator: "\n")
         for selector in MenuSymbols.map.keys {
