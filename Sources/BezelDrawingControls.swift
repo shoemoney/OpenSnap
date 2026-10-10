@@ -477,7 +477,7 @@ final class SizePopoverContent: NSView {
 
     override var wantsUpdateLayer: Bool { true }
     override func updateLayer() {
-        effectiveAppearance.performAsCurrentDrawingAppearance { layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor }
+        effectiveAppearance.performAsCurrentDrawingAppearance { layer?.backgroundColor = DesignTokens.Palette.Surface.content.cgColor }
     }
     override func viewDidChangeEffectiveAppearance() {
         super.viewDidChangeEffectiveAppearance()
@@ -701,9 +701,24 @@ final class BezelHoverButton: NSButton {
     override func mouseEntered(with event: NSEvent) { onHover?(true) }
     override func mouseExited(with event: NSEvent) { onHover?(false) }
 }
+/// The Drawing colors popover's content. It paints its own opaque content plate, as the Size popover does, so its text and controls
+/// never sit on the system popover material (which can come out dark under a light app); the plate follows the appearance.
 final class BezelHoverPaletteView: NSView {
     var onHover: ((Bool) -> Void)?
     private var hoverTracking: NSTrackingArea?
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        wantsLayer = true
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    override var wantsUpdateLayer: Bool { true }
+    override func updateLayer() {
+        effectiveAppearance.performAsCurrentDrawingAppearance { layer?.backgroundColor = DesignTokens.Palette.Surface.content.cgColor }
+    }
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        needsDisplay = true
+    }
     override func updateTrackingAreas() {
         if let hoverTracking { removeTrackingArea(hoverTracking) }
         let area = NSTrackingArea(rect: .zero, options: [.mouseEnteredAndExited, .activeInActiveApp, .inVisibleRect, .enabledDuringMouseDrag], owner: self)

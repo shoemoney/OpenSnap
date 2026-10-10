@@ -1,0 +1,1204 @@
+{
+ "sourceSha": "2275c5b",
+ "bundleId": "com.shoemoney.opensnap.eyedump-64001",
+ "iconMode": "sf",
+ "faMode": "FA unavailable: no FontAwesome7Pro subset fonts are bundled in this build, so every capture uses SF Symbols (nothing was faked)",
+ "captureCount": 38,
+ "unavailable": [],
+ "gaps": [
+  {
+   "appearance": "dark",
+   "iconMode": "sf",
+   "id": "S26",
+   "reason": "No Wipe confirmation exists: Wipe/Undo (Canvas.wipe) acts immediately, so there is nothing to capture; recorded as a finding",
+   "surface": "Wipe confirmation"
+  },
+  {
+   "appearance": "light",
+   "iconMode": "sf",
+   "id": "S26",
+   "reason": "No Wipe confirmation exists: Wipe/Undo (Canvas.wipe) acts immediately, so there is nothing to capture; recorded as a finding",
+   "surface": "Wipe confirmation"
+  }
+ ],
+ "captures": [
+  {
+   "id": "S26",
+   "slug": "close-unsaved",
+   "surface": "alerts / sheets",
+   "state": "Save your drawing? sheet (Save / Cancel / Don’t Save)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S26-close-unsaved-dark@2275c5b.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/2026-10-09/S26-close-unsaved-dark.png"
+  },
+  {
+   "id": "S26",
+   "slug": "close-unsaved",
+   "surface": "alerts / sheets",
+   "state": "Save your drawing? sheet (Save / Cancel / Don’t Save)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S26-close-unsaved-light@2275c5b.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S26",
+   "slug": "error-generic",
+   "surface": "alerts / sheets",
+   "state": "generic error sheet",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S26-error-generic-dark@2275c5b.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/2026-10-09/S26-error-generic-dark.png"
+  },
+  {
+   "id": "S26",
+   "slug": "error-generic",
+   "surface": "alerts / sheets",
+   "state": "generic error sheet",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S26-error-generic-light@2275c5b.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/2026-10-09/S26-error-generic-light.png"
+  },
+  {
+   "id": "S26",
+   "slug": "history-hide",
+   "surface": "alerts / sheets",
+   "state": "Hide drawings from History? sheet",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S26-history-hide-dark@2275c5b.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S26",
+   "slug": "history-hide",
+   "surface": "alerts / sheets",
+   "state": "Hide drawings from History? sheet",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S26-history-hide-light@2275c5b.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/2026-10-09/S26-history-hide-light.png"
+  },
+  {
+   "id": "S26",
+   "slug": "history-trash",
+   "surface": "alerts / sheets",
+   "state": "Move archived drawings to Trash? sheet",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S26-history-trash-dark@2275c5b.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/2026-10-09/S26-history-trash-dark.png"
+  },
+  {
+   "id": "S26",
+   "slug": "history-trash",
+   "surface": "alerts / sheets",
+   "state": "Move archived drawings to Trash? sheet",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S26-history-trash-light@2275c5b.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S26",
+   "slug": "rename",
+   "surface": "alerts / sheets",
+   "state": "Rename… sheet with text field",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S26-rename-dark@2275c5b.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S26",
+   "slug": "rename",
+   "surface": "alerts / sheets",
+   "state": "Rename… sheet with text field",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1624
+   ],
+   "pointSize": [
+    1120,
+    812
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S26-rename-light@2275c5b.png",
+   "storedPixelSize": [
+    1200,
+    870
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/2026-10-09/S26-rename-light.png"
+  },
+  {
+   "id": "S31",
+   "slug": "color-popover-custom-w1440",
+   "surface": "Colour popover",
+   "state": "Drawing colours popover open below the top-bar swatch at window width 1440, a custom colour current",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S31-color-popover-custom-w1440-dark@2275c5b.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S31-color-popover-custom-w1440-dark@2275c5b.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-1/S31-color-popover-w980-dark@8e7a37d.png"
+  },
+  {
+   "id": "S31",
+   "slug": "color-popover-custom-w1440",
+   "surface": "Colour popover",
+   "state": "Drawing colours popover open below the top-bar swatch at window width 1440, a custom colour current",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S31-color-popover-custom-w1440-light@2275c5b.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S31-color-popover-custom-w1440-light@2275c5b.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-1/S31-color-popover-w980-light@8e7a37d.png"
+  },
+  {
+   "id": "S31",
+   "slug": "color-popover-custom-w980",
+   "surface": "Colour popover",
+   "state": "Drawing colours popover open below the top-bar swatch at window width 980, a custom colour current",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S31-color-popover-custom-w980-dark@2275c5b.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S31-color-popover-custom-w980-dark@2275c5b.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-1/S31-color-popover-custom-w980-dark@8e7a37d.png"
+  },
+  {
+   "id": "S31",
+   "slug": "color-popover-custom-w980",
+   "surface": "Colour popover",
+   "state": "Drawing colours popover open below the top-bar swatch at window width 980, a custom colour current",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S31-color-popover-custom-w980-light@2275c5b.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S31-color-popover-custom-w980-light@2275c5b.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-1/S31-color-popover-custom-w980-light@8e7a37d.png"
+  },
+  {
+   "id": "S31",
+   "slug": "color-popover-only-custom-w1440",
+   "surface": "Colour popover",
+   "state": "the popover window alone, custom colour current",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    548,
+    364
+   ],
+   "pointSize": [
+    272,
+    181
+   ],
+   "scale": 2.014705882352941,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S31-color-popover-only-custom-w1440-dark@2275c5b.png",
+   "storedPixelSize": [
+    548,
+    364
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-1/S31-color-popover-only-w980-dark@8e7a37d.png"
+  },
+  {
+   "id": "S31",
+   "slug": "color-popover-only-custom-w1440",
+   "surface": "Colour popover",
+   "state": "the popover window alone, custom colour current",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    548,
+    364
+   ],
+   "pointSize": [
+    272,
+    181
+   ],
+   "scale": 2.014705882352941,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S31-color-popover-only-custom-w1440-light@2275c5b.png",
+   "storedPixelSize": [
+    548,
+    364
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-1/S31-color-popover-only-w980-light@8e7a37d.png"
+  },
+  {
+   "id": "S31",
+   "slug": "color-popover-only-custom-w980",
+   "surface": "Colour popover",
+   "state": "the popover window alone, custom colour current",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    548,
+    368
+   ],
+   "pointSize": [
+    272,
+    183
+   ],
+   "scale": 2.014705882352941,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S31-color-popover-only-custom-w980-dark@2275c5b.png",
+   "storedPixelSize": [
+    548,
+    368
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-1/S31-color-popover-only-custom-w980-dark@8e7a37d.png"
+  },
+  {
+   "id": "S31",
+   "slug": "color-popover-only-custom-w980",
+   "surface": "Colour popover",
+   "state": "the popover window alone, custom colour current",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    548,
+    366
+   ],
+   "pointSize": [
+    272,
+    182
+   ],
+   "scale": 2.014705882352941,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S31-color-popover-only-custom-w980-light@2275c5b.png",
+   "storedPixelSize": [
+    548,
+    366
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-1/S31-color-popover-only-custom-w980-light@8e7a37d.png"
+  },
+  {
+   "id": "S31",
+   "slug": "color-popover-only-w1440",
+   "surface": "Colour popover",
+   "state": "the popover window alone",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    544,
+    362
+   ],
+   "pointSize": [
+    272,
+    181
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S31-color-popover-only-w1440-dark@2275c5b.png",
+   "storedPixelSize": [
+    544,
+    362
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-1/S31-color-popover-only-w980-dark@8e7a37d.png"
+  },
+  {
+   "id": "S31",
+   "slug": "color-popover-only-w1440",
+   "surface": "Colour popover",
+   "state": "the popover window alone",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    544,
+    362
+   ],
+   "pointSize": [
+    272,
+    181
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S31-color-popover-only-w1440-light@2275c5b.png",
+   "storedPixelSize": [
+    544,
+    362
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-1/S31-color-popover-only-w980-light@8e7a37d.png"
+  },
+  {
+   "id": "S31",
+   "slug": "color-popover-only-w980",
+   "surface": "Colour popover",
+   "state": "the popover window alone",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    544,
+    362
+   ],
+   "pointSize": [
+    272,
+    181
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S31-color-popover-only-w980-dark@2275c5b.png",
+   "storedPixelSize": [
+    544,
+    362
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-1/S31-color-popover-only-w980-dark@8e7a37d.png"
+  },
+  {
+   "id": "S31",
+   "slug": "color-popover-only-w980",
+   "surface": "Colour popover",
+   "state": "the popover window alone",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    544,
+    362
+   ],
+   "pointSize": [
+    272,
+    181
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S31-color-popover-only-w980-light@2275c5b.png",
+   "storedPixelSize": [
+    544,
+    362
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-1/S31-color-popover-only-w980-light@8e7a37d.png"
+  },
+  {
+   "id": "S31",
+   "slug": "color-popover-w1440",
+   "surface": "Colour popover",
+   "state": "Drawing colours popover open below the top-bar swatch at window width 1440, a preset colour current",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S31-color-popover-w1440-dark@2275c5b.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S31-color-popover-w1440-dark@2275c5b.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-1/S31-color-popover-w980-dark@8e7a37d.png"
+  },
+  {
+   "id": "S31",
+   "slug": "color-popover-w1440",
+   "surface": "Colour popover",
+   "state": "Drawing colours popover open below the top-bar swatch at window width 1440, a preset colour current",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S31-color-popover-w1440-light@2275c5b.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S31-color-popover-w1440-light@2275c5b.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-1/S31-color-popover-w980-light@8e7a37d.png"
+  },
+  {
+   "id": "S31",
+   "slug": "color-popover-w980",
+   "surface": "Colour popover",
+   "state": "Drawing colours popover open below the top-bar swatch at window width 980, a preset colour current",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S31-color-popover-w980-dark@2275c5b.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S31-color-popover-w980-dark@2275c5b.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-1/S31-color-popover-w980-dark@8e7a37d.png"
+  },
+  {
+   "id": "S31",
+   "slug": "color-popover-w980",
+   "surface": "Colour popover",
+   "state": "Drawing colours popover open below the top-bar swatch at window width 980, a preset colour current",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S31-color-popover-w980-light@2275c5b.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S31-color-popover-w980-light@2275c5b.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-1/S31-color-popover-w980-light@8e7a37d.png"
+  },
+  {
+   "id": "S38",
+   "slug": "tooltip-size-w980",
+   "surface": "App tooltip",
+   "state": "the live Size tooltip below the Size pill (Size 7)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S38-tooltip-size-w980-dark@2275c5b.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S38-tooltip-size-w980-dark@2275c5b.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-1/S38-tooltip-size-w980-dark@8e7a37d.png"
+  },
+  {
+   "id": "S38",
+   "slug": "tooltip-size-w980",
+   "surface": "App tooltip",
+   "state": "the live Size tooltip below the Size pill (Size 7)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S38-tooltip-size-w980-light@2275c5b.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S38-tooltip-size-w980-light@2275c5b.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-1/S38-tooltip-size-w980-light@8e7a37d.png"
+  },
+  {
+   "id": "S38",
+   "slug": "tooltip-snap-w980",
+   "surface": "App tooltip",
+   "state": "the Snap tooltip below the Snap button; the long sentence wraps at 420 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S38-tooltip-snap-w980-dark@2275c5b.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S38-tooltip-snap-w980-dark@2275c5b.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-1/S38-tooltip-snap-w980-dark@8e7a37d.png"
+  },
+  {
+   "id": "S38",
+   "slug": "tooltip-snap-w980",
+   "surface": "App tooltip",
+   "state": "the Snap tooltip below the Snap button; the long sentence wraps at 420 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S38-tooltip-snap-w980-light@2275c5b.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S38-tooltip-snap-w980-light@2275c5b.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-1/S38-tooltip-snap-w980-light@8e7a37d.png"
+  },
+  {
+   "id": "S38",
+   "slug": "tooltip-wipe-annotations-w980",
+   "surface": "App tooltip",
+   "state": "Wipe over artwork: the plate says Remove annotations",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1348
+   ],
+   "pointSize": [
+    980,
+    674
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S38-tooltip-wipe-annotations-w980-dark@2275c5b.png",
+   "storedPixelSize": [
+    1200,
+    825
+   ],
+   "downscaled": true,
+   "layout": "layout/S38-tooltip-wipe-annotations-w980-dark@2275c5b.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-1/S38-tooltip-zoom-w980-dark@8e7a37d.png"
+  },
+  {
+   "id": "S38",
+   "slug": "tooltip-wipe-annotations-w980",
+   "surface": "App tooltip",
+   "state": "Wipe over artwork: the plate says Remove annotations",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1348
+   ],
+   "pointSize": [
+    980,
+    674
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S38-tooltip-wipe-annotations-w980-light@2275c5b.png",
+   "storedPixelSize": [
+    1200,
+    825
+   ],
+   "downscaled": true,
+   "layout": "layout/S38-tooltip-wipe-annotations-w980-light@2275c5b.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-1/S38-tooltip-zoom-w980-light@8e7a37d.png"
+  },
+  {
+   "id": "S38",
+   "slug": "tooltip-wipe-blank-w980",
+   "surface": "App tooltip",
+   "state": "Wipe on a blank canvas: dimmed, the plate says Nothing to clear",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1348
+   ],
+   "pointSize": [
+    980,
+    674
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S38-tooltip-wipe-blank-w980-dark@2275c5b.png",
+   "storedPixelSize": [
+    1200,
+    825
+   ],
+   "downscaled": true,
+   "layout": "layout/S38-tooltip-wipe-blank-w980-dark@2275c5b.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-1/S38-tooltip-zoom-w980-dark@8e7a37d.png"
+  },
+  {
+   "id": "S38",
+   "slug": "tooltip-wipe-blank-w980",
+   "surface": "App tooltip",
+   "state": "Wipe on a blank canvas: dimmed, the plate says Nothing to clear",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1348
+   ],
+   "pointSize": [
+    980,
+    674
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S38-tooltip-wipe-blank-w980-light@2275c5b.png",
+   "storedPixelSize": [
+    1200,
+    825
+   ],
+   "downscaled": true,
+   "layout": "layout/S38-tooltip-wipe-blank-w980-light@2275c5b.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-1/S38-tooltip-zoom-w980-light@8e7a37d.png"
+  },
+  {
+   "id": "S38",
+   "slug": "tooltip-wipe-image-w980",
+   "surface": "App tooltip",
+   "state": "Wipe over a snap alone: the plate says Clear image",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1348
+   ],
+   "pointSize": [
+    980,
+    674
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S38-tooltip-wipe-image-w980-dark@2275c5b.png",
+   "storedPixelSize": [
+    1200,
+    825
+   ],
+   "downscaled": true,
+   "layout": "layout/S38-tooltip-wipe-image-w980-dark@2275c5b.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-1/S38-tooltip-zoom-w980-dark@8e7a37d.png"
+  },
+  {
+   "id": "S38",
+   "slug": "tooltip-wipe-image-w980",
+   "surface": "App tooltip",
+   "state": "Wipe over a snap alone: the plate says Clear image",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1348
+   ],
+   "pointSize": [
+    980,
+    674
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S38-tooltip-wipe-image-w980-light@2275c5b.png",
+   "storedPixelSize": [
+    1200,
+    825
+   ],
+   "downscaled": true,
+   "layout": "layout/S38-tooltip-wipe-image-w980-light@2275c5b.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-1/S38-tooltip-zoom-w980-light@8e7a37d.png"
+  },
+  {
+   "id": "S38",
+   "slug": "tooltip-zoom-w980",
+   "surface": "App tooltip",
+   "state": "a bottom-bar control: the plate opens above the zoom face because there is no room below",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1336
+   ],
+   "pointSize": [
+    980,
+    668
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S38-tooltip-zoom-w980-dark@2275c5b.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": "layout/S38-tooltip-zoom-w980-dark@2275c5b.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-1/S38-tooltip-zoom-w980-dark@8e7a37d.png"
+  },
+  {
+   "id": "S38",
+   "slug": "tooltip-zoom-w980",
+   "surface": "App tooltip",
+   "state": "a bottom-bar control: the plate opens above the zoom face because there is no room below",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1336
+   ],
+   "pointSize": [
+    980,
+    668
+   ],
+   "scale": 2,
+   "sourceSha": "2275c5b",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S38-tooltip-zoom-w980-light@2275c5b.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": "layout/S38-tooltip-zoom-w980-light@2275c5b.json",
+   "before": "docs/design/evidence/impl-2026-10-09/audit-fix-1/S38-tooltip-zoom-w980-light@8e7a37d.png"
+  }
+ ]
+}

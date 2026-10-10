@@ -653,6 +653,20 @@ enum PublishingDestinationsTests {
         try expect(shutdownParent.attachedSheet == nil, "shutdown left the Destinations sheet attached")
         closing.showSettings(relativeTo: shutdownParent)
         try expect(shutdownParent.attachedSheet == nil, "a sheet opened after shutdown")
+
+        // A settings sheet begun on a window directly (no completion handler, as the screenshot harness does) must not hold Quit forever.
+        let bareParent = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 600), styleMask: [.titled], backing: .buffered, defer: false)
+        bareParent.isReleasedWhenClosed = false
+        let bare = try coordinator(destinations: destinations)
+        let (barePanel, _) = try bare.buildSettings()
+        bareParent.beginSheet(barePanel)
+        try expect(bareParent.attachedSheet === barePanel, "the bare sheet did not open")
+        bare.cancelSettings()
+        var bareAcknowledged = false
+        bare.shutdown { bareAcknowledged = true }
+        spin(5) { bareAcknowledged }
+        try expect(bareAcknowledged, "shutdown never acknowledged after a settings sheet ended without its completion handler")
+        try expect(bareParent.attachedSheet == nil, "the bare sheet stayed attached")
     }
 
     static func liveS3() throws {

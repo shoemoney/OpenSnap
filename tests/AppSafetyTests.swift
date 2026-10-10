@@ -3795,10 +3795,19 @@ enum AppSafetyTests {
                 let fixture = try Fixture(), app = fixture.app, canvas = app.canvas
                 guard let content = app.window.contentView, let button = app.wipeButton, button.action == #selector(AppDelegate.wipe),
                       button.target === app, button.isDescendant(of: content) else { throw Failure(description: "Wipe button must be located by its action") }
+                // The Edit menu item is validated like the button reads: same wording (title case), dimmed on a blank canvas (audit fix 2).
+                let editMenu = NSApp.mainMenu!.items.first { $0.submenu?.title == "Edit" }!.submenu!
+                guard let wipeItem = editMenu.items.first(where: { $0.action == #selector(AppDelegate.wipe) }) else { throw Failure(description: "Edit menu has no Wipe item") }
+                func menuReads(_ stage: WipeStage) -> Bool {
+                    editMenu.update()
+                    return wipeItem.title == stage.menuTitle && wipeItem.isEnabled == stage.isEnabled && app.validateMenuItem(wipeItem) == stage.isEnabled
+                }
                 func reads(_ stage: WipeStage) -> Bool {
                     button.title == stage.actionName && button.isEnabled == stage.isEnabled && button.isAccessibilityEnabled() == stage.isEnabled && button.accessibilityLabel() == stage.actionName
-                        && MainActor.assumeIsolated({ AppToolTip.text(for: button) }) == stage.toolTip && button.accessibilityHelp() == stage.toolTip
+                        && MainActor.assumeIsolated({ AppToolTip.text(for: button) }) == stage.toolTip && button.accessibilityHelp() == stage.toolTip && menuReads(stage)
                 }
+                try expect(["Clear Image", "Remove Annotations", "Clear Image"] == [WipeStage.clear.menuTitle, WipeStage.wipe.menuTitle, WipeStage.blank.menuTitle]
+                           && wipeItem.title != "Wipe", "The Edit menu says Remove Annotations / Clear Image in title case, never the static Wipe")
                 try expect(["Clear image", "Remove annotations", "Nothing to clear"] == [WipeStage.clear.actionName, WipeStage.wipe.actionName, WipeStage.blank.toolTip]
                            && !["Blank", "Clear", "Wipe"].contains(WipeStage.blank.actionName) && !["Blank", "Clear", "Wipe"].contains(WipeStage.clear.actionName) && WipeStage.wipe.actionName != "Wipe",
                            "The stages are spoken as actions, never as the legacy stage names")
@@ -3824,8 +3833,7 @@ enum AppSafetyTests {
                 try expect(reads(.wipe), "Field editing reads an enabled Wipe over an otherwise blank drawing")
                 text.string = ""; canvas.commitPendingTextEditing()
                 try expect(reads(.blank) && canvas.document.elements.isEmpty, "Ending an emptied field returns the button to Blank")
-                let editMenu = NSApp.mainMenu!.items.first { $0.submenu?.title == "Edit" }!.submenu!
-                try expect(editMenu.items.first { $0.action == #selector(AppDelegate.wipe) }?.title == "Wipe", "The Edit menu item keeps its Wipe title")
+                try expect(menuReads(.blank) && wipeItem.title == "Clear Image" && !wipeItem.isEnabled, "The Edit menu item ends on a disabled Clear Image (it was the static title Wipe)")
             }),
             ("selected tool labels remain readable on bright and dark accent colors", {
                 let colors: [NSColor] = [.yellow, .white, .black, .blue, .red, .green,

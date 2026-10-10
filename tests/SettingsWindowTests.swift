@@ -88,6 +88,7 @@ private enum SettingsWindowTests {
         NSApp.setActivationPolicy(.prohibited)
         structure()
         tabStrip()
+        tabStripContrast()
         closing()
         fit()
         alignmentAndTypography()
@@ -149,6 +150,29 @@ private enum SettingsWindowTests {
             if let c = color.usingColorSpace(.deviceRGB) { out = [c.redComponent, c.greenComponent, c.blueComponent, c.alphaComponent] }
         }
         return out
+    }
+
+    /// Audit fix 2: the strip's tabs read on its plate in light, dark and both Increase Contrast arms; the selected tab is held on its own fill too.
+    private static func tabStripContrast() {
+        typealias Palette = DesignTokens.Palette
+        let (controller, _, _, _, _, _) = makeController(destinations: sampleDestinations(count: 2))
+        let strip = controller.strip
+        controller.select(1)
+        strip.frame = NSRect(x: 0, y: 0, width: SettingsLayout.contentWidth, height: SettingsTabStrip.height)
+        strip.layoutSubtreeIfNeeded()
+        for (name, appearance) in ContrastProbe.appearances {
+            let reading = ContrastProbe.measure(strip, appearance: appearance, plateAt: NSPoint(x: 3, y: strip.bounds.midY),
+                                                textFrames: strip.buttons.map { strip.convert($0.bounds, from: $0) })
+            expect(reading.plateOpaque, "the strip draws an opaque plate (\(name))")
+            for (button, ratio) in zip(strip.buttons, reading.textRatios) { expect(ratio >= 4.5, "\(button.title) reads at 4.5:1 on the strip (\(name): \(ratio))") }
+            appearance.performAsCurrentDrawingAppearance {
+                let window = Palette.resolve(Palette.Surface.window, for: appearance)
+                let selected = Palette.blend(Palette.State.selectedFill, alpha: 1, over: window)
+                let backdrop = NSColor(srgbRed: selected.red, green: selected.green, blue: selected.blue, alpha: 1)
+                let ratio = Palette.contrastRatio(Palette.resolve(Palette.Text.primary, for: appearance), Palette.rgb(backdrop).rgb)
+                expect(ratio >= 4.5, "the selected tab's title reads on its own fill (\(name): \(ratio))")
+            }
+        }
     }
 
     private static func tabStrip() {

@@ -246,6 +246,13 @@ enum WipeStage: Equatable {
         case .wipe: return "Remove annotations"
         }
     }
+    /// The Edit menu item says the same thing as the button, in the title case menus use.
+    var menuTitle: String {
+        switch self {
+        case .blank, .clear: return "Clear Image"
+        case .wipe: return "Remove Annotations"
+        }
+    }
     /// The tooltip and the spoken help: the action, or why there is nothing to do.
     var toolTip: String { self == .blank ? "Nothing to clear" : actionName }
     var isEnabled: Bool { self != .blank }

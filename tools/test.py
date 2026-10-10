@@ -156,7 +156,7 @@ suites = [
     ("hotkey-tests", ["GlobalHotkeys.swift", "AppToolTip.swift", "TestDefaults.swift"], "GlobalHotkeysTests.swift", "GLOBAL_HOTKEY_TESTS", ()),
     ("settings-window-tests", ["SettingsWindow.swift", "GeneralPreferencesState.swift", "GlobalHotkeys.swift", "AppToolTip.swift", "DisplayOptions.swift", "OriginalCaptureFlash.swift",
                                "StrokeFitting.swift", "Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift", "AppAlert.swift", *ICONS,
-                               "TestDefaults.swift", "ViewTreeAudit.swift"], "SettingsWindowTests.swift", "SETTINGS_WINDOW_TESTS", ()),
+                               "TestDefaults.swift", "ViewTreeAudit.swift", "ContrastProbe.swift"], "SettingsWindowTests.swift", "SETTINGS_WINDOW_TESTS", ()),
     ("svg-tests", ["SVGPath.swift", "DocumentModel.swift", "VectorGeometry.swift", "StrokeFitting.swift", "ImageExport.swift", "Canvas.swift", "SVGExport.swift"], "SVGExportTests.swift", "SVG_EXPORT_TESTS", ()),
     ("opensnap-file-tests", ["SVGPath.swift", "DocumentModel.swift", "VectorGeometry.swift", "StrokeFitting.swift", "ImageExport.swift", "Canvas.swift", "OpenSnapFile.swift"], "OpenSnapFileTests.swift", "OPENSNAP_FILE_TESTS", ()),
     ("migration-tests", ["SVGPath.swift", "LegacyReader.swift", "DocumentModel.swift", "VectorGeometry.swift", "StrokeFitting.swift", "ImageExport.swift", "Canvas.swift", "OpenSnapFile.swift", "HistoryStore.swift", "Migration.swift"], "MigrationTests.swift", "MIGRATION_TESTS", (), {"CFFIXED_USER_HOME": "@temp-home"}),
@@ -168,9 +168,9 @@ suites = [
     ("state-styles-tests", ["StateStyles.swift"], "StateStylesTests.swift", "STATE_STYLES_TESTS", ()),
     ("status-item-tests", ["StatusItemSupport.swift"], "StatusItemSupportTests.swift", "STATUS_ITEM_TESTS", ()),
     ("about-window-tests", ["AboutWindow.swift"], "AboutWindowTests.swift", "ABOUT_WINDOW_TESTS", ()),
-    ("app-alert-tests", ["AppAlert.swift"], "AppAlertTests.swift", "APP_ALERT_TESTS", ()),
+    ("app-alert-tests", ["AppAlert.swift", "ContrastProbe.swift"], "AppAlertTests.swift", "APP_ALERT_TESTS", ()),
     ("metrics-tests", [], "MetricsTests.swift", "METRICS_TESTS", ()),
-    ("app-tooltip-tests", ["AppToolTip.swift"], "AppToolTipTests.swift", "APP_TOOLTIP_TESTS", ()),
+    ("app-tooltip-tests", ["AppToolTip.swift", "ContrastProbe.swift"], "AppToolTipTests.swift", "APP_TOOLTIP_TESTS", ()),
     # G4: the font-floor walker over every surface whose sources compile in isolation. The full main window joins via app-safety.
     ("view-tree-audit-tests", ["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift", "AppAlert.swift",
                                "AboutWindow.swift", "HistoryBrowser.swift", "ResizePresets.swift", "ResizePanel.swift", *ICONS, "StrokeFitting.swift",
@@ -194,7 +194,7 @@ modern_suites = [
     ("fontawesome-icons-tests", [*ICONS], "FontAwesomeIconsTests.swift", "FONTAWESOME_ICONS_TESTS", (), font_environment),
     ("menu-symbols-tests", [*ICONS, "MenuSymbols.swift"], "MenuSymbolsTests.swift", "MENU_SYMBOLS_TESTS", ()),
     ("icon-coverage-tests", [*ICONS], "IconCoverageTests.swift", "ICON_COVERAGE_TESTS", ()),
-    ("glass-chrome-tests", ["DisplayOptions.swift", "DisplayOptions+ChromeAccessibility.swift", "OriginalActionButton.swift", *ICONS, "BezelDrawingControls.swift", "DocumentModel.swift", "StateStyles.swift", "GlassChrome.swift", "UploadStatus.swift", "ModernEditorChrome.swift", "AppToolTip.swift"], "GlassChromeTests.swift", "GLASS_CHROME_TESTS", ()),
+    ("glass-chrome-tests", ["DisplayOptions.swift", "DisplayOptions+ChromeAccessibility.swift", "OriginalActionButton.swift", *ICONS, "BezelDrawingControls.swift", "DocumentModel.swift", "StateStyles.swift", "GlassChrome.swift", "UploadStatus.swift", "ModernEditorChrome.swift", "AppToolTip.swift", "ContrastProbe.swift"], "GlassChromeTests.swift", "GLASS_CHROME_TESTS", ()),
 ]
 with ThreadPoolExecutor(max_workers=len(suites) + len(modern_suites)) as executor:
     futures = [executor.submit(suite, *args) for args in suites]

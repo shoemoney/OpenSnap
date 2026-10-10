@@ -11,12 +11,18 @@ final class RecordingHost: NSWindow {
     var begun: [NSWindow] = []
     var ended: [NSWindow] = []
     var openSheet: NSWindow?
+    private var handlers: [ObjectIdentifier: (NSApplication.ModalResponse) -> Void] = [:]
     override var attachedSheet: NSWindow? { openSheet }
     override func beginSheet(_ sheetWindow: NSWindow, completionHandler handler: ((NSApplication.ModalResponse) -> Void)? = nil) {
         begun.append(sheetWindow); openSheet = sheetWindow
+        handlers[ObjectIdentifier(sheetWindow)] = handler
     }
-    override func endSheet(_ sheetWindow: NSWindow) { ended.append(sheetWindow); if openSheet === sheetWindow { openSheet = nil } }
-    override func endSheet(_ sheetWindow: NSWindow, returnCode: NSApplication.ModalResponse) { endSheet(sheetWindow) }
+    /// Like AppKit: ending a sheet, by anyone, runs the completion handler it was begun with.
+    override func endSheet(_ sheetWindow: NSWindow) { endSheet(sheetWindow, returnCode: .stop) }
+    override func endSheet(_ sheetWindow: NSWindow, returnCode: NSApplication.ModalResponse) {
+        ended.append(sheetWindow); if openSheet === sheetWindow { openSheet = nil }
+        handlers.removeValue(forKey: ObjectIdentifier(sheetWindow))?(returnCode)
+    }
 }
 
 @main
@@ -36,7 +42,9 @@ private enum AppAlertTests {
         keys()
         sheetPresentation()
         answering()
+        endedWithoutAButton()
         accessibility()
+        contrast()
         errorAlert()
         presenterSeam()
         print("AppAlertTests: \(checks) checks passed (windows never ordered on screen)")
@@ -188,6 +196,56 @@ private enum AppAlertTests {
         expect(odd.response == nil, "A button that does not exist answers nothing")
     }
 
+    // MARK: ended without a button
+
+    /// Every way a sheet can end answers its completion once, as Cancel, and leaves nothing on screen (the quit barrier depends on it).
+    private static func endedWithoutAButton() {
+        let saved = AppAlert.hostIsPresentable
+        AppAlert.hostIsPresentable = { _ in true }
+        defer { AppAlert.hostIsPresentable = saved }
+        let cancelIndex = NSApplication.ModalResponse.alertSecondButtonReturn
+        // endSheet from outside (nobody pressed a button).
+        let window = host()
+        var answers: [NSApplication.ModalResponse] = []
+        let alert = AppAlert(title: "Save your drawing?", buttons: discardButtons)
+        alert.present(on: window) { answers.append($0) }
+        window.endSheet(alert.panel)
+        expect(answers == [cancelIndex] && alert.response == cancelIndex, "endSheet with no button answers Cancel once (\(answers))")
+        expect(AppAlert.presentedAlerts.isEmpty && window.attachedSheet == nil, "...and the alert is no longer presented")
+        alert.dismiss(withButton: 0); alert.panel.cancelOperation(nil)
+        expect(answers == [cancelIndex], "A late press after the sheet ended does not answer a second time")
+        // The window the sheet hangs from closes.
+        let closing = host()
+        var closedAnswers: [NSApplication.ModalResponse] = []
+        let underClose = AppAlert(title: "Rename", buttons: [.init(title: "OK"), .init(title: "Cancel", role: .cancel)])
+        underClose.present(on: closing) { closedAnswers.append($0) }
+        NotificationCenter.default.post(name: NSWindow.willCloseNotification, object: closing)
+        expect(closedAnswers == [.alertSecondButtonReturn] && AppAlert.presentedAlerts.isEmpty, "Closing the host window answers Cancel once and clears the alert (\(closedAnswers))")
+        NotificationCenter.default.post(name: NSWindow.willCloseNotification, object: closing)
+        expect(closedAnswers == [.alertSecondButtonReturn], "A second close notification does not answer again")
+        // The alert's own panel closes.
+        let own = host()
+        var ownAnswers: [NSApplication.ModalResponse] = []
+        let closedPanel = AppAlert(title: "Upload failed", buttons: [.init(title: "OK")])
+        closedPanel.present(on: own) { ownAnswers.append($0) }
+        closedPanel.panel.close()
+        expect(ownAnswers == [.alertFirstButtonReturn] && AppAlert.presentedAlerts.isEmpty, "Closing the alert's panel answers the only button once (\(ownAnswers))")
+        // No Cancel button: the sheet ending never picks the destructive choice.
+        let guarded = host()
+        var guardedAnswers: [NSApplication.ModalResponse] = []
+        let noCancel = AppAlert(title: "Delete?", buttons: [.init(title: "Delete", role: .destructive), .init(title: "Keep")])
+        noCancel.present(on: guarded) { guardedAnswers.append($0) }
+        guarded.endSheet(noCancel.panel)
+        expect(guardedAnswers == [.cancel] && guardedAnswers != [.alertFirstButtonReturn], "Without a Cancel button, an ended sheet answers plain cancel, never the first (destructive) button")
+        // A button still answers with its own response and the end of the sheet that follows does not answer again.
+        let pressed = host()
+        var pressedAnswers: [NSApplication.ModalResponse] = []
+        let normal = AppAlert(title: "Save your drawing?", buttons: discardButtons)
+        normal.present(on: pressed) { pressedAnswers.append($0) }
+        normal.buttonViews[2].performClick(nil)
+        expect(pressedAnswers == [.alertThirdButtonReturn] && pressed.ended == [normal.panel], "A button answers with its own response; the sheet ending after it adds nothing")
+    }
+
     // MARK: accessibility
 
     private static func accessibility() {
@@ -204,6 +262,24 @@ private enum AppAlertTests {
         expect(alert.buttonViews.map { $0.accessibilityLabel() } == ["Move to Trash", "Cancel"], "Every button is labelled with its title")
         expect(alert.titleLabel.accessibilityLabel() == alert.title && alert.messageLabel.accessibilityLabel() == alert.message, "Title and message are read as written")
         alert.dismiss(withButton: 1)
+    }
+
+    // MARK: contrast
+
+    /// The sheet's title and message read on the sheet's window colour in light, dark and both Increase Contrast arms.
+    private static func contrast() {
+        let field = NSTextField(string: "Name"); field.font = DesignTokens.Typography.font(.body); field.frame = NSRect(x: 0, y: 0, width: 512, height: 40)
+        for alert in [AppAlert(title: "Save your drawing?", message: "This document has changes that have not been saved.", buttons: discardButtons),
+                      AppAlert(title: "Rename", message: "Document name", buttons: [.init(title: "OK"), .init(title: "Cancel", role: .cancel)], accessoryView: field)] {
+            let content = alert.panel.contentView!
+            for (name, appearance) in ContrastProbe.appearances {
+                let reading = ContrastProbe.measure(content, appearance: appearance, plateAt: NSPoint(x: 3, y: 3),
+                                                    textFrames: [alert.titleLabel.frame, alert.messageLabel.frame], plate: alert.panel.backgroundColor)
+                expect(reading.plateOpaque, "The sheet sits on an opaque window colour (\(alert.title), \(name))")
+                expect(reading.textRatios[0] >= 4.5 && reading.textRatios[1] >= 4.5,
+                       "The title and message read at 4.5:1 on the sheet (\(alert.title), \(name): \(reading.textRatios))")
+            }
+        }
     }
 
     // MARK: error and seam
