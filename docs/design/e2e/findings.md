@@ -1,6 +1,6 @@
 # E2E audit findings: lane J1 (editor core)
 
-Source revision `15d5ec2` (main `7c8bdb1` + tooltip crash fix + E2E infra). Driver: Sonnet J1, real clicks and keys through kimi-cu on an isolated session copy. Screenshots live in `docs/design/evidence/e2e-2026-10-10/j1/`.
+Source revision `15d5ec2` (main `7c8bdb1` + tooltip crash fix + E2E infra). Driver: J1 lane, real clicks and keys through kimi-cu on an isolated session copy. Screenshots live in `docs/design/evidence/e2e-2026-10-10/j1/`.
 
 Severity: P0 crash or data loss, P1 broken or confusing, P2 visual or space, P3 polish.
 
@@ -154,7 +154,7 @@ Harness notes that affect how to read the evidence (not app defects):
 
 # E2E audit findings: lane J2 (History, Destinations, Settings, uploads, About, status item)
 
-Source revision `10040ba` (main after J1 and audit fix batch 1). Driver: Sonnet J2, real clicks through kimi-cu on two isolated session copies (pids 39783 and 90314). Screenshots live in `docs/design/evidence/e2e-2026-10-10/j2/` (names below are relative to it). History's glass/text-button polish request is deferred by the owner and is not a finding here.
+Source revision `10040ba` (main after J1 and audit fix batch 1). Driver: J2 lane, real clicks through kimi-cu on two isolated session copies (pids 39783 and 90314). Screenshots live in `docs/design/evidence/e2e-2026-10-10/j2/` (names below are relative to it). History's glass/text-button polish request is deferred by the owner and is not a finding here.
 
 How to read the evidence: windows are captured one at a time, so menus, pop-up lists and context menus never appear in a screenshot; those were driven through AX presses and read back, and are labelled as such in the matrix.
 
@@ -285,7 +285,7 @@ How to read the evidence: windows are captured one at a time, so menus, pop-up l
 
 # E2E audit findings: lane J3 (rendered matrix)
 
-Source revision `3194247` (main after fix batches 3a and 3b). Driver: Sonnet J3, harness captures only (`tools/eye-dump-audit.sh`, throwaway bundle id, isolated HOME and defaults, display options injected inside the throwaway copy). **Nothing here is a real-click E2E result**: a capture proves how a state looks, not that a user can reach it, and the harness cannot prove VoiceOver speech or live screen capture. The 106-capture packed set is `docs/design/evidence/e2e-2026-10-10/j3/` (file names below are relative to it, with `@3194247` dropped); side-by-side composites are in `docs/design/evidence/e2e-2026-10-10/j3-diffs/`. Raw runs stayed in `/tmp/j3/` (not committed, 3,338 PNGs over 18 runs).
+Source revision `3194247` (main after fix batches 3a and 3b). Driver: J3 lane, harness captures only (`tools/eye-dump-audit.sh`, throwaway bundle id, isolated HOME and defaults, display options injected inside the throwaway copy). **Nothing here is a real-click E2E result**: a capture proves how a state looks, not that a user can reach it, and the harness cannot prove VoiceOver speech or live screen capture. The 106-capture packed set is `docs/design/evidence/e2e-2026-10-10/j3/` (file names below are relative to it, with `@3194247` dropped); side-by-side composites are in `docs/design/evidence/e2e-2026-10-10/j3-diffs/`. Raw runs stayed in `/tmp/j3/` (not committed, 3,338 PNGs over 18 runs).
 
 Severity: P0 crash or data loss, P1 broken or confusing, P2 visual or space, P3 polish. Surfaces whose fix is still in flight in batch 3c (Resize sheet, Toolbox menu, full-screen layout, History confirmations) are marked **pending 3c** instead of being filed again.
 
@@ -449,7 +449,7 @@ Method note: an automated per-field contrast sweep over the metrics was tried an
 
 # E2E audit findings: lane J4 (real-click retest of audit batches 3a, 3b and 3c)
 
-Source revision `94b7aa5` (main after merge of batch 3c). Driver: Sonnet J4, real clicks and keys through kimi-cu on two isolated session copies: pid 62733 (`com.shoemoney.opensnap.e2e-62694`, `--seed all`) and pid 70107 (`com.shoemoney.opensnap.e2e-70088`, `--seed history --aws`). Both stopped with "stores unchanged". Screenshots are in `docs/design/evidence/e2e-2026-10-10/j4/` (names below are relative to it, shortened to their number). The live AWS check is logged in `j4-aws-log.md`.
+Source revision `94b7aa5` (main after merge of batch 3c). Driver: J4 lane, real clicks and keys through kimi-cu on two isolated session copies: pid 62733 (`com.shoemoney.opensnap.e2e-62694`, `--seed all`) and pid 70107 (`com.shoemoney.opensnap.e2e-70088`, `--seed history --aws`). Both stopped with "stores unchanged". Screenshots are in `docs/design/evidence/e2e-2026-10-10/j4/` (names below are relative to it, shortened to their number). The live AWS check is logged in `j4-aws-log.md`.
 
 ## J4 retest
 
