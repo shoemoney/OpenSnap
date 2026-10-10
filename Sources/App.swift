@@ -1222,8 +1222,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     /// The two Drawing toggles set a pen default and change only that one flag on the selection; they never restyle it with the pen.
     @objc func toggleBezelFill(_ sender: NSMenuItem) { canvas.filled.toggle(); canvas.setFilledOnSelection(canvas.filled) }
     @objc func toggleBezelShadow(_ sender: NSMenuItem) { canvas.shadowed.toggle(); canvas.setShadowOnSelection(canvas.shadowed) }
+    /// What the zoom pop-up's tooltip says: the mode when there is one, then what the percentage measures (F-J3-005).
+    static let zoomExplanation = "Zoom is how large the drawing is shown. Actual Size shows one image pixel per screen pixel."
+    static func zoomTooltip(spoken: String?) -> String { spoken.map { "\($0). " + zoomExplanation } ?? zoomExplanation }
     @objc func changeZoom(_ sender: NSPopUpButton) {
-        AppToolTip.setText(sender.selectedItem?.toolTip, for: sender)
+        AppToolTip.setText(Self.zoomTooltip(spoken: sender.selectedItem?.toolTip), for: sender)
         guard !isActualSize, let scale = sender.selectedItem?.representedObject as? Double else { return }
         canvas.setZoom(CGFloat(scale)); updateStatus()
     }
@@ -1243,7 +1246,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         let percent = "\(Int((canvas.zoom*100).rounded()))%"
         let item = NSMenuItem(title: percent, action: nil, keyEquivalent: "")
         item.toolTip = "\(label), \(percent)"
-        AppToolTip.setText("\(label), \(percent)", for: zoomControl)
+        AppToolTip.setText(Self.zoomTooltip(spoken: "\(label), \(percent)"), for: zoomControl)
         item.tag = 999; item.representedObject = Double(canvas.zoom); zoomControl.menu?.insertItem(item, at: 0); zoomControl.select(item)
     }
     func changed() {
@@ -1302,8 +1305,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             let detail = dragSizeLabel.stringValue
             if detail.isEmpty { variants = ["\(tool) · \(state)", state] }
             else {
+                // What goes first when the slot narrows: the format and bytes, then the tool, then the document's size; the tool or the size
+                // outlasts the format and the bytes, and the saved state is never the one dropped.
                 let dimensions = detail.components(separatedBy: " · ")[0]
-                variants = ["\(tool) · \(state) · \(detail)", "\(tool) · \(state) · \(dimensions)", "\(state) · \(dimensions)", state]
+                variants = ["\(tool) · \(state) · \(detail)", "\(tool) · \(state) · \(dimensions)", "\(state) · \(dimensions)", "\(tool) · \(state)", state]
             }
         }
         status.setVariants(variants)

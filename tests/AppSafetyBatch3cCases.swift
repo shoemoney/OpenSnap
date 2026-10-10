@@ -202,16 +202,9 @@ extension AppSafetyTests {
         let toolbox = try b3cFind(NSPopUpButton.self, in: app.window.contentView) { $0.accessibilityLabel() == "Toolbox menu" }.b3cUnwrap("Toolbox")
         let rows = (toolbox.menu?.items ?? []).dropFirst().filter { !$0.isSeparatorItem }
         try expect(rows.count == 18 && rows.count < 33, "The Toolbox is \(rows.count) rows, not the old 33")
-        func hasInlineIcon(_ item: NSMenuItem) -> Bool {
-            var found = false
-            item.attributedTitle?.enumerateAttribute(.attachment, in: NSRange(location: 0, length: item.attributedTitle?.length ?? 0)) { value, _, _ in
-                if let attachment = value as? NSTextAttachment, attachment.image != nil { found = true }
-            }
-            return found
-        }
-        try expect(rows.allSatisfy { hasInlineIcon($0) || $0.action == #selector(AppDelegate.toggleBezelFill(_:)) || $0.action == #selector(AppDelegate.toggleBezelShadow(_:)) },
-                   "Every row draws its menu symbol in its title (a pull-down does not draw item images; the two checkmark rows keep the check instead): \(rows.filter { !hasInlineIcon($0) }.map(\.title))")
-        try expect(rows.filter { hasInlineIcon($0) }.allSatisfy { $0.image == nil && !$0.title.contains("\u{FFFC}") && $0.title == $0.attributedTitle?.string.replacingOccurrences(of: "\u{FFFC}  ", with: "") },
+        try expect(rows.allSatisfy { b4RowHasIcon($0) || $0.action == #selector(AppDelegate.toggleBezelFill(_:)) || $0.action == #selector(AppDelegate.toggleBezelShadow(_:)) },
+                   "Every row draws its menu symbol in its title (a pull-down does not draw item images; the two checkmark rows keep the check instead): \(rows.filter { !b4RowHasIcon($0) }.map(\.title))")
+        try expect(rows.filter { b4RowHasIcon($0) }.allSatisfy { $0.image == nil && !$0.title.contains("\u{FFFC}") && $0.title == $0.attributedTitle?.string.replacingOccurrences(of: "\u{FFFC}  ", with: "") },
                    "The icon lives in the attributed title only; the plain title stays the command's name for accessibility")
         let titles = rows.map(\.title)
         try expect(["About OpenSnap", "Settings…", "Quit OpenSnap", "New", "Open…", "Print…"].allSatisfy { !titles.contains($0) }, "No app or file plumbing in the Toolbox: \(titles)")

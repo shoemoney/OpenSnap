@@ -1438,7 +1438,10 @@ private enum GlassChromeTests {
         expect(variants.count > 5 && variants.last == variants.first, "There are middle-cut steps, and the whole sentence comes last so the cell cuts it at its tail when nothing fits (\(variants.count))")
         expect(zip(variants.dropLast(), variants.dropLast().dropFirst()).allSatisfy { $0.count > $1.count }, "The steps only get shorter")
         expect(variants.dropFirst().dropLast().allSatisfy { $0.hasPrefix("Link copied · ") && $0.contains("…") }, "Every step after the first keeps Link copied · and cuts the address in its middle")
-        expect(variants.dropFirst().dropLast().allSatisfy { $0.hasPrefix("Link copied · cdn") && $0.hasSuffix("png") }, "The host's start and the file name's end survive the cuts (\(variants[3]))")
+        expect(variants.dropFirst().dropLast().allSatisfy { ($0.hasPrefix("Link copied · cdn") || $0.hasPrefix("Link copied · Sh")) && $0.hasSuffix("png") }, "The host's start (or, narrower, the file name's start) and the file name's end survive the cuts (\(variants[3]))")
+        let nameSteps = variants.dropFirst().dropLast().filter { $0.hasPrefix("Link copied · Sh") }
+        expect(nameSteps.count >= 3 && nameSteps.allSatisfy { !$0.contains("cdn") } && variants.dropLast().last == nameSteps.last && nameSteps.last!.count <= "Link copied · ".count + 10,
+               "At 980 the last steps keep the file name, middle-cut, rather than a host stump (\(nameSteps))")
         expect(UploadState.success(url: url, copied: true).detailText == "Link copied: " + url.absoluteString, "The full URL stays in the tooltip and the VoiceOver help")
         expect(UploadState.success(url: url, copied: false).statusVariants == ["Published image"] && UploadState.idle.statusVariants.isEmpty, "An uncopied link and idle have no link text")
         expect(UploadState.uploading(name: "Shot").statusVariants == ["Uploading Shot…"] && UploadState.failure(message: "No.\nMore").statusVariants == ["Error: No."], "Uploading and error stay one sentence")

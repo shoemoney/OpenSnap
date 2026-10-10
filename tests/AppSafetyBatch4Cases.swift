@@ -9,6 +9,9 @@ extension AppSafetyTests {
             ("A fitted screenshot is stored, titled, archived and resized in whole pixels, never a fraction of the fit scale (F-J3-006)", b4WholePixelSizes),
             ("A freshly opened History entry shows its own size in the title and status at once, not the previous document's (F-J4-006)", b4SizeTextOnOpen),
             ("Capture Shortcuts… opens Settings on the Capture tab; no second shortcut sheet exists (F-J2-020)", b4CaptureShortcutsSingleSurface),
+            ("Resize wears the official Font Awesome Free resize glyph, not a ruler, and its menu symbol follows (F-J3-011)", b4ResizeGlyph),
+            ("The zoom and Original size controls say what they measure in their tooltips and spoken help (F-J3-005)", b4ZoomAndOriginalLabels),
+            ("The normal status line gives up format and bytes first, then the tool, and always keeps the state whole (F-J3-007)", b4StatusPriority),
             ("Delete from Web and Move to Trash put Cancel first: it is the default button and holds the initial focus (F-J4-005)", b4DestructiveSheetsFocusCancel)
         ]
     }
@@ -56,6 +59,7 @@ extension AppSafetyTests {
         let big = try store.archive(try b4Snapshot(size: CGSize(width: 900, height: 600), title: "Big"), name: "Big", action: .archived)
         app.canvas.newBlank(size: NSSize(width: 400, height: 300)); app.updateStatus(); app.updateDragPreview()
         try expect(app.dragSizeLabel.stringValue.hasPrefix("400 × 300 · PNG"), "The previous document reads 400 × 300 (\(app.dragSizeLabel.stringValue))")
+        app.dirty = false
         app.openHistory(big)
         try expect(app.canvas.outputSize == CGSize(width: 900, height: 600), "The entry is open (\(app.canvas.outputSize))")
         try expect(app.dragSizeLabel.stringValue.hasPrefix("900 × 600 · PNG") && app.window.subtitle.hasPrefix("900 × 600 · PNG"),
@@ -101,6 +105,60 @@ extension AppSafetyTests {
         b4Answer(.alertFirstButtonReturn); b4Answer(.alertFirstButtonReturn)
         try expect(store.entry(bound)?.remoteURL != nil && store.entries.count == 1, "Cancel on both removes nothing")
     }
+    /// Whether a menu row draws an icon: an `image`, or (in the Toolbox pull-down, which does not draw item images) a text attachment in its title.
+    static func b4RowHasIcon(_ item: NSMenuItem) -> Bool {
+        if item.image != nil { return true }
+        var found = false
+        item.attributedTitle?.enumerateAttribute(.attachment, in: NSRange(location: 0, length: item.attributedTitle?.length ?? 0)) { value, _, _ in
+            if let attachment = value as? NSTextAttachment, attachment.image != nil { found = true }
+        }
+        return found
+    }
+
+    private static func b4Chrome(_ app: AppDelegate) throws -> ModernEditorChrome {
+        guard let chrome = app.modernChrome as? ModernEditorChrome else { throw Failure(description: "AppDelegate did not build ModernEditorChrome") }
+        return chrome
+    }
+
+    private static func b4ResizeGlyph() throws {
+        let fixture = try Fixture(), app = fixture.app
+        let chrome = try b4Chrome(app)
+        try expect(chrome.resizeButton.icon == .resizeDiagonal, "Resize… draws the resize glyph (\(String(describing: chrome.resizeButton.icon)))")
+        try expect(chrome.resizeButton.icon != chrome.toolButtons["crop"]?.icon, "and it is not the Crop tool's glyph")
+        try expect(chrome.resizeButton.iconSource == .fontAwesomeFree("up-right-and-down-left-from-center") || { if case .fontAwesome = chrome.resizeButton.iconSource { return true } else { return false } }(),
+                   "It is the Font Awesome Free vector (or the Pro glyph in a dev build), not an SF Symbol (\(chrome.resizeButton.iconSource))")
+        try expect(MenuSymbols.map[#selector(AppDelegate.resize)] == "arrow.up.right.and.arrow.down.left", "The Image › Resize… menu symbol is the matching resize arrows, not a ruler")
+        try expect(FAIcon.resizeDiagonal.sfSymbolFallback == "arrow.up.right.and.arrow.down.left" && FAIcon.allCases.allSatisfy { $0.rawValue != "ruler-combined" }, "The SF fallback matches and the ruler is gone from the icon set")
+    }
+
+    private static func b4ZoomAndOriginalLabels() throws {
+        let fixture = try Fixture(), app = fixture.app
+        let zoomTip = AppToolTip.text(for: app.zoomControl) ?? ""
+        try expect(zoomTip.contains("how large the drawing is shown") && zoomTip.contains("one image pixel per screen pixel"), "The zoom explains what its percentage is: \(zoomTip)")
+        try expect(app.zoomControl.accessibilityHelp() == zoomTip, "Spoken help carries it too")
+        app.setCanvasDisplayZoom(0.83, label: "Fit")
+        let fitTip = AppToolTip.text(for: app.zoomControl) ?? ""
+        try expect(fitTip.hasPrefix("Fit, 83%.") && fitTip.hasSuffix("one image pixel per screen pixel."), "A mode word leads the explanation: \(fitTip)")
+        try expect(app.dragOriginalControl.title == "Original size" && app.dragOriginalControl.accessibilityLabel() == "Export at original size", "The box keeps its short title and is spoken as what it does")
+        let tip = AppToolTip.text(for: app.dragOriginalControl) ?? ""
+        try expect(tip.contains("own pixel size") && tip.contains("export") && tip.contains("upload"), "Its tooltip says it governs the dragged, exported and uploaded picture: \(tip)")
+    }
+
+    private static func b4StatusPriority() throws {
+        let fixture = try Fixture(), app = fixture.app
+        app.canvas.newBlank(size: NSSize(width: 800, height: 600)); app.setTool(.arrow); app.dirty = true
+        app.updateDragPreview()
+        let variants = app.status.variants
+        try expect(variants.count == 5 && variants[0].components(separatedBy: " · ").count == 5, "The full line has tool, state, size, format and bytes (\(variants))")
+        try expect(variants[1] == "Arrow · Unsaved changes · 800 × 600", "Format and bytes go first: \(variants[1])")
+        try expect(variants[2] == "Unsaved changes · 800 × 600" && variants[3] == "Arrow · Unsaved changes" && variants[4] == "Unsaved changes",
+                   "then the tool, then the size, and the state is the last thing standing: \(variants)")
+        try expect(variants.dropFirst().allSatisfy { !$0.contains("PNG") && !$0.contains("KB") && !$0.contains("MB") && !$0.contains("bytes") }, "No shortened step carries the format or the bytes")
+        try expect(variants.allSatisfy { $0.contains("Unsaved changes") }, "Every step keeps the state whole")
+        app.dirty = false; app.updateStatus()
+        try expect(app.status.variants.last == "Saved" && app.status.variants.dropFirst().allSatisfy { $0.contains("Saved") }, "A saved drawing is the same")
+    }
+
     private static func b4Answer(_ response: NSApplication.ModalResponse) {
         let held = AppSafetyAlert.pending.removeFirst()
         withExtendedLifetime(held) { held.reply(response) }
