@@ -560,3 +560,93 @@ Positive controls re-exercised and still working: drawing an ellipse, rectangle 
 ## Unverified and why
 
 F-J2-011 (⌘1 to ⌘4, see above), F-J2-017 (tool cannot show labels), F-J2-009 minimum-size reflow (no resize tool), FTP and FTPS destination forms (not opened), the Retrying label and Upload cancelled notice (needs a slow network), the 12 s success-line hold (only one upload allowed), and the clipboard: it held no text before the run, so non-text contents (if any) could not be saved; it was reset to empty text at the end.
+
+## J5 gap closure
+
+J5 lane, build e953411, three isolated sessions (pid 70334 seeded `all`, 86919 seeded `history` for the no-destination rows, 23880 seeded `empty` for the Fonts panel and zoom labels). Every row that was `unverified` was either exercised by real input and set to E2E with a viewed screenshot, or given exactly one gap reason in its notes and left `unverified`. The matrix `gap` column is regenerated from `tools/e2e-inventory.py` and was not touched; the J5 reason class is the first words of the `observed` cell (`J5 lane: gap: <reason>.`). Evidence is in `docs/design/evidence/e2e-2026-10-10/j5/` (48 jpg plus `44-ax-and-state-readouts-j5.txt`).
+
+### Counts
+
+| Evidence class | before J5 | after J5 |
+|---|---|---|
+| E2E | 258 | 305 |
+| rendered | 94 | 94 |
+| unit/source | 91 | 91 |
+| unverified | 146 | 99 |
+| total | 589 | 589 |
+
+47 rows moved to E2E, 99 stay `unverified` with an explicit reason:
+
+| Gap reason | rows | what it covers |
+|---|---|---|
+| `gap: unsafe` | 36 | capture items and shortcuts that grab the owner's display (Crosshair, Fullscreen, Window, Frame Snap, Timed, Snap…, ⌘1–⌘4, Shift/Option capture gestures), Hide Others / Show All, global-hotkey firing and the live Settings › Capture shortcut controls (system-wide registration), Move to Trash, Open Link, uploads and web deletes (network), Cancel Upload |
+| `gap: harness` | 32 | synthetic right-click context menus (History, text annotation), held modifiers and keys (Space, Shift, Option), file drop and cross-app drag-out, menu picks while the app is inactive (Spelling), clicks swallowed when the window is not key (Group/Ungroup, missing-file selection, shortcut sheet segments), full-keyboard sweeps, announcements, VoiceOver, menu check marks, the navigator panel, the dead circle-exclamation icon |
+| `gap: OS-owned` | 22 | Open, Save, Export and Print panels and the Export accessory (out-of-process panel service, invisible to the harness), Photos/Pictures folder choosers, share picker, Spelling panel, Colors panel modes |
+| `gap: hardware` | 5 | multi-display, 1x display, printer |
+| `gap: permission` | 4 | Screen Recording capture rows, Photos Library |
+
+### What changed to E2E (47)
+
+Capture menu Frame Snapshot, Cancel Frame, Snap from Link (a synthetic page on 127.0.0.1) and its sheet; Timed Snapshot sheet; Hide OpenSnap (⌘H) and the status item Show / Settings…; Arrow Head At End; Edit › Remove Annotations, Remove Snap Picture, Arrange › Bring to Front and Send to Back; zoom pop-up Actual Size, the Overview navigator (appears, follows the wheel), canvas border handles; Upload menu destination row, Destination Settings…, No destination configured and Upload with no destination; Fonts panel Text outline, Text shadow and Default Text Style; History Drag as JPG, TIFF, SVG, tile double-click, the selected-tile circle-check badge; Resize or Crop Limit by, anchors and validation message; Page Setup; ⌘, ⌘C ⌘X ⇧⌘P ⌘W ⌘H and ⌘D on the Save your drawing? sheet; Settings Esc and ⌘W; default window size; dirty then Save; AX names, roles and states of the icon-only controls; the Toolbox menu rows.
+
+### Re-check after batch 4
+
+These rows were tested against the current behaviour and need a second look once the batch 4 changes land: E2E-MENU-004 note and E2E-HOT-016 (app-menu Capture Shortcuts… still opens the sheet; the idle sheet shows no status line, only the pause note and the Original Frame footnote, `19-…jpg`), the Capture tab in Settings (`18-…jpg`), destination form heights (not opened this run), History empty states (not reached) and the Resize glyph (not compared).
+
+### New findings
+
+### F-J5-001 · P3 · Timed Snapshot throws away an invalid delay without a word
+- **Surface:** Capture › Timed Snapshot…
+- **Steps:** open the sheet (Delay in seconds, default 6), replace the value with `abc`, press OK.
+- **Observed:** the sheet closes, nothing starts, no message or status line explains it (`04-…jpg`, `05-…jpg`). The code accepts 0 to 120 only and returns silently for anything else.
+- **Expected:** keep the sheet open with an Error: line the way Resize or Crop does (`34-…jpg`: "Enter whole pixel dimensions from 1 to 16,384."), or at least a status notice.
+- **Suggested fix:** validate in the sheet and show the range (0–120 s) before closing.
+
+### F-J5-002 · P3 (observation, may be the harness) · ⌘D does not answer the Save your drawing? sheet that is attached to History
+- **Surface:** History › double-click a tile while the editor is dirty
+- **Steps:** double-click a tile; the sheet appears on the History window; press ⌘D (the Don't Save equivalent that works on the editor-attached sheet, `08-…jpg`).
+- **Observed:** the sheet stays (`27-…jpg`); pressing the Don't Save button through AX worked and opened the snap (`28-…jpg`). The History window was not key when ⌘D was posted, which may be why.
+- **Expected:** the same key equivalents on both hosts.
+- **Suggested fix:** confirm with a real key press; route AppAlert key equivalents through the sheet's own window, not the key window.
+
+### F-J5-003 · P3 · Save to History on a blank canvas does nothing and says nothing
+- **Surface:** Edit/File › Save to History and the bottom-bar Save
+- **Steps:** Snap from Link, then Remove Snap Picture and Remove Annotations so the canvas is blank white; press Save to History (menu and button, twice).
+- **Observed:** no new History entry (History still shows 6 items), status stays "Select · Unsaved changes", no notice (`22-…jpg`, History count unchanged in `23-…jpg`). With a picture plus drawings the same action works and reads "Saved to History" (`29-…jpg`).
+- **Expected:** either save the blank document or say there is nothing to save.
+- **Suggested fix:** add a status notice for the refused case.
+
+### F-J5-004 · P4 · Upload with no destination shows an empty list and no explanation
+- **Surface:** bottom-bar Upload with nothing configured
+- **Observed:** the Upload destinations sheet opens with a blank list box, Add… enabled and the help line "The one marked Default receives an Upload click" (`42-…jpg`); nothing says that no destination is configured (the menu does say No destination configured).
+- **Suggested fix:** show an empty-state line such as "No destinations yet. Add one to upload."
+
+### F-J5-005 · P1 (reported by the ops watchdog, cause not isolated) · The Open/Save panel service grows to ~66 GB when the isolated copy shows a system panel
+- **Surface:** ⌘E Export…, ⌘O Open…, ⌘S / ⇧⌘S Save (system panels, out-of-process `com.apple.appkit.xpc.openAndSavePanelService`)
+- **Steps:** in session 70334 press ⌘E, ⌘O, ⌘S, ⇧⌘S in turn, each dismissed with Esc or ⌘. after 3–6 s.
+- **Observed:** the app's AX tree collapses to one element while a panel is open and the panel is not visible to the harness. The ops log sweep (a peer session's message, not measured by this lane) reports the panel service footprint reaching ~66 GB within about two minutes, twice (07:26:29 and 07:31:04 CDT), ~52 GB of swap and free disk falling from 87 to 34 GiB; ops killed pids 77714 and 98463. This lane's own sample at 07:29 was pid 77714 at 57 % CPU and 3.3 GB resident. After that report this lane opened no further system panels (the Open Folder, Photos and Export accessory rows are therefore `gap: OS-owned`). The panel also registered `com.apple.xctest.FakeForceTouchDevice` (ops note).
+- **Expected:** a normal panel footprint (tens of MB).
+- **Suggested fix:** reproduce with `NSSavePanel` and no accessory view, then with the Export accessory, on the same macOS build, to separate an OpenSnap hand-over (accessory, preview image, directory URL) from a beta-OS bug; keep the ops watchdog (8 GB kill) in place for any future run that opens a system panel.
+
+### F-J5-006 · P4 (observation) · The circle-exclamation icon has no call site
+- **Surface:** E2E-ICON-026
+- **Observed:** `FAIcon.warning` (circle-exclamation) is defined in `FontAwesomeIcons.swift` and mapped in `FontAwesomeFree.swift`, but no source file uses it, so no UI state renders it and the row cannot be exercised. Errors use circle-xmark.
+- **Suggested fix:** drop the case or wire it where a warning (not failure) is shown.
+
+### F-J5-007 · P4 · Inventory names for three rows do not match the build
+- **Surface:** coverage matrix E2E-MENU-088 (Clear Image), E2E-HARN-001 (More Commands), E2E-HARN-002 (Wipe Snap Only)
+- **Observed:** the live Edit menu item is Remove Annotations, the bottom-bar button reads Remove annotations (AX also keeps "Clear image" on its disabled state), the Toolbox button is AXMenuButton "Toolbox menu" and its wipe row is Remove Snap Picture; no menu or button is named More Commands or Wipe Snap Only (`44-…txt`).
+- **Suggested fix:** rename in `tools/e2e-inventory.py` at the next regenerate (docs lane).
+
+### Harness notes for the next driver (J5 additions)
+
+- Menu picks commit ~3 s after the AX press and only while the app is active; indexes in the AX tree drift between menu opens, so re-query the menu item right before each press. A stale index silently presses a neighbouring item (this duplicated a rectangle once).
+- `AXShowMenu` on the Upload button opens the destinations menu without uploading (AXPress uploads); the AX press error code returned is misleading, the menu opens anyway.
+- `type_text` can report "not delivered, window occluded" while the text arrives; check the screenshot.
+- System panels (Open, Save, Export, Print) are out of process: the app's AX tree shrinks to one element and the harness cannot see or click them; ⌘. dismissed the print panel when Esc did not. Page Setup is in-process and visible. See F-J5-005 before opening any of them.
+- The owner's other windows can occlude the isolated window, after which menu bar picks are refused ("background app") and clicks are swallowed; a real drag makes the window key for one or two calls.
+- After a stop, the real-store compare may list `com.shoemoney.opensnap.eyedump-<pid>.plist` files: during this run pids 6797 and 6799 were live `tools/eye-dump-audit.sh` processes of the batch 4 lane (`/tmp/a4/ev/...`), so the plists are theirs and were not deleted. Sessions 86919 and 23880 stopped with "stores unchanged"; 70334's compare listed only those two plists.
+
+### Clipboard
+
+The pasteboard held no text before the run (`pbpaste` returned 0 bytes; any non-text contents could not be saved). ⌘C, ⌘V and ⌘X were used once each on a synthetic rectangle; the clipboard was reset to empty text at the end (`pbpaste` = 0 bytes).
