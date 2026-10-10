@@ -1358,3 +1358,18 @@ Round 5 (independent review of `e084f15`). Tests in `tests/AppSafetyBatch11Cases
 | R5-003 | P4 | A ticked corner drag scales the picture's own pixels; past 32 M pixels the mid-drag title showed an impossible size and release cancelled silently. | **Fixed by clamping.** `cornerDragPictureSize` stops the scale at the supported size, so the title shows what release makes and release applies it. `b12OversizedTickedDrag`. The R4-003 row above no longer says the drag "cancels as the sheet's error does". |
 | R5-004 | P4 | The Limit one-pixel fix lived only in the snap path; a drawing with no snap still came out short (1400 on 1981 × 953 gave 1399 × 673; 1200 on 2351 × 900 gave 1199 × 459). | **Fixed.** One shared rule (`partnerIsRoundedProportion`) serves the snap path and the generic proportional path. `b12LimitWithoutSnap` (both examples). |
 | Notes | — | The R4-001 ledger line overstated what the restore does; audit-fix-10's ticked corner-drag captures predate R4-003. | The R4-001 line is reworded; `audit-fix-10/captures.md` points the S46 ticked entries to audit-fix-11. |
+
+### Responses after round 6 (batch 13)
+
+Round 6 (independent review of `3b453b3`). Tests in `tests/AppSafetyBatch11Cases.swift` (batch 13's cases share the file), each with a can-fail proof (the fix reverted in a scratch copy with fake defaults, the test fails).
+
+| ID | Sev | Finding | Batch 13 |
+|---|---|---|---|
+| R6-001 | P4 | A ticked corner drag clamped only against the document size. After an edge crop on a snap the canvas keeps the whole uncropped photo, and release scales it by the same factor; 5120 × 3600 cropped to 2560 × 3600, then a big ticked drag, showed about 4770 × 6708 in the title while the kept photo would need about 9540 × 6708 (≈64 M pixels), so release cancelled silently. | **Fixed.** The gesture records the retained photo's size at begin (`WindowGesture.photoSize`, from `Canvas.retainedPhotoSize`); `cornerDragPictureSize` takes the ceiling from the document and the photo, and its validity loop checks the photo scaled the way `scaledState` scales it. `b13OversizedDragAfterCrop` (crop, then a drag the cropped picture could make but the photo could not: the title is what release leaves, one Undo step). |
+| R6-002 | P4 | `leaveActualSize`'s windowed branch used full screen's record of the zoom without checking its generation; a new snap taken in full screen, or a file opened there, starts a new document without clearing the record, so the old document's 60% landed on the new one. | **Fixed.** The record counts only when its generation is the Actual Size state's. `b13StaleFullScreenZoom` (60% document, full screen, new large document, Actual Size, leave full screen, leave Actual Size: 100% in a window that holds it). |
+
+#### Pre-existing, unchanged by batches 11–13 (recorded as known gaps)
+
+- Leaving full screen while the Resize sheet is up, then Cancel, puts full screen's zoom and frame back on the normal window.
+- After a size change made in full screen, leaving full screen resizes the window only if the zoom changed.
+- The Actual Size navigator nudge, when full screen is entered during Actual Size, may leave the window up to about 175 pt narrower than its canvas.

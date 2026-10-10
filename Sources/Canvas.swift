@@ -353,6 +353,8 @@ final class CanvasView: NSView, NSTextViewDelegate {
         return undoState(pending).document != undoState(before).document
     }
     var canvasSize: NSSize { document.size }
+    /// The whole photo kept behind an edge crop; a Resize scales it with the picture, so its size bounds how far the picture may grow.
+    var retainedPhotoSize: NSSize? { panBackground?.sourceSize }
     var outputSize: NSSize { document.outputSize }
     /// Actual presents the currently visible source coordinates, not the retained
     /// photo's hidden extent. Original documentPixelSize rounds to the nearest

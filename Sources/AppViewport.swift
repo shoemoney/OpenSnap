@@ -194,7 +194,7 @@ extension AppDelegate {
                 pictureFitZoom = state.pictureFit
                 fitDrawingForFullScreen()
             } else {
-                setCanvasDisplayZoom(state.fullScreenZoom?.before ?? state.zoom, label: "Normal")
+                setCanvasDisplayZoom(state.fullScreenZoom.flatMap { $0.generation == state.generation ? $0.before : nil } ?? state.zoom, label: "Normal")
                 pictureFitZoom = state.pictureFit
                 fullScreenZoom = nil
                 if refitPictureZoom() || sizeChanged { sizeNormalWindowToCanvas(centered: false) }
@@ -354,7 +354,7 @@ extension AppDelegate {
         switch handle { case .corner: name = "Resize Image"; case .edge: name = "Crop Canvas" }
         guard canvas.beginViewportEdit(name: name) else { return false }
         windowGesture = WindowGesture(generation: documentGeneration, outputSize: canvas.outputSize,
-                                       sourceSize: canvas.canvasSize, zoom: canvas.zoom,
+                                       sourceSize: canvas.canvasSize, photoSize: canvas.retainedPhotoSize, zoom: canvas.zoom,
                                        windowFrame: window.frame, handle: handle,
                                        scalesPicture: canvas.document.backgroundPNG != nil && dragAtOriginalSize)
         return true
@@ -365,17 +365,23 @@ extension AppDelegate {
     func cornerDragPictureSize(_ gesture: WindowGesture) -> CGSize {
         var factor = canvas.outputSize.width / gesture.outputSize.width
         // The picture's own pixels have a ceiling a shown size does not: the drag stops growing the picture there, so the title never
-        // reads a size release could not make (R5-003).
+        // reads a size release could not make (R5-003). A photo kept behind an edge crop scales with the picture, so it counts too (R6-001).
         let source = gesture.sourceSize
-        let ceiling = min(SketchDocument.maximumDimension / source.width, SketchDocument.maximumDimension / source.height,
-                          (SketchDocument.maximumPixelCount / (source.width * source.height)).squareRoot())
+        var bounded = [source]
+        if let photo = gesture.photoSize { bounded.append(photo) }
+        let ceiling = bounded.map { min(SketchDocument.maximumDimension / $0.width, SketchDocument.maximumDimension / $0.height,
+                                        (SketchDocument.maximumPixelCount / ($0.width * $0.height)).squareRoot()) }.min() ?? factor
         factor = min(factor, ceiling)
-        var size = SketchDocument.wholePixels(CGSize(width: source.width * factor, height: source.height * factor))
-        while !SketchDocument.validSize(size), factor > 0 {
-            factor *= 0.9999
-            size = SketchDocument.wholePixels(CGSize(width: source.width * factor, height: source.height * factor))
+        func sizes(_ factor: CGFloat) -> (picture: CGSize, photo: CGSize?) {
+            let picture = SketchDocument.wholePixels(CGSize(width: source.width * factor, height: source.height * factor))
+            return (picture, gesture.photoSize.map { CGSize(width: $0.width * picture.width / source.width, height: $0.height * picture.height / source.height) })
         }
-        return size
+        var scaled = sizes(factor)
+        while factor > 0, !SketchDocument.validSize(scaled.picture) || !(scaled.photo.map(SketchDocument.validSize) ?? true) {
+            factor *= 0.9999
+            scaled = sizes(factor)
+        }
+        return scaled.picture
     }
 
     func previewBorderGesture(delta: CGPoint, flags: NSEvent.ModifierFlags) {

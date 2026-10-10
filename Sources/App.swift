@@ -336,6 +336,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         let generation: UUID
         let outputSize: CGSize
         let sourceSize: CGSize
+        let photoSize: CGSize?
         let zoom: CGFloat
         let windowFrame: CGRect
         let handle: CanvasBorderHandle
