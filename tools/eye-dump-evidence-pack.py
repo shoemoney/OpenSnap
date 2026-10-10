@@ -109,9 +109,10 @@ def main():
         if layout_src.is_file():
             layout_rel = f"layout/{stem}@{args.sha}.json"
             (out / layout_rel).write_text(json.dumps(json.loads(layout_src.read_text()), separators=(",", ":"), ensure_ascii=False))
-        bs = before_stem(c)
+        # The mapped twin first, then the same id and slug: later runs keep the slug, so an earlier folder may hold exactly that capture.
         before_rel = None
-        if bs:
+        stems = [x for x in (before_stem(c), f"{c['id']}-{c['slug']}") if x]
+        for bs in stems:
             # Older evidence folders hold some twins without the @sha suffix.
             cand = next((p for p in (before / f"{bs}-{c['appearance']}@{args.before_sha}.png", before / f"{bs}-{c['appearance']}.png") if p.is_file()), None)
             for extra in args.before_also:
@@ -120,6 +121,7 @@ def main():
                 cand = next((p for p in sorted(d.glob(f"{bs}-{c['appearance']}@*.png")) + [d / f"{bs}-{c['appearance']}.png"] if p.is_file()), None)
             if cand:
                 before_rel = str(cand.relative_to(REPO)) if cand.is_absolute() and str(cand).startswith(str(REPO)) else str(cand)
+                break
         entry = {k: c[k] for k in ("id", "slug", "surface", "state", "appearance", "iconMode", "windowSize", "pixelSize", "pointSize", "scale", "sourceSha", "method")}
         entry.update({"file": dst.name, "storedPixelSize": stored, "downscaled": stored != c["pixelSize"], "layout": layout_rel, "before": before_rel})
         packed.append(entry)
