@@ -13,7 +13,9 @@ extension AppSafetyTests {
             ("The automatic zoom-to-fit is tracked after a document fit, in full screen and across Frame mode (R4-004)", b11FitZoomIsTracked),
             ("File > Export offers Original size only when the picture differs from the size it is shown at (R4-007)", b11ExportOffersOriginalOnlyWhenItDiffers),
             ("A ticked corner drag stops growing the picture at the supported size: the title never reads a size release could not make (R5-003)", b12OversizedTickedDrag),
-            ("A Limit lands on its number on a drawing with no snap too, where the partner side rounds down by half a pixel (R5-004)", b12LimitWithoutSnap)
+            ("A Limit lands on its number on a drawing with no snap too, where the partner side rounds down by half a pixel (R5-004)", b12LimitWithoutSnap),
+            ("A ticked corner drag after an edge crop also stops where the photo kept behind the crop can still scale: the title is what release leaves (R6-001)", b13OversizedDragAfterCrop),
+            ("Leaving Actual Size in a window never takes the zoom a different document had before full screen (R6-002)", b13StaleFullScreenZoom)
         ]
     }
 
@@ -296,6 +298,65 @@ extension AppSafetyTests {
         try expect(app.canvas.canvasSize == title && app.canvas.outputSize == title, "Release leaves the picture at what the title said (\(app.canvas.canvasSize))")
         try expect(app.canvas.editingUndoManager.canUndo, "…as one Undo step")
         try b6AllAgree(app, board, title, "Oversized ticked drag")
+    }
+
+    // MARK: R6-001
+
+    private static func b13OversizedDragAfterCrop() throws {
+        let fixture = try Fixture(), app = fixture.app
+        let board = b6Pasteboard(app); defer { board.releaseGlobally() }
+        let snap = CGSize(width: 5120, height: 3600)
+        try b11Large(app, size: snap, ticked: true)
+        try expect(app.beginWindowGesture(.edge(.right)), "Begin the edge crop")
+        app.previewBorderGesture(delta: CGPoint(x: -(app.canvas.outputSize.width * app.canvas.zoom) / 2, y: 0), flags: [])
+        app.endWindowGesture()
+        let cropped = app.canvas.canvasSize
+        let photo = try app.canvas.retainedPhotoSize.b6Unwrap("the photo kept behind the crop")
+        try expect(cropped.width < snap.width && photo == snap, "The crop kept the whole photo (\(cropped), photo \(photo))")
+        app.canvas.editingUndoManager.removeAllActions()
+        let shown = app.canvas.outputSize
+        try expect(app.beginWindowGesture(.corner(.bottomRight)), "Begin the corner drag")
+        app.previewBorderGesture(delta: CGPoint(x: shown.width * app.canvas.zoom * 0.6, y: 0), flags: [])
+        let proportion = app.canvas.outputSize.width / shown.width
+        try expect(snap.width * proportion * snap.height * proportion > SketchDocument.maximumPixelCount, "The drag asks for more photo pixels than may be kept (×\(proportion))")
+        try expect(cropped.width * proportion * cropped.height * proportion < SketchDocument.maximumPixelCount, "…while the cropped picture alone would have fitted")
+        let title = app.titlePixelSize
+        app.endWindowGesture()
+        try expect(app.canvas.canvasSize == title && app.canvas.outputSize == title, "Release leaves the picture at what the title said, not a cancelled drag (\(title) vs \(app.canvas.canvasSize))")
+        try expect(app.canvas.canvasSize != cropped, "…and the drag did something (\(cropped) → \(app.canvas.canvasSize))")
+        try expect(app.canvas.retainedPhotoSize.map(SketchDocument.validSize) ?? false, "The photo kept behind it is still a supported size (\(String(describing: app.canvas.retainedPhotoSize)))")
+        try b6AllAgree(app, board, title, "Oversized ticked drag after a crop")
+        app.undo()
+        try expect(app.canvas.canvasSize == cropped && !app.canvas.editingUndoManager.canUndo, "Exactly one Undo step took the drag back (\(app.canvas.canvasSize))")
+    }
+
+    // MARK: R6-002
+
+    private static func b13StaleFullScreenZoom() throws {
+        let fixture = try Fixture(), app = fixture.app
+        guard let window = app.window as? AppSafetyWindow else { throw Failure(description: "Isolated window") }
+        // A document at 60% in the window, then full screen records that zoom as the one to go back to.
+        try b11Large(app, ticked: false)
+        try b11Apply(app, width: 1667)
+        try expect(abs(app.canvas.zoom - 0.6) < 0.01, "The first document is shown at about 60% (\(app.canvas.zoom))")
+        window.setFrame(NSRect(x: 0, y: 0, width: 2056, height: 1329), display: false)
+        window.contentView?.layoutSubtreeIfNeeded()
+        window.simulatesFullScreen = true
+        app.windowDidEnterFullScreen(Notification(name: NSWindow.didEnterFullScreenNotification, object: window))
+        let record = try app.fullScreenZoom.b6Unwrap("full screen's record of the zoom")
+        // A new snap taken in full screen is a new document; full screen's record still belongs to the old one.
+        try b6Large(app, size: b11Snap)
+        try expect(app.fullScreenZoom?.generation == record.generation && record.generation != app.documentGeneration, "The record is the old document's")
+        app.toggleActualSize()
+        try expect(app.isActualSize, "Actual Size is up in full screen")
+        window.simulatesFullScreen = false
+        app.windowDidExitFullScreen(Notification(name: NSWindow.didExitFullScreenNotification, object: window))
+        app.toggleActualSize()
+        try expect(!app.isActualSize && app.fullScreenZoom == nil, "Actual Size is over and full screen's record is gone")
+        try expect(abs(app.canvas.zoom - record.before) > 0.05, "The new document does not get the old document's zoom (\(app.canvas.zoom) vs \(record.before))")
+        try expect(app.canvas.zoom == 1, "The new document is shown at 100%, as it was in the window it began in (\(app.canvas.zoom))")
+        let room = app.canvas.outputSize.width * app.canvas.zoom
+        try expect(app.window.frame.width >= room - 1, "…in a window that holds it (\(app.window.frame.width) for \(room))")
     }
 
     // MARK: R5-004
