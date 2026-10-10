@@ -625,7 +625,7 @@ final class GlobalHotkeyForm: NSView {
             for index in Self.modifierSegments.indices { modifiers.setWidth(Self.modifierSegmentWidth, forSegment: index) }
             modifiers.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.control).isActive = true
             modifiers.setAccessibilityLabel("\(action.title) modifier keys")
-            modifiers.toolTip = "Modifier keys: " + Self.modifierSegments.map { "\($0.1) \($0.2)" }.joined(separator: ", ")
+            AppToolTip.setText("Modifier keys: " + Self.modifierSegments.map { "\($0.1) \($0.2)" }.joined(separator: ", "), for: modifiers)
             let line = NSStackView(views: [key, modifiers])
             line.orientation = .horizontal; line.alignment = .centerY; line.spacing = Space.s3
             rows[action] = Row(key: key, modifiers: modifiers)
