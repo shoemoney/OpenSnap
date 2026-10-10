@@ -553,7 +553,7 @@ extension AppSafetyTests {
             "tool.text.id": "text",
             "tool.text.label": "Text",
             "tool.text.tip": "Text tool",
-            "toolbox.items": "Toolbox|About OpenSnap|Preferences…|Quit OpenSnap||New|Open...|Browse Photos|Save to History|Export...|Save As...|Print...||Cut|Copy|Paste|Delete|Select All|Duplicate|Show Fonts||Crosshair Snapshot|Fullscreen Snapshot|Frame Snapshot|Re-snap (Keep Pen)||Set Snap to Normal Size|Flip|Rotate 90° Clockwise|Background Color to Transparent|Crop Snap at Current View|Wipe Snap Only||More Commands|Filled Shapes|Shadow",
+            "toolbox.items": "Toolbox|About OpenSnap|Settings…|Quit OpenSnap||New|Open…|Photos…|Save to History|Export…|Save As…|Print…||Cut|Copy|Paste|Delete|Select All|Duplicate|Text Style…||Crosshair Snapshot|Fullscreen Snapshot|Frame Snapshot|Re-snap (Keep Pen)||Set Snap to Normal Size|Flip Horizontal|Rotate Clockwise|Transparent Background|Crop Snap at Current Edges|Wipe Snap Only||More Commands|Filled Shapes|Shadow",
             "toolbox.label": "Toolbox",
             "toolbox.tip": "Common drawing and capture commands; additional actions are in More Commands",
             "zoom.label": "Canvas zoom"

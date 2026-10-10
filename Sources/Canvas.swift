@@ -129,7 +129,7 @@ private final class SketchTextEditor: NSTextView {
     override var undoManager: UndoManager? { typingHistory }
     override func menu(for event: NSEvent) -> NSMenu? {
         let menu = super.menu(for: event) ?? NSMenu()
-        menu.font = .systemFont(ofSize: 20)
+        menu.font = DesignTokens.Typography.font(.body)
         guard delegate is CanvasView else { return menu }
         menu.addItem(.separator())
         let item = NSMenuItem(title: "Text Style…", action: #selector(showTextStyle), keyEquivalent: "")
@@ -1834,7 +1834,7 @@ final class CanvasView: NSView, NSTextViewDelegate {
     override func menu(for event: NSEvent) -> NSMenu? {
         guard !event.modifierFlags.contains(.control), let element = hitElement(documentPoint(event)), element.kind == .text else { return nil }
         finishTextEditing(); selection = [element.id]; needsDisplay = true
-        let menu = NSMenu(title: "Text"); menu.font = .systemFont(ofSize: 20)
+        let menu = NSMenu(title: "Text"); menu.font = DesignTokens.Typography.font(.body)
         let style = NSMenuItem(title: "Text Style…", action: #selector(requestTextStyle), keyEquivalent: "")
         style.target = self; menu.addItem(style)
         let defaults = NSMenuItem(title: "Default Text Style", action: #selector(defaultTextStyle), keyEquivalent: "")

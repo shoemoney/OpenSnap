@@ -27,9 +27,10 @@ private enum FontAwesomeIconsTests {
         if let directory = ProcessInfo.processInfo.environment["OPENSNAP_FA_FONT_DIR"], !directory.isEmpty {
             withFonts(URL(fileURLWithPath: directory, isDirectory: true))
         } else {
-            skipped.append("glyph branch (OPENSNAP_FA_FONT_DIR unset)")
+            skipped.append("glyph branch")
         }
-        let note = skipped.isEmpty ? "" : "; SKIPPED: " + skipped.joined(separator: ", ")
+        // Licence-gated: Font Awesome Pro is never committed, so a tree without it cannot run the glyph branch.
+        let note = skipped.isEmpty ? "" : "; SKIPPED (FA not bundled): " + skipped.joined(separator: ", ")
         print("FontAwesomeIconsTests: \(checks) checks passed (offscreen; no desktop input)\(note)")
     }
 
@@ -109,7 +110,7 @@ private enum FontAwesomeIconsTests {
         expect(FAIcon.allCases.allSatisfy { NSImage(systemSymbolName: $0.sfSymbolFallback, accessibilityDescription: nil) != nil },
                "Every SF Symbol fallback exists on this host")
 
-        guard let source = sourceText("FontAwesomeIcons.swift") else { skipped.append("fetch-script grep (FontAwesomeIcons.swift not found)"); return }
+        guard let source = sourceText("FontAwesomeIcons.swift") else { return expect(false, "FontAwesomeIcons.swift was not found next to the tests") }
         let regex = try! NSRegularExpression(pattern: "0x[0-9A-Fa-f]{2,5}")
         let range = NSRange(source.startIndex..., in: source)
         let found = regex.matches(in: source, range: range).map { UInt32(String(source[Range($0.range, in: source)!]).dropFirst(2), radix: 16)! }

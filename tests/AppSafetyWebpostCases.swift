@@ -33,14 +33,13 @@ extension AppSafetyTests {
             ("Webpost with no destination opens Sharing Settings instead of uploading", webpostUnconfiguredOpensSettings),
             ("A failed upload surfaces the error and Webpost works again", webpostFailureRecovers),
             ("The upload button's right-click menu lists the default destination, settings and Share with macOS", webpostMenu),
-            ("File menu keeps Share… and Publish Image… goes straight to upload", webpostFileMenu),
+            ("File menu keeps Share… and Publish… goes straight to upload", webpostFileMenu),
             ("Upload progress survives tool changes and edits, then the result replaces it", webpostProgressSurvivesStatusUpdates),
             ("Cancel Upload appears only while busy, cancels quietly with no clipboard write or alert", webpostCancel),
             ("Without a public base URL nothing is copied and the status says Uploaded image to destination", webpostNoPublicURLNoClipboard),
             ("The upload right-click menu uses the 20 pt menu font", webpostMenuFont),
             ("The right-click menu lists every destination; choosing one persists it and the next Webpost click uploads there", webpostMultipleDestinations),
             ("Destination settings: Add, Make Default and Remove round-trip through storage with an S3 profile destination", webpostDestinationSettingsRoundTrip),
-            ("--eye-dump is ignored unless OPENSNAP_APP_SUPPORT names an existing directory", webpostEyeDumpGate),
             ("--eye-dump-audit needs the throwaway harness bundle id, an isolated home and support folder, and no fixture", webpostEyeDumpAuditGate),
             ("The upload button is icon-only with the iCloud upload symbol and an explicit label", webpostModernIconOnly)
         ]
@@ -230,9 +229,9 @@ extension AppSafetyTests {
         let share = try file.items.first { $0.title == "Share…" }.unwrap("File › Share…")
         try expect(share.action == #selector(AppDelegate.shareFromMenu), "File › Share… opens the macOS picker")
         let probe = UploadProbe(); install(probe, on: app)
-        let publish = try file.items.first { $0.title == "Publish Image…" }.unwrap("Publish Image…")
+        let publish = try file.items.first { $0.title == "Publish…" }.unwrap("Publish…")
         _ = NSApp.sendAction(try publish.action.unwrap("action"), to: app, from: publish)
-        try expect(app.window.attachedSheet == nil && app.status.stringValue.hasPrefix("Uploading"), "Publish Image… uploads without a confirmation sheet")
+        try expect(app.window.attachedSheet == nil && app.status.stringValue.hasPrefix("Uploading"), "Publish… uploads without a confirmation sheet")
         try waitForMain("it finishes") { !app.publishing.isBusy && probe.count == 1 }
     }
 
@@ -286,15 +285,6 @@ extension AppSafetyTests {
     static func webpostMenuFont() throws {
         let fixture = try Fixture(), app = fixture.app
         try expect(try webpostButton(app).menu.unwrap("menu").font.pointSize >= 20, "The right-click menu is 20 pt like the other menus")
-    }
-
-    static func webpostEyeDumpGate() throws {
-        let args = ["OpenSnap", "--eye-dump", "/tmp/out"]
-        try expect(AppDelegate.eyeDumpDirectory(arguments: args, environment: [:]) == nil, "No OPENSNAP_APP_SUPPORT: ignored")
-        try expect(AppDelegate.eyeDumpDirectory(arguments: args, environment: ["OPENSNAP_APP_SUPPORT": ""]) == nil, "Empty: ignored")
-        try expect(AppDelegate.eyeDumpDirectory(arguments: args, environment: ["OPENSNAP_APP_SUPPORT": "/nonexistent/opensnap-support"]) == nil, "Missing directory: ignored")
-        try expect(AppDelegate.eyeDumpDirectory(arguments: args, environment: ["OPENSNAP_APP_SUPPORT": NSTemporaryDirectory()])?.path == "/tmp/out", "Isolated support directory: honoured")
-        try expect(AppDelegate.eyeDumpDirectory(arguments: ["OpenSnap"], environment: ["OPENSNAP_APP_SUPPORT": NSTemporaryDirectory()]) == nil, "No flag: nil")
     }
 
     static func webpostEyeDumpAuditGate() throws {

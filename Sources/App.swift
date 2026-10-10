@@ -262,6 +262,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     var shutdownError: Error?
     var timer: Timer?
     var statusItem: NSStatusItem?
+    var statusMenu: NSMenu?
+    var aboutWindow: AboutWindow?
     var historyBrowser: HistoryBrowser?
     var historyWindow: NSWindow? { historyBrowser?.window }
     var historyStore: HistoryStore?
@@ -336,9 +338,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         if CommandLine.arguments.contains("--smoke-test") {
             DispatchQueue.main.asyncAfter(deadline: .now()+1) { self.runSmokeTest() }
         }
-        if let dumpDirectory = AppDelegate.eyeDumpDirectory() {
-            DispatchQueue.main.asyncAfter(deadline: .now()+1) { self.runEyeDump(to: dumpDirectory) }
-        }
         if let auditDirectory = AppDelegate.eyeDumpAuditDirectory() {
             DispatchQueue.main.asyncAfter(deadline: .now()+1) { self.runEyeDumpAudit(to: auditDirectory) }
         }
@@ -388,15 +387,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         guard UserDefaults.standard.integer(forKey: "statusMenu") != 2 else { return }
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         statusItem = item
-        if let button = item.button {
-            let symbol = NSImage(systemSymbolName: "camera.viewfinder", accessibilityDescription: "OpenSnap")
-            symbol?.isTemplate = true
-            button.image = symbol
-            button.toolTip = "Click to show/hide OpenSnap"
-            button.setAccessibilityLabel("Show or hide OpenSnap")
-            button.target = self; button.action = #selector(showHide)
-        }
+        if let button = item.button { StatusIcon.configure(button) }
+        item.menu = makeStatusMenu()
     }
+    /// What clicking the menu-bar icon opens: show or hide the editor, start a snap, open Settings, quit.
+    func makeStatusMenu() -> NSMenu {
+        let name = DesignTokens.Brand.name
+        let menu = NSMenu(title: name)
+        func add(_ title: String, _ action: Selector) {
+            let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
+            item.target = self; menu.addItem(item)
+        }
+        add(statusShowHideTitle, #selector(statusShowHide))
+        menu.addItem(.separator())
+        add("Snap…", #selector(screenSnap))
+        add("Settings…", #selector(showPreferences))
+        menu.addItem(.separator())
+        add("Quit " + name, #selector(quit))
+        MenuSymbols.apply(to: menu)
+        MenuTypography.apply(to: menu)
+        statusMenu = menu
+        return menu
+    }
+    /// Mirrors toggleVisible(): the editor is hidden by the item only while it is visible, in front and the app is active.
+    var statusShowHideTitle: String {
+        let editorInFront = window.isVisible && !window.isMiniaturized && NSApp.isActive
+        return (editorInFront ? "Hide " : "Show ") + DesignTokens.Brand.name
+    }
+    @objc func statusShowHide() { toggleVisible() }
     func applyPresencePolicy() {
         let presence = generalPreferences.state.statusMenu
         // Modern AppKit changes Dock presence without rewriting the signed app
@@ -440,11 +458,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     }
     func windowWillMiniaturize(_ notification: Notification) {
         if (notification.object as? NSWindow) === window { helpBevel?.clear() }
-    }
-    @objc func showHide() {
-        if NSApp.currentEvent?.modifierFlags.contains(.option) == true { quit(); return }
-        guard UserDefaults.standard.integer(forKey: "statusMenu") != 2 else { return }
-        toggleVisible()
     }
     @objc func vanish() {
         guard window.isVisible else { return }
@@ -516,7 +529,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         if discardedForTermination { removeRecovery() }
         else { saveRecovery(finalizingTermination: true) }
         timer?.invalidate(); historyFollowTimer?.invalidate(); dragPreviewTimer?.invalidate(); navigatorTimer?.invalidate(); closeFontPanel(); try? hotkeys.unregister()
-        preferencesWindow?.orderOut(nil)
+        preferencesWindow?.orderOut(nil); aboutWindow?.close()
         helpBevel?.shutdown()
         if let hintEventMonitor { NSEvent.removeMonitor(hintEventMonitor); self.hintEventMonitor = nil }
         removeDragThumbnail(); activeDragID = nil; visibilityZoomOrigin = nil
@@ -608,7 +621,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
 
     func label(_ text: String) -> NSTextField { let f = NSTextField(labelWithString: text); f.font = .systemFont(ofSize: 18); return f }
     func button(_ title: String, _ action: Selector) -> NSButton { let b = OriginalActionButton(title: title, target: self, action: action); b.font = .systemFont(ofSize: 18); return b }
-    func copiedMainMenuItem(_ action: Selector, title: String? = nil) -> NSMenuItem? {
+    /// A live copy of the main-menu item for `action`, so a popup never carries wording of its own.
+    func copiedMainMenuItem(_ action: Selector) -> NSMenuItem? {
         func find(_ menu: NSMenu) -> NSMenuItem? {
             for item in menu.items {
                 if item.action == action { return item }
@@ -616,60 +630,53 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             }
             return nil
         }
-        guard let main = NSApp.mainMenu, let item = find(main)?.copy() as? NSMenuItem else { return nil }
-        if let title { item.title = title }
-        return item
+        guard let main = NSApp.mainMenu else { return nil }
+        return find(main)?.copy() as? NSMenuItem
     }
     func copiedMainMenu(_ title: String) -> NSMenu? {
-        guard let original = NSApp.mainMenu?.items.first(where: { $0.submenu?.title == title })?.submenu,
-              let copied = original.copy() as? NSMenu else { return nil }
-        copied.font = .systemFont(ofSize: 20)
-        return copied
+        NSApp.mainMenu?.items.first(where: { $0.submenu?.title == title })?.submenu?.copy() as? NSMenu
     }
+    /// The Toolbox is a subset of the main menu by action: every row is a copy of the menu-bar item, so titles, keys and symbols match.
     func bezelToolbox() -> NSPopUpButton {
         let control = NSPopUpButton(frame: .zero, pullsDown: true)
         control.font = .systemFont(ofSize: 20)
-        let choices = NSMenu(title: "Toolbox"); choices.font = .systemFont(ofSize: 20)
+        let choices = NSMenu(title: "Toolbox")
         choices.addItem(withTitle: "Toolbox", action: nil, keyEquivalent: "")
-        let groups: [[(String, Selector)]] = [
-            [("About OpenSnap", #selector(about)), ("Preferences…", #selector(showPreferences)), ("Quit OpenSnap", #selector(quit))],
-            [("New", #selector(newFile)), ("Open...", #selector(openFile)), ("Browse Photos", #selector(showPhotos)),
-             ("Save to History", #selector(saveHistory)), ("Export...", #selector(exportFile)), ("Save As...", #selector(saveAs)), ("Print...", #selector(printImage))],
-            [("Cut", #selector(cut)), ("Copy", #selector(copyArtwork)), ("Paste", #selector(paste)),
-             ("Delete", #selector(deleteSelection)), ("Select All", #selector(selectAll)), ("Duplicate", #selector(duplicate)), ("Show Fonts", #selector(chooseFont))],
-            [("Crosshair Snapshot", #selector(screenSnap)), ("Fullscreen Snapshot", #selector(fullscreenSnap)), ("Frame Snapshot", #selector(frameSnap)),
-             ("Re-snap (Keep Pen)", #selector(resnap))],
-            [("Set Snap to Normal Size", #selector(normalSize)), ("Flip", #selector(flipH)), ("Rotate 90° Clockwise", #selector(rotateCW)),
-             ("Background Color to Transparent", #selector(transparent)), ("Crop Snap at Current View", #selector(trimSnap)), ("Wipe Snap Only", #selector(wipeSnap))]
+        let groups: [[Selector]] = [
+            [#selector(about), #selector(showPreferences), #selector(quit)],
+            [#selector(newFile), #selector(openFile), #selector(showPhotos), #selector(saveHistory), #selector(exportFile), #selector(saveAs), #selector(printImage)],
+            [#selector(cut), #selector(copyArtwork), #selector(paste), #selector(deleteSelection), #selector(selectAll), #selector(duplicate), #selector(chooseFont)],
+            [#selector(screenSnap), #selector(fullscreenSnap), #selector(frameSnap), #selector(resnap)],
+            [#selector(normalSize), #selector(flipH), #selector(rotateCW), #selector(transparent), #selector(trimSnap), #selector(wipeSnap)]
         ]
         for (index, group) in groups.enumerated() {
             if index > 0 { choices.addItem(.separator()) }
-            for (title, action) in group {
-                if let item = copiedMainMenuItem(action, title: title) { choices.addItem(item) }
+            for action in group {
+                if let item = copiedMainMenuItem(action) { choices.addItem(item) }
             }
         }
         choices.addItem(.separator())
-        // Existing additions remain reachable without placing the original
-        // common commands behind another menu level.
-        let more = NSMenu(title: "More Commands"); more.font = .systemFont(ofSize: 20)
+        // The remaining commands stay reachable without a second level for the common ones.
+        let more = NSMenu(title: "More Commands")
         for title in ["File", "Image", "Drawing", "Text", "Capture"] {
             guard let copied = copiedMainMenu(title) else { continue }
             let item = NSMenuItem(title: title, action: nil, keyEquivalent: ""); item.submenu = copied; more.addItem(item)
         }
-        for (title, action) in [("Sharing Settings…", #selector(sharingSettings)), ("Capture Shortcuts…", #selector(shortcutSettings))] {
-            if let item = copiedMainMenuItem(action, title: title) { more.addItem(item) }
+        for action in [#selector(sharingSettings), #selector(shortcutSettings)] {
+            if let item = copiedMainMenuItem(action) { more.addItem(item) }
         }
         let extra = NSMenuItem(title: "More Commands", action: nil, keyEquivalent: ""); extra.submenu = more; choices.addItem(extra)
-        for (title, action) in [("Filled Shapes", #selector(toggleBezelFill(_:))), ("Shadow", #selector(toggleBezelShadow(_:)))] {
-            let item = NSMenuItem(title: title, action: action, keyEquivalent: ""); item.target = self; choices.addItem(item)
+        for action in [#selector(toggleBezelFill(_:)), #selector(toggleBezelShadow(_:))] {
+            if let item = copiedMainMenuItem(action) { choices.addItem(item) }
         }
+        MenuTypography.apply(to: choices)
         control.menu = choices; control.setAccessibilityLabel("Toolbox")
         control.toolTip = "Common drawing and capture commands; additional actions are in More Commands"
         return control
     }
     func buildWindow() {
         window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1024, height: 740), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
-        window.title = "OpenSnap"; window.delegate = self; window.minSize = NSSize(width: 900, height: 640)
+        window.title = DesignTokens.Brand.name; window.delegate = self; window.minSize = NSSize(width: 900, height: 640)
         buildModernWindowContent()
     }
     func configureDragExport(_ drag: DragExportView) {
@@ -721,13 +728,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         }
     }
     func menu(_ title: String, items: [(String, Selector?, String)]) -> NSMenu {
-        let m = NSMenu(title: title); m.font = .systemFont(ofSize: 20)
+        let m = NSMenu(title: title)
         for (name, action, key) in items { if name == "-" { m.addItem(.separator()); continue }; let item = NSMenuItem(title: name, action: action, keyEquivalent: key); item.target = self; m.addItem(item) }; return m
     }
     func buildMenus() {
         let bar = NSMenu()
-        let appMenu = menu("OpenSnap", items: [("About OpenSnap", #selector(about), ""), ("Preferences…", #selector(showPreferences), ","), ("Sharing Settings…", #selector(sharingSettings), ""), ("Capture Shortcuts…", #selector(shortcutSettings), ""), ("-", nil, ""), ("Quit OpenSnap", #selector(quit), "q")])
-        appMenu.insertItem(NSMenuItem(title: "Hide OpenSnap", action: #selector(toggleVisible), keyEquivalent: "h"), at: appMenu.numberOfItems - 1)
+        let name = DesignTokens.Brand.name
+        let appMenu = menu(name, items: [("About " + name, #selector(about), ""), ("Settings…", #selector(showPreferences), ","), ("Sharing Settings…", #selector(sharingSettings), ""), ("Capture Shortcuts…", #selector(shortcutSettings), ""), ("-", nil, ""), ("Quit " + name, #selector(quit), "q")])
+        appMenu.insertItem(NSMenuItem(title: "Hide " + name, action: #selector(toggleVisible), keyEquivalent: "h"), at: appMenu.numberOfItems - 1)
         appMenu.item(at: appMenu.numberOfItems - 2)?.target = self
         let quitIndex = appMenu.numberOfItems - 1
         let hideOthers = NSMenuItem(title: "Hide Others", action: #selector(NSApplication.hideOtherApplications(_:)), keyEquivalent: "h")
@@ -736,7 +744,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         for (offset, item) in [hideOthers, showAll, NSMenuItem.separator()].enumerated() {
             item.target = nil; appMenu.insertItem(item, at: quitIndex + offset)
         }
-        let file = menu("File", items: [("New Blank", #selector(newFile), "n"), ("Open…", #selector(openFile), "o"), ("Photos…", #selector(showPhotos), ""), ("Save Editable Document", #selector(saveFile), "s"), ("Save As…", #selector(saveAs), "S"), ("Save to History", #selector(saveHistory), ""), ("History", #selector(showHistory), ""), ("Export…", #selector(exportFile), "e"), ("Publish Image…", #selector(publishImage), ""), ("Share…", #selector(shareFromMenu), ""), ("Print…", #selector(printImage), "p")])
+        let file = menu("File", items: [("New", #selector(newFile), "n"), ("Open…", #selector(openFile), "o"), ("Photos…", #selector(showPhotos), ""), ("Save", #selector(saveFile), "s"), ("Save As…", #selector(saveAs), "S"), ("Save to History", #selector(saveHistory), ""), ("History", #selector(showHistory), ""), ("Export…", #selector(exportFile), "e"), ("Publish…", #selector(publishImage), ""), ("Share…", #selector(shareFromMenu), ""), ("Print…", #selector(printImage), "p")])
         let close = NSMenuItem(title: "Close", action: #selector(closeCurrentWindow), keyEquivalent: "w")
         close.target = self; file.insertItem(close, at: 3)
         let setup = NSMenuItem(title: "Page Setup…", action: #selector(pageSetup), keyEquivalent: "P")
@@ -745,8 +753,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         rename.target = self; file.insertItem(rename, at: (file.items.firstIndex { $0.title == "Save As…" } ?? 3) + 1)
         let edit = menu("Edit", items: [("Undo", #selector(undo), "z"), ("Redo", #selector(redo), "Z"), ("-", nil, ""), ("Cut", #selector(cut), "x"), ("Copy", #selector(copyArtwork), "c"), ("Copy Image", #selector(copyImage), ""), ("Paste", #selector(paste), "v"), ("Delete", #selector(deleteSelection), ""), ("Select All", #selector(selectAll), "a"), ("Duplicate", #selector(duplicate), "d"), ("Wipe", #selector(wipe), ""), ("Wipe Snap Only", #selector(wipeSnap), ""), ("Clear Annotations", #selector(clear), "")])
         let image = menu("Image", items: [("Actual Size", #selector(toggleActualSize), ""), ("Resize…", #selector(resize), ""), ("Crop Selection", #selector(crop), ""), ("Crop Snap at Current Edges", #selector(trimSnap), ""), ("Set Snap to Normal Size", #selector(normalSize), ""), ("Rotate Clockwise", #selector(rotateCW), ""), ("Rotate Counterclockwise", #selector(rotateCCW), ""), ("Flip Horizontal", #selector(flipH), ""), ("Flip Vertical", #selector(flipV), ""), ("Transparent Background", #selector(transparent), ""), ("White Background", #selector(white), ""), ("Flatten", #selector(flatten), ""), ("Add Shadow", #selector(addShadow), ""), ("Bring to Front", #selector(front), ""), ("Send to Back", #selector(back), ""), ("Group", #selector(group), ""), ("Ungroup", #selector(ungroup), "")])
-        let text = menu("Text", items: [("Font…", #selector(chooseFont), ""), ("Default Text Style", #selector(defaultTextStyle), ""), ("Toggle Text Outline", #selector(toggleOutline), ""), ("Toggle Text Shadow", #selector(toggleTextShadow), "")])
-        let spelling = NSMenu(title: "Spelling"); spelling.font = .systemFont(ofSize: 20)
+        let text = menu("Text", items: [("Text Style…", #selector(chooseFont), ""), ("Default Text Style", #selector(defaultTextStyle), ""), ("Toggle Text Outline", #selector(toggleOutline), ""), ("Toggle Text Shadow", #selector(toggleTextShadow), "")])
+        let spelling = NSMenu(title: "Spelling")
         for (title, action, key) in [("Spelling…", "showGuessPanel:", ":"), ("Check Spelling", "checkSpelling:", ";"), ("Check Spelling as You Type", "toggleContinuousSpellChecking:", "")] {
             // Original MainMenu.nib connects these directly to the text responder.
             // Keep the target nil so sheet fields and annotation editors both work.
@@ -754,7 +762,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         }
         let spellingItem = NSMenuItem(title: "Spelling", action: nil, keyEquivalent: ""); spellingItem.submenu = spelling; text.addItem(spellingItem)
         let snap = menu("Capture", items: [("Crosshair Snapshot", #selector(screenSnap), "1"), ("Fullscreen Snapshot", #selector(fullscreenSnap), "2"), ("Window Snapshot", #selector(windowSnap), "3"), ("Frame Snapshot", #selector(frameSnap), "4"), ("Re-snap (Keep Pen)", #selector(resnap), ""), ("Cancel Frame", #selector(cancelFrame), ""), ("Timed Snapshot…", #selector(timedSnap), ""), ("Cancel Snapshot", #selector(cancelSnapshot), ""), ("Snap from Link…", #selector(webSnap), "")])
-        let drawing = menu("Drawing", items: [])
+        let drawing = menu("Drawing", items: [("Filled Shapes", #selector(toggleBezelFill(_:)), ""), ("Shadow", #selector(toggleBezelShadow(_:)), ""), ("-", nil, "")])
         let smoothing = menu("Pencil Smoothing", items: [])
         for mode in [StrokeSmoothing.precise, .medium, .loose] {
             let item = NSMenuItem(title: mode.rawValue.capitalized, action: #selector(changeSmoothing(_:)), keyEquivalent: "")
@@ -775,6 +783,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         minimize.target = self; windows.insertItem(minimize, at: 0)
         for m in [appMenu, file, edit, image, drawing, text, snap, windows] { let i = NSMenuItem(); i.submenu = m; bar.addItem(i) }
         MenuSymbols.apply(to: bar)
+        MenuTypography.applyToDropdowns(of: bar)
         NSApp.mainMenu = bar; NSApp.windowsMenu = windows
     }
     @objc func changeSmoothing(_ sender: NSMenuItem) {
@@ -789,6 +798,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         preferencesForm?.synchronize(generalPreferences.state)
     }
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        if menuItem.action == #selector(statusShowHide) { menuItem.title = statusShowHideTitle; return !terminationStarted }
         if menuItem.action == #selector(cancelSnapshot) { return !terminationStarted && capture.isCapturing }
         if menuItem.action == #selector(showPreferences) { return !terminationStarted && !frameCaptureInProgress && window?.attachedSheet == nil }
         if menuItem.action == #selector(changeArrowHead(_:)) {
@@ -798,7 +808,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         if menuItem.action == #selector(toggleBezelFill(_:)) { menuItem.state = canvas.filled ? .on : .off; return !terminationStarted && !frameCaptureInProgress }
         if menuItem.action == #selector(toggleBezelShadow(_:)) { menuItem.state = canvas.shadowed ? .on : .off; return !terminationStarted && !frameCaptureInProgress }
         if menuItem.action == #selector(chooseFont) {
-            menuItem.title = fontPanel?.isVisible == true ? "Hide Fonts" : "Show Fonts"
+            menuItem.state = fontPanel?.isVisible == true ? .on : .off
             return !terminationStarted
         }
         if menuItem.action == #selector(toggleActualSize) { menuItem.state = isActualSize ? .on : .off; return canToggleActualSize }
@@ -1438,7 +1448,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     func configureWebpostButton(_ button: NSButton) {
         webpostButton = button
         button.toolTip = Self.webpostHelp
-        let menu = NSMenu(); menu.autoenablesItems = false; menu.delegate = self; menu.font = .systemFont(ofSize: 20)
+        let menu = NSMenu(); menu.autoenablesItems = false; menu.delegate = self; MenuTypography.apply(to: menu)
         button.menu = menu
         (button as? OriginalActionButton)?.showMenuOnLeftClick = false
         rebuildUploadMenu(menu)
@@ -1984,7 +1994,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     @objc func transparent() { canvas.setBackgroundColor(.clear) }; @objc func white() { canvas.setBackgroundColor(.white) }; @objc func flatten() { canvas.flatten() }; @objc func addShadow() { canvas.addShadow(); updateStatus() }
     @objc func front() { canvas.bringSelectionToFront() }; @objc func back() { canvas.sendSelectionToBack() }; @objc func group() { canvas.groupSelection() }; @objc func ungroup() { canvas.ungroupSelection() }
     @objc func quit() { NSApp.terminate(nil) }
-    @objc func about() { NSApp.orderFrontStandardAboutPanel(options: [.applicationName: "OpenSnap", .credits: NSAttributedString(string: "Native screen capture and annotation for macOS.")]) }
+    @objc func about() {
+        let panel = aboutWindow ?? AboutWindow(icon: NSApp.applicationIconImage, info: Bundle.main.infoDictionary)
+        aboutWindow = panel
+        NSApp.activate(ignoringOtherApps: true)
+        panel.makeKeyAndOrderFront(nil)
+    }
     func runSmokeTest() {
         let dir = URL(fileURLWithPath: ProcessInfo.processInfo.environment["OPENSNAP_EVIDENCE_DIR"] ?? NSTemporaryDirectory())
         do {

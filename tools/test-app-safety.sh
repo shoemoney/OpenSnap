@@ -46,6 +46,8 @@ if (root / 'tests/AppSafetyModernCases.swift').exists():
     paths.append(root / 'tests/AppSafetyModernCases.swift')
 if (root / 'tests/AppSafetyRetiredFormatCases.swift').exists():
     paths.append(root / 'tests/AppSafetyRetiredFormatCases.swift')
+if (root / 'tests/AppSafetyMenuCases.swift').exists():
+    paths.append(root / 'tests/AppSafetyMenuCases.swift')
 inputs = [(p.name, app_source if p.name == 'App.swift' else p) for p in paths]
 for attempt in range(3):
     snapshot = {name: (p, p.read_bytes()) for name, p in inputs}

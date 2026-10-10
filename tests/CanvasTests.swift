@@ -2,7 +2,6 @@
 // Run (excluding App.swift):
 // swiftc -D CANVAS_TESTS -target arm64-apple-macosx13.0 Sources/SVGPath.swift Sources/LegacyBridge.swift Sources/DocumentModel.swift Sources/VectorGeometry.swift Sources/StrokeFitting.swift Sources/ImageExport.swift Sources/Canvas.swift tests/CanvasTests.swift -o /tmp/opensnap-canvas-tests
 // /tmp/opensnap-canvas-tests
-// Fixture-only check without windows/captures: /tmp/opensnap-canvas-tests --fixture-only
 // tools/test.py runs the live-view visual proof. Manual escape hatch without it: /tmp/opensnap-canvas-tests --skip-visual-proof
 //
 // Fidelity checklist: vectors/text/zoom/crop/background transforms, independent erased
@@ -76,8 +75,6 @@ private final class CanvasTestDrag: NSObject, NSDraggingInfo {
 @main
 struct CanvasTests {
     struct Failure: Error, CustomStringConvertible { let description: String }
-    /// A case that cannot run here (git-ignored original/ archive absent); reported as SKIP, never as a failure.
-    struct Skip: Error, CustomStringConvertible { let description: String }
     static func expect(_ condition: @autoclosure () throws -> Bool, _ message: String) throws {
         if try !condition() { throw Failure(description: message) }
     }
@@ -227,16 +224,14 @@ struct CanvasTests {
             ("native canvas visual proof", visualProof)
         ]
         let selectedTests = tests.filter { name, _ in
-            if CommandLine.arguments.contains("--fixture-only") { return name == "original firstlaunch import stays editable" }
             return !CommandLine.arguments.contains("--skip-visual-proof") || name != "native canvas visual proof"
         }
-        var failures = 0, skipped = 0
+        var failures = 0
         for (name, test) in selectedTests {
             do { try autoreleasepool { try test() }; print("PASS \(name)") }
-            catch let skip as Skip { skipped += 1; print("SKIP \(name): \(skip)") }
             catch { failures += 1; print("FAIL \(name): \(error)") }
         }
-        print("\(selectedTests.count - failures - skipped)/\(selectedTests.count) canvas tests passed" + (skipped > 0 ? ", \(skipped) skipped" : ""))
+        print("\(selectedTests.count - failures)/\(selectedTests.count) canvas tests passed")
         if failures > 0 { exit(1) }
     }
     static func render() throws {
@@ -1651,6 +1646,7 @@ struct CanvasTests {
         let event = try mouse(c, .rightMouseDown, CGPoint(x: 20, y: 20))
         guard let menu = c.menu(for: event) else { throw Failure(description: "Text context menu") }
         try expect(menu.items.map(\.title) == ["Text Style…", "Default Text Style"], "Original reachable text font/default controls")
+        try expect(menu.font.pointSize == DesignTokens.Typography.font(.body).pointSize && menu.font.pointSize >= 18, "The text context menu draws at body size (20 pt), not the 13 pt system menu size")
         try expect(c.selection == [text.id] && c.tool == .brush && c.document == before && !c.editingUndoManager.canUndo, "Context selects text without document or tool mutation")
         var requests = 0; c.onTextStyleRequested = { requests += 1 }
         try expect(NSApp.sendAction(menu.items[0].action!, to: menu.items[0].target, from: menu.items[0]) && requests == 1, "Font context callback")

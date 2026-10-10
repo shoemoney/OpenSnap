@@ -1032,8 +1032,13 @@ extension AuditRun {
         }
         menus["canvasContextMenuNote"] = "Canvas.menu(for:) returns a menu only when right-clicking a text annotation; blank canvas and shapes return nil (Canvas.swift:1843)"
         menus["snapAlternate"] = "Snap has no menu: left-click = region/window snap, right-click or Control-click = Fullscreen alternate (OriginalActionButton.alternateAction); Frame mode clears the alternate"
-        menus["statusItem"] = ["hasMenu": app.statusItem?.menu != nil, "action": "showHide (toggle editor visibility)", "buttonToolTip": app.statusItem?.button?.toolTip ?? "none",
-                               "note": "The status item has no menu; Option-click quits"]
+        // Menus are not part of any window composite, so the status menu is dumped as titles, actions and fonts.
+        let statusMenu = app.statusItem?.menu ?? app.makeStatusMenu()
+        menus["statusItemMenu"] = menuNode(statusMenu)
+        menus["statusItem"] = ["hasMenu": app.statusItem?.menu != nil, "installedInThisProcess": app.statusItem != nil,
+                               "buttonToolTip": app.statusItem?.button?.toolTip ?? StatusIcon.name, "buttonAccessibilityLabel": app.statusItem?.button?.accessibilityLabel() ?? StatusIcon.name,
+                               "iconIsTemplate": StatusIcon.image()?.isTemplate as Any,
+                               "note": "Clicking the icon opens statusItemMenu; the first row follows the editor's visibility. The menu-bar strip titles are system-owned."]
         write(menus, to: "menus" + stemSuffix + ".json")
         guard let toolbox = firstView(of: NSPopUpButton.self, label: "Toolbox") else { gap("S23", "Toolbox menu open", "toolbox popup not found"); return }
         captureTrackedMenu("S23", "toolbox-menu-open", surface: "menus", state: "Toolbox pull-down open", refs: ["App.swift|func bezelToolbox()"],
@@ -1080,9 +1085,17 @@ extension AuditRun {
         pump(1.0)
         let panels = NSApp.windows.filter { !known.contains($0.windowNumber) && $0.isVisible }
         if let panel = panels.first {
-            shoot("S25", "about-panel", surface: "About panel", state: "standard About panel with OpenSnap credits", windows: [panel], refs: ["App.swift|@objc func about()"])
+            shoot("S25", "about-panel", surface: "About window", state: "app-owned About window: icon, name, version and build, credit line, license link", windows: [panel],
+                  refs: ["App.swift|@objc func about()", "AboutWindow.swift|final class AboutWindow"])
+            if let about = panel as? AboutWindow {
+                write(["title": about.title, "name": about.nameLabel.stringValue, "version": about.versionLabel.stringValue, "credit": about.creditLabel.stringValue,
+                       "licenseLink": about.licenseButton.attributedTitle.string,
+                       "fonts": ["name": fontInfo(about.nameLabel.font) as Any, "version": fontInfo(about.versionLabel.font) as Any, "credit": fontInfo(about.creditLabel.font) as Any,
+                                 "licenseLink": fontInfo(about.licenseButton.font) as Any],
+                       "note": "Title bar text is hidden in the window and kept only as the accessibility title."] as [String: Any], to: "about" + stemSuffix + ".json")
+            }
             panel.orderOut(nil)
-        } else { gap("S25", "About panel", "the standard About panel window was not found") }
+        } else { gap("S25", "About window", "the About window was not found") }
     }
 
     func s26() {
