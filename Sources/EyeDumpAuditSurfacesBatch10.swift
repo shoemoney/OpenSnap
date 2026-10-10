@@ -6,10 +6,13 @@ import Carbon
 /// Without Color); the Capture note when the shortcuts cannot be put back; and History Details after Delete from Web. Synthetic content only.
 extension AuditRun {
     func s46() {
-        guard let capacity = app.maximumNormalCanvas else { gap("S46", "oversized Resize", "no window capacity on this screen"); return }
-        // A snap at 2.5 times the room, and a typed size at 1.8 times it: above what the window holds whichever screen this runs on.
-        let snap = CGSize(width: (capacity.width * 2.5).rounded(), height: (capacity.height * 2.5).rounded())
-        let typedWidth = Int((capacity.width * 1.8).rounded())
+        // The harness screen is far larger than any snap worth drawing, so the editor is given the room of a small display (the window's minimum
+        // size): a 2560 x 1800 snap does not fit it, and neither does the 1600 wide it is resized to.
+        let capacity = CGSize(width: 920, height: 540)
+        app.maximumNormalCanvasOverride = capacity
+        defer { app.maximumNormalCanvasOverride = nil }
+        let snap = CGSize(width: 2560, height: 1800)
+        let typedWidth = 1600
 
         func resizeTo(_ width: Int) -> Bool {
             app.resize(); pump(0.9)
@@ -43,7 +46,7 @@ extension AuditRun {
             let before = app.window.subtitle
             if resizeTo(typedWidth) {
                 shoot("S46", "resize-oversized-\(word)", surface: "Editor title and footer",
-                      state: "Original size \(word) on a \(Int(snap.width)) × \(Int(snap.height)) snap, Resize to \(typedWidth) wide (above the \(Int(capacity.width)) pt of room): the title reads \(app.window.subtitle) (was \(before)), the picture is \(NSStringFromSize(canvas.canvasSize)) and the box has nothing to offer (R3-001)",
+                      state: "Original size \(word) on a \(Int(snap.width)) × \(Int(snap.height)) snap, Resize to \(typedWidth) wide (above the \(Int(capacity.width)) × \(Int(capacity.height)) pt of room this display gives it): the title reads \(app.window.subtitle) (was \(before)), the picture is \(NSStringFromSize(canvas.canvasSize)) and the box has nothing to offer (R3-001)",
                       refs: ["AppViewport.swift|let rewritten = plan.scaleTo", "AppViewport.swift|func refitPictureZoom"], settle: 0.3, extra: facts())
                 shoot("S46", "resize-oversized-\(word)-footer", surface: "Editor title and footer", state: "the footer of the same editor: size and format \(app.window.subtitle), no Original size box (R3-001)",
                       crop: footerCrop(), refs: ["AppViewport.swift|var isLargeShot"], settle: 0.2, extra: facts())
@@ -59,10 +62,10 @@ extension AuditRun {
             app.dragOriginalControl.state = ticked ? .on : .off; app.changeDragOptions(nil); app.updateDragPreview(); pump(0.4)
             let before = app.window.subtitle
             if app.beginWindowGesture(.corner(.bottomRight)) {
-                app.previewBorderGesture(delta: CGPoint(x: -240, y: 0), flags: [])
+                app.previewBorderGesture(delta: CGPoint(x: -150, y: 0), flags: [])
                 app.endWindowGesture(); app.updateDragPreview(); pump(0.5)
                 shoot("S46", "corner-drag-\(word)", surface: "Editor title and footer",
-                      state: "Original size \(word), the canvas border's bottom-right corner dragged 240 pt narrower: the title reads \(app.window.subtitle) (was \(before)), the picture is \(NSStringFromSize(canvas.canvasSize)) and the Undo step is \(canvas.editingUndoManager.undoActionName) (R3-002)",
+                      state: "Original size \(word), the canvas border's bottom-right corner dragged 150 pt narrower: the title reads \(app.window.subtitle) (was \(before)), the picture is \(NSStringFromSize(canvas.canvasSize)) and the Undo step is \(canvas.editingUndoManager.undoActionName) (R3-002)",
                       refs: ["AppViewport.swift|func endWindowGesture"], settle: 0.3,
                       extra: facts().merging(["undoName": canvas.editingUndoManager.undoActionName], uniquingKeysWith: { $1 }))
             } else { gap("S46", "corner drag \(word)", "the corner gesture did not begin") }
