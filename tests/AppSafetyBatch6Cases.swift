@@ -198,6 +198,11 @@ extension AppSafetyTests {
         try expect(app.isLargeShot && !app.dragOriginalControl.isHidden, "A large snap shows it")
         app.canvas.wipeSnap(); app.updateStatus()
         try expect(!app.isLargeShot && app.dragOriginalControl.isHidden && !app.dragAtOriginalSize, "Remove Snap Picture takes the box away instead of leaving a box that does nothing")
+        // A canvas that keeps a shown size smaller than its own size but has no snap still has no such choice.
+        var bare = SketchDocument(size: CGSize(width: 800, height: 600)); bare.renderSize = CGSize(width: 400, height: 300)
+        try app.canvas.loadDocument(data: try bare.encoded()); app.updateStatus()
+        try expect(app.canvas.outputSize != app.canvas.canvasSize && !app.isLargeShot && app.dragOriginalControl.isHidden && !app.dragAtOriginalSize,
+                   "A shown size with no snap behind it offers no Original size (\(app.canvas.outputSize) of \(app.canvas.canvasSize))")
         // A document that carries a shown size smaller than its picture keeps the choice whatever the screen: 800 × 600 fits any display.
         var document = SketchDocument(size: CGSize(width: 800, height: 600))
         document.backgroundPNG = SketchRenderer.png(image: try image(size: CGSize(width: 800, height: 600)))
