@@ -192,10 +192,12 @@ final class HistoryStore {
         return !valid
     }
     func previewURL(_ entry: Entry) -> URL? { entry.previewFile.flatMap { try? ownedURL($0) } }
+    /// Takes the web link off an entry. The published size stays: it is the size the entry was shared at, and Details keeps showing it so the
+    /// number does not change under an unchanged selection (F-J7-003).
     func clearRemote(_ id: UUID) throws {
         var next = index
         if let position = next.entries.firstIndex(where: { $0.id == id }) {
-            next.entries[position].remoteURL = nil; next.entries[position].remoteBinding = nil; next.entries[position].publishedSize = nil
+            next.entries[position].remoteURL = nil; next.entries[position].remoteBinding = nil
             try commit(next)
         }
     }

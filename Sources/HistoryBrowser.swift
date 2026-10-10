@@ -28,7 +28,8 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         var canDeleteFromWeb = true
         /// Set when the entry has a destination record that no longer matches the default destination: Delete from Web is off and says this.
         var deleteBlockedReason: String?
-        /// The size of the image that went to the web; Details reports it for a shared entry, whose editable copy may have been resized since.
+        /// The size of the image that went to the web; Details reports it, marked "published", for a shared entry whose editable copy may have been resized since,
+        /// and keeps it after the post is taken down.
         var publishedSize: CGSize?
     }
     /// The tab names are the tile labels (`HistoryStore.Action.title`): one vocabulary, so a tab holds exactly the tiles it names.
@@ -651,7 +652,9 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         } else {
             let formatter = DateFormatter(); formatter.calendar = calendar; formatter.timeZone = calendar.timeZone; formatter.dateStyle = .medium; formatter.timeStyle = .short
             detailValues["Name"]?.stringValue = value.name; detailValues["Date"]?.stringValue = formatter.string(from:value.date)
-            detailValues["Size"]?.stringValue = Self.sizeText(for: value.publishedSize ?? value.size)
+            // One number per shared entry, whether or not the web copy is still up: the editable copy's own size moves on with every edit, and
+            // swapping to it when the post is taken down made Details change under an unchanged selection (F-J7-003).
+            detailValues["Size"]?.stringValue = value.publishedSize.map { Self.sizeText(for: $0) + " (published)" } ?? Self.sizeText(for: value.size)
             detailValues["Action"]?.stringValue = value.action
             let destination = value.destination ?? value.link?.absoluteString
             detailValues["Destination"]?.stringValue = destination ?? "—"
