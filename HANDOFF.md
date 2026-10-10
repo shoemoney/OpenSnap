@@ -13,6 +13,7 @@ Resume document, October 9, 2026, America/Chicago. Describes branch `opensnap/w3
 | Export | Footer PNG / JPG toggle: PNG by default (keeps transparency), JPG fixed at 0.75 for drag, export, upload and History. |
 | Upload | SFTP, FTP/FTPS, WebDAV and S3-compatible destinations; one default; right-click the upload button to switch. |
 | Reconstruction evidence retired | `analysis/*.json` is untracked and `analysis/` is git-ignored (files stay on disk). `tools/check-dispositions.py`, `tools/decompile.sh` and `tools/ExportDecompiled.java` are deleted. No history rewrite. |
+| Type and tooltips | Every UI font comes from `DesignTokens.Typography` (body 20, caption 18 for the status line and byte counts only; `tools/check-tokens.py` reports literals). Chrome tooltips are app-owned: `Sources/AppToolTip.swift` shows a 20 pt plate; write them with `AppToolTip.setText(_:for:)`, never `view.toolTip =` (`tools/check-tooltips.py` fails the suite on a bypass). System panels (Save/Open, Fonts, Colors) and menu items keep OS tooltips. |
 | Hint copy | `Sources/OriginalHintMessages.swift` holds our own wording for every hint and tooltip; `tests/OriginalHintMessagesTests.swift` is a plain table test. |
 | Rename and migration | Done on `opensnap/w3-rename`: bundle `OpenSnap.app`, `.opensnap` documents (ADR `docs/adr/0002-opensnap-document-format.md`), one-time copy-never-move migration in `Sources/Migration.swift` (report and `.migrated-from-skitchredux` marker in the new folder), `tools/check-skitch-strings.py` gate. |
 | Docs | README rewritten for OpenSnap; the crop-resize ADR is kept as history. |
@@ -51,7 +52,7 @@ python3 tools/test-native-startup.py
 sh tools/eye-dump-audit.sh /tmp/run-OUT     # the ONLY screenshot path: isolated copy of the app, own-window PNGs + manifest + safety.txt
 ```
 
-Quit a running built app before rebuilding (the startup script refuses otherwise) and check for unsaved work first. Use the supported computer-use tooling for real UI interaction, not AppleScript, CGEvent or `screencapture`. Never build or test in the main checkout; use a worktree.
+Quit a running built app before rebuilding and check for unsaved work first (the startup smoke and the audit harness run throwaway copies, so they never touch it). Use the supported computer-use tooling for real UI interaction, not AppleScript, CGEvent or `screencapture`. Never build or test in the main checkout; use a worktree.
 
 ## Invariants
 

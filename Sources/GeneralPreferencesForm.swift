@@ -55,7 +55,7 @@ final class GeneralPreferencesForm: NSView {
                              radio("Menu bar", tag: 1, action: #selector(changeVisibility(_:))),
                              radio("Both", tag: 0, action: #selector(changeVisibility(_:)))]
         let help = NSTextField(wrappingLabelWithString: "Holding Option reverses the setting.")
-        help.font = .systemFont(ofSize: 18)
+        help.font = DesignTokens.Typography.font(.body)
         help.textColor = .labelColor
         help.setContentCompressionResistancePriority(.required, for: .vertical)
         let arrowChoices = vertical([horizontal(arrowButtons), help], spacing: 6)
@@ -74,7 +74,7 @@ final class GeneralPreferencesForm: NSView {
         let shortcuts = button("Capture Shortcuts…", action: #selector(requestShortcuts))
         let tabs = NSTabView()
         tabs.identifier = NSUserInterfaceItemIdentifier("preferencesTabs")
-        tabs.font = .systemFont(ofSize: 20)
+        tabs.font = DesignTokens.Typography.font(.body)
         tabs.translatesAutoresizingMaskIntoConstraints = false
         let general: [NSView] = [toolTips, keyboardTips, row("Show OpenSnap in:", choices: horizontal(visibilityButtons))]
         // Recovered MainMenu.nib ownership, rather than the older help image.
@@ -147,7 +147,7 @@ final class GeneralPreferencesForm: NSView {
     }
 
     private func configure(_ button: NSButton, action: Selector) {
-        button.font = .systemFont(ofSize: 20)
+        button.font = DesignTokens.Typography.font(.body)
         button.controlSize = .large
         button.target = self
         button.action = action
@@ -192,7 +192,7 @@ final class GeneralPreferencesForm: NSView {
 
     private func row(_ title: String, choices: NSView) -> NSStackView {
         let label = NSTextField(labelWithString: title)
-        label.font = .systemFont(ofSize: 20)
+        label.font = DesignTokens.Typography.font(.body)
         label.alignment = .right
         label.translatesAutoresizingMaskIntoConstraints = false
         label.widthAnchor.constraint(equalToConstant: 184).isActive = true

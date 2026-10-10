@@ -173,7 +173,7 @@ final class ModernEditorChrome: NSView {
             button.iconPointSize = pointSize
             button.icon = icon
             button.makeIconOnly(name: name, shortcut: shortcut, derivesToolTip: toolTip == nil)
-            if let toolTip { button.toolTip = toolTip }
+            if let toolTip { AppToolTip.setText(toolTip, for: button) }
             return button
         }
         hideButton = make("Hide", .eyeSlash, actions.hide, shortcut: Self.menuShortcut(for: actions.hide))
@@ -192,7 +192,7 @@ final class ModernEditorChrome: NSView {
         shareButton.image = NSImage(systemSymbolName: Self.uploadSymbolName, accessibilityDescription: "Upload")?
             .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: GlassChrome.Metrics.iconPointSize, weight: .regular))
         shareButton.imagePosition = .imageOnly
-        shareButton.toolTip = "Upload"
+        AppToolTip.setText("Upload", for: shareButton)
         super.init(frame: .zero)
         build(actions: actions)
         NSWorkspace.shared.notificationCenter.addObserver(
@@ -261,7 +261,7 @@ final class ModernEditorChrome: NSView {
         snapButton.icon = frameMode ? .frameViewfinder : .crosshairs
         snapButton.title = frameMode ? "Snap Frame" : "Snap"
         snapButton.iconPointSize = GlassChrome.Metrics.primaryIconPointSize
-        snapButton.toolTip = frameMode ? Self.snapFrameToolTip : Self.snapToolTip
+        AppToolTip.setText(frameMode ? Self.snapFrameToolTip : Self.snapToolTip, for: snapButton)
     }
 
     private func updateBackdropAndBleed() {
@@ -285,8 +285,8 @@ final class ModernEditorChrome: NSView {
         return surface
     }
 
-    private func readable(_ control: NSControl, _ size: CGFloat) {
-        if (control.font?.pointSize ?? 0) < 18 { control.font = .systemFont(ofSize: size) }
+    private func readable(_ control: NSControl) {
+        control.font = DesignTokens.Typography.floored(control.font)
     }
 
     private func build(actions: Actions) {
@@ -295,13 +295,12 @@ final class ModernEditorChrome: NSView {
         let headerTop: CGFloat = 4, rowHeight: CGFloat = 44, footerBottom: CGFloat = 8
 
         for control in [controls.dragFormatControl, controls.toolbox, controls.paletteButton] as [NSControl] { GlassChrome.useExtraLarge(control) }
-        for control in [controls.dragFormatControl, controls.toolbox] as [NSControl] { readable(control, 20) }
-        for control in [controls.status, controls.zoomControl, controls.dragOriginalControl, controls.widthControl] as [NSControl] { readable(control, 18) }
+        for control in [controls.dragFormatControl, controls.toolbox, controls.status, controls.zoomControl, controls.dragOriginalControl, controls.widthControl] as [NSControl] { readable(control) }
         // Color shows only its swatch: the title stays on the control (and its accessibility label) but is never drawn.
         controls.paletteButton.isBordered = false
         controls.paletteButton.imagePosition = .imageOnly
-        controls.paletteButton.toolTip = "Color: " + (controls.paletteButton.toolTip.map { $0.prefix(1).lowercased() + $0.dropFirst() } ?? "pick a drawing color")
-        controls.widthControl.toolTip = "Size"
+        AppToolTip.setText("Color: " + (AppToolTip.text(for: controls.paletteButton).map { $0.prefix(1).lowercased() + $0.dropFirst() } ?? "pick a drawing color"), for: controls.paletteButton)
+        AppToolTip.setText("Size", for: controls.widthControl)
         controls.status.textColor = .labelColor
         controls.status.lineBreakMode = .byTruncatingTail
         controls.status.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -342,7 +341,7 @@ final class ModernEditorChrome: NSView {
 
         // Capture: Snap stays put; Cancel joins it on the right in Frame mode only (a hidden surface collapses out of the stack).
         snapButton.isPrimary = true
-        snapButton.toolTip = Self.snapToolTip
+        AppToolTip.setText(Self.snapToolTip, for: snapButton)
         cancelFrameButton.isHidden = true
         let snapSurface = iconPill(snapButton, size: Metrics.primaryButton)
         snapSurface.prominence = .primary
@@ -359,7 +358,7 @@ final class ModernEditorChrome: NSView {
             button.iconPointSize = Metrics.iconPointSize
             button.icon = icon
             button.setAccessibilityLabel(id.capitalized)
-            button.toolTip = id.capitalized + " tool"
+            AppToolTip.setText(id.capitalized + " tool", for: button)
             let surface = GlassChrome.surface(button, shape: .rounded(Metrics.toolRadius), accessibility: accessibility, size: Metrics.toolButton)
             register(surface, for: button)
             toolButtons[id] = button

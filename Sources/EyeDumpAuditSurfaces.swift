@@ -336,6 +336,7 @@ extension AuditRun {
             step("S35", "large canvas fills viewport") { s35() }
             step("S36", "selection and text editing at 980/1280") { s36() }
             step("S37", "PNG and JPG at 980") { s37() }
+            step("S38", "app tooltips") { s38() }
             step("S13", "capture picker") { s13() }
             step("S14", "countdown") { s14() }
             step("S15", "capture flash") { s15() }

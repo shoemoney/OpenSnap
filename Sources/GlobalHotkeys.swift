@@ -581,12 +581,12 @@ private final class GlobalHotkeySettingsPanel: NSWindowController, NSWindowDeleg
 
     private func label(_ text: String, heading: Bool = false) -> NSTextField {
         let label = NSTextField(wrappingLabelWithString: text)
-        label.font = .systemFont(ofSize: heading ? 28 : 20, weight: heading ? .semibold : .regular)
+        label.font = DesignTokens.Typography.font(heading ? .title : .body)
         return label
     }
     private func button(_ text: String, _ selector: Selector) -> NSButton {
         let button = NSButton(title: text, target: self, action: selector)
-        button.bezelStyle = .rounded; button.font = .systemFont(ofSize: 20)
+        button.bezelStyle = .rounded; button.font = DesignTokens.Typography.font(.body)
         button.heightAnchor.constraint(greaterThanOrEqualToConstant: 40).isActive = true
         return button
     }
@@ -617,7 +617,7 @@ private final class GlobalHotkeySettingsPanel: NSWindowController, NSWindowDeleg
         ])
         let heading = label("Global Capture Shortcuts", heading: true)
         let introduction = label("Choose Command or Control with a key. None disables an action. Key names refer to physical US keyboard positions.")
-        enabled.font = .systemFont(ofSize: 20)
+        enabled.font = DesignTokens.Typography.font(.body)
         stack.addArrangedSubview(heading); stack.addArrangedSubview(introduction); stack.addArrangedSubview(enabled)
         introduction.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
         for action in GlobalHotkeyAction.allCases {
@@ -625,7 +625,7 @@ private final class GlobalHotkeySettingsPanel: NSWindowController, NSWindowDeleg
             let name = label(action.title)
             name.widthAnchor.constraint(equalToConstant: 145).isActive = true
             let key = NSPopUpButton(frame: .zero, pullsDown: false)
-            key.font = .systemFont(ofSize: 20); key.menu?.font = .systemFont(ofSize: 20)
+            key.font = DesignTokens.Typography.font(.body); key.menu?.font = DesignTokens.Typography.font(.body)
             key.addItems(withTitles: ["None"] + GlobalHotkeyKeys.choices.map(\.name))
             key.widthAnchor.constraint(equalToConstant: 150).isActive = true
             key.setAccessibilityLabel("\(action.title) key")
@@ -634,7 +634,7 @@ private final class GlobalHotkeySettingsPanel: NSWindowController, NSWindowDeleg
             let options: [(GlobalHotkeyModifiers, String)] = [(.command,"Command"),(.option,"Option"),(.control,"Control"),(.shift,"Shift")]
             let controls = options.map { modifier, title -> (GlobalHotkeyModifiers, NSButton) in
                 let checkbox = NSButton(checkboxWithTitle: title, target: nil, action: nil)
-                checkbox.font = .systemFont(ofSize: 20)
+                checkbox.font = DesignTokens.Typography.font(.body)
                 checkbox.setAccessibilityLabel("\(action.title) \(title) modifier")
                 line.addArrangedSubview(checkbox)
                 return (modifier, checkbox)
@@ -645,7 +645,7 @@ private final class GlobalHotkeySettingsPanel: NSWindowController, NSWindowDeleg
         let defaults = label("All actions start at None. Original Frame used Command + Shift + 7, but that shortcut may already belong to macOS or another app. Configure and save only the shortcuts you want.")
         stack.addArrangedSubview(defaults)
         defaults.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
-        status.font = .systemFont(ofSize: 20)
+        status.font = DesignTokens.Typography.font(.body)
         stack.addArrangedSubview(status)
         status.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
         let buttons = NSStackView(); buttons.orientation = .horizontal; buttons.spacing = 12

@@ -37,6 +37,8 @@ extension AppSafetyTests {
             ("The status carries the export size once, truncates with the full text as tooltip, and the drag-preview timer is not re-armed by it", modernStatusMergesDragSize),
             ("The zoom face is the percentage alone while VoiceOver and the tooltip carry the mode word", modernZoomFace),
             ("Every relocated control keeps its target and action, and the top and bottom bars run in reading order", modernRelocatedOwnership),
+            ("OSN-041: controls are 20 pt body text; only the status line is the 18 pt caption", modernBodyType),
+            ("The chrome's tooltips are app-owned at 20 pt: none left on the system, VoiceOver keeps the words, dynamic text stays live", modernAppToolTips),
             ("The two bars render in light and dark, normal and Frame mode, with the Size popover, and the bitmaps land in the evidence folder", modernLayoutBitmaps),
             ("Modern footer is a [PNG | JPG] toggle: PNG on a fresh install, JPG encodes drag, export and upload at 0.75, and a stored JPEG row reads as JPG", modernFormatToggle)
         ]
@@ -53,7 +55,7 @@ extension AppSafetyTests {
         let (fresh, chrome) = try modernFixture()
         let app = fresh.app, toggle = app.dragFormatToggle
         try expect(toggle.segmentCount == 2 && toggle.label(forSegment: 0) == "PNG" && toggle.label(forSegment: 1) == "JPG", "The toggle has exactly the PNG and JPG segments")
-        try expect(toggle.trackingMode == .selectOne && toggle.accessibilityLabel() == "Image format" && toggle.toolTip == "Format for drag, export and upload", "Selection mode, label and tooltip")
+        try expect(toggle.trackingMode == .selectOne && toggle.accessibilityLabel() == "Image format" && AppToolTip.text(for: toggle) == "Format for drag, export and upload", "Selection mode, label and tooltip")
         try expect((toggle.font?.pointSize ?? 0) >= 18 && toggle.superview != nil && chrome.surface(for: toggle) != nil, "Text is at least 18 pt and the toggle sits in the glass footer")
         try expect(toggle.selectedSegment == 0 && app.dragFormat == "png", "PNG is selected on a fresh defaults domain")
 
@@ -413,24 +415,24 @@ extension AppSafetyTests {
             let button = app.toolButtons[tool]
             facts["tool.\(tool.rawValue).id"] = button?.identifier?.rawValue ?? "<nil>"
             facts["tool.\(tool.rawValue).label"] = button?.accessibilityLabel() ?? "<nil>"
-            facts["tool.\(tool.rawValue).tip"] = button?.toolTip ?? "<nil>"
+            facts["tool.\(tool.rawValue).tip"] = button.flatMap { AppToolTip.text(for: $0) } ?? "<nil>"
         }
-        facts["snap.tip"] = app.snapButton.toolTip ?? "<nil>"
+        facts["snap.tip"] = AppToolTip.text(for: app.snapButton) ?? "<nil>"
         facts["palette.label"] = app.paletteButton.accessibilityLabel() ?? "<nil>"
-        facts["palette.tip"] = app.paletteButton.toolTip ?? "<nil>"
+        facts["palette.tip"] = AppToolTip.text(for: app.paletteButton) ?? "<nil>"
         facts["zoom.label"] = app.zoomControl.accessibilityLabel() ?? "<nil>"
         facts["format.label"] = app.dragFormatToggle.accessibilityLabel() ?? "<nil>"
         facts["drag.label"] = app.dragExportView?.accessibilityLabel() ?? "<nil>"
-        facts["drag.tip"] = app.dragExportView?.toolTip ?? "<nil>"
+        facts["drag.tip"] = app.dragExportView.flatMap { AppToolTip.text(for: $0) } ?? "<nil>"
         facts["original.title"] = app.dragOriginalControl.title
         facts["original.label"] = app.dragOriginalControl.accessibilityLabel() ?? "<nil>"
         facts["size.label"] = app.widthControl.accessibilityLabel() ?? "<nil>"
-        facts["size.tip"] = app.widthControl.toolTip ?? "<nil>"
+        facts["size.tip"] = AppToolTip.text(for: app.widthControl) ?? "<nil>"
         facts["name.placeholder"] = app.nameField.placeholderString ?? "<nil>"
         facts["status.font"] = String(Double(app.status.font?.pointSize ?? 0))
         let toolbox = collect(NSPopUpButton.self, in: content).first { $0.accessibilityLabel() == "Toolbox" }
         facts["toolbox.label"] = toolbox?.accessibilityLabel() ?? "<nil>"
-        facts["toolbox.tip"] = toolbox?.toolTip ?? "<nil>"
+        facts["toolbox.tip"] = toolbox.flatMap { AppToolTip.text(for: $0) } ?? "<nil>"
         facts["toolbox.items"] = toolbox?.itemTitles.joined(separator: "|") ?? "<nil>"
         let tools = Set(app.toolButtons.values.map(ObjectIdentifier.init))
         let plain = collect(NSButton.self, in: content).filter { !($0 is NSPopUpButton) && !tools.contains(ObjectIdentifier($0)) }
@@ -594,11 +596,11 @@ extension AppSafetyTests {
             for (action, name, tip) in expected {
                 let button = try buttons.first { $0.action == action }.unwrap("\(name) button")
                 try expect(button.imagePosition == .imageOnly && ((button as? GlassChromeButton)?.visibleTitle ?? button.title).isEmpty, "\(label): \(name) shows no title text")
-                try expect(button.toolTip == tip, "\(label): \(name) tooltip is '\(tip)', not '\(button.toolTip ?? "nil")'")
+                try expect(AppToolTip.text(for: button) == tip, "\(label): \(name) tooltip is '\(tip)', not '\(AppToolTip.text(for: button) ?? "nil")'")
                 try expect(button.accessibilityLabel() == name, "\(label): \(name) VoiceOver label, not '\(button.accessibilityLabel() ?? "nil")'")
             }
-            try expect(wipe.toolTip == "Blank", "\(label): Wipe's staged title is its tooltip")
-            try expect(app.paletteButton.imagePosition == .imageOnly && app.paletteButton.accessibilityLabel() == "Drawing colors" && (app.paletteButton.toolTip ?? "").hasPrefix("Color"),
+            try expect(AppToolTip.text(for: wipe) == "Blank", "\(label): Wipe's staged title is its tooltip")
+            try expect(app.paletteButton.imagePosition == .imageOnly && app.paletteButton.accessibilityLabel() == "Drawing colors" && (AppToolTip.text(for: app.paletteButton) ?? "").hasPrefix("Color"),
                        "\(label): Color is a swatch with a tooltip and its label")
             try expect(app.sizeLabel.superview == nil, "\(label): the Size text is not shown")
             try expect(chrome.header.subviews.flatMap { collect(NSTextField.self, in: $0) }.isEmpty, "\(label): the top bar has no title text")
@@ -611,13 +613,13 @@ extension AppSafetyTests {
             try verify("overlay preference \(show)")
         }
         app.canvas.strokeWidth = 9.38; app.syncDrawingControls()
-        try expect(app.widthControl.toolTip == "Size 9" && ((app.widthControl.accessibilityValue() as? NSNumber)?.doubleValue == 9.375 || abs(((app.widthControl.accessibilityValue() as? NSNumber)?.doubleValue ?? 0) - 9.38) < 0.01),
+        try expect(AppToolTip.text(for: app.widthControl) == "Size 9" && ((app.widthControl.accessibilityValue() as? NSNumber)?.doubleValue == 9.375 || abs(((app.widthControl.accessibilityValue() as? NSNumber)?.doubleValue ?? 0) - 9.38) < 0.01),
                    "The slider tooltip shows the whole-number size and VoiceOver reads its value")
-        let before = app.widthControl.toolTip
+        let before = AppToolTip.text(for: app.widthControl)
         app.canvas.strokeWidth = 3; app.syncDrawingControls()
-        try expect(app.widthControl.toolTip == "Size " + String(format: "%.0f", app.widthControl.doubleValue.rounded()) && app.widthControl.toolTip != before, "The Size tooltip follows the slider (\(app.widthControl.toolTip ?? "nil"))")
+        try expect(AppToolTip.text(for: app.widthControl) == "Size " + String(format: "%.0f", app.widthControl.doubleValue.rounded()) && AppToolTip.text(for: app.widthControl) != before, "The Size tooltip follows the slider (\(AppToolTip.text(for: app.widthControl) ?? "nil"))")
         let drag = try (app.dragExportView).unwrap("drag well")
-        try expect(drag.showsHandIconOnly && drag.toolTip == "Drag the drawing into Finder or another app" && drag.accessibilityLabel() == "Drag Me", "The drag well is an open-hand icon with a tooltip and keeps its VoiceOver label")
+        try expect(drag.showsHandIconOnly && AppToolTip.text(for: drag) == "Drag the drawing into Finder or another app" && drag.accessibilityLabel() == "Drag Me", "The drag well is an open-hand icon with a tooltip and keeps its VoiceOver label")
         try expect(NSImage(systemSymbolName: DragExportView.handSymbolName, accessibilityDescription: nil) != nil, "The hand symbol exists")
         try expect(drag.prepare != nil && drag.onBegin != nil && drag.onEnd != nil, "The icon-only well is still the drag source")
         let size = NSSize(width: 48, height: 36)
@@ -648,11 +650,11 @@ extension AppSafetyTests {
         let minimize = try item(#selector(AppDelegate.vanish)), undo = try item(#selector(AppDelegate.undo))
         let (oldKey, oldMask) = (minimize.keyEquivalent, minimize.keyEquivalentModifierMask)
         defer { minimize.keyEquivalent = oldKey; minimize.keyEquivalentModifierMask = oldMask }
-        try expect(chrome.hideButton.toolTip == "Hide (⌘" + minimize.keyEquivalent.uppercased() + ")", "Hide's tooltip suffix is Minimize's key equivalent: \(chrome.hideButton.toolTip ?? "nil")")
-        try expect(chrome.undoButton.toolTip == "Undo (⌘" + undo.keyEquivalent.uppercased() + ")", "Undo's tooltip suffix is Undo's key equivalent: \(chrome.undoButton.toolTip ?? "nil")")
+        try expect(AppToolTip.text(for: chrome.hideButton) == "Hide (⌘" + minimize.keyEquivalent.uppercased() + ")", "Hide's tooltip suffix is Minimize's key equivalent: \(AppToolTip.text(for: chrome.hideButton) ?? "nil")")
+        try expect(AppToolTip.text(for: chrome.undoButton) == "Undo (⌘" + undo.keyEquivalent.uppercased() + ")", "Undo's tooltip suffix is Undo's key equivalent: \(AppToolTip.text(for: chrome.undoButton) ?? "nil")")
         minimize.keyEquivalent = "h"; minimize.keyEquivalentModifierMask = [.command, .option, .shift]
         chrome.refreshShortcutHints()
-        try expect(chrome.hideButton.toolTip == "Hide (⌥⇧⌘H)", "Changing Minimize's shortcut changes Hide's tooltip: \(chrome.hideButton.toolTip ?? "nil")")
+        try expect(AppToolTip.text(for: chrome.hideButton) == "Hide (⌥⇧⌘H)", "Changing Minimize's shortcut changes Hide's tooltip: \(AppToolTip.text(for: chrome.hideButton) ?? "nil")")
     }
 
     private static func modernRenameAvailability() throws {
@@ -686,7 +688,7 @@ extension AppSafetyTests {
             try expect(measured <= app.status.frame.width + 0.5,
                        "The Frame hint '\(app.status.stringValue)' fits whole at \(Int(width)) wide (\(measured) vs \(app.status.frame.width))")
             try expect(app.status.stringValue == shortHint, "The Frame status shows the short hint: \(app.status.stringValue)")
-            try expect(app.status.toolTip == fullHint, "The full sentence is the Frame status tooltip: \(app.status.toolTip ?? "nil")")
+            try expect(AppToolTip.text(for: app.status) == fullHint, "The full sentence is the Frame status tooltip: \(AppToolTip.text(for: app.status) ?? "nil")")
             try expect(app.status.accessibilityValue() == fullHint && app.status.accessibilityHelp() == fullHint,
                        "The full sentence is the Frame status accessibility value and help: \(String(describing: app.status.accessibilityValue())) / \(String(describing: app.status.accessibilityHelp())) / \(fullHint)")
         }
@@ -739,7 +741,7 @@ extension AppSafetyTests {
             app.dragPreviewTimer?.invalidate(); app.dragPreviewTimer = nil
             app.updateDragPreview()
             let state = dirty ? "Unsaved changes" : "Saved"
-            let full = app.status.toolTip ?? ""
+            let full = AppToolTip.text(for: app.status) ?? ""
             let parts = full.components(separatedBy: " · ")
             try expect(parts.count == 4 && parts[1] == state && parts[2].contains("×") && parts[3].hasSuffix("B"), "The full status has tool, state, size and bytes: \(full)")
             let expected = [full, parts[0...2].joined(separator: " · "), parts[1...2].joined(separator: " · "), state]
@@ -754,7 +756,7 @@ extension AppSafetyTests {
                 try expect(need(shown) <= room + 0.5 || shown == state, "\(label): '\(shown)' fits whole in \(room) pt")
                 let index = expected.firstIndex(of: shown) ?? 0
                 try expect(expected[..<index].allSatisfy { need($0) > room + 0.5 }, "\(label): every longer variant really is too wide for \(room) pt")
-                try expect(app.status.toolTip == full && (app.status.accessibilityValue() as? String) == full, "\(label): the tooltip and spoken value are the full text: tip=\(app.status.toolTip ?? "nil") ax=\(String(describing: app.status.accessibilityValue())) spoken=\(app.status.spokenValue ?? "nil") shown=\(shown) full=\(full)")
+                try expect(AppToolTip.text(for: app.status) == full && (app.status.accessibilityValue() as? String) == full, "\(label): the tooltip and spoken value are the full text: tip=\(AppToolTip.text(for: app.status) ?? "nil") ax=\(String(describing: app.status.accessibilityValue())) spoken=\(app.status.spokenValue ?? "nil") shown=\(shown) full=\(full)")
                 try expect(!shown.contains("…"), "\(label): no ellipsis was typed into the text")
                 if index > 0 { sawShortened = true } else { sawWhole = true }
             }
@@ -768,7 +770,7 @@ extension AppSafetyTests {
         // A window that grows gives the longer text back; the label's width does not depend on what it shows.
         app.setWindowFrame(CGRect(origin: origin, size: CGSize(width: 1440, height: app.window.frame.height)))
         content.layoutSubtreeIfNeeded()
-        try expect(app.status.stringValue == app.status.toolTip, "A wide window shows the whole status again: \(app.status.stringValue)")
+        try expect(app.status.stringValue == AppToolTip.text(for: app.status), "A wide window shows the whole status again: \(app.status.stringValue)")
 
         // An upload message is one text: it keeps its priority and is cut only at its tail. A plain write is one fixed text too.
         let field = StatusTextField(labelWithString: "")
@@ -829,7 +831,7 @@ extension AppSafetyTests {
                 try expect(surface.isSelected == isOn, "\(label): \(tool) surface selection")
                 try expect((surface.currentTint != nil) == isOn, "\(label): only the selected tool is tinted (\(tool))")
                 try expect(button.activeFamily == (isOn ? .solid : .regular), "\(label): \(tool) glyph family")
-                try expect(button.toolTip?.contains("(selected)") == isOn, "\(label): \(tool) tooltip '\(button.toolTip ?? "")'")
+                try expect(AppToolTip.text(for: button)?.contains("(selected)") == isOn, "\(label): \(tool) tooltip '\(AppToolTip.text(for: button) ?? "")'")
                 if isOn {
                     try expect(abs((surface.currentTint?.alphaComponent ?? 0) - 0.85) < 0.001, "\(label): \(tool) carries the accent tint")
                     try expect(sameColor(button.contentTintColor, GlassChromeButton.textColor(on: .controlAccentColor)), "\(label): \(tool) glyph contrasts with the accent")
@@ -880,7 +882,7 @@ extension AppSafetyTests {
             try expect(snap.title == (frame ? "Snap Frame" : "Snap") && snap.icon == (frame ? .frameViewfinder : .crosshairs), "\(label): Snap title and glyph '\(snap.title)'")
             try expect(snap.accessibilityLabel() == (frame ? "Snap Frame" : "Snap"), "\(label): VoiceOver reads '\(snap.accessibilityLabel() ?? "nil")' for Snap")
             try expect(cancel.accessibilityLabel() == "Cancel", "\(label): Cancel keeps its spoken label")
-            try expect(snap.toolTip == (frame ? ModernEditorChrome.snapFrameToolTip : ModernEditorChrome.snapToolTip), "\(label): Snap tooltip")
+            try expect(AppToolTip.text(for: snap) == (frame ? ModernEditorChrome.snapFrameToolTip : ModernEditorChrome.snapToolTip), "\(label): Snap tooltip")
             try expect(snap.alternateAction == (frame ? nil : fullscreen), "\(label): the Fullscreen alternate is \(frame ? "cleared" : "restored")")
             try expect(snap.alternateTarget === app, "\(label): the alternate target")
             try expect(snap.isPrimary && (try surface(chrome, snap)).prominence == .primary, "\(label): Snap stays the one primary command")
@@ -1366,7 +1368,7 @@ extension AppSafetyTests {
         app.updateDragPreview()
         let text = app.status.stringValue
         try expect(text.hasPrefix("Arrow · ") && text.contains("×") && text.components(separatedBy: " · ").count == 4 && text.hasSuffix("KB"), "The status reads tool, state and export size in one line: \(text)")
-        try expect(app.dragSizeLabel.superview == nil && app.status.toolTip == text && (app.status.accessibilityValue() as? String) == text, "The full text is the tooltip and the spoken value; no separate size label exists on screen")
+        try expect(app.dragSizeLabel.superview == nil && AppToolTip.text(for: app.status) == text && (app.status.accessibilityValue() as? String) == text, "The full text is the tooltip and the spoken value; no separate size label exists on screen")
         try expect(app.status.lineBreakMode == .byTruncatingTail, "A narrow status truncates its tail")
         try expect(app.dragPreviewTimer == nil, "Writing the size into the status does not re-arm the one-second drag-preview timer")
         app.updateStatus()
@@ -1385,7 +1387,7 @@ extension AppSafetyTests {
         app.updateDragPreview(); app.updateViewportChrome()
         content.layoutSubtreeIfNeeded()
         try expect(!app.dragOriginalControl.isHidden && app.isLargeShot, "A large shot shows the Original size checkbox")
-        let full = (app.status.cell?.copy() as? NSCell).map { $0.stringValue = app.status.toolTip ?? ""; return $0.cellSize.width } ?? 0
+        let full = (app.status.cell?.copy() as? NSCell).map { $0.stringValue = AppToolTip.text(for: app.status) ?? ""; return $0.cellSize.width } ?? 0
         try expect(app.status.frame.width >= 120 && app.status.frame.width <= full + 0.5, "At the minimum width with the checkbox the status keeps \(app.status.frame.width) pt (needs 120)")
         // A label's frame reaches 2 pt past the alignment rect layout places; the 12 pt group gap is measured on the alignment rect.
         let placed = app.status.superview!.convert(app.status.alignmentRect(forFrame: app.status.frame), to: nil)
@@ -1398,11 +1400,13 @@ extension AppSafetyTests {
         app.setCanvasDisplayZoom(0.83, label: "Fit")
         try expect(zoom.titleOfSelectedItem == "83%" && zoom.selectedItem?.toolTip == "Fit, 83%" && (zoom.accessibilityValue() as? String) == "Fit, 83%",
                    "The face is the percentage; the mode word travels on the tooltip and the spoken value (\(zoom.titleOfSelectedItem ?? "nil"))")
+        try expect(AppToolTip.text(for: zoom) == "Fit, 83%" && zoom.toolTip == nil, "The zoom face's app tooltip carries the live mode word, with no system tooltip")
         app.setCanvasDisplayZoom(1, label: "Normal")
         try expect(zoom.titleOfSelectedItem == "100%" && (zoom.accessibilityValue() as? String) == "Normal, 100%", "Normal reads 100%")
         let index = try (zoom.itemArray.firstIndex { $0.title == "150%" }).unwrap("150% item")
         zoom.selectItem(at: index); app.changeZoom(zoom)
         try expect((zoom.accessibilityValue() as? String) == "150%" && abs(app.canvas.zoom - 1.5) < 0.001, "Picking a plain zoom speaks only its percentage, never the previous mode word")
+        try expect(AppToolTip.text(for: zoom) == nil, "Picking a plain zoom clears the previous mode word from the app tooltip")
         // The capsule is sized once for the widest face, so no title is ever clipped. The menu-only Actual Size command is never a face.
         let surface = try surface(chrome, zoom)
         for item in zoom.itemArray where item.tag != ZoomPopUpButton.actualSizeTag && !item.isSeparatorItem {
@@ -1410,7 +1414,69 @@ extension AppSafetyTests {
             zoom.select(item)
             try expect(zoom.fittingSize.width <= surface.frame.width - 8 + 0.5, "\(title) fits the zoom capsule (\(zoom.fittingSize.width) in \(surface.frame.width))")
         }
-        try expect(zoom.toolTip == nil || zoom.toolTip == "Canvas zoom", "Zoom keeps its tooltip")
+        try expect(AppToolTip.text(for: zoom) == nil || AppToolTip.text(for: zoom) == "Canvas zoom", "Zoom keeps its tooltip")
+    }
+
+    private static func modernBodyType() throws {
+        let (fixture, _) = try modernFixture()
+        let app = fixture.app
+        let content = try (app.window.contentView).unwrap("content")
+        let body = DesignTokens.Typography.font(.body).pointSize, caption = DesignTokens.Typography.font(.caption).pointSize
+        let controls: [(String, NSControl)] = [("zoom popup", app.zoomControl), ("Original size checkbox", app.dragOriginalControl), ("Color button", app.paletteButton),
+                                               ("Toolbox", try collect(NSPopUpButton.self, in: content).first { $0.accessibilityLabel() == "Toolbox" }.unwrap("Toolbox")), ("PNG | JPG", app.dragFormatToggle)]
+        for (name, control) in controls {
+            try expect(control.font?.pointSize == body && body == 20, "\(name) is body text, 20 pt (is \(control.font?.pointSize ?? 0))")
+        }
+        try expect(app.status.font?.pointSize == caption && caption == 18, "The status line is the 18 pt caption")
+        try expect(app.zoomControl.menu?.font.pointSize == 20, "The zoom menu is 20 pt")
+        for button in collect(NSButton.self, in: content) {
+            try expect((button.font?.pointSize ?? 0) >= 18, "\(type(of: button)) '\(button.accessibilityLabel() ?? button.title)' keeps at least the readable floor")
+        }
+    }
+
+    private static func modernAppToolTips() throws {
+        let (fixture, chrome) = try modernFixture()
+        let app = fixture.app
+        let content = try (app.window.contentView).unwrap("content view")
+        AppToolTip.install(on: content)
+        var all: [NSView] = []
+        func walk(_ view: NSView) { all.append(view); view.subviews.forEach(walk) }
+        walk(content)
+        let withText = all.filter { AppToolTip.text(for: $0) != nil }
+        try expect(withText.count >= 20, "The chrome carries app tooltips on its controls (\(withText.count))")
+        try expect(all.filter { $0.toolTip != nil }.isEmpty, "No view in the main window has a system tooltip: \(all.filter { $0.toolTip != nil }.map { "\(type(of: $0)) \($0.toolTip ?? "")" })")
+        for view in withText where view !== app.status {
+            let text = AppToolTip.text(for: view) ?? ""
+            let help = view.accessibilityHelp() ?? ""
+            try expect(help == text, "\(type(of: view)) '\(view.accessibilityLabel() ?? "")' keeps spoken help for its tooltip '\(text)'")
+        }
+        for view in [app.snapButton!, chrome.undoButton, chrome.hideButton, chrome.wipeButton, app.widthControl] as [NSView] {
+            try expect(view.accessibilityHelp() == AppToolTip.text(for: view), "\(view.accessibilityLabel() ?? "") has accessibilityHelp equal to its former tooltip")
+        }
+        try expect(app.status.accessibilityHelp() == nil && (app.status.accessibilityValue() as? String) == AppToolTip.text(for: app.status),
+                   "The status line speaks its full text as its value, so it is not repeated as help")
+        for view in [app.snapButton!, chrome.undoButton, app.widthControl] as [NSView] {
+            let anchor = AppToolTip.anchorRect(of: view, in: app.window)
+            try expect(anchor.width < 200 && anchor.height < 100 && app.window.frame.insetBy(dx: -1, dy: -1).contains(anchor),
+                       "The tooltip anchors on the control itself, not its window: \(view.accessibilityLabel() ?? "") \(anchor) in \(app.window.frame) (bounds \(view.bounds), visible \(view.visibleRect), window \(String(describing: view.window === app.window)))")
+        }
+        // The plate itself: 20 pt, and the dynamic Size text follows the control.
+        let tip = AppToolTip.shared
+        tip.dismiss(); tip.present = { _ in }; tip.reduceMotion = { true }
+        tip.show(for: app.widthControl)
+        try expect(tip.shownText == AppToolTip.text(for: app.widthControl) && (tip.label?.font?.pointSize ?? 0) >= 18 && tip.label?.font?.pointSize == 20,
+                   "The Size tooltip is shown on an app plate at 20 pt (\(tip.shownText ?? "nil"))")
+        app.canvas.strokeWidth = 12
+        app.syncDrawingControls()
+        try expect(tip.shownText == "Size 12", "The shown Size plate follows the control live (\(tip.shownText ?? "nil"))")
+        tip.dismiss()
+        // The hover-hint bevel replaces the tooltip on the controls it covers, and only while it is enabled.
+        let brush = try app.toolButtons[.brush].unwrap("Brush")
+        app.helpBevel?.enabled = true
+        try expect(tip.suppressed(brush) && tip.suppressed(chrome.wipeButton) && !tip.suppressed(chrome.undoButton),
+                   "With the hint bevel on, covered controls yield their tooltip and the rest keep it")
+        app.helpBevel?.enabled = false
+        try expect(!tip.suppressed(brush), "With the hint bevel off, tooltips show on every control")
     }
 
     private static func modernRelocatedOwnership() throws {

@@ -80,10 +80,11 @@ final class AuditRun {
     func grab(_ windows: [NSWindow]) -> (CGImage, String)? {
         let numbers = windows.map(\.windowNumber).filter { $0 > 0 }.map { CGWindowID($0) }
         let options: CGWindowImageOption = [.boundsIgnoreFraming, .bestResolution]
-        // A popover sits above its window in the window server's own order, but a joint capture draws the window over it and loses
-        // the overlap. Image each window on its own and stack them in the order given.
-        if windows.count > 1, windows.contains(where: { String(describing: type(of: $0)).contains("Popover") }), let stacked = stackedImage(windows) {
-            return (stacked, "CGWindowListCreateImage per window, stacked in order (\(windows.count) own windows; popover above its window)")
+        // A popover or tooltip plate sits above its window in the window server's own order, but a joint capture draws the window over
+        // it and loses the overlap. Image each window on its own and stack them in the order given.
+        let overlays = ["Popover", "ToolTip"]
+        if windows.count > 1, windows.contains(where: { window in overlays.contains { String(describing: type(of: window)).contains($0) } }), let stacked = stackedImage(windows) {
+            return (stacked, "CGWindowListCreateImage per window, stacked in order (\(windows.count) own windows; popover or tooltip above its window)")
         }
         var image: CGImage?
         if numbers.count == 1 {

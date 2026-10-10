@@ -9,11 +9,11 @@ enum OriginalDrawingControls {
             let rgba = bits.map { CGFloat(Float(bitPattern: $0)) }
             // The original DocumentController takes the raw table floats.
             // A calibrated swatch converted to deviceRGB would alter them.
-            return NSColor(deviceRed: rgba[0], green: rgba[1], blue: rgba[2], alpha: rgba[3])
+            return NSColor(deviceRed: rgba[0], green: rgba[1], blue: rgba[2], alpha: rgba[3]) // token-exempt: original preset colour data
         }
         var swatchColor: NSColor {
             let rgba = bits.map { CGFloat(Float(bitPattern: $0)) }
-            return NSColor(calibratedRed: rgba[0], green: rgba[1], blue: rgba[2], alpha: rgba[3])
+            return NSColor(calibratedRed: rgba[0], green: rgba[1], blue: rgba[2], alpha: rgba[3]) // token-exempt: original preset colour data
         }
     }
     // Original __GLOBAL__I_a at0x001dc570 initializes tags100...110.
@@ -34,7 +34,7 @@ enum OriginalDrawingControls {
         guard let rgb = panelColor.usingColorSpace(.genericRGB) else { return nil }
         let values = [rgb.redComponent, rgb.greenComponent, rgb.blueComponent, rgb.alphaComponent].map { CGFloat(Float($0)) }
         guard values.allSatisfy({ $0.isFinite && (0...1).contains($0) }) else { return nil }
-        return NSColor(deviceRed: values[0], green: values[1], blue: values[2], alpha: values[3])
+        return NSColor(deviceRed: values[0], green: values[1], blue: values[2], alpha: values[3]) // token-exempt: drawing colour data
     }
     static func legacyRGB(_ color: NSColor) -> String {
         let raw = SketchColor(color)
@@ -46,7 +46,7 @@ enum OriginalDrawingControls {
         let values = parts.compactMap { Double($0.trimmingCharacters(in: .whitespacesAndNewlines)) }
         guard values.count == 3, values.allSatisfy({ $0.isFinite && (0...255).contains($0) }),
               let opacity = Double(alpha ?? "1"), opacity.isFinite, (0...1).contains(opacity) else { return nil }
-        return NSColor(deviceRed: CGFloat(Float(values[0]/255)), green: CGFloat(Float(values[1]/255)),
+        return NSColor(deviceRed: CGFloat(Float(values[0]/255)), green: CGFloat(Float(values[1]/255)), // token-exempt: stored drawing colour data
                        blue: CGFloat(Float(values[2]/255)), alpha: CGFloat(Float(opacity)))
     }
     static let minimum = 1.5, maximum = 12.0, initialSize = 6.75
@@ -81,17 +81,17 @@ final class BezelColorButton: NSButton {
         NSBezierPath(roundedRect: rect, xRadius: 5, yRadius: 5).addClip()
         for row in 0..<Int(ceil(rect.height/6)) {
             for column in 0..<Int(ceil(rect.width/6)) {
-                ((row+column)%2 == 0 ? NSColor.white : NSColor(white: 0.72, alpha: 1)).setFill()
+                ((row+column)%2 == 0 ? NSColor.white : NSColor(white: 0.72, alpha: 1)).setFill() // token-exempt: transparency checkerboard behind a document colour
                 NSRect(x: rect.minX+CGFloat(column)*6, y: rect.minY+CGFloat(row)*6, width: 6, height: 6).fill()
             }
         }
         drawingColor.setFill(); rect.fill()
         NSGraphicsContext.restoreGraphicsState()
         let outline = NSBezierPath(roundedRect: rect, xRadius: 5, yRadius: 5)
-        (state == .on ? NSColor.controlAccentColor : NSColor.darkGray).setStroke()
+        (state == .on ? DesignTokens.Palette.accent : DesignTokens.Palette.SwatchOutline.rest).setStroke()
         outline.lineWidth = state == .on ? 3 : 1; outline.stroke()
         if window?.firstResponder === self {
-            NSColor.keyboardFocusIndicatorColor.setStroke()
+            DesignTokens.Palette.focusRing.setStroke()
             let focus = NSBezierPath(roundedRect: bounds.insetBy(dx: 1, dy: 1), xRadius: 6, yRadius: 6)
             focus.lineWidth = 2; focus.stroke()
         }
@@ -125,11 +125,11 @@ final class BezelSizeSlider: NSControl, NSPopoverDelegate {
     override init(frame: NSRect) {
         super.init(frame: frame)
         cell = NSActionCell(); isEnabled = true
-        font = .systemFont(ofSize: 18)
+        font = DesignTokens.Typography.font(.body)
         focusRingType = .exterior
         setAccessibilityElement(true); setAccessibilityRole(.slider)
         setAccessibilityLabel("Drawing size")
-        toolTip = "Five drawing sizes; hold Shift for continuous adjustment"
+        AppToolTip.setText("Five drawing sizes; hold Shift for continuous adjustment", for: self)
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     override func accessibilityValue() -> Any? { NSNumber(value: value) }
@@ -201,6 +201,7 @@ final class BezelSizeSlider: NSControl, NSPopoverDelegate {
     func showPopover() {
         guard isEnabled, let window, window.attachedSheet == nil, !isPopoverShown else { return }
         let content = SizePopoverContent(slider: self)
+        AppToolTip.install(on: content)
         let controller = NSViewController()
         controller.view = content
         let popover = popoverProvider()
@@ -263,8 +264,8 @@ final class SizePopoverContent: NSView {
         presetButtons = OriginalDrawingControls.sizeSteps.map { SizePresetButton(size: $0, slider: slider) }
         super.init(frame: NSRect(origin: .zero, size: Self.size))
         wantsLayer = true
-        titleLabel.font = .systemFont(ofSize: 20, weight: .semibold)
-        readout.font = .monospacedDigitSystemFont(ofSize: 20, weight: .regular)
+        titleLabel.font = DesignTokens.Typography.font(.bodyStrong)
+        readout.font = .monospacedDigitSystemFont(ofSize: DesignTokens.Typography.readableDefault, weight: .regular)
         readout.alignment = .right
         readout.setAccessibilityLabel("Size value")
         for view in [titleLabel, readout, trackView] + presetButtons {
@@ -320,7 +321,7 @@ final class SizeTrackView: NSControl {
     init(slider: BezelSizeSlider) {
         self.slider = slider
         super.init(frame: NSRect(origin: .zero, size: Self.size))
-        font = .systemFont(ofSize: 18)
+        font = DesignTokens.Typography.font(.body)
         focusRingType = .exterior
         setAccessibilityElement(true); setAccessibilityRole(.slider)
         setAccessibilityLabel("Size")
@@ -391,11 +392,11 @@ final class SizePresetButton: NSButton {
         super.init(frame: NSRect(origin: .zero, size: Self.size))
         isBordered = false
         title = ""
-        font = .systemFont(ofSize: 18)
+        font = DesignTokens.Typography.font(.body)
         focusRingType = .exterior
         target = self; action = #selector(choose)
         let name = "Size " + String(format: "%.0f", size.rounded())
-        setAccessibilityLabel(name); toolTip = name
+        setAccessibilityLabel(name); AppToolTip.setText(name, for: self)
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
