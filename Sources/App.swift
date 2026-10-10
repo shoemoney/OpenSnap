@@ -1848,6 +1848,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         window.level = frameWindowLevel
         window.backgroundColor = frameWindowBackground
         window.collectionBehavior.insert(.fullScreenPrimary)
+        window.titlebarAppearsTransparent = true
         canvas.enclosingScrollView?.drawsBackground = frameScrollDrewBackground
         canvas.enclosingScrollView?.hasHorizontalScroller = frameScrollersShown.horizontal; canvas.enclosingScrollView?.hasVerticalScroller = frameScrollersShown.vertical
         snapButton.title = "Snap"

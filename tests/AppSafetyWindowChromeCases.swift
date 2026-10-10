@@ -9,7 +9,7 @@ extension AppSafetyTests {
     static var windowChromeCases: [(String, () throws -> Void)] {
         [
             ("The window title is the document name (Untitled when new), the proxy icon follows the file, and the subtitle is the live size", windowTitleFollowsDocument),
-            ("The title bar has no separator and shares the window surface colour; the separate titlebar stays opaque for Frame mode", windowTitlebarReadsAsChrome),
+            ("The title bar has no separator and shows the window surface colour; Frame mode makes it opaque and leaving restores it", windowTitlebarReadsAsChrome),
             ("A fresh window opens centred at 1120 x 780; a saved frame is restored and centring is skipped; the key format is AppKit's", windowFrameAutosave),
             ("The minimum window is the width the live bars need (never below 980) and 640 high; the worst case does not depend on Frame mode", windowMinimumIsMeasured),
             ("Full screen is on for the window, refused by Frame with a status line, switched off while Frame is up, and ends Frame if it starts anyway", windowFullScreenExcludesFrame),
@@ -84,12 +84,12 @@ extension AppSafetyTests {
         let fixture = try Fixture(), app = fixture.app
         try expect(app.window.titlebarSeparatorStyle == .none, "No separator line under the title bar")
         try expect(app.window.backgroundColor == DesignTokens.Palette.Surface.window, "The window background is the chrome surface colour")
-        try expect(!app.window.titlebarAppearsTransparent, "The title bar stays opaque: the Frame-mode hole and title backdrop depend on it")
+        try expect(app.window.titlebarAppearsTransparent, "Outside Frame the title bar shows the window surface colour, so there is no grey strip")
         try expect(!app.window.styleMask.contains(.fullSizeContentView), "Content does not run under the title bar (a full-size content view would cost 78 pt beside the traffic lights)")
         app.frameSnap()
-        try expect(app.window.backgroundColor == .clear && !app.window.titlebarAppearsTransparent, "Frame still clears the window and keeps the title bar opaque")
+        try expect(app.window.backgroundColor == .clear && !app.window.titlebarAppearsTransparent, "Frame clears the window and makes the title bar opaque (its title backdrop depends on it)")
         app.leaveFrame()
-        try expect(app.window.backgroundColor == DesignTokens.Palette.Surface.window, "Leaving Frame restores the surface colour")
+        try expect(app.window.backgroundColor == DesignTokens.Palette.Surface.window && app.window.titlebarAppearsTransparent, "Leaving Frame restores the surface colour and the seamless title bar")
     }
 
     // MARK: size and memory

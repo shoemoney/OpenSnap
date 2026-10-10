@@ -39,10 +39,13 @@ extension AppDelegate {
         window.title = trimmed.isEmpty ? MainWindowFrame.untitled : trimmed
     }
 
-    /// The title bar reads as part of the chrome: no separator line, the same surface colour as the window below it.
+    /// The title bar reads as part of the chrome: no separator line, and the title bar shows the window's own surface colour
+    /// instead of its material (measured: the opaque title bar is 41/40/39 over a 30/30/30 window in dark, with a 1 pt line).
+    /// Frame mode makes it opaque again (enterFrame) because the clear window would otherwise clear it too.
     /// The title and subtitle text themselves are drawn by the system, at the system's size.
     func configureWindowChrome() {
         window.titlebarSeparatorStyle = .none
+        window.titlebarAppearsTransparent = true
         window.backgroundColor = DesignTokens.Palette.Surface.window
         window.collectionBehavior.insert(.fullScreenPrimary)
         window.representedURL = currentURL

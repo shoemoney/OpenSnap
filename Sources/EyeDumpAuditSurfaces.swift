@@ -118,7 +118,7 @@ extension AuditRun {
         var fonts: [String: Any] = ["title": fontInfo(alert.titleLabel.font) as Any, "message": fontInfo(alert.messageLabel.font) as Any,
                                     "buttons": alert.buttonViews.map { fontInfo($0.font) as Any }]
         if let field = alert.accessoryView as? NSTextField { fonts["field"] = fontInfo(field.font) as Any }
-        shoot(id, slug, surface: surface, state: state, windows: [window, alert.panel], refs: refs, settle: 0,
+        shoot(id, slug, surface: surface, state: state, windows: [alert.panel, window], refs: refs, settle: 0.1,
               extra: ["alertTitle": alert.title, "alertButtons": alert.buttons.map(\.title), "fonts": fonts, "presentedAs": window.attachedSheet === alert.panel ? "sheet on the document window" : "separate panel"])
         alert.cancel()
         pump(0.3)
@@ -1025,7 +1025,7 @@ extension AuditRun {
         app.publishImage()
         pump(3.0)
         if let alert = AppAlert.presentedAlerts.last {
-            shoot("S21", "publish-error", surface: "publish error", state: "error sheet after a stubbed failed upload", windows: [window, alert.panel], refs: ["App.swift|func receivePublishing", "App.swift|func error(_ error: Error)"], settle: 0,
+            shoot("S21", "publish-error", surface: "publish error", state: "error sheet after a stubbed failed upload", windows: [alert.panel, window], refs: ["App.swift|func receivePublishing", "App.swift|func error(_ error: Error)"], settle: 0,
                   extra: ["alertTitle": alert.title, "presentedAs": window.attachedSheet === alert.panel ? "sheet on the document window" : "separate panel"])
             alert.cancel()
         } else { gap("S21", "publish error alert", "no error sheet appeared") }
