@@ -222,7 +222,7 @@ Notes on the table:
 
 ### Finding resolution index
 
-Every finding ID from J1 to J5 (75) and every review round 1 ID R1-001 to R1-024 (24). Status key: **fixed** (merge or batch named); **partial**; **deferred**; **gap** (outside what the harness or the isolated session can prove); **doc-only**; **open** (no fix recorded in the sources; listed, not scheduled); **in progress** (batch 5); **J6 pending**; **accepted trade-off** (none recorded). The R1 titles are not written down in the repo, so R1 rows carry their status and batch from the lane brief, with no title.
+Every finding ID from J1 to J5 (75) and every review round 1 ID R1-001 to R1-024 (24). Status key: **fixed** (merge or batch named); **partial**; **deferred**; **gap** (outside what the harness or the isolated session can prove); **doc-only**; **open** (no fix recorded in the sources; listed, not scheduled); **in progress** (batch 5); **J6 pending**; **accepted trade-off** (none recorded). R1 rows take their titles from the round 1 record in `docs/design/e2e/findings.md`.
 
 #### Journey findings (F-J1 to F-J5)
 
@@ -306,32 +306,32 @@ Every finding ID from J1 to J5 (75) and every review round 1 ID R1-001 to R1-024
 
 #### Review round 1 (R1-001 to R1-024)
 
-| ID | Status | Batch or merge | Note |
-|---|---|---|---|
-| R1-001 | fixed | `b09ecc6` | Harness input fence; leaked capture withdrawn from the tree. History cleanup pending, owned by root before any push |
-| R1-002 | in progress | batch 5 || — |
-| R1-003 | in progress | batch 5 || — |
-| R1-004 | fixed | `b09ecc6` | Free-only fonts by default; the default build never bundles Font Awesome Pro |
-| R1-005 | in progress | batch 5 || — |
-| R1-006 | in progress | batch 5 || — |
-| R1-007 | fixed | `b09ecc6` || — |
-| R1-008 | fixed | `b09ecc6` || — |
-| R1-009 | J6 pending | J6 retest | Real-click retest of batch 4 and the batch 5 fixes |
-| R1-010 | in progress | batch 5 || — |
-| R1-011 | in progress | batch 5 || — |
-| R1-012 | in progress | batch 5 || — |
-| R1-013 | in progress | batch 5 || — |
-| R1-014 | in progress | batch 5 || — |
-| R1-015 | in progress | batch 5 || — |
-| R1-016 | deferred | none || — |
-| R1-017 | in progress | batch 5 || — |
-| R1-018 | in progress | batch 5 || — |
-| R1-019 | in progress | batch 5 || — |
-| R1-020 | in progress | batch 5 || — |
-| R1-021 | in progress | batch 5 stretch || — |
-| R1-022 | in progress | batch 5 || — |
-| R1-023 | fixed | `b09ecc6` || — |
-| R1-024 | fixed | `fa4715f` | Panel-service root cause in the launchers; the OS bug remains |
+| ID | Title | Status | Batch or merge | Note |
+|---|---|---|---|---|
+| R1-001 | Private text visible in a harness capture | fixed | `b09ecc6` | Harness input fence; leaked capture withdrawn from the tree. History cleanup pending, owned by root before any push |
+| R1-002 | Upload size versus "Original size" promise | in progress | batch 5 | — |
+| R1-003 | Resize sheet opens in output points | in progress | batch 5 | — |
+| R1-004 | Font Awesome Pro bundled in default builds | fixed | `b09ecc6` | Free-only fonts by default; the default build never bundles Font Awesome Pro |
+| R1-005 | Toolbox pull-down icons unverified; near-identical symbols | in progress | batch 5 | — |
+| R1-006 | Resize glyph reads as expand | in progress | batch 5 | — |
+| R1-007 | Ledger rows describe removed sheet and old tab names | fixed | `b09ecc6` | — |
+| R1-008 | Ledger class inflation | fixed | `b09ecc6` | — |
+| R1-009 | No real-click retest of batch 4 | J6 pending | J6 retest | Real-click retest of batch 4 and the batch 5 fixes |
+| R1-010 | Delete from Web after re-save | in progress | batch 5 | — |
+| R1-011 | Settings › Upload duplicates Destinations sheet | in progress | batch 5 | — |
+| R1-012 | History toolbar unlabeled glyphs | in progress | batch 5 | — |
+| R1-013 | Status line repeats the title | in progress | batch 5 | — |
+| R1-014 | Status line truncates the upload link at 980 | in progress | batch 5 | — |
+| R1-015 | Empty states and copy consistency | in progress | batch 5 | — |
+| R1-016 | Actual Size navigator mostly empty | deferred | none | — |
+| R1-017 | Settings › Capture redundant controls | in progress | batch 5 | — |
+| R1-018 | Differentiate Without Color outline not live | in progress | batch 5 | — |
+| R1-019 | Weak test assertions | in progress | batch 5 | — |
+| R1-020 | Window › Full Screen acts on the wrong window | in progress | batch 5 | — |
+| R1-021 | Eraser drops the shadow from the whole shape | in progress | batch 5 stretch | — |
+| R1-022 | Miscellaneous WebDAV, notice and shortcut defects | in progress | batch 5 | — |
+| R1-023 | Model and tool names in committed docs and tooling | fixed | `b09ecc6` | — |
+| R1-024 | F-J5-005 judgement | fixed | `fa4715f` | Panel-service root cause in the launchers; the OS bug remains |
 
 #### Totals by status
 
