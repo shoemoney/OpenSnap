@@ -553,6 +553,10 @@ enum PublishingDestinationsTests {
         row = view.formResult
         try expect(row.kind == .failure && row.text.stringValue == "Error: AccessDenied: no such bucket" && row.glyph.image != nil && !row.glyph.isHidden, "failure shows a glyph and an Error: line")
         try expect(row.glyph.image !== successGlyph, "success and failure use different glyphs")
+        for icon in [FAIcon.circleCheck, .xmarkCircle, .check] {
+            if case .sfSymbol = ChromeIcons.resolve(icon, family: .solid).source { throw PublishingFailure("\(icon) is an SF Symbol here; Destinations must use the chrome icon family") }
+        }
+        try expect(row.glyph.image?.isTemplate == true && successGlyph?.isTemplate == true, "status glyphs are template images that take the text colour")
         view.showStatus("Network is down")
         try expect(view.formResult.text.stringValue == "Error: Network is down" && view.formResult.glyph.image != nil, "a coordinator failure is prefixed and carries the failure glyph")
         view.protocolPopup.selectItem(withTitle: PublishingProtocol.s3.title); view.formChanged()

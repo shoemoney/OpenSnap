@@ -95,15 +95,15 @@ private enum FontAwesomeIconsTests {
     // MARK: table
 
     private static func table() {
-        expect(FAIcon.allCases.count == 25, "Icon table lists the 25 mapped controls")
+        expect(FAIcon.allCases.count == 34, "Icon table lists the 34 mapped icons")
         expect(Set(FAIcon.allCases.map(\.rawValue)).count == FAIcon.allCases.count, "Icon names are unique")
         expect(FAIcon.allCases.allSatisfy { $0.rawValue == $0.rawValue.lowercased() && !$0.rawValue.contains(" ") }, "Icon names are lowercase kebab-case")
-        expect(FAIcon(rawValue: "eye-slash") == .eyeSlash && FAIcon(rawValue: "arrow-up-from-bracket") == .arrowUpFromBracket, "Raw values are the icons.yml keys")
+        expect(FAIcon(rawValue: "eye-slash") == .eyeSlash && FAIcon(rawValue: "cloud-arrow-up") == .upload, "Raw values are the icons.yml keys")
         let codepoints = FAIcon.allCases.map(\.codepoint)
         expect(Set(codepoints).count == codepoints.count, "Every icon has its own codepoint")
         expect(FontAwesomeIcons.subsetUnicodes == Set(codepoints).sorted(), "subsetUnicodes is the sorted unique table")
         expect(FontAwesomeIcons.subsetUnicodes.count == FAIcon.allCases.count, "subsetUnicodes covers every icon exactly once")
-        expect(FAIcon.slashForward.codepoint == 0x2F && FAIcon.eyeSlash.codepoint == 0xF070 && FAIcon.arrowUpFromBracket.codepoint == 0xE09A,
+        expect(FAIcon.slashForward.codepoint == 0x2F && FAIcon.eyeSlash.codepoint == 0xF070 && FAIcon.upload.codepoint == 0xF0EE,
                "Spot-checked codepoints match icons.yml")
         expect(FAFamily.regular.postScriptName == "FontAwesome7Pro-Regular" && FAFamily.solid.postScriptName == "FontAwesome7Pro-Solid", "PostScript names")
         expect(FAFamily.allCases.map(\.resourceName) == ["FontAwesome7Pro-Regular-subset", "FontAwesome7Pro-Solid-subset"], "Resource names")
@@ -139,8 +139,14 @@ private enum FontAwesomeIconsTests {
                 expect(!FontAwesomeIcons.glyphExists(icon, family: family), "\(icon) has no glyph without a font")
                 expect(FontAwesomeIcons.image(icon, family: family, pointSize: 22) == nil, "\(icon) renders nothing without a font")
                 let resolved = ChromeIcons.resolve(icon, family: family, pointSize: 22)
-                expect(resolved.source == .sfSymbol(icon.sfSymbolFallback), "\(icon)/\(family) falls back to its SF Symbol")
-                expect(resolved.image?.isTemplate == true && (resolved.image?.size.width ?? 0) > 0, "\(icon) SF fallback is a sized template image")
+                expect(resolved.source == .fontAwesomeFree(icon.freeSource.name), "\(icon)/\(family) without Pro uses its embedded Free vector")
+                expect(resolved.image?.isTemplate == true && (resolved.image?.size.width ?? 0) > 0, "\(icon) Free vector is a sized template image")
+                let original = ChromeIcons.freeGlyph
+                ChromeIcons.freeGlyph = { _, _ in nil }
+                let fallback = ChromeIcons.resolve(icon, family: family, pointSize: 22)
+                ChromeIcons.freeGlyph = original
+                expect(fallback.source == .sfSymbol(icon.sfSymbolFallback), "\(icon)/\(family) falls back to its SF Symbol when Free has no glyph")
+                expect(fallback.image?.isTemplate == true && (fallback.image?.size.width ?? 0) > 0, "\(icon) SF fallback is a sized template image")
             }
         }
         let (empty, root) = temporaryBundle(files: [])
@@ -157,13 +163,15 @@ private enum FontAwesomeIconsTests {
     // MARK: symbol fallback
 
     private static func symbolFallback() {
-        let original = ChromeIcons.symbolName
-        defer { ChromeIcons.symbolName = original }
+        let original = ChromeIcons.symbolName, originalFree = ChromeIcons.freeGlyph
+        defer { ChromeIcons.symbolName = original; ChromeIcons.freeGlyph = originalFree }
+        expect(ChromeIcons.resolve(.paintbrush).source == .fontAwesomeFree("paintbrush"), "Without Pro the Free vector outranks the SF Symbol")
+        ChromeIcons.freeGlyph = { _, _ in nil }
         let symbol = ChromeIcons.resolve(.paintbrush)
         expect(symbol.source == .sfSymbol("paintbrush") && symbol.image?.isTemplate == true, "Without Font Awesome the SF Symbol is used as a template")
         ChromeIcons.symbolName = { _ in "no.such.symbol.anywhere" }
         let none = ChromeIcons.resolve(.paintbrush)
-        expect(none.source == .none && none.image == nil, "When Font Awesome and SF Symbols both miss the chain ends at none")
+        expect(none.source == .none && none.image == nil, "When Font Awesome Pro, Free and SF Symbols all miss the chain ends at none")
     }
 
     // MARK: fonts registered

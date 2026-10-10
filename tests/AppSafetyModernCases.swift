@@ -835,7 +835,8 @@ extension AppSafetyTests {
                 if isOn {
                     try expect(abs((surface.currentTint?.alphaComponent ?? 0) - 0.85) < 0.001, "\(label): \(tool) carries the accent tint")
                     try expect(sameColor(button.contentTintColor, GlassChromeButton.textColor(on: .controlAccentColor)), "\(label): \(tool) glyph contrasts with the accent")
-                    let expected: ChromeIconSource = FontAwesomeFont.isAvailable(.solid) ? .fontAwesome(.solid) : .sfSymbol(button.icon?.sfSymbolFallback ?? "")
+                    let free = button.icon.flatMap { FontAwesomeFree.glyph(for: $0, family: .solid) }
+                    let expected: ChromeIconSource = FontAwesomeFont.isAvailable(.solid) ? .fontAwesome(.solid) : free.map { .fontAwesomeFree($0.name) } ?? .sfSymbol(button.icon?.sfSymbolFallback ?? "")
                     try expect(button.iconSource == expected, "\(label): \(tool) icon source \(button.iconSource)")
                 }
             }

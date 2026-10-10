@@ -15,6 +15,7 @@ private enum AboutWindowTests {
 
     private static let info: [String: Any] = ["CFBundleShortVersionString": "1.2.3", "CFBundleVersion": "45"]
     private static let sampleLicense = "MIT License\n\nPermission is hereby granted, free of charge."
+    private static let sampleNotices = "Font Awesome Free 7.3.1 by Fonticons, Inc. CC BY 4.0"
 
     static func main() {
         _ = NSApplication.shared
@@ -22,12 +23,14 @@ private enum AboutWindowTests {
         fonts()
         dismissal()
         licenseWindow()
+        noticesWindow()
         noNetwork()
         print("AboutWindowTests: \(checks) checks passed (windows never ordered on screen)")
     }
 
-    private static func make(license: @escaping @MainActor () -> String = { sampleLicense }) -> AboutWindow {
-        AboutWindow(icon: NSImage(size: NSSize(width: 64, height: 64)), info: info, licenseText: license)
+    private static func make(license: @escaping @MainActor () -> String = { sampleLicense },
+                             notices: @escaping @MainActor () -> String = { sampleNotices }) -> AboutWindow {
+        AboutWindow(icon: NSImage(size: NSSize(width: 64, height: 64)), info: info, licenseText: license, noticesText: notices)
     }
 
     private static func allViews(_ view: NSView) -> [NSView] { [view] + view.subviews.flatMap(allViews) }
@@ -52,6 +55,7 @@ private enum AboutWindowTests {
         expect(about.versionLabel.stringValue == "Version 1.2.3 (build 45)", "Version and build come from the Info.plist values: \(about.versionLabel.stringValue)")
         expect(about.creditLabel.stringValue == "Capture, annotate, share.", "The credit line")
         expect(about.licenseButton.attributedTitle.string == "MIT License", "The license link reads MIT License")
+        expect(about.noticesButton.attributedTitle.string == "Third-party notices", "A second link reads Third-party notices")
         expect(about.title == "About OpenSnap", "The window title for accessibility is About OpenSnap")
         expect(AboutWindow.versionLine(["CFBundleShortVersionString": "0.4.0"]) == "Version 0.4.0", "No build number: version only")
         expect(AboutWindow.versionLine(nil) == "Development build", "No bundle information (a bare binary) says so instead of inventing a number")
@@ -68,6 +72,10 @@ private enum AboutWindowTests {
         }
         let button = about.licenseButton.attributedTitle.attribute(.font, at: 0, effectiveRange: nil) as? NSFont
         expect(button?.pointSize == 20, "The license link is body size")
+        let notices = about.noticesButton.attributedTitle.attribute(.font, at: 0, effectiveRange: nil) as? NSFont
+        expect(notices?.pointSize == 20 && about.noticesButton.font?.pointSize == 20, "The notices link keeps the 20 pt body size")
+        let both = about.makeNoticesWindow()
+        expect(both.textView.font?.pointSize == 20, "The notices text is body size")
         expect(about.licenseButton.font?.pointSize == 20, "The button's own font is body size too")
         for view in allViews(about.contentView!) {
             // A button draws through a private label that only takes the button's font at draw time; the button itself is checked above.
@@ -109,6 +117,25 @@ private enum AboutWindowTests {
         expect(closings(of: child, during: { again.close() }) == 1, "Closing About closes the license window with it")
         expect(AboutWindow.bundledLicenseText() == AboutWindow.missingLicense, "Outside an app bundle the license falls back to a note, not a network fetch")
         expect(!AboutWindow.missingLicense.lowercased().contains(["ski", "tch"].joined()), "The fallback names no retired product")
+    }
+
+    private static func noticesWindow() {
+        let about = make()
+        expect(about.noticesButton.target === about && about.noticesButton.action == #selector(AboutWindow.showNotices), "The link opens the notices window")
+        expect(about.noticesWindow == nil, "Nothing is built until the link is used")
+        let notices = about.makeNoticesWindow()
+        expect(notices.textView.string == sampleNotices && !notices.textView.isEditable, "The notices window shows the supplied text, read-only")
+        expect(notices.title == "Third-Party Notices" && notices.textView.accessibilityLabel() == "Third-Party Notices text", "Titled and labelled Third-Party Notices")
+        expect(about.makeNoticesWindow() === notices && about.makeLicenseWindow() !== notices, "A second click reuses the window, apart from the license window")
+        expect(about.makeLicenseWindow().title == "MIT License" && about.makeLicenseWindow().textView.string == sampleLicense, "The license window is unchanged")
+        expect(closings(of: notices, during: { notices.sendEvent(event(.keyDown, keyCode: 53, characters: "\u{1B}")) }) == 1, "Escape closes the notices window")
+        let again = make()
+        let child = again.makeNoticesWindow(), sibling = again.makeLicenseWindow()
+        expect(closings(of: child, during: { again.close() }) == 1 && closings(of: sibling, during: {}) == 0, "Closing About closes the notices window with it")
+        // Outside an app bundle there is no THIRD_PARTY_NOTICES.txt; the fallback still carries the attribution and reaches for no network.
+        let fallback = AboutWindow.bundledNoticesText()
+        expect(fallback == AboutWindow.missingNotices && fallback.contains("Font Awesome Free") && fallback.contains("CC BY 4.0"), "Without the bundled file the fallback still credits Font Awesome Free under CC BY 4.0")
+        expect(!fallback.lowercased().contains(["ski", "tch"].joined()), "The fallback names no retired product")
     }
 
     /// The About window must work offline: nothing in its source reaches for a URL loader or the browser.

@@ -17,15 +17,15 @@ class DismissibleWindow: NSWindow {
     }
 }
 
-/// The license text in a window of its own, so reading it never leaves the app or touches the network.
+/// The license (or third-party notice) text in a window of its own, so reading it never leaves the app or touches the network.
 @MainActor
 final class LicenseWindow: DismissibleWindow {
     let textView = NSTextView()
 
-    init(text: String) {
+    init(text: String, title: String = "MIT License") {
         super.init(contentRect: NSRect(x: 0, y: 0, width: 620, height: 560), styleMask: [.titled, .closable, .resizable],
                    backing: .buffered, defer: true)
-        title = "MIT License"
+        self.title = title
         isReleasedWhenClosed = false
         minSize = NSSize(width: 480, height: 360)
         textView.isEditable = false; textView.isSelectable = true
@@ -35,7 +35,7 @@ final class LicenseWindow: DismissibleWindow {
         textView.isVerticallyResizable = true; textView.isHorizontallyResizable = false
         textView.autoresizingMask = [.width]
         textView.string = text
-        textView.setAccessibilityLabel("MIT License text")
+        textView.setAccessibilityLabel(title + " text")
         let scroll = NSScrollView(frame: contentRect(forFrameRect: frame))
         scroll.hasVerticalScroller = true; scroll.drawsBackground = false
         scroll.autoresizingMask = [.width, .height]
@@ -45,19 +45,22 @@ final class LicenseWindow: DismissibleWindow {
     }
 }
 
-/// The app-owned About window: icon, name, version and build, one credit line and the license link.
+/// The app-owned About window: icon, name, version and build, one credit line, the license link and the third-party notices link.
 /// Everything readable is body size or larger; the title bar text is the system's.
 @MainActor
 final class AboutWindow: DismissibleWindow {
     static let credit = "Capture, annotate, share."
     static let licenseLinkTitle = "MIT License"
     static let missingLicense = "The license text is not bundled in this build. OpenSnap is released under the MIT License."
+    static let noticesLinkTitle = "Third-party notices"
+    static let noticesWindowTitle = "Third-Party Notices"
+    static let missingNotices = "The notices are not bundled in this build. Icons are Font Awesome Free 7.3.1 by Fonticons, Inc., licensed CC BY 4.0 (fontawesome.com/license/free)."
 
     let nameLabel: NSTextField, versionLabel: NSTextField, creditLabel: NSTextField
-    let licenseButton: NSButton
+    let licenseButton: NSButton, noticesButton: NSButton
     let iconView: NSImageView
-    private let licenseText: @MainActor () -> String
-    private(set) var licenseWindow: LicenseWindow?
+    private let licenseText: @MainActor () -> String, noticesText: @MainActor () -> String
+    private(set) var licenseWindow: LicenseWindow?, noticesWindow: LicenseWindow?
 
     /// "Version 0.3.0 (build 3)", from the bundle's Info.plist values.
     static func versionLine(_ info: [String: Any]?) -> String {
@@ -76,14 +79,24 @@ final class AboutWindow: DismissibleWindow {
         return text
     }
 
-    init(icon: NSImage?, info: [String: Any]?, licenseText: @escaping @MainActor () -> String = AboutWindow.bundledLicenseText) {
+    /// THIRD_PARTY_NOTICES.txt in the app's Resources; `nil` outside a built bundle.
+    static func bundledNoticesText() -> String {
+        guard let url = Bundle.main.url(forResource: "THIRD_PARTY_NOTICES", withExtension: "txt"),
+              let text = try? String(contentsOf: url, encoding: .utf8) else { return missingNotices }
+        return text
+    }
+
+    init(icon: NSImage?, info: [String: Any]?, licenseText: @escaping @MainActor () -> String = AboutWindow.bundledLicenseText,
+         noticesText: @escaping @MainActor () -> String = AboutWindow.bundledNoticesText) {
         self.licenseText = licenseText
+        self.noticesText = noticesText
         iconView = NSImageView(image: icon ?? NSImage())
         nameLabel = NSTextField(labelWithString: DesignTokens.Brand.name)
         versionLabel = NSTextField(labelWithString: Self.versionLine(info))
         creditLabel = NSTextField(labelWithString: Self.credit)
         licenseButton = NSButton(title: "", target: nil, action: nil)
-        super.init(contentRect: NSRect(x: 0, y: 0, width: 360, height: 300), styleMask: [.titled, .closable], backing: .buffered, defer: true)
+        noticesButton = NSButton(title: "", target: nil, action: nil)
+        super.init(contentRect: NSRect(x: 0, y: 0, width: 360, height: 340), styleMask: [.titled, .closable], backing: .buffered, defer: true)
         title = "About " + DesignTokens.Brand.name
         titleVisibility = .hidden; titlebarAppearsTransparent = true
         isReleasedWhenClosed = false
@@ -96,21 +109,26 @@ final class AboutWindow: DismissibleWindow {
         nameLabel.setAccessibilityIdentifier("about.name"); versionLabel.setAccessibilityIdentifier("about.version")
         creditLabel.setAccessibilityIdentifier("about.credit")
 
-        licenseButton.isBordered = false
-        licenseButton.font = Typography.font(.body)
-        licenseButton.attributedTitle = NSAttributedString(string: Self.licenseLinkTitle, attributes: [
-            .font: Typography.font(.body), .foregroundColor: NSColor.linkColor,
-            .underlineStyle: NSUnderlineStyle.single.rawValue])
+        for (button, title) in [(licenseButton, Self.licenseLinkTitle), (noticesButton, Self.noticesLinkTitle)] {
+            button.isBordered = false
+            button.font = Typography.font(.body)
+            button.attributedTitle = NSAttributedString(string: title, attributes: [
+                .font: Typography.font(.body), .foregroundColor: NSColor.linkColor,
+                .underlineStyle: NSUnderlineStyle.single.rawValue])
+            button.setAccessibilityLabel(title)
+        }
         licenseButton.target = self; licenseButton.action = #selector(showLicense)
-        licenseButton.setAccessibilityLabel(Self.licenseLinkTitle)
         licenseButton.toolTip = "Read the license text"
+        noticesButton.target = self; noticesButton.action = #selector(showNotices)
+        noticesButton.toolTip = "Read the third-party notices"
 
-        let stack = NSStackView(views: [iconView, nameLabel, versionLabel, creditLabel, licenseButton])
+        let stack = NSStackView(views: [iconView, nameLabel, versionLabel, creditLabel, licenseButton, noticesButton])
         stack.orientation = .vertical; stack.alignment = .centerX; stack.spacing = 8
         stack.setCustomSpacing(12, after: iconView)
         stack.setCustomSpacing(16, after: creditLabel)
+        stack.setCustomSpacing(4, after: licenseButton)
         stack.translatesAutoresizingMaskIntoConstraints = false
-        let content = NSView(frame: NSRect(x: 0, y: 0, width: 360, height: 300))
+        let content = NSView(frame: NSRect(x: 0, y: 0, width: 360, height: 340))
         content.addSubview(stack)
         contentView = content
         NSLayoutConstraint.activate([
@@ -133,10 +151,20 @@ final class AboutWindow: DismissibleWindow {
         return made
     }
 
+    /// The notices window, kept like the license window so a second click brings the same one forward.
+    func makeNoticesWindow() -> LicenseWindow {
+        if let existing = noticesWindow { return existing }
+        let made = LicenseWindow(text: noticesText(), title: Self.noticesWindowTitle)
+        noticesWindow = made
+        return made
+    }
+
     @objc func showLicense() { makeLicenseWindow().makeKeyAndOrderFront(nil) }
+    @objc func showNotices() { makeNoticesWindow().makeKeyAndOrderFront(nil) }
 
     override func close() {
         licenseWindow?.close()
+        noticesWindow?.close()
         super.close()
     }
 }
