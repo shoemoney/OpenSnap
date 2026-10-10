@@ -737,6 +737,7 @@ private final class GlobalHotkeySettingsPanel: NSWindowController, NSWindowDeleg
     static let width: CGFloat = 760, margin = DesignTokens.Space.s5
     private weak var manager: GlobalHotkeyManager?
     private var form: GlobalHotkeyForm?
+    private var stack: NSStackView?
 
     init(manager: GlobalHotkeyManager) {
         self.manager = manager
@@ -781,6 +782,7 @@ private final class GlobalHotkeySettingsPanel: NSWindowController, NSWindowDeleg
             stack.topAnchor.constraint(equalTo: document.topAnchor, constant: Self.margin),
             stack.bottomAnchor.constraint(equalTo: document.bottomAnchor, constant: -Self.margin)
         ])
+        self.stack = stack
         let contentWidth = Self.width - 2 * Self.margin
         let heading = label("Global Capture Shortcuts", heading: true)
         let introduction = label("Choose Command or Control with a key. None disables an action. Key names refer to physical US keyboard positions.")
@@ -802,9 +804,17 @@ private final class GlobalHotkeySettingsPanel: NSWindowController, NSWindowDeleg
         guard let window else { return }
         if window.isVisible { window.makeKeyAndOrderFront(nil); return }
         form?.reload()
+        fitToContent(visibleHeight: (parent?.screen ?? NSScreen.main)?.visibleFrame.height ?? 800)
         if let parent, parent.attachedSheet == nil { parent.beginSheet(window) }
         else { window.center(); showWindow(nil) }
         NSApplication.shared.activate(ignoringOtherApps: true)
+    }
+    /// The sheet is as tall as its form (so Save is always in view), or as tall as the screen allows and then scrolls.
+    private func fitToContent(visibleHeight: CGFloat) {
+        guard let window, let stack else { return }
+        window.contentView?.layoutSubtreeIfNeeded()
+        let wanted = stack.fittingSize.height + 2 * Self.margin
+        window.setContentSize(NSSize(width: Self.width, height: min(wanted, max(440, visibleHeight - 120))))
     }
     private func dismiss() {
         guard let window else { return }

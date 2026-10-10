@@ -184,6 +184,23 @@ private enum SettingsWindowTests {
         }
         expect(Set(heights).count == 4, "each tab sizes to its own content, not one shared height: \(heights)")
         expect(heights[2] > heights[0] && heights[2] > heights[3], "Capture, the longest form, is the tallest: \(heights)")
+        // A tab switch animates; a second switch while the first is under way replaces it, and the window ends on the later size.
+        controller.reduceMotion = { false }; controller.animatesWhenHidden = true
+        controller.select(0); spin(0.5)
+        let general = controller.windowHeight(forTabAt: 0), capture = controller.windowHeight(forTabAt: 2), drawing = controller.windowHeight(forTabAt: 1)
+        expect(abs(window.frame.height - general) < 0.5 && Set([general, capture, drawing]).count == 3, "the General tab's size is settled (\(window.frame.height))")
+        controller.select(2)
+        spin(0.06)
+        expect(window.frame.height > general + 1 && window.frame.height < capture - 1, "the switch to Capture is animating (\(general) < \(window.frame.height) < \(capture))")
+        controller.select(1)
+        spin(0.6)
+        expect(abs(window.frame.height - drawing) < 0.5, "after a second switch the window is \(window.frame.height), not the first target \(capture) (Drawing wants \(drawing))")
+        controller.select(2); spin(0.6)
+        expect(abs(window.frame.height - capture) < 0.5, "an undisturbed switch arrives at its target (\(window.frame.height) vs \(capture))")
+        controller.reduceMotion = { true }
+        controller.select(0)
+        expect(abs(window.frame.height - general) < 0.5, "under Reduce Motion the window is its new size at once (\(window.frame.height))")
+        controller.reduceMotion = { false }; controller.animatesWhenHidden = false
         // A screen too short for a tab limits the window instead of letting it run off the bottom.
         controller.visibleFrame = { NSRect(x: 0, y: 0, width: 1280, height: 400) }
         controller.select(2)
@@ -374,6 +391,11 @@ private enum SettingsWindowTests {
         // A window adopts the Return button as its default button cell (and then reports its key equivalent as empty).
         expect(form.mode == .sheet && sheet.defaultButtonCell === form.saveButton?.cell && form.cancelButton?.keyEquivalent == "\u{1b}", "the sheet keeps Save on Return and Cancel on Escape")
         expect(sheet.title == "Global Capture Shortcuts" && sheet.frame.width >= 760, "the sheet is titled and 760 wide: \(sheet.frame.width)")
+        sheet.contentView?.layoutSubtreeIfNeeded()
+        if let save = form.saveButton, let content = sheet.contentView, (NSScreen.main?.visibleFrame.height ?? 0) >= 840 {
+            let box = save.convert(save.bounds, to: content)
+            expect(content.bounds.contains(box), "Save is inside the sheet without scrolling when the screen has room: \(box) in \(content.bounds)")
+        }
         let k = GlobalHotkeyKeys.choices.firstIndex { $0.name == "L" }! + 1
         form.keyPopup(for: .upload).selectItem(at: k)
         _ = form.keyPopup(for: .upload).target?.perform(form.keyPopup(for: .upload).action, with: form.keyPopup(for: .upload))

@@ -153,7 +153,6 @@ class SettingsTabViewController: NSViewController {
             grid.topAnchor.constraint(equalTo: root.topAnchor, constant: SettingsLayout.verticalMargin),
             grid.centerXAnchor.constraint(equalTo: root.centerXAnchor)])
         view = root
-        updatePreferredSize()
     }
 
     /// The height the tab asks for: its grid plus the vertical margins.
@@ -165,12 +164,10 @@ class SettingsTabViewController: NSViewController {
         grid.layoutSubtreeIfNeeded()
         return ceil(grid.fittingSize.height + 2 * SettingsLayout.verticalMargin)
     }
-    func updatePreferredSize() { preferredContentSize = NSSize(width: SettingsLayout.contentWidth, height: gridHeight) }
 
-    func contentChanged() {
-        updatePreferredSize()
-        onResize?()
-    }
+    /// The tab's content changed height; the window refits. The controller sizes the window itself, so no tab sets a
+    /// `preferredContentSize`: AppKit would resize the window to it the moment the tab is selected, ahead of the animation.
+    func contentChanged() { onResize?() }
 }
 
 @MainActor
@@ -293,7 +290,6 @@ final class CaptureSettingsTab: SettingsTabViewController {
         super.loadView()
         grid.row(at: 1).mergeCells(in: NSRange(location: 0, length: 2))
         grid.row(at: 1).yPlacement = .top
-        updatePreferredSize()
     }
 
     override func refresh() {
@@ -333,6 +329,40 @@ final class SettingsListSurface: NSView {
     }
 }
 
+/// One saved destination: its name over its transport, and the Default pill when Upload uses it. The name never shares a line
+/// with the transport, so a long name truncates only when it is longer than the row.
+@MainActor
+final class SettingsDestinationRow: NSView {
+    static let height = DesignTokens.Size.row + DesignTokens.Space.s3
+    let nameField: NSTextField, transportField: NSTextField
+    private(set) var pill: DefaultPillView?
+
+    init(name: String, transport: String, isDefault: Bool) {
+        nameField = NSTextField(labelWithString: name); transportField = NSTextField(labelWithString: transport)
+        super.init(frame: .zero)
+        nameField.font = DesignTokens.Typography.font(.body); nameField.textColor = DesignTokens.Palette.Text.primary
+        nameField.lineBreakMode = .byTruncatingTail
+        transportField.font = DesignTokens.Typography.font(.caption); transportField.textColor = DesignTokens.Palette.Text.secondary
+        nameField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        let text = NSStackView(views: [nameField, transportField])
+        text.orientation = .vertical; text.alignment = .leading; text.spacing = 0
+        let flexible = NSView(); flexible.setContentHuggingPriority(.init(1), for: .horizontal)
+        var views: [NSView] = [text, flexible]
+        if isDefault { let pill = DefaultPillView(); self.pill = pill; views.append(pill) }
+        let row = NSStackView(views: views)
+        row.orientation = .horizontal; row.alignment = .centerY; row.spacing = DesignTokens.Space.s3
+        row.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(row)
+        NSLayoutConstraint.activate([
+            row.leadingAnchor.constraint(equalTo: leadingAnchor, constant: DesignTokens.Space.s4),
+            row.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -DesignTokens.Space.s3),
+            row.centerYAnchor.constraint(equalTo: centerYAnchor)])
+        setAccessibilityElement(true); setAccessibilityRole(.row)
+        setAccessibilityLabel([name, transport, isDefault ? "Default" : nil].compactMap { $0 }.joined(separator: ", "))
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+}
+
 @MainActor
 final class UploadSettingsTab: SettingsTabViewController {
     /// More destinations than this are summarised; the full list is in the sheet.
@@ -344,7 +374,7 @@ final class UploadSettingsTab: SettingsTabViewController {
     private let emptyLabel = NSTextField(wrappingLabelWithString: "No upload destination yet.")
     private let moreLabel = NSTextField(labelWithString: "")
     private(set) var manageButton: NSButton!
-    private(set) var rows: [DestinationRowView] = []
+    private(set) var rows: [SettingsDestinationRow] = []
 
     init(destinations: @escaping () -> PublishingDestinationList, manage: @escaping () -> Void) {
         self.destinations = destinations; self.manage = manage
@@ -373,8 +403,8 @@ final class UploadSettingsTab: SettingsTabViewController {
         label.translatesAutoresizingMaskIntoConstraints = false; labelCell.addSubview(label)
         NSLayoutConstraint.activate([
             label.trailingAnchor.constraint(equalTo: labelCell.trailingAnchor), label.leadingAnchor.constraint(greaterThanOrEqualTo: labelCell.leadingAnchor),
-            label.centerYAnchor.constraint(equalTo: labelCell.topAnchor, constant: DesignTokens.Size.row / 2),
-            labelCell.heightAnchor.constraint(equalToConstant: DesignTokens.Size.row)])
+            label.centerYAnchor.constraint(equalTo: labelCell.topAnchor, constant: SettingsDestinationRow.height / 2),
+            labelCell.heightAnchor.constraint(equalToConstant: SettingsDestinationRow.height)])
         return [[labelCell, listSurface],
                 [NSGridCell.emptyContentView, manageButton],
                 [NSGridCell.emptyContentView, caption]]
@@ -384,7 +414,6 @@ final class UploadSettingsTab: SettingsTabViewController {
         super.loadView()
         grid.row(at: 0).rowAlignment = .none
         grid.row(at: 0).yPlacement = .top
-        updatePreferredSize()
     }
 
     override func refresh() {
@@ -393,10 +422,15 @@ final class UploadSettingsTab: SettingsTabViewController {
         let defaultID = list.defaultDestination?.id
         for view in listStack.arrangedSubviews { listStack.removeArrangedSubview(view); view.removeFromSuperview() }
         rows = []
-        for destination in list.destinations.prefix(Self.visibleRows) {
-            let row = DestinationRowView(name: destination.name, transport: destination.settings.transport.title, isDefault: destination.id == defaultID)
+        for (index, destination) in list.destinations.prefix(Self.visibleRows).enumerated() {
+            if index > 0 {
+                let line = NSBox(); line.boxType = .separator; line.translatesAutoresizingMaskIntoConstraints = false
+                listStack.addArrangedSubview(line)
+                line.widthAnchor.constraint(equalToConstant: SettingsLayout.controlColumnWidth).isActive = true
+            }
+            let row = SettingsDestinationRow(name: destination.name, transport: destination.settings.transport.title, isDefault: destination.id == defaultID)
             row.translatesAutoresizingMaskIntoConstraints = false
-            row.heightAnchor.constraint(equalToConstant: DesignTokens.Size.row).isActive = true
+            row.heightAnchor.constraint(equalToConstant: SettingsDestinationRow.height).isActive = true
             row.widthAnchor.constraint(equalToConstant: SettingsLayout.controlColumnWidth).isActive = true
             listStack.addArrangedSubview(row); rows.append(row)
         }
@@ -478,7 +512,13 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     private let stateProvider: () -> GeneralPreferencesState
     private var hasSavedFrame = false
     private var observers: [NSObjectProtocol] = []
+    private var resizeTimer: Timer?
+    private static let resizeDuration: TimeInterval = 0.2
     /// The visible area of the screen the window is on. A test replaces it with a fake screen.
+    /// A window that is not on screen resizes at once; a test turns this on to watch the animation without ordering a window front.
+    var animatesWhenHidden = false
+    /// Under Reduce Motion the window changes size at once. A test replaces it.
+    var reduceMotion: () -> Bool = { DisplayOptions.current.reduceMotion }
     var visibleFrame: () -> NSRect = { NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900) }
 
     /// Called for Escape, Command-W and the close button. The owner hides the window.
@@ -580,14 +620,33 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         if target.height > visible.height { target.size.height = visible.height }
         if target.minY < visible.minY { target.origin.y = visible.minY }
         guard abs(target.height - window.frame.height) > 0.5 || abs(target.width - window.frame.width) > 0.5 else { return }
-        let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
-        window.setFrame(target, display: true, animate: animated && !reduceMotion)
+        setFrame(target, animated: animated && !reduceMotion())
+    }
+
+    /// The one writer for the window's size. A change that arrives while an earlier one is still animating replaces it, so the last
+    /// size asked for is the one the window ends on (AppKit's own frame animation keeps stepping toward its first target).
+    private func setFrame(_ target: NSRect, animated: Bool) {
+        resizeTimer?.invalidate(); resizeTimer = nil
+        let start = window.frame
+        guard animated, start != target else { window.setFrame(target, display: true); return }
+        let began = Date()
+        resizeTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60, repeats: true) { [weak self] timer in
+            MainActor.assumeIsolated {
+                guard let self else { timer.invalidate(); return }
+                let progress = min(1, Date().timeIntervalSince(began) / Self.resizeDuration)
+                let eased = CGFloat(progress * progress * (3 - 2 * progress))
+                func mix(_ from: CGFloat, _ to: CGFloat) -> CGFloat { from + (to - from) * eased }
+                self.window.setFrame(NSRect(x: mix(start.minX, target.minX), y: mix(start.minY, target.minY),
+                                            width: mix(start.width, target.width), height: mix(start.height, target.height)), display: true)
+                if progress >= 1 { timer.invalidate(); self.resizeTimer = nil }
+            }
+        }
     }
 
     private func selectionChanged(animated: Bool = true) {
         guard selectedIndex >= 0 else { return }
         window.title = tabs.tabViewItems[selectedIndex].label
-        fit(animated: animated && window.isVisible)
+        fit(animated: animated && (window.isVisible || animatesWhenHidden))
     }
 
     // MARK: NSWindowDelegate
