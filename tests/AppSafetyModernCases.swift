@@ -16,10 +16,11 @@ extension AppSafetyTests {
             ("G5 on the real window: 8 plates, no nested glass, no overlap with the well at default, minimum and Frame, one accent, no phantom", modernGlassDepth),
             ("Injected display options reach every glass surface and clear again", modernAccessibilityInjection),
             ("Header and footer buttons reach the real AppDelegate actions", modernActionRouting),
-            ("Modern Wipe presses follow the Blank/Clear/Wipe stages with the dimmed glass and the stage spoken", modernWipeStages),
+            ("Modern Wipe presses follow the blank/clear/wipe stages with the dimmed glass and the action spoken (Clear image, Remove annotations, Nothing to clear)", modernWipeStages),
             ("writeLayoutEvidence reports the Modern style and finds the header and brand one level deeper", modernLayoutEvidence),
             ("Main menu items carry symbols in Modern only and keep validating", modernMenus),
             ("Color popover follows the system appearance", modernPalettePopover),
+            ("Color popover always shows the active colour: a checked preset, or the Custom color… row with the colour's chip, a check and the accent outline; rows align edge to edge", modernPaletteShowsActiveColor),
             ("Modern centres a small canvas in the editor area at default and minimum size and leaves larger and wide documents panning unconstrained", modernCanvasCentred),
             ("A small canvas is centred when only the document or zoom changes, with no window resize", modernCanvasCentresWithoutWindowResize),
             ("Hide and Undo tooltips read their shortcuts from the real menu items", modernShortcutHintsFollowMenu),
@@ -654,8 +655,8 @@ extension AppSafetyTests {
             "axLabel.save": "Save",
             "axLabel.snap": "Snap",
             "axLabel.undo": "Undo",
-            "axLabel.wipe": "Blank",
-            "buttons": "Blank|Cancel|Color…|Font|Hide|History|Original size|Photos|Resize…|Save|Snap|Undo",
+            "axLabel.wipe": "Clear image",
+            "buttons": "Cancel|Clear image|Color…|Font|Hide|History|Original size|Photos|Resize…|Save|Snap|Undo",
             "drag.label": "Drag image to another app",
             "drag.tip": "Drag the drawing into Finder or another app",
             "format.label": "Image format",
@@ -709,9 +710,9 @@ extension AppSafetyTests {
         try expect(differing.isEmpty && modern.count == expectedFacts.count, "Control strings differ from the recovered ones (\(modern.count) vs \(expectedFacts.count) facts): " + differing.joined(separator: "; "))
         try expect(modern["tool.arrow.label"] == "Arrow tool" && modern["tool.crop.tip"] == "Crop tool"
                    && modern["toolbox.label"] == "Toolbox menu" && modern["drag.label"] == "Drag image to another app" && modern["format.label"] == "Image format", "The strings are the recovered ones, not merely equal to each other")
-        // At launch Wipe reads its Blank stage; every other command reads its title (the icon-only upload button is checked on its own).
+        // At launch Wipe reads its blank stage (a dimmed Clear image); every other command reads its title (the icon-only upload button is checked on its own).
         let spoken = ["hide": "Hide", "photos": "Photos", "save": "Save", "history": "History", "snap": "Snap", "cancel": "Cancel", "font": "Font",
-                      "undo": "Undo", "wipe": "Blank", "resize": "Resize…"]
+                      "undo": "Undo", "wipe": "Clear image", "resize": "Resize…"]
         let misread = spoken.keys.sorted().filter { modern["axLabel.\($0)"] != spoken[$0] }
             .map { "\($0): '\(modern["axLabel.\($0)"] ?? "")' instead of '\(spoken[$0] ?? "")'" }
         try expect(misread.isEmpty && spoken.count == commandActions.count, "VoiceOver reads the wrong command labels: " + misread.joined(separator: "; "))
@@ -732,7 +733,7 @@ extension AppSafetyTests {
             (#selector(AppDelegate.vanish), "Hide", "Hide (⌘M)"), (#selector(AppDelegate.showPhotos), "Photos", "Photos"),
             (#selector(AppDelegate.saveHistory), "Save", "Save to History"), (#selector(AppDelegate.showHistory), "History", "History"),
             (#selector(AppDelegate.snapButtonPressed), "Snap", ModernEditorChrome.snapToolTip), (#selector(AppDelegate.chooseFont), "Font", "Font"),
-            (#selector(AppDelegate.undo), "Undo", "Undo (⌘Z)"), (#selector(AppDelegate.wipe), "Blank", "Blank"),
+            (#selector(AppDelegate.undo), "Undo", "Undo (⌘Z)"), (#selector(AppDelegate.wipe), "Clear image", "Nothing to clear"),
             (#selector(AppDelegate.resize), "Resize…", "Resize…"),
             (#selector(AppDelegate.share(_:)), "Upload image", AppDelegate.webpostHelp)]
         func verify(_ label: String) throws {
@@ -743,7 +744,7 @@ extension AppSafetyTests {
                 try expect(AppToolTip.text(for: button) == tip, "\(label): \(name) tooltip is '\(tip)', not '\(AppToolTip.text(for: button) ?? "nil")'")
                 try expect(button.accessibilityLabel() == name, "\(label): \(name) VoiceOver label, not '\(button.accessibilityLabel() ?? "nil")'")
             }
-            try expect(AppToolTip.text(for: wipe) == "Blank", "\(label): Wipe's staged title is its tooltip")
+            try expect(AppToolTip.text(for: wipe) == "Nothing to clear" && wipe.accessibilityHelp() == "Nothing to clear", "\(label): a blank canvas's Wipe says why it is dimmed, as tooltip and help")
             try expect(app.paletteButton.imagePosition == .imageOnly && app.paletteButton.accessibilityLabel() == "Drawing colors" && (AppToolTip.text(for: app.paletteButton) ?? "").hasPrefix("Color"),
                        "\(label): Color is a swatch with a tooltip and its label")
             try expect(app.sizeLabel.superview == nil, "\(label): the Size text is not shown")
@@ -1330,8 +1331,10 @@ extension AppSafetyTests {
         guard app.wipeButton === button, button.action == #selector(AppDelegate.wipe), button.target === app else {
             throw Failure(description: "The Wipe button must be the chrome's, located by its action")
         }
-        func reads(_ title: String, _ enabled: Bool) -> Bool {
-            button.title == title && button.isEnabled == enabled && button.accessibilityLabel() == title
+        func reads(_ stage: WipeStage) -> Bool {
+            let title = stage.actionName, enabled = stage.isEnabled
+            return button.title == title && button.isEnabled == enabled && button.accessibilityLabel() == title
+                && AppToolTip.text(for: button) == stage.toolTip && button.accessibilityHelp() == stage.toolTip
                 && button.isAccessibilityEnabled() == enabled
                 && button.plate.isDisabled == !enabled && button.alphaValue == (enabled ? 1 : 0.38) && button.plate.style.fill == nil
         }
@@ -1341,39 +1344,39 @@ extension AppSafetyTests {
         }
         let shape = SketchElement(kind: .rectangle)
         let untouched = canvas.editingUndoManager.undoActionName
-        try expect(reads("Blank", false), "A fresh drawing reads a dimmed, disabled Blank: " + detail())
+        try expect(reads(.blank), "A fresh drawing reads a dimmed, disabled Blank: " + detail())
         button.performClick(nil)
-        try expect(reads("Blank", false) && canvas.editingUndoManager.undoActionName == untouched, "A disabled Blank button ignores presses")
+        try expect(reads(.blank) && canvas.editingUndoManager.undoActionName == untouched, "A disabled Blank button ignores presses")
         app.wipe()
-        try expect(reads("Blank", false) && canvas.editingUndoManager.undoActionName == untouched,
+        try expect(reads(.blank) && canvas.editingUndoManager.undoActionName == untouched,
                    "The Wipe menu command on a blank drawing changes nothing")
 
         canvas.setBackground(try image(size: CGSize(width: 120, height: 80)))
-        try expect(reads("Clear", true) && canvas.document.backgroundPNG != nil, "A snap image alone reads a live Clear: " + detail())
+        try expect(reads(.clear) && canvas.document.backgroundPNG != nil, "A snap image alone reads a live Clear: " + detail())
         canvas.document.elements = [shape]
-        try expect(reads("Wipe", true), "Artwork over a snap reads a live Wipe: " + detail())
+        try expect(reads(.wipe), "Artwork over a snap reads a live Wipe: " + detail())
         button.performClick(nil)
-        try expect(canvas.document.elements.isEmpty && canvas.document.backgroundPNG != nil && reads("Clear", true),
+        try expect(canvas.document.elements.isEmpty && canvas.document.backgroundPNG != nil && reads(.clear),
                    "Wipe removes only the artwork and the glass reads Clear: " + detail())
         button.performClick(nil)
-        try expect(canvas.document.backgroundPNG == nil && canvas.document.backgroundColor == .white && reads("Blank", false),
+        try expect(canvas.document.backgroundPNG == nil && canvas.document.backgroundColor == .white && reads(.blank),
                    "Clear removes the snap and the glass dims to Blank: " + detail())
         button.performClick(nil)
-        try expect(reads("Blank", false), "The disabled Blank button stays Blank after the last stage")
+        try expect(reads(.blank), "The disabled Blank button stays Blank after the last stage")
 
                 canvas.document.elements = [shape]
-        try expect(reads("Wipe", true), "Artwork over a white drawing without a snap reads Wipe: " + detail())
+        try expect(reads(.wipe), "Artwork over a white drawing without a snap reads Wipe: " + detail())
         button.performClick(nil)
-        try expect(canvas.document.elements.isEmpty && reads("Blank", false), "Wiping artwork with no snap lands on a dimmed Blank: " + detail())
+        try expect(canvas.document.elements.isEmpty && reads(.blank), "Wiping artwork with no snap lands on a dimmed Blank: " + detail())
 
                 canvas.setBackgroundColor(.red)
-        try expect(reads("Clear", true), "A coloured backdrop alone reads Clear: " + detail())
-        app.undo(); try expect(reads("Blank", false), "Undo returns the glass to the dimmed Blank: " + detail())
-        app.redo(); try expect(reads("Clear", true), "Redo brings the live Clear back: " + detail())
+        try expect(reads(.clear), "A coloured backdrop alone reads Clear: " + detail())
+        app.undo(); try expect(reads(.blank), "Undo returns the glass to the dimmed Blank: " + detail())
+        app.redo(); try expect(reads(.clear), "Redo brings the live Clear back: " + detail())
         _ = try editor(app, text: "Typing")
-        try expect(reads("Wipe", true), "Field editing over a coloured backdrop reads Wipe: " + detail())
+        try expect(reads(.wipe), "Field editing over a coloured backdrop reads Wipe: " + detail())
         button.performClick(nil)
-        try expect(canvas.document.elements.isEmpty && canvas.subviews.compactMap { $0 as? NSTextView }.isEmpty && reads("Clear", true),
+        try expect(canvas.document.elements.isEmpty && canvas.subviews.compactMap { $0 as? NSTextView }.isEmpty && reads(.clear),
                    "Wipe commits and removes the field and leaves the coloured backdrop as Clear: " + detail())
     }
 
@@ -1773,6 +1776,63 @@ extension AppSafetyTests {
         }
         app.window.appearance = nil
         _ = chrome
+    }
+
+    /// Audit fix 1 (items 6 and 7): the popover marks the current colour whether or not it is a preset, and its rows share their edges.
+    private static func modernPaletteShowsActiveColor() throws {
+        let (fixture, _) = try modernFixture()
+        let app = fixture.app
+        guard let window = app.window as? AppSafetyWindow else { throw Failure(description: "Isolated window") }
+        window.simulatesVisibility = true; window.shown = true
+        defer { app.closeDrawingColors() }
+        let custom = NSColor(deviceRed: 0.18, green: 0.62, blue: 0.55, alpha: 1)
+        // A preset colour: its swatch carries the check, and the Custom color… row is the plain button.
+        let red = OriginalDrawingControls.presets[0]
+        app.applyChosenColor(red.color, modifiers: [])
+        app.presentDrawingColors(hover: false)
+        let row = try (app.customColorButton).unwrap("Custom color… row")
+        try expect(app.presetColorButtons.filter { $0.state == .on }.map { $0.accessibilityLabel() ?? "" } == [red.name], "A preset colour checks exactly its own swatch (\(app.presetColorButtons.filter { $0.state == .on }.count))")
+        try expect(!row.isCurrentChoice && row.image == nil && row.accessibilityValue() as? String != "Selected", "...and the Custom color… row is the plain button")
+        // A colour that is no preset: no swatch is checked, and the Custom color… row carries the colour, a check and the accent outline.
+        app.applyChosenColor(custom, modifiers: [])
+        try expect(app.presetColorButtons.allSatisfy { $0.state == .off }, "A custom colour checks no preset swatch")
+        try expect(row.isCurrentChoice && row.image != nil && row.imagePosition == .imageLeading && SketchColor(row.currentColor ?? .clear) == SketchColor(custom),
+                   "The Custom color… row is current and carries the active colour")
+        try expect(row.accessibilityValue() as? String == "Selected" && row.title == "Custom color…", "VoiceOver hears the row as Selected, still named Custom color…")
+        // The chip really is that colour with a check on it, and the row draws the accent outline.
+        let chip = BezelCustomColorButton.chip(for: custom)
+        let rep = try (NSBitmapImageRep(data: try (chip.tiffRepresentation).unwrap("chip bitmap"))).unwrap("chip rep")
+        func pixel(_ x: Double, _ y: Double) -> NSColor? { rep.colorAt(x: Int(x * Double(rep.pixelsWide)), y: Int(y * Double(rep.pixelsHigh)))?.usingColorSpace(.deviceRGB) }
+        let corner = try pixel(0.2, 0.3).unwrap("chip pixel")
+        try expect(abs(corner.redComponent - 0.18) < 0.06 && abs(corner.greenComponent - 0.62) < 0.06, "The chip is filled with the custom colour (\(corner))")
+        let centre = try pixel(0.5, 0.5).unwrap("chip centre")
+        try expect(abs(centre.redComponent - corner.redComponent) > 0.2 || abs(centre.greenComponent - corner.greenComponent) > 0.2 || abs(centre.blueComponent - corner.blueComponent) > 0.2,
+                   "...with a check glyph drawn over its middle (\(centre))")
+        let probe = BezelCustomColorButton(title: "Custom color…", target: nil, action: nil)
+        probe.font = DesignTokens.Typography.font(.body)
+        probe.frame = NSRect(x: 0, y: 0, width: 216, height: 30)
+        probe.currentColor = custom
+        let ring = try (probe.bitmapImageRepForCachingDisplay(in: probe.bounds)).unwrap("row bitmap")
+        probe.cacheDisplay(in: probe.bounds, to: ring)
+        let accent = StateStyles.swatch(.selected, highContrast: false, appearance: probe.effectiveAppearance).outline.usingColorSpace(.deviceRGB)
+        let edge = try (ring.colorAt(x: ring.pixelsWide / 2, y: 1)).unwrap("row edge").usingColorSpace(.deviceRGB).unwrap("row edge colour")
+        try expect(accent != nil && abs(edge.redComponent - (accent?.redComponent ?? 9)) < 0.08 && abs(edge.greenComponent - (accent?.greenComponent ?? 9)) < 0.08 && abs(edge.blueComponent - (accent?.blueComponent ?? 9)) < 0.08,
+                   "The Custom color… row is outlined in the accent while its colour is current (\(edge))")
+        // Back to a preset: the mark moves home.
+        app.applyChosenColor(OriginalDrawingControls.presets[2].color, modifiers: [])
+        try expect(!row.isCurrentChoice && row.image == nil && app.presetColorButtons.filter { $0.state == .on }.count == 1, "Choosing a preset again clears the Custom color… mark")
+        // Geometry (item 7): the title and every row start and end on the same edges; the margins are even.
+        guard let content = app.colorPopover?.contentViewController?.view else { throw Failure(description: "No popover content") }
+        func drawn(_ view: NSView, inset: CGFloat) -> (min: CGFloat, max: CGFloat) { (view.frame.minX + inset, view.frame.maxX - inset) }
+        let first = drawn(app.presetColorButtons[0], inset: 3), last = drawn(app.presetColorButtons[4], inset: 3), second = drawn(app.presetColorButtons[9], inset: 3)
+        let customEdges = drawn(row, inset: 0)
+        try expect(abs(first.min - customEdges.min) < 0.5 && abs(last.max - customEdges.max) < 0.5 && abs(second.max - customEdges.max) < 0.5,
+                   "Swatches and the Custom color… row share their left and right edges (swatches \(first.min)...\(last.max), row \(customEdges.min)...\(customEdges.max))")
+        try expect(abs(first.min - (content.frame.width - last.max)) < 0.5, "The left and right margins are equal (\(first.min) and \(content.frame.width - last.max))")
+        let bottomMargin = row.frame.minY, topMargin = content.frame.height - (content.subviews.compactMap { $0 as? NSTextField }.first?.frame.maxY ?? 0)
+        try expect(abs(bottomMargin - topMargin) < 0.5 && bottomMargin >= 12, "The top and bottom margins are equal and at least 12 pt (bottom \(bottomMargin), top \(topMargin))")
+        let rows = Set(app.presetColorButtons.map { $0.frame.minY })
+        try expect(rows.count == 2 && abs((rows.max() ?? 0) - (rows.min() ?? 0) - 34) < 0.5 && abs((rows.min() ?? 0) - (row.frame.maxY + 2)) < 0.5, "The two swatch rows and the Custom color… row are evenly stacked")
     }
 
     private static func modernPalettePopover() throws {

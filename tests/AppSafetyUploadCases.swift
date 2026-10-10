@@ -8,13 +8,15 @@ extension AppSafetyTests {
     static var uploadCases: [(String, () throws -> Void)] {
         [
             ("Upload state: idle, then uploading with a spinner and Cancel and no Original size checkbox, then Link copied with Open and Copy, then idle with the checkbox back after the timer", uploadHappyPath),
-            ("A failed upload shows Error: <message> inline with Retry and Details…, raises no alert, announces at high priority, and Details opens the whole error", uploadFailureInline),
+            ("A failed upload shows Error: <message> inline with Retry and Details icon buttons, raises no alert, announces at high priority, and Details opens the whole error", uploadFailureInline),
             ("Retry sends the same bytes under the same file name; success clears it; a different document drops the failure and its Retry", uploadRetrySamePayload),
             ("Cancel returns to idle with Upload cancelled, no alert and nothing copied", uploadCancelReturnsToIdle),
             ("Quitting after a failed upload leaves the inline error alone, and a refused Quit keeps Retry working", uploadQuitAfterFailure),
             ("Quitting during a running upload cancels it, clears the spinner, raises no alert and replies to AppKit", uploadQuitDuringUpload),
             ("A second click while uploading changes nothing; an unconfigured destination opens Settings and stays idle", uploadSecondClickAndUnconfigured),
-            ("Upload status commands are named for VoiceOver, 20 pt text, and only the commands of the current state are shown", uploadCommandsAreLabelled)
+            ("Upload status commands are named for VoiceOver, are 36 pt icon buttons with a rest plate, and only the commands of the current state are shown", uploadCommandsAreLabelled),
+            ("Link copied shows the link itself (full URL on the tooltip and as VoiceOver help) and gives it up to the width the slot has", uploadLinkInStatus),
+            ("The Original size checkbox steps aside during an upload only where the measured slot cannot hold it: hidden at 980, kept at 1440, following a resize", uploadCheckboxFollowsWidth)
         ]
     }
 
@@ -73,6 +75,16 @@ extension AppSafetyTests {
         return shown
     }
 
+    /// Sets the window's content width and lets the bars react, as a user dragging the edge would.
+    private static func resizeWindow(_ app: AppDelegate, contentWidth: CGFloat) throws {
+        let frame = app.window.frameRect(forContentRect: NSRect(x: 0, y: 0, width: contentWidth, height: app.window.contentView?.bounds.height ?? 640))
+        app.window.setFrame(NSRect(origin: app.window.frame.origin, size: frame.size), display: false)
+        app.window.contentView?.layoutSubtreeIfNeeded()
+        app.windowDidResize(Notification(name: NSWindow.didResizeNotification, object: app.window))
+        app.window.contentView?.layoutSubtreeIfNeeded()
+        try expect(abs((app.window.contentView?.bounds.width ?? 0) - contentWidth) < 1, "The window is \(Int(contentWidth)) pt wide (\(app.window.contentView?.bounds.width ?? 0))")
+    }
+
     private static func largeUploadShot(_ app: AppDelegate) throws {
         guard let capacity = app.maximumNormalCanvas else { throw Failure(description: "Missing screen capacity") }
         app.receiveCapture(.success(try image(size: CGSize(width: ceil(capacity.width + 300), height: ceil(capacity.height + 150)))), discardAlreadyApproved: true)
@@ -84,6 +96,7 @@ extension AppSafetyTests {
         let fixture = try Fixture(), app = fixture.app
         let chrome = try chromeOf(app)
         try largeUploadShot(app)
+        try resizeWindow(app, contentWidth: ModernEditorChrome.minimumWindowWidth)
         let stub = Stub(); stub.blocks = true; install(stub, on: app)
         var opened: [URL] = []
         app.linkOpener = { opened.append($0) }
@@ -97,14 +110,14 @@ extension AppSafetyTests {
             try expect(visibleCommands(chrome) == ["spinner", "cancel"], "Uploading shows a spinner and Cancel only (\(visibleCommands(chrome)))")
             try expect(chrome.uploadControls.spinner.style == .spinning && chrome.uploadControls.spinner.isIndeterminate, "The spinner is the indeterminate kind")
             try expect(chrome.uploadControls.spinner.frame.size == NSSize(width: 20, height: 20), "The spinner is 20 pt (\(chrome.uploadControls.spinner.frame.size))")
-            try expect(app.dragOriginalControl.isHidden && app.isLargeShot, "The Original size checkbox is hidden for the duration of the upload")
+            try expect(app.dragOriginalControl.isHidden && app.isLargeShot, "At 980 the Original size checkbox is hidden for the duration of the upload")
             try expect(log.texts.contains("Uploading Shot") && log.items.first { $0.text == "Uploading Shot" }?.priority == .medium, "The start is announced: \(log.texts)")
             stub.gate.signal()
             try waitForMain("The upload succeeds") { if case .success = app.uploadState { return true } else { return false } }
             guard case .success(let url, let copied) = app.uploadState else { throw Failure(description: "Not a success") }
-            try expect(copied && stub.copied == [url] && app.status.stringValue == "Link copied", "Success: Link copied, and the clipboard behaviour is unchanged (\(app.status.stringValue))")
+            try expect(copied && stub.copied == [url] && app.status.stringValue.hasPrefix("Link copied"), "Success: Link copied, and the clipboard behaviour is unchanged (\(app.status.stringValue))")
             try expect(visibleCommands(chrome) == ["open", "copy"], "Success shows Open and Copy (\(visibleCommands(chrome)))")
-            try expect(app.dragOriginalControl.isHidden, "The checkbox stays out of the way while Link copied and its commands are showing")
+            try expect(app.dragOriginalControl.isHidden, "At 980 the checkbox stays out of the way while Link copied and its commands are showing")
             try expect(log.texts.contains("Upload complete. Link copied."), "Success is announced: \(log.texts)")
             try expect(AppToolTip.text(for: app.status) == "Link copied: " + url.absoluteString && app.status.accessibilityHelp() == "Link copied: " + url.absoluteString, "The link itself rides on the tooltip and the VoiceOver help")
             chrome.uploadControls.openButton.performClick(nil)
@@ -257,13 +270,15 @@ extension AppSafetyTests {
         let chrome = try chromeOf(app)
         let controls = chrome.uploadControls
         let expected: [(CommandButton, String)] = [(controls.cancelButton, "Cancel upload"), (controls.openButton, "Open link in browser"), (controls.copyButton, "Copy link"),
-                                                    (controls.retryButton, "Retry"), (controls.detailsButton, "Details…")]
+                                                    (controls.retryButton, "Retry upload"), (controls.detailsButton, "Show error details")]
         for (button, name) in expected {
             try expect(button.accessibilityLabel() == name, "\(name): VoiceOver label (\(button.accessibilityLabel() ?? "nil"))")
-            try expect(button.frame.height >= DesignTokens.Size.hitMin && (button.font?.pointSize ?? 0) >= DesignTokens.Typography.readableMinimum, "\(name): at least \(DesignTokens.Size.hitMin) pt tall with a readable font")
+            try expect(AppToolTip.text(for: button) == name, "\(name): tooltip (\(AppToolTip.text(for: button) ?? "nil"))")
+            try expect(button.frame.height >= DesignTokens.Size.hitMin && button.frame.width >= DesignTokens.Size.hitMin && button.visibleTitle.isEmpty, "\(name): an icon button at least \(DesignTokens.Size.hitMin) pt square")
+            try expect(button.showsRestPlate, "\(name): has a rest plate, so it reads as a button before hover")
         }
         try expect(controls.cancelButton.icon == .xmark && controls.openButton.icon == .openExternal && controls.copyButton.icon == .copy, "Cancel, Open and Copy use the semantic Font Awesome icons")
-        try expect(controls.retryButton.visibleTitle == "Retry" && controls.detailsButton.visibleTitle == "Details…", "Retry and Details… are text")
+        try expect(controls.retryButton.icon == .arrowRotateRight && controls.detailsButton.icon == .circleInfo, "Retry and Details use the semantic Font Awesome icons arrow-rotate-right and circle-info")
         let url = URL(string: "https://example.com/a.png")!
         for (state, shown) in [(UploadState.idle, []), (.uploading(name: "x"), ["spinner", "cancel"]), (.success(url: url, copied: true), ["open", "copy"]),
                                (.success(url: url, copied: false), []), (.failure(message: "m"), ["retry", "details"])] {
@@ -271,6 +286,62 @@ extension AppSafetyTests {
             try expect(visibleCommands(chrome) == shown, "\(state): shows \(shown) (\(visibleCommands(chrome)))")
         }
         app.uploadState = .idle
+    }
+
+    static func uploadLinkInStatus() throws {
+        let fixture = try Fixture(), app = fixture.app
+        try resizeWindow(app, contentWidth: ModernEditorChrome.minimumWindowWidth)
+        let stub = Stub(); install(stub, on: app)
+        let productionDuration = app.uploadSuccessDuration
+        app.uploadSuccessDuration = 600
+        try uploadButton(app).performClick(nil)
+        try waitForMain("The upload succeeds") { if case .success = app.uploadState { return true } else { return false } }
+        guard case .success(let url, true) = app.uploadState, let status = app.status as? StatusTextField else { throw Failure(description: "Not a copied success") }
+        let address = UploadState.displayAddress(of: url)
+        try expect(status.variants.first == "Link copied · " + address && status.variants.last?.hasPrefix("Link copied · ") == true && status.variants.count > 3,
+                   "The status carries the link after Link copied, and shorter middle-cut steps (\(status.variants.first ?? ""))")
+        try expect(status.stringValue.hasPrefix("Link copied · ") && status.frame.width > 150,
+                   "At 980 the \(Int(status.frame.width)) pt slot is used for the link, not left empty (\(status.stringValue))")
+        try expect(AppToolTip.text(for: status) == "Link copied: " + url.absoluteString && status.accessibilityHelp() == "Link copied: " + url.absoluteString,
+                   "The full URL stays on the tooltip and in the VoiceOver help, whatever the status shows")
+        try expect(status.accessibilityValue() == (status.stringValue == status.variants.first ? status.stringValue : status.variants.first), "VoiceOver is told the whole sentence")
+        // Four seconds in production: the countdown is untouched by the longer text.
+        try expect(productionDuration == 4 && app.uploadSuccessTimer != nil, "The expiry timer is running, and the production expiry is still four seconds (\(productionDuration))")
+        app.expireUploadSuccess()
+        try expect(app.uploadState == .idle, "and the state still ends")
+    }
+
+    static func uploadCheckboxFollowsWidth() throws {
+        let fixture = try Fixture(), app = fixture.app
+        let chrome = try chromeOf(app)
+        try largeUploadShot(app)
+        let stub = Stub(); stub.blocks = true; install(stub, on: app)
+        app.uploadSuccessDuration = 600
+        // The same three upload states at both widths; the checkbox follows the measured slot, not the state.
+        for width in [ModernEditorChrome.minimumWindowWidth, 1440] as [CGFloat] {
+            try resizeWindow(app, contentWidth: width)
+            try expect(!app.dragOriginalControl.isHidden && app.isLargeShot, "\(Int(width)): idle shows the checkbox")
+            let states: [UploadState] = [.uploading(name: "Shot"), .success(url: URL(string: "https://cdn.example.com/pics/Shot.png")!, copied: true), .failure(message: "Upload to Example S3 failed: the connection was refused.")]
+            for state in states {
+                app.uploadState = state
+                let fits = chrome.slotHasRoomForCheckbox(during: state)
+                try expect(app.dragOriginalControl.isHidden == !fits, "\(Int(width)) \(state): the checkbox is \(fits ? "kept" : "hidden") where the \(Int(chrome.statusSlotWidth())) pt slot \(fits ? "holds" : "cannot hold") it")
+                try expect(fits == (width > 1000), "\(Int(width)) \(state): \(width > 1000 ? "1440 has room" : "980 has none")")
+                chrome.window?.contentView?.layoutSubtreeIfNeeded()
+                let status = chrome.convert(app.status.bounds, from: app.status), box = chrome.convert(app.dragOriginalControl.bounds, from: app.dragOriginalControl)
+                if fits { try expect(!app.dragOriginalControl.isHidden && box.maxX <= status.minX + 0.5, "\(Int(width)) \(state): the checkbox stands clear of the message") }
+            }
+            app.uploadState = .idle
+        }
+        // A resize while the error is up moves the checkbox with the width.
+        app.uploadState = .failure(message: "Server said no.")
+        try resizeWindow(app, contentWidth: 1440)
+        try expect(!app.dragOriginalControl.isHidden, "Widening the window while an error shows brings the checkbox back")
+        try resizeWindow(app, contentWidth: ModernEditorChrome.minimumWindowWidth)
+        try expect(app.dragOriginalControl.isHidden, "Narrowing it again takes the checkbox out of the way")
+        app.uploadState = .idle
+        try expect(!app.dragOriginalControl.isHidden, "and idle brings it back")
+        stub.gate.signal()
     }
 }
 #endif

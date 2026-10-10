@@ -30,6 +30,8 @@ final class StatePlate {
     private weak var view: NSView?
     var accessibility: ChromeAccessibility = .none { didSet { apply() } }
     private(set) var isHovered = false, isPressed = false, isSelected = false, isPrimary = false, isDisabled = false, isFocused = false
+    /// A faint fill at rest (see `StateStyles.command`); off for every command on a group plate.
+    var showsRestPlate = false { didSet { if showsRestPlate != oldValue { apply() } } }
     private(set) var style = Style.none
     private(set) var stateStyle = StateStyles.command(.rest, primary: false, focused: false, highContrast: false, differentiate: false)
     private(set) var lastAnimationDuration: TimeInterval = 0
@@ -69,7 +71,8 @@ final class StatePlate {
         guard !batching, let view, let layer = view.layer else { return }
         let state = Self.controlState(hovered: isHovered, pressed: isPressed, selected: isSelected, disabled: isDisabled)
         let resolved = StateStyles.command(state, primary: isPrimary, focused: isFocused, highContrast: accessibility.increaseContrast,
-                                           differentiate: accessibility.differentiateWithoutColor, selected: isSelected, appearance: view.effectiveAppearance)
+                                           differentiate: accessibility.differentiateWithoutColor, selected: isSelected, restPlate: showsRestPlate,
+                                           appearance: view.effectiveAppearance)
         let next = Style(fill: resolved.fill, border: resolved.border, borderWidth: resolved.borderWidth)
         let duration = accessibility.reduceMotion ? 0 : Self.animationDuration
         lastAnimationDuration = duration
@@ -127,6 +130,12 @@ class CommandButton: OriginalActionButton, ChromeFillable {
     var iconPointSize: CGFloat = 22 { didSet { refreshIcon() } }
     /// The single saturated command (Snap): its fill is the accent and its icon takes the contrasting color.
     var isPrimary = false { didSet { syncPlate() } }
+    /// A command that sits on the bar, off any group plate (the upload's Cancel, Open, Copy, Retry and Details): a faint fill at rest
+    /// makes it read as a button before the pointer arrives.
+    var showsRestPlate: Bool {
+        get { plate.showsRestPlate }
+        set { plate.showsRestPlate = newValue; syncPlate() }
+    }
     /// False for toggles that only change glyph (Actual Size): `.on` neither fills the button nor flips the label color.
     var selectionTints = true { didSet { syncPlate() } }
     /// The focus ring follows the state fill's rounded rectangle.
@@ -183,7 +192,7 @@ class CommandButton: OriginalActionButton, ChromeFillable {
     }
 
     /// Icon-only commands keep their name here instead of drawing it: the name feeds the tooltip and VoiceOver, so
-    /// retitles (Snap / Snap Frame, Actual Size / Normal View, Blank / Clear / Wipe) still land without showing text.
+    /// retitles (Snap / Snap Frame, Actual Size / Normal View, Clear image / Remove annotations) still land without showing text.
     private(set) var iconOnlyName: String?
     /// Keyboard shortcut appended to the derived tooltip, e.g. "⌘Z".
     var shortcutHint: String? { didSet { refreshDerivedToolTip() } }
@@ -218,7 +227,7 @@ class CommandButton: OriginalActionButton, ChromeFillable {
 
     // Without Font Awesome the icon is an SF Symbol with no description of its own, and AppKit then reads the symbol's
     // ("download" for Save) instead of the command. An explicit label wins; otherwise the live title is what is read,
-    // so Snap / Snap Frame, Actual Size / Normal View and Blank / Clear / Wipe follow their retitles like Classic's.
+    // so Snap / Snap Frame, Actual Size / Normal View and Clear image / Remove annotations follow their retitles like Classic's.
     override func setAccessibilityLabel(_ label: String?) {
         explicitAccessibilityLabel = label
         super.setAccessibilityLabel(label)

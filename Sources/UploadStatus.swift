@@ -13,16 +13,52 @@ enum UploadState: Equatable {
     var occupiesStatusSlot: Bool { self != .idle }
     var isFailure: Bool { if case .failure = self { return true } else { return false } }
 
-    /// The sentence the status line shows; nil when idle, where the normal adaptive status applies.
-    var statusText: String? {
+    /// The sentence the status line shows, longest first; empty when idle, where the normal adaptive status applies. The status line shows the
+    /// first one that fits whole, so a narrow slot gives up the tail of the link before it gives up "Link copied".
+    var statusVariants: [String] {
         switch self {
-        case .idle: return nil
-        case .uploading(let name): return name.isEmpty ? "Uploading…" : "Uploading \(name)…"
+        case .idle: return []
+        case .uploading(let name): return [name.isEmpty ? "Uploading…" : "Uploading \(name)…"]
         case .success(let url, let copied):
-            if copied { return "Link copied" }
-            return ["http", "https"].contains(url.scheme ?? "") ? "Published image" : "Uploaded image to destination"
-        case .failure(let message): return "Error: " + Self.firstLine(of: message)
+            guard copied else { return [["http", "https"].contains(url.scheme ?? "") ? "Published image" : "Uploaded image to destination"] }
+            return Self.copiedVariants(for: url)
+        case .failure(let message): return ["Error: " + Self.firstLine(of: message)]
         }
+    }
+
+    /// The longest sentence the status line can show; nil when idle.
+    var statusText: String? { statusVariants.first }
+
+    /// "Link copied · cdn.example.com/pics/name.png", then the same with the middle of the address cut out a few characters at a time
+    /// (the host and the file name are the parts worth keeping). When none of those fits, the whole sentence comes last: the status line then
+    /// cuts it at its tail ("Link copied · cdn.exa…"), so the slot is never left empty and "Link copied" always leads, without a second ellipsis.
+    static func copiedVariants(for url: URL) -> [String] {
+        let base = "Link copied"
+        let address = displayAddress(of: url)
+        guard !address.isEmpty else { return [base] }
+        var variants = [base + " · " + address]
+        var keep = address.count - 3
+        while keep >= minimumAddressCharacters {
+            variants.append(base + " · " + middleTruncated(address, to: keep))
+            keep -= 3
+        }
+        variants.append(variants[0])
+        return variants
+    }
+    static let minimumAddressCharacters = 14
+
+    /// The link without its scheme, which says nothing the host does not.
+    static func displayAddress(of url: URL) -> String {
+        let text = url.absoluteString
+        for scheme in ["https://", "http://"] where text.lowercased().hasPrefix(scheme) { return String(text.dropFirst(scheme.count)) }
+        return text
+    }
+
+    /// `text` cut to `count` characters with an ellipsis in the middle, keeping a little more of the end (the file name) than the start.
+    static func middleTruncated(_ text: String, to count: Int) -> String {
+        guard text.count > count, count > 1 else { return text }
+        let tail = count / 2, head = count - 1 - tail
+        return String(text.prefix(head)) + "…" + String(text.suffix(tail))
     }
 
     /// What the status line leaves out: the link itself, or the whole error. It travels on the tooltip and as VoiceOver help.
@@ -55,7 +91,10 @@ enum UploadState: Equatable {
 /// built once and only hidden or shown (a hidden arranged view leaves its stack), so a state change never rebuilds the bar.
 ///   uploading   spinner, status text, Cancel
 ///   success     status text, Open, Copy (the last two only when the link was copied)
-///   failure     status text, Retry, Details…
+///   failure     status text, Retry, Details
+/// Every command is an icon button with a rest plate (a faint fill, as the unselected segment of the PNG | JPG toggle has), so each one
+/// reads as a button before the pointer arrives; it deepens on hover and press like the rest of the chrome. They sit on the bar itself,
+/// not on a glass plate of their own: the bars hold exactly eight plates.
 @MainActor
 final class UploadStatusControls {
     static let spinnerSide: CGFloat = 20
@@ -64,8 +103,8 @@ final class UploadStatusControls {
     let cancelButton = CommandButton(title: "", target: nil, action: nil)
     let openButton = CommandButton(title: "", target: nil, action: nil)
     let copyButton = CommandButton(title: "", target: nil, action: nil)
-    let retryButton = CommandButton(title: "Retry", target: nil, action: nil)
-    let detailsButton = CommandButton(title: "Details…", target: nil, action: nil)
+    let retryButton = CommandButton(title: "", target: nil, action: nil)
+    let detailsButton = CommandButton(title: "", target: nil, action: nil)
     private(set) var state: UploadState = .idle
 
     init() {
@@ -79,14 +118,14 @@ final class UploadStatusControls {
         icon(cancelButton, .xmark, name: "Cancel upload")
         icon(openButton, .openExternal, name: "Open link in browser")
         icon(copyButton, .copy, name: "Copy link")
-        text(retryButton)
-        text(detailsButton)
+        icon(retryButton, .arrowRotateRight, name: "Retry upload")
+        icon(detailsButton, .circleInfo, name: "Show error details")
         apply(.idle)
     }
 
     /// Everything the stack arranges for the upload, in reading order (the spinner first, the commands after the status text).
     var leadingViews: [NSView] { [spinner] }
-    var trailingViews: [NSView] { [cancelButton, openButton, copyButton, retryButton, detailsButton] }
+    var trailingViews: [NSView] { commandButtons }
     var commandButtons: [CommandButton] { [cancelButton, openButton, copyButton, retryButton, detailsButton] }
 
     private func icon(_ button: CommandButton, _ icon: FAIcon, name: String) {
@@ -94,16 +133,9 @@ final class UploadStatusControls {
         button.iconPointSize = GlassChrome.Metrics.iconPointSize
         button.icon = icon
         button.makeIconOnly(name: name)
+        button.showsRestPlate = true
         button.setAccessibilityLabel(name)
         GlassChrome.fix(button, GlassChrome.Metrics.iconButton)
-        button.setContentCompressionResistancePriority(.required, for: .horizontal)
-    }
-
-    private func text(_ button: CommandButton) {
-        GlassChrome.useExtraLarge(button)
-        button.font = DesignTokens.Typography.font(.body)
-        let width = ceil((button.title as NSString).size(withAttributes: [.font: button.font as Any]).width) + 2 * DesignTokens.Space.s3
-        GlassChrome.fix(button, NSSize(width: width, height: GlassChrome.Metrics.commandHeight))
         button.setContentCompressionResistancePriority(.required, for: .horizontal)
     }
 

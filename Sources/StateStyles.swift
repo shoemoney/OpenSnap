@@ -71,6 +71,9 @@ enum StateStyles {
 
     private static func resolve(_ role: NSColor, _ arm: Palette.Arm) -> NSColor { Palette.resolve(role, arm: arm) }
 
+    /// The faint fill a rest-plated command and an unselected toggle segment share.
+    static func restPlateAlpha(highContrast: Bool) -> CGFloat { highContrast ? 0.12 : 0.06 }
+
     /// `labelColor` at an alpha, built under the arm's appearance because a system colour snaps to the appearance current when it is tinted.
     private static func label(alpha: CGFloat, _ arm: Palette.Arm) -> NSColor {
         var color = NSColor.clear
@@ -90,8 +93,12 @@ enum StateStyles {
     /// - Parameters:
     ///   - selected: the control is also selected while it is hovered or pressed; `.selected` itself already means it.
     ///   - accent: replaces the system accent colour; tests use it to prove the glyph colour follows the blended fill, whatever the accent.
+    ///   - restPlate: the control carries a faint fill at rest (the unselected toggle segment's 0.06, 0.12 under Increase Contrast) and its
+    ///     hover and press fills deepen by that much, for a command that sits on the bar rather than on a group plate and would otherwise
+    ///     read as a word or a glyph until the pointer arrives.
     static func command(_ state: ControlState, primary: Bool, focused: Bool, highContrast: Bool, differentiate: Bool,
-                        selected: Bool = false, accent accentOverride: NSColor? = nil, appearance: NSAppearance = .currentDrawing()) -> StateStyle {
+                        selected: Bool = false, accent accentOverride: NSColor? = nil, restPlate: Bool = false,
+                        appearance: NSAppearance = .currentDrawing()) -> StateStyle {
         let arm = arm(for: appearance, highContrast: highContrast)
         let disabled = state == .disabled
         let ring = focused && !disabled
@@ -121,10 +128,11 @@ enum StateStyles {
         }
 
         var fill: NSColor?
+        let restAlpha = restPlate ? restPlateAlpha(highContrast: highContrast) : 0
         switch state {
-        case .hover: fill = resolve(Palette.State.hover, arm)
-        case .pressed: fill = resolve(Palette.State.pressed, arm)
-        case .rest, .selected, .disabled: fill = nil
+        case .hover: fill = restPlate ? label(alpha: resolve(Palette.State.hover, arm).alphaComponent + restAlpha, arm) : resolve(Palette.State.hover, arm)
+        case .pressed: fill = restPlate ? label(alpha: resolve(Palette.State.pressed, arm).alphaComponent + restAlpha, arm) : resolve(Palette.State.pressed, arm)
+        case .rest, .selected, .disabled: fill = restPlate ? label(alpha: restAlpha, arm) : nil
         }
         return StateStyle(fill: fill, content: Palette.Text.primary, border: nil, borderWidth: 0, contentAlpha: alpha, indicator: false,
                           glyphScale: state == .pressed ? pressedGlyphScale : 1, focusRing: ring, strongText: false)
@@ -145,7 +153,7 @@ enum StateStyles {
         switch state {
         case .hover: fill = resolve(Palette.State.hover, arm)
         case .pressed: fill = resolve(Palette.State.pressed, arm)
-        case .rest, .selected, .disabled: fill = label(alpha: highContrast ? 0.12 : 0.06, arm)
+        case .rest, .selected, .disabled: fill = label(alpha: restPlateAlpha(highContrast: highContrast), arm)
         }
         return StateStyle(fill: fill, content: Palette.Text.primary, border: nil, borderWidth: 0,
                           contentAlpha: state == .disabled ? disabledAlpha : 1, indicator: false,

@@ -41,6 +41,7 @@ private enum StateStylesTests {
         try toggleTests()
         try trackTests()
         try swatchTests()
+        try restPlateTests()
         print("PASS state-styles-tests (\(checks) checks)")
     }
 
@@ -249,6 +250,38 @@ private enum StateStylesTests {
                     let normal = StateStyles.track(.rest, highContrast: false, appearance: appearance)
                     try expect(alpha(style(.rest).track) > alpha(normal.track), "HC draws a stronger track: \(label)")
                 }
+            }
+        }
+    }
+
+    // MARK: rest plate (audit fix 1: a command on the bar, off any group plate, reads as a button before hover)
+
+    private static func restPlateTests() throws {
+        for (name, appearance) in appearances {
+            for hc in flags {
+                let label = "\(name) hc=\(hc)"
+                func plated(_ state: ControlState, focused: Bool = false) -> StateStyle {
+                    StateStyles.command(state, primary: false, focused: focused, highContrast: hc, differentiate: false, restPlate: true, appearance: appearance)
+                }
+                func plain(_ state: ControlState) -> StateStyle {
+                    StateStyles.command(state, primary: false, focused: false, highContrast: hc, differentiate: false, appearance: appearance)
+                }
+                let rest = StateStyles.restPlateAlpha(highContrast: hc)
+                try expect(abs(rest - (hc ? 0.12 : 0.06)) < 0.0001, "the rest plate is the toggle segment's faint fill: \(label)")
+                try expect(plain(.rest).fill == nil, "without the flag a command still rests with no fill: \(label)")
+                try expect(abs(alpha(plated(.rest).fill) - rest) < 0.004, "a rest-plated command rests on label@\(rest): \(label)")
+                // Hover and press deepen by the plate, so the feedback is never smaller than on a plain command.
+                try expect(abs(alpha(plated(.hover).fill) - (alpha(plain(.hover).fill) + rest)) < 0.004, "hover adds to the rest plate: \(label)")
+                try expect(abs(alpha(plated(.pressed).fill) - (alpha(plain(.pressed).fill) + rest)) < 0.004, "press adds to the rest plate: \(label)")
+                try expect(alpha(plated(.hover).fill) > alpha(plated(.rest).fill) && alpha(plated(.pressed).fill) > alpha(plated(.hover).fill), "rest < hover < pressed: \(label)")
+                try expect(abs(alpha(plated(.disabled).fill) - rest) < 0.004 && plated(.disabled).contentAlpha == 0.38, "a disabled one keeps the plate and dims: \(label)")
+                // Everything else is the plain command: content colour, no border, focus ring, no indicator.
+                try expect(plated(.rest).content == plain(.rest).content && plated(.rest).border == nil && !plated(.rest).indicator && plated(.rest, focused: true).focusRing, "only the fill differs: \(label)")
+                // Selection and Snap are untouched by the flag.
+                let selected = StateStyles.command(.selected, primary: false, focused: false, highContrast: hc, differentiate: false, restPlate: true, appearance: appearance)
+                try expect(selected == StateStyles.command(.selected, primary: false, focused: false, highContrast: hc, differentiate: false, appearance: appearance), "a selected command ignores the flag: \(label)")
+                let snap = StateStyles.command(.rest, primary: true, focused: false, highContrast: hc, differentiate: false, restPlate: true, appearance: appearance)
+                try expect(snap == StateStyles.command(.rest, primary: true, focused: false, highContrast: hc, differentiate: false, appearance: appearance), "Snap ignores the flag: \(label)")
             }
         }
     }
