@@ -1,16 +1,16 @@
 # OpenSnap visual audit: roadmap (final, round 2)
 
-Status: **all 36 todos pending.** This roadmap and `todo-checklist.md` and `backlog.json` are generated from the same data, which is parsed from `visual-audit.md` (FINAL). Authoritative sources: `visual-audit.md` (findings, section 9 backlog, section 6.0 status at `dc1eb26`), `technical-spec.md` (implementation detail and section 0 decisions), `user-feedback.md` (owner request), `build/declassic-plan.md` (WP0 to WP7; owner decisions in section 4).
+Status: **implementation in progress at main `f3ba77f`** (baseline `bad6617`): 20 done, 2 verified, 1 not-a-bug, 1 in-progress, 12 pending, of 36 todos. Per-todo state is in `backlog.json`, `todo-checklist.md` and `progress.md`; section 2b has the merge map and milestone status. The audit findings and the section 4 statuses are as at `dc1eb26`. This roadmap and `todo-checklist.md` and `backlog.json` are generated from the same data, which is parsed from `visual-audit.md` (FINAL). Authoritative sources: `visual-audit.md` (findings, section 9 backlog, section 6.0 status at `dc1eb26`), `technical-spec.md` (implementation detail and section 0 decisions), `user-feedback.md` (owner request), `build/declassic-plan.md` (WP0 to WP7; owner decisions in section 4).
 
 ## 1. Summary
 
 - **29 findings:** 6 P0, 16 P1, 7 P2. By evidence class: 22 rendered or measured (R/M), 6 source-only (S), 1 unverified (U, VF-27). The class rule is in section 13, item 1.
-- **36 todos, all pending:** 12 P0, 20 P1, 4 P2, across eight milestones (M0 to M7). 22 are Lane A (they edit `Sources/App.swift`, one writer at a time).
-- **The owner's P1 layout request** (remove the permanent right rail, `user-feedback.md`) is M1: OSN-010 to OSN-014. Section 8 of the audit reports a measured fit at 980 pt from a harness-only mock (not product). Re-measure after the change (OSN-013).
-- **Landed in source at `dc1eb26` (section 6.0 and 7):** WP1 (own assets), WP2 (Classic removal, macOS 26.0), WP3 (build, runners, gates) and WP6 in part (hint copy, `analysis/` untracked). OSN-020 to OSN-023 are therefore verification only: a visual check against the cited captures plus the named gate.
-- **Foundation still open:** the safe screenshot path (OSN-001, VF-06), the owner decisions (OSN-002), WP4 identity and migration (OSN-030, OSN-031; in flight on `opensnap/w3-rename`), and synthetic fixtures (OSN-024).
-- **Owner input needed:** 10 decisions (section 3). Each has a recommended default from the sources; none is answered.
-- **Estimate:** 18.0 d numeric across 18 todos, plus 17.5 d of unsplit spec figures, total 35.5 d (section 8). The numeric figure includes OSN-020, OSN-021, OSN-022 at their round-1 scope; those todos now need only verification (section 13, item 11).
+- **36 todos at main `f3ba77f`:** 20 done, 2 verified (landed before the baseline; checked only), 1 not-a-bug, 1 in-progress (OSN-041), 12 pending. M0 to M3 are done, M4 and M5 are in progress, M6 has not started, and M7 is partly started (OSN-070). Section 2b has the table.
+- **The owner's P1 layout request** (remove the permanent right rail, `user-feedback.md`) is **done** in M1 (OSN-010 to OSN-014, merged in `c53155c`). OSN-013 captured the layout from 980 pt to full screen (80 captures at `fef46c7`, `evidence/impl-2026-10-09/m1-rail/`). Live screen capture was not run.
+- **Still open:** the top-bar spike and glass consolidation (OSN-042), unified window chrome (OSN-043), component states (OSN-044), icons (OSN-045), the Settings rebuild (OSN-051), upload feedback (OSN-054), accessibility (M6), the gates and full visual acceptance (OSN-070, OSN-071), and migration on a copy of the owner's real store (OSN-072).
+- **Owner input:** 10 decisions (section 3). Nine are resolved; Q3 is still open until the OSN-042 spike.
+- **Estimate:** 18.0 d numeric across 18 todos, plus 17.5 d of unsplit spec figures, total 35.5 d (section 8). This is the round-1 plan figure and has not been re-estimated. It still carries round-1 scope for OSN-020 to OSN-023, most of which has landed (section 13, item 11).
+- **Not done:** no push and no release. The first real launch and migration on the owner's machine is parked by the owner.
 
 ## 2. Snapshot and evidence status
 
@@ -21,7 +21,7 @@ Status: **all 36 todos pending.** This roadmap and `todo-checklist.md` and `back
 | Main at the final check (11:01 CDT) | `dc1eb26` | Nine commits after `4b2ae0f`. See section 2a. |
 | Source line numbers | `4b2ae0f` | Re-derive every `file:line` at the SHA a todo starts from. |
 | Evidence captures | `evidence/2026-10-09/`: 297 captures | 205 at `b9319c4`, 84 at `dc1eb26`, 8 PROTO mocks at `dc1eb26` (not product). Index in `README.md`. |
-| Harness branch | `audit/visual-harness` @ `6ed6828` | Unmerged. OSN-001 makes it the standard path. |
+| Harness branch | `audit/visual-harness` @ `6ed6828` | Merged to main in `3431efc` (OSN-001). It is the standard path. |
 
 ### 2a. Drift since the snapshot (read before starting work)
 
@@ -45,28 +45,57 @@ Rules that follow:
 - Line numbers in the spec and source inventory are `4b2ae0f`. Classic-related lines are gone at `dc1eb26`, and WP4 moves them again.
 - An observation is only as current as the SHA it was captured on. A footer finding seen at `b9319c4` (12-format popup) is superseded where `4b2ae0f` changed it.
 
+## 2b. Implementation progress (from bad6617)
+
+Implementation began at `bad6617`. Main is now `f3ba77f`, after six merges. Per-todo detail is in `progress.md` (commit map and open items) and in the `implementation` field of each todo in `backlog.json`.
+
+| # | Merge | Branch | Branch commits |
+|---|---|---|---|
+| 1 | `3431efc` | impl/osn-001-harness | `0f0db46`, `161e191`, `b919775`, `9e9ec8c`, `db973a6` |
+| 2 | `8df7780` | impl/m4-tokens | `eee03d3`, `13c032c`, `0ed44b4`, `fac0cc7` |
+| 3 | `f484d3e` | impl/m5-dest-history | `3be3870`, `26e2160`, `708b6bd`, `a2f3843`, `dd17d50` |
+| 4 | `c53155c` | impl/t15-rail | `de7f511`, `891c197`, `ab4373d`, `b30ee32`, `356dde5`, `4f164ef`, `f9bc0fc`, `1e9d4de`, `e65662c`, `616c9b0`, `4981836`, `2189f4a`, `fef46c7`, `e2db58c` |
+| 5 | `77bad0c` | impl/m3-identity-menus | `51e37a9`, `45dc148`, `dbf7461` |
+| 6 | `f3ba77f` | impl/m5-capture | `75a9ee6`, `08f03e5`, `1eead53`, `8a9af59`, `1e6a089`, `8a0e8d9`, `b9a0f24` |
+
+Branch commits are those the orchestrator named. Merges of main into a branch that it did not name (`0c48aa0`, `a88f998`, `e7a8fc2`) are not listed.
+
+Milestone status is computed from the todo statuses. Section 5 exit criteria are unchanged; this table does not say they are met.
+
+| Milestone | Done | Verified | Not-a-bug | In progress | Pending | Status at `f3ba77f` |
+|---|---|---|---|---|---|---|
+| M0 Baseline, safety, decisions | 2 | 0 | 0 | 0 | 0 | Done |
+| M1 Owner layout (rail removal) | 5 | 0 | 0 | 0 | 0 | Done |
+| M2 Foundation: declassic + clean build | 3 | 2 | 0 | 0 | 0 | Done (OSN-021 and OSN-022 verified only) |
+| M3 Identity + migration | 3 | 0 | 0 | 0 | 0 | Done (the real-store check is OSN-072, in M7) |
+| M4 Design-system foundation | 1 | 0 | 0 | 1 | 4 | In progress |
+| M5 Surface polish | 6 | 0 | 1 | 0 | 2 | In progress |
+| M6 Accessibility + adaptivity | 0 | 0 | 0 | 0 | 3 | Not started |
+| M7 Visual acceptance + release readiness | 0 | 0 | 0 | 0 | 3 | Partly started (OSN-070) |
+| **Total** | **20** | **2** | **1** | **1** | **12** | |
+
 ## 3. Owner decisions needed
 
-10 decisions gate work: Q1 to Q5, D-TEXT, D-HINT and D-T15-1 to D-T15-3. Each shows the recommended default from the sources and the todos it blocks. None is answered. The default is what the todos are written against until the owner decides.
+10 decisions gate work: Q1 to Q5, D-TEXT, D-HINT and D-T15-1 to D-T15-3. Each shows the recommended default from the sources, the todos it blocks, and its resolution at `f3ba77f`. Nine are resolved (Q4 is resolved as its default, and its implementation is pending in OSN-043). Q3 is still open until the OSN-042 spike.
 
-| # | Question | Recommended default (source) | Blocks |
-|---|---|---|---|
-| Q1 | Font Awesome Pro in the shipped app: (a) licence-cleared glyph outlines compiled as vector paths, or (b) SF Symbols in release. | Visual-audit section 9 default: treat SF Symbols as the release icon set until the licence question is answered. Run visual acceptance in SF mode, and capture FA mode as a dev-only comparison. If the licence allows compiled vector outlines, ship FA as generated vector paths (spec Q1a). *(Source: visual-audit section 9 (OSN-002 defaults); technical-spec section 0 Q1.)* | OSN-045 |
-| Q2 | Native document container: the JSON SketchDocument encoding becomes .opensnap, or another format. | Spec default: rename the JSON encoding to .opensnap (id com.shoemoney.opensnap.document, version 1). SVG stays an export. The old SVG-Skitch and JSON readers move to Sources/Migration/ and are not reachable from Open, drag or import. Needs docs/adr/0002. The declassic plan (section 4, D3) already fixes the .opensnap extension. *(Source: technical-spec section 0 Q2; visual-audit section 9 (Q2-Q5 as recommended in the spec).)* | OSN-030 |
-| Q3 | Top bar: a real NSToolbar, or custom glass bars. | Spec default: prefer NSToolbar for the top bar after T15 lands (tools as an NSToolbarItemGroup with selectOne), gated by a spike: all 16 top-bar items unclipped at 980 pt with no overflow chevron. If the spike fails or the option is rejected, use T4 option B (custom bars). The glass budget differs between the spec's two statements: section 0 says at most 5 surfaces in total, and the T4 tests say 8. Reconcile before OSN-042 starts. *(Source: technical-spec section 0 Q3, T4 (option B and tests); visual-audit section 9 (Q2-Q5 as recommended in the spec).)* | OSN-042, OSN-043 |
-| Q4 | Full screen: enable it, and how it interacts with Frame mode. | Spec default: enable full screen (.fullScreenPrimary). Full screen and Frame mode are mutually exclusive: disable or exit Frame mode while in full screen. *(Source: technical-spec section 0 Q4; visual-audit section 9.)* | OSN-043 |
-| Q5 | Capture flash: keep it, and under what rule. | Spec default: keep the flash at 0.1 s, skip the ramp under Reduce Motion, and cap peak luminance at 70 %. *(Source: technical-spec section 0 Q5; visual-audit section 9.)* | OSN-050 |
-| D-TEXT | Native-text exceptions to the 18-pt rule: menu bar, tooltips, NSAlert text, NSSavePanel and NSOpenPanel chrome, Fonts and Colors panels, and the standard About panel. Option (a) accepts them as platform text. Option (b) replaces them with app-owned equivalents where the app controls rendering. Plus the tooltip-only command names (VF-11). | Visual-audit section 9 default: accept system-rendered menus, tooltips, Save and Open panels, and the Fonts and Colors panels as platform text outside the 18-pt rule. App-specific alerts (permission, upload errors) become app-owned sheets at 20 pt. The About credits are set as an 18-pt attributed string. *(Source: visual-audit section 9 (OSN-002 defaults); visual-audit VF-11 (N-exceptions).)* | OSN-041, OSN-050, OSN-055 |
-| D-HINT | Hover-hint bevel (OSN-056): keep it, or retire it. | Visual-audit section 9 default: keep the hover-hint bevel as an opt-in (off by default, as today), modernised. *(Source: visual-audit section 9 (OSN-002 defaults; OSN-002 row).)* | OSN-056 |
-| D-T15-1 | Zoom popup face: show the percentage only (for example 83 %), with the mode word in the tooltip and the AX value. | Visual-audit section 9 default: accept. Without it, T15 does not fit at 980 in Frame mode. The alternative 160-pt popup overflows the bottom bar. *(Source: visual-audit section 8 and section 9 (D-T15-1..3); technical-spec T15 sections b and k.)* | OSN-010 |
-| D-T15-2 | Size-pill arrow keys: follow NSSlider (Right and Up are larger), or keep the Classic inversion (Down is larger). | Visual-audit section 9 default: accept (Right and Up larger, Left and Down smaller, as NSSlider does). *(Source: visual-audit section 8 and section 9 (D-T15-1..3); technical-spec T15 sections d and k.)* | OSN-011 |
-| D-T15-3 | Tool tile width: 44 x 40 pt (from 48 x 40). | Visual-audit section 9 default: accept (44 x 40 pt). Without it, T15 does not fit at 980 in Frame mode. *(Source: visual-audit section 8 and section 9 (D-T15-1..3); technical-spec T15 section b.)* | OSN-010 |
+| # | Question | Recommended default (source) | Blocks | Resolution at `f3ba77f` |
+|---|---|---|---|---|
+| Q1 | Font Awesome Pro in the shipped app: (a) licence-cleared glyph outlines compiled as vector paths, or (b) SF Symbols in release. | Visual-audit section 9 default: treat SF Symbols as the release icon set until the licence question is answered. Run visual acceptance in SF mode, and capture FA mode as a dev-only comparison. If the licence allows compiled vector outlines, ship FA as generated vector paths (spec Q1a). *(Source: visual-audit section 9 (OSN-002 defaults); technical-spec section 0 Q1.)* | OSN-045 | Resolved: SF Symbols in release. Font Awesome Pro is never committed or shipped. Official Free FA vectors may be used where suitable (OSN-045 pending). |
+| Q2 | Native document container: the JSON SketchDocument encoding becomes .opensnap, or another format. | Spec default: rename the JSON encoding to .opensnap (id com.shoemoney.opensnap.document, version 1). SVG stays an export. The old SVG-Skitch and JSON readers move to Sources/Migration/ and are not reachable from Open, drag or import. Needs docs/adr/0002. The declassic plan (section 4, D3) already fixes the .opensnap extension. *(Source: technical-spec section 0 Q2; visual-audit section 9 (Q2-Q5 as recommended in the spec).)* | OSN-030 | Resolved: .opensnap (done earlier; ADR at docs/adr/0002-opensnap-document-format.md). |
+| Q3 | Top bar: a real NSToolbar, or custom glass bars. | Spec default: prefer NSToolbar for the top bar after T15 lands (tools as an NSToolbarItemGroup with selectOne), gated by a spike: all 16 top-bar items unclipped at 980 pt with no overflow chevron. If the spike fails or the option is rejected, use T4 option B (custom bars). The glass budget differs between the spec's two statements: section 0 says at most 5 surfaces in total, and the T4 tests say 8. Reconcile before OSN-042 starts. *(Source: technical-spec section 0 Q3, T4 (option B and tests); visual-audit section 9 (Q2-Q5 as recommended in the spec).)* | OSN-042, OSN-043 | Open: pending the OSN-042 spike. |
+| Q4 | Full screen: enable it, and how it interacts with Frame mode. | Spec default: enable full screen (.fullScreenPrimary). Full screen and Frame mode are mutually exclusive: disable or exit Frame mode while in full screen. *(Source: technical-spec section 0 Q4; visual-audit section 9.)* | OSN-043 | Resolved as the default: full screen is enabled and is exclusive with Frame mode. Implementation pending in OSN-043. |
+| Q5 | Capture flash: keep it, and under what rule. | Spec default: keep the flash at 0.1 s, skip the ramp under Reduce Motion, and cap peak luminance at 70 %. *(Source: technical-spec section 0 Q5; visual-audit section 9.)* | OSN-050 | Resolved: flash kept, peak 0.7. Reduce Motion gives a single 0.05 s frame. Show capture flash off means no flash at any time (a deliberate, more intuitive reading of the opt-out). |
+| D-TEXT | Native-text exceptions to the 18-pt rule: menu bar, tooltips, NSAlert text, NSSavePanel and NSOpenPanel chrome, Fonts and Colors panels, and the standard About panel. Option (a) accepts them as platform text. Option (b) replaces them with app-owned equivalents where the app controls rendering. Plus the tooltip-only command names (VF-11). | Visual-audit section 9 default: accept system-rendered menus, tooltips, Save and Open panels, and the Fonts and Colors panels as platform text outside the 18-pt rule. App-specific alerts (permission, upload errors) become app-owned sheets at 20 pt. The About credits are set as an 18-pt attributed string. *(Source: visual-audit section 9 (OSN-002 defaults); visual-audit VF-11 (N-exceptions).)* | OSN-041, OSN-050, OSN-055 | Resolved: the app owns text wherever it can. Done: About window, 20 pt menus, permission sheet. In progress: app-owned tooltips (OSN-041). OS-owned limitations recorded: menu-bar strip titles, window title-bar text, system tooltips inside system panels, NSAlert text size, Save, Open and Print panels, Fonts and Colors panels. |
+| D-HINT | Hover-hint bevel (OSN-056): keep it, or retire it. | Visual-audit section 9 default: keep the hover-hint bevel as an opt-in (off by default, as today), modernised. *(Source: visual-audit section 9 (OSN-002 defaults; OSN-002 row).)* | OSN-056 | Resolved: kept as opt-in and modernised (done in OSN-056). |
+| D-T15-1 | Zoom popup face: show the percentage only (for example 83 %), with the mode word in the tooltip and the AX value. | Visual-audit section 9 default: accept. Without it, T15 does not fit at 980 in Frame mode. The alternative 160-pt popup overflows the bottom bar. *(Source: visual-audit section 8 and section 9 (D-T15-1..3); technical-spec T15 sections b and k.)* | OSN-010 | Resolved: accepted and implemented (OSN-010). |
+| D-T15-2 | Size-pill arrow keys: follow NSSlider (Right and Up are larger), or keep the Classic inversion (Down is larger). | Visual-audit section 9 default: accept (Right and Up larger, Left and Down smaller, as NSSlider does). *(Source: visual-audit section 8 and section 9 (D-T15-1..3); technical-spec T15 sections d and k.)* | OSN-011 | Resolved: accepted and implemented (OSN-011). |
+| D-T15-3 | Tool tile width: 44 x 40 pt (from 48 x 40). | Visual-audit section 9 default: accept (44 x 40 pt). Without it, T15 does not fit at 980 in Frame mode. *(Source: visual-audit section 8 and section 9 (D-T15-1..3); technical-spec T15 section b.)* | OSN-010 | Resolved: accepted and implemented (OSN-010). |
 
 **Already decided (not open):** the owner's 2026-10-09 decisions in `build/declassic-plan.md` section 4. They override the plan's defaults: product name OpenSnap; bundle id `com.shoemoney.opensnap`; App Support folder `OpenSnap`; Keychain service `OpenSnap.Publishing`; environment prefix `OPENSNAP_*`; macOS 26.0 minimum (D2); one-time copy-never-move migration (D1); `.skitch` support dropped for users, with the migration as the only reader (D3); no git-history rewrite (D4); silent and minimal, with no sounds, no welcome document and drawn own icons (D5). The repo and folder rename is a separate, later, owner-approved step.
 
 ## 4. Findings
 
-All 29 findings, from the section 6 headers (severity, evidence class, surfaces) and the section 6.0 table (status at `dc1eb26`). Categories: R/M = rendered or measured; S = source-only; U = unverified. The category is derived from the header's evidence class by the rule in section 13, item 1.
+All 29 findings, from the section 6 headers (severity, evidence class, surfaces) and the section 6.0 table (status at `dc1eb26`). Categories: R/M = rendered or measured; S = source-only; U = unverified. The category is derived from the header's evidence class by the rule in section 13, item 1. The statuses below are as at `dc1eb26`; they were not re-audited in the implementation run. For todo state at `f3ba77f`, see section 2b.
 
 | ID | Sev | Evidence (header) | Category | Surfaces | Status at `dc1eb26` |
 |---|---|---|---|---|---|
@@ -297,7 +326,7 @@ Two todos may run together when neither is Lane A and their files do not overlap
 
 ## 7. Foundation blockers and polish
 
-**Foundation (before the visual polish).** OSN-001 and OSN-002 (the safe harness and the decisions); OSN-010 (owner priority, lands before any polish that touches the bars); OSN-020 (build and gates, verification); OSN-021, OSN-022 and OSN-023 (landed; verify); OSN-024 (fixtures); OSN-030 and OSN-031 (WP4, in flight); then the gates and acceptance, OSN-070, OSN-071 and OSN-072.
+**Foundation (before the visual polish).** OSN-001 and OSN-002 (the safe harness and the decisions); OSN-010 (owner priority, lands before any polish that touches the bars); OSN-020 (build and gates, verification); OSN-021, OSN-022 and OSN-023 (verified or done); OSN-024 (fixtures); OSN-030 and OSN-031 (WP4, done); then the gates and acceptance, OSN-070, OSN-071 and OSN-072. At `f3ba77f`, OSN-070 is partly started and OSN-071 and OSN-072 are pending.
 
 **Polish (after WP4).** OSN-040 to OSN-045 (tokens, type sweep, glass, window chrome, states, icons); OSN-050 to OSN-058 (surfaces, including the two P2 items OSN-057 and OSN-058); OSN-060 to OSN-062 (accessibility). The audit's section 9 says broad visual polish waits for WP4 so each line is edited once.
 
@@ -353,8 +382,8 @@ Todos with no figure (unsplit or no spec figure): OSN-001, OSN-002, OSN-013, OSN
 
 Each gate has a concrete check. Gates are wired in OSN-070 unless noted.
 
-1. **Clean-clone build, `original/` absent, and no-original byte match.** `tools/check-no-original.py` is on main (OSN-020). The clean-clone script is a planned check (`tools/check-clean-clone.sh`, OSN-020), and its release dry run is OSN-072.
-2. **No user-visible "Skitch" strings.** Static: `tools/check-skitch-strings.py`, which is not on main (section 9 of the audit: OSN-020 lists it). Dynamic: `OpenSnap --dump-strings DIR`, then a check across windows, menus, status item, tooltips, AX labels, placeholders and alerts. The dynamic launch hook is Lane A (OSN-070).
+1. **Clean-clone build, `original/` absent, and no-original byte match.** `tools/check-no-original.py` and `tools/check-clean-clone.sh` are on main (OSN-020; the clean-clone script passed on `dbf7461`). Its release dry run is OSN-072.
+2. **No user-visible "Skitch" strings.** Static: `tools/check-skitch-strings.py`, on main (OSN-020). Dynamic: `OpenSnap --dump-strings DIR`, then a check across windows, menus, status item, tooltips, AX labels, placeholders and alerts. The dynamic launch hook is Lane A (OSN-070).
 3. **Migration safety.** `tests/MigrationTests.swift` runs in a scratch home **with an injected scratch defaults suite**. `CFFIXED_USER_HOME` does not isolate `UserDefaults` (VF-06 probe). Asserts: the old tree manifest is byte-identical after the run; the new tree is complete; documents decode and equal their source; a re-run is a no-op; crash injection leaves no partial tree. The real-store guard hashes `SkitchRedux/` and `OpenSnap/`. OSN-072 runs against a copy of the owner's store.
 4. **Regression tests.** Font-floor walker (`ViewTreeAuditTests`): readable text at least 18 pt; controls at least 20 pt unless caption. Glass depth and budget (`GlassDepthTests`): no glass ancestor or descendant; at most 4 bottom-bar surfaces plus the toolbar (option A), or 8 (option B); no glass frame intersects the canvas viewport. No decorative glyphs: a static scan for emoji, arrows, dingbats, U+F8FF, `º` and ASCII `...` in titles. Layout fit at 980: the Frame-mode top bar with 44-pt tool tiles has at least 10 pt of slack (T15 section b); the bottom bar keeps at least 120 pt for the status with the checkbox shown.
 5. **Visual acceptance.** Light and dark, at 980, 1024, 1280, 1440 and full screen, across empty, populated, selection, text editing, Frame mode, popover open, PNG and JPG states, in FA and SF icon modes. Reduce Transparency and Increase Contrast come from injected `DisplayOptions` (OSN-061). Every capture records its `sourceSha`; every gap is recorded in `gaps.md`. Opus sign-off is recorded (OSN-071).
@@ -402,9 +431,9 @@ Two steps in OSN-072 come from the declassic plan and are **not** to be run with
 
 ## 12. Tooling not yet on main
 
-- The harness is on `audit/visual-harness` @ `6ed6828` only. OSN-001 merges it. The branch's `tools/eye-dump-audit.sh` still has the `welcome` group and the old bundle id `com.shoemoney.skitch-redux` (verified on the branch); OSN-001 and OSN-030 change both.
+- The harness is on main (merged in `3431efc`, OSN-001). Its `welcome` group and the rail-less proto mock are gone, and it runs under a throwaway bundle id (see `README.md`).
 - `tools/build.sh` no longer copies from `original/` (landed, VF-01), so the harness can build without a local `original/`. The build still needs the owner's toolchain.
-- `tools/check-skitch-strings.py` and `tools/check-clean-clone.sh` are planned gates; neither is on main (section 9 and gate 1 above).
+- `tools/check-skitch-strings.py` and `tools/check-clean-clone.sh` are on main (OSN-020, `77bad0c`). `tools/check-brand.py` (OSN-031) and `tools/check-tokens.py` (OSN-040, report mode) are on main too.
 
 ## 13. Source inconsistencies and how I handled them
 
@@ -415,7 +444,7 @@ These are places where the sources disagree, leave a gap, or have moved since ro
 3. **Estimate roll-up.** The spec's text says about 26 d; its own listed items add to 29.0 d. The listed items are used (section 8).
 4. **OSN-010 depends on OSN-030.** Section 9's Depends on column reads "App.swift hunks after OSN-030". The todo's dependency list includes OSN-030 as written. Confirm whether it is a hard dependency or a merge-order rule.
 5. **Lane A list.** Section 9 marks OSN-021, OSN-022 and OSN-023 as Lane A, but its serial order omits them because they have landed. The serial order in section 6 is the section 9 sequence as written.
-6. **check-skitch-strings.** Section 9 names the gate in OSN-020's scope and says it is not on main. It is required by the D8 rule (section 3 of the audit) and by gate 2 above.
+6. **check-skitch-strings.** Section 9 names the gate in OSN-020's scope and says it is not on main at `dc1eb26`. It is on main at `f3ba77f` (OSN-020). It is required by the D8 rule (section 3 of the audit) and by gate 2 above.
 7. **D-TEXT blocks.** Section 9 names D-TEXT in OSN-002 and OSN-041 only. Its recommended default also covers the permission sheet (OSN-050) and the About credits (OSN-055), so those are listed as blocked. That mapping is inferred from the default text.
 8. **Minimum height.** T15 sets a 608 pt minimum content height (492 pt viewport). T8 sets a 680 pt window minimum. The two stay open under OSN-043 (see its open item in the checklist); this round does not pick one.
 9. **VF-27 severity.** The header says "P1 (if captured)". Treated as P1 with evidence U, as the brief directs. OSN-014 verifies it with a live capture.
