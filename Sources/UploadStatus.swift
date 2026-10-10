@@ -35,22 +35,38 @@ enum UploadState: Equatable {
         }
     }
 
-    /// The first line of the error, then the same with the middle of the line cut a few characters at a time (the beginning says what failed
-    /// and the end is often the code that matters), and last "Upload failed", which always fits. The tail of a long error is never simply
-    /// dropped. There is no "Error:" lead in the footer: the red text, the Retry button and the Details button already say it, and the lead
-    /// cost the line twelve characters at 980 pt (R2-014). The tooltip and the spoken help keep "Error: ".
+    /// The first line of the error whole; narrower, "Upload failed · HTTP 403" when the message carries a short code worth reading; narrowest,
+    /// "Upload failed", which always fits. The footer only ever shows text that means something: a sentence is never cut a few characters at
+    /// a time ("The server r… refused it."). There is no "Error:" lead in the footer: the red text, the Retry button and the Details button
+    /// already say it, and the lead cost the line twelve characters at 980 pt (R2-014). The tooltip, the spoken help and Details keep the whole message.
     static func errorVariants(for message: String) -> [String] {
         let line = firstLine(of: message)
         var variants = [line]
-        var keep = line.count - 4
-        while keep >= minimumErrorCharacters {
-            variants.append(middleTruncated(line, to: keep))
-            keep -= 4
+        if let code = errorCode(in: line) {
+            let coded = "Upload failed · " + code
+            if line.count > coded.count { variants.append(coded) }
         }
         if line.count > "Upload failed".count { variants.append("Upload failed") }
         return variants
     }
-    static let minimumErrorCharacters = 24
+
+    /// A short code a person can search for, taken only from a form that cannot be anything else: an HTTP status ("HTTP 403", "403 Forbidden"),
+    /// a curl exit code ("curl: (6)", "curl exit code 6"), or an OSStatus ("(-25300)", "OSStatus -25300"). Nil when the message has none.
+    static func errorCode(in line: String) -> String? {
+        let patterns: [(String, String)] = [
+            (#"\bHTTP[ /]?(?:\d(?:\.\d)? )?([1-5]\d\d)(?!\d)"#, "HTTP "),
+            (#"(?<![\d.])([45]\d\d) [A-Z][a-z]+"#, "HTTP "),
+            (#"\bcurl\b(?::| error| exit(?:ed)?(?: with)?(?: status)?(?: code)?| failed with(?: exit)?(?: code)?)? ?\(?(\d{1,3})(?![\d.])"#, "curl "),
+            (#"(?:\(|\bOSStatus:? ?\(?)(-\d{2,6})\)?"#, ""),
+        ]
+        for (pattern, lead) in patterns {
+            guard let regex = try? NSRegularExpression(pattern: pattern, options: pattern.contains("HTTP[") ? [.caseInsensitive] : []),
+                  let match = regex.firstMatch(in: line, range: NSRange(line.startIndex..., in: line)),
+                  let range = Range(match.range(at: 1), in: line) else { continue }
+            return lead + String(line[range])
+        }
+        return nil
+    }
 
     /// The longest sentence the status line can show; nil when idle.
     var statusText: String? { statusVariants.first }

@@ -53,7 +53,7 @@ extension AuditRun {
               refs: ["App.swift|static func noticeVariants"], settle: 0.2, extra: ["status": app.status.stringValue, "variants": app.status.variants])
         app.clearStatusNotice()
         app.uploadState = .failure(message: "The server returned HTTP 403 for this request and refused it."); pump(0.4)
-        shoot("S44", "footer-w980-error", surface: "Bottom bar", state: "980 wide, a failed upload: the message without an Error: lead, Retry and Details beside it (R2-014)", crop: footerCrop(),
+        shoot("S44", "footer-w980-error", surface: "Bottom bar", state: "980 wide, a failed upload: the message without an Error: lead, or Upload failed · and its code, never a cut sentence; Retry and Details beside it (R2-014)", crop: footerCrop(),
               refs: ["UploadStatus.swift|static func errorVariants"], settle: 0.2, extra: ["status": app.status.stringValue, "variants": app.status.variants])
         app.uploadState = .idle
         app.uploadState = .uploading(name: "Audit-6-3f2a9c0e-5b1d-4c77-9a0e-7d6c1b2f8a44.png"); pump(0.4)
@@ -62,6 +62,10 @@ extension AuditRun {
         app.uploadState = .idle; app.dirty = true; app.updateStatus()
         if let wide = windowSize(for: "1440x900", surface: "S44") {
             placeWindow(wide); pump(0.4)
+            app.uploadState = .failure(message: "The server returned HTTP 403 for this request and refused it."); pump(0.4)
+            shoot("S44", "footer-w1440-error", surface: "Bottom bar", state: "1440 wide, a failed upload: the whole first line fits", crop: footerCrop(),
+                  refs: ["UploadStatus.swift|static func errorVariants"], settle: 0.2, extra: ["status": app.status.stringValue, "variants": app.status.variants])
+            app.uploadState = .idle; app.updateStatus(); pump(0.2)
             shoot("S44", "footer-w1440-unsaved", surface: "Bottom bar", state: "1440 wide: both format segments, the whole status", crop: footerCrop(), refs: ["ModernEditorChrome.swift|static let compactFormatBelow"],
                   settle: 0.2, extra: ["status": app.status.stringValue])
         }
