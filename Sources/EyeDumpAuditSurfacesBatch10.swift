@@ -123,7 +123,7 @@ extension AuditRun {
                       windows: [controller.window], refs: ["GlobalHotkeys.swift|private var errorFromPause"], settle: 0.3, extra: ["note": note])
             } else { gap("S46", "Capture note error", "could not stage the failure (claim status \(claimed), note \(note))") }
             if let blocker { UnregisterEventHotKey(blocker) }
-            try? app.hotkeys.clearAll()
+            try? app.hotkeys.apply(.defaults)
             controller.capture.reloadShortcuts()
         } else { gap("S46", "Capture note error", "Capture Shortcuts… did not open Settings") }
         app.closePreferences(); pump(0.3)
