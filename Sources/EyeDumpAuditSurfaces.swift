@@ -351,6 +351,7 @@ extension AuditRun {
             step("S36", "selection and text editing at 980/1280") { s36() }
             step("S37", "PNG and JPG at 980") { s37() }
             step("S38", "app tooltips") { s38() }
+            step("S39", "titled window and alert sheets") { s39() }
             step("S13", "capture picker") { s13() }
             step("S14", "countdown") { s14() }
             step("S15", "capture flash") { s15() }
@@ -1021,19 +1022,47 @@ extension AuditRun {
         shoot("S21", "publish-success-footer", surface: "publish success", state: "footer crop after success", crop: footerCrop(), refs: ["App.swift|func receivePublishing"], settle: 0.1)
         pump(0.5)
         gate.mode = "fail"
-        let failureTimer = Timer(timeInterval: 2.0, repeats: false) { [self] _ in
-            MainActor.assumeIsolated {
-                if let modal = NSApp.modalWindow {
-                    shoot("S21", "publish-error", surface: "publish error", state: "error alert after a stubbed failed upload", windows: [modal], refs: ["App.swift|func receivePublishing", "App.swift|func error(_ error: Error)"], settle: 0)
-                } else { gap("S21", "publish error alert", "no modal alert appeared") }
-                NSApp.abortModal()
-            }
-        }
-        RunLoop.main.add(failureTimer, forMode: .common)
         app.publishImage()
-        pump(3.5)
-        failureTimer.invalidate()
+        pump(3.0)
+        if let alert = AppAlert.presentedAlerts.last {
+            shoot("S21", "publish-error", surface: "publish error", state: "error sheet after a stubbed failed upload", windows: [window, alert.panel], refs: ["App.swift|func receivePublishing", "App.swift|func error(_ error: Error)"], settle: 0,
+                  extra: ["alertTitle": alert.title, "presentedAs": window.attachedSheet === alert.panel ? "sheet on the document window" : "separate panel"])
+            alert.cancel()
+        } else { gap("S21", "publish error alert", "no error sheet appeared") }
+        pump(0.5)
         shoot("S21", "publish-error-footer", surface: "publish error", state: "footer crop after the error alert was dismissed", crop: footerCrop(), refs: ["App.swift|func receivePublishing"], settle: 0.2)
+    }
+
+    /// OSN-043: the window titled with the document name and its size, the proxy icon, and the app-owned alert sheets.
+    func s39() {
+        loadSynthetic(size: CGSize(width: 1000, height: 700), name: "Quarterly mockup")
+        _ = addAllAnnotationKinds(scale: 1)
+        // A saved document: the file is written into the throwaway support folder, so the title bar shows a proxy icon for it.
+        app.currentURL = app.support.appendingPathComponent("Quarterly mockup.opensnap")
+        _ = app.save()
+        app.updateDragPreview()
+        for spec in ["980xmin", "1280x800"] {
+            guard let size = windowSize(for: spec, surface: "S39") else { continue }
+            placeWindow(size)
+            window.makeKeyAndOrderFront(nil); pump(0.4)
+            let width = spec.hasPrefix("980") ? "w980" : "w1280"
+            let facts: [String: Any] = ["windowTitle": window.title, "subtitle": window.subtitle, "representedURL": window.representedURL?.lastPathComponent ?? "none",
+                                        "titlebarSeparatorStyle": String(describing: window.titlebarSeparatorStyle), "backgroundIsSurfaceWindow": window.backgroundColor == DesignTokens.Palette.Surface.window,
+                                        "fullScreenPrimary": window.collectionBehavior.contains(.fullScreenPrimary), "minSize": NSStringFromSize(window.minSize)]
+            shoot("S39", "titled-window-\(width)", surface: "titled window", state: "title = document name, subtitle = size, proxy icon, no title-bar separator, at \(width)",
+                  refs: ["App+ModernChrome.swift|func configureWindowChrome()", "App.swift|window?.subtitle = dragSizeLabel.stringValue"], extra: facts)
+            shoot("S39", "titlebar-crop-\(width)", surface: "titled window", state: "the title bar and top bar only, at \(width)", crop: headerCrop(),
+                  refs: ["App+ModernChrome.swift|func configureWindowChrome()"], settle: 0.1, extra: facts)
+        }
+        app.dirty = true
+        captureAlertSheet("S39", "discard-sheet", surface: "alerts / sheets", state: "Save your drawing? sheet over the titled window (Save / Cancel / Don\u{2019}t Save)",
+                          refs: ["App.swift|func confirmDiscard(", "AppAlert.swift|final class AppAlert"]) { app.confirmDiscard { _ in } }
+        app.dirty = false
+        syntheticDestinations()
+        app.publishing.clipboardWriter = { _ in }
+        app.publishing.uploader = { _, _, _, _ in throw PublishingFailure("Upload to Example S3 failed: the connection was refused (stub, no network was used).") }
+        captureAlertSheet("S39", "upload-error-sheet", surface: "alerts / sheets", state: "error sheet after a stubbed failed upload, over the titled window",
+                          refs: ["App.swift|func receivePublishing", "App.swift|func error(_ error: Error)"]) { app.publishImage(); pump(2.5) }
     }
 
     func s22() {
