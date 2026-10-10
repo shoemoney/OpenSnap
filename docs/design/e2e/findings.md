@@ -954,6 +954,8 @@ J6 lane, build 0bd6f94, four isolated sessions through `tools/e2e-session.sh`, d
 
 25 rows moved to E2E (20 from unverified: MENU-004, 023, 029, 030, 033, 095, SET-025 to 030, HOT-041, HIST-043, 044, DEST-038, ALERT-004, ICON-109, 110, HARN-003; 5 from rendered: BAR-030, BAR-031, SHEET-004, 006, 018). Before the pass 17 unverified rows (the batch 5 TBD rows and MENU-004) had no reason in their notes. 36 further rows carry an appended J6 re-check note and keep their class.
 
+*Note, 2026-10-10 (review round 2, R2-008):* the table above is the history at the J6 build. Rows whose surface no longer exists now carry the class `retired` and count toward no other class; the current counts are in the "Independent review round 2" section at the end of this file.
+
 ### Gap reasons of the 118 `unverified` rows (exactly one per row, in the observed cell)
 
 | Gap reason | rows | what it covers |
@@ -979,3 +981,49 @@ J6 lane, build 0bd6f94, four isolated sessions through `tools/e2e-session.sh`, d
 ### Clipboard
 
 The pasteboard held 14 bytes of text before the run; it was saved to a temp file (not printed) and restored byte for byte after the Copy Image press and the two upload links had replaced it (`cmp` identical); the temp file was deleted.
+
+## Independent review round 2 (pinned 14d4d9f)
+
+**Round 1 status, as the reviewer stated it:** R1-005 (Toolbox icons) and R1-023 (model and tool names in committed files) are **reopened**; R1-017 (Settings › Capture cleanup) has a **regression**, tracked as R2-001; every other round 1 item stays as recorded in the round 1 section above.
+
+**Findings** (severity · ID · surface · finding · status). All eighteen findings are described below, with the lane each was routed to.
+
+- P2 · R2-001 · Settings › Capture / global shortcuts · the batch-5 pause (`isShown && selectedIndex == captureTab`, SettingsWindow.swift ~1046, GlobalHotkeys.swift ~492) keeps every global capture shortcut off while Settings is merely shown on the Capture tab, even after switching to another app · batch 6 (pause only while Settings is key and the app active; resume on resign key, deactivate, hide, close).
+- P2 · R2-002 · document size · deeper cause of F-J6-001: `Canvas.renderSize` holds both the chosen Resize result and the auto-fit presentation size, so refits can overwrite a Resize; with Original size ticked export used `document.size` and ignored it; `dragAtOriginalSize` depended on the current screen (`isLargeShot`) · batch 6 (separate the chosen output size from the view fit; decide from the document).
+- P3 · R2-003 · bottom bar · the Original size checkbox stays on a canvas with no snap picture (after Remove Snap Picture) and does nothing · batch 6 (require a snap picture).
+- P3 · R2-004 · Toolbox · the selection-style pop-up places a row over its own button (the open menu covers Toolbox, Photos and part of the tools) and exposes a pop-up role with a value (the "Select All" of F-J6-009) · batch 6 (menu button that opens below itself, role menu button, label "Toolbox").
+- P3 · R2-005 · History · labels are chosen only after a resize, so with all labels shown the action row holds the window near 945 pt and 880 is unreachable by a real drag (likely cause of F-J6-006) · batch 6.
+- P3 · R2-006 · evidence text · `panelfix/00-cmd-o-panel-service.txt` line 1 named the computer-use tool · fixed in this lane (now "real-click driver"); `git grep` for model, vendor and tool names (case-insensitive, the assistant's own config folder excluded) leaves only `docs/design/e2e-audit-plan.md:7` and `docs/design/audit-overview.html` (root-owned) and one `.gitignore` entry for the assistant's worktree folder (owner decision).
+- P3 · R2-007 · ledger · E2E-SET-023 and E2E-KEY-021 cited image 16 (Settings open) for a "closed" result that is only a window-list readout · fixed in this lane: both moved to `unverified` with `gap: text readout only`; E2E-MENU-061 (the hidden state is a readout, the image shows the restore) treated the same way.
+- P3 · R2-008 · ledger · retired rows (HOT-001 to HOT-018, HOT-032, HOT-033, DEST-001 to DEST-006, DEST-030) still counted as rendered or E2E · fixed in this lane: a new evidence class `retired`, set by the generator for every row whose gap is `removed` or `replaced`; IDs and historic evidence stay in the row's observed and evidence columns.
+- P3 · R2-009 · ledger · rendered rows drawn from build 3194247 describe the chrome before batches 4 and 5 (E2E-STATE-002 "82 pt free at 980" among them) · fixed in this lane as a note: each carries "Re-check after batch 6" in its observed cell and keeps its class; the final render pass after batch 6 refreshes them.
+- · R2-010 · display options · covered by the final display-option render pass after batch 6.
+- P3 · R2-011 · evidence · `audit-fix-5/S42-status-notice-light` showed the normal status while its layout JSON reads "Saved to History"; `captures.md` said S42-status-after-notice names the export format (stale since R1-013) and that the S10 dark export panel did not produce, while `ZZ-unexpected-modal-1-dark` is that panel, blank · fixed in this lane in `captures.md` (mistimed capture marked, statement corrected, blank panel described); the final render pass recaptures the notice.
+- P3 · R2-012 · harness input fence · the swallowed-event count is never written to the run record, and mouseEntered/mouseExited/cursorUpdate are not fenced (a real cursor can still put hover states into captures) · batch 6.
+- P3 · R2-013 · tooling · the panel-service watchdogs killed any `openAndSavePanelService` above 2 GB system-wide, `panel-service-check.sh` counted other apps' services in its peak, and its cleanup touched the real Preferences folder · fixed in this lane: both watchdogs and the peak consider only a service whose `ps eww` environment names the session's own temp dir (`CFFIXED_USER_HOME=`, `HOME=` or `TMPDIR=` followed by `<dir>/`; an unreadable environment is left alone), and the real-home cleanup is gone. Tests use fake `ps`, `ps eww` and `kill`: a big service of another environment is not killed, one with the session environment is, and mutated scratch copies go red.
+- P3 · R2-014 · bottom bar at 980 · the status gets ~150 pt while PNG|JPG takes 134 pt and zoom + Resize… ~226 pt · batch 6 (compact format toggle below ~1100 pt, no "Error:" prefix, "Uploading… NN%").
+- P3 · R2-015 · History · at 1280×800 three fixed tiles leave ~26% of the grid empty; "Drag as" stretches to ~300 pt at 880; Details shows "Destination: —" for never-shared entries · batch 6 if time, else next.
+- P3 · R2-016 · Settings › Upload · a ~230 pt label column for the only control leaves the left quarter empty; the empty state still says "Right-click Upload to switch."; the selected row and the Default pill share one yellow · batch 6 if time, else next.
+- P3 · R2-017 · destination form · an empty Endpoint gives a three-line URL rule without naming or marking the field · batch 6 if time, else next.
+- P3 · R2-018 · WebDAV Test · a 2xx with a username set reports that the server accepted the login, although a server that never asks for auth also answers 2xx · batch 6 if time, else next.
+
+**Ledger sample (reviewer, at 14d4d9f).** Class counts E2E 322 · rendered 64 · unit/source 93 · unverified 118 (597 rows). 22 of 25 sampled E2E rows held; KEY-021 and SET-023 overclaimed (R2-007). DEST-001 was retired but still counted as E2E (R2-008). MENU-092 (Send to Back) is ambiguous: the two rectangles share a colour, so the stacking order cannot be read from the picture. All 118 unverified rows carry exactly one gap reason. No E2E row claims Differentiate Without Color or Increase Contrast as proven.
+
+### Class counts after the round 2 ledger fixes (597 rows)
+
+| Evidence class | at 14d4d9f | now |
+|---|---|---|
+| E2E | 322 | 309 |
+| rendered | 64 | 48 |
+| unit/source | 93 | 93 |
+| unverified | 118 | 120 |
+| retired | – | 27 |
+| total | 597 | 597 |
+
+Movement: 27 retired rows left their classes (10 E2E: HOT-017, HOT-032, HOT-033, DEST-001 to DEST-006, DEST-030; 16 rendered: HOT-001 to HOT-015 and HOT-018; 1 unverified: HOT-016). SET-023, KEY-021 and MENU-061 moved from E2E to unverified (`gap: text readout only`), so unverified is 118 − 1 (HOT-016) + 3 = 120 and each of the three carries exactly one gap reason. The "Gap reasons of the 118 unverified rows" table above is the J6 history: its `gap: retired` row (HOT-016) is now counted as `retired`, and `gap: text readout only` is 7 rows (4 + 3).
+
+### Rendered rows to re-check after batch 6 (R2-009)
+
+48 rendered rows cite evidence drawn at build 3194247, before batches 4 and 5 changed the editor chrome, Settings, the destination form, Resize and the Toolbox (three Resize rows record 0bd6f94 as their source SHA while their image is the 3194247 one). They keep class `rendered` and carry the note; the final render pass after batch 6 refreshes the evidence, and any row it shows unchanged simply loses the note.
+
+STAT-001, TOOL-012, TOOL-013, TOOL-015, TOOL-016, TOOL-017, TOOL-018, TOOL-019, TOOL-021, TOOL-029, CAP-001, CAP-004, CAP-005, CAP-006, CAP-007, SET-006, DEST-014, DEST-016, DEST-022, DEST-025, SHEET-002, SHEET-003, SHEET-005, SHEET-026, SHEET-036, SHEET-037, SHEET-044, ICON-025, ICON-027, ICON-031, ICON-100, ICON-101, ICON-102, ICON-106, STATE-002, STATE-003, STATE-009, STATE-010, STATE-011, STATE-014, STATE-015, STATE-016, STATE-017, STATE-018, STATE-019, STATE-020, STATE-021, STATE-022
