@@ -140,11 +140,21 @@ enum ResizePanelGeometry {
                            width: size.width, height: size.height), target, picture)
         }
         let factor = min(target.width / output.width, target.height / output.height)
-        let fitted = CGSize(width: ResizePanelValidation.wholePixel(output.width * factor), height: ResizePanelValidation.wholePixel(output.height * factor))
+        var fitted = CGSize(width: ResizePanelValidation.wholePixel(output.width * factor), height: ResizePanelValidation.wholePixel(output.height * factor))
+        // R5-004: the same rule as for a snap's picture: a partner that is the rounded proportion is the size as typed (no pixel short).
+        if request.constrainProportions, partnerIsRoundedProportion(of: output, typed: target) { fitted = target }
         if request.constrainProportions { return (nil, try ResizePanelValidation.validate(fitted), picture) }
         let size = CGSize(width: target.width * source.width / (output.width * factor),
                           height: target.height * source.height / (output.height * factor))
         return (CGRect(x: (source.width-size.width)/2, y: (source.height-size.height)/2, width: size.width, height: size.height), target, picture)
+    }
+
+    /// Whether a proportional request is the base size's proportion with one side rounded: fitting by the smaller ratio would land a pixel
+    /// short on the side that was typed, so such a request is used as typed.
+    private static func partnerIsRoundedProportion(of base: CGSize, typed: CGSize) -> Bool {
+        let heightOff = abs(base.height * typed.width / base.width - typed.height)
+        let widthOff = abs(base.width * typed.height / base.height - typed.width)
+        return (heightOff <= 1 && widthOff <= 1) || min(heightOff, widthOff) <= 0.5 + 1e-6
     }
 
     private static func picturePlan(source: CGSize, displayed: CGSize, typed: CGSize, request: ResizePanelSubmission) throws -> ResizePicturePlan {
@@ -162,9 +172,7 @@ enum ResizePanelGeometry {
         // (a Limit of 1400 on 1981 × 953 pairs 673, and 1981 × 673 fits at 1399): a request whose partner is the rounded proportion on
         // either side is the picture exactly as typed.
         if request.constrainProportions {
-            let heightOff = abs(displayed.height * typed.width / displayed.width - typed.height)
-            let widthOff = abs(displayed.width * typed.height / displayed.height - typed.width)
-            if (heightOff <= 1 && widthOff <= 1) || min(heightOff, widthOff) <= 0.5 + 1e-6 { scaled = typed }
+            if partnerIsRoundedProportion(of: displayed, typed: typed) { scaled = typed }
             // R4-002: one side the picture's own and the partner its rounded proportion (2560 × 1799 of a 2560 × 1800 snap) is the
             // picture itself, not a resample a pixel short.
             if (typed.width == source.width && abs(typed.height - source.height) <= 1)

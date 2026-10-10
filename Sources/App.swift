@@ -325,6 +325,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         let pictureFit: CGFloat?
         let windowFrame: CGRect
         let scrollOrigin: CGPoint
+        /// Whether the window was full screen when Actual Size began, and the zoom full screen had chosen (R5-002).
+        var fullScreen = false
+        var fullScreenZoom: (generation: UUID, before: CGFloat, applied: CGFloat)?
         var savedWhileActive = false
     }
     var actualView: ActualViewState?
