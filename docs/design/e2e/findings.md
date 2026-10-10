@@ -986,26 +986,26 @@ The pasteboard held 14 bytes of text before the run; it was saved to a temp file
 
 **Round 1 status, as the reviewer stated it:** R1-005 (Toolbox icons) and R1-023 (model and tool names in committed files) are **reopened**; R1-017 (Settings › Capture cleanup) has a **regression**, tracked as R2-001; every other round 1 item stays as recorded in the round 1 section above.
 
-**Findings** (severity · ID · surface · finding · status). Only the findings this lane owns are described in full here; the others are listed with their routing as given in the lane brief, and their text stays with the reviewer's report.
+**Findings** (severity · ID · surface · finding · status). All findings are described below; routing as decided by the orchestrator, and their text stays with the reviewer's report.
 
-- · R2-001 · Settings › Capture · regression of R1-017 (the Capture cleanup) · batch 6.
-- · R2-002 · see the reviewer's report · batch 6.
-- · R2-003 · see the reviewer's report · batch 6.
-- · R2-004 · see the reviewer's report · batch 6.
-- · R2-005 · see the reviewer's report · batch 6.
+- P2 · R2-001 · Settings › Capture / global shortcuts · the batch-5 pause (`isShown && selectedIndex == captureTab`, SettingsWindow.swift ~1046, GlobalHotkeys.swift ~492) keeps every global capture shortcut off while Settings is merely shown on the Capture tab, even after switching to another app · batch 6 (pause only while Settings is key and the app active; resume on resign key, deactivate, hide, close).
+- P2 · R2-002 · document size · deeper cause of F-J6-001: `Canvas.renderSize` holds both the chosen Resize result and the auto-fit presentation size, so refits can overwrite a Resize; with Original size ticked export used `document.size` and ignored it; `dragAtOriginalSize` depended on the current screen (`isLargeShot`) · batch 6 (separate the chosen output size from the view fit; decide from the document).
+- P3 · R2-003 · bottom bar · the Original size checkbox stays on a canvas with no snap picture (after Remove Snap Picture) and does nothing · batch 6 (require a snap picture).
+- P3 · R2-004 · Toolbox · the selection-style pop-up places a row over its own button (the open menu covers Toolbox, Photos and part of the tools) and exposes a pop-up role with a value (the "Select All" of F-J6-009) · batch 6 (menu button that opens below itself, role menu button, label "Toolbox").
+- P3 · R2-005 · History · labels are chosen only after a resize, so with all labels shown the action row holds the window near 945 pt and 880 is unreachable by a real drag (likely cause of F-J6-006) · batch 6.
 - P3 · R2-006 · evidence text · `panelfix/00-cmd-o-panel-service.txt` line 1 named the computer-use tool · fixed in this lane (now "real-click driver"); `git grep` for model, vendor and tool names (case-insensitive, the assistant's own config folder excluded) leaves only `docs/design/e2e-audit-plan.md:7` and `docs/design/audit-overview.html` (root-owned) and one `.gitignore` entry for the assistant's worktree folder (owner decision).
 - P3 · R2-007 · ledger · E2E-SET-023 and E2E-KEY-021 cited image 16 (Settings open) for a "closed" result that is only a window-list readout · fixed in this lane: both moved to `unverified` with `gap: text readout only`; E2E-MENU-061 (the hidden state is a readout, the image shows the restore) treated the same way.
 - P3 · R2-008 · ledger · retired rows (HOT-001 to HOT-018, HOT-032, HOT-033, DEST-001 to DEST-006, DEST-030) still counted as rendered or E2E · fixed in this lane: a new evidence class `retired`, set by the generator for every row whose gap is `removed` or `replaced`; IDs and historic evidence stay in the row's observed and evidence columns.
 - P3 · R2-009 · ledger · rendered rows drawn from build 3194247 describe the chrome before batches 4 and 5 (E2E-STATE-002 "82 pt free at 980" among them) · fixed in this lane as a note: each carries "Re-check after batch 6" in its observed cell and keeps its class; the final render pass after batch 6 refreshes them.
 - · R2-010 · display options · covered by the final display-option render pass after batch 6.
 - P3 · R2-011 · evidence · `audit-fix-5/S42-status-notice-light` showed the normal status while its layout JSON reads "Saved to History"; `captures.md` said S42-status-after-notice names the export format (stale since R1-013) and that the S10 dark export panel did not produce, while `ZZ-unexpected-modal-1-dark` is that panel, blank · fixed in this lane in `captures.md` (mistimed capture marked, statement corrected, blank panel described); the final render pass recaptures the notice.
-- · R2-012 · see the reviewer's report · batch 6.
+- P3 · R2-012 · harness input fence · the swallowed-event count is never written to the run record, and mouseEntered/mouseExited/cursorUpdate are not fenced (a real cursor can still put hover states into captures) · batch 6.
 - P3 · R2-013 · tooling · the panel-service watchdogs killed any `openAndSavePanelService` above 2 GB system-wide, `panel-service-check.sh` counted other apps' services in its peak, and its cleanup touched the real Preferences folder · fixed in this lane: both watchdogs and the peak consider only a service whose `ps eww` environment names the session's own temp dir (`CFFIXED_USER_HOME=`, `HOME=` or `TMPDIR=` followed by `<dir>/`; an unreadable environment is left alone), and the real-home cleanup is gone. Tests use fake `ps`, `ps eww` and `kill`: a big service of another environment is not killed, one with the session environment is, and mutated scratch copies go red.
-- · R2-014 · see the reviewer's report · batch 6.
-- · R2-015 · see the reviewer's report · batch 6 if time, else next.
-- · R2-016 · see the reviewer's report · batch 6 if time, else next.
-- · R2-017 · see the reviewer's report · batch 6 if time, else next.
-- · R2-018 · see the reviewer's report · batch 6 if time, else next.
+- P3 · R2-014 · bottom bar at 980 · the status gets ~150 pt while PNG|JPG takes 134 pt and zoom + Resize… ~226 pt · batch 6 (compact format toggle below ~1100 pt, no "Error:" prefix, "Uploading… NN%").
+- P3 · R2-015 · History · at 1280×800 three fixed tiles leave ~26% of the grid empty; "Drag as" stretches to ~300 pt at 880; Details shows "Destination: —" for never-shared entries · batch 6 if time, else next.
+- P3 · R2-016 · Settings › Upload · a ~230 pt label column for the only control leaves the left quarter empty; the empty state still says "Right-click Upload to switch."; the selected row and the Default pill share one yellow · batch 6 if time, else next.
+- P3 · R2-017 · destination form · an empty Endpoint gives a three-line URL rule without naming or marking the field · batch 6 if time, else next.
+- P3 · R2-018 · WebDAV Test · a 2xx with a username set reports that the server accepted the login, although a server that never asks for auth also answers 2xx · batch 6 if time, else next.
 
 **Ledger sample (reviewer, at 14d4d9f).** Class counts E2E 322 · rendered 64 · unit/source 93 · unverified 118 (597 rows). 22 of 25 sampled E2E rows held; KEY-021 and SET-023 overclaimed (R2-007). DEST-001 was retired but still counted as E2E (R2-008). MENU-092 (Send to Back) is ambiguous: the two rectangles share a colour, so the stacking order cannot be read from the picture. All 118 unverified rows carry exactly one gap reason. No E2E row claims Differentiate Without Color or Increase Contrast as proven.
 
