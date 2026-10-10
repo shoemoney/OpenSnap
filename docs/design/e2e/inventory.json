@@ -973,7 +973,7 @@
    "surface": "Menu bar › Image",
    "name": "Resize…",
    "type": "menu item",
-   "icon": "ruler",
+   "icon": "arrow.up.right.and.arrow.down.left",
    "entryPath": "Menu bar › Image › Resize…",
    "prerequisite": "Not in Actual Size or Frame mode",
    "expected": "Resize or Crop sheet opens",
@@ -3658,7 +3658,7 @@
    "surface": "Bottom bar",
    "name": "Resize…",
    "type": "toolbar button",
-   "icon": "ruler-combined",
+   "icon": "up-right-and-down-left-from-center",
    "entryPath": "Bottom bar › Resize…",
    "prerequisite": "Fresh launch, empty document",
    "expected": "Resize or Crop sheet; disabled in Actual Size and Frame mode",
@@ -10698,7 +10698,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "case .font; Free codepoint 0xF031; SF fallback textformat.size; used in AboutWindow.swift, AppAlert.swift, Canvas.swift, DesignTokens.swift, DocumentModel.swift, ExportAccessory.swift, EyeDumpAudit.swift, EyeDumpAuditSurfaces.swift, GlassChrome.swift, GlobalHotkeys.swift, LegacyReader.swift, ModernEditorChrome.swift, OriginalCaptureCountdown.swift, OriginalHelpBevel.swift, ResizePanel.swift, SVGExport.swift, SettingsWindow.swift, StatusItemSupport.swift, TextStyleForm.swift",
+   "note": "case .font; Free codepoint 0xF031; SF fallback textformat.size; used in AboutWindow.swift, App.swift, AppAlert.swift, Canvas.swift, DesignTokens.swift, DocumentModel.swift, ExportAccessory.swift, EyeDumpAudit.swift, EyeDumpAuditSurfaces.swift, GlassChrome.swift, LegacyReader.swift, ModernEditorChrome.swift, OriginalCaptureCountdown.swift, OriginalHelpBevel.swift, ResizePanel.swift, SVGExport.swift, SettingsWindow.swift, StatusItemSupport.swift, TextStyleForm.swift",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -10757,30 +10757,6 @@
     "source"
    ],
    "id": "E2E-ICON-021"
-  },
-  {
-   "area": "ICON",
-   "surface": "FAIcon",
-   "name": "ruler-combined",
-   "type": "icon",
-   "icon": "ruler-combined",
-   "entryPath": "Bottom bar › Resize…",
-   "prerequisite": "Control visible",
-   "expected": "Renders as a Font Awesome glyph (0xF546) in release builds, or SF Symbol ruler when no glyph resolves; centred, template-tinted, matches its meaning",
-   "owner": "app",
-   "exercise": "e2e",
-   "gap": null,
-   "note": "case .rulerCombined; Free codepoint 0xF546; SF fallback ruler; used in ModernEditorChrome.swift",
-   "shortcut": null,
-   "proof": [],
-   "rendered": [
-    "S03",
-    "S04"
-   ],
-   "sources": [
-    "source"
-   ],
-   "id": "E2E-ICON-022"
   },
   {
    "area": "ICON",
@@ -12285,39 +12261,6 @@
   {
    "area": "ICON",
    "surface": "Menu leading symbol",
-   "name": "ruler",
-   "type": "icon",
-   "icon": "ruler",
-   "entryPath": "Menu bar / Toolbox row for resize",
-   "prerequisite": "Menu open",
-   "expected": "Leading SF Symbol ruler sits left of the resize item title, template-tinted, 20 pt row",
-   "owner": "app",
-   "exercise": "e2e",
-   "gap": null,
-   "note": "selector resize",
-   "shortcut": null,
-   "proof": [
-    {
-     "file": "MenuSymbolsTests.swift",
-     "test": "maps to"
-    },
-    {
-     "file": "AppSafetyMenuCases.swift",
-     "test": "Every menu and Toolbox row has an SF symbol or a named exemption"
-    }
-   ],
-   "rendered": [
-    "S12",
-    "S16"
-   ],
-   "sources": [
-    "source"
-   ],
-   "id": "E2E-ICON-072"
-  },
-  {
-   "area": "ICON",
-   "surface": "Menu leading symbol",
    "name": "pencil",
    "type": "icon",
    "icon": "pencil",
@@ -13377,6 +13320,63 @@
     "source"
    ],
    "id": "E2E-ICON-106"
+  },
+  {
+   "area": "ICON",
+   "surface": "FAIcon",
+   "name": "up-right-and-down-left-from-center",
+   "type": "icon",
+   "icon": "up-right-and-down-left-from-center",
+   "entryPath": "Bottom bar › Resize…",
+   "prerequisite": "Control visible",
+   "expected": "Renders as a Font Awesome glyph (0xF424) in release builds, or SF Symbol arrow.up.right.and.arrow.down.left when no glyph resolves; centred, template-tinted, matches its meaning",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": "case .resizeDiagonal; Free codepoint 0xF424; SF fallback arrow.up.right.and.arrow.down.left; used in ModernEditorChrome.swift",
+   "shortcut": null,
+   "proof": [],
+   "rendered": [
+    "S03",
+    "S04"
+   ],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-ICON-107"
+  },
+  {
+   "area": "ICON",
+   "surface": "Menu leading symbol",
+   "name": "arrow.up.right.and.arrow.down.left",
+   "type": "icon",
+   "icon": "arrow.up.right.and.arrow.down.left",
+   "entryPath": "Menu bar / Toolbox row for resize",
+   "prerequisite": "Menu open",
+   "expected": "Leading SF Symbol arrow.up.right.and.arrow.down.left sits left of the resize item title, template-tinted, 20 pt row",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": "selector resize",
+   "shortcut": null,
+   "proof": [
+    {
+     "file": "MenuSymbolsTests.swift",
+     "test": "maps to"
+    },
+    {
+     "file": "AppSafetyMenuCases.swift",
+     "test": "Every menu and Toolbox row has an SF symbol or a named exemption"
+    }
+   ],
+   "rendered": [
+    "S12",
+    "S16"
+   ],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-ICON-108"
   },
   {
    "area": "KEY",
