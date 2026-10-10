@@ -3,7 +3,7 @@
     "project": "OpenSnap",
     "round": 2,
     "generated": "2026-10-09",
-    "statusNote": "Implementation progress at main 284f028 (baseline bad6617): 29 done, 2 verified, 1 not-a-bug, 3 in-progress, 1 pending, of 36 todos. OSN-044, OSN-054, OSN-060 and OSN-061 are done at merges 3ee9503, 7c8bdb1 and accfedd; OSN-062 stays in-progress (manual VoiceOver pass not recorded). Each todo's status, mainState and implementation block record its main state at the SHA named there. Audit findings and priority counts are unchanged.",
+    "statusNote": "Implementation progress at main fa4715f (baseline bad6617): 29 done, 2 verified, 1 not-a-bug, 3 in-progress, 1 pending, of 36 todos. Statuses are unchanged since 284f028. The E2E audit merges since then (batch 4 `04dda5b`, panel-service fix `fa4715f`) changed evidence notes only, on OSN-045, OSN-051, OSN-053 and OSN-061. OSN-044, OSN-054, OSN-060 and OSN-061 are done at merges 3ee9503, 7c8bdb1 and accfedd; OSN-062 stays in-progress (manual VoiceOver pass not recorded); OSN-071 stays pending until independent review round 2. Each todo's status, mainState and implementation block record its main state at the SHA named there. Audit findings and priority counts are unchanged.",
     "auditedShas": {
       "briefed": "b9319c4",
       "drift": [
@@ -1835,7 +1835,7 @@
       "priority": "P1",
       "milestone": "M4",
       "status": "done",
-      "mainState": "Done: chrome icons resolve as Font Awesome Free 7.3.1 vectors compiled as path data (Sources/FontAwesomeFree.swift; no font files, no Pro material). The chain is Pro glyph (dev only), then Free vector, then SF Symbol, then none. Icons are CC BY 4.0, credited in THIRD_PARTY_NOTICES.md and reachable from About via \"Third-party notices\". Wipe uses the broom icon (SF fallback eraser.line.dashed); delete is trash. Menus keep SF Symbols (Q1). Merged in 439d734.",
+      "mainState": "Done: chrome icons resolve as Font Awesome Free 7.3.1 vectors compiled as path data (Sources/FontAwesomeFree.swift; no font files, no Pro material). The chain is Pro glyph (dev only), then Free vector, then SF Symbol, then none. Icons are CC BY 4.0, credited in THIRD_PARTY_NOTICES.md and reachable from About via \"Third-party notices\". Wipe uses the broom icon (SF fallback eraser.line.dashed); delete is trash. Menus keep SF Symbols (Q1). Merged in 439d734. Batch 4 (`1d8c3d3`) gave Resize the Font Awesome Free resize arrows and drew icons on the Toolbox rows. Rendered in `audit-fix-4` only, in SF icon mode (Font Awesome unavailable at `1026e58`); not real-click retested (pending J6).",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -1990,7 +1990,7 @@
       "priority": "P1",
       "milestone": "M5",
       "status": "done",
-      "mainState": "Merged to main in e124f77 (impl/m5-settings integrated at a79a1d8 with the App.swift hunk, app-safety seam and legacy form removal); full suite green, app-safety 166/166.",
+      "mainState": "Merged to main in e124f77 (impl/m5-settings integrated at a79a1d8 with the App.swift hunk, app-safety seam and legacy form removal); full suite green, app-safety 166/166. Batch 4 (`d9ed8b7`, `12b75e6`) fitted the destination forms, made destructive sheets Cancel-first and put destination errors on the page they were raised on. Rendered in `audit-fix-4`; not real-click retested (pending J6).",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -2118,7 +2118,7 @@
       "priority": "P1",
       "milestone": "M5",
       "status": "done",
-      "mainState": "Done: History is a content-first grid (16 pt gaps, 2, 3 and 4 columns at 880, 1000 and 1280) with check-badge selection, centred empty state, icon action row and .opensnap drag, merged in f484d3e.",
+      "mainState": "Done: History is a content-first grid (16 pt gaps, 2, 3 and 4 columns at 880, 1000 and 1280) with check-badge selection, centred empty state, icon action row and .opensnap drag, merged in f484d3e. Batch 4 (`d9ed8b7`, `e3f99b8`) added a History footer notice after Delete from Web and kept the published size on Shared entries. Not real-click retested (pending J6).",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -2535,7 +2535,7 @@
       "priority": "P1",
       "milestone": "M6",
       "status": "done",
-      "mainState": "Done on main: part 1 at accfedd (DisplayOptions model, countdown, flash, hint bevel) and part 2 at 3ee9503 (Differentiate Without Color and Increase Contrast consumers on the states work). The harness-gated --display injection in tools/eye-dump-audit.sh is the capture path; a normal launch cannot use it. J3 ran positive controls for all four options (rendered only).",
+      "mainState": "Done on main: part 1 at accfedd (DisplayOptions model, countdown, flash, hint bevel) and part 2 at 3ee9503 (Differentiate Without Color and Increase Contrast consumers on the states work). The harness-gated --display injection in tools/eye-dump-audit.sh is the capture path; a normal launch cannot use it. J3 ran positive controls for all four options (rendered only). Batch 4 (`6d833a8`) outlines the selected PNG | JPG and the Settings tab under Differentiate Without Color, and darkens glyphs under Increase Contrast. Rendered in `audit-fix-4` (dwc and ic, source `1026e58`, SF icon mode); not real-click.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -2605,7 +2605,7 @@
       "priority": "P1",
       "milestone": "M6",
       "status": "in-progress",
-      "mainState": "In progress: labels, Announcer announcements and the G10 accessibility audit walker (32 surfaces, 0 violations) are on main at 7c8bdb1 and 4fca729. The recorded manual VoiceOver pass is not done: VoiceOver speech was not run in any lane and stays on the gap list.",
+      "mainState": "In progress: labels, Announcer announcements and the G10 accessibility audit walker (32 surfaces, 0 violations) are on main at 7c8bdb1 and 4fca729. The recorded manual VoiceOver pass is not done: VoiceOver speech was not run in any lane and stays on the gap list. The E2E audit's keyboard walk (J1, F-J1-007) passed with real Tab presses. That is keyboard evidence, not the manual VoiceOver pass.",
       "remainingWork": null,
       "openItems": [
         "Manual VoiceOver pass not recorded (the todo requires it). VoiceOver speech is outside what the harness can prove."
@@ -2778,7 +2778,7 @@
       "priority": "P0",
       "milestone": "M7",
       "status": "pending",
-      "mainState": "Open: the full visual acceptance gallery and the independent visual sign-off have not been run on the implemented surfaces.",
+      "mainState": "Pending: the full visual acceptance gallery and the independent visual sign-off have not been run on the implemented surfaces. The E2E audit and review round 1 do not close this todo; it waits for independent review round 2 and the final gates.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
