@@ -60,7 +60,7 @@ enum HistoryStoreTests {
         try store.follow(id, snapshot: revised, name: "Renamed")
         try expect(store.entries[0] == stable, "Unchanged follow preserves revision and update date")
         let exportID = try store.archive(first, name: "Export", action: .exported, destination: "/user/original.png", date: date.addingTimeInterval(100))
-        try expect(store.entries[0].id == exportID && store.entries[0].action.title == "Exported/Dragged", "Newest action first and original exported category")
+        try expect(store.entries[0].id == exportID && store.entries[0].action.title == "Exported", "Newest action first and original exported category")
         let exportFile = directory.appendingPathComponent(store.entries[0].nativeFile)
         try store.remove([exportID], deleteFiles: false)
         try expect(FileManager.default.fileExists(atPath: exportFile.path), "Remove is list-only")

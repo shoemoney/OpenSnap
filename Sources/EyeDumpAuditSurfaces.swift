@@ -1211,10 +1211,35 @@ extension AuditRun {
         let key = form.keyPopup(for: .screen)
         key.selectItem(withTitle: "K"); _ = key.target?.perform(key.action, with: key)
         capture(2, "capture-error", "Capture tab with a refused shortcut (a key with no Command or Control)")
+        // A chosen shortcut: the selected modifier segments are drawn in the accent (Option and Control here).
+        let modifiers = form.modifierControl(for: .screen)
+        controller.select(2)
+        key.selectItem(withTitle: "K"); _ = key.target?.perform(key.action, with: key)
+        modifiers.setSelected(true, forSegment: 1); modifiers.setSelected(true, forSegment: 2); _ = modifiers.target?.perform(modifiers.action, with: modifiers)
+        capture(2, "capture-modifiers", "Capture tab with Option-Control-K chosen for Screen region: the selected modifier segments are in the accent")
         key.selectItem(at: 0); _ = key.target?.perform(key.action, with: key)
         destinations = PublishingDestinationList()
         controller.refresh()
         capture(3, "upload-empty", "Upload tab, no destination saved")
+        // Eight destinations: the list shows five and says so, the window grows to hold them and the caption stays in view.
+        let extra = ["Backup WebDAV", "Team SFTP", "Archive S3", "Staging WebDAV", "Press kit SFTP"].map { PublishingDestination(name: $0, settings: $0.contains("S3") ? s3 : ($0.contains("SFTP") ? sftp : dav)) }
+        destinations = PublishingDestinationList(defaultID: items[0].id, destinations: items + extra)
+        controller.refresh()
+        capture(3, "upload-many", "Upload tab, eight saved destinations: five listed, then 'and 3 more', the caption and Manage button in view")
+        // A 640 pt tall screen: the list gives up room and scrolls inside its frame, so the window still fits and the caption is still seen.
+        let short = NSRect(x: screen.minX, y: screen.maxY - 616, width: 1136, height: 616)
+        controller.select(3)
+        place(short)
+        controller.window.contentView?.layoutSubtreeIfNeeded()
+        shoot("S17", "settings-upload-many-640", surface: "Settings: Upload", state: "Upload tab, eight destinations on a 640 pt tall screen (616 pt visible): same window, list capped",
+              windows: [controller.window], refs: refs, settle: 0.5,
+              extra: ["fakeScreen": "1136x640", "fakeVisibleHeight": 616.0, "windowHeight": Double(controller.window.frame.height), "fitsVisibleHeight": controller.window.frame.height <= 616])
+        let compact = NSRect(x: screen.minX, y: screen.maxY - 440, width: 1136, height: 440)
+        place(compact)
+        controller.window.contentView?.layoutSubtreeIfNeeded()
+        shoot("S17", "settings-upload-many-440", surface: "Settings: Upload", state: "Upload tab, eight destinations on a very short 440 pt visible height: the list scrolls inside, the caption stays in view",
+              windows: [controller.window], refs: refs, settle: 0.5,
+              extra: ["fakeScreen": "1136x440", "fakeVisibleHeight": 440.0, "windowHeight": Double(controller.window.frame.height), "fitsVisibleHeight": controller.window.frame.height <= 440])
         controller.window.orderOut(nil)
     }
 
@@ -1278,6 +1303,26 @@ extension AuditRun {
             pump(0.5)
             shootSheet("S19", "destinations-short-screen", surface: "Destinations / Publishing", state: "edit form on a short display (visible frame 1280 x 500): the form scrolls and Test, Cancel and Save stay pinned", refs: ["Publishing.swift|func buildSettings(visibleFrame", "PublishingDestinationsView.swift|static func sheetSize"], host: window, sheet: shortPanel)
             closeHarnessSheet(shortPanel)
+            // Audit batch 3b: one form per protocol with its own placeholders, help and Test note; a Test result for a non-S3 protocol;
+            // and the sheet as it hangs from the 640 pt Settings window (as wide as its parent, never overhanging it).
+            let (formPanel, formView) = try app.publishing.buildSettings()
+            window.beginSheet(formPanel); pump(0.8)
+            formView.addTapped()
+            for transport in PublishingProtocol.allCases {
+                formView.protocolPopup.selectItem(withTitle: transport.title); formView.formChanged()
+                pump(0.4)
+                shootSheet("S19", "destinations-form-\(transport.rawValue.lowercased())", surface: "Destinations / Publishing", state: "new \(transport.title) destination: its own endpoint scheme, placeholders and help, and the Test note in the one-line result band", refs: ["PublishingDestinationsView.swift|static func formCopy", "PublishingDestinationsView.swift|private func refreshForm"], host: window, sheet: formPanel)
+            }
+            formView.protocolPopup.selectItem(withTitle: PublishingProtocol.webDAV.title); formView.formChanged()
+            formView.showTestResult(ok: false, message: "The server rejected the user name or password (HTTP 401).")
+            pump(0.4)
+            shootSheet("S19", "destinations-test-error-webdav", surface: "Destinations / Publishing", state: "WebDAV form after a synthetic failed Test (HTTP 401): the band grows to its lines and the form above it shrinks to make room", refs: ["Publishing.swift|enum PublishingConnectionTest", "PublishingDestinationsView.swift|func showTestResult"], host: window, sheet: formPanel)
+            closeHarnessSheet(formPanel)
+            let (narrowPanel, narrowView) = try app.publishing.buildSettings(hostWidth: SettingsLayout.contentWidth)
+            window.beginSheet(narrowPanel); pump(0.8)
+            narrowView.select(id: try AppDelegate.publishingStore.load().defaultID ?? ""); narrowView.editTapped(); pump(0.5)
+            shootSheet("S19", "destinations-from-settings-640", surface: "Destinations / Publishing", state: "the sheet as hosted by the 640 pt Settings window: 640 wide, so it never overhangs its parent", refs: ["Publishing.swift|func buildSettings(visibleFrame", "PublishingDestinationsView.swift|static func sheetWidth(forHostWidth"], host: window, sheet: narrowPanel)
+            closeHarnessSheet(narrowPanel)
         } catch { gap("S19", "Destinations list/edit form", "buildSettings threw: \(error.localizedDescription)") }
     }
 
@@ -1333,9 +1378,24 @@ extension AuditRun {
                     shoot("S20", "history-\(Int(width))x\(Int(height))-selected", surface: "History browser", state: "six synthetic entries, one selected, window \(Int(width)) x \(Int(height)): grid reflow, check badge, details beside the grid", windows: [history], refs: ["HistoryBrowser.swift|final class HistoryTileView", "HistoryBrowser.swift|func layoutDetails"])
                 }
                 history.setFrame(NSRect(x: history.frame.minX, y: max(40, history.frame.maxY - 600), width: 880, height: 600), display: true)
-                app.historyBrowser?.setFilters(category: .posted, date: .all, query: "no such snap")
+                app.historyBrowser?.setFilters(category: .shared, date: .all, query: "no such snap")
                 pump(0.6)
                 shoot("S20", "history-no-match", surface: "History browser", state: "filters that match nothing at 880 x 600: centred message, no save hint", windows: [history], refs: ["HistoryBrowser.swift|private func updateEmptyState"])
+                app.historyBrowser?.setFilters(category: .all)
+                // Audit batch 3b: nothing selected at the minimum (summary column), a clipped link made whole, and the footer confirmation.
+                app.historyBrowser?.select(ids: [])
+                pump(0.6)
+                shoot("S20", "history-880x600-none", surface: "History browser", state: "880 x 600, nothing selected: the details column shows the summary instead of a blank hint; tiles sized to their preview", windows: [history], refs: ["HistoryBrowser.swift|static func summaryLines", "HistoryBrowser.swift|static func tileHeight"])
+                if let shared = app.historyStore?.entries.first(where: { $0.remoteURL != nil })?.id {
+                    app.historyBrowser?.select(ids: [shared])
+                    app.historyBrowser?.confirm("Link copied")
+                    pump(0.6)
+                    shoot("S20", "history-link-copied", surface: "History browser", state: "a Shared entry selected after Copy Link: the footer confirms, and the destination link is cut in its middle with the full text in its tooltip", windows: [history], refs: ["HistoryBrowser.swift|func confirm", "HistoryBrowser.swift|let isLink"])
+                    app.historyBrowser?.clearConfirmation()
+                }
+                app.historyBrowser?.setFilters(category: .shared, date: .all, query: "no such snap")
+                pump(0.6)
+                shoot("S20", "history-no-match-footer", surface: "History browser", state: "filters that match nothing: the footer stays (0 of 6 items) and Clear filters offers the way out", windows: [history], refs: ["HistoryBrowser.swift|func clearFilters", "HistoryBrowser.swift|static func statusText"])
                 app.historyBrowser?.setFilters(category: .all)
             }
             history.orderOut(nil)
@@ -1390,7 +1450,17 @@ extension AuditRun {
             pump(1.5)
             shoot("S21", "publish-error-\(width)", surface: "publish error", state: "inline Error: with the Retry and Details icon buttons on their plate after a stubbed failed upload, at \(width)", refs: refs, extra: ["status": app.status.stringValue, "uploadState": String(describing: app.uploadState), "originalSizeCheckboxHidden": app.dragOriginalControl.isHidden])
             shoot("S21", "publish-error-footer-\(width)", surface: "publish error", state: "footer crop with the inline error, Retry and Details, at \(width)", crop: footerCrop(), refs: refs, settle: 0.1)
-            captureAlertSheet("S21", "publish-error-details-\(width)", surface: "publish error", state: "the Details\u{2026} sheet with the whole error, at \(width)", refs: ["App+Upload.swift|func showUploadErrorDetails"]) { app.showUploadErrorDetails() }
+            captureAlertSheet("S21", "publish-error-details-\(width)", surface: "publish error", state: "the Details\u{2026} sheet with the whole error (no second Error: under the title), at \(width)", refs: ["App+Upload.swift|func showUploadErrorDetails"]) { app.showUploadErrorDetails() }
+            // Retry while the stub holds the transfer: the status names the new attempt.
+            gate.mode = "wait"
+            app.retryUpload()
+            pump(0.8)
+            shoot("S21", "publish-retrying-\(width)", surface: "publish retry", state: "Retrying <name>\u{2026} with the spinner and Cancel, after Retry from a failed upload, at \(width)", refs: refs, extra: ["status": app.status.stringValue, "uploadState": String(describing: app.uploadState)])
+            app.cancelUpload()
+            gate.release.signal()
+            pump(1.2)
+            shoot("S21", "publish-cancelled-\(width)", surface: "publish cancelled", state: "Upload cancelled in the status line after Cancel, kept for ten seconds, at \(width)", refs: refs + ["UploadStatus.swift|enum UploadNotice"], extra: ["status": app.status.stringValue, "uploadState": String(describing: app.uploadState)])
+            UploadNotice.clear()
             app.uploadState = .idle
             pump(0.3)
         }
@@ -1506,7 +1576,14 @@ extension AuditRun {
                        "licenseLink": about.licenseButton.attributedTitle.string,
                        "fonts": ["name": fontInfo(about.nameLabel.font) as Any, "version": fontInfo(about.versionLabel.font) as Any, "credit": fontInfo(about.creditLabel.font) as Any,
                                  "licenseLink": fontInfo(about.licenseButton.font) as Any],
-                       "note": "Title bar text is hidden in the window and kept only as the accessibility title."] as [String: Any], to: "about" + stemSuffix + ".json")
+                       "note": "The title bar text is visible, so the window has a name to find it by.", "titleVisible": about.titleVisibility == .visible] as [String: Any], to: "about" + stemSuffix + ".json")
+            }
+            if let about = panel as? AboutWindow {
+                let license = about.makeLicenseWindow()
+                license.setFrameTopLeftPoint(NSPoint(x: panel.frame.maxX + 24, y: panel.frame.maxY))
+                license.makeKeyAndOrderFront(nil); pump(0.6)
+                shoot("S25", "license-window", surface: "About window", state: "the MIT License window with the paragraphs reflowed to the window width", windows: [license], refs: ["AboutWindow.swift|static func reflowed"])
+                license.orderOut(nil)
             }
             panel.orderOut(nil)
         } else { gap("S25", "About window", "the About window was not found") }
@@ -1541,7 +1618,7 @@ extension AuditRun {
                 view.select(id: target.id)
                 view.removeTapped(); pump(0.9)
                 if let alert = AppAlert.presentedAlerts.last {
-                    shoot("S26", "remove-destination", surface: "alerts / sheets", state: "Remove “\(name)”? sheet on the Upload Destinations sheet (default destination): destructive Remove, Cancel",
+                    shoot("S26", "remove-destination", surface: "alerts / sheets", state: "Remove “\(name)”? sheet on the Upload Destinations sheet (default destination): Cancel is the default, Remove is destructive",
                           windows: [alert.panel, panel, window], refs: ["PublishingDestinationsView.swift|private func askToRemove", "AppAlert.swift|final class AppAlert"], settle: 0.1,
                           extra: ["alertTitle": alert.title, "alertButtons": alert.buttons.map(\.title), "titleFont": fontInfo(alert.titleLabel.font) as Any, "messageFont": fontInfo(alert.messageLabel.font) as Any,
                                   "buttonFonts": alert.buttonViews.map { fontInfo($0.font) as Any }, "presentedAs": panel.attachedSheet === alert.panel ? "sheet on the Upload Destinations sheet" : "separate panel"])

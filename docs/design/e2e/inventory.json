@@ -11184,7 +11184,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "case .font; Free codepoint 0xF031; SF fallback textformat.size; used in AboutWindow.swift, Canvas.swift, DesignTokens.swift, DocumentModel.swift, ExportAccessory.swift, EyeDumpAudit.swift, EyeDumpAuditSurfaces.swift, GlassChrome.swift, GlobalHotkeys.swift, LegacyReader.swift, ModernEditorChrome.swift, OriginalCaptureCountdown.swift, OriginalHelpBevel.swift, ResizePanel.swift, SVGExport.swift, SettingsWindow.swift, StatusItemSupport.swift, TextStyleForm.swift",
+   "note": "case .font; Free codepoint 0xF031; SF fallback textformat.size; used in AboutWindow.swift, AppAlert.swift, Canvas.swift, DesignTokens.swift, DocumentModel.swift, ExportAccessory.swift, EyeDumpAudit.swift, EyeDumpAuditSurfaces.swift, GlassChrome.swift, GlobalHotkeys.swift, LegacyReader.swift, ModernEditorChrome.swift, OriginalCaptureCountdown.swift, OriginalHelpBevel.swift, ResizePanel.swift, SVGExport.swift, SettingsWindow.swift, StatusItemSupport.swift, TextStyleForm.swift",
    "shortcut": null,
    "proof": [],
    "rendered": [

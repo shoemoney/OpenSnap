@@ -77,6 +77,11 @@ final class AppAlert: NSObject {
             button.frame.size = NSSize(width: max(Self.minimumButtonWidth, button.frame.width + 2 * DesignTokens.Space.s2),
                                        height: max(button.frame.height, DesignTokens.Size.control))
             button.hasDestructiveAction = spec.role == .destructive
+            // The system does not paint a destructive push button in this build, so the label carries the warning colour (with its words).
+            if spec.role == .destructive {
+                button.contentTintColor = DesignTokens.Palette.feedbackError
+                button.attributedTitle = NSAttributedString(string: spec.title, attributes: [.font: Typography.font(.body), .foregroundColor: DesignTokens.Palette.feedbackError])
+            }
             button.setAccessibilityLabel(spec.title)
             if index == 0 { button.keyEquivalent = "\r" }
             else if spec.answersEscape { button.keyEquivalent = "\u{1b}" }
