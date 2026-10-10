@@ -11,7 +11,7 @@ enum FAFamily: String, CaseIterable, Sendable {
 }
 
 enum FAIcon: String, CaseIterable, Sendable {
-    case eyeSlash = "eye-slash", toolbox, images, floppyDisk = "floppy-disk", clockRotateLeft = "clock-rotate-left",
+    case eyeSlash = "eye-slash", toolbox, images, boxArchive = "box-archive", clockRotateLeft = "clock-rotate-left",
          arrowPointer = "arrow-pointer", paintbrush, slashForward = "slash-forward", circle, square, fillDrip = "fill-drip",
          eraser, text, arrowUpRight = "arrow-up-right", cropSimple = "crop-simple", crosshairs, frameViewfinder = "camera-viewfinder",
          xmark, font, arrowRotateLeft = "arrow-rotate-left", broom, rulerCombined = "ruler-combined",
@@ -24,7 +24,7 @@ enum FAIcon: String, CaseIterable, Sendable {
         case .eyeSlash: return 0xF070
         case .toolbox: return 0xF552
         case .images: return 0xF302
-        case .floppyDisk: return 0xF0C7
+        case .boxArchive: return 0xF187
         case .clockRotateLeft: return 0xF1DA
         case .arrowPointer: return 0xF245
         case .paintbrush: return 0xF1FC
@@ -66,7 +66,7 @@ enum FAIcon: String, CaseIterable, Sendable {
         case .eyeSlash: return "eye.slash"
         case .toolbox: return "wrench.and.screwdriver"
         case .images: return "photo.on.rectangle"
-        case .floppyDisk: return "square.and.arrow.down"
+        case .boxArchive: return "archivebox"
         case .clockRotateLeft: return "clock.arrow.circlepath"
         case .arrowPointer: return "cursorarrow"
         case .paintbrush: return "paintbrush"

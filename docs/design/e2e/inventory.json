@@ -31,7 +31,7 @@
   "HARN": "Seen by the harness, not accounted for by a source table"
  },
  "counts": {
-  "total": 605,
+  "total": 607,
   "byArea": {
    "A11Y": 6,
    "ALERT": 7,
@@ -42,8 +42,8 @@
    "HIST": 42,
    "HOT": 40,
    "ICON": 105,
-   "KEY": 34,
-   "MENU": 87,
+   "KEY": 35,
+   "MENU": 88,
    "SET": 24,
    "SHEET": 52,
    "STAT": 5,
@@ -56,24 +56,24 @@
    "control": 149,
    "gesture": 28,
    "icon": 105,
-   "menu item": 147,
+   "menu item": 148,
    "popover": 2,
    "preference": 18,
    "sheet": 15,
-   "shortcut": 41,
+   "shortcut": 42,
    "state": 60,
    "toolbar button": 31,
    "window": 3
   },
   "byExercise": {
-   "e2e": 524,
+   "e2e": 526,
    "e2e-partial": 55,
    "gap": 26
   },
   "byGap": {
    "display-hardware": 3,
    "global-hotkey-background": 6,
-   "none": 524,
+   "none": 526,
    "os-panel": 40,
    "photos-library": 1,
    "printer": 3,
@@ -82,7 +82,7 @@
    "voiceover": 1
   },
   "byOwner": {
-   "app": 586,
+   "app": 588,
    "os": 19
   }
  },
@@ -2469,6 +2469,31 @@
    "id": "E2E-MENU-088"
   },
   {
+   "area": "MENU",
+   "surface": "Menu bar › Window",
+   "name": "Enter Full Screen",
+   "type": "menu item",
+   "icon": null,
+   "entryPath": "Menu bar › Window › Enter Full Screen",
+   "prerequisite": "Fresh launch, empty document",
+   "expected": "Enters or leaves full screen; the title reads Enter Full Screen or Exit Full Screen and follows the window; disabled in Frame mode",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": null,
+   "shortcut": "⌃⌘F",
+   "proof": [],
+   "rendered": [
+    "S12",
+    "S16",
+    "S17"
+   ],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-MENU-089"
+  },
+  {
    "area": "TOOLBOX",
    "surface": "Toolbar › Toolbox",
    "name": "Toolbox",
@@ -4167,7 +4192,7 @@
    "surface": "Bottom bar",
    "name": "Save",
    "type": "toolbar button",
-   "icon": "floppy-disk",
+   "icon": "box-archive",
    "entryPath": "Bottom bar › Save",
    "prerequisite": "A drawing on the canvas",
    "expected": "Saves to History (tooltip Save to History); status confirms",
@@ -5646,7 +5671,7 @@
    "icon": null,
    "entryPath": "Canvas › Tab",
    "prerequisite": "A drawing on the canvas",
-   "expected": "Switches to the Brush tool and back to the previous tool (pencil toggle)",
+   "expected": "Control-Tab switches to the Brush tool and back to the previous tool (pencil toggle); plain Tab moves the keyboard to the next control, and does the pencil toggle only while the bars are not tab stops (Full Keyboard Access off)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
@@ -10814,30 +10839,6 @@
   {
    "area": "ICON",
    "surface": "FAIcon",
-   "name": "floppy-disk",
-   "type": "icon",
-   "icon": "floppy-disk",
-   "entryPath": "Bottom bar › Save",
-   "prerequisite": "Control visible",
-   "expected": "Renders as a Font Awesome glyph (0xF0C7) in release builds, or SF Symbol square.and.arrow.down when no glyph resolves; centred, template-tinted, matches its meaning",
-   "owner": "app",
-   "exercise": "e2e",
-   "gap": null,
-   "note": "case .floppyDisk; Free codepoint 0xF0C7; SF fallback square.and.arrow.down; used in ModernEditorChrome.swift",
-   "shortcut": null,
-   "proof": [],
-   "rendered": [
-    "S03",
-    "S04"
-   ],
-   "sources": [
-    "source"
-   ],
-   "id": "E2E-ICON-004"
-  },
-  {
-   "area": "ICON",
-   "surface": "FAIcon",
    "name": "clock-rotate-left",
    "type": "icon",
    "icon": "clock-rotate-left",
@@ -13840,6 +13841,30 @@
    "id": "E2E-ICON-105"
   },
   {
+   "area": "ICON",
+   "surface": "FAIcon",
+   "name": "box-archive",
+   "type": "icon",
+   "icon": "box-archive",
+   "entryPath": "Bottom bar › Save",
+   "prerequisite": "Control visible",
+   "expected": "Renders as a Font Awesome glyph (0xF187) in release builds, or SF Symbol archivebox when no glyph resolves; centred, template-tinted, matches its meaning",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": "case .boxArchive; Free codepoint 0xF187; SF fallback archivebox; used in ModernEditorChrome.swift",
+   "shortcut": null,
+   "proof": [],
+   "rendered": [
+    "S03",
+    "S04"
+   ],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-ICON-106"
+  },
+  {
    "area": "KEY",
    "surface": "Menu key equivalents › OpenSnap",
    "name": "⌘, Settings…",
@@ -14620,6 +14645,29 @@
     "source"
    ],
    "id": "E2E-KEY-034"
+  },
+  {
+   "area": "KEY",
+   "surface": "Menu key equivalents › Window",
+   "name": "⌃⌘F Enter Full Screen",
+   "type": "shortcut",
+   "icon": null,
+   "entryPath": "Press ⌃⌘F with the editor key",
+   "prerequisite": "Fresh launch, empty document",
+   "expected": "Runs Enter Full Screen",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": null,
+   "shortcut": "⌃⌘F",
+   "proof": [],
+   "rendered": [
+    "S12"
+   ],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-KEY-035"
   },
   {
    "area": "STATE",

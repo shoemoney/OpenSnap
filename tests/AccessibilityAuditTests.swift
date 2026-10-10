@@ -455,6 +455,37 @@ private enum AccessibilityAuditTests {
             expect(panel.sheetParent == nil, "Resize: \(name) ends the sheet")
         }
 
+        // Return and Escape typed into a size field answer for the sheet as well (audit F-J1-004): Return is OK whether or not the sheet's own key
+        // equivalents are live, Apply is only the preview button, and the preset name field keeps Return for its own text.
+        for (name, command, applies) in [("Return", #selector(NSResponder.insertNewline(_:)), true), ("Escape", #selector(NSResponder.cancelOperation(_:)), false)] {
+            let suite = "OpenSnapAccessibilityAudit.fieldkeys." + UUID().uuidString
+            let defaults = TestDefaults(name: suite); defer { TestDefaults.dispose(defaults, name: suite) }
+            var applied: [CGSize] = []
+            let parent = parentWindow()
+            let resize = ResizePanel(session: ResizePanelSession(size: CGSize(width: 800, height: 600), onApply: { size, _, _ in applied.append(size) }),
+                                     presets: ResizePresetStore(defaults: defaults))
+            resize.show(attachedTo: parent)
+            guard let panel: NSPanel = private_(resize, "panel"), let content = panel.contentView else { expect(false, "Resize panel exists"); continue }
+            func field(_ label: String) -> NSTextField? {
+                func search(_ view: NSView) -> NSTextField? {
+                    if let field = view as? NSTextField, field.accessibilityLabel() == label { return field }
+                    for sub in view.subviews { if let hit = search(sub) { return hit } }
+                    return nil
+                }
+                return search(content)
+            }
+            guard let width = field("Width in pixels"), let preset = field("Preset name") else { expect(false, "Resize fields exist"); continue }
+            expect(panel.defaultButtonCell !== button(titled: "Apply", in: panel)?.cell && panel.defaultButtonCell === button(titled: "OK", in: panel)?.cell,
+                   "Resize: Apply is the plain preview button and OK is the default")
+            width.stringValue = "400"
+            resize.controlTextDidChange(Notification(name: NSControl.textDidChangeNotification, object: width))
+            expect(resize.control(preset, textView: NSTextView(), doCommandBy: command) == false && applied.isEmpty && panel.sheetParent === parent,
+                   "Resize: \(name) in the preset name field is left to that field")
+            expect(resize.control(width, textView: NSTextView(), doCommandBy: command), "Resize: \(name) in the width field is handled")
+            expect(applied.count == (applies ? 1 : 0) && (!applies || applied[0].width == 400), "Resize: \(name) in the width field \(applies ? "applies the typed size once (OK)" : "applies nothing (Cancel)") (\(applied))")
+            expect(panel.sheetParent == nil, "Resize: \(name) in the width field closes the sheet")
+        }
+
         // Photos: Escape closes without opening; Return opens the selected photo and does nothing while nothing is selected.
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent("opensnap-a11y-photos-" + UUID().uuidString)
         try! FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)

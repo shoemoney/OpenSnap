@@ -10,7 +10,7 @@ extension AppSafetyTests {
             ("Tools, Upload, Toolbox, the status item and the status line carry their VoiceOver names and roles", mainWindowLabels),
             ("The Size pill is a slider named Drawing size with a whole-number value, one-preset steps and a Show size options action; its popover track agrees", mainWindowSizePill),
             ("Key-view loop: top bar left to right, the canvas, then the bottom bar left to right; walking it visits every control once and returns", mainWindowKeyLoop),
-            ("Focus Toolbar (Window menu) puts the keyboard on the first top-bar control; Control-Tab leaves the canvas while plain Tab still swaps the pencil", mainWindowFocusToolbar),
+            ("Focus Toolbar (Window menu) puts the keyboard on the first top-bar control; on the canvas Tab leaves it and Control-Tab swaps the pencil", mainWindowFocusToolbar),
             ("The Size and Color popovers close their own key-view loops", mainWindowPopoverLoops),
             ("Capture success, Frame on and off, Undo and Redo are announced; an Undo with nothing to undo is silent", mainWindowAnnouncements)
         ]
@@ -119,6 +119,8 @@ extension AppSafetyTests {
             let fixture = try Fixture(), app = fixture.app
             let chrome = try chromeFor(app)
             let window = app.window!
+            // A blank document has nothing to undo, so Undo is dimmed and, being disabled, not a tab stop (audit F-J1-020): give it a change.
+            app.canvas.setBackgroundColor(.blue)
             try expect(window.autorecalculatesKeyViewLoop && window.initialFirstResponder === app.canvas, "The loop is recalculated by AppKit and starts on the canvas")
             window.setFrame(CGRect(origin: window.frame.origin, size: CGSize(width: 1280, height: 760)), display: false)
             window.contentView?.layoutSubtreeIfNeeded()
@@ -188,6 +190,7 @@ extension AppSafetyTests {
             defer { KeyboardNavigation.fullKeyboardAccess = saved; KeyboardNavigation.toolbarFocusActive = false }
             let fixture = try Fixture(), app = fixture.app
             let chrome = try chromeFor(app)
+            app.canvas.setBackgroundColor(.blue)   // Undo is dimmed on a blank document and a disabled button is never a tab stop (audit F-J1-020)
             if let window = app.window as? AppSafetyWindow { window.simulatesVisibility = true; window.shown = true }
             app.window.contentView?.layoutSubtreeIfNeeded(); app.window.recalculateKeyViewLoop()
             app.window.makeFirstResponder(app.canvas)
@@ -198,7 +201,8 @@ extension AppSafetyTests {
             app.windowDidResignKey(Notification(name: NSWindow.didResignKeyNotification, object: app.window))
             try expect(!KeyboardNavigation.toolbarFocusActive && !chrome.undoButton.canBecomeKeyView, "When the window stops being key the bars go back to the system setting")
         }
-        // Tab on the canvas keeps swapping the pencil; Control-Tab leaves it.
+        // On the canvas Tab moves the keyboard on (the bars are tab stops here) and Control-Tab is the pencil swap (audit F-J1-007). The
+        // full walk, both ways, and the Full-Keyboard-Access-off exception are in AppSafetyAuditCases.
         let fixture = try Fixture(), app = fixture.app
         _ = try chromeFor(app)
         app.window.makeFirstResponder(app.canvas)
@@ -208,19 +212,16 @@ extension AppSafetyTests {
         }
         app.setTool(.arrow)
         app.window.makeFirstResponder(app.canvas)
-        app.canvas.keyDown(with: try tab([]))
-        try expect(app.canvas.tool == .brush, "Plain Tab on the canvas still swaps to the pencil (\(app.canvas.tool))")
-        app.canvas.keyDown(with: try tab([]))
-        try expect(app.canvas.tool == .arrow && app.window.firstResponder === app.canvas, "and back, with the keyboard still on the canvas")
-        withFullKeyboardAccess {
-            app.window.recalculateKeyViewLoop()
-        }
-        let following = try withFullKeyboardAccess { () -> NSView? in
+        try withFullKeyboardAccess {
             app.window.recalculateKeyViewLoop()
             app.canvas.keyDown(with: try tab(.control))
-            return app.window.firstResponder as? NSView
+            try expect(app.canvas.tool == .brush && app.window.firstResponder === app.canvas, "Control-Tab on the canvas swaps to the pencil (\(app.canvas.tool))")
+            app.canvas.keyDown(with: try tab(.control))
+            try expect(app.canvas.tool == .arrow && app.window.firstResponder === app.canvas, "and back, with the keyboard still on the canvas")
+            app.canvas.keyDown(with: try tab([]))
+            let following = app.window.firstResponder as? NSView
+            try expect(following != nil && following !== app.canvas && app.canvas.tool == .arrow, "Plain Tab moves the keyboard off the canvas without touching the tool (\(String(describing: following)))")
         }
-        try expect(following != nil && following !== app.canvas && app.canvas.tool == .arrow, "Control-Tab moves the keyboard off the canvas without touching the tool (\(String(describing: following)))")
     }
 
     static func mainWindowPopoverLoops() throws {

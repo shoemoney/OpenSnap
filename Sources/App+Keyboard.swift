@@ -5,11 +5,12 @@ extension AppDelegate {
     /// AppKit recalculates it from the controls' positions, which already runs in that order now the right rail is gone, so only the
     /// two popovers (Size, Color) set `nextKeyView` by hand. The canvas is where the keyboard starts.
     ///
-    /// The canvas keeps Tab for itself: on the canvas Tab swaps between the current tool and the pencil (the hint bar says "tab = Pen").
-    /// Control-Tab and Control-Shift-Tab are the way out of it, forward and back, as in a text view. Everything else is reached by
-    /// Tab once Full Keyboard Access is on (System Settings > Keyboard > Keyboard navigation), which is also the setting AppKit
-    /// applies to every button. The Focus Toolbar command (Window menu, Option-Command-T) does not need it: it puts the keyboard on
-    /// the first top-bar control and lets the bars take Tab for as long as the window stays key.
+    /// Tab moves the keyboard through that loop from the canvas as it does from any control, and Shift-Tab goes back, so the canvas is never a
+    /// trap. The old "Tab = Pen" swap between the current tool and the pencil is Control-Tab now (the hint bar says so): where Tab moves focus,
+    /// Control-Tab is the key that does what Tab would otherwise have done, as in a text field. The one exception is a window whose bars are
+    /// not tab stops (Full Keyboard Access off, System Settings > Keyboard > Keyboard navigation, and no Focus Toolbar): Tab has nowhere to go
+    /// there, so it keeps the swap. The Focus Toolbar command (Window menu, Option-Command-T) does not need the setting: it puts the keyboard
+    /// on the first top-bar control and lets the bars take Tab for as long as the window stays key.
     func configureKeyViewLoop() {
         window.autorecalculatesKeyViewLoop = true
         window.initialFirstResponder = canvas

@@ -87,8 +87,11 @@ final class AppSafetySizePopover: NSPopover {
 
 final class AppSafetyColorPanel: NSColorPanel {
     var sampleColor: NSColor = .red
+    var shown = false
     override var color: NSColor { get { sampleColor } set { sampleColor = newValue } }
-    override func orderFront(_ sender: Any?) {}
+    override var isVisible: Bool { shown }
+    override func orderFront(_ sender: Any?) { shown = true }
+    override func orderOut(_ sender: Any?) { shown = false }
 }
 
 final class AppSafetyFontPanel: NSFontPanel {
@@ -3553,12 +3556,13 @@ enum AppSafetyTests {
                 let presets = OriginalDrawingControls.presets
                 try expect(presets.map(\.tag) == Array(100...109), "Original palette tag order")
                 try expect(presets.map(\.name) == ["Red","Yellow","Blue","Pink","Translucent gray","Orange","Green","White","Black","Highlighter"], "Original palette names")
-                let red = presets[0].swatchColor.usingColorSpace(.genericRGB)!
-                let blue = presets[2].swatchColor.usingColorSpace(.genericRGB)!
-                try expect(abs(red.redComponent-1) < 0.001 && red.greenComponent < 0.001 && red.blueComponent < 0.001,
-                           "Original red is full calibrated red, independent of system accent/theme")
-                try expect(abs(blue.redComponent-25/255.0) < 0.001 && abs(blue.greenComponent-119/255.0) < 0.001 && abs(blue.blueComponent-1) < 0.001,
-                           "Original blue keeps its calibrated RGB components")
+                // The swatch is drawn in the colour it applies (audit F-J1-002), so the original components are read from that one colour.
+                let red = SketchColor(presets[0].color)
+                let blue = SketchColor(presets[2].color)
+                try expect(abs(red.red-1) < 0.001 && red.green < 0.001 && red.blue < 0.001,
+                           "Original red is full red, independent of system accent/theme")
+                try expect(abs(blue.red-25/255.0) < 0.001 && abs(blue.green-119/255.0) < 0.001 && abs(blue.blue-1) < 0.001,
+                           "Original blue keeps its original RGB components")
                 try expect(abs(presets[4].color.alphaComponent-0.43) < 0.00001 && abs(presets[9].color.alphaComponent-0.35) < 0.00001,
                            "Original translucent gray and yellow highlighter retain separate alphas")
                 for preset in presets {
@@ -3699,6 +3703,10 @@ enum AppSafetyTests {
                 app.canvas.document.renderSize = NSSize(width: 200, height: 150)
                 app.applyChosenColor(original, modifiers: [])
                 let panel = AppSafetyColorPanel(contentRect: .zero, styleMask: [.titled], backing: .buffered, defer: false)
+                // The panel is open (Custom color… put it up), which is when a colour change in it is a choice (audit F-J1-005 root cause).
+                app.colorPanelProvider = { panel }
+                app.chooseCustomColor(app.paletteButton)
+                app.applyChosenColor(original, modifiers: [])
                 panel.sampleColor = NSColor(calibratedRed: 0.17, green: 0.43, blue: 0.91, alpha: 0.23)
                 app.changeColor(panel)
                 try expect(SketchColor(app.canvas.strokeColor) == SketchColor(OriginalDrawingControls.drawingColor(from: panel.sampleColor)!),
@@ -3855,7 +3863,7 @@ enum AppSafetyTests {
         ]
         // Development aid: APP_SAFETY_FILTER=<text> runs only the cases whose title contains it. Unset, every case runs.
         let filter = ProcessInfo.processInfo.environment["APP_SAFETY_FILTER"]
-        let tests = (sharedCases + Self.modernCases + Self.webpostCases + Self.retiredFormatCases + Self.menuCases + Self.windowChromeCases + Self.uploadCases + Self.accessibilityCases).filter { filter.map($0.0.contains) ?? true }
+        let tests = (sharedCases + Self.modernCases + Self.webpostCases + Self.retiredFormatCases + Self.menuCases + Self.windowChromeCases + Self.uploadCases + Self.accessibilityCases + Self.auditCases).filter { filter.map($0.0.contains) ?? true }
         var results: [[String: Any]] = [], failures = 0
         for (name, test) in tests {
             AppSafetyAlert.reset(); AppSafetyAlert.install(); AppSafetyEvents.current = nil

@@ -94,13 +94,14 @@ enum VectorGeometryTests {
         var e = rectangle(CGRect(x: 10, y: 10, width: 100, height: 70))
         e.shadowed = true; e.groupID = UUID()
         let before = e
+        // Audit F-J1-001: a cut edge must not cast the original's drop shadow into the slot, so fragments of a real cut are unshadowed.
         let eraser = try required(VectorGeometry.eraserPath(points: [CGPoint(x: 60, y: 0), CGPoint(x: 60, y: 100)], width: 12), "Missing eraser")
         let fragments = try required(VectorGeometry.subtract(element: e, eraser: eraser), "Split returned no change")
         try expect(fragments.count == 2, "Full-height cut must create two editable components")
         try expect(Set(fragments.map(\.id)).count == 2, "Fragments share identity")
         try expect(fragments.allSatisfy { $0.id != e.id }, "Every erased fragment must receive a fresh ID, including the first")
         try expect(e == before, "Subtraction mutated source")
-        try expect(fragments.allSatisfy { $0.kind == .path && $0.filled && $0.strokeWidth == 0 && $0.imagePNG == nil && $0.transform == .identity && $0.color == e.color && $0.shadowed && $0.groupID == e.groupID }, "Fragment geometry/style was flattened or lost")
+        try expect(fragments.allSatisfy { $0.kind == .path && $0.filled && $0.strokeWidth == 0 && $0.imagePNG == nil && $0.transform == .identity && $0.color == e.color && !$0.shadowed && $0.groupID == e.groupID }, "Fragment geometry/style was flattened or lost")
         let paths = try fragments.map(painted)
         for point in [CGPoint(x: 30, y: 40), CGPoint(x: 90, y: 40)] {
             try expect(contains(paths, point), "Retained side missing at \(point)")
