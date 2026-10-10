@@ -17,7 +17,8 @@ extension AppSafetyTests {
             ("A pending crop says Return applies and Esc cancels, through the adaptive status variants (F-J1-011)", auditCropStatus),
             ("Minimize and the Hide button hide a visible editor even while the app is not active; the Hide tooltip names the real shortcut (F-J1-022)", auditMinimize),
             ("The Undo button and menu item are dimmed with nothing to undo and follow the history (F-J1-020)", auditUndoAvailability),
-            ("Save to History wears an archive-box icon, not a floppy disk, and its neighbour keeps the clock (F-J1-021)", auditSaveIcon)
+            ("Save to History wears an archive-box icon, not a floppy disk, and its neighbour keeps the clock (F-J1-021)", auditSaveIcon),
+            ("The harness input fence swallows a real key press and click before they reach a capture window, and still lets the harness drive the canvas directly (R1-001)", auditHarnessInputFence)
         ]
     }
 
@@ -412,6 +413,55 @@ extension AppSafetyTests {
         // Typing in a text box has its own history, which Undo steps first.
         let editor = try editor(app, text: "typing")
         try expect(editor.undoManager?.canUndo == true && chrome.undoButton.isEnabled, "Typing makes Undo available")
+    }
+
+    // MARK: R1-001
+
+    /// A real key or mouse event is dispatched through `NSApp.sendEvent`; the harness never is. The baseline half proves the probe really
+    /// sees a delivered event, so the fenced half cannot pass merely because nothing could ever arrive.
+    private static func auditHarnessInputFence() throws {
+        let fixture = try Fixture(), app = fixture.app
+        var menuFired = 0
+        final class Probe: NSObject { var fired: () -> Void = {}; @objc func hit(_ sender: Any?) { fired() } }
+        let probe = Probe(); probe.fired = { menuFired += 1 }
+        let item = NSMenuItem(title: "Probe", action: #selector(Probe.hit(_:)), keyEquivalent: "j")
+        item.keyEquivalentModifierMask = [.command]; item.target = probe
+        let menu = NSMenu(title: "Main"), top = NSMenuItem(), sub = NSMenu(title: "Probe")
+        sub.addItem(item); top.submenu = sub; menu.addItem(top)
+        let savedMenu = NSApp.mainMenu
+        NSApp.mainMenu = menu
+        defer { NSApp.mainMenu = savedMenu }
+        func realKey() -> NSEvent? {
+            NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [.command], timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: 0, context: nil,
+                             characters: "j", charactersIgnoringModifiers: "j", isARepeat: false, keyCode: 38)
+        }
+        func realClick() -> NSEvent? {
+            NSEvent.mouseEvent(with: .leftMouseDown, location: .zero, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: 0, context: nil, eventNumber: 1, clickCount: 1, pressure: 1)
+        }
+        guard let key = realKey(), let click = realClick() else { throw Failure(description: "Could not build the synthetic real events") }
+        NSApp.sendEvent(key)
+        try expect(menuFired == 1, "Baseline: without the fence a real key equivalent reaches the app (\(menuFired)); the probe works")
+
+        let before = HarnessInputGuard.swallowedCount
+        let token = HarnessInputGuard.install()
+        defer { HarnessInputGuard.remove(token) }
+        NSApp.sendEvent(key)
+        NSApp.sendEvent(click)
+        try expect(menuFired == 1, "With the fence a real key equivalent never reaches the app (\(menuFired))")
+        try expect(HarnessInputGuard.swallowedCount == before + 2, "Both the key press and the click were swallowed and counted (\(HarnessInputGuard.swallowedCount - before))")
+        for type: NSEvent.EventType in [.keyDown, .keyUp, .flagsChanged, .leftMouseDown, .leftMouseUp, .leftMouseDragged, .rightMouseDown, .rightMouseUp,
+                                        .rightMouseDragged, .otherMouseDown, .otherMouseUp, .otherMouseDragged, .mouseMoved, .scrollWheel] {
+            try expect(HarnessInputGuard.blockedEvents.contains(NSEvent.EventTypeMask(rawValue: 1 << UInt64(type.rawValue))), "\(type) is fenced")
+        }
+
+        // The harness calls responders directly, which never passes through sendEvent, so the fence leaves it alone.
+        var reached = 0
+        app.canvas.onHintModifiers = { _ in reached += 1 }
+        if let space = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: 0, context: nil,
+                                        characters: " ", charactersIgnoringModifiers: " ", isARepeat: false, keyCode: 49) {
+            app.canvas.keyDown(with: space)
+        }
+        try expect(reached == 1, "A direct harness-style keyDown still reaches the canvas while the fence is up (\(reached))")
     }
 
     // MARK: F-J1-021
