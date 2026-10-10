@@ -93,7 +93,7 @@ Pre-change twins are referenced from `docs/design/evidence/impl-2026-10-09/m1-ra
 | `S38-tooltip-zoom-w980-light@da2738d.png` | light | 980×640 | a bottom-bar control: the plate opens above the zoom face because there is no room below | `layout/S38-tooltip-zoom-w980-light@da2738d.json` | — |
 
 
-## Display-option captures (`--display reduceTransparency,increaseContrast`, injected inside the throwaway copy; manifest in `manifest-display.json`)
+## Display-option captures (`--display reduceTransparency,increaseContrast`, injected inside the throwaway copy;)
 
 | Capture | Appearance | Window pt | What it shows | Layout JSON | BEFORE |
 |---|---|---|---|---|---|
