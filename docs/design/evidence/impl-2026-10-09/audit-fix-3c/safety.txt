@@ -10,3 +10,25 @@ sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keyc
 cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-32814) dropped BEFORE the final compare; the compare below would show any damage cleanup did
 real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
 RESULT stores unchanged
+
+=== round 2 (6469efb): S43 run ===
+sourceSha        6469efb
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+bundle id        com.shoemoney.opensnap.eyedump-42590 (real id com.shoemoney.opensnap is never launched)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+=== round 2: S42 run ===
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+bundle id        com.shoemoney.opensnap.eyedump-45073 (real id com.shoemoney.opensnap is never launched)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+=== round 2: S21 run ===
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+bundle id        com.shoemoney.opensnap.eyedump-97304 (real id com.shoemoney.opensnap is never launched)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+STORE CHANGED: left behind /Users/shoemoney/Library/Preferences/com.shoemoney.opensnap.eyedump-1019.plist
+RESULT STORES CHANGED
+(the S21 run's STORE CHANGED line names com.shoemoney.opensnap.eyedump-1019, the throwaway id of another worker's concurrent harness run (/tmp/j3/base-more, PID 1019); this run's own id was dropped before its compare and no real store changed)
