@@ -253,23 +253,39 @@ private enum AppToolTipTests {
         expect(tip.target === r.nested && tip.shownText == "Nested tip", "The second control's text is shown")
 
         // The root's tracking area drives the same machine: moved over a control waits, then shows; exit hides.
-        let watcher = AppToolTip.watcher(for: r.root) as! AppToolTip.Watcher
-        func pointer(_ x: CGFloat, _ y: CGFloat) -> NSEvent {
-            NSEvent.mouseEvent(with: .mouseMoved, location: NSPoint(x: x, y: y), modifierFlags: [], timestamp: 0, windowNumber: 0, context: nil, eventNumber: 0, clickCount: 0, pressure: 0)!
+        // Events go through the Objective-C runtime to the tracking area's owner, the way AppKit delivers them. Calling the
+        // Swift methods directly is how a selector mismatch (`mouseEnteredWith:` vs `mouseEntered:`) shipped as a hover crash.
+        let area = r.root.trackingAreas.first { $0.owner is AppToolTip.Watcher }
+        expect(area != nil && area!.owner === AppToolTip.watcher(for: r.root), "The root's tracking area is owned by its watcher")
+        let owner = area!.owner as! NSObject
+        expect(area!.options.contains(.mouseMoved) && area!.options.contains(.mouseEnteredAndExited), "The tracking area asks for moves, enters and exits")
+        for name in ["mouseEntered:", "mouseExited:", "mouseMoved:"] {
+            expect(owner.responds(to: NSSelectorFromString(name)), "The tracking area owner responds to \(name) as AppKit sends it")
+            expect(!owner.responds(to: NSSelectorFromString(name.replacingOccurrences(of: ":", with: "With:"))), "\(name) is not exported under the Swift-mangled name")
+        }
+        func deliver(_ name: String, _ event: NSEvent) { _ = owner.perform(NSSelectorFromString(name), with: event) }
+        func pointer(_ x: CGFloat, _ y: CGFloat, _ type: NSEvent.EventType = .mouseMoved) -> NSEvent {
+            switch type {
+            case .mouseEntered, .mouseExited:
+                return NSEvent.enterExitEvent(with: type, location: NSPoint(x: x, y: y), modifierFlags: [], timestamp: 0, windowNumber: 0,
+                                              context: nil, eventNumber: 0, trackingNumber: 0, userData: nil)!
+            default:
+                return NSEvent.mouseEvent(with: .mouseMoved, location: NSPoint(x: x, y: y), modifierFlags: [], timestamp: 0, windowNumber: 0, context: nil, eventNumber: 0, clickCount: 0, pressure: 0)!
+            }
         }
         tip.dismiss()
-        watcher.mouseMoved(with: pointer(40, 250))
+        deliver("mouseMoved:", pointer(40, 250))
         expect(tip.isPending && tip.pendingTarget === r.plain, "The tracking area's pointer move over a control starts its tooltip")
         spin(0.3)
         expect(tip.target === r.plain, "The tooltip appears for the control under the pointer")
-        watcher.mouseMoved(with: pointer(590, 5))
+        deliver("mouseMoved:", pointer(590, 5))
         expect(!tip.isShown, "Moving onto empty space hides the plate")
-        watcher.mouseMoved(with: pointer(40, 250))
+        deliver("mouseMoved:", pointer(40, 250))
         spin(0.3)
         expect(tip.isShown, "The plate shows again on re-entry")
-        watcher.mouseExited(with: pointer(40, 250))
+        deliver("mouseExited:", pointer(40, 250, .mouseExited))
         expect(!tip.isShown && !tip.isPending, "The tracking area's mouse exit hides the plate")
-        watcher.mouseEntered(with: pointer(40, 250))
+        deliver("mouseEntered:", pointer(40, 250, .mouseEntered))
         expect(tip.isPending, "The tracking area's mouse enter over a control starts the wait")
         tip.dismiss()
 
