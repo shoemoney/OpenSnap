@@ -44,6 +44,7 @@ private enum AppAlertTests {
         answering()
         endedWithoutAButton()
         accessibility()
+        contrast()
         errorAlert()
         presenterSeam()
         print("AppAlertTests: \(checks) checks passed (windows never ordered on screen)")
@@ -261,6 +262,24 @@ private enum AppAlertTests {
         expect(alert.buttonViews.map { $0.accessibilityLabel() } == ["Move to Trash", "Cancel"], "Every button is labelled with its title")
         expect(alert.titleLabel.accessibilityLabel() == alert.title && alert.messageLabel.accessibilityLabel() == alert.message, "Title and message are read as written")
         alert.dismiss(withButton: 1)
+    }
+
+    // MARK: contrast
+
+    /// The sheet's title and message read on the sheet's window colour in light, dark and both Increase Contrast arms.
+    private static func contrast() {
+        let field = NSTextField(string: "Name"); field.font = DesignTokens.Typography.font(.body); field.frame = NSRect(x: 0, y: 0, width: 512, height: 40)
+        for alert in [AppAlert(title: "Save your drawing?", message: "This document has changes that have not been saved.", buttons: discardButtons),
+                      AppAlert(title: "Rename", message: "Document name", buttons: [.init(title: "OK"), .init(title: "Cancel", role: .cancel)], accessoryView: field)] {
+            let content = alert.panel.contentView!
+            for (name, appearance) in ContrastProbe.appearances {
+                let reading = ContrastProbe.measure(content, appearance: appearance, plateAt: NSPoint(x: 3, y: 3),
+                                                    textFrames: [alert.titleLabel.frame, alert.messageLabel.frame], plate: alert.panel.backgroundColor)
+                expect(reading.plateOpaque, "The sheet sits on an opaque window colour (\(alert.title), \(name))")
+                expect(reading.textRatios[0] >= 4.5 && reading.textRatios[1] >= 4.5,
+                       "The title and message read at 4.5:1 on the sheet (\(alert.title), \(name): \(reading.textRatios))")
+            }
+        }
     }
 
     // MARK: error and seam

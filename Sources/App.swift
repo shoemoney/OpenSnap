@@ -1055,7 +1055,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         // drawn grid, so the left and right edges of every row line up.
         let view = BezelHoverPaletteView(frame: NSRect(x: 0, y: 0, width: 246, height: 155))
         view.onHover = { [weak self] inside in self?.drawingColorHover(inside, palette: true) }
-        let title = label("Drawing colors"); title.frame = NSRect(x: 13, y: 118, width: 220, height: 25); view.addSubview(title)
+        let title = label("Drawing colors"); title.textColor = DesignTokens.Palette.Text.primary; title.frame = NSRect(x: 13, y: 118, width: 220, height: 25); view.addSubview(title)
         presetColorButtons.removeAll()
         for (index, preset) in OriginalDrawingControls.presets.enumerated() {
             let button = BezelColorButton(frame: NSRect(x: CGFloat(12+(index%5)*45), y: CGFloat(78-(index/5)*34), width: 42, height: 32))

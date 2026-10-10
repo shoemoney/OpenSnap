@@ -421,6 +421,21 @@ private enum GlassChromeTests {
         slider.popoverProvider = { TestPopover() }
         func groups() -> String { "begin \(begins) end \(ends)" }
 
+        // Audit fix 2: the popover's content is a solid plate and its title and readout read at 4.5:1 in all four appearances.
+        do {
+            let sizeContent = SizePopoverContent(slider: slider)
+            // Auto Layout needs a window to place the labels; it is never ordered on screen.
+            let host = NSWindow(contentRect: NSRect(origin: .zero, size: SizePopoverContent.size), styleMask: [.titled], backing: .buffered, defer: true)
+            host.isReleasedWhenClosed = false; host.contentView = sizeContent
+            sizeContent.sync(); sizeContent.layoutSubtreeIfNeeded()
+            for (name, appearance) in ContrastProbe.appearances {
+                let reading = ContrastProbe.measure(sizeContent, appearance: appearance, plateAt: NSPoint(x: 3, y: 3),
+                                                    textFrames: [sizeContent.titleLabel.frame, sizeContent.readout.frame])
+                expect(reading.plateOpaque, "The Size popover draws an opaque plate (\(name))")
+                expect(reading.textRatios[0] >= 4.5 && reading.textRatios[1] >= 4.5, "The Size title and readout read at 4.5:1 (\(name): \(reading.textRatios))")
+            }
+        }
+
         // Semantics: a real slider to assistive technology, with the five original steps.
         expect(OriginalDrawingControls.sizeSteps == [1.5, 4.125, 6.75, 9.375, 12], "There are five steps")
         expect(slider.accessibilityRole() == .slider && slider.accessibilityLabel() == "Drawing size" && slider.isAccessibilityElement(), "The pill is an accessible slider")

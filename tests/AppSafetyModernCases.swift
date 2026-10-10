@@ -20,6 +20,7 @@ extension AppSafetyTests {
             ("writeLayoutEvidence reports the Modern style and finds the header and brand one level deeper", modernLayoutEvidence),
             ("Main menu items carry symbols in Modern only and keep validating", modernMenus),
             ("Color popover follows the system appearance", modernPalettePopover),
+            ("Color popover paints its own opaque plate and its text reads at 4.5:1 in light, dark and both Increase Contrast arms (audit fix 2)", modernPalettePopoverContrast),
             ("Color popover always shows the active colour: a checked preset, or the Custom color… row with the colour's chip, a check and the accent outline; rows align edge to edge", modernPaletteShowsActiveColor),
             ("Modern centres a small canvas in the editor area at default and minimum size and leaves larger and wide documents panning unconstrained", modernCanvasCentred),
             ("A small canvas is centred when only the document or zoom changes, with no window resize", modernCanvasCentresWithoutWindowResize),
@@ -1833,6 +1834,38 @@ extension AppSafetyTests {
         try expect(abs(bottomMargin - topMargin) < 0.5 && bottomMargin >= 12, "The top and bottom margins are equal and at least 12 pt (bottom \(bottomMargin), top \(topMargin))")
         let rows = Set(app.presetColorButtons.map { $0.frame.minY })
         try expect(rows.count == 2 && abs((rows.max() ?? 0) - (rows.min() ?? 0) - 34) < 0.5 && abs((rows.min() ?? 0) - (row.frame.maxY + 2)) < 0.5, "The two swatch rows and the Custom color… row are evenly stacked")
+    }
+
+    /// Audit fix 2: in light the popover came out a dark system material under near-black text ("Drawing colors" and "Custom color…" failed).
+    /// The content now draws a solid plate of its own; its pixels are measured per appearance, not inferred from token values.
+    private static func modernPalettePopoverContrast() throws {
+        let (fixture, _) = try modernFixture()
+        let app = fixture.app
+        guard let window = app.window as? AppSafetyWindow else { throw Failure(description: "Isolated window") }
+        window.simulatesVisibility = true; window.shown = true
+        defer { app.closeDrawingColors() }
+        for custom in [false, true] {
+            app.applyChosenColor(custom ? NSColor(deviceRed: 0.18, green: 0.62, blue: 0.55, alpha: 1) : OriginalDrawingControls.presets[0].color, modifiers: [])
+            app.presentDrawingColors(hover: false)
+            let content = try (app.colorPopover?.contentViewController?.view).unwrap("popover content")
+            let title = try (content.subviews.compactMap { $0 as? NSTextField }.first).unwrap("Drawing colors title")
+            let row = try (app.customColorButton).unwrap("Custom color… row")
+            // Only the row's label: the chip, the check and the accent outline sit outside it and would flatter the reading.
+            let rowText = NSRect(x: row.frame.minX + (custom ? 56 : 24), y: row.frame.minY + 6, width: row.frame.width - (custom ? 80 : 48), height: row.frame.height - 12)
+            for (name, appearance) in ContrastProbe.appearances {
+                let reading = ContrastProbe.measure(content, appearance: appearance, plateAt: NSPoint(x: 3, y: content.bounds.height - 3), textFrames: [title.frame, rowText])
+                let label = "\(custom ? "custom" : "preset") colour, \(name)"
+                try expect(reading.plateOpaque, "The popover content draws an opaque plate (\(label))")
+                try expect(reading.textRatios[0] >= 4.5, "\"Drawing colors\" reads at 4.5:1 on the plate (\(label): \(reading.textRatios[0]))")
+                try expect(reading.textRatios[1] >= 4.5, "\"Custom color…\" reads at 4.5:1 on the plate (\(label): \(reading.textRatios[1]))")
+            }
+            // Re-resolved on appearance change: the same view flipped from light to dark changes its plate.
+            let light = ContrastProbe.measure(content, appearance: ContrastProbe.appearances[0].appearance, plateAt: NSPoint(x: 3, y: content.bounds.height - 3), textFrames: [])
+            let dark = ContrastProbe.measure(content, appearance: ContrastProbe.appearances[1].appearance, plateAt: NSPoint(x: 3, y: content.bounds.height - 3), textFrames: [])
+            try expect(DesignTokens.Palette.luminance(light.plate) > 0.5 && DesignTokens.Palette.luminance(dark.plate) < 0.2,
+                       "The plate follows the appearance: light \(light.plate), dark \(dark.plate)")
+            app.closeDrawingColors()
+        }
     }
 
     private static func modernPalettePopover() throws {
