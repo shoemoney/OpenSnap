@@ -34,6 +34,8 @@ fi
 cp "$ROOT/Resources/OpenSnap.png" "$APP/Contents/Resources/"
 # The About window reads the MIT license text from here, so showing it never needs a network.
 cp "$ROOT/LICENSE" "$APP/Contents/Resources/LICENSE.txt"
+# Font Awesome Free (CC BY 4.0) attribution, read from the About window's "Third-party notices" link.
+cp "$ROOT/THIRD_PARTY_NOTICES.md" "$APP/Contents/Resources/THIRD_PARTY_NOTICES.txt"
 # Font Awesome Pro is optional and never committed: with your own token the
 # fetch step builds glyph subsets under build/fonts; without them Modern
 # falls back to SF Symbols. A failed fetch must not fail the build.

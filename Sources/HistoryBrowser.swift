@@ -45,7 +45,7 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         case open, copy, copyLink, openLink, remove, deleteFiles, deleteRemote
         var title: String { ["Open", "Copy", "Copy Link", "Open Link", "Hide from History", "Move to Trash", "Delete from Web"][rawValue] }
         /// The toolbar-style action row is icon-only; the title is the tooltip, the accessibility label and the context-menu text.
-        var symbolName: String { ["arrow.up.right.square", "doc.on.doc", "link", "safari", "eye.slash", "trash", "icloud.slash"][rawValue] }
+        var icon: FAIcon { [FAIcon.openExternal, .copy, .link, .globe, .eyeSlash, .trash, .linkSlash][rawValue] }
     }
     struct Section { var day: Date; var title: String; var items: [Item] }
     /// Persisted keys. `jpeg` is the stored name for JPG, and `opensnap` is the editable document.
@@ -318,8 +318,7 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         let actions = Action.allCases.map { action -> NSButton in
             let button = NSButton(title:"",target:self,action:#selector(actionInvoked(_:)))
             button.tag = action.rawValue; button.bezelStyle = .rounded; Typography.apply(.body,to:button)
-            if let symbol = NSImage(systemSymbolName:action.symbolName,accessibilityDescription:action.title)?
-                .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize:Typography.iconInline,weight:.regular)) {
+            if let symbol = ChromeIcons.resolve(action.icon,pointSize:Typography.iconInline).image {
                 button.image = symbol; button.imagePosition = .imageOnly
             } else { button.title = action.title }
             button.toolTip = action.title; button.setAccessibilityLabel(action.title)
@@ -665,8 +664,7 @@ final class HistoryTileView: NSView {
     func addCheckBadge(over host: NSView) {
         let badge = NSImageView(); badge.translatesAutoresizingMaskIntoConstraints = false
         let size = DesignTokens.Typography.iconPrimary
-        badge.image = NSImage(systemSymbolName:"checkmark.circle.fill",accessibilityDescription:"Selected")?
-            .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize:size,weight:.semibold))
+        badge.image = ChromeIcons.resolve(.circleCheck,family:.solid,pointSize:size).image
         badge.contentTintColor = DesignTokens.Palette.accent; badge.isHidden = true
         badge.setAccessibilityElement(false)
         addSubview(badge); checkBadge = badge

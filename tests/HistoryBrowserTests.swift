@@ -418,6 +418,7 @@ struct HistoryBrowserTests {
                     guard let tile = cell.view as? HistoryTileView else { throw Failure("The tile is not a HistoryTileView") }
                     let badge = try tile.checkBadge.unwrap("check badge subview")
                     try expect(badge.superview === tile && badge.image != nil,"The badge is not an image subview of the tile")
+                    try expect(badge.image?.isTemplate == true && ChromeIcons.resolve(.circleCheck,family:.solid,pointSize:DesignTokens.Typography.iconPrimary).source != .none,"The badge is the chrome's check-circle icon, tinted as a template")
                     try expect(badge.isHidden && !tile.isTileSelected,"An unselected tile must not show the badge")
                     tile.updateLayer(); try expect(tile.layer?.borderWidth == 0,"An unselected tile has a border")
                     cell.isSelected = true
@@ -479,9 +480,13 @@ struct HistoryBrowserTests {
                 try browser { browser,_ in
                     let row = browser.actionRow.arrangedSubviews.compactMap { $0 as? NSButton }.filter { !($0 is NSPopUpButton) }
                     try expect(row.count == 7,"The action row has \(row.count) buttons")
+                    try expect(Set(HistoryBrowser.Action.allCases.map(\.icon)).count == 7,"Each action has its own icon")
                     for (button,action) in zip(row,HistoryBrowser.Action.allCases) {
                         try expect(button.toolTip == action.title && button.accessibilityLabel() == action.title,"\(action) has no tooltip and accessibility name")
                         try expect(button.image != nil && button.imagePosition == .imageOnly,"\(action) has no glyph")
+                        let source = ChromeIcons.resolve(action.icon,pointSize:DesignTokens.Typography.iconInline).source
+                        if case .sfSymbol = source { throw Failure("\(action) draws an SF Symbol instead of the chrome icon family: \(source)") }
+                        try expect(button.image?.isTemplate == true,"\(action) glyph is a template image, so it follows the label colour")
                         try expect(!button.isEnabled,"\(action) is enabled with nothing selected")
                     }
                     // The old layout stacked the same seven in two text-button rows under the details.

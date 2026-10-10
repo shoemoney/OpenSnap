@@ -1,7 +1,7 @@
 import AppKit
 import CoreText
 
-/// Font Awesome Pro glyph table. The Pro fonts never live in this repository: tools/fetch-fontawesome.sh subsets
+/// Font Awesome icon table: Pro glyphs when a dev build bundles the subsets, otherwise the embedded Free vectors (FontAwesomeFree.swift). The Pro fonts never live in this repository: tools/fetch-fontawesome.sh subsets
 /// them to exactly the codepoints listed here by grepping this file for hex literals, so the codepoint switch
 /// below must stay the only place they appear.
 enum FAFamily: String, CaseIterable, Sendable {
@@ -14,8 +14,9 @@ enum FAIcon: String, CaseIterable, Sendable {
     case eyeSlash = "eye-slash", toolbox, images, floppyDisk = "floppy-disk", clockRotateLeft = "clock-rotate-left",
          arrowPointer = "arrow-pointer", paintbrush, slashForward = "slash-forward", circle, square, fillDrip = "fill-drip",
          eraser, text, arrowUpRight = "arrow-up-right", cropSimple = "crop-simple", crosshairs, frameViewfinder = "camera-viewfinder",
-         xmark, font, arrowRotateLeft = "arrow-rotate-left", broom, maximize, minimize, rulerCombined = "ruler-combined",
-         arrowUpFromBracket = "arrow-up-from-bracket"
+         xmark, font, arrowRotateLeft = "arrow-rotate-left", broom, rulerCombined = "ruler-combined",
+         upload = "cloud-arrow-up", dragHand = "hand", check, warning = "circle-exclamation", xmarkCircle = "circle-xmark",
+         openExternal = "up-right-from-square", copy, link, globe, trash, linkSlash = "link-slash", circleCheck = "circle-check"
 
     var codepoint: UInt32 {
         switch self {
@@ -40,10 +41,19 @@ enum FAIcon: String, CaseIterable, Sendable {
         case .font: return 0xF031
         case .arrowRotateLeft: return 0xF0E2
         case .broom: return 0xF51A
-        case .maximize: return 0xF31E
-        case .minimize: return 0xF78C
         case .rulerCombined: return 0xF546
-        case .arrowUpFromBracket: return 0xE09A
+        case .upload: return 0xF0EE
+        case .dragHand: return 0xF256
+        case .check: return 0xF00C
+        case .warning: return 0xF06A
+        case .xmarkCircle: return 0xF057
+        case .openExternal: return 0xF35D
+        case .copy: return 0xF0C5
+        case .link: return 0xF0C1
+        case .globe: return 0xF0AC
+        case .trash: return 0xF1F8
+        case .linkSlash: return 0xF127
+        case .circleCheck: return 0xF058
         }
     }
 
@@ -69,11 +79,20 @@ enum FAIcon: String, CaseIterable, Sendable {
         case .xmark: return "xmark"
         case .font: return "textformat.size"
         case .arrowRotateLeft: return "arrow.uturn.backward"
-        case .broom: return "trash"
-        case .maximize: return "arrow.up.left.and.arrow.down.right"
-        case .minimize: return "arrow.down.right.and.arrow.up.left"
+        case .broom: return "eraser.line.dashed"
         case .rulerCombined: return "ruler"
-        case .arrowUpFromBracket: return "square.and.arrow.up"
+        case .upload: return "icloud.and.arrow.up"
+        case .dragHand: return "hand.raised"
+        case .check: return "checkmark"
+        case .warning: return "exclamationmark.circle"
+        case .xmarkCircle: return "xmark.circle"
+        case .openExternal: return "arrow.up.right.square"
+        case .copy: return "doc.on.doc"
+        case .link: return "link"
+        case .globe: return "safari"
+        case .trash: return "trash"
+        case .linkSlash: return "icloud.slash"
+        case .circleCheck: return "checkmark.circle.fill"
         }
     }
 }

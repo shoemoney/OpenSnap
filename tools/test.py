@@ -34,11 +34,14 @@ def secrets_guard():
     forbidden = re.compile(r"\.(ttf|otf|woff2?)$|(^|/)(\.npmrc|package-lock\.json)$|(^|/)node_modules/|(^|/)fortawesome-fontawesome-pro-[^/]*\.tgz$", re.I)
     listing = subprocess.run(["/usr/bin/git", "ls-files", "--cached", "--others", "--exclude-standard"], cwd=root, capture_output=True, text=True)
     problems = [f"committable licensed/credential file: {name}" for name in listing.stdout.splitlines() if forbidden.search(name)]
-    token = re.compile(rb"_authToken=[0-9A-Fa-f-]{36}")
+    token = re.compile(rb"_authToken=[0-9A-Fa-f-]{36}|FONTAWESOME[A-Z_]*TOKEN\s*[=:]\s*[\"']?[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}")
     for folder in ("Sources", "tools", "tests"):
         for path in sorted((root / folder).rglob("*")):
             if path.is_file() and token.search(path.read_bytes()):
                 problems.append(f"registry auth token in {path.relative_to(root)}")
+    notices = root / "THIRD_PARTY_NOTICES.md"
+    if notices.exists() and token.search(notices.read_bytes()):
+        problems.append("registry auth token in THIRD_PARTY_NOTICES.md")
     if problems:
         raise SystemExit("FAIL secrets-guard\n" + "\n".join(problems))
     return "secrets-guard"
@@ -98,6 +101,9 @@ def suite(name, sources, test, define=None, arguments=(), environment=None):
 fonts = root / "build/fonts"
 font_environment = os.environ | {"OPENSNAP_FA_FONT_DIR": str(fonts)} if any(fonts.glob("*-subset.ttf")) else None
 
+# The icon layer (Pro glyph, embedded Free vector, SF Symbol) that every view drawing a chrome glyph compiles with.
+ICONS = ["FontAwesomeIcons.swift", "ChromeIcons.swift", "FontAwesomeFree.swift", "SVGPath.swift"]
+
 suites = [
     ("original-action-button-tests", ["OriginalActionButton.swift"], "OriginalActionButtonTests.swift", "ORIGINAL_ACTION_BUTTON_TESTS", ()),
     ("original-capture-timing-tests", ["OriginalCaptureTiming.swift"], "OriginalCaptureTimingTests.swift", "ORIGINAL_CAPTURE_TIMING_TESTS", ()),
@@ -120,11 +126,11 @@ suites = [
     ("stroke-fitting-tests", ["SVGPath.swift", "StrokeFitting.swift"], "StrokeFittingTests.swift", "STROKE_FITTING_TESTS", ()),
     ("canvas-tests", ["SVGPath.swift", "DocumentModel.swift", "VectorGeometry.swift", "StrokeFitting.swift", "ImageExport.swift", "Canvas.swift"], "CanvasTests.swift", "CANVAS_TESTS", ()),
     ("history-store-tests", ["SVGPath.swift", "DocumentModel.swift", "VectorGeometry.swift", "StrokeFitting.swift", "ImageExport.swift", "Canvas.swift", "OpenSnapFile.swift", "HistoryStore.swift"], "HistoryStoreTests.swift", "HISTORY_STORE_TESTS", ()),
-    ("history-browser-tests", ["HistoryBrowser.swift", "TestDefaults.swift"], "HistoryBrowserTests.swift", "HISTORY_BROWSER_TESTS", ()),
-    ("history-remote-deletion-tests", ["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift", "HistoryRemoteDeletion.swift"], "HistoryRemoteDeletionTests.swift", None, ("--test",)),
-    ("publishing-tests", ["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift"], "PublishingTests.swift", None, ("--test",)),
-    ("publishing-shutdown-tests", ["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift"], "PublishingShutdownTests.swift", None, ("--test",)),
-    ("publishing-destinations-tests", ["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift"], "PublishingDestinationsTests.swift", None, ("--test",)),
+    ("history-browser-tests", ["HistoryBrowser.swift", "TestDefaults.swift", *ICONS], "HistoryBrowserTests.swift", "HISTORY_BROWSER_TESTS", ()),
+    ("history-remote-deletion-tests", ["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift", "HistoryRemoteDeletion.swift", *ICONS], "HistoryRemoteDeletionTests.swift", None, ("--test",)),
+    ("publishing-tests", ["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift", *ICONS], "PublishingTests.swift", None, ("--test",)),
+    ("publishing-shutdown-tests", ["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift", *ICONS], "PublishingShutdownTests.swift", None, ("--test",)),
+    ("publishing-destinations-tests", ["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift", *ICONS], "PublishingDestinationsTests.swift", None, ("--test",)),
     ("hotkey-tests", ["GlobalHotkeys.swift", "TestDefaults.swift"], "GlobalHotkeysTests.swift", "GLOBAL_HOTKEY_TESTS", ()),
     ("svg-tests", ["SVGPath.swift", "DocumentModel.swift", "VectorGeometry.swift", "StrokeFitting.swift", "ImageExport.swift", "Canvas.swift", "SVGExport.swift"], "SVGExportTests.swift", "SVG_EXPORT_TESTS", ()),
     ("opensnap-file-tests", ["SVGPath.swift", "DocumentModel.swift", "VectorGeometry.swift", "StrokeFitting.swift", "ImageExport.swift", "Canvas.swift", "OpenSnapFile.swift"], "OpenSnapFileTests.swift", "OPENSNAP_FILE_TESTS", ()),
@@ -140,9 +146,10 @@ suites = [
 # These need the Modern chrome sources; a missing file fails the suite. Only the Font Awesome glyph branch inside them
 # is licence-gated, and it prints "SKIPPED (FA not bundled)" when the Pro subsets are absent.
 modern_suites = [
-    ("fontawesome-icons-tests", ["FontAwesomeIcons.swift", "ChromeIcons.swift"], "FontAwesomeIconsTests.swift", "FONTAWESOME_ICONS_TESTS", (), font_environment),
-    ("menu-symbols-tests", ["FontAwesomeIcons.swift", "ChromeIcons.swift", "MenuSymbols.swift"], "MenuSymbolsTests.swift", "MENU_SYMBOLS_TESTS", ()),
-    ("glass-chrome-tests", ["OriginalActionButton.swift", "FontAwesomeIcons.swift", "ChromeIcons.swift", "BezelDrawingControls.swift", "SVGPath.swift", "DocumentModel.swift", "GlassChrome.swift", "ModernEditorChrome.swift"], "GlassChromeTests.swift", "GLASS_CHROME_TESTS", ()),
+    ("fontawesome-icons-tests", [*ICONS], "FontAwesomeIconsTests.swift", "FONTAWESOME_ICONS_TESTS", (), font_environment),
+    ("menu-symbols-tests", [*ICONS, "MenuSymbols.swift"], "MenuSymbolsTests.swift", "MENU_SYMBOLS_TESTS", ()),
+    ("icon-coverage-tests", [*ICONS], "IconCoverageTests.swift", "ICON_COVERAGE_TESTS", ()),
+    ("glass-chrome-tests", ["OriginalActionButton.swift", *ICONS, "BezelDrawingControls.swift", "DocumentModel.swift", "GlassChrome.swift", "ModernEditorChrome.swift"], "GlassChromeTests.swift", "GLASS_CHROME_TESTS", ()),
 ]
 with ThreadPoolExecutor(max_workers=len(suites) + len(modern_suites)) as executor:
     futures = [executor.submit(suite, *args) for args in suites]
