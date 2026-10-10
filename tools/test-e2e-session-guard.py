@@ -13,8 +13,10 @@ once ran its EXIT cleanup against the real defaults domain). Proved, each with a
  (f) a tampered real store makes stop exit non-zero; SIGKILL follows an ignored SIGTERM;
  (g) --aws never echoes credential content (sentinel in a fake credentials file never appears in any output or file);
  (i) the panel-service watchdog: only the exact openAndSavePanelService executable is ever a kill target, only above the RSS threshold
-     (override honoured), kills are timestamped in the log, start/stop write and remove the pid file and stop keeps its cleanup order;
-     `ps` and `kill` are replaced by fakes (E2E_WATCHDOG_PS / E2E_WATCHDOG_KILL) so no test signals a real process.
+     (override honoured) and only when its `ps eww` environment names THIS session's temp dir (a big service of another app or session,
+     a prefix-lookalike dir, a service with no readable environment are all left alone); kills are timestamped in the log, start/stop
+     write and remove the pid file and stop keeps its cleanup order; tools/panel-service-check.sh scopes its peak and kills the same way.
+     `ps`, `ps eww` and `kill` are replaced by fakes (E2E_WATCHDOG_PS / E2E_WATCHDOG_ENV / E2E_WATCHDOG_KILL) so no test reads or signals a real process.
  (h) the E2E inventory (tools/e2e-inventory.py): docs/design/e2e/inventory.json and the coverage matrix match the sources, every FAIcon case and
      menu symbol is listed, every pre-filled proof names a real test, and scratch copies with a drift or a bad proof make --check fail.
 Run: python3 -I tools/test-e2e-session-guard.py
@@ -116,8 +118,8 @@ def env_problem(env):
         return "TMPDIR is not the scratch tmp"
     if env.get("E2E_DEFAULTS") not in (SAFE["defaults"], SAFE["evil"]):
         return "E2E_DEFAULTS is not a fake recorder"
-    if env.get("E2E_WATCHDOG_PS") != SAFE["fake_ps"] or env.get("E2E_WATCHDOG_KILL") != SAFE["fake_kill"]:
-        return "the watchdog ps/kill are not the fakes"
+    if env.get("E2E_WATCHDOG_PS") != SAFE["fake_ps"] or env.get("E2E_WATCHDOG_KILL") != SAFE["fake_kill"] or env.get("E2E_WATCHDOG_ENV") != SAFE["fake_env"]:
+        return "the watchdog ps/env/kill are not the fakes"
     return None
 
 
@@ -125,7 +127,7 @@ def run(script, args, extra_env=None, defaults=None, timeout=120):
     """The only way this file executes a copy of e2e-session.sh: scratch HOME and TMPDIR, fake defaults, recorded."""
     env = dict(os.environ, **(extra_env or {}))
     env.update(HOME=SAFE["home"], TMPDIR=SAFE["tmp"] + "/", E2E_DEFAULTS=defaults or SAFE["defaults"], E2E_STOP_TIMEOUT=env.get("E2E_STOP_TIMEOUT", "2"),
-               E2E_LAUNCH_WAIT="0.4", E2E_WATCHDOG_PS=SAFE["fake_ps"], E2E_WATCHDOG_KILL=SAFE["fake_kill"], E2E_WATCHDOG_INTERVAL="0.1")
+               E2E_LAUNCH_WAIT="0.4", E2E_WATCHDOG_PS=SAFE["fake_ps"], E2E_WATCHDOG_ENV=SAFE["fake_env"], E2E_WATCHDOG_KILL=SAFE["fake_kill"], E2E_WATCHDOG_INTERVAL="0.1")
     env.pop("E2E_STATE_DIR", None)
     problem = env_problem(env)
     assert problem is None, problem
@@ -259,7 +261,7 @@ def drop_harness(text, bad_id, base):
     victim.write_bytes(b"<plist>real</plist>")
     harness = Path(base) / "drop-harness.sh"
     harness.write_text(f'REAL_ID={REAL_ID}\nDEFAULTS="$E2E_DEFAULTS"\n{functions}\ndrop_defaults "{bad_id}"\n')
-    env = dict(os.environ, HOME=SAFE["home"], TMPDIR=SAFE["tmp"], E2E_DEFAULTS=SAFE["defaults"], E2E_WATCHDOG_PS=SAFE["fake_ps"], E2E_WATCHDOG_KILL=SAFE["fake_kill"])
+    env = dict(os.environ, HOME=SAFE["home"], TMPDIR=SAFE["tmp"], E2E_DEFAULTS=SAFE["defaults"], E2E_WATCHDOG_PS=SAFE["fake_ps"], E2E_WATCHDOG_ENV=SAFE["fake_env"], E2E_WATCHDOG_KILL=SAFE["fake_kill"])
     assert env_problem(env) is None
     Path(SAFE["log"]).write_text("")
     subprocess.run(["sh", str(harness)], capture_output=True, text=True, env=env, timeout=30)
@@ -676,16 +678,33 @@ def set_fake_ps(rows):
     Path(SAFE["fake_ps"]).chmod(0o755)
 
 
+def set_fake_env(table):
+    """`ps eww -p PID` stand-in: pid -> the text after the command (the process environment); a pid absent from the table prints nothing."""
+    Path(SAFE["env_table"]).write_text("".join(f"{pid} {text}\n" for pid, text in table.items()))
+
+
+def owned_env(session_dir):
+    """What `ps eww` shows for a panel service the session's app started: the service inherits the client's CFFIXED_USER_HOME, HOME and TMPDIR."""
+    return f"{PANEL_PATH} PATH=/usr/bin HOME={session_dir}/home CFFIXED_USER_HOME={session_dir}/home TMPDIR={session_dir}/tmp OPENSNAP_APP_SUPPORT={session_dir}/support"
+
+
 def killed_pids():
     path = Path(SAFE["kill_log"])
     return sorted(int(line.split()[-1]) for line in path.read_text().splitlines() if line.startswith("-9 ")) if path.exists() else []
 
 
-def watch(script, rows, session_id, extra_env=None, ticks="1"):
-    """Run the `watchdog` subcommand (bounded by ticks) over a fake process table; returns (killed pids, log lines)."""
+def watch(script, rows, session_id, extra_env=None, ticks="1", env=None):
+    """Run the `watchdog` subcommand (bounded by ticks) over a fake process table; returns (killed pids, log lines).
+    Every row is a service of the session unless `env` overrides a pid's environment text (None: unreadable)."""
     reap()
-    forge_session(SAFE["base"], session_id, name=f"{session_id}.session")
+    marked = forge_session(SAFE["base"], session_id, name=f"{session_id}.session")
     set_fake_ps(rows)
+    table = {pid: owned_env(marked) for pid, _, _ in rows}
+    for pid, text in (env or {}).items():
+        table.pop(pid, None)
+        if text is not None:
+            table[pid] = text
+    set_fake_env(table)
     Path(SAFE["kill_log"]).write_text("")
     result = run(script, ["watchdog", session_id], dict({"E2E_WATCHDOG_TICKS": ticks}, **(extra_env or {})))
     log = state_dir() / f"{session_id}.watchdog.log"
@@ -762,13 +781,15 @@ def test_watchdog(base, app):
     status = run(SCRIPT, ["status"])
     check(f"panel watchdog pid {wpid} running, threshold 2097152KB, kills 0" in status.stdout, "watchdog lifecycle: status reports the watchdog, threshold and kill count")
     # A kill shows up in the log, in status and in stop's output.
-    set_fake_ps([(920, over, PANEL_PATH)])
+    set_fake_ps([(920, over, PANEL_PATH), (921, over, PANEL_PATH)])
+    set_fake_env({920: owned_env(session["dir"]), 921: owned_env("/private/var/folders/zz/another-app/T/other-session")})
     deadline = time.time() + 5
     log_path = state_dir() / f"{session_id}.watchdog.log"
     while time.time() < deadline and not (log_path.exists() and log_path.read_text()):
         time.sleep(0.1)
     set_fake_ps([])
-    check(log_path.exists() and " killed pid 920 " in log_path.read_text(), "watchdog lifecycle: the running watchdog killed the over-threshold panel service and logged it")
+    check(log_path.exists() and " killed pid 920 " in log_path.read_text() and " pid 921 " not in log_path.read_text(),
+          "watchdog lifecycle: the running watchdog killed this session's over-threshold panel service and logged it, and left the other app's alone")
     status = run(SCRIPT, ["status"])
     check(re.search(r"kills [1-9]", status.stdout) is not None, "watchdog lifecycle: status counts the kills")
     result = stop()
@@ -816,6 +837,99 @@ def test_watchdog(base, app):
     reap()
 
 
+def test_watchdog_scope(base, app):
+    """The watchdog kills only this session's panel service: judged from the service's `ps eww` environment (fake table, no real process read)."""
+    text = SCRIPT.read_text()
+    ident = f"{REAL_ID}.e2e-42002"
+    over = THRESHOLD_KB + 1
+    mine = str(Path(SAFE["tmp"]) / "e2e-session.FORGED")
+    other_app = "/private/var/folders/zz/another-app/T/some-other-run"
+    rows = [(940, over, PANEL_PATH),        # this session's service, big: killed
+            (941, over, PANEL_PATH),        # another app's service, big: foreign environment
+            (942, over, PANEL_PATH),        # a lookalike dir that merely starts with this session's path
+            (943, over, PANEL_PATH),        # big, but its environment cannot be read
+            (944, over, PANEL_PATH),        # this session's dir appears only inside another variable's value, not as HOME/TMPDIR/CFFIXED_USER_HOME
+            (945, over, PANEL_PATH),        # a variable that merely ends in HOME
+            (946, 4096, PANEL_PATH)]        # this session's service, small: kept
+    env = {941: owned_env(other_app), 942: owned_env(mine + "X"), 943: None,
+           944: f"{PANEL_PATH} PATH=/usr/bin NOTES={mine}/home HOME=/Users/someone", 945: f"{PANEL_PATH} MYHOME={mine}/home HOME=/Users/someone"}
+    result, killed, log = watch(SCRIPT, rows, ident, env=env)
+    check(result.returncode == 0 and killed == [940], f"watchdog scope: only the big service whose environment names this session is killed (killed {killed})")
+    check(len(log) == 1 and " killed pid 940 " in log[0], f"watchdog scope: only that kill is logged ({log})")
+    result, killed, log = watch(SCRIPT, rows[:1], ident, env={940: owned_env(other_app)})
+    check(not killed and not log, "watchdog scope: a big service from another app's environment is NOT killed, however big")
+    result, killed, log = watch(SCRIPT, rows[:1], ident, env={940: f"{PANEL_PATH} TMPDIR={mine}/tmp"})
+    check(killed == [940], "watchdog scope: a TMPDIR under the session dir alone is enough to attribute the service")
+    result, killed, log = watch(SCRIPT, rows[:1], ident, env={940: f"{PANEL_PATH} CFFIXED_USER_HOME={mine}//home"})
+    check(killed == [940], "watchdog scope: the non-normalized (\"//\") CFFIXED_USER_HOME that grows without bound is still attributed to its session")
+    result, killed, log = watch(SCRIPT, rows[:1], ident, extra_env={"E2E_PANEL_WATCHDOG_KB": "1000"}, env={940: owned_env(other_app)})
+    check(not killed, "watchdog scope: lowering the threshold never widens the scope")
+    # A session file with no dir field has nothing to attribute a service to.
+    reap()
+    forge_session(SAFE["base"], ident, name=f"{ident}.session")
+    (state_dir() / f"{ident}.session").write_text(f"id={ident}\npid=\nseed=empty\naws=no\n")
+    set_fake_ps(rows[:1]); set_fake_env({940: owned_env(mine)}); Path(SAFE["kill_log"]).write_text("")
+    result = run(SCRIPT, ["watchdog", ident], {"E2E_WATCHDOG_TICKS": "1"})
+    check(result.returncode == 0 and not killed_pids(), "watchdog scope: a session file without a dir kills nothing")
+
+    # Can fail: with the environment test removed every big service is a target again; with the trailing slash dropped a lookalike dir matches.
+    mutant = script_copy(base, "mut-scope-all", text.replace('    return 1\n}\n\n# "pid rss" for every process of THIS session', '    return 0\n}\n\n# "pid rss" for every process of THIS session', 1))
+    check(mutant.read_text() != text, "watchdog scope (can fail): the scope mutation applied")
+    result, killed, log = watch(mutant, rows, ident, env=env)
+    check({940, 941, 942, 943, 944, 945} <= set(killed), f"watchdog scope (can fail): without the environment test every big service is killed (killed {killed})")
+    mutant = script_copy(base, "mut-scope-slash", text.replace('=$dir/"*', '=$dir"*'))
+    check(mutant.read_text() != text, "watchdog scope (can fail): the prefix mutation applied")
+    result, killed, log = watch(mutant, rows, ident, env=env)
+    check(942 in killed and 941 not in killed, f"watchdog scope (can fail): without the trailing slash a lookalike dir is killed (killed {killed})")
+    mutant = script_copy(base, "mut-scope-loose", text.replace('*" HOME=$dir/"*', '*"HOME=$dir/"*'))
+    result, killed, log = watch(mutant, rows, ident, env=env)
+    check(945 in killed and 941 not in killed, f"watchdog scope (can fail): without the leading space a variable ending in HOME is attributed (killed {killed})")
+    reap()
+
+
+def test_panel_service_check(base):
+    """tools/panel-service-check.sh opens a real panel, so it is never run here; its own `session_panel_services` function is lifted out and run
+    over a fake `ps` (the same text with /bin/ps pointed at the fake) and the script text is checked for the real-home cleanup it must not have."""
+    script = root / "tools/panel-service-check.sh"
+    text = script.read_text()
+    check("Library/Preferences" not in text and "defaults delete" not in text and "$HOME/" not in text,
+          "panel-service-check: nothing outside the run's own temp dir is touched (no real Preferences cleanup, no $HOME path)")
+    check(text.count("session_panel_services") >= 3, "panel-service-check: the peak and the watchdog both read the session-scoped list")
+    function = re.search(r"^session_panel_services\(\) \{\n.*?^\}$", text, re.M | re.S).group(0)
+    run_dir = "/private/var/folders/zz/me/T/panel-service-check.AbC123"
+    fake = Path(base) / "fake-ps-check.sh"
+    fake.write_text(f"""#!/bin/sh
+if [ "$1" = "-axo" ]; then
+cat <<'EOF'
+{ps_listing([(700, 3000000, PANEL_PATH), (701, 3000000, PANEL_PATH), (702, 3000000, PANEL_PATH), (703, 3000000, PANEL_PATH), (704, 90000, PANEL_PATH),
+             (705, 3000000, "/usr/bin/vim"), (1, 3000000, PANEL_PATH)])}EOF
+else
+for last; do :; done
+awk -v p="$last" '$1 == p {{ sub(/^[^ ]+ /, ""); print }}' '{SAFE["env_table"]}'
+fi
+""")
+    fake.chmod(0o755)
+    set_fake_env({700: owned_env(run_dir), 701: owned_env("/private/var/folders/zz/another/T/panel-service-check.Zzz999"), 702: f"{PANEL_PATH} CFFIXED_USER_HOME={run_dir}//home",
+                  704: owned_env(run_dir), 705: owned_env(run_dir), 1: owned_env(run_dir)})
+
+    def listed(source):
+        harness = Path(base) / "psc-harness.sh"
+        harness.write_text(f"T={run_dir}\n{source}\nsession_panel_services\n")
+        return subprocess.run(["sh", str(harness)], capture_output=True, text=True, timeout=30).stdout.split("\n")[:-1]
+    bound = function.replace("/bin/ps", str(fake))
+    check(bound != function, "panel-service-check: the fake ps was bound into the function copy")
+    check(listed(bound) == ["700 3000000", "702 3000000", "704 90000"],
+          f"panel-service-check: only this run's panel services are listed: the other run's, an unreadable one, pid 1 and non-panel processes are not ({listed(bound)})")
+    mutant = bound.replace('*" CFFIXED_USER_HOME=$T/"*|*" HOME=$T/"*|*" TMPDIR=$T/"*) echo', "*) echo")
+    check(mutant != bound and {"701 3000000", "703 3000000"} <= set(listed(mutant)),
+          "panel-service-check (can fail): without the environment test another run's and an unreadable service are counted and would be killed")
+    reap_env()
+
+
+def reap_env():
+    set_fake_env({})
+
+
 def test_runs_were_safe():
     check(len(RUNS) > 0 and all(env_problem(env) is None for env in RUNS),
           f"every one of the {len(RUNS)} script runs used the scratch HOME and TMPDIR and a fake defaults recorder")
@@ -823,12 +937,13 @@ def test_runs_were_safe():
           and env_problem({"HOME": SAFE["home"], "TMPDIR": SAFE["tmp"]}) is not None
           and env_problem({"HOME": SAFE["home"], "TMPDIR": SAFE["tmp"], "E2E_DEFAULTS": "/usr/bin/defaults"}) is not None
           and env_problem({"HOME": SAFE["home"], "TMPDIR": os.environ.get("TMPDIR", "/tmp"), "E2E_DEFAULTS": SAFE["defaults"]}) is not None
-          and env_problem({"HOME": SAFE["home"], "TMPDIR": SAFE["tmp"], "E2E_DEFAULTS": SAFE["defaults"], "E2E_WATCHDOG_PS": SAFE["fake_ps"], "E2E_WATCHDOG_KILL": SAFE["fake_kill"]}) is None,
+          and env_problem({"HOME": SAFE["home"], "TMPDIR": SAFE["tmp"], "E2E_DEFAULTS": SAFE["defaults"], "E2E_WATCHDOG_PS": SAFE["fake_ps"], "E2E_WATCHDOG_ENV": SAFE["fake_env"], "E2E_WATCHDOG_KILL": SAFE["fake_kill"]}) is None,
           "the env checker rejects a real HOME, a real TMPDIR, a missing recorder and the real /usr/bin/defaults")
     check(env_problem({"HOME": SAFE["home"], "TMPDIR": SAFE["tmp"], "E2E_DEFAULTS": SAFE["defaults"]}) is not None
-          and env_problem({"HOME": SAFE["home"], "TMPDIR": SAFE["tmp"], "E2E_DEFAULTS": SAFE["defaults"], "E2E_WATCHDOG_PS": "/bin/ps", "E2E_WATCHDOG_KILL": SAFE["fake_kill"]}) is not None
-          and env_problem({"HOME": SAFE["home"], "TMPDIR": SAFE["tmp"], "E2E_DEFAULTS": SAFE["defaults"], "E2E_WATCHDOG_PS": SAFE["fake_ps"], "E2E_WATCHDOG_KILL": "kill"}) is not None,
-          "the env checker rejects a run without the fake ps and kill (so a test can never signal a real process)")
+          and env_problem({"HOME": SAFE["home"], "TMPDIR": SAFE["tmp"], "E2E_DEFAULTS": SAFE["defaults"], "E2E_WATCHDOG_PS": "/bin/ps", "E2E_WATCHDOG_ENV": SAFE["fake_env"], "E2E_WATCHDOG_KILL": SAFE["fake_kill"]}) is not None
+          and env_problem({"HOME": SAFE["home"], "TMPDIR": SAFE["tmp"], "E2E_DEFAULTS": SAFE["defaults"], "E2E_WATCHDOG_PS": SAFE["fake_ps"], "E2E_WATCHDOG_ENV": "/bin/ps eww -o command= -p", "E2E_WATCHDOG_KILL": SAFE["fake_kill"]}) is not None
+          and env_problem({"HOME": SAFE["home"], "TMPDIR": SAFE["tmp"], "E2E_DEFAULTS": SAFE["defaults"], "E2E_WATCHDOG_PS": SAFE["fake_ps"], "E2E_WATCHDOG_ENV": SAFE["fake_env"], "E2E_WATCHDOG_KILL": "kill"}) is not None,
+          "the env checker rejects a run without the fake ps, ps eww and kill (so a test can never signal a real process)")
 
 
 with tempfile.TemporaryDirectory(prefix="e2e-guard-test.") as scratch:
@@ -839,9 +954,12 @@ with tempfile.TemporaryDirectory(prefix="e2e-guard-test.") as scratch:
     fake_ps, fake_kill, kill_log = Path(scratch) / "fake-ps.sh", Path(scratch) / "fake-kill.sh", Path(scratch) / "fake-kill.log"
     fake_ps.write_text("#!/bin/sh\n")
     fake_kill.write_text(f"#!/bin/sh\nprintf '%s\\n' \"$*\" >> '{kill_log}'\n")
-    for path in (fake_ps, fake_kill):
+    fake_env, env_table = Path(scratch) / "fake-env.sh", Path(scratch) / "fake-env.table"
+    env_table.write_text("")
+    fake_env.write_text(f"#!/bin/sh\nawk -v p=\"$1\" '$1 == p {{ sub(/^[^ ]+ /, \"\"); print }}' '{env_table}'\n")
+    for path in (fake_ps, fake_kill, fake_env):
         path.chmod(0o755)
-    SAFE.update(home=str(scratch_home), tmp=str(Path(scratch) / "tmp"), defaults=str(good), evil=str(evil), log=str(log),
+    SAFE.update(fake_env=str(fake_env), env_table=str(env_table), home=str(scratch_home), tmp=str(Path(scratch) / "tmp"), defaults=str(good), evil=str(evil), log=str(log),
                 fake_ps=str(fake_ps), fake_kill=str(fake_kill), kill_log=str(kill_log), base=scratch)
     app = fake_app(scratch)
     try:
@@ -854,6 +972,8 @@ with tempfile.TemporaryDirectory(prefix="e2e-guard-test.") as scratch:
         test_protections(scratch, app)
         test_aws(scratch, app)
         test_watchdog(scratch, app)
+        test_watchdog_scope(scratch, app)
+        test_panel_service_check(scratch)
         test_inventory(scratch)
         test_runs_were_safe()
     finally:

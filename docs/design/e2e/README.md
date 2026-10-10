@@ -21,6 +21,7 @@ A screenshot is not an interaction and an AX dump is not VoiceOver. Every row sa
 | `rendered` | A harness capture (`tools/eye-dump-audit.sh`): the app drew this state in-process. Proves how it looks, not that a user can reach it. |
 | `unit/source` | An existing named test proves the behaviour. The row names the test, and `tools/test-e2e-session-guard.py` fails if that test text disappears. Pre-filled only where the test really covers the row's expectation. |
 | `unverified` | Nothing yet. Every row starts here. |
+| `retired` | The surface was removed or replaced (gap `removed` or `replaced`). The ID and its historic evidence stay in the row for traceability, but it counts toward no other class; the live surface has its own rows. The generator sets this class itself. |
 
 Each row also carries an `exercise` verdict from the inventory: `e2e` (fully real-click exercisable), `e2e-partial` (the app-owned part is real-click, the named gap is the rest) or `gap` (not exercisable in an isolated session). Gap reasons: needs Screen Recording permission; Photos library; OS-owned panel content; multi-display or 1x hardware; VoiceOver speech; global hotkeys while the app is in the background; real printer; and `system-setting` (a system appearance or display option cannot be changed in an E2E session, so only harness-injected rendered evidence exists). Gaps are reported, never relabelled as passes.
 

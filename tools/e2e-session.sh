@@ -21,10 +21,13 @@
 #
 # PANEL WATCHDOG (F-J5-005): start also launches a background watchdog that every E2E_WATCHDOG_INTERVAL seconds (default 0.5) looks at
 # running processes and SIGKILLs any whose executable is exactly com.apple.appkit.xpc.openAndSavePanelService (the system open/save panel
-# service) once its resident size passes E2E_PANEL_WATCHDOG_KB (default 2097152 = 2 GB). That service grew to ~66 GB and ignored SIGTERM
-# during a real-click run; nothing else is ever matched or killed. Kills are timestamped in $STATE/<id>.watchdog.log; status reports the
-# watchdog and stop prints its kills, then ends it AFTER the app cleanup and BEFORE the real-store compare. E2E_WATCHDOG_PS /
-# E2E_WATCHDOG_KILL replace `ps` and `kill` so tests never signal a real process.
+# service) once its resident size passes E2E_PANEL_WATCHDOG_KB (default 2097152 = 2 GB), BUT ONLY WHEN THAT SERVICE BELONGS TO THIS SESSION:
+# the service inherits the client's CFFIXED_USER_HOME/HOME/TMPDIR, so its `ps eww` environment must name the session's own temp dir
+# (<dir>/ after CFFIXED_USER_HOME=, HOME= or TMPDIR=). A service of another app, or of another session, is never touched, and neither is
+# one whose environment cannot be read. That service grew to ~66 GB and ignored SIGTERM during a real-click run. Kills are timestamped in
+# $STATE/<id>.watchdog.log; status reports the watchdog and stop prints its kills, then ends it AFTER the app cleanup and BEFORE the
+# real-store compare. E2E_WATCHDOG_PS / E2E_WATCHDOG_ENV / E2E_WATCHDOG_KILL replace `ps`, `ps eww -p` and `kill` so tests never signal
+# or read a real process.
 #
 # stop: SIGTERM, SIGKILL after E2E_STOP_TIMEOUT seconds (default 10), drop the throwaway defaults domain (E2E_DEFAULTS, default
 # /usr/bin/defaults), remove the temp dir, THEN compare the real stores. Exit non-zero when any watched real store changed.
@@ -41,6 +44,7 @@ WATCHDOG_KB=${E2E_PANEL_WATCHDOG_KB:-2097152}
 case "$WATCHDOG_KB" in ''|*[!0-9]*) WATCHDOG_KB=2097152 ;; esac
 WATCHDOG_INTERVAL=${E2E_WATCHDOG_INTERVAL:-0.5}
 WATCHDOG_PS=${E2E_WATCHDOG_PS:-/bin/ps -axo pid=,rss=,comm=}
+WATCHDOG_ENV=${E2E_WATCHDOG_ENV:-/bin/ps eww -o command= -p}   # called with one pid: prints its command line and environment
 WATCHDOG_KILL=${E2E_WATCHDOG_KILL:-kill}
 
 # Only <real id>.e2e-<digits> passes, so neither real defaults domain (the current id or the retired one) can ever match.
@@ -98,20 +102,36 @@ terminate_app() {
 }
 
 # ---------------------------------------------------------------------------------------------------------------- watchdog
-# "pid rss" for every process whose executable BASENAME is exactly the panel service and whose rss (KB) is above the threshold.
+# True when the process's environment (`ps eww`) shows it was started under the session's own temp dir. Nothing readable, nothing killed.
+in_session() {
+    pid=$1; dir=$2
+    penv=$($WATCHDOG_ENV "$pid" 2>/dev/null || true)
+    case "$penv" in
+        *" CFFIXED_USER_HOME=$dir/"*|*" HOME=$dir/"*|*" TMPDIR=$dir/"*) return 0 ;;
+    esac
+    return 1
+}
+
+# "pid rss" for every process of THIS session (environment under $2) whose executable BASENAME is exactly the panel service and whose rss (KB) is above $1.
 panel_over_threshold() {
-    $WATCHDOG_PS 2>/dev/null | awk -v name="$PANEL_SERVICE" -v max="$1" '
+    max=$1; dir=${2:-}
+    [ -n "$dir" ] || return 0
+    $WATCHDOG_PS 2>/dev/null | awk -v name="$PANEL_SERVICE" -v max="$max" '
         { pid = $1; rss = $2; $1 = ""; $2 = ""; sub(/^ +/, "", $0); n = split($0, parts, "/")
-          if (parts[n] == name && pid ~ /^[0-9]+$/ && pid + 0 > 1 && rss ~ /^[0-9]+$/ && rss + 0 > max + 0) print pid, rss }'
+          if (parts[n] == name && pid ~ /^[0-9]+$/ && pid + 0 > 1 && rss ~ /^[0-9]+$/ && rss + 0 > max + 0) print pid, rss }' |
+    while read -r cpid crss; do
+        if in_session "$cpid" "$dir"; then echo "$cpid $crss"; fi
+    done
 }
 
 cmd_watchdog() {
     id=${1:-}
     valid_id "$id" || { echo "watchdog: refusing unexpected id '$id'" >&2; exit 2; }
     session="$SESSIONS/$id.session"; log="$SESSIONS/$id.watchdog.log"; ticks=0
+    dir=$(field dir "$session" 2>/dev/null || true)
     # Ends when the session file is gone (stop, or the session dir was wiped); E2E_WATCHDOG_TICKS bounds a test run.
     while [ -f "$session" ]; do
-        panel_over_threshold "$WATCHDOG_KB" | while read -r wpid wrss; do
+        panel_over_threshold "$WATCHDOG_KB" "$dir" | while read -r wpid wrss; do
             if $WATCHDOG_KILL -9 "$wpid" 2>/dev/null; then verdict=killed; else verdict="kill failed for"; fi
             echo "$(date '+%Y-%m-%dT%H:%M:%S%z') $verdict pid $wpid rss ${wrss}KB (threshold ${WATCHDOG_KB}KB) $PANEL_SERVICE" >> "$log"
         done
@@ -368,7 +388,7 @@ cmd_start() {
     if [ "$AWS" = yes ]; then
         echo "aws              AWS_SHARED_CREDENTIALS_FILE points at the owner's credentials file in place; its content is never read or printed here"
     fi
-    echo "panel watchdog   kills any $PANEL_SERVICE above ${WATCHDOG_KB}KB RSS (E2E_PANEL_WATCHDOG_KB); log $SESSIONS/$THROWAWAY_ID.watchdog.log"
+    echo "panel watchdog   kills only this session's $PANEL_SERVICE above ${WATCHDOG_KB}KB RSS (E2E_PANEL_WATCHDOG_KB); log $SESSIONS/$THROWAWAY_ID.watchdog.log"
     echo "real stores      before: $(cat "$TMP/guard-before.txt")"
     echo "stop with        sh tools/e2e-session.sh stop"
 }
