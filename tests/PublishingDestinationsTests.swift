@@ -421,6 +421,24 @@ enum PublishingDestinationsTests {
         try expect(!view.endpointField.isHiddenOrHasHiddenAncestor && view.endpointField.stringValue == "sftp://old.example.com/uploads", "an SFTP destination saved with an sftp:// endpoint still shows it")
         view.cancelFormTapped()
 
+        // R2-017: Test with an empty required address says which field, outlines it and focuses it, and never starts a test.
+        view.showForm(for: nil)
+        view.protocolPopup.selectItem(withTitle: PublishingProtocol.webDAV.title); view.formChanged(); panel.contentView?.layoutSubtreeIfNeeded()
+        var started = 0
+        view.onTest = { _, _ in started += 1 }
+        view.nameField.stringValue = "Web"; view.endpointField.stringValue = "  "
+        view.testTapped()
+        try expect(started == 0 && view.formResult.text.stringValue.contains("Endpoint URL is empty"), "an empty endpoint is named, not tested (\(view.formResult.text.stringValue))")
+        try expect(view.endpointField.layer?.borderWidth == 2 && (panel.firstResponder as? NSTextView)?.delegate === view.endpointField, "…the field is outlined and holds the keyboard")
+        NotificationCenter.default.post(name: NSControl.textDidChangeNotification, object: view.endpointField)
+        try expect(view.endpointField.layer?.borderWidth == 0, "…and the outline goes when the field is edited")
+        view.endpointField.stringValue = "https://dav.example.com/files"; view.testTapped()
+        try expect(started == 1, "a filled endpoint is tested")
+        view.protocolPopup.selectItem(withTitle: PublishingProtocol.sftp.title); view.formChanged(); view.aliasField.stringValue = ""; view.testTapped()
+        try expect(started == 1 && view.formResult.text.stringValue.contains("SSH host is empty"), "an SFTP destination without a host is named too (\(view.formResult.text.stringValue))")
+        view.onTest = nil
+        view.cancelFormTapped()
+
         // Every protocol and credential source: the form shows its own copy, and every filled field still has its caption as its name.
         view.showForm(for: nil)
         for transport in PublishingProtocol.allCases {
@@ -589,7 +607,7 @@ enum PublishingDestinationsTests {
         // What the answers mean.
         func web(_ code: String, exit: Int32 = 0, stderr: String = "") -> PublishingS3Plan.CheckResult { Test.webDAVOutcome(stdout: code + "\n", exitCode: exit, stderr: stderr, username: "me", password: "hunter2") }
         try expect(web("200").ok && web("207").ok && web("405").ok && web("501").ok, "an answer that does not refuse the login or the folder is a connection")
-        try expect(web("200").message.contains("accepted the login") && web("405").message.contains("login could not be checked"), "a 2xx says the login was accepted; a PUT-only endpoint says it could not check it")
+        try expect(web("200").message.contains("did not reject the login") && !web("200").message.contains("accepted") && web("200").message.contains("does not prove") && web("405").message.contains("login could not be checked"), "a 2xx says only that the login was not rejected (R2-018); a PUT-only endpoint says it could not check it")
         try expect(!web("301").ok && !web("302").ok && !web("308").ok && web("301").message.contains("redirected") && web("301").message.contains("does not follow redirects"), "a redirect is a failure with its reason, not a pass")
         try expect(Test.webDAVOutcome(stdout: "401", exitCode: 0, stderr: "", username: "", password: "").message.contains("asks for a user name and password"), "an anonymous test that meets a login says to enter one")
         try expect(!web("401").ok && web("401").message.contains("user name or password"), "401 is a login problem")

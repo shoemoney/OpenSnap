@@ -368,8 +368,39 @@ final class PublishingDestinationsView: NSView {
         catch { showStatus(error.localizedDescription) }
     }
     @objc func testTapped() {
+        if let (field, sentence) = emptyRequiredField() { flag(field, sentence); return }
         do { let draft = try makeDraft(); showResult(.working, "Testing…"); onTest?(draft.destination, draft.password) }
         catch { showStatus(error.localizedDescription) }
+    }
+
+    /// The first required address field that is still empty for this protocol, with the sentence that names it. Test says which field it
+    /// needs instead of a general "enter a complete URL" (R2-017).
+    func emptyRequiredField() -> (NSTextField, String)? {
+        func empty(_ field: NSTextField) -> Bool { field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        switch selectedProtocol {
+        case .webDAV, .ftp, .ftps:
+            if empty(endpointField) { return (endpointField, "Endpoint URL is empty. Enter the server address, such as \(endpointField.placeholderString ?? "https://example.com/files").") }
+        case .sftp:
+            if !showsLegacySFTPEndpoint, empty(aliasField) { return (aliasField, "SSH host is empty. Enter an alias from ~/.ssh/config, or a host name.") }
+        case .s3:
+            if empty(bucketField) { return (bucketField, "Bucket is empty. Enter the name of the S3 bucket.") }
+        }
+        return nil
+    }
+    /// The field that needs attention: named in the result line, outlined in the error colour (with the words, so not colour alone), and focused.
+    /// The outline goes as soon as the field is edited.
+    private func flag(_ field: NSTextField, _ sentence: String) {
+        showStatus(sentence)
+        field.wantsLayer = true
+        field.layer?.borderWidth = 2; field.layer?.cornerRadius = DesignTokens.Radius.md
+        field.effectiveAppearance.performAsCurrentDrawingAppearance { field.layer?.borderColor = DesignTokens.Palette.feedbackError.cgColor }
+        field.setAccessibilityHelp(sentence)
+        window?.makeFirstResponder(field)
+        var token: NSObjectProtocol?
+        token = NotificationCenter.default.addObserver(forName: NSControl.textDidChangeNotification, object: field, queue: .main) { [weak field] _ in
+            MainActor.assumeIsolated { field?.layer?.borderWidth = 0; field?.setAccessibilityHelp(nil) }
+            if let token { NotificationCenter.default.removeObserver(token) }
+        }
     }
     @objc func cancelFormTapped() { formResult.show(.idle, ""); onCancel?() }
 }
@@ -474,8 +505,9 @@ final class DefaultPillView: NSView {
     override func layout() { super.layout(); layer?.cornerRadius = bounds.height / 2 }
     override func updateLayer() {
         effectiveAppearance.performAsCurrentDrawingAppearance {
-            layer?.backgroundColor = (emphasized ? NSColor.clear : Palette.State.selectedFill).cgColor
-            layer?.borderColor = (emphasized ? NSColor.alternateSelectedControlTextColor : Palette.accent).cgColor
+            // Outlined and neutral, not the accent fill a selected row wears, so "Default" and "selected" are two different things.
+            layer?.backgroundColor = NSColor.clear.cgColor
+            layer?.borderColor = (emphasized ? NSColor.alternateSelectedControlTextColor : Palette.Text.secondary).cgColor
         }
     }
     private func refreshColors() {

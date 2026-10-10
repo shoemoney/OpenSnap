@@ -411,6 +411,24 @@ struct HistoryBrowserTests {
                     try expect(HistoryBrowser.previewHeight(forTileWidth:300) > HistoryBrowser.previewHeight(forTileWidth:210),"A stretched tile keeps a small preview")
                 }
             }),
+            ("Extra width becomes another column, never a tile wider than 280; the Drag as pop-up stays under 150; a never-shared snap has no Destination row (R2-015)", {
+                for grid in stride(from:420.0,through:2600.0,by:20.0) {
+                    let tile = HistoryBrowser.tileWidth(forGridWidth:grid)
+                    let columns = max(1,((grid - 2 * HistoryBrowser.gridSideInset + HistoryBrowser.tileGap) / (tile + HistoryBrowser.tileGap)).rounded(.down))
+                    // A tile is over the cap only where one more column would make every tile narrower than the minimum.
+                    let next = (grid - 2 * HistoryBrowser.gridSideInset - columns * HistoryBrowser.tileGap) / (columns + 1)
+                    try expect(tile <= HistoryBrowser.maximumTileWidth || next < HistoryBrowser.minimumTileWidth,"a \(grid) wide grid keeps its tiles at or under \(HistoryBrowser.maximumTileWidth) unless another column would be too narrow (tile \(tile), \(columns) columns, next \(next))")
+                    if columns > 1 { try expect(tile >= HistoryBrowser.minimumTileWidth,"…and at least \(HistoryBrowser.minimumTileWidth) (tile \(tile))") }
+                }
+                try browser { browser,_ in
+                    let content = try browser.window?.contentView.unwrap("content view") ?? NSView()
+                    browser.update(items:[item("Local",0)]); browser.select(ids:[browser.visibleItems[0].id]); laidOut(browser,width:1000,height:720)
+                    let pop = try descendants(content).compactMap { $0 as? NSPopUpButton }.first { $0.accessibilityLabel() == "History drag export format" }.unwrap("format popup")
+                    try expect(pop.frame.width <= HistoryBrowser.formatPopupMaximumWidth + 0.5,"the format pop-up is \(pop.frame.width) wide")
+                    let destination = try descendants(content).compactMap { $0 as? NSTextField }.first { $0.accessibilityLabel() == "Destination" }.unwrap("Destination value")
+                    try expect(destination.superview?.isHidden == true,"a snap that was never shared has no Destination row")
+                }
+            }),
             ("Tiles in a row are evenly spaced, with no large gap, at 880, 1000 and 1280", {
                 try browser { browser,_ in
                     // Nine snaps on one day so a wide window has full rows, plus three on an earlier day for a short row.
