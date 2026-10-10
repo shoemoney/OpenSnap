@@ -1,8 +1,10 @@
 import AppKit
 
-// The Settings window: a toolbar of four tabs (General, Drawing, Capture, Upload), no Done button, every change applied at
-// once. It is self-contained: the app hands it closures for the things it owns (stored preferences, the shortcut manager, the
-// destination list, the destinations sheet) and it owns nothing else, so a test can build it with in-memory stand-ins.
+// The Settings window: four tabs (General, Drawing, Capture, Upload) on an app-owned strip at the top of the content, no Done
+// button, every change applied at once. It is self-contained: the app hands it closures for the things it owns (stored
+// preferences, the shortcut manager, the destination list, the destinations sheet) and it owns nothing else, so a test can build
+// it with in-memory stand-ins. The strip is ours, not an NSToolbar's, because AppKit draws toolbar labels at about 13 pt and an
+// app-owned label is 20 pt. The title bar text is the one thing the OS still sets; it follows the selected tab.
 
 /// Sizes and row builders shared by the four tabs, so every tab is the same aligned form grid.
 @MainActor
@@ -21,13 +23,19 @@ enum SettingsLayout {
 
     /// Every row label in the window, so the widest one sets the label column of all four tabs.
     static var rowLabels: [String] {
-        ["Show in:", "Snapping:", "Hints:", "Drawing precision:", "Arrow head:", "Flash:", "Destinations:"] + GlobalHotkeyForm.labelTexts()
+        GeneralSettingsTab.rowLabels + DrawingSettingsTab.rowLabels + ["Flash:", "Destinations:"] + GlobalHotkeyForm.labelTexts()
     }
-    static var labelColumnWidth: CGFloat {
-        let font = Typography.font(.bodyStrong)
-        return ceil(rowLabels.map { ($0 as NSString).size(withAttributes: [.font: font]).width }.max() ?? 0)
-    }
+    static var labelColumnWidth: CGFloat { labelWidth(for: rowLabels) }
     static var controlColumnWidth: CGFloat { gridWidth - labelColumnWidth - columnSpacing }
+
+    /// The label column a tab needs for its own labels. A short form (General, Drawing) sizes to them and is centred; the long ones
+    /// (Capture, Upload) use the widest label of all so they stay one column.
+    static func labelWidth(for labels: [String]) -> CGFloat {
+        let font = Typography.font(.bodyStrong)
+        return ceil(labels.map { ($0 as NSString).size(withAttributes: [.font: font]).width }.max() ?? 0)
+    }
+    /// The widest a control column can be inside the content width once the label column is taken.
+    static func availableControlWidth(labelWidth: CGFloat) -> CGFloat { gridWidth - labelWidth - columnSpacing }
 
     /// A row label: right-aligned in the label column, 20 pt semibold.
     static func rowLabel(_ text: String) -> NSTextField {
@@ -38,22 +46,29 @@ enum SettingsLayout {
     }
 
     /// Secondary text under a control, the only place the 18 pt caption is used.
-    static func caption(_ text: String) -> NSTextField {
+    static func caption(_ text: String, width: CGFloat? = nil) -> NSTextField {
+        let width = width ?? controlColumnWidth
         let field = NSTextField(wrappingLabelWithString: text)
         field.font = Typography.font(.caption); field.textColor = DesignTokens.Palette.Text.secondary
-        field.preferredMaxLayoutWidth = controlColumnWidth
-        field.widthAnchor.constraint(equalToConstant: controlColumnWidth).isActive = true
+        field.preferredMaxLayoutWidth = width
+        field.widthAnchor.constraint(equalToConstant: width).isActive = true
         return field
     }
 
-    static func checkbox(_ title: String, identifier: String, target: AnyObject, action: Selector, wraps: Bool = false) -> NSButton {
+    /// The width a caption takes on one line, so a tab can size its control column to hold it.
+    static func captionWidth(_ text: String) -> CGFloat {
+        ceil((text as NSString).size(withAttributes: [.font: Typography.font(.caption)]).width)
+    }
+
+    /// A checkbox. With `wrapWidth` the title wraps inside that width (the checkbox glyph included).
+    static func checkbox(_ title: String, identifier: String, target: AnyObject, action: Selector, wrapWidth: CGFloat? = nil) -> NSButton {
         let button = NSButton(checkboxWithTitle: title, target: target, action: action)
-        guard wraps else { configure(button, identifier: identifier); return button }
-        let measured = (title as NSString).boundingRect(with: NSSize(width: controlColumnWidth - checkboxIndent, height: .greatestFiniteMagnitude),
+        guard let wrapWidth else { configure(button, identifier: identifier); return button }
+        let measured = (title as NSString).boundingRect(with: NSSize(width: wrapWidth - checkboxIndent, height: .greatestFiniteMagnitude),
                                                        options: .usesLineFragmentOrigin, attributes: [.font: Typography.font(.body)])
         configure(button, identifier: identifier, height: ceil(measured.height))
         button.cell?.wraps = true; button.cell?.isScrollable = false; button.cell?.lineBreakMode = .byWordWrapping
-        button.widthAnchor.constraint(equalToConstant: controlColumnWidth).isActive = true
+        button.widthAnchor.constraint(equalToConstant: wrapWidth).isActive = true
         return button
     }
 
@@ -126,12 +141,15 @@ final class SettingsPreferencesModel {
     }
 }
 
-/// One tab: a fixed-width form grid pinned to the top, sized to its content.
+/// One tab: a form grid sized to its content, centred across the window and pinned to the top.
 @MainActor
 class SettingsTabViewController: NSViewController {
     private(set) var grid = NSGridView()
     /// A tab whose content changed height asks the window to refit.
     var onResize: (() -> Void)?
+    /// The label and control column widths of this tab's grid. A subclass with a short form sets them in `makeRows`.
+    var labelWidth = SettingsLayout.labelColumnWidth
+    var controlWidth = SettingsLayout.controlColumnWidth
 
     /// Rows of [label, control]; a row with no label uses `NSGridCell.emptyContentView`. Subclasses override.
     func makeRows() -> [[NSView]] { [] }
@@ -141,16 +159,19 @@ class SettingsTabViewController: NSViewController {
     override func loadView() {
         let root = NSView()
         root.translatesAutoresizingMaskIntoConstraints = false
-        root.widthAnchor.constraint(equalToConstant: SettingsLayout.contentWidth).isActive = true
+        // Content width unless the scroll view says otherwise: a scroll bar that takes room leaves the grid centred in what is left.
+        let width = root.widthAnchor.constraint(equalToConstant: SettingsLayout.contentWidth)
+        width.priority = .defaultHigh; width.isActive = true
         grid = NSGridView(views: makeRows())
         grid.translatesAutoresizingMaskIntoConstraints = false
         grid.rowSpacing = SettingsLayout.rowSpacing; grid.columnSpacing = SettingsLayout.columnSpacing
-        grid.column(at: 0).xPlacement = .trailing; grid.column(at: 0).width = SettingsLayout.labelColumnWidth
-        grid.column(at: 1).xPlacement = .leading; grid.column(at: 1).width = SettingsLayout.controlColumnWidth
+        grid.column(at: 0).xPlacement = .trailing; grid.column(at: 0).width = labelWidth
+        grid.column(at: 1).xPlacement = .leading; grid.column(at: 1).width = controlWidth
         for index in 0..<grid.numberOfRows { grid.row(at: index).rowAlignment = .firstBaseline }
         root.addSubview(grid)
         NSLayoutConstraint.activate([
             grid.topAnchor.constraint(equalTo: root.topAnchor, constant: SettingsLayout.verticalMargin),
+            grid.bottomAnchor.constraint(equalTo: root.bottomAnchor, constant: -SettingsLayout.verticalMargin),
             grid.centerXAnchor.constraint(equalTo: root.centerXAnchor)])
         view = root
     }
@@ -172,6 +193,9 @@ class SettingsTabViewController: NSViewController {
 
 @MainActor
 final class GeneralSettingsTab: SettingsTabViewController {
+    static let rowLabels = ["Show in:", "Snapping:", "Hints:"]
+    /// Wide enough that the snap sentence wraps to two lines, not three.
+    private static let minimumControlWidth: CGFloat = 420
     let model: SettingsPreferencesModel
     private(set) var presenceButtons: [NSButton] = []
     private(set) var snapCheckbox: NSButton!, hoverHintsCheckbox: NSButton!, keyboardTipsCheckbox: NSButton!
@@ -188,12 +212,17 @@ final class GeneralSettingsTab: SettingsTabViewController {
         presenceButtons = [SettingsLayout.radio("Dock", tag: 2, identifier: "presenceDock", target: self, action: #selector(changePresence(_:))),
                            SettingsLayout.radio("Menu bar", tag: 1, identifier: "presenceMenuBar", target: self, action: #selector(changePresence(_:))),
                            SettingsLayout.radio("Both", tag: 0, identifier: "presenceBoth", target: self, action: #selector(changePresence(_:)))]
-        snapCheckbox = SettingsLayout.checkbox("Show OpenSnap window in fullscreen and crosshair snaps", identifier: "includeApp",
-                                               target: self, action: #selector(changeSnap(_:)), wraps: true)
         hoverHintsCheckbox = SettingsLayout.checkbox("Show hover hints for tools", identifier: "showToolTips", target: self, action: #selector(changeHoverHints(_:)))
         keyboardTipsCheckbox = SettingsLayout.checkbox("Show keyboard tip overlay", identifier: "showKeyboardTips", target: self, action: #selector(changeKeyboardTips(_:)))
+        let presence = SettingsLayout.choices(presenceButtons)
+        // The form is as wide as its widest control and no wider, so the window centres it; the long snap sentence wraps inside that width.
+        labelWidth = SettingsLayout.labelWidth(for: Self.rowLabels)
+        let available = SettingsLayout.availableControlWidth(labelWidth: labelWidth)
+        controlWidth = min(available, ceil(max(presence.fittingSize.width, hoverHintsCheckbox.fittingSize.width, keyboardTipsCheckbox.fittingSize.width, Self.minimumControlWidth)))
+        snapCheckbox = SettingsLayout.checkbox("Show OpenSnap window in fullscreen and crosshair snaps", identifier: "includeApp",
+                                               target: self, action: #selector(changeSnap(_:)), wrapWidth: controlWidth)
         let rows: [[NSView]] = [
-            [SettingsLayout.rowLabel("Show in:"), SettingsLayout.choices(presenceButtons)],
+            [SettingsLayout.rowLabel("Show in:"), presence],
             [SettingsLayout.rowLabel("Snapping:"), snapCheckbox],
             [SettingsLayout.rowLabel("Hints:"), SettingsLayout.group([hoverHintsCheckbox, keyboardTipsCheckbox])]]
         defer { refresh() }
@@ -217,6 +246,8 @@ final class GeneralSettingsTab: SettingsTabViewController {
 
 @MainActor
 final class DrawingSettingsTab: SettingsTabViewController {
+    static let rowLabels = ["Drawing precision:", "Arrow head:"]
+    private static let note = "Holding Option reverses the setting."
     let model: SettingsPreferencesModel
     private(set) var precisionButtons: [NSButton] = []
     private(set) var arrowButtons: [NSButton] = []
@@ -235,10 +266,14 @@ final class DrawingSettingsTab: SettingsTabViewController {
                             SettingsLayout.radio("Loose", tag: 2, identifier: "precisionLoose", target: self, action: #selector(changePrecision(_:)))]
         arrowButtons = [SettingsLayout.radio("End", tag: 2, identifier: "arrowEnd", target: self, action: #selector(changeArrow(_:))),
                         SettingsLayout.radio("Start", tag: 1, identifier: "arrowStart", target: self, action: #selector(changeArrow(_:)))]
+        let precision = SettingsLayout.choices(precisionButtons), arrow = SettingsLayout.choices(arrowButtons)
+        labelWidth = SettingsLayout.labelWidth(for: Self.rowLabels)
+        controlWidth = min(SettingsLayout.availableControlWidth(labelWidth: labelWidth),
+                           ceil(max(precision.fittingSize.width, arrow.fittingSize.width, SettingsLayout.captionWidth(Self.note))))
         let rows: [[NSView]] = [
-            [SettingsLayout.rowLabel("Drawing precision:"), SettingsLayout.choices(precisionButtons)],
-            [SettingsLayout.rowLabel("Arrow head:"), SettingsLayout.choices(arrowButtons)],
-            [NSGridCell.emptyContentView, SettingsLayout.caption("Holding Option reverses the setting.")]]
+            [SettingsLayout.rowLabel("Drawing precision:"), precision],
+            [SettingsLayout.rowLabel("Arrow head:"), arrow],
+            [NSGridCell.emptyContentView, SettingsLayout.caption(Self.note, width: controlWidth)]]
         defer { refresh() }
         return rows
     }
@@ -465,10 +500,245 @@ final class UploadSettingsTab: SettingsTabViewController {
     @objc private func manageTapped() { manage() }
 }
 
+/// One tab on the strip: an icon and a 20 pt label. It is a real NSButton with a title, so the G4 walker judges its text.
+/// Rest, hover, pressed and selected are drawn as fills; selected adds a 1 pt accent border and an accent icon, the same cues
+/// as the selected tool in the main chrome, so the state is never colour alone.
+@MainActor
+final class SettingsTabButton: NSButton {
+    static let height = DesignTokens.Size.row
+    static let horizontalPadding = DesignTokens.Space.s3
+    private typealias Palette = DesignTokens.Palette
+
+    let icon: FAIcon
+    private(set) var isCurrent = false
+    private(set) var isHovered = false
+    private(set) var isPressed = false
+    private var trackingArea: NSTrackingArea?
+
+    init(title: String, icon: FAIcon) {
+        self.icon = icon
+        super.init(frame: .zero)
+        self.title = title
+        isBordered = false; setButtonType(.momentaryChange); imagePosition = .imageLeading; imageHugsTitle = true
+        image = ChromeIcons.resolve(icon, family: .solid, pointSize: DesignTokens.Typography.iconRegular).image
+        refusesFirstResponder = true; focusRingType = .none
+        wantsLayer = true; layer?.cornerRadius = DesignTokens.Radius.md
+        identifier = NSUserInterfaceItemIdentifier("settingsTab." + title)
+        setAccessibilityElement(true); setAccessibilityRole(.radioButton); setAccessibilityLabel(title)
+        applyTitle()
+        applyState()
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+
+    override var intrinsicContentSize: NSSize {
+        let size = super.intrinsicContentSize
+        return NSSize(width: size.width + 2 * Self.horizontalPadding, height: Self.height)
+    }
+
+    /// The title is attributed so its size and colour are ours and not the button style's.
+    private func applyTitle() {
+        let font = DesignTokens.Typography.font(.body)
+        self.font = font; cell?.font = font
+        attributedTitle = NSAttributedString(string: title, attributes: [.font: font, .foregroundColor: Palette.Text.primary])
+    }
+
+    func setCurrent(_ current: Bool) {
+        isCurrent = current
+        applyState()
+    }
+
+    override func accessibilityValue() -> Any? { isCurrent ? 1 : 0 }
+    override func accessibilityPerformPress() -> Bool { performClick(nil); return true }
+
+    // MARK: State
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        applyState()
+    }
+
+    private func applyState() {
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            let accent = Palette.accent
+            contentTintColor = isCurrent ? accent : Palette.Text.secondary
+            guard let layer else { return }
+            if isCurrent {
+                layer.backgroundColor = (isPressed ? accent.withAlphaComponent(0.32) : Palette.State.selectedFill).cgColor
+                layer.borderColor = accent.cgColor; layer.borderWidth = 1
+            } else {
+                layer.borderWidth = 0; layer.borderColor = nil
+                layer.backgroundColor = (isPressed ? Palette.State.pressed : (isHovered ? Palette.State.hover : NSColor.clear)).cgColor
+            }
+        }
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let trackingArea { removeTrackingArea(trackingArea) }
+        let area = NSTrackingArea(rect: bounds, options: [.mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect], owner: self, userInfo: nil)
+        addTrackingArea(area); trackingArea = area
+    }
+    func setHovered(_ hovered: Bool) { isHovered = hovered; applyState() }
+    func setPressed(_ pressed: Bool) { isPressed = pressed; applyState() }
+    override func mouseEntered(with event: NSEvent) { setHovered(true) }
+    override func mouseExited(with event: NSEvent) { setHovered(false) }
+    /// `super.mouseDown` tracks the whole click, so the pressed fill is on for exactly as long as the mouse is down.
+    override func mouseDown(with event: NSEvent) {
+        setPressed(true)
+        super.mouseDown(with: event)
+        setPressed(false)
+    }
+}
+
+/// The strip of tabs: a solid surface (Settings is a content window, and glass is for navigation), one key-view stop, the
+/// Left and Right arrows move between tabs while it has focus, and it presents itself as a tab group.
+@MainActor
+final class SettingsTabStrip: NSView {
+    static let verticalPadding = DesignTokens.Space.s2
+    static let height = SettingsTabButton.height + 2 * verticalPadding
+
+    let buttons: [SettingsTabButton]
+    private(set) var selectedIndex = -1
+    /// Called with the index the user asked for, by click or arrow key.
+    var onSelect: ((Int) -> Void)?
+    private let row: NSStackView
+
+    init(items: [(title: String, icon: FAIcon)]) {
+        buttons = items.map { SettingsTabButton(title: $0.title, icon: $0.icon) }
+        row = NSStackView(views: buttons)
+        super.init(frame: .zero)
+        wantsLayer = true
+        focusRingType = .exterior
+        row.orientation = .horizontal; row.alignment = .centerY; row.spacing = DesignTokens.Space.s1
+        row.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(row)
+        NSLayoutConstraint.activate([
+            row.centerXAnchor.constraint(equalTo: centerXAnchor), row.centerYAnchor.constraint(equalTo: centerYAnchor),
+            row.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: DesignTokens.Space.s3),
+            heightAnchor.constraint(equalToConstant: Self.height)])
+        for (index, button) in buttons.enumerated() {
+            button.tag = index; button.target = self; button.action = #selector(tabClicked(_:))
+            button.translatesAutoresizingMaskIntoConstraints = false
+            button.heightAnchor.constraint(equalToConstant: SettingsTabButton.height).isActive = true
+        }
+        setAccessibilityElement(true); setAccessibilityRole(.tabGroup); setAccessibilityLabel("Settings sections")
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+
+    /// The width the four tabs take side by side, so a test can hold it against the window width.
+    var contentWidth: CGFloat { row.fittingSize.width }
+
+    func select(_ index: Int) {
+        guard buttons.indices.contains(index) else { return }
+        selectedIndex = index
+        for (position, button) in buttons.enumerated() { button.setCurrent(position == index) }
+        noteFocusRingMaskChanged()
+    }
+
+    @objc private func tabClicked(_ sender: NSButton) { onSelect?(sender.tag) }
+
+    // MARK: Surface
+
+    override var wantsUpdateLayer: Bool { true }
+    override func updateLayer() {
+        effectiveAppearance.performAsCurrentDrawingAppearance { layer?.backgroundColor = DesignTokens.Palette.Surface.window.cgColor }
+    }
+
+    // MARK: Keyboard
+
+    override var acceptsFirstResponder: Bool { true }
+    override func keyDown(with event: NSEvent) {
+        guard event.modifierFlags.intersection(.deviceIndependentFlagsMask).isEmpty, selectedIndex >= 0 else { return super.keyDown(with: event) }
+        switch event.keyCode {
+        case 123: onSelect?(max(0, selectedIndex - 1))
+        case 124: onSelect?(min(buttons.count - 1, selectedIndex + 1))
+        default: super.keyDown(with: event)
+        }
+    }
+
+    private var focusRect: NSRect {
+        guard buttons.indices.contains(selectedIndex) else { return .zero }
+        return convert(buttons[selectedIndex].bounds, from: buttons[selectedIndex])
+    }
+    override var focusRingMaskBounds: NSRect { focusRect }
+    override func drawFocusRingMask() {
+        NSBezierPath(roundedRect: focusRect, xRadius: DesignTokens.Radius.md, yRadius: DesignTokens.Radius.md).fill()
+    }
+
+    // MARK: Accessibility
+
+    override func accessibilityTabs() -> [Any]? { buttons }
+    override func accessibilityValue() -> Any? { buttons.indices.contains(selectedIndex) ? buttons[selectedIndex] : nil }
+    override func accessibilityChildren() -> [Any]? { buttons }
+}
+
+/// The scroll view's clip: top-down, so a tab shorter than the window sits at the top and a taller one starts at its first row.
+@MainActor
+final class SettingsClipView: NSClipView {
+    override var isFlipped: Bool { true }
+}
+
+/// The window's content: the tab strip, a separator under it, and the selected tab in a scroll view. The scroll view only has
+/// something to scroll when a screen is too short for the tab.
+@MainActor
+final class SettingsContentView: NSView {
+    static let separatorHeight: CGFloat = 1
+    static var chromeHeight: CGFloat { SettingsTabStrip.height + separatorHeight }
+
+    let strip: SettingsTabStrip
+    let scroll = NSScrollView()
+    private let separator = NSBox()
+    private(set) var tab: SettingsTabViewController?
+
+    init(strip: SettingsTabStrip) {
+        self.strip = strip
+        super.init(frame: .zero)
+        separator.boxType = .separator
+        scroll.contentView = SettingsClipView()
+        scroll.drawsBackground = false; scroll.borderType = .noBorder
+        scroll.hasVerticalScroller = true; scroll.hasHorizontalScroller = false; scroll.autohidesScrollers = true
+        scroll.automaticallyAdjustsContentInsets = false; scroll.verticalScrollElasticity = .automatic
+        for view in [strip, separator, scroll] as [NSView] {
+            view.translatesAutoresizingMaskIntoConstraints = false
+            addSubview(view)
+        }
+        NSLayoutConstraint.activate([
+            strip.topAnchor.constraint(equalTo: topAnchor), strip.leadingAnchor.constraint(equalTo: leadingAnchor), strip.trailingAnchor.constraint(equalTo: trailingAnchor),
+            separator.topAnchor.constraint(equalTo: strip.bottomAnchor), separator.leadingAnchor.constraint(equalTo: leadingAnchor),
+            separator.trailingAnchor.constraint(equalTo: trailingAnchor), separator.heightAnchor.constraint(equalToConstant: Self.separatorHeight),
+            scroll.topAnchor.constraint(equalTo: separator.bottomAnchor), scroll.leadingAnchor.constraint(equalTo: leadingAnchor),
+            scroll.trailingAnchor.constraint(equalTo: trailingAnchor), scroll.bottomAnchor.constraint(equalTo: bottomAnchor)])
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+
+    func show(_ tab: SettingsTabViewController) {
+        self.tab = tab
+        let document = tab.view
+        scroll.documentView = document
+        document.translatesAutoresizingMaskIntoConstraints = false
+        let clip = scroll.contentView
+        NSLayoutConstraint.activate([
+            document.topAnchor.constraint(equalTo: clip.topAnchor), document.leadingAnchor.constraint(equalTo: clip.leadingAnchor),
+            document.trailingAnchor.constraint(equalTo: clip.trailingAnchor)])
+        clip.scroll(to: .zero)
+        scroll.reflectScrolledClipView(clip)
+    }
+
+    /// How far the shown tab runs past the bottom of the window; zero when it fits.
+    var scrollableExtent: CGFloat {
+        guard let document = scroll.documentView else { return 0 }
+        layoutSubtreeIfNeeded()
+        return max(0, document.frame.height - scroll.contentView.bounds.height)
+    }
+}
+
 /// Escape and Command-W close it; so does the close button. It calls `onClose` so the owner decides what closing means.
+/// Command-1 to Command-4 pick a tab.
 @MainActor
 class SettingsWindow: NSWindow {
     var onClose: (() -> Void)?
+    /// Called with the tab index (0 to 3) for Command-1 to Command-4.
+    var onSelectTab: ((Int) -> Void)?
 
     required override init(contentRect: NSRect, styleMask style: NSWindow.StyleMask, backing backingStoreType: NSWindow.BackingStoreType, defer flag: Bool) {
         super.init(contentRect: contentRect, styleMask: style, backing: backingStoreType, defer: flag)
@@ -485,22 +755,22 @@ class SettingsWindow: NSWindow {
         else { super.keyDown(with: event) }
     }
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
-        if event.type == .keyDown, event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command,
-           event.charactersIgnoringModifiers?.lowercased() == "w" {
-            requestClose(); return true
+        if event.type == .keyDown, event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command {
+            let key = event.charactersIgnoringModifiers?.lowercased()
+            if key == "w" { requestClose(); return true }
+            if let key, let number = Int(key), (1...SettingsLayout.tabTitles.count).contains(number), attachedSheet == nil {
+                onSelectTab?(number - 1); return true
+            }
         }
         return super.performKeyEquivalent(with: event)
     }
 }
 
-/// An `NSTabViewController` that tells its owner when the selection changes.
-@MainActor
-final class SettingsTabs: NSTabViewController {
-    var onSelect: ((NSTabViewItem?) -> Void)?
-    override func tabView(_ tabView: NSTabView, didSelect tabViewItem: NSTabViewItem?) {
-        super.tabView(tabView, didSelect: tabViewItem)
-        onSelect?(tabViewItem)
-    }
+/// One tab of the window: its label, its icon and the view controller that builds its form.
+struct SettingsTabItem {
+    let label: String
+    let icon: FAIcon
+    let viewController: SettingsTabViewController
 }
 
 @MainActor
@@ -509,22 +779,25 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     static let autosaveName = "OpenSnap.Settings"
     /// The window class a new controller builds. The app's isolated tests substitute a subclass that never reaches the screen.
     static var windowClass: SettingsWindow.Type = SettingsWindow.self
-    private static let icons: [(String, FAIcon)] = [("General", .toolbox), ("Drawing", .paintbrush), ("Capture", .crosshairs), ("Upload", .upload)]
+    private static let icons: [FAIcon] = [.gear, .paintbrush, .crosshairs, .upload]
 
     let window: SettingsWindow
-    let tabs = SettingsTabs()
+    let strip: SettingsTabStrip
+    let content: SettingsContentView
     let model: SettingsPreferencesModel
     let general: GeneralSettingsTab, drawing: DrawingSettingsTab, capture: CaptureSettingsTab, upload: UploadSettingsTab
+    let tabItems: [SettingsTabItem]
+    private(set) var selectedIndex = -1
     private let stateProvider: () -> GeneralPreferencesState
     private var hasSavedFrame = false
     private var observers: [NSObjectProtocol] = []
     private var resizeTimer: Timer?
     private static let resizeDuration: TimeInterval = 0.2
-    /// The visible area of the screen the window is on. A test replaces it with a fake screen.
     /// A window that is not on screen resizes at once; a test turns this on to watch the animation without ordering a window front.
     var animatesWhenHidden = false
     /// Under Reduce Motion the window changes size at once. A test replaces it.
     var reduceMotion: () -> Bool = { DisplayOptions.current.reduceMotion }
+    /// The visible area of the screen the window is on. A test replaces it with a fake screen.
     var visibleFrame: () -> NSRect = { NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900) }
 
     /// Called for Escape, Command-W and the close button. The owner hides the window.
@@ -549,6 +822,10 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         capture = CaptureSettingsTab(defaults: defaults, hotkeys: hotkeys)
         var presentManage: () -> Void = {}
         upload = UploadSettingsTab(destinations: destinations, manage: { presentManage() })
+        let tabs: [SettingsTabViewController] = [general, drawing, capture, upload]
+        tabItems = tabs.enumerated().map { SettingsTabItem(label: SettingsLayout.tabTitles[$0.offset], icon: Self.icons[$0.offset], viewController: $0.element) }
+        strip = SettingsTabStrip(items: tabItems.map { ($0.label, $0.icon) })
+        content = SettingsContentView(strip: strip)
         super.init()
         presentManage = { [weak self] in
             guard let self, self.window.attachedSheet == nil else { return }
@@ -557,25 +834,16 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
 
         window.isReleasedWhenClosed = false
         window.delegate = self
-        window.toolbarStyle = .preference
-        tabs.tabStyle = .toolbar
-        // The tab view's own strip is not drawn in toolbar style; the toolbar draws the labels at the system's size.
-        tabs.tabView.font = DesignTokens.Typography.font(.body)
-        let all: [SettingsTabViewController] = [general, drawing, capture, upload]
-        for (index, tab) in all.enumerated() {
-            let item = NSTabViewItem(viewController: tab)
-            item.label = Self.icons[index].0
-            item.identifier = Self.icons[index].0
-            item.image = ChromeIcons.resolve(Self.icons[index].1, family: .solid, pointSize: DesignTokens.Typography.iconPrimary).image
-            tabs.addTabViewItem(item)
+        window.contentView = content
+        for tab in tabs {
             _ = tab.fittingHeight
             tab.onResize = { [weak self] in self?.fit(animated: self?.window.isVisible ?? false) }
         }
-        tabs.onSelect = { [weak self] _ in self?.selectionChanged() }
-        window.contentViewController = tabs
-        selectionChanged(animated: false)
+        strip.onSelect = { [weak self] in self?.select($0) }
+        window.onSelectTab = { [weak self] in self?.select($0) }
+        select(0, animated: false)
         if let frameAutosaveName { hasSavedFrame = window.setFrameAutosaveName(frameAutosaveName) }
-        AppToolTip.install(on: window.contentView ?? tabs.view)
+        AppToolTip.install(on: content)
 
         observers.append(NotificationCenter.default.addObserver(forName: NSWindow.didEndSheetNotification, object: window, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.upload.refresh() }
@@ -585,11 +853,18 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         })
     }
 
-    var selectedIndex: Int { tabs.selectedTabViewItemIndex }
-    var selectedTab: SettingsTabViewController { tabs.tabViewItems[max(0, selectedIndex)].viewController as! SettingsTabViewController }
-    var tabItems: [NSTabViewItem] { tabs.tabViewItems }
+    var selectedTab: SettingsTabViewController { tabItems[max(0, selectedIndex)].viewController }
 
-    func select(_ index: Int) { tabs.selectedTabViewItemIndex = index }
+    func select(_ index: Int) { select(index, animated: true) }
+
+    private func select(_ index: Int, animated: Bool) {
+        guard tabItems.indices.contains(index), index != selectedIndex else { return }
+        selectedIndex = index
+        strip.select(index)
+        content.show(tabItems[index].viewController)
+        window.title = tabItems[index].label
+        fit(animated: animated && (window.isVisible || animatesWhenHidden))
+    }
 
     /// Shows what the parent stored: General and Drawing, the flash, the destinations. Delivers no edit.
     func refresh() {
@@ -609,21 +884,24 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
 
     // MARK: Sizing
 
-    /// The window frame a tab asks for: 640 wide, its own height, the top edge kept where it is.
+    /// The window frame a tab asks for: 640 wide, the strip plus its own height, the top edge kept where it is.
     func frame(forTabAt index: Int, keepingTopOf current: NSRect) -> NSRect {
-        let tab = tabs.tabViewItems[index].viewController as! SettingsTabViewController
-        let size = window.frameRect(forContentRect: NSRect(x: 0, y: 0, width: SettingsLayout.contentWidth, height: tab.fittingHeight)).size
+        let tab = tabItems[index].viewController
+        let size = window.frameRect(forContentRect: NSRect(x: 0, y: 0, width: SettingsLayout.contentWidth,
+                                                           height: SettingsContentView.chromeHeight + tab.fittingHeight)).size
         return NSRect(x: current.minX, y: current.maxY - size.height, width: size.width, height: size.height)
     }
 
-    /// The whole window height a tab needs, title bar and toolbar included.
+    /// The whole window height a tab needs, title bar and tab strip included.
     func windowHeight(forTabAt index: Int) -> CGFloat { frame(forTabAt: index, keepingTopOf: window.frame).height }
 
     func fit(animated: Bool) {
         guard selectedIndex >= 0 else { return }
         var target = frame(forTabAt: selectedIndex, keepingTopOf: window.frame)
         let visible = visibleFrame()
+        // A tab taller than the screen is capped to it: the scroll view in the content scrolls the rest.
         if target.height > visible.height { target.size.height = visible.height }
+        if target.maxY > visible.maxY { target.origin.y = visible.maxY - target.height }
         if target.minY < visible.minY { target.origin.y = visible.minY }
         guard abs(target.height - window.frame.height) > 0.5 || abs(target.width - window.frame.width) > 0.5 else { return }
         setFrame(target, animated: animated && !reduceMotion())
@@ -647,12 +925,6 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
                 if progress >= 1 { timer.invalidate(); self.resizeTimer = nil }
             }
         }
-    }
-
-    private func selectionChanged(animated: Bool = true) {
-        guard selectedIndex >= 0 else { return }
-        window.title = tabs.tabViewItems[selectedIndex].label
-        fit(animated: animated && (window.isVisible || animatesWhenHidden))
     }
 
     // MARK: NSWindowDelegate

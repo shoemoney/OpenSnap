@@ -292,7 +292,7 @@ private enum ViewTreeAuditTests {
             settings.select(index)
             settings.window.contentView?.layoutSubtreeIfNeeded()
             record("Settings: \(item.label)", Audit.audit(settings.window, surface: "Settings: \(item.label)"))
-            record("Settings: \(item.label) (tab view)", Audit.audit(item.viewController!.view, surface: "Settings: \(item.label) (tab view)"))
+            record("Settings: \(item.label) (tab view)", Audit.audit(item.viewController.view, surface: "Settings: \(item.label) (tab view)"))
         }
         // A seeded 14 pt row label on the real window is caught, so zero above is not the walker looking at nothing.
         settings.select(0)
@@ -307,6 +307,13 @@ private enum ViewTreeAuditTests {
         seeded?.font = font(14)
         expect(Audit.audit(settings.window, surface: "Settings (seeded)").violations.count == 1, "Settings: a 14 pt row label is caught on the real window")
         seeded?.font = seededFont
+        // The same for a tab label on the strip: 13 pt, what AppKit's own toolbar labels were, is caught on the real window.
+        let tabLabel = settings.strip.buttons[1]
+        let tabTitle = tabLabel.attributedTitle
+        tabLabel.attributedTitle = NSAttributedString(string: tabLabel.title, attributes: [.font: font(13)])
+        let tabCaught = Audit.audit(settings.window, surface: "Settings (seeded tab)").violations
+        expect(tabCaught.count == 1 && tabCaught[0].pointSize == 13 && tabCaught[0].text == "Drawing", "Settings: a 13 pt tab label is caught on the real window: \(tabCaught)")
+        tabLabel.attributedTitle = tabTitle
         let style = TextStyleForm(outlined: nil, shadowed: nil)
         record("Text style", Audit.audit(style, surface: "Text style"))
         let accessory = ExportAccessory(format: "jpeg", originalSize: false, jpegQuality: 0.7)

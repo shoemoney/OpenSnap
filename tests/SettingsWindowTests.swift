@@ -87,6 +87,7 @@ private enum SettingsWindowTests {
         _ = NSApplication.shared
         NSApp.setActivationPolicy(.prohibited)
         structure()
+        tabStrip()
         closing()
         fit()
         alignmentAndTypography()
@@ -106,10 +107,11 @@ private enum SettingsWindowTests {
     private static func structure() {
         let (controller, _, _, _, _, _) = makeController()
         let window = controller.window
-        expect(controller.tabs.tabStyle == .toolbar, "the tabs live in the window toolbar")
+        expect(window.toolbar == nil && controller.strip.superview === controller.content && window.contentView === controller.content,
+               "the tabs are an app-owned strip at the top of the window's content, not a toolbar")
         expect(controller.tabItems.map(\.label) == ["General", "Drawing", "Capture", "Upload"], "four tabs in order: \(controller.tabItems.map(\.label))")
-        expect(controller.tabItems.allSatisfy { $0.image != nil && $0.image!.size.width > 0 }, "every tab has an icon")
-        expect(window.contentViewController === controller.tabs, "the tab controller is the window's content")
+        expect(controller.tabItems.map(\.icon) == [.gear, .paintbrush, .crosshairs, .upload], "General is the gear; the others keep their icons")
+        expect(controller.strip.buttons.allSatisfy { $0.image != nil && $0.image!.size.width > 0 }, "every tab has an icon")
         for index in controller.tabItems.indices {
             controller.select(index)
             expect(window.title == controller.tabItems[index].label, "the window title follows the tab: '\(window.title)' on \(controller.tabItems[index].label)")
@@ -118,13 +120,177 @@ private enum SettingsWindowTests {
         expect(!window.styleMask.contains(.resizable), "width is fixed; height follows the tab")
         expect(SettingsWindowController.autosaveName == "OpenSnap.Settings" && window.frameAutosaveName.isEmpty,
                "the frame name is supplied by the app; a test passes none and nothing is saved")
-        let buttons = controller.tabItems.flatMap { descendants($0.viewController!.view) }.compactMap { $0 as? NSButton }
+        let buttons = controller.tabItems.flatMap { descendants($0.viewController.view) }.compactMap { $0 as? NSButton }
         expect(!buttons.contains { $0.title == "Done" || $0.keyEquivalent == "\r" }, "no Done button, and no default button to take Return")
-        let all = controller.tabItems.flatMap { texts(in: $0.viewController!.view) }
+        let all = controller.tabItems.flatMap { texts(in: $0.viewController.view) }
         for word in ["Appearance", "Sounds", "Play sounds", "Relaunch", "Modern", "Classic"] {
             expect(!all.contains { $0.localizedCaseInsensitiveContains(word) }, "no row or control mentions \(word)")
         }
         expect(controller.window.delegate === controller, "the controller is the window's delegate")
+    }
+
+    // MARK: The tab strip
+
+    private static func accent(_ view: NSView) -> NSColor {
+        var resolved = NSColor.clear
+        view.effectiveAppearance.performAsCurrentDrawingAppearance { resolved = DesignTokens.Palette.accent.usingColorSpace(.deviceRGB) ?? .clear }
+        return resolved
+    }
+    private static func rgb(_ cg: CGColor?, in view: NSView) -> [CGFloat] {
+        var out: [CGFloat] = []
+        view.effectiveAppearance.performAsCurrentDrawingAppearance {
+            if let cg, let color = NSColor(cgColor: cg)?.usingColorSpace(.deviceRGB) { out = [color.redComponent, color.greenComponent, color.blueComponent, color.alphaComponent] }
+        }
+        return out
+    }
+    private static func resolved(_ color: NSColor, in view: NSView) -> [CGFloat] {
+        var out: [CGFloat] = []
+        view.effectiveAppearance.performAsCurrentDrawingAppearance {
+            if let c = color.usingColorSpace(.deviceRGB) { out = [c.redComponent, c.greenComponent, c.blueComponent, c.alphaComponent] }
+        }
+        return out
+    }
+
+    private static func tabStrip() {
+        typealias Palette = DesignTokens.Palette
+        let (controller, _, _, _, _, _) = makeController(destinations: sampleDestinations(count: 2))
+        let window = controller.window, strip = controller.strip
+        window.contentView?.layoutSubtreeIfNeeded()
+
+        // Size: every label is 20 pt body in a real button, so the type walker judges it.
+        expect(strip.buttons.map(\.title) == ["General", "Drawing", "Capture", "Upload"], "the strip has the four tab buttons: \(strip.buttons.map(\.title))")
+        for button in strip.buttons {
+            expect(button.font == DesignTokens.Typography.font(.body) && button.font?.pointSize == 20, "\(button.title): the tab label is 20 pt body (\(button.font?.pointSize ?? 0))")
+            let runs = button.attributedTitle.attribute(.font, at: 0, effectiveRange: nil) as? NSFont
+            expect(runs?.pointSize == 20, "\(button.title): the drawn title run is 20 pt (\(runs?.pointSize ?? 0))")
+            expect(button.imagePosition == .imageLeading && button.image != nil, "\(button.title): an icon beside the label")
+            expect(button.frame.height >= DesignTokens.Size.hitMin, "\(button.title): the tab is at least \(DesignTokens.Size.hitMin) pt tall (\(button.frame.height))")
+        }
+        expect(strip.contentWidth + 2 * DesignTokens.Space.s3 <= SettingsLayout.contentWidth, "the four tabs fit the 640 pt window: \(strip.contentWidth)")
+        let stripBox = strip.convert(strip.bounds, to: window.contentView), rowBox = strip.buttons.map { $0.convert($0.bounds, to: window.contentView) }.reduce(NSRect.null) { $0.union($1) }
+        expect(abs((rowBox.midX) - stripBox.midX) < 1, "the tabs are centred across the window")
+        expect(abs(window.contentLayoutRect.maxY - strip.convert(strip.bounds, to: nil).maxY) < 1.5 || strip.frame.maxY >= (window.contentView?.bounds.maxY ?? 0) - 0.5,
+               "the strip is at the top of the content")
+
+        // A solid surface with a separator below, and no glass anywhere in it.
+        let kinds = descendants(strip).map { String(describing: type(of: $0)) }
+        expect(!kinds.contains { $0.contains("Glass") || $0.contains("VisualEffect") } && !(strip is NSVisualEffectView), "the strip is solid, not glass: \(Set(kinds))")
+        var surface: [CGFloat] = []
+        strip.effectiveAppearance.performAsCurrentDrawingAppearance { strip.updateLayer(); surface = rgb(strip.layer?.backgroundColor, in: strip) }
+        expect(surface == resolved(Palette.Surface.window, in: strip) && surface.last == 1, "the strip fills with the opaque window surface: \(surface)")
+        let separator = window.contentView!.subviews.compactMap { $0 as? NSBox }.first { $0.boxType == .separator }
+        expect(separator != nil, "a separator under the strip")
+        if let separator {
+            let line = separator.alignmentRect(forFrame: separator.frame)
+            expect(abs(line.height - SettingsContentView.separatorHeight) < 0.5, "the separator is 1 pt (\(line.height))")
+            expect(abs(line.maxY - strip.frame.minY) < 0.5, "the separator sits directly under the strip (\(line) vs \(strip.frame))")
+        }
+
+        // States: rest, hover, pressed and selected are fills; selected adds a border and an accent icon (not colour alone).
+        for appearance in [NSAppearance.Name.aqua, .darkAqua] {
+            window.appearance = NSAppearance(named: appearance)
+            controller.select(1)
+            for (index, button) in strip.buttons.enumerated() {
+                let layer = button.layer!
+                let fill = rgb(layer.backgroundColor, in: button)
+                if index == 1 {
+                    expect(layer.borderWidth == 1 && rgb(layer.borderColor, in: button) == resolved(Palette.accent, in: button), "\(appearance.rawValue): the selected tab has a 1 pt accent border")
+                    expect(fill == resolved(Palette.State.selectedFill, in: button), "\(appearance.rawValue): the selected tab has the selected fill: \(fill)")
+                    expect(button.contentTintColor.map { resolved($0, in: button) } == resolved(Palette.accent, in: button), "\(appearance.rawValue): the selected icon is accent")
+                    expect(button.accessibilityValue() as? Int == 1, "the selected tab reports value 1")
+                } else {
+                    expect(layer.borderWidth == 0 && fill.last == 0, "\(appearance.rawValue): \(button.title) rests with no fill and no border (\(fill))")
+                    expect(button.contentTintColor.map { resolved($0, in: button) } == resolved(Palette.Text.secondary, in: button), "\(appearance.rawValue): a resting icon is secondary")
+                    expect(button.accessibilityValue() as? Int == 0, "an unselected tab reports value 0")
+                }
+            }
+            let rest = strip.buttons[2]
+            rest.setHovered(true)
+            expect(rgb(rest.layer?.backgroundColor, in: rest) == resolved(Palette.State.hover, in: rest), "\(appearance.rawValue): hover fills with the hover colour")
+            rest.setPressed(true)
+            expect(rgb(rest.layer?.backgroundColor, in: rest) == resolved(Palette.State.pressed, in: rest), "\(appearance.rawValue): pressed fills with the pressed colour")
+            rest.setPressed(false); rest.setHovered(false)
+            expect(rgb(rest.layer?.backgroundColor, in: rest).last == 0, "\(appearance.rawValue): the fill clears when the pointer leaves")
+            let current = strip.buttons[1]
+            current.setHovered(true)
+            expect(rgb(current.layer?.backgroundColor, in: current) == resolved(Palette.State.selectedFill, in: current), "\(appearance.rawValue): hover never washes out the selected tab")
+            current.setPressed(true)
+            expect((rgb(current.layer?.backgroundColor, in: current).last ?? 0) >= 0.32 - 0.001, "\(appearance.rawValue): pressing the selected tab deepens its fill")
+            current.setPressed(false); current.setHovered(false)
+        }
+        window.appearance = nil
+        controller.select(0)
+
+        // Clicking a tab selects it and the title follows.
+        strip.buttons[2].performClick(nil)
+        expect(controller.selectedIndex == 2 && window.title == "Capture" && strip.selectedIndex == 2, "clicking Capture selects it and the title follows: \(window.title)")
+        controller.select(0)
+
+        // Keyboard: Command-1 to Command-4.
+        for (offset, code) in [UInt16(18), 19, 20, 21].enumerated() {
+            let event = keyEvent(String(offset + 1), code: code, flags: .command, window: window)
+            expect(window.performKeyEquivalent(with: event), "Command-\(offset + 1) is handled")
+            expect(controller.selectedIndex == offset && window.title == SettingsLayout.tabTitles[offset], "Command-\(offset + 1) selects \(SettingsLayout.tabTitles[offset])")
+        }
+        controller.select(0)
+        for (characters, code, flags) in [("1", UInt16(18), NSEvent.ModifierFlags([])), ("2", 19, [.command, .shift]), ("3", 20, [.command, .option]), ("5", 23, .command), ("0", 29, .command)] {
+            _ = window.performKeyEquivalent(with: keyEvent(characters, code: code, flags: flags, window: window))
+            expect(controller.selectedIndex == 0, "\(flags.rawValue) \(characters) does not switch tabs")
+        }
+        let sheet = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 300, height: 100), styleMask: [.titled], backing: .buffered, defer: false)
+        sheet.isReleasedWhenClosed = false
+        window.beginSheet(sheet)
+        _ = window.performKeyEquivalent(with: keyEvent("3", code: 20, flags: .command, window: window))
+        expect(controller.selectedIndex == 0, "Command-3 does nothing under the window's own sheet")
+        window.endSheet(sheet); sheet.orderOut(nil)
+
+        // Keyboard: the strip is one key-view stop and the arrows move between tabs.
+        expect(strip.acceptsFirstResponder && strip.canBecomeKeyView && strip.buttons.allSatisfy(\.refusesFirstResponder), "the strip is the one key-view stop; its buttons do not take focus")
+        expect(window.makeFirstResponder(strip) && window.firstResponder === strip, "the strip can hold focus")
+        func arrow(_ code: UInt16, _ flags: NSEvent.ModifierFlags = []) {
+            strip.keyDown(with: keyEvent(code == 123 ? "\u{F702}" : "\u{F703}", code: code, flags: flags, window: window))
+        }
+        arrow(124); expect(controller.selectedIndex == 1, "Right moves to Drawing")
+        arrow(124); arrow(124); expect(controller.selectedIndex == 3, "Right walks on to Upload")
+        arrow(124); expect(controller.selectedIndex == 3, "Right stops at the last tab")
+        arrow(123); expect(controller.selectedIndex == 2 && window.title == "Capture", "Left moves back to Capture")
+        arrow(123); arrow(123); arrow(123); expect(controller.selectedIndex == 0, "Left stops at the first tab")
+        arrow(124, .option); arrow(124, .shift)
+        expect(controller.selectedIndex == 0, "a modified arrow is not a tab move")
+        var closes = 0
+        controller.onClose = { closes += 1 }
+        window.keyDown(with: keyEvent("\u{1b}", code: 53, flags: [], window: window))
+        expect(closes == 1 && controller.selectedIndex == 0, "Escape still closes with the strip focused")
+        controller.onClose = nil
+        _ = window.makeFirstResponder(nil)
+
+        // Accessibility: a tab group of tabs, each with its label, the selection exposed as the group's value.
+        expect(strip.accessibilityRole() == .tabGroup && strip.isAccessibilityElement(), "the strip is a tab group")
+        expect((strip.accessibilityTabs() ?? []).count == 4, "the group exposes four tabs")
+        for (index, button) in strip.buttons.enumerated() {
+            expect(button.accessibilityRole() == .radioButton && button.accessibilityLabel() == SettingsLayout.tabTitles[index], "\(button.title): a radio-button tab with its label")
+        }
+        for index in 0..<4 {
+            controller.select(index)
+            expect(strip.accessibilityValue() as AnyObject === strip.buttons[index], "the group's value is the selected tab (\(SettingsLayout.tabTitles[index]))")
+            expect(strip.buttons.enumerated().allSatisfy { ($0.element.accessibilityValue() as? Int) == ($0.offset == index ? 1 : 0) }, "only the selected tab reports 1")
+        }
+        controller.select(0)
+
+        // G4: the walker sees four 20 pt tab labels on the real window, and fails when one is made small.
+        let report = ViewTreeAudit.audit(window, surface: "Settings tab strip")
+        let labels = report.findings.filter { SettingsLayout.tabTitles.contains($0.text) && $0.role == .control }
+        expect(Set(labels.map(\.text)) == Set(SettingsLayout.tabTitles) && labels.allSatisfy { $0.pointSize == 20 }, "the walker found the four tab labels at 20 pt: \(labels.map { "\($0.text) \($0.pointSize)" })")
+        expect(report.violations.isEmpty, "no violation on the real window:\n\(report.description)")
+        let victim = strip.buttons[2]
+        let original = victim.attributedTitle
+        victim.attributedTitle = NSAttributedString(string: victim.title, attributes: [.font: NSFont.systemFont(ofSize: 13)])
+        let caught = ViewTreeAudit.audit(window, surface: "Settings tab strip (seeded)").violations
+        expect(caught.count == 1 && caught[0].pointSize == 13 && caught[0].text == "Capture", "a 13 pt tab label fails the walker: \(caught)")
+        victim.attributedTitle = NSAttributedString(string: victim.title, attributes: [.font: NSFont.systemFont(ofSize: 17)])
+        expect(ViewTreeAudit.audit(window, surface: "Settings tab strip (17 pt)").violations.count == 1, "17 pt is under the 18 pt floor and fails")
+        victim.attributedTitle = original
+        expect(ViewTreeAudit.audit(window, surface: "Settings tab strip (restored)").violations.isEmpty, "restoring the label clears the violation")
     }
 
     // MARK: Escape, Command-W, the close button
@@ -174,6 +340,9 @@ private enum SettingsWindowTests {
             expect(height <= fakeVisible.height, "\(controller.tabItems[index].label) needs \(height) pt; the fake 1280 x 800 screen shows \(fakeVisible.height)")
             expect(abs(window.frame.height - height) < 0.5, "the window is the height its tab asks for (\(window.frame.height) vs \(height))")
             expect(abs(window.contentLayoutRect.width - SettingsLayout.contentWidth) < 0.5, "the content is 640 wide on every tab")
+            expect(abs(window.contentLayoutRect.height - (SettingsContentView.chromeHeight + controller.selectedTab.fittingHeight)) < 0.5,
+                   "the window is the strip, a separator and the tab's own height: \(window.contentLayoutRect.height)")
+            expect(controller.content.scrollableExtent < 0.5, "\(controller.tabItems[index].label) fits the fake screen, so it does not scroll")
             expect(abs(window.frame.maxY - top) < 0.5, "switching tabs keeps the top edge where it was")
             window.contentView?.layoutSubtreeIfNeeded()
             let tabView = controller.selectedTab.view
@@ -216,6 +385,53 @@ private enum SettingsWindowTests {
         expect(window.frame.height <= 400, "a 400 pt screen caps the window at \(window.frame.height)")
         controller.visibleFrame = { fakeVisible }
         controller.fit(animated: false)
+        shortScreen()
+    }
+
+    // MARK: A screen shorter than the tab
+
+    private static func shortScreen() {
+        let (controller, _, _, _, _, _) = makeController(destinations: sampleDestinations(count: 3))
+        let window = controller.window
+        let short = NSRect(x: 0, y: 40, width: 1280, height: 500)
+        controller.visibleFrame = { short }
+        for index in controller.tabItems.indices {
+            controller.select(index)
+            window.contentView?.layoutSubtreeIfNeeded()
+            let name = controller.tabItems[index].label
+            let wanted = controller.windowHeight(forTabAt: index)
+            let tab = controller.selectedTab
+            expect(window.frame.height <= short.height + 0.5 && window.frame.minY >= short.minY - 0.5 && window.frame.maxY <= short.maxY + 0.5,
+                   "\(name): the window stays on a 500 pt screen (\(window.frame) in \(short))")
+            let document = tab.view, clip = controller.content.scroll.contentView
+            expect(controller.content.scroll.documentView === document, "\(name): the tab sits in the scroll view")
+            let controls = descendants(document).filter { ($0 is NSControl) && !$0.isHidden && $0.bounds.width > 0 }
+            let lowest = controls.min { frame(of: $0, in: document).minY < frame(of: $1, in: document).minY }!
+            let box = frame(of: lowest, in: document)
+            if wanted > short.height + 0.5 {
+                expect(abs(window.frame.height - short.height) < 0.5, "\(name): a tab that needs \(wanted) pt takes the whole 500 pt screen (\(window.frame.height))")
+                expect(controller.content.scrollableExtent > 1, "\(name): the rest of the tab scrolls (\(controller.content.scrollableExtent) pt)")
+                expect(clip.bounds.origin.y < 0.5, "\(name): a tab opens at its top (clip origin \(clip.bounds.origin.y))")
+                expect(!clip.documentVisibleRect.contains(box), "\(name): the last control starts below the fold (\(box) vs \(clip.documentVisibleRect))")
+                let bottom = NSPoint(x: 0, y: document.frame.height - clip.bounds.height)
+                clip.scroll(to: bottom); controller.content.scroll.reflectScrolledClipView(clip)
+                expect(clip.documentVisibleRect.contains(box), "\(name): scrolling to the end reaches the last control (\(box) vs \(clip.documentVisibleRect))")
+                expect(abs(clip.bounds.maxY - document.frame.height) < 1, "\(name): nothing is clipped past the end")
+                clip.scroll(to: .zero); controller.content.scroll.reflectScrolledClipView(clip)
+            } else {
+                expect(controller.content.scrollableExtent < 0.5 && abs(window.frame.height - wanted) < 0.5, "\(name): a tab that fits is not scrolled (\(controller.content.scrollableExtent))")
+            }
+        }
+        // A scrolled tab goes back to its top when it is chosen again.
+        controller.select(2)
+        let clip = controller.content.scroll.contentView
+        clip.scroll(to: NSPoint(x: 0, y: 80)); controller.content.scroll.reflectScrolledClipView(clip)
+        controller.select(0); controller.select(2)
+        expect(clip.bounds.origin.y < 0.5, "choosing a tab again starts it at the top (\(clip.bounds.origin.y))")
+        // The screen grows: the window and the scrolling follow.
+        controller.visibleFrame = { fakeVisible }
+        controller.fit(animated: false)
+        expect(abs(window.frame.height - controller.windowHeight(forTabAt: 2)) < 0.5 && controller.content.scrollableExtent < 0.5, "a taller screen shows the whole tab without scrolling")
     }
 
     // MARK: Alignment and type
@@ -225,7 +441,7 @@ private enum SettingsWindowTests {
         for index in controller.tabItems.indices {
             controller.select(index)
             controller.window.contentView?.layoutSubtreeIfNeeded()
-            let tab = controller.tabItems[index].viewController!.view
+            let tab = controller.tabItems[index].viewController.view
             let name = controller.tabItems[index].label
             let labels = descendants(tab).compactMap { $0 as? NSTextField }.filter { SettingsLayout.rowLabels.contains($0.stringValue) }
             expect(!labels.isEmpty, "\(name) has row labels")
@@ -243,9 +459,19 @@ private enum SettingsWindowTests {
                 expect(caption.font == DesignTokens.Typography.font(.caption), "\(name): the only 18 pt text is a caption ('\(caption.stringValue)')")
             }
             // Every control starts at the control column, not the label column: one left edge for the whole tab.
-            let tabLeft = (tab.bounds.width - SettingsLayout.gridWidth) / 2
-            let controlColumn = tabLeft + SettingsLayout.labelColumnWidth + SettingsLayout.columnSpacing
-            let grid = controller.tabItems[index].viewController as! SettingsTabViewController
+            let grid = controller.tabItems[index].viewController
+            let gridBox = frame(of: grid.grid, in: tab)
+            let controlColumn = gridBox.minX + grid.labelWidth + SettingsLayout.columnSpacing
+            // The form is centred across the window, with as much room on its left as on its right.
+            expect(abs(gridBox.minX - (tab.bounds.maxX - gridBox.maxX)) < 1.5, "\(name): the form grid is centred (left \(gridBox.minX), right \(tab.bounds.maxX - gridBox.maxX))")
+            expect(gridBox.width <= SettingsLayout.gridWidth + 0.5, "\(name): the form fits the content width (\(gridBox.width))")
+            if index < 2 {
+                // A short form is as wide as its widest control: its ink sits in the middle, not against the left.
+                let ink = descendants(tab).filter { ($0 is NSControl) && !$0.isHidden && $0.bounds.width > 0 }.map { alignment(of: $0, in: tab) }.reduce(NSRect.null) { $0.union($1) }
+                let left = ink.minX, right = tab.bounds.maxX - ink.maxX
+                expect(abs(left - right) < 4, "\(name): the controls and labels are centred in the window (left room \(left), right room \(right))")
+                expect(left > 30 && ink.width / tab.bounds.width > 0.7, "\(name): the form takes its share of the width, not a left-hand corner (\(ink.width / tab.bounds.width))")
+            }
             var cells = 0
             for row in 0..<grid.grid.numberOfRows {
                 guard let content = grid.grid.cell(atColumnIndex: 1, rowIndex: row).contentView, !(content is GlobalHotkeyForm) else { continue }
@@ -275,6 +501,11 @@ private enum SettingsWindowTests {
         let labelWidth = SettingsLayout.labelColumnWidth
         let widest = SettingsLayout.rowLabels.map { ($0 as NSString).size(withAttributes: [.font: DesignTokens.Typography.font(.bodyStrong)]).width }.max()!
         expect(labelWidth >= widest, "the label column is wide enough for the longest row label (\(labelWidth) vs \(widest))")
+        for (index, labels) in [GeneralSettingsTab.rowLabels, DrawingSettingsTab.rowLabels].enumerated() {
+            let own = SettingsLayout.labelWidth(for: labels)
+            expect(controller.tabItems[index].viewController.labelWidth == own && own <= labelWidth && (index != 0 || own < labelWidth), "\(controller.tabItems[index].label) sizes its label column to its own labels (\(own) vs \(labelWidth))")
+        }
+        expect(controller.capture.labelWidth == labelWidth && controller.upload.labelWidth == labelWidth, "Capture and Upload keep the shared label column")
     }
 
     // MARK: General and Drawing
@@ -522,7 +753,7 @@ private enum SettingsWindowTests {
         var strings: [String] = []
         for index in controller.tabItems.indices {
             controller.select(index)
-            strings += texts(in: controller.tabItems[index].viewController!.view)
+            strings += texts(in: controller.tabItems[index].viewController.view)
             strings.append(controller.window.title)
         }
         strings += controller.tabItems.map(\.label)
@@ -545,7 +776,7 @@ private enum SettingsWindowTests {
             controller.window.contentView?.layoutSubtreeIfNeeded()
             let name = "Settings: " + controller.tabItems[index].label
             let windowReport = ViewTreeAudit.audit(controller.window, surface: name)
-            let viewReport = ViewTreeAudit.audit(controller.tabItems[index].viewController!.view, surface: name + " (tab view)")
+            let viewReport = ViewTreeAudit.audit(controller.tabItems[index].viewController.view, surface: name + " (tab view)")
             expect(!viewReport.findings.isEmpty, "\(name): the walker found text, so zero violations means something")
             expect(windowReport.violations.isEmpty && viewReport.violations.isEmpty, "\(name) breaks the type floor:\n\(windowReport.description)\n\(viewReport.description)")
             judged += viewReport.findings.count
