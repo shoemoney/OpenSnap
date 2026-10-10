@@ -1221,3 +1221,73 @@ Light 980 and dark 1440 (or the nearest size the surface has) were viewed for: e
 - **Suggested fix:** keep one counter per kind in `record()` and print "keyboard 0, buttons 0, pointer moves N".
 
 **Not captured:** the light and dark S42 status notice in the form the row asked for exists only for light (F-R-001); the Resize sheet with Manage expanded (no harness step); real Font Awesome icons (Pro fonts not bundled in this build); the status item on a real menu bar (transparent capture only); native tooltips and the Share picker (recorded harness gaps).
+
+## J8 real-input validation (87abbfd)
+
+J8 lane, build 87abbfd (main after batch 8), one isolated session through `tools/e2e-session.sh`: pid 94116 (seed `history` plus `--aws`, one upload), driven only with the computer-use driver. `stop` ended with 0 panel-service watchdog kills and `RESULT stores unchanged` (digest `dbde037ac2085108` before and after; no concurrent `eyedump` plist was present this time, `pgrep -f eye-dump-audit` was empty). No system Open, Save, Export or Print panel was opened. A local synthetic page (`http://127.0.0.1:8765/`, gradient, red rounded rectangle, the words "J8 synthetic page, fixture, nothing personal") served Snap from Link for the 2560 × 1800 snap; a throwaway local WebDAV stand-in on 127.0.0.1:8766 (207 for PROPFIND, 403 for PUT) served the Test note and the failed upload. Both were stopped and deleted afterwards (ports answer nothing). Evidence is `docs/design/evidence/e2e-2026-10-10/j8/` (18 jpg, numbers below are the file prefixes; `03` is a second view of the editor key at the moment of `02`); the AWS steps are in `j8-aws-log.md`. Result key as before: PASS = the corrected behaviour was seen in a screenshot I looked at; PARTIAL = part of it; unverified = not reachable, reason given.
+
+### Result table
+
+| Item | Result | Evidence | Note |
+|---|---|---|---|
+| 1a R2-001 / F-J7-004: note while Settings is key | **PASS** | `01` | Settings › Capture with Settings key and the app active reads `Shortcuts are paused while this window is in front.`; its AX value says the same. |
+| 1b editor window of the same app becomes key | **PASS** | `02`, `03` | The editor's traffic lights are lit, Settings' are grey, and the Capture note is back to `Shortcuts are saved as you change them. They pause while this window is in front.` (AX value too). |
+| 1c Settings key again | **PASS** | `04` | Paused text again. |
+| 1d switch tab | PARTIAL | `05`, `06` | While on Drawing there is no readout (the note lives only on the Capture tab, `05`), so the pause release on leaving the tab cannot be read. Re-entering Capture while the editor was key (AX press of the tab) showed the normal note (`06`). |
+| 1e close Settings, reopen | **PASS** (with a note) | `07` | Closed with ⌘W, reopened with ⌘,: Settings is key at once, so it reads the paused text straight away (`07`); there is no moment where it is shown but not key. |
+| 1f app deactivated | unverified | none | `gap: unsafe`. The isolated app has only the editor and Settings windows; deactivating the app means bringing another app forward, which could be one of the owner's. The real global shortcuts were never pressed, so the unregistration itself stays unit/source (HOT-044, class unchanged). |
+| 2a F-J7-005: Resize with Original size unticked | **PASS** | `09`, `11` | 2560 × 1800 snap, Original size unticked (title 1438 × 1011), Resize Width 1200: the title behind the sheet is 1200 × 844 at once and the checkbox is already gone; after OK the title stays 1200 × 844 with no checkbox. (J7: the checkbox stayed and ticking jumped to 2560 × 1800.) |
+| 2b ticked variant | **PASS** | `10`, `12` | Undo, tick Original size (title 2560 × 1800), Resize 1200: title 1200 × 844, checkbox hidden. |
+| 2c Limit once | **PASS** | `13` | Limit, Longest side 800: title 800 × 563, the window narrowed to 980, no checkbox, one PNG toggle. |
+| 2d nothing jumps when toggling | PASS (nothing to toggle) | `11`, `12`, `13` | After any applied Resize or Limit the picture equals the shown size, so the checkbox is hidden; there is no toggle that can jump. |
+| 3 F-J7-003: Details Size, shared entry | **PASS** | `14`, `15`, `17` | Live S3 upload of the 800 × 563 picture (object 800 × 563 by `sips`): Details reads `800 × 563 (published)`; after Delete from Web, same entry still selected, it still reads `800 × 563 (published)` and the Destination keeps the URL. (J7: `1200 × 844` then `1438 × 1011`.) |
+| 3b Delete from Web (live object) | **PASS** | `16`, `17` | Sheet names the exact URL; the pixel click on the sheet's button was swallowed, the AX press landed; the app deleted the object (head-object 404). The public URL still answered 200 from CloudFront (`age: 91`) – the app's notice says cached copies can persist; no invalidation was requested. |
+| 4 F-J7-006 / F-J7-002: 980 footer after a 403 | **PASS** (F-J7-006) / PARTIAL (F-J7-002) | `18`, `19` | At 980 with `Original size` ticked the footer is `[x] Original size  Failed` with Retry and Details beside it – the checkbox stays. The visible line gives up its words to `Failed`; the full `Upload failed · HTTP 403` is the status text's AX value and AX help text, and Details shows `Upload failed · HTTP 403` and `curl: (22) The requested URL returned error: 403` (`19`). |
+| 5 F-J7-001: WebDAV Test note | **PASS** | `08` | Test against the 207 stand-in with a user name and password: `Connected`, `Reached the server (HTTP 207); it did not reject the login. A server with no login answers the same way, so this does not prove it. Nothing was uploaded.` – three whole lines, the closing sentence included. |
+
+### Re-check rows
+
+14 matrix rows carry an appended J8 note and keep their class: BAR-024, 025, 030, HOT-034, HIST-023, 034, 040, DEST-026, 034, 036, SHEET-007, 009 and 019 (E2E), and HOT-044 (stays unit/source: the pause now has a readout that follows key window, tab entry and reopen, but the firing/unregistration is unsafe to prove and the app was never deactivated).
+
+### New findings
+
+### F-J8-001 · P4 (observation) · The 980 footer error line shows only "Failed"; the status code is in the AX help text and Details
+- **Surface:** bottom bar at 980, upload error with the Original size checkbox kept beside it.
+- **Observed:** `Failed` with Retry and Details (`18`). The whole `Upload failed · HTTP 403` exists as the status text's AX value and AX help text and in Details (`19`), but a sighted user must open Details to see the code (hover was not tried).
+- **Expected:** acceptable as a trade-off after batch 8 (the checkbox won); a short code such as `HTTP 403` fits in the free space left of Retry if the owner wants it visible.
+- **Suggested fix:** show `HTTP 403` (or `Failed · 403`) when the status carries a code and the row has room.
+
+### F-J8-002 · P4 (observation) · The pause note cannot be read off the Capture tab
+- **Surface:** Settings, any tab but Capture.
+- **Observed:** the readout lives in the Capture form; on Drawing, General or Upload nothing says whether shortcuts are paused (`05`), so the release on a tab change cannot be asserted without firing a shortcut.
+- **Suggested fix:** none needed for users; for testing, an AX value on the tab group would do. Not worth shipping on its own.
+
+### Observations that are not findings
+
+- Settings window ⌘, from the editor needed one repeat after ⌘W the first time (the first press returned ok but no window appeared); the second press opened it. Likely the menu command racing the closing window in the driver.
+- The destination form's text fields give no AX readback; `type_text` with a pixel target types into whichever field is first responder (the Endpoint text landed in Name first), and a Tab inside the text skips a field. Clicking the field, then typing, put text where expected for Endpoint, Public base URL, Username and Password; the Name field kept the stale text. Harness note below.
+- The WebDAV destination's name defaulted to the endpoint URL in the list when Name held the endpoint text; no finding.
+
+### Harness notes for the next driver (J8 additions)
+
+- Settings, History and the sheets are separate window ids; `activate_window` on the editor id makes the editor key and the Settings window resigns, which is what the pause note follows. `get_app_state` with `additional_window_ids` captures both in one call.
+- Sheet buttons (Delete from Web) take an AX press from the owning window's tree (`ax_filter Delete`); pixel clicks are swallowed. Segmented Limit tab likewise needs the AX press from the editor window's tree; the Limit field then takes a click, then `type_text` without a trailing tab, then Return.
+- Dragging the editor window's right edge in `get_app_state` pixel coordinates with the current `screenshot_id` resizes it (1482 → 1030 → 980); the footer goes compact below ~1000.
+- Keep AX filters tight (`ax_filter`): a bare `AXButton` or `AX` filter returns the whole tree and costs tens of thousands of tokens.
+
+### Class counts (matrix at 87abbfd, 597 rows)
+
+| Evidence class | before J8 | after J8 |
+|---|---|---|
+| E2E | 312 | 312 |
+| rendered | 45 | 45 |
+| unit/source | 93 | 93 |
+| unverified | 120 | 120 |
+| retired | 27 | 27 |
+| total | 597 | 597 |
+
+No row changed class: the J8 results confirm batch 8 on rows that were already E2E, and the one row that could have moved (HOT-044) stays unit/source for a stated reason. Every unverified row still carries exactly one gap reason (the check passes).
+
+### Clipboard
+
+The pasteboard held 13 bytes of text before the run; it was saved to a temp file (not printed), replaced by the upload's link (read back once to learn the exact key of the object this lane created), restored byte for byte (`cmp` identical) after the session was stopped, and the temp file was deleted.

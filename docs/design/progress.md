@@ -1,7 +1,7 @@
 # OpenSnap implementation progress
 
 **Baseline:** `bad6617`, when implementation began (the rename and migration were already merged in `f7ff86b` and `d2dc3c9`).
-**Main now:** `fa4715f`. The eighteen implementation merges below are followed by the E2E audit merges since `284f028`, listed in the E2E audit section.
+**Main now:** `33743c5`. The eighteen implementation merges below are followed by the E2E audit merges since `284f028`, listed in the E2E audit section.
 **Status of 36 todos:** 29 done, 2 verified, 1 not-a-bug, 3 in-progress, 1 pending.
 
 Per-todo state is in `backlog.json` (`status`, `mainState`, `implementation`). The roadmap has the milestone table (section 2b). Findings statuses in the roadmap (section 4) are still as at `dc1eb26`.
@@ -156,11 +156,11 @@ Recorded as validation evidence under OSN-054 and OSN-072. It partly satisfies O
 
 Owner authorization: Jeremy, 2026-10-09 23:27 CDT: audit every option and every icon, and ask whether each looks as good as it can and uses space well. The plan is [`e2e-audit-plan.md`](e2e-audit-plan.md). The method, inventory and launcher are in [`e2e/README.md`](e2e/README.md).
 
-**Evidence classes are never merged.** `E2E` is a real click or key in an isolated session copy, with the result seen in a screenshot or an AX read. `rendered` is a harness capture (`tools/eye-dump-audit.sh`): the app drew the state in-process, which shows how it looks, not that a user can reach it. `unit/source` is a named existing test. `unverified` means nothing has been recorded yet.
+**Evidence classes are never merged.** `E2E` is a real click or key in an isolated session copy, with the result seen in a screenshot or an AX read. `rendered` is a harness capture (`tools/eye-dump-audit.sh`): the app drew the state in-process, which shows how it looks, not that a user can reach it. `unit/source` is a named existing test. `unverified` is a row the audit could not exercise; it carries exactly one gap reason. `retired` is a row whose surface the app removed or replaced; it is counted in no other class.
 
 ### Merges since 284f028
 
-Merges to main, first-parent order. Merges of main into the batch and probe branches (`e41f0c2`, `663fa39`, `082ff95`) are not listed.
+Merges to main, in merge order. Merges of main into the batch and probe branches (`e41f0c2`, `663fa39`, `082ff95`, `cc764dc`, `41eade2`, `26c8be3`, `a8cfc00`) are not listed.
 
 | Merge | Branch | What it did |
 |---|---|---|
@@ -169,6 +169,15 @@ Merges to main, first-parent order. Merges of main into the batch and probe bran
 | `877a5c6` | audit/panel-probe | Launcher panel-service watchdog (SIGKILL above 2 GB) and the F-J5-005 investigation |
 | `b09ecc6` | fix/review-r1-tools-docs | Review round 1 tools and docs: leaked capture withdrawn, OCR sweep tool, harness input fence, Free-only fonts by default, ledger corrections, neutral role names |
 | `fa4715f` | fix/panel-service-runaway | F-J5-005 root cause: the launchers canonicalize their session dir. App code unchanged; the OS bug remains on macOS 27.2 |
+| `0bd6f94` | fix/audit-batch-5 | Batch 5: upload honours Original size, Resize opens at the title's size, Toolbox icons drawn, one destinations surface, labelled History actions, footer stops repeating the title. Branch commits `d05cb49`, `f7f68be`; evidence `fe15ddc` |
+| `14d4d9f` | audit/e2e-j6 | J6 real-click retest of batches 4 and 5: F-J6-001 to 010, live S3 original-size check, every unverified row carries one gap reason |
+| `0b03903` | fix/review-r2-tools-ledger | Review round 2 tools and ledger: session-scoped panel watchdogs (R2-013), retired ledger class (R2-008), text-readout downgrades (R2-007), stale-row flags (R2-009), S42 caption correction (R2-011) |
+| `5989fa0` | fix/audit-batch-6 | Batch 6: Resize rewrites the picture under Original size, one size formatter, shortcuts pause only while Settings is key, Toolbox menu button, History at 880, compact format toggle, Hide and Trash Cancel-first. Carries review round 2 R2-001 to 005 and R2-014 to 018 |
+| `5b30929` | fix/audit-batch-7 | Batch 7: footer upload error is the whole line, `Upload failed · code` or `Upload failed`, never a cut sentence |
+| `5310a2c` | audit/e2e-j7 | J7 real-input validation of batches 6 and 7 and the review round 2 fixes: F-J7-001 to 006, live S3 resized upload 1200 × 844 |
+| `87abbfd` | fix/audit-batch-8 | Batch 8: Resize always rewrites the picture, visible shortcut-pause note, stable published size, HTTP status in upload errors, checkbox kept beside an error at 980 |
+| `7f0a767` | audit/final-render | Final render pass: display options on current surfaces with positive controls, 48 stale rendered rows refreshed, F-R-001 to 005 |
+| `33743c5` | audit/e2e-j8 | J8 real-input validation of batch 8: visible shortcut-pause lifecycle, Resize one rule, stable published size, 980 error keeps the checkbox; F-J8-001 and 002 |
 
 ### Journeys
 
@@ -179,7 +188,10 @@ Merges to main, first-parent order. Merges of main into the batch and probe bran
 | J3 rendered matrix | **Rendered only, not E2E.** Light and dark, five sizes, Reduce Transparency, Increase Contrast, Differentiate Without Color, Reduce Motion and combinations, with positive controls | `3194247` | `baea204` | 11 findings (F-J3-001 to 011); 111 captures packed in `e2e-2026-10-10/j3/` from 3,338 PNGs over 18 runs |
 | J4 real-click retest | Real-click retest of the 47 fixes from batches 1 to 3c, plus the live S3 delete through the app | `94b7aa5` | `284f028` | 37 pass, 8 partial, 2 unverified of 47 (the table after the ledger correction; the original summary said 38 and 7); 7 new P3 findings (F-J4-001 to 007); 76 captures in `e2e-2026-10-10/j4/`, AWS log in `e2e/j4-aws-log.md` |
 | J5 gap closure | Real input for every `unverified` row that could be reached; one gap reason for each row that could not; the F-J5-005 panel-service investigation | `e953411` | `c9d485c` | 7 findings (F-J5-001 to 007); 47 rows to E2E; 48 jpg plus one AX and state readout file in `e2e-2026-10-10/j5/` |
-| J6 real-click retest | Real clicks on batch 4 and the batch 5 fixes, in an isolated session | pending | pending | pending (R1-009) |
+| J6 real-click retest | Real clicks on batches 4 and 5, four isolated sessions, computer-use driver only | `0bd6f94` | `14d4d9f` | 10 findings (F-J6-001 to 010); 64 captures in `e2e-2026-10-10/j6/`; AWS log `e2e/j6-aws-log.md`; 0 panel-service kills, stores unchanged |
+| J7 real-input validation | Batches 6 and 7 and the review round 2 fixes, two isolated sessions | `5b30929` | `5310a2c` | 6 findings (F-J7-001 to 006); 34 captures in `e2e-2026-10-10/j7/`; live S3 resized upload 1200 × 844; `e2e/j7-aws-log.md` |
+| J8 real-input validation | Batch 8, one isolated session | `87abbfd` | `33743c5` | 2 findings (F-J8-001 and 002); 19 captures in `e2e-2026-10-10/j8/`; live S3 upload and delete; `e2e/j8-aws-log.md` |
+| Final render pass | Harness renders (not real input) of display options on current surfaces, with positive controls | `5b30929` | `7f0a767` | 5 findings (F-R-001 to 005); 122 captures in `impl-2026-10-09/final-render/` |
 
 Notes on counts that the sources disagree on:
 
@@ -197,11 +209,15 @@ Notes on counts that the sources disagree on:
 | 3b | `fix/audit-batch-3b` | `3194247` | `impl-2026-10-09/audit-fix-3b/` (184, `526ab3c` and `41b2507`); before twins in `audit-fix-3b-before/` (62, `2cc07da`) |
 | 3c | `fix/audit-batch-3c` | `94b7aa5` | `impl-2026-10-09/audit-fix-3c/` (52, `0edc3ce` and `6469efb`) |
 | 4 | `fix/audit-batch-4` | `04dda5b` | `impl-2026-10-09/audit-fix-4/` (147 captures at `1026e58`: dwc 16, ic 12, plain 119). Rendered only, icon mode `sf` (Font Awesome unavailable in that run). No real-click retest yet |
-| 5 | no branch recorded yet | not merged | In progress: app findings from independent review round 1 (see the resolution index) |
+| 5 | `fix/audit-batch-5` | `0bd6f94` | `impl-2026-10-09/audit-fix-5/` (249, `f7f68be`) |
+| 6 | `fix/audit-batch-6` | `5989fa0` | `impl-2026-10-09/audit-fix-6/` (78, `cc764dc`) |
+| 7 | `fix/audit-batch-7` | `5b30929` | no folder of its own; checked in `e2e-2026-10-10/j7/` (34) and in the final render (`5b30929`) |
+| 8 | `fix/audit-batch-8` | `87abbfd` | `impl-2026-10-09/audit-fix-8/` (24, `ee89d7b`); checked in `e2e-2026-10-10/j8/` (19) |
+| 9 | not merged; branch not recorded in the sources | in progress | F-R-001 to 005, see the resolution index |
 
 ### Finding dispositions
 
-Derived from the J4 retest table in `e2e/findings.md` (after the ledger correction), the J5 section, the F-J5-005 investigation, and the batch 4 commit subjects and evidence. Batch 4 has no verdict in `findings.md`, so its fixes are mapped from commit subjects and the evidence folder. They were checked rendered only, and the table keeps them apart from real-click passes.
+Snapshot as at the J4 retest, kept for history; the resolution index below is current. Derived from the J4 retest table in `e2e/findings.md` (after the ledger correction), the J5 section, the F-J5-005 investigation, and the batch 4 commit subjects and evidence. Batch 4 has no verdict in `findings.md`, so its fixes are mapped from commit subjects and the evidence folder. They were checked rendered only, and the table keeps them apart from real-click passes.
 
 | Journey | Findings | Real-click pass (J4) | Batch 4, rendered, not retested | Fixed, other | Partial | Gap | Deferred | Doc-only | Open |
 |---|---|---|---|---|---|---|---|---|---|
@@ -222,7 +238,7 @@ Notes on the table:
 
 ### Finding resolution index
 
-Every finding ID from J1 to J5 (75) and every review round 1 ID R1-001 to R1-024 (24). Status key: **fixed** (merge or batch named); **partial**; **deferred**; **gap** (outside what the harness or the isolated session can prove); **doc-only**; **open** (no fix recorded in the sources; listed, not scheduled); **in progress** (batch 5); **J6 pending**; **accepted trade-off** (none recorded). R1 rows take their titles from the round 1 record in `docs/design/e2e/findings.md`.
+Every finding ID from J1 to J8 (93), every review round 1 ID R1-001 to R1-024 (24), every review round 2 ID R2-001 to R2-018 (18) and every final render ID F-R-001 to F-R-005 (5): 140 in all. Status key: **fixed** (merge or batch named, and not contradicted by a later real-input result); **partial** (part of the item passed under real input, or the fix holds only in the rendered harness); **deferred**; **gap** (outside what the harness or the isolated session can prove); **doc-only**; **open** (no fix recorded in the sources; listed, not scheduled); **in progress** (batch 9, F-R-001 to 005); **accepted trade-off** (recorded as acceptable by the journey that found it). R1 rows take their titles from the round 1 record in `docs/design/e2e/findings.md`.
 
 #### Journey findings (F-J1 to F-J5)
 
@@ -236,7 +252,7 @@ Every finding ID from J1 to J5 (75) and every review round 1 ID R1-001 to R1-024
 | F-J1-006 | fixed | batches 1 to 3c; J4 pass (P1) | Shadow toggle restyles only the shadow |
 | F-J1-007 | fixed | batches 1 to 3c; J4 pass (P1) | Tab walk leaves the canvas (keyboard evidence for OSN-060) |
 | F-J1-008 | fixed | batches 1 to 3c; J4 pass | Full screen enters and leaves from the Window menu |
-| F-J1-009 | fixed | batch 4 `1d8c3d3`; not retested | Toolbox rows draw their icons (J4 had 18 rows and no icons). Batch 4 captures are icon mode `sf` |
+| F-J1-009 | fixed | batch 4 `1d8c3d3`; J7 item 4 pass | Toolbox rows draw their icons; every row has one in the J7 real-click pass (R1-005 closed) |
 | F-J1-010 | fixed | batches 1 to 3c; J4 pass | Status names the format and stays current |
 | F-J1-011 | fixed | batches 1 to 3c; J4 pass | Crop hint names Return and Escape |
 | F-J1-012 | gap | none | Drag well Export panel never retested; the panel is OS-owned (see gaps) |
@@ -281,114 +297,184 @@ Every finding ID from J1 to J5 (75) and every review round 1 ID R1-001 to R1-024
 | F-J3-001 | fixed | batch 4 `6d833a8`; rendered | Differentiate Without Color outlines the selected PNG/JPG |
 | F-J3-002 | fixed | batch 4; rendered (inferred) | Blank column in History's empty and no-match states (evidence "History empty" in `495ff6b`) |
 | F-J3-003 | fixed | batch 4 `d9ed8b7`; rendered (inferred) | Destination forms fit their protocol, not the S3 height |
-| F-J3-004 | fixed | batch 4 `6d833a8`; rendered | Increase Contrast darkens glyphs and keeps toggle labels at contrast |
-| F-J3-005 | fixed | batch 4 `1d8c3d3`; rendered | Zoom and Original size explain what they measure |
-| F-J3-006 | fixed | batch 4 `d9ed8b7`; rendered (inferred) | Whole-pixel sizes. The finding is plausible only and still needs a real-click check |
-| F-J3-007 | fixed | batch 4 `1d8c3d3`; rendered (inferred) | Status keeps the tool or size longest, and link steps file-name-first |
+| F-J3-004 | partial | batch 4 `6d833a8`; rendered | Borders and the Snap outline strengthen under Increase Contrast; glyph and disabled contrast do not (F-R-002, batch 9) |
+| F-J3-005 | partial | batch 4 `1d8c3d3`; J6 partial | Zoom and Original size explain what they measure (text readout); the tooltips were not captured |
+| F-J3-006 | fixed | batch 4 `d9ed8b7`; J7 item 2a pass | Whole-pixel sizes; the Resize result that broke them is fixed (F-J6-001) |
+| F-J3-007 | fixed | batch 4 `1d8c3d3`; batch 7 `5b30929`; J7 item 6 pass | Status keeps the tool or size longest; the 980 status reads whole (F-J6-004) |
 | F-J3-008 | gap | OS-owned | Window title text is system-drawn |
 | F-J3-009 | open | none | Small and empty documents use 4 to 41% of a large window; no batch 4 subject covers it |
 | F-J3-010 | gap | OS-owned | Unselected radios and checkboxes are system-drawn |
-| F-J3-011 | partial | batch 4 `1d8c3d3`; not seen | Resize uses Font Awesome Free arrows, but batch 4 captures are icon mode `sf`. Needs an FA-mode capture |
+| F-J3-011 | fixed | batch 4 `1d8c3d3`; batch 5 (R1-006 text button); J6 pass | The Font Awesome arrows gave way to the Resize… text button; J6 found the glyph gone |
 | F-J4-001 | fixed | batch 4 `12b75e6`; rendered (inferred) | Destination errors stay on the page they were raised on; the list shows none |
-| F-J4-002 | open | none | History Date clipped for two-digit days (AM/PM lost) |
+| F-J4-002 | fixed | J6 pass (`14d4d9f`) | History Date fits at two-digit days: `Oct 10, 2026 at 10:12 AM` |
 | F-J4-003 | fixed | batch 4 `d9ed8b7`; rendered (inferred) | History footer notice after Delete from Web. The CDN cache is outside the app |
 | F-J4-004 | fixed | batch 4 `e3f99b8`; rendered (inferred) | History keeps the published size for Shared entries |
 | F-J4-005 | fixed | batch 4 `d9ed8b7`; rendered (inferred) | Destructive sheets are Cancel-first, including Delete from Web |
 | F-J4-006 | open | none | Previous document's size shown briefly after History › Open |
 | F-J4-007 | open | none | Erased fragments lose their shadow; a design question, may be intended |
-| F-J5-001 | open | none | Timed Snapshot silently drops an invalid delay |
-| F-J5-002 | open | none | ⌘D does not answer the sheet attached to History; may be the harness |
-| F-J5-003 | open | none | Save to History on a blank canvas does nothing and says nothing |
-| F-J5-004 | open | none | Upload with no destination shows an empty list and no explanation |
+| F-J5-001 | fixed | J6 pass | An invalid delay keeps the sheet with the error line |
+| F-J5-002 | fixed | J6 pass (caveat) | ⌘D answers the History sheet once History is key; may be the harness |
+| F-J5-003 | fixed | J6 pass; status whole after batch 7 | Save to History on a blank canvas says Nothing to save; no entry is added |
+| F-J5-004 | fixed | J6 pass | Opens Settings › Upload with No destinations yet and Add… |
 | F-J5-005 | fixed | `877a5c6` watchdog; `fa4715f` root cause | Launchers canonicalize the session dir. App code unchanged; the OS bug remains on 27.2 (see the panel investigation) |
-| F-J5-006 | open | none | The circle-exclamation icon has no call site |
-| F-J5-007 | open | docs lane, next matrix regenerate | Three inventory names do not match the build; the generator is outside this lane |
+| F-J5-006 | fixed | J6 pass (source) | Dead circle-exclamation icon removed (`FAIcon.warning` is gone) |
+| F-J5-007 | fixed | batch 5 `f7f68be` | Inventory names regenerated from a fresh harness run, matching the build |
+
+#### Journey findings (F-J6)
+
+Real-click retest of batches 4 and 5 (`14d4d9f`). Batch column names the fix where the sources name it.
+
+| ID | Priority | Title | Status | Batch or merge | Note |
+|---|---|---|---|---|---|
+| F-J6-001 | P2 | Applying a Resize never changes the title or exported size | fixed | batch 6 `5989fa0` (R2-002) | J7 2a and J8 2a pass: title and upload both 1200 × 844 |
+| F-J6-002 | P3 | Edit › Copy Image ignores Original size | partial | none named | J7 read a 1200 × 844 TIFF after a Resize (readout only); the copy of an unresized Original-size picture was not re-run |
+| F-J6-003 | P3 | History's Delete from Web state not recomputed when a destination changes | fixed | not named in a merge | J7 item 7 pass: disabled at once after the prefix change, enabled at once after restore |
+| F-J6-004 | P3 | At 980 the plain status messages are tail-cut | fixed | batch 7 `5b30929` | J7 item 6 pass: `Unsaved changes` and `Upload failed (curl 22).` read whole |
+| F-J6-005 | P4 | The title lags a moment behind the Original size checkbox | fixed | batch 6 | J7 2b pass: title fitted at once, no lag |
+| F-J6-006 | P4 | The History window stops at 945 wide, not at its 880 minimum | fixed | batch 6 (R2-005) | J7 item 5 pass: 880 × 720 reached |
+| F-J6-007 | P4 | Resize's Apply is a preview that Cancel undoes | fixed | batch 6 `29481af` (Apply commits) | J7 2d pass: Cancel keeps the size. The button is still labelled Apply; the suggested rename was not made |
+| F-J6-008 | P4 | The Hide and Trash sheets disagree on button order and default | fixed | batch 6 `9fda9c7` (Cancel first) | Not re-checked in J7 or J8 |
+| F-J6-009 | P4 | Toolbox: two rows without an icon, AX value Select All | fixed | batch 6 (R2-004) | J7 item 4 pass: every row has an icon; AXMenuButton with no value |
+| F-J6-010 | P4 | Size formats differ between the title and History Details | fixed | batch 6 (one size formatter) | Per the merge message; not re-read in J7 or J8 |
 
 #### Review round 1 (R1-001 to R1-024)
 
 | ID | Title | Status | Batch or merge | Note |
 |---|---|---|---|---|
 | R1-001 | Private text visible in a harness capture | fixed | `b09ecc6` | Harness input fence; leaked capture withdrawn from the tree. History cleanup pending, owned by root before any push |
-| R1-002 | Upload size versus "Original size" promise | in progress | batch 5 | — |
-| R1-003 | Resize sheet opens in output points | in progress | batch 5 | — |
+| R1-002 | Upload size versus "Original size" promise | fixed | batch 5 `0bd6f94` | J6 pass (P1): ticked, the object is 2560 × 1800; unticked, 674 × 474 |
+| R1-003 | Resize sheet opens in output points | fixed | batch 5 (opens); batch 6 `5989fa0` (apply) | J6 found Apply never reached the title or the upload (F-J6-001); J7 item 2a pass |
 | R1-004 | Font Awesome Pro bundled in default builds | fixed | `b09ecc6` | Free-only fonts by default; the default build never bundles Font Awesome Pro |
-| R1-005 | Toolbox pull-down icons unverified; near-identical symbols | in progress | batch 5 | — |
-| R1-006 | Resize glyph reads as expand | in progress | batch 5 | — |
+| R1-005 | Toolbox pull-down icons unverified; near-identical symbols | fixed | batch 4 `1d8c3d3`; batch 6 (R2-004) | Reopened by review round 2; J6 partial; J7 item 4 pass: every row has an icon |
+| R1-006 | Resize glyph reads as expand | fixed | batch 5 | J6 pass: text button at 980 and 1482 wide, disabled in Actual Size |
 | R1-007 | Ledger rows describe removed sheet and old tab names | fixed | `b09ecc6` | — |
 | R1-008 | Ledger class inflation | fixed | `b09ecc6` | — |
-| R1-009 | No real-click retest of batch 4 | J6 pending | J6 retest | Real-click retest of batch 4 and the batch 5 fixes |
-| R1-010 | Delete from Web after re-save | in progress | batch 5 | — |
-| R1-011 | Settings › Upload duplicates Destinations sheet | in progress | batch 5 | — |
-| R1-012 | History toolbar unlabeled glyphs | in progress | batch 5 | — |
-| R1-013 | Status line repeats the title | in progress | batch 5 | — |
-| R1-014 | Status line truncates the upload link at 980 | in progress | batch 5 | — |
-| R1-015 | Empty states and copy consistency | in progress | batch 5 | — |
+| R1-009 | No real-click retest of batch 4 | fixed | J6 retest `14d4d9f` | Retest done in real clicks for batches 4 and 5; results in the F-J6 rows |
+| R1-010 | Delete from Web after re-save | fixed | not named in a merge (F-J6-003) | J6 partial; J7 item 7 pass: Delete from Web follows the destination at once |
+| R1-011 | Settings › Upload duplicates Destinations sheet | fixed | batch 5 | J6 pass: one destinations list, Make Default, form-only editor sheet |
+| R1-012 | History toolbar unlabeled glyphs | fixed | batch 5 (labels); batch 6 (880) | J6 partial (880 unreachable); J7 item 5 pass at 880 × 720 |
+| R1-013 | Status line repeats the title | fixed | batch 5 | J6 pass: windowed footer has no size; full screen shows it once |
+| R1-014 | Status line truncates the upload link at 980 | fixed | batch 7 `5b30929` | J7 item 6 pass: the 980 status and upload error read whole |
+| R1-015 | Empty states and copy consistency | fixed | batch 5 | J6 pass: empty-state wording |
 | R1-016 | Actual Size navigator mostly empty | deferred | none | — |
-| R1-017 | Settings › Capture redundant controls | in progress | batch 5 | — |
-| R1-018 | Differentiate Without Color outline not live | in progress | batch 5 | — |
-| R1-019 | Weak test assertions | in progress | batch 5 | — |
-| R1-020 | Window › Full Screen acts on the wrong window | in progress | batch 5 | — |
-| R1-021 | Eraser drops the shadow from the whole shape | in progress | batch 5 stretch | — |
-| R1-022 | Miscellaneous WebDAV, notice and shortcut defects | in progress | batch 5 | — |
+| R1-017 | Settings › Capture redundant controls | fixed | batch 5; pause fix in batch 6 (R2-001) | J6 pass (cleanup); J8 items 1a to 1e pass on the visible pause note |
+| R1-018 | Differentiate Without Color outline not live | partial | batch 5 | Rendered positive control shows the tab outline under the option; the live toggle is a system option, not real input |
+| R1-019 | Weak test assertions | fixed | batch 5 `f7f68be` | History and upload tests prove published size and success status |
+| R1-020 | Window › Full Screen acts on the wrong window | partial | batch 5 | J6: Full Screen acted on the aimed editor; the refusal with another window key was not shown |
+| R1-021 | Eraser drops the shadow from the whole shape | open | none (stretch goal, not in the batch 5 merge) | J6 inconclusive: the harness drag trail covers the stroke |
+| R1-022 | Miscellaneous WebDAV, notice and shortcut defects | fixed | not named in a merge | WebDAV note: J7 partial, J8 item 5 pass. The shortcut part is R2-001 |
 | R1-023 | Model and tool names in committed docs and tooling | fixed | `b09ecc6` | — |
 | R1-024 | F-J5-005 judgement | fixed | `fa4715f` | Panel-service root cause in the launchers; the OS bug remains |
 
+#### Independent review round 2 (R2-001 to R2-018)
+
+| ID | Priority | Title | Status | Batch or merge | Note |
+|---|---|---|---|---|---|
+| R2-001 | P2 | Shortcut pause holds while Settings is only shown on the Capture tab | partial | batch 6 `5989fa0` | J8 items 1a to 1e pass on the visible note. Firing a shortcut and the app-deactivation path stay unverified (unsafe) |
+| R2-002 | P2 | Resize result overwritten by refits; Original size ignores it | fixed | batch 6 `5989fa0` | J7 2a and 2b, J8 2a and 2b pass |
+| R2-003 | P3 | Original size checkbox stays with no snap picture | partial | batch 6 (proof test `7882bb0`) | J7: blank canvas pass; after Remove Snap Picture not isolated (the 980 error hid it, fixed in batch 8) |
+| R2-004 | P3 | Toolbox menu covers its own button; pop-up role with a value | fixed | batch 6 | J7 item 4 pass |
+| R2-005 | P3 | History action labels chosen only after resize; 880 unreachable | fixed | batch 6 | J7 item 5 pass |
+| R2-006 | P3 | Evidence text names the computer-use tool | fixed | review round 2 lane `0b03903` | Wording corrected in the evidence file |
+| R2-007 | P3 | Ledger rows overclaim E2E (SET-023, KEY-021, MENU-061) | fixed | review round 2 lane `0b03903` | Moved to unverified with `gap: text readout only` |
+| R2-008 | P3 | Retired rows still counted as rendered or E2E | fixed | review round 2 lane `0b03903` | New `retired` class, 27 rows |
+| R2-009 | P3 | Rendered rows drawn before batches 4 and 5 describe old chrome | fixed | final render pass `7f0a767` | 48 rows refreshed from `5b30929`, flag dropped |
+| R2-010 | P3 | Display options not re-rendered after batch 6 | fixed | final render pass `7f0a767` | Positive controls on the current surfaces (rendered, not real input) |
+| R2-011 | P3 | S42 status-notice capture mistimed; captions wrong | partial | review round 2 lane `0b03903` | Captions corrected. A correct dark notice capture is still missing (F-R-001, batch 9) |
+| R2-012 | P3 | Harness input fence: no event counts, no hover fence | partial | batch 6 `29481af` (record) | The swallowed count is recorded; no split by event kind (F-R-005, batch 9) |
+| R2-013 | P3 | Panel watchdogs killed other apps' services; cleanup touched the real Preferences | fixed | review round 2 lane `0b03903` | Watchdogs consider only the session environment; the real-home cleanup is gone |
+| R2-014 | P3 | Bottom bar at 980: status squeezed by the format toggle and zoom | fixed | batches 6 and 7 | J7 item 6 pass (one exception, F-J7-002) |
+| R2-015 | P3 | History tiles, Drag as width and "Destination: —" | fixed | batch 6 `90b8be6` | J7 item 8a pass |
+| R2-016 | P3 | Settings › Upload: wide label column, empty-state hint, shared yellow | partial | batch 6 `90b8be6` | J7 item 8b pass; the empty-list hint was not run (needs an empty list) |
+| R2-017 | P3 | Empty Endpoint gives an unnamed three-line URL rule | fixed | batch 6 `90b8be6` | J7 item 8c pass |
+| R2-018 | P3 | WebDAV 2xx Test says the login was accepted | fixed | batch 6 `90b8be6` | J7 item 8d partial (cut); J8 item 5 pass |
+
+#### J7 findings (F-J7-001 to 006)
+
+| ID | Priority | Title | Status | Batch or merge | Note |
+|---|---|---|---|---|---|
+| F-J7-001 | P3 | The WebDAV 2xx Test note is cut at three lines | fixed | not named in a merge | J8 item 5 pass: three whole lines, closing sentence included |
+| F-J7-002 | P4 | The footer error shows curl's exit code, not the HTTP status | partial | batch 8 `87abbfd` (HTTP status) | J8 item 4: footer reads `Failed`; `Upload failed · HTTP 403` is in Details and AX only (F-J8-001) |
+| F-J7-003 | P3 | A shared entry's Details Size changes after Delete from Web | fixed | batch 8 `87abbfd` (stable published size) | J8 item 3 pass: `800 × 563 (published)` before and after delete |
+| F-J7-004 | P4 | Nothing shows whether global shortcuts are paused | fixed | batch 8 `87abbfd` (visible note) | J8 1a pass; the note and its AX value follow key window |
+| F-J7-005 | P4 | Original size behaves differently after ticked and unticked Resize | fixed | batch 8 `87abbfd` (Resize one rule) | J8 2a and 2b pass: the checkbox is hidden after any applied Resize |
+| F-J7-006 | P4 | An upload error hides the Original size checkbox at 980 | fixed | batch 8 `87abbfd` | J8 item 4 pass: checkbox kept beside Retry and Details |
+
+#### Final render pass (F-R-001 to 005)
+
+| ID | Priority | Title | Status | Batch or merge | Note |
+|---|---|---|---|---|---|
+| F-R-001 | P3 | S42 status-notice captures show the stale status | in progress (batch 9) | batch 9 | Notice in 2 of 21 attempts (light only); the layout JSON says Saved to History |
+| F-R-002 | P3 | Increase Contrast does not raise glyph or disabled contrast | in progress (batch 9) | batch 9 | Glyph 4.00:1 unchanged; disabled Undo 1.47:1 to 1.57:1 (F-J3-004 still open) |
+| F-R-003 | P3 | Differentiate Without Color leaves the Upload list selection colour-only | in progress (batch 9) | batch 9 | Selected row 1.10:1 fill, no cue under the option; the tab does gain one |
+| F-R-004 | P3 | Toolbox menu capture fails intermittently and passes silently | in progress (batch 9) | batch 9 | 12 of 30 first-set menu captures dropped; the count of PNGs looked like a pass |
+| F-R-005 | P3 | Input-fence count cannot tell a parked pointer from typing | in progress (batch 9) | batch 9 | The fence records no event kinds; menu runs swallow 11 to 70 events |
+
+#### J8 findings (F-J8-001 to 002)
+
+| ID | Priority | Title | Status | Batch or merge | Note |
+|---|---|---|---|---|---|
+| F-J8-001 | P4 | The 980 footer error line shows only "Failed" | accepted trade-off | batch 8 `87abbfd` | J8: acceptable, the checkbox won. The owner may want `HTTP 403` visible in the footer |
+| F-J8-002 | P4 | The pause note cannot be read off the Capture tab | accepted trade-off | none | J8: not worth shipping on its own; an AX value on the tab group would serve testing |
+
 #### Totals by status
 
-| Status | F-J (75) | R1 (24) | All (99) |
-|---|---|---|---|
-| fixed | 50 (37 real-click pass, 12 batch 4 rendered only, 1 launcher) | 6 | 56 |
-| partial | 8 | 0 | 8 |
-| deferred | 1 | 1 | 2 |
-| gap | 5 | 0 | 5 |
-| doc-only | 1 | 0 | 1 |
-| open (no fix recorded) | 10 | 0 | 10 |
-| in progress (batch 5) | 0 | 16 (incl. R1-021 stretch) | 16 |
-| J6 pending | 0 | 1 | 1 |
-| accepted trade-off | 0 | 0 | 0 |
-| **Total** | **75** | **24** | **99** |
+| Status | F-J1 to F-J8 (93) | R1 (24) | R2 (18) | F-R (5) | All (140) |
+|---|---|---|---|---|---|
+| fixed | 70 | 20 | 13 | 0 | 103 |
+| partial | 11 | 2 | 5 | 0 | 18 |
+| deferred | 1 | 1 | 0 | 0 | 2 |
+| gap | 5 | 0 | 0 | 0 | 5 |
+| doc-only | 1 | 0 | 0 | 0 | 1 |
+| open | 3 | 1 | 0 | 0 | 4 |
+| in progress (batch 9) | 0 | 0 | 0 | 5 | 5 |
+| accepted trade-off | 2 | 0 | 0 | 0 | 2 |
+| **Total** | **93** | **24** | **18** | **5** | **140** |
 
-Check: 56 + 8 + 2 + 5 + 1 + 10 + 16 + 1 + 0 = 99.
+Check: 103 + 18 + 2 + 5 + 1 + 4 + 5 + 2 = 140.
 
 ### Coverage summary
 
-Source of truth: `e2e/coverage-matrix.md` (one row per audit ID) and `e2e/inventory.json` (the same 590 entries). The matrix is regenerated from the sources, so these are the counts it has now.
+Source of truth: `e2e/coverage-matrix.md` (one row per audit ID, **597 rows**) and `e2e/inventory.json` (the same 597 entries). Counts below were recounted from the matrix on 2026-10-10 after the final render pass, with the table cells split on unescaped pipes only.
 
 Evidence classes are never merged:
 
-- **`E2E`**: a real click or key in an isolated session copy, with the result seen in a screenshot or an AX read.
-- **`rendered`**: the harness renders the state in-process (`tools/eye-dump-audit.sh`). It shows how the state looks, not that a user can reach it. It is not a real-click result.
+- **`E2E`**: real input (a click or key) in an isolated session copy, with the result seen in a screenshot or an AX read. The image was viewed, not just listed.
+- **`rendered`**: the harness renders the state in-process (`tools/eye-dump-audit.sh`). It shows how the state looks, not that a user can reach it. It is not a real-input result.
 - **`unit/source`**: a named existing test or source check.
-- **`unverified`**: nothing recorded yet, or a row the audit could not exercise. Each one should carry a gap reason. 122 of the 125 do; the other 3 do not (see below).
+- **`unverified`**: the audit could not exercise the row. Each one carries **exactly one gap reason**, in the observed cell.
+- **`retired`**: the app removed or replaced the surface. The row keeps its IDs and history and is counted in no other class.
 
 | Evidence class | Rows in `coverage-matrix.md` |
 |---|---|
-| `E2E` (real input, viewed) | 303 |
-| `rendered` (harness render, not real input) | 71 |
-| `unit/source` (named test or check) | 91 |
-| `unverified` (gap reason in the row, or none) | 125 |
-| **Total** | **590** |
+| `E2E` (real input, viewed) | 312 |
+| `rendered` (harness render, not real input) | 45 |
+| `unit/source` (named test or check) | 93 |
+| `unverified` (one gap reason each) | 120 |
+| `retired` (surface removed or replaced) | 27 |
+| **Total** | **597** |
 
-Earlier notes said 589 rows. The file has 590, and the inventory has 590 entries (`e2e`: 494, `e2e-partial`: 53, `gap`: 43). Earlier prose figures (258 / 94 / 146 before J5; 305 / 99 after J5; 299 / 71 / 129 after the ledger corrections) do not match this file. The matrix is the source.
+How the class moved (rows, 597 throughout): at `14d4d9f` (J6) E2E 322, rendered 64, unit/source 93, unverified 118. After review round 2 (R2-007, R2-008) E2E 309, rendered 48, unverified 120, retired 27. After J7 (three rendered rows, DEST-014, 016 and 022, became E2E) E2E 312, rendered 45. J8 changed no class.
 
-Gap reasons for the 125 `unverified` rows, counted per row from the row text:
+Gap reasons of the 120 `unverified` rows, counted from the observed cell (each row has exactly one):
 
-| Gap reason | Rows |
-|---|---|
-| `gap: unsafe` (captures that grab the owner's display, network, system-wide hotkeys) | 36 |
-| `gap: harness` (synthetic right-click, held keys, file drop, non-key window) | 32 |
-| `gap: AX presence only` (present in the menu tree, not pressed) | 23 |
-| `gap: OS-owned` (system panels, Photos and Pictures choosers, share picker) | 18 |
-| `gap: hardware` (multi-display, 1x, printer) | 5 |
-| `gap: permission` (Screen Recording, Photos library) | 4 |
-| `gap: text readout only` | 2 |
-| `gap: AX value only` | 2 |
-| **No gap reason in the row** | **3** |
-| **Total** | **125** |
+| Gap reason | Rows | What it covers |
+|---|---|---|
+| `gap: unsafe` | 36 | captures of the real display, global hotkeys, Hide Others, Move to Trash, Open Link, Cancel Upload, Timed Snapshot with a valid delay, Clear All |
+| `gap: harness` | 30 | synthetic right-click menus, held modifiers, file drops and drags to other apps, menu picks while inactive, full-keyboard sweeps, announcements |
+| `gap: AX presence only` | 18 | menu items listed in the AX tree, not pressed |
+| `gap: OS-owned` | 18 | Open, Save, Export and Print panels, the Export accessory, share picker, Photos and Pictures choosers, Spelling and Colors panels |
+| `gap: text readout only` | 7 | Edit › Copy Image pasteboard read, tooltips not captured, the No destination readout, icon-only AX names, the Settings-open readouts moved here in round 2 |
+| `gap: hardware` | 5 | multi-display, 1x display, printer |
+| `gap: permission` | 4 | Screen Recording captures, Photos Library |
+| `gap: AX value only` | 2 | zoom entries 75% and 100% |
+| **Total** | **120** | |
 
-The 3 rows without a reason: MENU-004 (observed at `10040ba` opening the removed Capture Shortcuts sheet; its note says re-check after `d9ed8b7`), and HOT-041 and ICON-107, whose observed cell still reads `TBD`. Another 32 unverified rows show `e2e-partial:` in the gap column; their reasons sit in the observed cell.
+Matrix housekeeping, which this lane does not edit (`e2e/` is the e2e lane's):
 
-A note on how these were counted. A plain `grep -o "gap: [a-zA-Z-]*"` cuts multi-word reasons after the first word (for example "gap: AX presence only" becomes "gap: AX") and also counts gap text outside the `unverified` rows, so it is not a per-row count.
+- The row's separate **gap column** does not match the observed cell in some rows: 72 are blank, 32 read `e2e-partial:` (the reason is in the observed cell), and 16 give a second label (for example MENU-016 reads `AX presence only` in the observed cell and `printer` in the gap column). The observed cell is what the counts above use.
+- Three rows contain an escaped pipe in a cell. Column-splitting without escape handling miscounts them; the counts above split on unescaped pipes only.
+- The earlier prose counts (590 rows, 303 / 71 / 91 / 125; 597 rows at J6 with 322 / 64 / 93 / 118) are superseded by the counts above.
 
 ### Evidence index
 
@@ -402,6 +488,9 @@ Paths are under `docs/design/evidence/` unless stated. Counts are image files (`
 | `e2e-2026-10-10/j3-diffs/` | 8 | Side-by-side composites that prove the J3 display-option positive controls. Rendered only |
 | `e2e-2026-10-10/j4/` | 76 | J4 real-click retest captures (the 47 fixes plus the live S3 delete), source `94b7aa5`. The AWS log is `e2e/j4-aws-log.md` |
 | `e2e-2026-10-10/j5/` | 48 | J5 real-click gap closure captures, build `e953411`, plus `44-ax-and-state-readouts-j5.txt` |
+| `e2e-2026-10-10/j6/` | 64 | J6 real-click retest of batches 4 and 5, four isolated sessions, build `0bd6f94`. AWS steps in `e2e/j6-aws-log.md` |
+| `e2e-2026-10-10/j7/` | 34 | J7 real-input validation of batches 6 and 7 and the review round 2 fixes, build `5b30929`. AWS steps in `e2e/j7-aws-log.md` |
+| `e2e-2026-10-10/j8/` | 19 | J8 real-input validation of batch 8, build `87abbfd`. AWS steps in `e2e/j8-aws-log.md` |
 | `e2e-2026-10-10/panelfix/` | 4 | Panel-service check after the F-J5-005 fix: ⌘E, ⌘S and ⇧⌘S panels, and the state after Cancel, with `00-cmd-o-panel-service.txt`. The ⌘O screenshot shows the owner's Documents folder and is deliberately not stored |
 | `impl-2026-10-09/audit-fix-1/` | 74 | Batch 1 visual acceptance, `8e7a37d` |
 | `impl-2026-10-09/audit-fix-2/` | 38 | Batch 2 visual acceptance, `2275c5b` |
@@ -409,6 +498,10 @@ Paths are under `docs/design/evidence/` unless stated. Counts are image files (`
 | `impl-2026-10-09/audit-fix-3b/` | 184 | Batch 3b visual acceptance, `526ab3c` (Settings re-captured at `41b2507`) |
 | `impl-2026-10-09/audit-fix-3b-before/` | 62 | Batch 3b before-state twins, `2cc07da`, dark |
 | `impl-2026-10-09/audit-fix-3c/` | 52 | Batch 3c visual acceptance, `0edc3ce` and `6469efb` |
+| `impl-2026-10-09/audit-fix-5/` | 249 | Batch 5 visual acceptance at `f7f68be`, rendered, icon mode `sf`: Toolbox icons, labelled History at 880 and wide, Settings › Upload, editor sheet on Settings. Has `captures.md`, `manifest.json`, `safety.txt`, `layout/` |
+| `impl-2026-10-09/audit-fix-6/` | 78 | Batch 6 visual acceptance at `cc764dc`, rendered, icon mode `sf`: Original size and Resize, footer at 980 states (S44), compact format toggle, Toolbox below its button, Hide and Trash Cancel-first, History at 880 |
+| `impl-2026-10-09/audit-fix-8/` | 24 | Batch 8 visual acceptance at `ee89d7b`, rendered, icon mode `sf`: the J7 findings (pause note, Resize one rule, published size, footer error with the checkbox kept) |
+| `impl-2026-10-09/final-render/` | 122 | Final render pass at `5b30929`, rendered only: display options on the current surfaces with positive controls, 48 stale rows refreshed; `captures.md`, `manifest.json`, `safety.txt`, `layout/` |
 | `impl-2026-10-09/audit-fix-4/` | 147 | Batch 4 visual acceptance at `1026e58`, rendered, icon mode `sf`: `dwc/` 16, `ic/` 12, `plain/` 119; each with `captures.md` and `layout/` |
 | `impl-2026-10-09/m1-rail/` | 80 | Rail removal, 80 captures at `fef46c7` |
 | `impl-2026-10-09/m4-glass/` | 98 | Glass plates, 98 captures at `da2738d` |
@@ -420,32 +513,37 @@ Paths are under `docs/design/evidence/` unless stated. Counts are image files (`
 
 Also outside `evidence/`: `e2e/panel-probe/` holds `probe.swift` (the throwaway panel probe) and `trials/` (`sampler.py`, two sample logs for the live ⌘O trials, `watchdog.log`).
 
-The rendered folders (`j3`, `j3-diffs`, `audit-fix-*`, `m*`) are harness renders. Do not read them as real-click proof. The `panelfix` and `j1`, `j2`, `j4`, `j5` folders are the real-click evidence.
+The rendered folders (`j3`, `j3-diffs`, `audit-fix-*`, `final-render`, `m*`) are harness renders. Do not read them as real-click proof. The `panelfix` and `j1`, `j2`, `j4`, `j5`, `j6`, `j7` and `j8` folders are the real-click evidence. `panelfix/` was already listed above and is unchanged.
 
 ### E2E audit gaps (not proven by this audit)
 
 These are outside what the harness or the isolated session could prove. They are listed, not waived.
 
-- **VoiceOver speech.** The AX dumps and the G10 walker are structural checks. The manual pass for OSN-062 is not recorded.
-- **Live Screen Recording capture**, including the Frame-mode scroller question (VF-27) and the countdown over a live desktop.
-- **1x and multi-display.** The only display was 2x Retina. The 1x menu-bar check (OSN-023) is not done.
-- **Photos library contents.** J1 opened the Photos sheet in its empty state only. The populated browser reads the real library and was not exercised.
-- **OS-owned panels.** The internals of Save, Open, Export, Print, Share, Page Setup and the Colors panel are the OS's. Since the F-J5-005 fix, the Open, Save and Export panels are visible and clickable through the driver (`panelfix`), but their contents are not judged.
-- **Printer.** Nothing was printed.
-- **Held-modifier gestures**, such as a drag made while holding Shift or Option.
-- **Context menus** (History tiles, Upload button, text annotation) are not reachable by a synthetic right-click.
-- **⌘1 to ⌘4 in Settings** (F-J2-011): the harness maps chords to menu items, and ⌘2 would start a real full-screen capture of the owner's display. A real-keyboard check is still open.
-- **Window title text and system radio and checkbox drawing** are OS-owned (F-J3-008, F-J3-010).
-- **Drag well Export panel** (F-J1-012, plausible and unconfirmed).
-- **Field names in the destination forms** (F-J2-017): the AX tool cannot show whether an explicit label exists.
-- **FTP and FTPS destination forms** were not opened in J2 or J4.
-- **Timed UI states:** the 12 s success-line hold, the Retrying label and the Upload cancelled notice (needs a slow network). Only one real upload was allowed.
-- **Minimum-size reflow** of History at 880 × 600 (F-J2-009): no window resize tool.
-- **Clipboard:** it held no text before the run, so non-text contents could not be saved; it was reset to empty text at the end.
-- **Added since 284f028:**
-  - **Font Awesome Pro is no longer bundled by default** (`b09ecc6`, R1-004). The Pro glyph path is dev-only, so no capture here exercises Pro icons.
-  - **Font Awesome Free in the batch 4 captures.** Batch 4 captures are icon mode `sf`, so the Free glyph changes (F-J3-011, and the Toolbox icons under F-J1-009) are not seen in the evidence.
-  - **macOS 27.2 panel-service bug** (F-J5-005). The OS bug is unfixed. A process launched with a non-normalized `CFFIXED_USER_HOME` hangs its first Open or Save panel. Real users are not affected (their home is normal). Any new harness that opens a system panel must normalize its home first.
+1. **VoiceOver speech.** The AX dumps and the G10 walker are structural checks.
+2. **Live Screen Recording capture of the real display.** Not run; it needs the owner's display.
+3. **Global capture shortcuts actually firing.** Unsafe on the real display. The pause lifecycle is verified through the visible note (J8 1a to 1e), not through a fired shortcut.
+4. **The app deactivation path of the pause.** Not run: deactivating the app brings another app forward, which could be the owner's.
+5. **1x and multi-display.** The only display was 2x Retina.
+6. **Photos library.** The Photos sheet was opened in its empty state only; the populated browser reads the real library.
+7. **Printer.** Nothing was printed.
+8. **OS-owned panels' internals:** Open, Save, Export, Print, Share and Colors. The panels are OS-owned; the app-owned parts are driven and checked.
+9. **Native tooltips.**
+10. **Synthetic right-click context menus.** Not reachable by the synthetic click.
+11. **Held-modifier gestures**, such as a drag made while holding Shift or Option.
+12. **Drag out of the app.** The driver cannot drag to another app.
+13. **⌘1 to ⌘4 with the real keyboard in Settings** (F-J2-011). The harness maps the chords to menu items, and ⌘2 would start a real full-screen capture of the owner's display.
+14. **Window title text and system radios and checkboxes.** OS-owned (F-J3-008, F-J3-010).
+15. **Font Awesome Pro is not bundled by default** (R1-004). No capture exercises Pro icons; the evidence is icon mode `sf`.
+16. **The macOS 27.2 panel-service bug** (F-J5-005) is an OS bug. It is mitigated by the launchers canonicalizing the session path (`fa4715f`); real users are not affected.
+17. **The manual VoiceOver pass for OSN-062** is not recorded. OSN-062 stays in progress.
+18. **History cleanup of a withdrawn capture.** The leaked capture (R1-001) is out of the tree but still in history, owned by root. The cleanup must happen before any push.
+
+Also still open from earlier passes:
+
+- FTP and FTPS destination forms were not opened (F-J2-014); WebDAV and SFTP copy was checked (F-J2-015).
+- Timed UI states: the 12 s success-line hold, the Retrying label and the Upload cancelled notice (F-J2-022). Needs a slow network.
+- Field names in the destination forms (F-J2-017): the AX tool cannot show whether an explicit label exists.
+- Font Awesome Free glyphs: every batch 4 and later capture is icon mode `sf`, so the Toolbox icons have no FA-mode capture (F-J1-009).
 
 ### Panel-service investigation (F-J5-005)
 
@@ -473,13 +571,13 @@ App-specific alerts are no longer NSAlert: they are app-owned sheets at 20 pt (O
 
 ## Open items and gaps
 
-- **Batch 5 (in progress, no merge yet):** app findings from independent review round 1. Scope from the lane brief: upload original size, Resize seeding, Toolbox menu icons, a single destinations surface in Settings › Upload, History toolbar labels, the status line not repeating the title, Delete-from-Web binding stability, and the P3s. Mapped IDs: R1-002, 003, 005, 006, 010 to 015, 017 to 020 and 022 (15), plus R1-021 as a stretch goal. Batch 4 already touched the Toolbox icons (`1d8c3d3`), so batch 5 starts by checking what remains.
-- **J6 real-click retest (R1-009):** pending. It is the first real-click check of batch 4 and of the batch 5 fixes, and it covers the batch 4 items that are rendered only.
-- **Independent review round 2:** pending. OSN-071 waits on it.
-- **Final gates:** pending. OSN-071 and OSN-072 depend on them.
+- **Batch 9 (in progress):** F-R-001 to 005. F-R-002: Increase Contrast must raise inactive glyph and disabled contrast (F-J3-004 stays partial). F-R-003: Differentiate Without Color needs a cue on the Settings › Upload selection. F-R-001: the S42 status notice must be captured from the layout the capture reports. F-R-004: the Toolbox menu capture must open every time or fail the run. F-R-005: the input fence must record keyboard, button and pointer events separately. Harness timing, menu and fence-count fixes are in the same batch. Branch not recorded in the sources.
+- **Independent review round 3 (pending):** focused on the review round 2 regression fixes (R2-001 to R2-005, R2-014 to R2-018). OSN-071 waits on it.
+- **Final gates (pending):** after batch 9 and review round 3. OSN-071 and OSN-072 depend on them.
+- **Open with no fix recorded:** F-J3-009, F-J4-006, F-J4-007 and R1-021 (stretch goal). Partial: F-J6-002 (the Copy Image path for an unresized Original-size picture was not re-run). Gaps listed in the resolution index: F-J1-012, F-J2-011, F-J2-017, F-J3-008, F-J3-010.
 - **R1-001 history cleanup:** the withdrawn capture is out of the tree but still in history. The cleanup is owned by root and must happen before any push.
-- **Matrix and inventory housekeeping (docs lane, next regenerate; this lane does not edit `e2e/`):** F-J5-007 names; three unverified rows with no gap reason (MENU-004 has a re-check note, HOT-041 and ICON-107 read `TBD`); 32 unverified rows whose gap column reads `e2e-partial:` instead of a reason (the reason is in the observed cell); earlier prose counts (258/94/146, 305/99, 299/71/129) predate the current file (303/71/125 over 590 rows).
-- **F-J3-011 and the batch 4 Font Awesome glyphs:** need one FA-mode capture; batch 4 evidence is icon mode `sf`.
+- **Matrix housekeeping (e2e lane, next regenerate):** the gap column disagrees with the observed cell in 16 rows and is blank in 72; 32 rows read `e2e-partial:` in it. Counts in this file use the observed cell.
+- **Font Awesome glyphs:** every capture since batch 4 is icon mode `sf` (Font Awesome Pro is not bundled). The Toolbox icons (F-J1-009) still need one FA-mode capture.
 - **Round-1 incident (OSN-001):** a can-fail proof deleted the owner's real `com.shoemoney.opensnap` defaults plist. Cause: a cleanup trap was installed before an id refusal. Fixed in `db973a6`. The SkitchRedux store and `com.shoemoney.skitch-redux.plist` hashed unchanged. The migration marker is a file in the absent OpenSnap folder, so the parked migration is unaffected.
 - **Unsafe tool, resolved:** `tools/test-native-startup.py` now runs only a throwaway-id temp copy, behind a store guard (`efe2f68`). The warning from the earlier pass no longer applies.
 - **OSN-042 (merged in `8015360`):** the phantom capsule under Snap and the full-screen salmon tint are gone (no per-button glass, no backdrop or bleed). Open: the legacy-scroller corner is slightly lighter than the well (AppKit draws it; there is no public API). Controls are 36 pt tall inside 44 pt bars; to be reviewed at sign-off (OSN-071). Evidence: `evidence/impl-2026-10-09/m4-glass/`.

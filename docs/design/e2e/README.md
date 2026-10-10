@@ -5,7 +5,7 @@ Owner authorization (2026-10-09 23:27 CDT): audit every option and every icon, a
 | File | What it is |
 |---|---|
 | `inventory.json` | Every window, menu, control, icon, preference, sheet, alert, shortcut and state, each with a stable audit ID. Generated. |
-| `coverage-matrix.md` | One row per audit ID: where the evidence goes. Descriptive columns generated, evidence columns filled while auditing and preserved across regenerates. |
+| `coverage-matrix.md` | One row per audit ID: where the evidence goes. Descriptive columns generated, evidence columns and `gap reason` filled while auditing and preserved across regenerates. |
 | `harness-seen.json` | What the screenshot harness rendered and exposed through AX (surfaces and controls). The harness half of the inventory. |
 | `tools/e2e-session.sh` | The safe interactive launcher a driver clicks through. |
 | `tools/e2e-inventory.py` | Regenerates the inventory and matrix from the sources and `harness-seen.json`. |
@@ -20,10 +20,23 @@ A screenshot is not an interaction and an AX dump is not VoiceOver. Every row sa
 | `E2E` | A real interaction in an isolated session: a real click or key through the computer-use tools, the resulting state change observed, and a screenshot actually looked at. A suppressed or negative behaviour needs a positive control (the same step shown to work when it should). |
 | `rendered` | A harness capture (`tools/eye-dump-audit.sh`): the app drew this state in-process. Proves how it looks, not that a user can reach it. |
 | `unit/source` | An existing named test proves the behaviour. The row names the test, and `tools/test-e2e-session-guard.py` fails if that test text disappears. Pre-filled only where the test really covers the row's expectation. |
-| `unverified` | Nothing yet. Every row starts here. |
+| `unverified` | No E2E evidence yet. Every row starts here; once audited and still short of E2E, it keeps this class and records why in `gap reason`. |
 | `retired` | The surface was removed or replaced (gap `removed` or `replaced`). The ID and its historic evidence stay in the row for traceability, but it counts toward no other class; the live surface has its own rows. The generator sets this class itself. |
 
-Each row also carries an `exercise` verdict from the inventory: `e2e` (fully real-click exercisable), `e2e-partial` (the app-owned part is real-click, the named gap is the rest) or `gap` (not exercisable in an isolated session). Gap reasons: needs Screen Recording permission; Photos library; OS-owned panel content; multi-display or 1x hardware; VoiceOver speech; global hotkeys while the app is in the background; real printer; and `system-setting` (a system appearance or display option cannot be changed in an E2E session, so only harness-injected rendered evidence exists). Gaps are reported, never relabelled as passes.
+Each row also carries an `exercise` verdict from the inventory: `e2e` (fully real-click exercisable), `e2e-partial` (the app-owned part is real-click, the named gap is the rest) or `gap` (not exercisable in an isolated session). Its static reasons: needs Screen Recording permission; Photos library; OS-owned panel content; multi-display or 1x hardware; VoiceOver speech; global hotkeys while the app is in the background; real printer; and `system-setting` (a system appearance or display option cannot be changed in an E2E session, so only harness-injected rendered evidence exists). Gaps are reported, never relabelled as passes.
+
+### The two gap columns
+
+The matrix ends with two columns that answer different questions and must not be read as one:
+
+| Column | Who writes it | Meaning |
+|---|---|---|
+| `reachability note` | The generator, from `inventory.json` | A prediction made from the sources of why the row may be hard to drive: `e2e-partial: os-panel`, `gap: printer`, `gap: removed`. Blank when nothing is expected to stand in the way. Regenerated every run. |
+| `gap reason` | The auditor, preserved across regenerates | The finding for a row whose evidence class is `unverified`: why no E2E evidence exists. Exactly one of `permission`, `hardware`, `OS-owned`, `harness`, `unsafe`, `AX presence only`, `AX value only`, `text readout only`, `retired`. Empty for every other class. |
+
+When the two differ, `gap reason` is what was observed and `reachability note` is only what was expected (an `os-panel` row can turn out `unsafe`; a `printer` row can only have been seen as `AX presence only`). The auditor also writes the same reason in the `observed` cell as `<lane>: gap: <reason>.` (a parenthetical detail may follow), and `--check` requires the two to agree.
+
+`python3 -I tools/e2e-inventory.py --check` fails when an `unverified` row has no valid `gap reason` or has more than one, when an `E2E`, `rendered`, `unit/source` or `retired` row has one, or when the column contradicts the `gap: <reason>` in `observed`. When a row moves out of `unverified`, clear its `gap reason` in the same edit. The generator prints the per-class and per-reason counts after every regenerate.
 
 Audit IDs are `E2E-<AREA>-<nnn>`. They are stable: a regenerate reuses the ID of every entry already in `inventory.json` (keyed by area, surface, name and type) and only appends new numbers. `HARN` entries are controls the harness saw that no source table accounts for; there should be none.
 
