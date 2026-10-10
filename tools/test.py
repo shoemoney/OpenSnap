@@ -67,6 +67,9 @@ subprocess.run([sys.executable, str(root / "tools" / "check-tokens.py"), "--self
 # D-TEXT: chrome tooltips are app-owned (20 pt); a direct system `toolTip` write fails this gate, and the self-test proves it can.
 subprocess.run([sys.executable, str(root / "tools" / "check-tooltips.py")], cwd=root, check=True)
 subprocess.run([sys.executable, str(root / "tools" / "check-tooltips.py"), "--self-test"], cwd=root, check=True)
+# The app-tooltip suite waits on events, not fixed delays: frozen mid-wait (a cold run starts dozens of compiles at once) it must still pass.
+subprocess.run([sys.executable, str(root / "tools" / "test-tooltip-stall.py")], cwd=root, check=True)
+subprocess.run([sys.executable, str(root / "tools" / "test-tooltip-stall.py"), "--self-test"], cwd=root, check=True)
 # G6: decorative glyphs and emoji in string literals. Sources are clean, so it runs strict; the self-test proves --strict can fail.
 subprocess.run([sys.executable, str(root / "tools" / "check-glyphs.py"), "--strict"], cwd=root, check=True)
 subprocess.run([sys.executable, str(root / "tools" / "check-glyphs.py"), "--self-test"], cwd=root, check=True)
