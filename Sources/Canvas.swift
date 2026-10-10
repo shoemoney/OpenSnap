@@ -238,13 +238,16 @@ private final class SketchTextGrip: NSView {
 /// What the next Wipe press will do (original updateWipeButton, IMP 0x25d45).
 enum WipeStage: Equatable {
     case blank, clear, wipe
-    var title: String {
+    /// What the button does, as an action: the name VoiceOver reads and the tooltip begins with. The stage names of the original
+    /// (Blank, Clear, Wipe) mean nothing to a user, so they are never spoken. A blank canvas keeps "Clear image": the button is dimmed there.
+    var actionName: String {
         switch self {
-        case .blank: return "Blank"
-        case .clear: return "Clear"
-        case .wipe: return "Wipe"
+        case .blank, .clear: return "Clear image"
+        case .wipe: return "Remove annotations"
         }
     }
+    /// The tooltip and the spoken help: the action, or why there is nothing to do.
+    var toolTip: String { self == .blank ? "Nothing to clear" : actionName }
     var isEnabled: Bool { self != .blank }
 }
 

@@ -160,6 +160,61 @@ final class BezelColorButton: NSButton {
     }
 }
 
+/// The "Custom color…" row of the Drawing colors popover. While the stroke colour is none of the presets, this row carries the colour in
+/// use: a chip of it with the check glyph beside the title, and the 3 pt accent outline a selected preset swatch gets, so the popover always
+/// shows which colour is active and the choice is never colour alone. With a preset current it is the plain button it always was.
+@MainActor
+final class BezelCustomColorButton: OriginalActionButton {
+    static let chipSize = NSSize(width: 28, height: 20)
+    static let cornerRadius: CGFloat = 7
+    /// The stroke colour while it is a custom one; nil while a preset is current.
+    var currentColor: NSColor? { didSet { refreshCurrent() } }
+    var isCurrentChoice: Bool { currentColor != nil }
+
+    private func refreshCurrent() {
+        if let currentColor {
+            image = Self.chip(for: currentColor)
+            imagePosition = .imageLeading
+        } else {
+            image = nil
+            imagePosition = .noImage
+        }
+        needsDisplay = true
+    }
+
+    /// The colour as a small rounded chip over the transparency checkerboard (the colour may be translucent), with the check on it.
+    static func chip(for color: NSColor) -> NSImage {
+        NSImage(size: chipSize, flipped: false) { rect in
+            let shape = NSBezierPath(roundedRect: rect.insetBy(dx: 0.5, dy: 0.5), xRadius: 4, yRadius: 4)
+            NSGraphicsContext.saveGraphicsState()
+            shape.addClip()
+            for row in 0..<Int(ceil(rect.height / 5)) {
+                for column in 0..<Int(ceil(rect.width / 5)) {
+                    ((row + column) % 2 == 0 ? NSColor.white : NSColor(white: 0.72, alpha: 1)).setFill() // token-exempt: transparency checkerboard behind a document colour
+                    NSRect(x: CGFloat(column) * 5, y: CGFloat(row) * 5, width: 5, height: 5).fill()
+                }
+            }
+            color.setFill(); rect.fill()
+            NSGraphicsContext.restoreGraphicsState()
+            DesignTokens.Palette.SwatchOutline.rest.setStroke(); shape.lineWidth = 1; shape.stroke()
+            if let glyph = ChromeIcons.resolve(.check, family: .solid, pointSize: 12).image {
+                BezelColorButton.drawTinted(glyph, color: StateStyles.checkColor(on: color), centeredIn: rect)
+            }
+            return true
+        }
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+        guard isCurrentChoice else { return }
+        let style = StateStyles.swatch(.selected, highContrast: DisplayOptions.current.increaseContrast, appearance: effectiveAppearance)
+        let outline = NSBezierPath(roundedRect: bounds.insetBy(dx: style.outlineWidth / 2, dy: style.outlineWidth / 2), xRadius: Self.cornerRadius, yRadius: Self.cornerRadius)
+        style.outline.setStroke(); outline.lineWidth = style.outlineWidth; outline.stroke()
+    }
+
+    override func accessibilityValue() -> Any? { isCurrentChoice ? "Selected" : super.accessibilityValue() }
+}
+
 /// The Size control: a 48 x 36 pill that draws the current stroke thickness as a horizontal line and opens a popover
 /// with a track and five presets. The pill stays the one model object: the value, the target/action, the undo
 /// grouping and the "Size N" tooltip all live here, and the popover drives them through the same gesture API.

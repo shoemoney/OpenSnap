@@ -117,12 +117,40 @@ final class ModernEditorChrome: NSView {
     /// What the bars alone need, before the 980 floor: the number a metric change moves.
     func measuredWindowWidth() -> CGFloat {
         typealias M = GlassChrome.Metrics
-        func fit(_ id: String) -> CGFloat { surfaceList.first { $0.identifier?.rawValue == id }?.fittingSize.width ?? 0 }
         let cancel = cancelFrameButton.isHidden ? M.groupSpacing + M.iconButton.width : 0
         let top = fit("GlassHeaderLeading") + fit("GlassCaptureGroup") + cancel + fit("GlassToolBar") + fit("GlassAnnotationGroup") + 3 * M.groupGap
         let status = controls.dragOriginalControl.fittingSize.width + 12 + Self.minimumStatusWidth
-        let bottom = fit("GlassUndoWipeGroup") + fit("GlassViewGroup") + fit("GlassSaveGroup") + fit("GlassFooterRow") + 4 * M.groupGap + status
-        return ceil(max(top, bottom)) + 2 * DesignTokens.Layout.margin
+        return ceil(max(top, fitFooterGroups() + status)) + 2 * DesignTokens.Layout.margin
+    }
+    private func fit(_ id: String) -> CGFloat { surfaceList.first { $0.identifier?.rawValue == id }?.fittingSize.width ?? 0 }
+    /// The four plates of the bottom bar and the gaps between them and the status slot.
+    private func fitFooterGroups() -> CGFloat {
+        fit("GlassUndoWipeGroup") + fit("GlassViewGroup") + fit("GlassSaveGroup") + fit("GlassFooterRow") + 4 * GlassChrome.Metrics.groupGap
+    }
+
+    /// The width the bottom bar leaves for the status slot at the window's current width: the bar's width less its four plates and gaps.
+    func statusSlotWidth() -> CGFloat { bounds.width - 2 * DesignTokens.Layout.margin - fitFooterGroups() }
+
+    /// The gap between neighbours in the status row.
+    static let statusRowSpacing: CGFloat = 12
+    /// What an upload's message keeps beside the Original size checkbox: about twenty characters of an error or a name. The message is the
+    /// news and the checkbox is an option, so the checkbox steps aside before the message is squeezed further.
+    static let minimumUploadStatusWidth: CGFloat = 200
+
+    /// What a transfer needs of the slot besides the Original size checkbox: the spinner when one runs, the message at its minimum, and the
+    /// commands (one icon for Cancel, two for Open and Copy or Retry and Details), each with the gap before it.
+    func slotNeed(for state: UploadState) -> CGFloat {
+        let commands = state.isUploading ? 1 : (state.isFailure || state.link != nil ? 2 : 0)
+        var need = Self.minimumUploadStatusWidth
+        if state.isUploading { need += UploadStatusControls.spinnerSide + Self.statusRowSpacing }
+        return need + CGFloat(commands) * (GlassChrome.Metrics.iconButton.width + Self.statusRowSpacing)
+    }
+
+    /// Whether the Original size checkbox can stay beside the upload's message and commands: only when the slot, measured at the window's
+    /// current width, holds the checkbox as well as everything `slotNeed` lists. At 980 it does not, so the checkbox steps aside; from about
+    /// 1100 on it stays.
+    func slotHasRoomForCheckbox(during state: UploadState) -> Bool {
+        statusSlotWidth() >= slotNeed(for: state) + Self.statusRowSpacing + controls.dragOriginalControl.fittingSize.width
     }
     /// The status line keeps at least this much beside the Original size checkbox at the minimum window.
     static let minimumStatusWidth: CGFloat = 120
@@ -187,7 +215,7 @@ final class ModernEditorChrome: NSView {
         cancelFrameButton = make("Cancel", .xmark, actions.cancelFrame)
         fontButton = make("Font", .font, actions.font)
         undoButton = make("Undo", .arrowRotateLeft, actions.undo, shortcut: Self.menuShortcut(for: actions.undo))
-        wipeButton = make("Wipe", .broom, actions.wipe)
+        wipeButton = make("Clear image", .broom, actions.wipe)
         resizeButton = make("Resize…", .rulerCombined, actions.resize)
         // Icon-only upload command: the semantic Upload icon, no title, so nothing but the explicit label is read aloud.
         shareButton = CommandButton(title: "", target: actions.target, action: actions.share)
@@ -418,7 +446,7 @@ final class ModernEditorChrome: NSView {
         // An upload swaps what sits here (spinner and Cancel, Open and Copy, Retry and Details) and hides the checkbox; the slot never grows.
         let statusRow = NSStackView(views: uploadControls.leadingViews + [controls.dragOriginalControl, controls.status] + uploadControls.trailingViews)
         statusRow.orientation = .horizontal
-        statusRow.spacing = 12
+        statusRow.spacing = Self.statusRowSpacing
         statusRow.alignment = .centerY
         statusRow.identifier = NSUserInterfaceItemIdentifier("OpenSnapStatusRow")
 

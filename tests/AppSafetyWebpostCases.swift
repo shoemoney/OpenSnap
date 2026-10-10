@@ -74,10 +74,10 @@ extension AppSafetyTests {
         try webpostButton(app).performClick(nil)
         try expect(app.window.attachedSheet == nil && app.status.stringValue == "Uploading Shot…", "Webpost starts at once: no sheet, status reads Uploading Shot… (\(app.status.stringValue))")
         try waitForMain("The upload finishes") { !app.publishing.isBusy && probe.count == 1 }
-        try waitForMain("Success is reported") { app.status.stringValue == "Link copied" }
+        try waitForMain("Success is reported") { app.status.stringValue.hasPrefix("Link copied") }
         try expect(probe.copied.count == 1 && probe.copied[0].absoluteString.hasPrefix("https://cdn.example.com/imgs/Shot-")
                    && app.uploadState == .success(url: probe.copied[0], copied: true) && AppToolTip.text(for: app.status) == "Link copied: " + probe.copied[0].absoluteString,
-                   "The verified public URL is copied; the status says Link copied and the link itself rides on the tooltip (OSN-054 changed this from the long, cut-off URL)")
+                   "The verified public URL is copied; the status says Link copied · the link, and the full link rides on the tooltip (audit fix 1: the status shows the link, middle-cut to the slot)")
         try expect(app.window.attachedSheet == nil && AppSafetyAlert.seen.isEmpty, "No sheet or alert at any point")
     }
 
@@ -184,11 +184,11 @@ extension AppSafetyTests {
         view.cancelFormTapped()
         // Remove the default; the other becomes default.
         var asked: [(String, String)] = []
-        view.confirmRemoval = { title, detail in asked.append((title, detail)); return false }
+        view.confirmRemoval = { title, detail, answer in asked.append((title, detail)); answer(false) }
         view.select(id: saved.id); view.removeTapped()
         try expect(asked.count == 1 && asked[0].0 == "Remove “AWS cdn”?" && asked[0].1.contains("Home SFTP") && asked[0].1.contains("default") && view.list.destinations.count == 2,
                    "Declining the confirmation removes nothing, and the prompt names the destination and the next default (\(asked))")
-        view.confirmRemoval = { _, _ in true }
+        view.confirmRemoval = { _, _, answer in answer(true) }
         view.removeTapped()
         try expect(view.list.destinations.map(\.name) == ["Home SFTP"] && (try app.publishing.store.defaultDestination()?.name) == "Home SFTP", "Removing the default promotes the remaining destination")
         try expect(app.publishing.isConfigured, "The remaining destination keeps Webpost configured")
