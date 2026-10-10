@@ -371,7 +371,9 @@ final class PhotoBrowserCoordinator: NSObject, NSTableViewDataSource, NSTableVie
         let sources = NSStackView(views: [folderButton, libraryButton]); sources.spacing = 16
         let bottom = NSStackView(views: [close, openButton]); bottom.spacing = 16
         status.font = DesignTokens.Typography.font(.body); status.maximumNumberOfLines = 2
+        status.setAccessibilityRole(.staticText)
         status.stringValue = "No folder selected. Only the folder you choose will be browsed."
+        table.setAccessibilityLabel("Photos in the chosen folder")
         table.headerView = nil; table.rowHeight = 140; table.intercellSpacing = NSSize(width: 0, height: 4)
         table.dataSource = self; table.delegate = self; table.target = self
         table.doubleAction = #selector(openSelected); table.allowsMultipleSelection = false
@@ -391,7 +393,10 @@ final class PhotoBrowserCoordinator: NSObject, NSTableViewDataSource, NSTableVie
             bottom.trailingAnchor.constraint(equalTo: help.trailingAnchor), bottom.topAnchor.constraint(equalTo: status.bottomAnchor, constant: 18), bottom.bottomAnchor.constraint(equalTo: content.bottomAnchor, constant: -22),
             scroll.heightAnchor.constraint(greaterThanOrEqualToConstant: 160)
         ])
+        panel.defaultButtonCell = openButton.cell as? NSButtonCell
     }
+    /// Errors say "Error:" in words, so they never rest on colour alone.
+    private func showError(_ text: String) { status.stringValue = text.hasPrefix("Error:") ? text : "Error: " + text }
     private func configure(_ button: NSButton, _ title: String, _ action: Selector) {
         button.title = title; button.target = self; button.action = action
         button.bezelStyle = .rounded; button.font = DesignTokens.Typography.font(.body)
@@ -415,7 +420,7 @@ final class PhotoBrowserCoordinator: NSObject, NSTableViewDataSource, NSTableVie
             self.loadFolder(url)
         }
     }
-    private func loadFolder(_ url: URL) {
+    func loadFolder(_ url: URL) {
         guard panel != nil, let session = sessionID else { return }
         cancellation?.cancel()
         let access = PhotoBrowserFolderAccess(url), cancel = PhotoBrowserCancellation()
@@ -432,7 +437,7 @@ final class PhotoBrowserCoordinator: NSObject, NSTableViewDataSource, NSTableVie
                     self.entries = entries
                     self.status.stringValue = entries.isEmpty ? "No supported photos in \(url.lastPathComponent). Choose another folder or use Photos Library." : "\(entries.count) photos in \(url.lastPathComponent). Double-click a photo to open it."
                     self.table.reloadData()
-                case .failure(let error): self.status.stringValue = error.localizedDescription
+                case .failure(let error): self.showError(error.localizedDescription)
                 }
                 self.setLoading(false)
             }
@@ -456,7 +461,7 @@ final class PhotoBrowserCoordinator: NSObject, NSTableViewDataSource, NSTableVie
         restoreBrowser()
         guard let provider = results.first?.itemProvider else { return }
         guard let identifier = provider.registeredTypeIdentifiers.first(where: { UTType($0)?.conforms(to: .image) == true }) else {
-            status.stringValue = "The selected item has no supported image representation."; return
+            showError("The selected item has no supported image representation."); return
         }
         let request = UUID(), cancel = PhotoBrowserCancellation()
         cancellation?.cancel(); cancellation = cancel
@@ -482,7 +487,7 @@ final class PhotoBrowserCoordinator: NSObject, NSTableViewDataSource, NSTableVie
                     guard let lease = work.claim(id) else { return }
                     self.pendingImportID = id; self.pendingLease = lease
                     self.finish(opening: lease.url)
-                case .failed(let message): self.status.stringValue = message; self.setLoading(false)
+                case .failed(let message): self.showError(message); self.setLoading(false)
                 }
             }
         }
@@ -521,7 +526,7 @@ final class PhotoBrowserCoordinator: NSObject, NSTableViewDataSource, NSTableVie
         guard folderButton.isEnabled, entries.indices.contains(table.selectedRow) else { return }
         let url = entries[table.selectedRow].url
         guard PhotoBrowserCatalog.metadata(for: url) != nil else {
-            status.stringValue = "This photo is no longer readable. Choose the folder again."; return
+            showError("This photo is no longer readable. Choose the folder again."); return
         }
         finish(opening: url)
     }
