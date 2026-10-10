@@ -191,17 +191,30 @@ private enum IconCoverageTests {
             guard let glyph = FontAwesomeFree.glyph(for: icon), glyph.bounds.height > 0 else { expect(false, "\(icon) is missing"); continue }
             expect(abs(glyph.bounds.width - glyph.bounds.height) < glyph.bounds.width * 0.15, "\(icon) is a 45 degree glyph, about as tall as wide")
         }
-        if let arrow = FontAwesomeFree.glyph(for: .arrowUpRight), let image = FontAwesomeFree.image(arrow, pointSize: 40) {
+        // Direction, measured on the pixels: the arrow's heavy head pulls the ink centroid to the upper right, and the line is a "/".
+        func quadrants(_ icon: FAIcon) -> (upperRight: Int, upperLeft: Int, lowerRight: Int, lowerLeft: Int, centroidX: Double, centroidRow: Double, size: Int)? {
+            guard let glyph = FontAwesomeFree.glyph(for: icon), let image = FontAwesomeFree.image(glyph, pointSize: 40) else { return nil }
             let rep = render(image, scale: 1), pixels = rep.pixelsWide, half = pixels / 2
-            var upperRight = 0, lowerLeft = 0
+            var q = (upperRight: 0, upperLeft: 0, lowerRight: 0, lowerLeft: 0), sumX = 0.0, sumY = 0.0, total = 0.0
             for y in 0..<pixels { for x in 0..<pixels {
                 let alpha = Int(rep.bitmapData![y * rep.bytesPerRow + x * 4 + 3])
-                if x >= half && y < half { upperRight += alpha }
-                if x < half && y >= half { lowerLeft += alpha }
+                switch (x >= half, y < half) {   // bitmap rows run top to bottom
+                case (true, true): q.upperRight += alpha
+                case (false, true): q.upperLeft += alpha
+                case (true, false): q.lowerRight += alpha
+                case (false, false): q.lowerLeft += alpha
+                }
+                sumX += Double(x * alpha); sumY += Double(y * alpha); total += Double(alpha)
             } }
-            // The head is the heavy end of an arrow: more ink in the upper right than in the lower left.
-            expect(upperRight > lowerLeft, "The arrow tool's head is in the upper right, so it points up and right (\(upperRight) vs \(lowerLeft))")
+            return (q.upperRight, q.upperLeft, q.lowerRight, q.lowerLeft, sumX / total, sumY / total, pixels)
         }
+        if let arrow = quadrants(.arrowUpRight) {
+            expect(arrow.centroidX > Double(arrow.size) / 2 && arrow.centroidRow < Double(arrow.size) / 2,
+                   "The arrow tool's head is in the upper right, so it points up and right (centroid \(arrow.centroidX), \(arrow.centroidRow))")
+        } else { expect(false, "The arrow tool icon did not render") }
+        if let line = quadrants(.slashForward) {
+            expect(line.upperRight + line.lowerLeft > 4 * (line.upperLeft + line.lowerRight), "The line tool's icon runs from lower left to upper right, like a slash")
+        } else { expect(false, "The line tool icon did not render") }
         expect(FontAwesomeFree.image(FontAwesomeFree.glyph(for: .circle)!, pointSize: 0) == nil, "Non-positive sizes render nothing")
     }
 
