@@ -437,6 +437,30 @@ def test_kill_fallback(base):
     reap()
 
 
+def test_free_icons(base):
+    """R1-004/R1-001: a session copy never carries a Font Awesome Pro font, and start says so and warns that typing lands in the app."""
+    reap()
+    pro = fake_app(base, "Pro.app")
+    for name in ("FontAwesome7Pro-Regular-subset.ttf", "FontAwesome7Pro-Solid-subset.ttf"):
+        (pro / "Contents/Resources" / name).write_bytes(b"not a real font")
+    result = start(pro)
+    folder = read_session(sessions()[0])["dir"]
+    copied = [p.name for p in (Path(folder)).glob("*.app/Contents/Resources/*")]
+    check(result.returncode == 0 and not any("Pro" in name for name in copied), f"icons: no FontAwesome*Pro* file reaches the session copy (found {copied})")
+    check((pro / "Contents/Resources/FontAwesome7Pro-Regular-subset.ttf").exists(), "icons: the source bundle is left untouched")
+    check("icons: Font Awesome Free" in result.stdout and "keep personal text out of it" in result.stdout, "start: prints the Free-icons line and the typing warning")
+    stop()
+    reap()
+    mutant = script_copy(base, "mut-pro", re.sub(r'^\s*rm -f "\$APP/Contents/Resources"/FontAwesome.*\n', "", SCRIPT.read_text(), flags=re.M))
+    check(mutant.read_text() != SCRIPT.read_text(), "icons (can fail): the strip line was found to remove")
+    start(pro, script=mutant)
+    folder = read_session(sessions()[0])["dir"]
+    leaked = [p.name for p in Path(folder).glob("*.app/Contents/Resources/*Pro*")]
+    stop(script=mutant)
+    check(leaked, "icons (can fail): without the strip line the Pro fonts do reach the copy, so the check above is the strip's doing")
+    reap()
+
+
 def test_protections(base, app):
     text = SCRIPT.read_text()
     start_refused, stop_refused, drop_refused, plist_survives = protection_results(base, text, "real", app)
@@ -799,6 +823,7 @@ with tempfile.TemporaryDirectory(prefix="e2e-guard-test.") as scratch:
         test_start_stop(scratch, app)
         test_tamper_and_order(scratch, app)
         test_kill_fallback(scratch)
+        test_free_icons(scratch)
         test_protections(scratch, app)
         test_aws(scratch, app)
         test_watchdog(scratch, app)
