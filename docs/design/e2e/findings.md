@@ -279,3 +279,120 @@ How to read the evidence: windows are captured one at a time, so menus, pop-up l
 - Right-click context menus (History tiles, Upload button) never open from a synthetic right-click.
 - `activate_window` is not a callable tool in this build; menu-bar and status-item picks work only while the app happens to be active, and clicks are routed by screen position, so overlapping windows (History over the editor) take the click.
 - Escape and ⌘W reach only the key window; Settings and About were not key when tried. AX press on the About close button did nothing; a real click on it closed the window.
+
+
+---
+
+# E2E audit findings: lane J4 (real-click retest of audit batches 3a, 3b and 3c)
+
+Source revision `94b7aa5` (main after merge of batch 3c). Driver: Sonnet J4, real clicks and keys through kimi-cu on two isolated session copies: pid 62733 (`com.shoemoney.opensnap.e2e-62694`, `--seed all`) and pid 70107 (`com.shoemoney.opensnap.e2e-70088`, `--seed history --aws`). Both stopped with "stores unchanged". Screenshots are in `docs/design/evidence/e2e-2026-10-10/j4/` (names below are relative to it, shortened to their number). The live AWS check is logged in `j4-aws-log.md`.
+
+## J4 retest
+
+Result key: PASS = the original steps no longer reproduce the defect and the corrected behaviour was seen in a screenshot or AX read; PARTIAL = part of the fix seen, part not; unverified = not reachable here, reason given. Findings left out on purpose: F-J1-012 (gap), F-J1-023 (deferred), F-J2-024 (doc-only), F-J2-020 (partly deferred, only the stale error was retested).
+
+| Finding | Result | Evidence | Note |
+|---|---|---|---|
+| F-J1-001 eraser shadow | PASS | `12` | The erased notch is clean white with no grey halo. Side effect: the rest of the cut rectangle lost its shadow (F-J4-007). |
+| F-J1-002 swatches | PASS | `01`, `02` | Red and Blue show the check and look like the applied colour. |
+| F-J1-003 Custom color… | **PASS (P1)** | `03`, `04` | Black, Custom color…: the Colors panel opens on black (was blue); closing it leaves the colour black. |
+| F-J1-004 Resize Return | PASS | `13`, `14`, `15` | OK is the yellow default; Return on a bad width validates, Return on 400 applied and closed (400 × 300). |
+| F-J1-005 text Size | **PASS (P1)** | `05`, `06`, `07` | Preset 12 grows glyphs and frame together; the duplicate renders at the same size as the original. |
+| F-J1-006 Shadow restyle | **PASS (P1)** | `08`, `10`, `11` | Select All on a red ellipse and a blue outline rectangle (pen blue, size 9), Toolbox › Shadow off and on: only the shadow changed. |
+| F-J1-007 Tab trap | **PASS (P1)** | `19` | Focus walked Hide, Toolbox, Photos, Snap, ten tools, Color, Size, Font, canvas, then left the canvas to Undo; no Brush toggle. |
+| F-J1-008 full screen item | PASS | `18` | Window menu lists Enter Full Screen; ⌃⌘F (harness maps it to the menu item) entered and left full screen. |
+| F-J1-009 Toolbox | PARTIAL | `09` | 18 rows (was 33), a drawing session's commands; still no leading icons. |
+| F-J1-010 stale status | PASS | `00`, `21` | Status names the format and is current after full screen and after hide and restore. |
+| F-J1-011 crop hint | PASS | `26`, `27` | "Crop: Return applies, Esc cancels"; switching tool drops the overlay. |
+| F-J1-013 Photos empty | PASS | `28` | Explanation and both Choose buttons sit inside the grid. |
+| F-J1-014 Resize layout | PASS | `13`, `16`, `17` | Mode and dimensions first, presets below, 3 × 3 crop anchor grid, no blank bands in any mode. |
+| F-J1-015 paste position | PASS | `23` | Pasted copy is offset from the original. |
+| F-J1-016 handles at 25% | PARTIAL | `24` | Handles are about 12 px at 25% as at 100% (fixed screen size); on an 85 px selection they are still large. |
+| F-J1-017 command naming | PASS | AX | Edit has Arrange as a submenu and Remove Annotations / Remove Snap Picture; Image no longer holds the arrange commands (AX read of the live menus, not visible in a capture). |
+| F-J1-018 full-screen layout | PASS | `18` | Canvas fits at 200%; chrome capped and grouped. |
+| F-J1-019 popover dismissal | PASS | `05` | Both popovers close after a pick. |
+| F-J1-020 Undo enabled | PASS | `00` | Undo and Remove annotations disabled on a blank canvas. |
+| F-J1-021 floppy icon | PASS | `00` | Save is the box-archive glyph. |
+| F-J1-022 ⌘M | PASS | `20`, `21` | ⌘M (harness maps it to the menu item) hid the window (tool: window exists but is not on-screen); the status item read Show OpenSnap and restored it. No capture of the hidden state is possible. |
+| F-J1-024 Option-Return | PASS | `22` | Option-Return finished "first"; typing "second" made no box. |
+| F-J1-025 Add Shadow | PASS | AX | Disabled without a snap. |
+| F-J1-026 flip text | PASS | `25` | Shapes mirror, text stays readable. |
+| F-J2-001 sheets on the editor | **PASS (P1)** | `31`, `40`, `41`, `42` | Hide, Trash and the Delete key open their sheets on the History window; Escape cancels. |
+| F-J2-002 S3 delete | **PASS (P1)** | `69`, `70`, `71`, `j4-aws-log.md` | The app deleted its own S3 object (head-object 404). See the AWS log. |
+| F-J2-003 dirty-document guard | **PASS (P1)** | `33`, `34` | Open with unsaved changes asks Save your drawing? on History; Cancel keeps everything. |
+| F-J2-004 copy confirmation | PASS | `36`, `37` | "Link copied" and "Image copied" in the History footer. |
+| F-J2-005 Unsaved on open | PASS | `35` | Opened entry reads "Saved". |
+| F-J2-006 dim canvas | PASS | `35` | Bright after every sheet; not reproduced (it was plausible only). |
+| F-J2-007 vocabulary | PASS | `29` | Tabs All, Shared, Exported, Saved match the tiles. |
+| F-J2-008 empty states | PASS | `38`, `39` | No-match shows Clear filters and the footer "0 of 5 items". |
+| F-J2-009 space | PARTIAL | `29` | The right column now holds a summary; the 880 × 600 minimum reflow was not reachable (no window resize tool). |
+| F-J2-010 details clip | PASS | `69` | Destination is middle-truncated. The Date is still tail-cut (F-J4-002). |
+| F-J2-011 ⌘1 to ⌘4 | unverified | none | The harness maps ⌘ chords to menu items; ⌘2 would start a real full-screen capture of the owner's display, so none were pressed. |
+| F-J2-012 Settings heights | PASS | `43`, `44`, `45`, `48` | Each tab fits its own form; the Upload caption is in view. |
+| F-J2-013 sheet vs window | PASS | `49` | Destinations sheet sits inside the Settings window. |
+| F-J2-014 Test button | PARTIAL | `50`, `51`, `52`, `54` | WebDAV, SFTP and S3 forms have Test with a "never uploads" line; only the S3 local-validation Test was pressed. FTP and FTPS were not opened. |
+| F-J2-015 per-protocol copy | PARTIAL | `50`, `51` | WebDAV and SFTP copy is protocol specific and SFTP has no Endpoint field; FTP and FTPS not opened. |
+| F-J2-016 S3 fields | PASS | `53` | S3 placeholders, no "optional". |
+| F-J2-017 field names | unverified | none | A filled field still prints as `AXTextField = "value"` with no name in the tool (Name, Region, and the Resize fields); the tool cannot show whether an explicit label exists. Not confirmed fixed. |
+| F-J2-018 result band | PASS | `54` | The error band sits above the buttons and the form scrolls above it. |
+| F-J2-019 Remove default | PASS | `56` | Remove in the warning colour, Cancel focused. |
+| F-J2-020 stale error | PARTIAL | `46`, `47` | Disable All clears the error. The 69-item key menu and the two shortcut surfaces remain (suggestions). |
+| F-J2-021 failure text | PASS | `61`, `62` | Inline "Error: Upload failed", Details body has no second prefix and keeps the code (-25300). |
+| F-J2-022 outcome line | PARTIAL | `63`, `67` | The success line shows "Link copied" with Open and Copy icons about five seconds after the upload; the 12 s hold, the cancel notice and the Retrying label could not be timed (only one real upload was allowed; Retry failed instantly). |
+| F-J2-023 About | PASS | `57`, `58`, `59` | Visible title, reflowed licence, Escape closes About, licence and notices; notices match the shipped Free set. |
+
+Positive controls re-exercised and still working: drawing an ellipse, rectangle and arrow, Select All, Duplicate, Copy and Paste, Undo, Resize (Resize and Limit applied), Crop overlay, zoom 25%, Flip, History search and Clear filters, Hide with confirm, Copy and Copy Link, Settings tabs, Destinations Add forms, About, an S3 upload with link copied.
+
+**Known open item (fractional size): not reproduced in real use.** Every size seen in real use was an integer: the title and status line (400 × 300, 900 × 600, 1011 × 758), the Resize fields (Limit 1011 on 800 × 600 gives Width 1011, Height 758, not 758.25), and History Details for a real saved drawing (`73`, 1,011 × 758). The only fractional size ever seen was the harness-saved entry in J2, so it comes from that fixture, not from the app's own save path.
+
+## New findings
+
+### F-J4-001 · P3 · The Destinations list shows the cancelled form's stale Test error
+- **Surface:** Settings › Upload › Manage Destinations… › Add… › S3 form
+- **Steps:** choose S3-compatible, Access key source, press Test with the keys empty (error band appears), press Cancel.
+- **Observed:** back on the list the same red "Error: Enter the access key ID and secret…" line is drawn under the buttons, half clipped by the Done bar, and the sheet grows a vertical scrollbar (`55-NEW-…jpg`). Pressing Done and reopening the sheet clears it (`60-…jpg`). The AX tree of the list sheet contains the error text.
+- **Expected:** Cancel clears the form's result band; the list shows no error.
+- **Suggested fix:** clear the result text when the form is dismissed (or give the list its own status label).
+
+### F-J4-002 · P3 · History Details clips the Date for two-digit days
+- **Surface:** History › Details
+- **Observed:** "October 10, 2026 at 6:49…" (`30-…jpg`, `69-…jpg`) while "October 7, 2026 at 5:49 AM" fits (`36-…jpg`); the AM/PM is lost on every day from the 10th.
+- **Suggested fix:** shorten the format (for example "Oct 10, 2026, 6:49 AM"), wrap the line, or middle-truncate.
+
+### F-J4-003 · P3 (observation) · After Delete from Web the public link still answers 200
+- **Surface:** History › Delete from Web, S3 behind CloudFront
+- **Observed:** head-object returned 404 at 11:50:56Z but `curl -sI https://cdn.shoemoney.com/pics/…png` kept returning 200 with `x-cache: Hit from cloudfront` (age 69 s and still 200 20 s later). The app has no after-delete notice in the History footer (`71-…jpg`).
+- **Expected:** the user is told the origin object is gone and that a CDN may keep serving it until its cache expires.
+- **Suggested fix:** a one-line notice after a successful delete ("Removed from the server. A CDN may keep serving it for a while.").
+
+### F-J4-004 · P3 · A Shared entry's Details report the later, resized size
+- **Surface:** History › Details
+- **Steps:** upload an 800 × 600 drawing to S3 (entry Untitled · Shared, Size 800 × 600, `69-…jpg`); resize the same document to 1011 × 758; Save to History.
+- **Observed:** two entries exist (a new Untitled · Saved and the earlier Untitled · Shared); the Shared one now reads Size 1,011 × 758 (`72-NEW-…jpg`) although the published PNG is 800 × 600.
+- **Expected:** the Shared entry keeps the size it was published at, or Details says it describes the editable copy.
+- **Suggested fix:** show the publication's recorded size for the Shared action, or label the field.
+
+### F-J4-005 · P3 · The Delete from Web confirmation focuses the destructive button
+- **Surface:** History › Delete from Web sheet
+- **Observed:** AX marks Delete from Web focused on the sheet (`70-…jpg`), while the Remove-destination sheet focuses Cancel (`56-…jpg`). Return on the first deletes a server file.
+- **Suggested fix:** focus Cancel on every destructive sheet.
+
+### F-J4-006 · P3 · A freshly opened History entry shows the previous document's size for a moment
+- **Surface:** editor title and status line after History › Open
+- **Observed:** right after Don't Save the title read "Quarterly mockup – 400 × 300 · PNG" and the status "Brush · Saved · 400 × 300" while the canvas already showed the 900 × 600 entry at 79% (`75-NEW-…jpg`); a second later both read 900 × 600 · PNG · 57 KB (`35-…jpg`).
+- **Suggested fix:** compute the size text from the loaded document before the first draw.
+
+### F-J4-007 · P3 (design check) · Erasing a corner of a shape removes the shadow from the rest of it
+- **Surface:** Eraser tool
+- **Observed:** after one erase stroke across the top edge of the blue rectangle the remaining pieces draw without the drop shadow while the neighbouring ellipse keeps its shadow (`12-…jpg`). This follows the batch-3a rule "erased fragments of a real cut are unshadowed" (test `72ecadb`), so it may be intended.
+- **Suggested fix:** if intended, say so in the Eraser help; if not, keep the shadow on cut fragments and only skip it for the erase stroke itself.
+
+## Harness notes for the next driver
+
+- The session window is often not key (grey title): AX presses and `window_id` clicks work, plain clicks on sheet controls are swallowed, and the first drag after a tool switch is dropped (draw again). A real drag on the canvas makes the window key; Tab, ⌘ chords through menu mapping and Escape then work.
+- `get_app_state … rect` is ignored for images; use AX filters (`ax_filter`) to keep output small.
+- Menu-bar pick commits only while the app is active; the status item menu committed with Return.
+
+## Unverified and why
+
+F-J2-011 (⌘1 to ⌘4, see above), F-J2-017 (tool cannot show labels), F-J2-009 minimum-size reflow (no resize tool), FTP and FTPS destination forms (not opened), the Retrying label and Upload cancelled notice (needs a slow network), the 12 s success-line hold (only one upload allowed), and the clipboard: it held no text before the run, so non-text contents (if any) could not be saved; it was reset to empty text at the end.
