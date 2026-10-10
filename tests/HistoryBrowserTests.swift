@@ -612,6 +612,23 @@ struct HistoryBrowserTests {
                     try expect(HistoryBrowser.confirmationDuration >= 3,"The confirmation is too brief to read")
                 }
             }),
+            ("Delete from Web is off, with its reason in the tooltip, for a published entry with no recorded destination", {
+                try browser { browser,_ in
+                    var recorded = item("Recorded",action:"Shared",link:true), legacy = item("Legacy",action:"Shared",link:true)
+                    recorded.canDeleteFromWeb = true; legacy.canDeleteFromWeb = false
+                    browser.onDeleteRemote = { _ in }; browser.onCopyLink = { _ in }
+                    browser.update(items:[recorded,legacy])
+                    let button = try browser.actionRow.arrangedSubviews.compactMap { $0 as? NSButton }.first { $0.accessibilityLabel() == HistoryBrowser.Action.deleteRemote.title }.unwrap("Delete from Web button")
+                    browser.select(ids:[recorded.id])
+                    try expect(browser.canPerform(.deleteRemote) && button.isEnabled && (AppToolTip.text(for:button) ?? button.toolTip) == "Delete from Web","A recorded entry can be deleted from the web")
+                    browser.select(ids:[legacy.id])
+                    try expect(!browser.canPerform(.deleteRemote) && !button.isEnabled,"An entry with no destination record is not offered Delete from Web")
+                    try expect(AppToolTip.text(for:button)?.contains("unavailable") == true && AppToolTip.text(for:button)?.contains("recorded where it went") == true,"The tooltip says why: \(AppToolTip.text(for:button) ?? "")")
+                    try expect(browser.canPerform(.copyLink) && HistoryBrowser.deleteRemoteHelp(for:[]) == "Delete from Web","Its other link actions stay on, and nothing selected has no special text")
+                    browser.select(ids:[recorded.id,legacy.id])
+                    try expect(!browser.canPerform(.deleteRemote),"A mixed selection is not deletable")
+                }
+            }),
             ("The details column is a summary with nothing selected, and a link stays on one line with its full text in the tooltip", {
                 try browser { browser,_ in
                     let lines = HistoryBrowser.summaryLines(for:[item("A",action:"Saved"),item("B",action:"Shared"),item("C",action:"Shared")])

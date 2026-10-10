@@ -24,6 +24,8 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         var link: URL?
         var previewURL: URL?
         var missing: Bool
+        /// False when the entry has a link but no recorded publication destination, so the app cannot take it down; the icon then says why.
+        var canDeleteFromWeb = true
     }
     /// The tab names are the tile labels (`HistoryStore.Action.title`): one vocabulary, so a tab holds exactly the tiles it names.
     enum Category: Int, CaseIterable {
@@ -203,7 +205,8 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         guard !selected.isEmpty, callback(action) != nil else { return false }
         switch action {
         case .open,.copy,.deleteFiles: return selected.allSatisfy { !$0.missing }
-        case .copyLink,.openLink,.deleteRemote: return selected.allSatisfy { $0.link != nil }
+        case .copyLink,.openLink: return selected.allSatisfy { $0.link != nil }
+        case .deleteRemote: return selected.allSatisfy { $0.link != nil && $0.canDeleteFromWeb }
         case .remove: return true
         }
     }
@@ -213,6 +216,12 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         let before = pasteboardChangeCount()
         callback(action)?(ids)
         if let message = Self.confirmation(for:action), pasteboardChangeCount() != before { confirm(message) }
+    }
+    /// The tooltip of Delete from Web: its name, or the reason it is off for a published entry the app has no destination record for.
+    nonisolated static func deleteRemoteHelp(for selected: [Item]) -> String {
+        let unrecorded = !selected.isEmpty && selected.allSatisfy { $0.link != nil } && selected.contains { !$0.canDeleteFromWeb }
+        return unrecorded ? "Delete from Web is unavailable: this was published before the app recorded where it went, so it can only be removed on the server."
+                          : Action.deleteRemote.title
     }
     /// What the footer says once a clipboard action has written to the pasteboard.
     nonisolated static func confirmation(for action: Action) -> String? {
@@ -535,6 +544,11 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
     private func updateControls() {
         let selected = selectedItems
         for action in Action.allCases { buttons[action]?.isEnabled = canPerform(action) }
+        if let delete = buttons[.deleteRemote] {
+            // Before the window's tooltips are adopted the plain tooltip is the name; the reason replaces it, and the name comes back with it.
+            let help = Self.deleteRemoteHelp(for:selected)
+            if help != Action.deleteRemote.title || AppToolTip.text(for:delete) != nil { AppToolTip.setText(help,for:delete) }
+        }
         status.stringValue = transientStatus ?? Self.statusText(shown:visibleItems.count,total:items.count,selected:selected.count)
         updateEmptyState()
         let missingCount = selected.filter(\.missing).count
