@@ -25,17 +25,11 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         var previewURL: URL?
         var missing: Bool
     }
+    /// The tab names are the tile labels (`HistoryStore.Action.title`): one vocabulary, so a tab holds exactly the tiles it names.
     enum Category: Int, CaseIterable {
-        case all, posted, savedDragged, archived
-        var title: String { ["All", "Posted to Web", "Saved", "Archived"][rawValue] }
-        func includes(_ item: Item) -> Bool {
-            switch self {
-            case .all: return true
-            case .posted: return item.action == "Shared"
-            case .savedDragged: return item.action == "Exported/Dragged"
-            case .archived: return item.action == "Saved"
-            }
-        }
+        case all, shared, exported, saved
+        var title: String { ["All", "Shared", "Exported", "Saved"][rawValue] }
+        func includes(_ item: Item) -> Bool { self == .all || item.action == title }
     }
     enum DateFilter: Int, CaseIterable {
         case all, lastHour, yesterday, last48
@@ -60,15 +54,28 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
     static let defaultSize = NSSize(width: 1000, height: 720), minimumSize = NSSize(width: 880, height: 600)
     /// Below this content width the details panel moves from beside the grid to under it.
     static let detailsCollapseWidth: CGFloat = 760
-    static let tileSize = NSSize(width: 210, height: 234)
+    /// The narrowest a tile gets; the preview is `previewAspect` as tall as the tile is wide, so a stretched tile shows a bigger preview
+    /// instead of a preview floating in blank space.
+    static let minimumTileWidth: CGFloat = 210, previewAspect: CGFloat = 0.65
+    static let tileInset = DesignTokens.Space.s2, tileTextSpacing = DesignTokens.Space.s1
     /// Space between neighbouring tiles, and the grid's side inset.
     static let tileGap = DesignTokens.Space.s4, gridSideInset = DesignTokens.Space.s3
     /// Tiles share the row width exactly: as many as fit at the minimum width, each stretched to fill, so the gap between
     /// neighbours is always `tileGap` instead of the flow layout spreading fixed tiles to the far edges.
     static func tileWidth(forGridWidth width: CGFloat) -> CGFloat {
         let available = width - 2 * gridSideInset
-        let columns = max(1, ((available + tileGap) / (tileSize.width + tileGap)).rounded(.down))
+        let columns = max(1, ((available + tileGap) / (minimumTileWidth + tileGap)).rounded(.down))
         return max(1, ((available - (columns - 1) * tileGap) / columns).rounded(.down))
+    }
+    static func previewHeight(forTileWidth width: CGFloat) -> CGFloat { ((width - 2 * tileInset) * previewAspect).rounded() }
+    /// A tile is its preview, the name line and the action line, with nothing under them.
+    static func tileHeight(forTileWidth width: CGFloat) -> CGFloat {
+        func line(_ style: Typography.Style) -> CGFloat { ceil(NSLayoutManager().defaultLineHeight(for: Typography.font(style))) }
+        return 2 * tileInset + previewHeight(forTileWidth: width) + 2 * tileTextSpacing + line(.body) + line(.caption)
+    }
+    static func tileSize(forGridWidth width: CGFloat) -> NSSize {
+        let tile = tileWidth(forGridWidth: width)
+        return NSSize(width: tile, height: tileHeight(forTileWidth: tile))
     }
     nonisolated static let dragFormatDefaultsKey = "OpenSnap.HistoryDragFormat"
 
@@ -112,6 +119,8 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
     private var detailLabelWidths: [NSLayoutConstraint] = []
     private var detailsFields: NSStackView?
     private let detailsHint = NSTextField(wrappingLabelWithString:"Select a snap to see its details.")
+    /// What the details column shows with nothing selected: how many snaps the grid holds, by kind, so the column is never blank.
+    private let detailsSummaryTitle = NSTextField(labelWithString:""), detailsSummary = NSTextField(wrappingLabelWithString:"")
     private var buttons: [Action: NSButton] = [:]
     private var contextItems: [Action: NSMenuItem] = [:]
     /// The grid's scroll view. Horizontal scrolling is off: the grid reflows instead.
@@ -119,6 +128,13 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
     /// The centred message over the grid when there is nothing to show.
     let emptyState = NSStackView()
     let emptyTitle = NSTextField(labelWithString: ""), emptyHint = NSTextField(wrappingLabelWithString: "")
+    /// Shown with "No history items match these filters", so a dead end is one click from the full list.
+    private(set) lazy var clearFiltersButton: NSButton = {
+        let button = NSButton(title:"Clear filters",target:self,action:#selector(clearFilters))
+        button.bezelStyle = .rounded; Typography.apply(.body,to:button)
+        button.heightAnchor.constraint(greaterThanOrEqualToConstant:DesignTokens.Size.control).isActive = true
+        return button
+    }()
     let filterRow = NSStackView(), actionRow = NSStackView()
     let detailsPanel = NSStackView()
     private(set) var detailsPlacement: DetailsPlacement = .beside
@@ -162,6 +178,7 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         rebuild(keeping:selected,preserveScroll:true)
     }
     func setFilters(category: Category, date: DateFilter = .all, query: String = "") {
+        clearConfirmation()
         let selected = Set(selectedIDs)
         self.category = category; dateFilter = date; self.query = query
         categoryControl.selectedSegment = category.rawValue
@@ -193,7 +210,17 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
     func perform(_ action: Action) {
         guard canPerform(action) else { return }
         let ids = selectedIDs // Capture UUIDs before a callback changes the catalog.
+        let before = pasteboardChangeCount()
         callback(action)?(ids)
+        if let message = Self.confirmation(for:action), pasteboardChangeCount() != before { confirm(message) }
+    }
+    /// What the footer says once a clipboard action has written to the pasteboard.
+    nonisolated static func confirmation(for action: Action) -> String? {
+        switch action {
+        case .copy: return "Image copied"
+        case .copyLink: return "Link copied"
+        default: return nil
+        }
     }
     private func callback(_ action: Action) -> (([UUID]) -> Void)? {
         switch action {
@@ -337,9 +364,9 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
 
         // Body: the grid, with the details panel beside it (or under it when narrow).
         let body = NSView(); body.translatesAutoresizingMaskIntoConstraints = false; root.addArrangedSubview(body)
-        let layout = HistoryFlowLayout(); layout.itemSize = Self.tileSize
-        layout.minimumInteritemSpacing = Self.tileGap; layout.minimumLineSpacing = Space.s4; layout.headerReferenceSize = NSSize(width:1,height:52)
-        layout.sectionInset = NSEdgeInsets(top:Space.s2,left:Self.gridSideInset,bottom:Space.s5,right:Self.gridSideInset)
+        let layout = HistoryFlowLayout(); layout.itemSize = Self.tileSize(forGridWidth:640)
+        layout.minimumInteritemSpacing = Self.tileGap; layout.minimumLineSpacing = Space.s3; layout.headerReferenceSize = NSSize(width:1,height:Self.dayHeaderHeight)
+        layout.sectionInset = NSEdgeInsets(top:0,left:Self.gridSideInset,bottom:Space.s3,right:Self.gridSideInset)
         collection.frame = NSRect(x:0,y:0,width:640,height:400); collection.autoresizingMask = [.width]
         collection.collectionViewLayout = layout; collection.dataSource = self; collection.delegate = self
         collection.isSelectable = true; collection.allowsMultipleSelection = true; collection.allowsEmptySelection = true
@@ -385,7 +412,7 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         content.layoutSubtreeIfNeeded()
         layoutDetails(forContentWidth:content.bounds.width)
     }
-    static let detailsWidth: CGFloat = 248, detailsBelowHeight: CGFloat = 176
+    static let detailsWidth: CGFloat = 248, detailsBelowHeight: CGFloat = 176, dayHeaderHeight: CGFloat = 44
 
     private func configure(_ stack: NSStackView,_ views: [NSView]) {
         stack.orientation = .horizontal; stack.alignment = .centerY; stack.spacing = Space.s3
@@ -402,7 +429,10 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         for name in ["Name","Date","Size","Action","Destination"] {
             let label = NSTextField(labelWithString:name+":"); label.font = Typography.font(.bodyStrong)
             let value = NSTextField(wrappingLabelWithString:"—"); value.font = Typography.font(.body); value.isSelectable = true
-            value.maximumNumberOfLines = 2; value.setContentCompressionResistancePriority(.defaultLow,for:.horizontal)
+            // A link or a long file name never wraps into a clipped second line: it keeps its two ends and the tooltip carries the rest.
+            let isLink = name == "Destination"
+            value.maximumNumberOfLines = isLink ? 1 : 2; value.lineBreakMode = isLink ? .byTruncatingMiddle : .byTruncatingTail
+            value.setContentCompressionResistancePriority(.defaultLow,for:.horizontal)
             value.setAccessibilityLabel(name); detailValues[name] = value
             let pair = NSStackView(views:[label,value]); pair.orientation = .vertical; pair.alignment = .leading; pair.spacing = 0
             detailPairs.append(pair); fields.addArrangedSubview(pair)
@@ -412,6 +442,11 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         detailsFields = fields
         detailsHint.font = Typography.font(.body); detailsHint.textColor = Palette.Text.secondary; detailsHint.maximumNumberOfLines = 0
         detailsHint.preferredMaxLayoutWidth = Self.detailsWidth
+        detailsSummaryTitle.font = Typography.font(.bodyStrong); detailsSummary.font = Typography.font(.body)
+        detailsSummary.maximumNumberOfLines = 0; detailsSummary.preferredMaxLayoutWidth = Self.detailsWidth
+        detailsSummaryTitle.setAccessibilityElement(true); detailsSummary.setAccessibilityElement(true)
+        detailsPanel.addArrangedSubview(detailsSummaryTitle); detailsPanel.addArrangedSubview(detailsSummary)
+        detailsPanel.setCustomSpacing(Space.s5,after:detailsSummary)
         detailsPanel.addArrangedSubview(detailsHint)
         detailsPanel.addArrangedSubview(detailsImage); detailsPanel.addArrangedSubview(fields)
         detailsImage.widthAnchor.constraint(equalTo:detailsPanel.widthAnchor).isActive = true
@@ -423,7 +458,8 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         emptyTitle.font = Typography.font(.headline); emptyTitle.textColor = Palette.Text.primary; emptyTitle.alignment = .center
         emptyHint.font = Typography.font(.body); emptyHint.textColor = Palette.Text.secondary; emptyHint.alignment = .center
         emptyHint.maximumNumberOfLines = 0; emptyHint.preferredMaxLayoutWidth = 360
-        emptyState.addArrangedSubview(emptyTitle); emptyState.addArrangedSubview(emptyHint)
+        emptyState.addArrangedSubview(emptyTitle); emptyState.addArrangedSubview(emptyHint); emptyState.addArrangedSubview(clearFiltersButton)
+        emptyState.setCustomSpacing(Space.s4,after:emptyHint)
         body.addSubview(emptyState)
         NSLayoutConstraint.activate([emptyState.centerXAnchor.constraint(equalTo:scroll.centerXAnchor),emptyState.centerYAnchor.constraint(equalTo:scroll.centerYAnchor),
                                      emptyState.widthAnchor.constraint(lessThanOrEqualTo:scroll.widthAnchor,constant:-2*Space.s5)])
@@ -460,8 +496,11 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         emptyTitle.stringValue = nothingSaved ? "No history yet." : "No history items match these filters."
         emptyHint.stringValue = nothingSaved ? Self.emptyHint(shortcut:saveShortcut()) : ""
         emptyHint.isHidden = !nothingSaved
+        clearFiltersButton.isHidden = nothingSaved || !filtersAreActive
         emptyState.setAccessibilityLabel([emptyTitle.stringValue,emptyHint.stringValue].filter { !$0.isEmpty }.joined(separator:" "))
     }
+    var filtersAreActive: Bool { category != .all || dateFilter != .all || !query.isEmpty }
+    @objc func clearFilters() { setFilters(category:.all,date:.all,query:"") }
     /// A functional hint: the live shortcut when the menu has one, otherwise the command's name, never an invented key.
     nonisolated static func emptyHint(shortcut: String?) -> String {
         shortcut.map { "Press \($0) to save a snap" } ?? "Use Save to History to keep a snap"
@@ -496,12 +535,17 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
     private func updateControls() {
         let selected = selectedItems
         for action in Action.allCases { buttons[action]?.isEnabled = canPerform(action) }
-        status.stringValue = visibleItems.isEmpty ? "" : "\(visibleItems.count) items · \(selected.count) selected"
+        status.stringValue = transientStatus ?? Self.statusText(shown:visibleItems.count,total:items.count,selected:selected.count)
         updateEmptyState()
         let missingCount = selected.filter(\.missing).count
         warning.stringValue = missingCount == 0 ? "" : "Error: \(missingCount) selected \(missingCount == 1 ? "file is" : "files are") missing. You can remove the history entry or use its web link."
         warning.isHidden = missingCount == 0
         detailsHint.isHidden = !selected.isEmpty; detailsImage.isHidden = selected.isEmpty; detailsFields?.isHidden = selected.isEmpty
+        let summary = Self.summaryLines(for:visibleItems)
+        detailsSummaryTitle.isHidden = !selected.isEmpty || summary.isEmpty; detailsSummary.isHidden = detailsSummaryTitle.isHidden
+        detailsSummaryTitle.stringValue = summary.first ?? ""; detailsSummary.stringValue = summary.dropFirst().joined(separator:"\n")
+        // Every value carries its full text as a tooltip, so a truncated link or name is one hover from readable.
+        defer { for field in detailValues.values { AppToolTip.setText(field.stringValue == "—" ? nil : field.stringValue,for:field,mirrorsToAccessibility:false) } }
         guard let value = selected.first else {
             detailsImage.image = nil; detailValues.values.forEach { $0.stringValue = "—" }; return
         }
@@ -520,6 +564,45 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
             detailValues["Destination"]?.stringValue = value.destination ?? value.link?.absoluteString ?? "—"
         }
     }
+    /// The headline and one line per kind for the grid's current contents, in the tab order; empty when the grid is empty.
+    nonisolated static func summaryLines(for items: [Item]) -> [String] {
+        guard !items.isEmpty else { return [] }
+        let kinds = Category.allCases.dropFirst().compactMap { category -> String? in
+            let count = items.filter(category.includes).count
+            return count == 0 ? nil : "\(category.title): \(count)"
+        }
+        return [items.count == 1 ? "1 snap in this view" : "\(items.count) snaps in this view"] + kinds
+    }
+    /// "1 item · 0 selected"; with a filter on, "2 of 6 items · 0 selected"; with everything filtered out, "0 of 6 items". The footer stays
+    /// on screen in every state, so the counts are always where the eye expects them.
+    nonisolated static func statusText(shown: Int,total: Int,selected: Int) -> String {
+        func items(_ count: Int) -> String { count == 1 ? "1 item" : "\(count) items" }
+        if total == 0 { return "No items" }
+        if shown == 0 { return "0 of \(items(total))" }
+        let count = shown == total ? items(shown) : "\(shown) of \(items(total))"
+        return "\(count) · \(selected) selected"
+    }
+    /// A one-line confirmation in the footer ("Link copied"), until the next selection or filter change or `confirmationDuration` passes.
+    static let confirmationDuration: TimeInterval = 5
+    private var transientStatus: String?
+    private var confirmationTimer: Timer?
+    func confirm(_ message: String) {
+        transientStatus = message
+        confirmationTimer?.invalidate()
+        let timer = Timer(timeInterval:Self.confirmationDuration,repeats:false) { [weak self] _ in
+            MainActor.assumeIsolated { self?.clearConfirmation() }
+        }
+        confirmationTimer = timer; RunLoop.main.add(timer,forMode:.common)
+        status.stringValue = message
+    }
+    func clearConfirmation() {
+        confirmationTimer?.invalidate(); confirmationTimer = nil
+        guard transientStatus != nil else { return }
+        transientStatus = nil; updateControls()
+    }
+    var statusLine: String { status.stringValue }
+    /// The pasteboard's change counter, so a Copy is confirmed only when the app really wrote something. A test replaces it.
+    var pasteboardChangeCount: () -> Int = { NSPasteboard.general.changeCount }
     @objc private func filtersChanged() {
         setFilters(category:Category(rawValue:categoryControl.selectedSegment) ?? .all,
                    date:DateFilter(rawValue:datePopup.indexOfSelectedItem) ?? .all,query:search.stringValue)
@@ -547,8 +630,8 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         let header = collectionView.makeSupplementaryView(ofKind:kind,withIdentifier:HistoryDayHeader.identifier,for:indexPath) as! HistoryDayHeader
         header.label.stringValue = sections[indexPath.section].title; return header
     }
-    func collectionView(_ collectionView: NSCollectionView,didSelectItemsAt indexPaths: Set<IndexPath>) { if !selectionChanging { updateControls() } }
-    func collectionView(_ collectionView: NSCollectionView,didDeselectItemsAt indexPaths: Set<IndexPath>) { if !selectionChanging { updateControls() } }
+    func collectionView(_ collectionView: NSCollectionView,didSelectItemsAt indexPaths: Set<IndexPath>) { if !selectionChanging { clearConfirmation(); updateControls() } }
+    func collectionView(_ collectionView: NSCollectionView,didDeselectItemsAt indexPaths: Set<IndexPath>) { if !selectionChanging { clearConfirmation(); updateControls() } }
 
     /// Export now, never when Finder later asks the promise to write. The delegate
     /// owns immutable bytes/name/format even if the history catalog is then removed.
@@ -595,18 +678,19 @@ private final class HistoryGrid: NSCollectionView {
 @MainActor
 private final class HistoryThumbnail: NSCollectionViewItem {
     static let identifier = NSUserInterfaceItemIdentifier("HistoryThumbnail")
-    private let name = NSTextField(wrappingLabelWithString:"")
+    private let name = NSTextField(labelWithString:"")
     private let action = NSTextField(labelWithString:"")
     private let placeholder = NSTextField(wrappingLabelWithString:"Preview unavailable")
     private let preview = NSImageView()
     override func loadView() {
         let tile = HistoryTileView(); view = tile
-        let stack = NSStackView(); stack.orientation = .vertical; stack.spacing = DesignTokens.Space.s1; stack.alignment = .leading
+        let stack = NSStackView(); stack.orientation = .vertical; stack.spacing = HistoryBrowser.tileTextSpacing; stack.alignment = .leading
         stack.translatesAutoresizingMaskIntoConstraints = false; view.addSubview(stack)
-        let inset = DesignTokens.Space.s2
+        let inset = HistoryBrowser.tileInset
         NSLayoutConstraint.activate([stack.leadingAnchor.constraint(equalTo:view.leadingAnchor,constant:inset),stack.trailingAnchor.constraint(equalTo:view.trailingAnchor,constant:-inset),
                                      stack.topAnchor.constraint(equalTo:view.topAnchor,constant:inset),stack.bottomAnchor.constraint(equalTo:view.bottomAnchor,constant:-inset)])
-        let host = NSView(); host.translatesAutoresizingMaskIntoConstraints = false; host.heightAnchor.constraint(equalToConstant:126).isActive = true
+        let host = NSView(); host.translatesAutoresizingMaskIntoConstraints = false
+        host.heightAnchor.constraint(equalTo:host.widthAnchor,multiplier:HistoryBrowser.previewAspect).isActive = true
         for child in [preview,placeholder] {
             child.translatesAutoresizingMaskIntoConstraints = false; host.addSubview(child)
             NSLayoutConstraint.activate([child.leadingAnchor.constraint(equalTo:host.leadingAnchor),child.trailingAnchor.constraint(equalTo:host.trailingAnchor),
@@ -614,9 +698,10 @@ private final class HistoryThumbnail: NSCollectionViewItem {
         }
         preview.imageScaling = .scaleProportionallyUpOrDown
         placeholder.font = DesignTokens.Typography.font(.caption); placeholder.alignment = .center; placeholder.textColor = DesignTokens.Palette.Text.secondary
-        name.font = DesignTokens.Typography.font(.body); name.maximumNumberOfLines = 2; name.lineBreakMode = .byTruncatingTail
+        name.font = DesignTokens.Typography.font(.body); name.maximumNumberOfLines = 1; name.lineBreakMode = .byTruncatingTail
         action.font = DesignTokens.Typography.font(.caption); action.lineBreakMode = .byTruncatingTail; action.textColor = DesignTokens.Palette.Text.secondary
         stack.addArrangedSubview(host); stack.addArrangedSubview(name); stack.addArrangedSubview(action)
+        for line in [host,name,action] { line.widthAnchor.constraint(lessThanOrEqualTo:stack.widthAnchor).isActive = true }
         host.widthAnchor.constraint(equalTo:stack.widthAnchor).isActive = true
         tile.addCheckBadge(over:host)
     }
@@ -638,7 +723,7 @@ private final class HistoryThumbnail: NSCollectionViewItem {
 @MainActor
 private final class HistoryFlowLayout: NSCollectionViewFlowLayout {
     private func fit(toGridWidth width: CGFloat) {
-        let size = NSSize(width:HistoryBrowser.tileWidth(forGridWidth:width),height:HistoryBrowser.tileSize.height)
+        let size = HistoryBrowser.tileSize(forGridWidth:width)
         if itemSize != size { itemSize = size }
     }
     override func prepare() {

@@ -94,9 +94,9 @@ struct HistoryBrowserTests {
             }),
             ("Original action filters use exact supplied core strings", {
                 try browser { browser,_ in
-                    let saved = item("Archive",action:"Saved"), dragged = item("Dragged",action:"Exported/Dragged"), shared = item("Shared",action:"Shared",link:true), unknown = item("Other",action:"saved")
+                    let saved = item("Archive",action:"Saved"), dragged = item("Dragged",action:"Exported"), shared = item("Shared",action:"Shared",link:true), unknown = item("Other",action:"saved")
                     browser.update(items:[saved,dragged,shared,unknown])
-                    for (category,expected) in [(HistoryBrowser.Category.archived,saved.id),(.savedDragged,dragged.id),(.posted,shared.id)] {
+                    for (category,expected) in [(HistoryBrowser.Category.saved,saved.id),(.exported,dragged.id),(.shared,shared.id)] {
                         browser.setFilters(category:category)
                         try expect(browser.visibleItems.map(\.id) == [expected],"Category mapping \(category)")
                     }
@@ -113,11 +113,11 @@ struct HistoryBrowserTests {
                         try expect(browser.visibleItems.map(\.id) == [a.id],"Search field mismatch \(query)")
                     }
                     for query in ["resume","team","plan draft"," résumé ","Saved"] {
-                        browser.setFilters(category:.posted,query:query)
+                        browser.setFilters(category:.shared,query:query)
                         try expect(browser.visibleItems.isEmpty,"Search tokenizes, trims, removes diacritics, or searches extra fields: \(query)")
                     }
-                    browser.setFilters(category:.archived,query:"résumé"); try expect(browser.visibleItems.isEmpty,"Search ignores category")
-                    browser.setFilters(category:.posted,date:.yesterday,query:"résumé"); try expect(browser.visibleItems.isEmpty,"Search ignores date")
+                    browser.setFilters(category:.saved,query:"résumé"); try expect(browser.visibleItems.isEmpty,"Search ignores category")
+                    browser.setFilters(category:.shared,date:.yesterday,query:"résumé"); try expect(browser.visibleItems.isEmpty,"Search ignores date")
                     browser.setFilters(category:.all,query:""); try expect(browser.visibleItems.count == 2,"Empty search must match all")
                 }
             }),
@@ -214,11 +214,11 @@ struct HistoryBrowserTests {
             }),
             ("Detail fields show supplied metadata and aggregate multiselection", {
                 try browser { browser,_ in
-                    var a = item("Project",action:"Exported/Dragged"); a.destination = "Finder folder"
+                    var a = item("Project",action:"Exported"); a.destination = "Finder folder"
                     let b = item("Second",-1)
                     browser.update(items:[a,b]); browser.select(ids:[a.id])
                     let fields = descendants(browser.window!.contentView!).compactMap { $0 as? NSTextField }
-                    for text in ["Project","640 × 480","Exported/Dragged","Finder folder"] {
+                    for text in ["Project","640 × 480","Exported","Finder folder"] {
                         try expect(fields.contains { $0.stringValue == text },"Detail omitted \(text)")
                     }
                     browser.select(ids:[a.id,b.id]); try expect(fields.contains { $0.stringValue == "2 items selected" },"Multiselect details")
@@ -377,9 +377,16 @@ struct HistoryBrowserTests {
                 try browser { browser,_ in
                     let segmented = try descendants(browser.window!.contentView!).compactMap { $0 as? NSSegmentedControl }.first.unwrap("category control")
                     let labels = (0..<segmented.segmentCount).map { segmented.label(forSegment:$0) ?? "" }
-                    try expect(labels == ["All","Posted to Web","Saved","Archived"],"Tab names are \(labels)")
+                    try expect(labels == ["All","Shared","Exported","Saved"],"Tab names are \(labels)")
                     try expect(HistoryBrowser.Category.allCases.map(\.title) == labels,"Category titles match the control")
                     try expect(!labels.joined().contains("DragMe") && !labels.joined().contains("/"),"The cramped Saved/DragMe'd name is gone")
+                    // One vocabulary: a tab holds exactly the tiles whose label is its name.
+                    let all = ["Saved","Exported","Shared"].map { item("Tile "+$0,action:$0) }
+                    browser.update(items:all)
+                    for category in HistoryBrowser.Category.allCases.dropFirst() {
+                        browser.setFilters(category:category)
+                        try expect(browser.visibleItems.map(\.action) == [category.title],"Tab \(category.title) holds \(browser.visibleItems.map(\.action))")
+                    }
                 }
             }),
             ("Grid reflows at the 880 x 600 minimum with no horizontal scroller", {
@@ -397,7 +404,10 @@ struct HistoryBrowserTests {
                     func columns(_ frames: [NSRect]) -> Int { Set(frames.map { Int($0.minX.rounded()) }).count }
                     try expect(columns(narrow) >= 2,"Minimum width fits fewer than two tile columns: \(columns(narrow))")
                     try expect(columns(wide) > columns(narrow),"The grid does not reflow: \(columns(wide)) columns wide, \(columns(narrow)) at the minimum")
-                    try expect(narrow.allSatisfy { $0.width >= 209.5 && abs($0.height - 234) < 0.5 },"Tiles are at least 210 wide and 234 tall: \(narrow.map(\.size))")
+                    try expect(narrow.allSatisfy { $0.width >= 209.5 && abs($0.height - HistoryBrowser.tileHeight(forTileWidth:$0.width)) < 0.5 },"Tiles are at least 210 wide and as tall as their preview and two text lines: \(narrow.map(\.size))")
+                    // Nothing sits under the captions: the tile is its preview plus two lines, and the preview grows with the tile.
+                    try expect(narrow.allSatisfy { $0.height < 230 },"Tiles still reserve blank space under the captions: \(narrow.map(\.height))")
+                    try expect(HistoryBrowser.previewHeight(forTileWidth:300) > HistoryBrowser.previewHeight(forTileWidth:210),"A stretched tile keeps a small preview")
                 }
             }),
             ("Tiles in a row are evenly spaced, with no large gap, at 880, 1000 and 1280", {
@@ -511,6 +521,12 @@ struct HistoryBrowserTests {
                     try expect(browser.emptyState.isHidden,"The empty state stays over a populated grid")
                     browser.setFilters(category:.all,query:"zzz")
                     try expect(!browser.emptyState.isHidden && browser.emptyTitle.stringValue.contains("match") && browser.emptyHint.isHidden,"Filtered-out History says no items match, with no save hint")
+                    try expect(!browser.clearFiltersButton.isHidden && browser.clearFiltersButton.title == "Clear filters","A no-match state has no Clear filters button")
+                    try expect(browser.statusLine == "0 of 1 item","The footer is gone from the no-match state: \(browser.statusLine)")
+                    browser.clearFilters()
+                    try expect(browser.emptyState.isHidden && browser.visibleItems.count == 1 && !browser.filtersAreActive,"Clear filters does not restore the list")
+                    browser.update(items:[])
+                    try expect(browser.clearFiltersButton.isHidden,"An empty History offers to clear filters it does not have")
                 }
             }),
             ("Save to History shortcut is read from the main menu, never invented", {
@@ -550,13 +566,69 @@ struct HistoryBrowserTests {
                         try expect(!button.isEnabled,"\(action) is enabled with nothing selected")
                     }
                     // The old layout stacked the same seven in two text-button rows under the details.
-                    let textButtons = descendants(browser.window!.contentView!).compactMap { $0 as? NSButton }.filter { !($0 is NSPopUpButton) && !$0.title.isEmpty && $0.bezelStyle == .rounded }
+                    let textButtons = descendants(browser.window!.contentView!).compactMap { $0 as? NSButton }.filter { !($0 is NSPopUpButton) && $0 !== browser.clearFiltersButton && !$0.title.isEmpty && $0.bezelStyle == .rounded }
                     try expect(textButtons.isEmpty,"Text buttons are back under the grid: \(textButtons.map(\.title))")
                     let menu = try grid(browser).menu.unwrap("context menu")
                     try expect(menu.items.map(\.title) == HistoryBrowser.Action.allCases.map(\.title),"Context menu items: \(menu.items.map(\.title))")
                     let a = item("A",action:"Shared",link:true); browser.update(items:[a]); browser.select(ids:[a.id])
                     browser.onOpen = { _ in }; browser.onCopy = { _ in }
                     try expect(row[0].isEnabled && row[1].isEnabled && !row[2].isEnabled,"Row buttons keep their validation")
+                }
+            }),
+            ("The footer pluralises and stays on screen in every state", {
+                try expect(HistoryBrowser.statusText(shown:1,total:1,selected:0) == "1 item · 0 selected","One item: \(HistoryBrowser.statusText(shown:1,total:1,selected:0))")
+                try expect(HistoryBrowser.statusText(shown:6,total:6,selected:2) == "6 items · 2 selected","Several items")
+                try expect(HistoryBrowser.statusText(shown:2,total:6,selected:0) == "2 of 6 items · 0 selected","A filtered view says how many exist")
+                try expect(HistoryBrowser.statusText(shown:1,total:6,selected:1) == "1 of 6 items · 1 selected","A filtered view of one")
+                try expect(HistoryBrowser.statusText(shown:0,total:1,selected:0) == "0 of 1 item","Everything filtered out, one item exists")
+                try expect(HistoryBrowser.statusText(shown:0,total:0,selected:0) == "No items","An empty History")
+                try browser { browser,_ in
+                    try expect(browser.statusLine == "No items","Empty History footer is \(browser.statusLine)")
+                    browser.update(items:[item("One")]); try expect(browser.statusLine == "1 item · 0 selected","Footer is \(browser.statusLine)")
+                    browser.setFilters(category:.all,query:"nothing like this")
+                    try expect(browser.statusLine == "0 of 1 item","A no-match History keeps its footer: \(browser.statusLine)")
+                }
+            }),
+            ("Copy and Copy Link confirm in the footer only when the pasteboard changed", {
+                try browser { browser,_ in
+                    let a = item("Shared one",action:"Shared",link:true); browser.update(items:[a]); browser.select(ids:[a.id])
+                    var count = 10
+                    browser.pasteboardChangeCount = { count }
+                    browser.onCopy = { _ in count += 1 }; browser.onCopyLink = { _ in count += 1 }
+                    browser.perform(.copyLink)
+                    try expect(browser.statusLine == "Link copied","Copy Link left the footer at \(browser.statusLine)")
+                    browser.perform(.copy)
+                    try expect(browser.statusLine == "Image copied","Copy left the footer at \(browser.statusLine)")
+                    browser.select(ids:[]); browser.collectionView(try grid(browser),didDeselectItemsAt:[])
+                    try expect(browser.statusLine == "1 item · 0 selected","A new selection did not clear the confirmation: \(browser.statusLine)")
+                    browser.select(ids:[a.id]); browser.onCopy = { _ in } // a failed copy writes nothing
+                    browser.perform(.copy)
+                    try expect(browser.statusLine == "1 item · 1 selected","A copy that wrote nothing was confirmed: \(browser.statusLine)")
+                    browser.onCopyLink = { _ in count += 1 }; browser.perform(.copyLink)
+                    browser.update(items:[a]) // a catalog refresh keeps the message
+                    try expect(browser.statusLine == "Link copied","A refresh dropped the confirmation: \(browser.statusLine)")
+                    browser.clearConfirmation()
+                    try expect(browser.statusLine == "1 item · 1 selected","Clearing did not restore the counts: \(browser.statusLine)")
+                    try expect(HistoryBrowser.confirmationDuration >= 3,"The confirmation is too brief to read")
+                }
+            }),
+            ("The details column is a summary with nothing selected, and a link stays on one line with its full text in the tooltip", {
+                try browser { browser,_ in
+                    let lines = HistoryBrowser.summaryLines(for:[item("A",action:"Saved"),item("B",action:"Shared"),item("C",action:"Shared")])
+                    try expect(lines == ["3 snaps in this view","Shared: 2","Saved: 1"],"Summary lines are \(lines)")
+                    try expect(HistoryBrowser.summaryLines(for:[]).isEmpty && HistoryBrowser.summaryLines(for:[item("A")]).first == "1 snap in this view","Summary pluralisation")
+                    var shared = item("Uploaded",action:"Shared",link:true)
+                    let link = "https://cdn.example.invalid/pics/a-very-long-folder-name/another-long-segment/2026-10-10-capture-final-v2.png"
+                    shared.destination = link
+                    browser.update(items:[shared,item("Other",-1)]); laidOut(browser,width:1000,height:720)
+                    let texts = descendants(browser.window!.contentView!).compactMap { $0 as? NSTextField }
+                    try expect(texts.contains { !$0.isHidden && $0.stringValue == "2 snaps in this view" },"No summary with nothing selected")
+                    try expect(texts.contains { !$0.isHidden && $0.stringValue == "Select a snap to see its details." },"The hint went missing")
+                    browser.select(ids:[shared.id])
+                    let value = try texts.first { $0.stringValue == link }.unwrap("destination value")
+                    try expect(value.maximumNumberOfLines == 1 && value.lineBreakMode == .byTruncatingMiddle,"The destination wraps instead of cutting its middle")
+                    try expect(AppToolTip.text(for:value) == link,"The full link is not in the tooltip")
+                    try expect(!texts.contains { !$0.isHidden && $0.stringValue == "2 snaps in this view" },"The summary stays over a selection")
                 }
             }),
             ("Every control in History is body size or larger and the filter row fits at the minimum", {

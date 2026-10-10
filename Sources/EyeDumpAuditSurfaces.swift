@@ -1243,7 +1243,7 @@ extension AuditRun {
                     shoot("S20", "history-\(Int(width))x\(Int(height))-selected", surface: "History browser", state: "six synthetic entries, one selected, window \(Int(width)) x \(Int(height)): grid reflow, check badge, details beside the grid", windows: [history], refs: ["HistoryBrowser.swift|final class HistoryTileView", "HistoryBrowser.swift|func layoutDetails"])
                 }
                 history.setFrame(NSRect(x: history.frame.minX, y: max(40, history.frame.maxY - 600), width: 880, height: 600), display: true)
-                app.historyBrowser?.setFilters(category: .posted, date: .all, query: "no such snap")
+                app.historyBrowser?.setFilters(category: .shared, date: .all, query: "no such snap")
                 pump(0.6)
                 shoot("S20", "history-no-match", surface: "History browser", state: "filters that match nothing at 880 x 600: centred message, no save hint", windows: [history], refs: ["HistoryBrowser.swift|private func updateEmptyState"])
                 app.historyBrowser?.setFilters(category: .all)
