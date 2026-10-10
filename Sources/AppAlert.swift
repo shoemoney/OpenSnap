@@ -55,7 +55,9 @@ final class AppAlert: NSObject {
             field.font = Typography.font(style)
             field.textColor = DesignTokens.Palette.Text.primary
             field.maximumNumberOfLines = lines
-            field.lineBreakMode = .byTruncatingTail
+            // Word wrap, then an ellipsis on the last allowed line; a truncating break mode would keep it to one line.
+            field.lineBreakMode = .byWordWrapping
+            (field.cell as? NSTextFieldCell)?.truncatesLastVisibleLine = true
             field.isSelectable = false
             return field
         }

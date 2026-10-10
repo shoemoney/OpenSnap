@@ -83,6 +83,14 @@ private enum AppAlertTests {
         let long = AppAlert(title: "Could not upload the picture", message: String(repeating: "The server answered that the request could not be completed. ", count: 40), buttons: [.init(title: "OK")])
         expect(long.panel.contentView!.frame.height < 600, "A very long message does not make a sheet taller than 600 pt (\(long.panel.contentView!.frame.height))")
         expect(long.messageLabel.maximumNumberOfLines == 12 && long.messageLabel.accessibilityLabel() == long.message, "...and VoiceOver still gets all of it")
+        // Long text wraps onto as many lines as it needs (up to the cap), and the frame is tall enough for all of them.
+        let oneLine = AppAlert(title: "Done", message: "Short.", buttons: [.init(title: "OK")])
+        let wrapped = AppAlert(title: "Upload to Example S3 failed: the connection was refused (stub, no network was used) and nothing was sent.",
+                               message: "The server answered that the request could not be completed. Try again, or choose another destination in Settings.", buttons: [.init(title: "OK")])
+        let line = DesignTokens.Typography.font(.headline).boundingRectForFont.height
+        expect(wrapped.titleLabel.frame.height >= 2 * line * 0.8 && wrapped.titleLabel.frame.height > oneLine.titleLabel.frame.height * 1.8, "A long title wraps to a second line instead of being cut (\(wrapped.titleLabel.frame.height) vs \(oneLine.titleLabel.frame.height))")
+        expect(wrapped.messageLabel.frame.height > oneLine.messageLabel.frame.height * 1.8, "A message that needs two lines gets two (\(wrapped.messageLabel.frame.height) vs \(oneLine.messageLabel.frame.height))")
+        expect(long.messageLabel.frame.height > oneLine.messageLabel.frame.height * 6, "A very long message shows many lines before it is cut (\(long.messageLabel.frame.height))")
         // An empty message leaves no gap.
         let bare = AppAlert(title: "Done", message: "", buttons: [.init(title: "OK")])
         expect(bare.messageLabel.superview == nil, "No message, no empty label")
