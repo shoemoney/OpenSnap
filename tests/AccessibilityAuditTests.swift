@@ -474,6 +474,7 @@ private enum AccessibilityAuditTests {
                 }
                 return search(content)
             }
+            resize.setPresetManagementShown(true) // preset naming is folded away until asked for
             guard let width = field("Width in pixels"), let preset = field("Preset name") else { expect(false, "Resize fields exist"); continue }
             expect(panel.defaultButtonCell !== button(titled: "Apply", in: panel)?.cell && panel.defaultButtonCell === button(titled: "OK", in: panel)?.cell,
                    "Resize: Apply is the plain preview button and OK is the default")

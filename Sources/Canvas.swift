@@ -145,7 +145,10 @@ private final class SketchTextEditor: NSTextView {
             (event.keyCode == 36 && flags.contains(.option)) ||
             (event.keyCode == 76 && (flags.contains(.numericPad) || flags.rawValue < 0x10000))
         if finish, let canvas = delegate as? CanvasView {
-            canvas.commitPendingTextEditing(); return
+            canvas.commitPendingTextEditing()
+            // Option-Return and Enter say "done typing": what is typed next is not a new box. Escape keeps its older meaning (type again).
+            if event.keyCode != 53 { canvas.typingNeedsClick = true }
+            return
         }
         super.keyDown(with: event)
     }
@@ -232,6 +235,16 @@ private final class SketchTextGrip: NSView {
     override func viewWillMove(toSuperview newSuperview: NSView?) {
         if newSuperview == nil { restoreCursor() }
         super.viewWillMove(toSuperview: newSuperview)
+    }
+}
+
+extension SketchTransform {
+    /// This transform with the element's centre carried to where `matrix` puts it, and its orientation left alone: the element lands in
+    /// the mirrored place without being mirrored itself.
+    func mirroringPosition(of rect: CGRect, by matrix: SketchTransform) -> SketchTransform {
+        let centre = CGPoint(x: rect.midX, y: rect.midY)
+        let target = applying(centre).applying(matrix.cg)
+        return SketchTransform(a: a, b: b, c: c, d: d, tx: target.x - (a * centre.x + c * centre.y), ty: target.y - (b * centre.x + d * centre.y))
     }
 }
 
@@ -437,6 +450,13 @@ final class CanvasView: NSView, NSTextViewDelegate {
     private var textBeforeEditing: EditorState?
     private var isFinishingText = false
     private var pasteOffset: CGFloat = 0
+    /// Set when a text box is finished from the keyboard with Option-Return or Enter: the typing that follows is not a new box until the
+    /// pointer is used, so finishing never starts a second box on top of the first (F-J1-024).
+    var typingNeedsClick = false
+    /// Where the last copy's selection sat in this drawing, and the pasteboard state it left: a paste of that same copy goes back to
+    /// the spot it came from (nudged), while anything else is centred in what the window shows instead of piling at the top-left.
+    private var copiedOrigin: CGPoint?
+    private var copiedChangeCount: Int?
     private static let pasteboardType = NSPasteboard.PasteboardType("com.shoemoney.opensnap.editable-selection")
     private enum DragMode { case none, create, move, resize, marquee, crop, erase, pan, sampleColor }
     /// The raster cache in SketchDocument is the visible viewport. Preserve the full
@@ -764,7 +784,7 @@ final class CanvasView: NSView, NSTextViewDelegate {
         guard document.backgroundPNG != nil || document.backgroundColor != .white else {
             return
         }
-        edit("Wipe Snap Only") { document.backgroundPNG = nil; document.backgroundColor = .white; panBackground = nil }
+        edit("Remove Snap Picture") { document.backgroundPNG = nil; document.backgroundColor = .white; panBackground = nil }
     }
     func clearAnnotations() {
         edit("Clear Annotations") { document.elements.removeAll(); selection.removeAll() }
@@ -794,6 +814,9 @@ final class CanvasView: NSView, NSTextViewDelegate {
         }
     }
     private func remappedCopies(_ elements: [SketchElement], offset: CGFloat) -> [SketchElement] {
+        remappedCopies(elements, offsetX: offset, offsetY: offset)
+    }
+    private func remappedCopies(_ elements: [SketchElement], offsetX: CGFloat, offsetY: CGFloat) -> [SketchElement] {
         var groups: [UUID: UUID] = [:]
         return elements.map { original in
             var copy = original
@@ -802,7 +825,7 @@ final class CanvasView: NSView, NSTextViewDelegate {
                 if groups[group] == nil { groups[group] = UUID() }
                 copy.groupID = groups[group]
             }
-            copy.translate(x: offset, y: offset)
+            copy.translate(x: offsetX, y: offsetY)
             return copy
         }
     }
@@ -994,9 +1017,25 @@ final class CanvasView: NSView, NSTextViewDelegate {
         board.setData(png, forType: .png)
         if let tiff = bitmap.representation(using: .tiff, properties: [:]) { board.setData(tiff, forType: .tiff) }
         pasteOffset = 0
+        copiedOrigin = selected.isEmpty ? nil : copyOrigin(of: selected)
+        copiedChangeCount = board.changeCount
     }
     func paste() {
         paste(from: .general)
+    }
+    /// The top-left of what a copy took in, in this drawing's coordinates (the same rectangle copySelection cut it to).
+    private func copyOrigin(of selected: [SketchElement]) -> CGPoint {
+        let painted = selected.dropFirst().reduce(selected.first!.paintBounds) { $0.union($1.paintBounds) }
+        let bounds = painted.integral.intersection(document.canvasRect)
+        return bounds.isEmpty ? .zero : bounds.origin
+    }
+    /// Where a pasted selection's top-left lands before the nudge: its old place for a copy made here, else the middle of the visible area.
+    private func pasteBase(for source: SketchDocument, board: NSPasteboard) -> CGPoint {
+        if let origin = copiedOrigin, copiedChangeCount == board.changeCount { return origin }
+        let shown = documentRect(visibleRect).intersection(document.canvasRect)
+        guard !shown.isEmpty else { return .zero }
+        let size = source.size
+        return CGPoint(x: max(shown.minX, shown.midX - size.width / 2), y: max(shown.minY, shown.midY - size.height / 2))
     }
     private func paste(from board: NSPasteboard) {
         finishTextEditing()
@@ -1004,7 +1043,8 @@ final class CanvasView: NSView, NSTextViewDelegate {
             if !source.elements.isEmpty {
                 edit("Paste") {
                     pasteOffset += 12
-                    let copies = remappedCopies(source.elements, offset: pasteOffset)
+                    let base = pasteBase(for: source, board: board)
+                    let copies = remappedCopies(source.elements, offsetX: base.x + pasteOffset, offsetY: base.y + pasteOffset)
                     document.elements.append(contentsOf: copies)
                     selection = Set(copies.map(\.id))
                 }
@@ -1025,7 +1065,8 @@ final class CanvasView: NSView, NSTextViewDelegate {
             edit("Paste Text") {
                 var element = styledElement(.text)
                 element.text = text
-                element.rect = CGRect(x: 20, y: 20, width: max(80, min(400, canvasSize.width - 20)), height: 100)
+                let shown = documentRect(visibleRect).intersection(document.canvasRect)
+                element.rect = CGRect(x: shown.minX + 20, y: shown.minY + 20, width: max(80, min(400, canvasSize.width - 20)), height: 100)
                 document.elements.append(element); selection = [element.id]
             }
         }
@@ -1108,7 +1149,10 @@ final class CanvasView: NSView, NSTextViewDelegate {
             settingPanBackground = false; panBackground = source
             if let output, name == "Rotate" { document.renderSize = CGSize(width: output.height, height: output.width) }
             for index in document.elements.indices {
-                document.elements[index].transform = document.elements[index].transform.followed(by: matrix)
+                let element = document.elements[index]
+                // A flip moves annotation text to the mirrored place but never mirrors its glyphs (Rotate keeps them readable too).
+                document.elements[index].transform = name == "Flip" && element.kind == .text
+                    ? element.transform.mirroringPosition(of: element.rect, by: matrix) : element.transform.followed(by: matrix)
             }
             cropRect = nil
         }
@@ -1445,8 +1489,10 @@ final class CanvasView: NSView, NSTextViewDelegate {
         if let bounds = selectedBounds(excluding: editingTextID) {
             let path = NSBezierPath(rect: viewRect(bounds).insetBy(dx: -2, dy: -2))
             path.lineWidth = 1.5; path.stroke()
-            for point in handlePoints(for: bounds) {
-                let rect = CGRect(x: point.x * displayScale.width - 5, y: point.y * displayScale.height - 5, width: 10, height: 10)
+            let handles = handleLayout(for: bounds)
+            for (index, point) in handlePoints(for: bounds).enumerated() where handles.shown.contains(index) {
+                let rect = CGRect(x: point.x * displayScale.width - handles.side / 2, y: point.y * displayScale.height - handles.side / 2,
+                                  width: handles.side, height: handles.side)
                 NSColor.white.setFill(); rect.fill()
                 NSColor.controlAccentColor.setStroke(); NSBezierPath(rect: rect).stroke()
             }
@@ -1622,9 +1668,24 @@ final class CanvasView: NSView, NSTextViewDelegate {
          CGPoint(x: rect.maxX, y: rect.midY), CGPoint(x: rect.maxX, y: rect.maxY), CGPoint(x: rect.midX, y: rect.maxY),
          CGPoint(x: rect.minX, y: rect.maxY), CGPoint(x: rect.minX, y: rect.midY)]
     }
+    /// A handle keeps one size on screen however far the canvas is zoomed out, but never so large that a small selection is buried under its own
+    /// handles (F-J1-016): the side shrinks with the selection, and the four edge midpoints give way to the corners when there is no room for them.
+    struct HandleLayout: Equatable { let side: CGFloat; let shown: [Int] }
+    static let handleSide: CGFloat = 10
+    static func handleLayout(forViewSize size: CGSize) -> HandleLayout {
+        let shortest = min(size.width, size.height)
+        let side = max(6, min(handleSide, shortest / 3.5))
+        let corners = [0, 2, 4, 6]
+        return HandleLayout(side: side, shown: shortest < 36 ? corners : Array(0..<8))
+    }
+    private func handleLayout(for rect: CGRect) -> HandleLayout {
+        Self.handleLayout(forViewSize: CGSize(width: rect.width * displayScale.width, height: rect.height * displayScale.height))
+    }
     private func hitHandle(_ point: CGPoint) -> Int? {
         guard let bounds = selectionBounds else { return nil }
-        return handlePoints(for: bounds).firstIndex { hypot(($0.x - point.x) * displayScale.width, ($0.y - point.y) * displayScale.height) <= 8 }
+        let layout = handleLayout(for: bounds), reach = max(layout.side / 2 + 3, 8 * layout.side / Self.handleSide)
+        return handlePoints(for: bounds).enumerated().first { layout.shown.contains($0.offset) &&
+            hypot(($0.element.x - point.x) * displayScale.width, ($0.element.y - point.y) * displayScale.height) <= reach }?.offset
     }
     private func hitElement(_ point: CGPoint) -> SketchElement? {
         let hitOrder = document.elements.filter { $0.kind != .text } + document.elements.filter { $0.kind == .text }
@@ -1684,6 +1745,7 @@ final class CanvasView: NSView, NSTextViewDelegate {
         endViewportEdit(cancelled: true)
         documentMutationDepth += 1
         defer { documentMutationDepth -= 1 }
+        typingNeedsClick = false
         finishTextEditing()
         window?.makeFirstResponder(self)
         currentModifiers = event.modifierFlags
@@ -2055,6 +2117,7 @@ final class CanvasView: NSView, NSTextViewDelegate {
               characters.unicodeScalars.allSatisfy({
                   !CharacterSet.controlCharacters.contains($0) && !(0xF700...0xF8FF).contains($0.value)
               }) else { return false }
+        if typingNeedsClick { return true }
         var point = lastMousePoint
         if point == nil, let window {
             let viewPoint = convert(window.mouseLocationOutsideOfEventStream, from: nil)

@@ -465,12 +465,8 @@ final class ModernEditorChrome: NSView {
 
         NSLayoutConstraint.activate([
             headerGlass.topAnchor.constraint(equalTo: topAnchor, constant: headerTop),
-            headerGlass.leadingAnchor.constraint(equalTo: leadingAnchor, constant: margin),
-            headerGlass.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -margin),
             headerGlass.heightAnchor.constraint(equalToConstant: Metrics.headerHeight),
 
-            footerGlass.leadingAnchor.constraint(equalTo: leadingAnchor, constant: margin),
-            footerGlass.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -margin),
             footerGlass.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -footerBottom),
             footerGlass.heightAnchor.constraint(equalToConstant: DesignTokens.Layout.footer),
             undoWipeGroup.leadingAnchor.constraint(equalTo: footer.leadingAnchor),
@@ -489,6 +485,22 @@ final class ModernEditorChrome: NSView {
         ])
         fillList.append(contentsOf: uploadControls.commandButtons)
         for fill in fillList { fill.accessibility = accessibility }
+        for bar in [headerGlass, footerGlass] { constrainBarWidth(bar, margin: margin) }
+    }
+
+    /// The widest a bar gets. Past it (a full-screen window) the bar stays this wide in the middle, so its groups stay together
+    /// instead of drifting to the corners of the screen; below it the bar spans the window less the margins, as before.
+    static let maximumBarWidth: CGFloat = 1440
+
+    private func constrainBarWidth(_ bar: NSView, margin: CGFloat) {
+        let fill = bar.widthAnchor.constraint(equalTo: widthAnchor, constant: -2 * margin)
+        fill.priority = .defaultHigh
+        NSLayoutConstraint.activate([
+            fill,
+            bar.widthAnchor.constraint(lessThanOrEqualToConstant: Self.maximumBarWidth),
+            bar.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: margin),
+            bar.centerXAnchor.constraint(equalTo: centerXAnchor)
+        ])
     }
 }
 

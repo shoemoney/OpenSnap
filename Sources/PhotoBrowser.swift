@@ -321,6 +321,11 @@ final class PhotoBrowserCoordinator: NSObject, NSTableViewDataSource, NSTableVie
     private var picker: PHPickerViewController?
     private var pickerProgress: Progress?
     private var folderChooser: NSOpenPanel?
+    /// What the grid shows until there is a folder to show: the explanation and the two ways to choose one (F-J1-013).
+    private let emptyState = NSView()
+    private let emptyActions = NSStackView()
+    private let sources = NSStackView()
+    private var loading = false
 
     /// onOpen must synchronously read/decode the URL, as App.openURL does. The
     /// Photos copy is removed after it returns, including a declined dirty prompt.
@@ -360,19 +365,17 @@ final class PhotoBrowserCoordinator: NSObject, NSTableViewDataSource, NSTableVie
         let content = NSView(); browserContent = content; panel.contentView = content
         let title = NSTextField(labelWithString: "Open a photo")
         title.font = DesignTokens.Typography.font(.title)
-        let help = NSTextField(wrappingLabelWithString: "Choose Pictures or another image folder, or select a photo from your Photos library. Double-click a thumbnail to open the original image.")
-        help.font = DesignTokens.Typography.font(.body)
-        configure(folderButton, "Pictures Folder…", #selector(chooseFolder))
-        configure(libraryButton, "Photos Library…", #selector(chooseLibrary))
+        configure(folderButton, "Choose Pictures Folder…", #selector(chooseFolder))
+        configure(libraryButton, "Choose from Photos Library…", #selector(chooseLibrary))
         configure(openButton, "Open Selected Photo", #selector(openSelected)); openButton.isEnabled = false
         openButton.keyEquivalent = "\r"
         let close = NSButton(title: "Close", target: self, action: #selector(closeBrowser))
         close.font = DesignTokens.Typography.font(.body); close.keyEquivalent = "\u{1b}"
-        let sources = NSStackView(views: [folderButton, libraryButton]); sources.spacing = 16
+        sources.orientation = .horizontal; sources.spacing = 16
         let bottom = NSStackView(views: [close, openButton]); bottom.spacing = 16
         status.font = DesignTokens.Typography.font(.body); status.maximumNumberOfLines = 2
         status.setAccessibilityRole(.staticText)
-        status.stringValue = "No folder selected. Only the folder you choose will be browsed."
+        status.stringValue = ""
         table.setAccessibilityLabel("Photos in the chosen folder")
         table.headerView = nil; table.rowHeight = 140; table.intercellSpacing = NSSize(width: 0, height: 4)
         table.dataSource = self; table.delegate = self; table.target = self
@@ -381,19 +384,54 @@ final class PhotoBrowserCoordinator: NSObject, NSTableViewDataSource, NSTableVie
         table.columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle
         let scroll = NSScrollView(); scroll.documentView = table; scroll.hasVerticalScroller = true
         scroll.borderType = .bezelBorder
-        for view in [title, help, sources, scroll, status, bottom] {
+        buildEmptyState()
+        for view in [title, sources, scroll, status, bottom] {
             view.translatesAutoresizingMaskIntoConstraints = false; content.addSubview(view)
         }
+        emptyState.translatesAutoresizingMaskIntoConstraints = false; content.addSubview(emptyState)
+        // The sources row only takes room once there are photos to browse; until then its buttons live in the empty grid, so the grid
+        // starts right under the title and nothing above it is blank.
         NSLayoutConstraint.activate([
             title.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: 24), title.topAnchor.constraint(equalTo: content.topAnchor, constant: 22),
-            help.leadingAnchor.constraint(equalTo: title.leadingAnchor), help.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -24), help.topAnchor.constraint(equalTo: title.bottomAnchor, constant: 14),
-            sources.leadingAnchor.constraint(equalTo: title.leadingAnchor), sources.topAnchor.constraint(equalTo: help.bottomAnchor, constant: 18),
-            scroll.leadingAnchor.constraint(equalTo: title.leadingAnchor), scroll.trailingAnchor.constraint(equalTo: help.trailingAnchor), scroll.topAnchor.constraint(equalTo: sources.bottomAnchor, constant: 20),
-            status.leadingAnchor.constraint(equalTo: title.leadingAnchor), status.trailingAnchor.constraint(equalTo: help.trailingAnchor), status.topAnchor.constraint(equalTo: scroll.bottomAnchor, constant: 16),
-            bottom.trailingAnchor.constraint(equalTo: help.trailingAnchor), bottom.topAnchor.constraint(equalTo: status.bottomAnchor, constant: 18), bottom.bottomAnchor.constraint(equalTo: content.bottomAnchor, constant: -22),
-            scroll.heightAnchor.constraint(greaterThanOrEqualToConstant: 160)
+            title.trailingAnchor.constraint(lessThanOrEqualTo: content.trailingAnchor, constant: -24),
+            sources.leadingAnchor.constraint(equalTo: title.leadingAnchor), sources.topAnchor.constraint(equalTo: title.bottomAnchor, constant: 14),
+            scroll.leadingAnchor.constraint(equalTo: title.leadingAnchor), scroll.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -24), scroll.topAnchor.constraint(equalTo: sources.bottomAnchor, constant: 14),
+            status.leadingAnchor.constraint(equalTo: title.leadingAnchor), status.trailingAnchor.constraint(equalTo: scroll.trailingAnchor), status.topAnchor.constraint(equalTo: scroll.bottomAnchor, constant: 16),
+            bottom.trailingAnchor.constraint(equalTo: scroll.trailingAnchor), bottom.topAnchor.constraint(equalTo: status.bottomAnchor, constant: 18), bottom.bottomAnchor.constraint(equalTo: content.bottomAnchor, constant: -22),
+            scroll.heightAnchor.constraint(greaterThanOrEqualToConstant: 160),
+            emptyState.centerXAnchor.constraint(equalTo: scroll.centerXAnchor), emptyState.centerYAnchor.constraint(equalTo: scroll.centerYAnchor),
+            emptyState.widthAnchor.constraint(lessThanOrEqualTo: scroll.widthAnchor, constant: -48)
         ])
         panel.defaultButtonCell = openButton.cell as? NSButtonCell
+        refreshEmptyState()
+    }
+    private func buildEmptyState() {
+        let icon = NSImageView(image: ChromeIcons.resolve(.images, family: .regular, pointSize: 56).image ?? NSImage())
+        icon.contentTintColor = DesignTokens.Palette.Text.secondary
+        icon.setAccessibilityElement(false)
+        let heading = NSTextField(labelWithString: "Choose where your photos are")
+        heading.font = DesignTokens.Typography.font(.headline)
+        let body = NSTextField(wrappingLabelWithString: "Pick your Pictures folder or any folder of images, or choose a photo from your Photos library. Only what you choose is browsed. Double-click a thumbnail to open the original image.")
+        body.font = DesignTokens.Typography.font(.body); body.alignment = .center
+        body.preferredMaxLayoutWidth = 560
+        emptyActions.orientation = .horizontal; emptyActions.spacing = 16
+        let column = NSStackView(views: [icon, heading, body, emptyActions])
+        column.orientation = .vertical; column.alignment = .centerX; column.spacing = 14
+        column.setCustomSpacing(20, after: body)
+        column.translatesAutoresizingMaskIntoConstraints = false
+        emptyState.addSubview(column)
+        NSLayoutConstraint.activate([
+            column.leadingAnchor.constraint(equalTo: emptyState.leadingAnchor), column.trailingAnchor.constraint(equalTo: emptyState.trailingAnchor),
+            column.topAnchor.constraint(equalTo: emptyState.topAnchor), column.bottomAnchor.constraint(equalTo: emptyState.bottomAnchor)
+        ])
+    }
+    /// Shown while there is nothing to browse and nothing loading; it hands the two source buttons to the row above the grid once photos arrive.
+    private func refreshEmptyState() {
+        let showsEmpty = entries.isEmpty && !loading
+        emptyState.isHidden = !showsEmpty
+        sources.isHidden = showsEmpty
+        if showsEmpty { sources.setViews([], in: .leading); emptyActions.setViews([folderButton, libraryButton], in: .center) }
+        else { emptyActions.setViews([], in: .center); sources.setViews([folderButton, libraryButton], in: .leading) }
     }
     /// Errors say "Error:" in words, so they never rest on colour alone.
     private func showError(_ text: String) { status.stringValue = text.hasPrefix("Error:") ? text : "Error: " + text }
@@ -402,8 +440,10 @@ final class PhotoBrowserCoordinator: NSObject, NSTableViewDataSource, NSTableVie
         button.bezelStyle = .rounded; button.font = DesignTokens.Typography.font(.body)
     }
     private func setLoading(_ loading: Bool) {
+        self.loading = loading
         folderButton.isEnabled = !loading; libraryButton.isEnabled = !loading
         openButton.isEnabled = !loading && entries.indices.contains(table.selectedRow)
+        refreshEmptyState()
     }
 
     @objc private func chooseFolder() {

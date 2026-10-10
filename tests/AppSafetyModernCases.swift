@@ -701,9 +701,9 @@ extension AppSafetyTests {
             "tool.text.id": "text",
             "tool.text.label": "Text tool",
             "tool.text.tip": "Text tool",
-            "toolbox.items": "Toolbox|About OpenSnap|Settings…|Quit OpenSnap||New|Open…|Photos…|Save to History|Export…|Save As…|Print…||Cut|Copy|Paste|Delete|Select All|Duplicate|Text Style…||Crosshair Snapshot|Fullscreen Snapshot|Frame Snapshot|Re-snap (Keep Pen)||Set Snap to Normal Size|Flip Horizontal|Rotate Clockwise|Transparent Background|Crop Snap at Current Edges|Wipe Snap Only||More Commands|Filled Shapes|Shadow",
+            "toolbox.items": "Toolbox|Save to History|Export…||Copy|Paste|Duplicate|Delete|Select All||Crosshair Snapshot|Fullscreen Snapshot|Frame Snapshot|Re-snap (Keep Pen)||Rotate Clockwise|Flip Horizontal|Crop Snap at Current Edges|Remove Snap Picture||Filled Shapes|Shadow|Text Style…",
             "toolbox.label": "Toolbox menu",
-            "toolbox.tip": "Common drawing and capture commands; additional actions are in More Commands",
+            "toolbox.tip": "Drawing, edit and capture commands; everything else is in the menu bar",
             "zoom.label": "Canvas zoom"
         ]
         let differing = expectedFacts.keys.sorted().filter { expectedFacts[$0] != modern[$0] }
@@ -1432,7 +1432,7 @@ extension AppSafetyTests {
         app.canvas.setBackgroundColor(.yellow)
         try expect(app.validateMenuItem(undo), "Undo becomes available after an edit")
         let toolbox = collect(NSPopUpButton.self, in: app.window.contentView!).first { $0.accessibilityLabel() == "Toolbox menu" }
-        try expect(toolbox?.menu?.items.contains { $0.title == "More Commands" } == true, "The Toolbox menu keeps its More Commands entry")
+        try expect(toolbox?.menu?.items.contains { $0.action == #selector(AppDelegate.saveHistory) } == true, "The Toolbox menu keeps Save to History")
     }
 
     // MARK: T15 cases

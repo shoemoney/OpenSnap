@@ -26,4 +26,14 @@ extension AppDelegate {
         KeyboardNavigation.toolbarFocusActive = true
         window.makeFirstResponder(chrome.firstToolbarControl)
     }
+
+    /// Command-1 to Command-4 are Capture's shortcuts and also Settings' tab shortcuts. While Settings is the key window a key press
+    /// belongs to its tabs: the menu item must not claim it (a menu that maps the chord itself, as a driver does, would start a capture
+    /// instead of switching the tab). Choosing the item with the pointer is unaffected: only a key event is refused.
+    static func settingsOwnsKeyEquivalent(of item: NSMenuItem, event: NSEvent?, keyWindow: NSWindow?, settingsWindow: NSWindow?) -> Bool {
+        guard let settingsWindow, keyWindow === settingsWindow, event?.type == .keyDown,
+              item.keyEquivalentModifierMask.intersection(.deviceIndependentFlagsMask) == .command,
+              let number = Int(item.keyEquivalent), (1...4).contains(number) else { return false }
+        return true
+    }
 }

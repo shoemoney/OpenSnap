@@ -319,6 +319,125 @@ final class ResizePanelSession {
     }
 }
 
+/// The crop anchor: nine cells laid out like the picture they stand for, the chosen one marking the part of the image that is kept.
+/// One tab stop; the arrow keys move the choice, the pointer picks a cell, and VoiceOver sees a radio group of nine named cells.
+@MainActor
+final class ResizeAnchorGrid: NSView {
+    static let cellSize = NSSize(width: 56, height: 40)
+    static let spacing: CGFloat = DesignTokens.Space.s2
+    var anchor: ResizePanelAnchor = .center { didSet { if anchor != oldValue { needsDisplay = true; invalidateAccessibility() } } }
+    var onChange: ((ResizePanelAnchor) -> Void)?
+    private var hovered: ResizePanelAnchor?
+    private var hoverArea: NSTrackingArea?
+    private var cellElements: [ResizeAnchorCellElement] = []
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: NSRect(origin: .zero, size: Self.intrinsic))
+        focusRingType = .exterior
+        setAccessibilityElement(true)
+        setAccessibilityRole(.radioGroup)
+        setAccessibilityLabel("Crop anchor")
+        cellElements = ResizePanelAnchor.allCases.map { ResizeAnchorCellElement(grid: self, anchor: $0) }
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    static var intrinsic: NSSize {
+        NSSize(width: 3 * cellSize.width + 2 * spacing, height: 3 * cellSize.height + 2 * spacing)
+    }
+    override var intrinsicContentSize: NSSize { Self.intrinsic }
+    override var isFlipped: Bool { true }
+    override var acceptsFirstResponder: Bool { true }
+
+    func frame(of cell: ResizePanelAnchor) -> NSRect {
+        let column = cell.rawValue % 3, row = cell.rawValue / 3
+        return NSRect(x: CGFloat(column) * (Self.cellSize.width + Self.spacing), y: CGFloat(row) * (Self.cellSize.height + Self.spacing),
+                      width: Self.cellSize.width, height: Self.cellSize.height)
+    }
+    func cell(at point: NSPoint) -> ResizePanelAnchor? { ResizePanelAnchor.allCases.first { frame(of: $0).contains(point) } }
+
+    func select(_ cell: ResizePanelAnchor) {
+        guard cell != anchor else { return }
+        anchor = cell
+        onChange?(cell)
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        for cell in ResizePanelAnchor.allCases {
+            let rect = frame(of: cell).insetBy(dx: 1, dy: 1)
+            let selected = cell == anchor
+            let path = NSBezierPath(roundedRect: rect, xRadius: DesignTokens.Radius.md, yRadius: DesignTokens.Radius.md)
+            if selected { DesignTokens.Palette.State.selectedFill.setFill(); path.fill() }
+            else if cell == hovered { DesignTokens.Palette.State.hover.setFill(); path.fill() }
+            (selected ? DesignTokens.Palette.accent : DesignTokens.Palette.separator).setStroke()
+            path.lineWidth = selected ? 2 : 1
+            path.stroke()
+            // The dot is the kept part; a selected cell carries a ring as well, so the choice never rests on colour alone.
+            let dot = NSRect(x: rect.midX - 6, y: rect.midY - 6, width: 12, height: 12)
+            let mark = NSBezierPath(ovalIn: dot)
+            DesignTokens.Palette.Text.primary.setFill()
+            if selected { mark.fill(); let ring = NSBezierPath(ovalIn: dot.insetBy(dx: -4, dy: -4)); ring.lineWidth = 1.5; DesignTokens.Palette.Text.primary.setStroke(); ring.stroke() }
+            else { DesignTokens.Palette.Text.secondary.setFill(); NSBezierPath(ovalIn: dot.insetBy(dx: 3, dy: 3)).fill() }
+        }
+    }
+    override var focusRingMaskBounds: NSRect { bounds }
+    override func drawFocusRingMask() {
+        NSColor.black.setFill()
+        let rect = frame(of: anchor)
+        NSBezierPath(roundedRect: rect, xRadius: DesignTokens.Radius.md, yRadius: DesignTokens.Radius.md).fill()
+    }
+    override func mouseDown(with event: NSEvent) {
+        window?.makeFirstResponder(self)
+        if let cell = cell(at: convert(event.locationInWindow, from: nil)) { select(cell) }
+    }
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let hoverArea { removeTrackingArea(hoverArea) }
+        let area = NSTrackingArea(rect: .zero, options: [.mouseMoved, .mouseEnteredAndExited, .activeInActiveApp, .inVisibleRect], owner: self, userInfo: nil)
+        addTrackingArea(area); hoverArea = area
+    }
+    override func mouseMoved(with event: NSEvent) {
+        let cell = cell(at: convert(event.locationInWindow, from: nil))
+        if cell != hovered { hovered = cell; needsDisplay = true }
+    }
+    override func mouseExited(with event: NSEvent) { if hovered != nil { hovered = nil; needsDisplay = true } }
+    override func keyDown(with event: NSEvent) {
+        let column = anchor.rawValue % 3, row = anchor.rawValue / 3
+        let moved: (Int, Int)?
+        switch event.keyCode {
+        case 123: moved = (max(0, column - 1), row)
+        case 124: moved = (min(2, column + 1), row)
+        case 126: moved = (column, max(0, row - 1))
+        case 125: moved = (column, min(2, row + 1))
+        default: moved = nil
+        }
+        if let (c, r) = moved, let next = ResizePanelAnchor(rawValue: r * 3 + c) { select(next) } else { super.keyDown(with: event) }
+    }
+
+    private func invalidateAccessibility() {
+        NSAccessibility.post(element: self, notification: .valueChanged)
+    }
+    override func accessibilityValue() -> Any? { anchor.title }
+    override func accessibilityChildren() -> [Any]? { cellElements }
+    override func accessibilitySelectedChildren() -> [Any]? { cellElements.filter { $0.anchor == anchor } }
+}
+
+/// One cell of the anchor grid as VoiceOver sees it: a named radio button that says whether it is the part kept, and presses to choose it.
+final class ResizeAnchorCellElement: NSAccessibilityElement {
+    let anchor: ResizePanelAnchor
+    private weak var grid: ResizeAnchorGrid?
+    @MainActor init(grid: ResizeAnchorGrid, anchor: ResizePanelAnchor) {
+        self.grid = grid; self.anchor = anchor
+        super.init()
+        setAccessibilityRole(.radioButton)
+        setAccessibilityLabel(anchor.title)
+        setAccessibilityParent(grid)
+    }
+    override func accessibilityFrameInParentSpace() -> NSRect { MainActor.assumeIsolated { grid?.frame(of: anchor) ?? .zero } }
+    override func accessibilityValue() -> Any? { MainActor.assumeIsolated { grid?.anchor == anchor ? 1 : 0 } }
+    override func isAccessibilitySelected() -> Bool { MainActor.assumeIsolated { grid?.anchor == anchor } }
+    override func accessibilityPerformPress() -> Bool { MainActor.assumeIsolated { grid?.select(anchor); return grid != nil } }
+}
+
 @MainActor
 final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
     private let session: ResizePanelSession
@@ -327,11 +446,14 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
     private var heightField: NSTextField?
     private var ratioButton: NSButton?
     private var modeControl: NSSegmentedControl?
-    private var anchorPopup: NSPopUpButton?
+    private var anchorGrid: ResizeAnchorGrid?
     private var anchorRow: NSStackView?
+    private var dimensionRow: NSStackView?
+    private var contentStack: NSStackView?
+    private var presetDisclosure: NSButton?
+    private var presetManagement: NSStackView?
     private var errorLabel: NSTextField?
     private var helpLabel: NSTextField?
-    private var dimensionGrid: NSGridView?
     private var limitRow: NSStackView?
     private var limitField: NSTextField?
     private var limitPopup: NSPopUpButton?
@@ -364,7 +486,7 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
 
     func show(attachedTo parent: NSWindow) {
         guard panel == nil, !session.isFinished else { return }
-        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 600, height: 660),
+        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: Self.sheetWidth, height: 520),
                             styleMask: [.titled, .closable], backing: .buffered, defer: false)
         panel.title = "Resize or Crop"
         panel.isReleasedWhenClosed = false
@@ -385,24 +507,12 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         panel.makeFirstResponder(widthField)
     }
 
+    /// The sheet reads top to bottom as the job is done: what to do (Resize, Crop or Limit), how big, then the optional extras. Presets sit
+    /// one row below with their management folded away, so the dimensions are the first thing under the mode control.
     private func buildContent(in panel: NSPanel) {
         let content = NSView()
         panel.contentView = content
         let heading = label("Resize or Crop", style: .title)
-        let presetChoice = NSPopUpButton(frame: .zero, pullsDown: false)
-        presetChoice.font = DesignTokens.Typography.font(.body)
-        presetChoice.target = self; presetChoice.action = #selector(selectPreset(_:))
-        presetChoice.setAccessibilityLabel("Size preset")
-        presetPopup = presetChoice
-        let presetTitle = dimensionField(value: "New Size", name: "Preset name")
-        presetName = presetTitle
-        let addPreset = button("Add Preset", action: #selector(addPreset(_:)))
-        let savePreset = button("Save Preset", action: #selector(savePreset(_:)))
-        let removePreset = button("Remove", action: #selector(removePreset(_:)))
-        savePresetButton = savePreset; removePresetButton = removePreset
-        let presetActions = NSStackView(views: [addPreset, savePreset, removePreset])
-        presetActions.orientation = .horizontal; presetActions.spacing = 16
-        reloadPresets()
         let mode = NSSegmentedControl(labels: ["Resize", "Crop", "Limit"], trackingMode: .selectOne,
                                       target: self, action: #selector(changeMode(_:)))
         mode.font = DesignTokens.Typography.font(.body)
@@ -412,112 +522,156 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
 
         let help = NSTextField(wrappingLabelWithString: "")
         help.font = DesignTokens.Typography.font(.body)
+        help.textColor = DesignTokens.Palette.Text.secondary
         helpLabel = help
+
+        // Dimensions: Width and Height side by side, so the two fields cost one row.
         let width = dimensionField(value: session.state.displayWidthText, name: "Width in pixels")
         let height = dimensionField(value: session.state.displayHeightText, name: "Height in pixels")
-        widthField = width
-        heightField = height
-        let grid = NSGridView(views: [[label("Width (pixels)"), width],
-                                     [label("Height (pixels)"), height]])
-        grid.columnSpacing = 20
-        grid.rowSpacing = 14
-        grid.rowAlignment = .firstBaseline
-        grid.column(at: 1).width = 240
-        dimensionGrid = grid
+        widthField = width; heightField = height
+        let dimensions = NSStackView(views: [label("Width"), width, label("Height"), height, label("pixels")])
+        dimensions.orientation = .horizontal; dimensions.alignment = .firstBaseline
+        dimensions.spacing = DesignTokens.Space.s3
+        dimensions.setCustomSpacing(DesignTokens.Space.s5, after: width)
+        dimensions.setCustomSpacing(DesignTokens.Space.s2, after: height)
+        dimensionRow = dimensions
+        let ratio = NSButton(checkboxWithTitle: "Lock proportions", target: self, action: #selector(changeRatio(_:)))
+        ratio.font = DesignTokens.Typography.font(.body)
+        ratioButton = ratio
+
+        // Limit: one size and what it limits.
         let limit = dimensionField(value: session.state.displayLimitText, name: "Size limit in pixels")
         limitField = limit
         let limitChoice = NSPopUpButton(frame: .zero, pullsDown: false)
         limitChoice.font = DesignTokens.Typography.font(.body)
         limitChoice.addItems(withTitles: ResizePanelLimitMode.allCases.map(\.title))
+        for item in limitChoice.itemArray { item.attributedTitle = NSAttributedString(string: item.title, attributes: [.font: DesignTokens.Typography.font(.body)]) }
         limitChoice.target = self; limitChoice.action = #selector(changeLimit(_:))
         limitChoice.setAccessibilityLabel("Limit by")
         limitPopup = limitChoice
-        let limitControls = NSStackView(views: [limitChoice, limit])
-        limitControls.orientation = .horizontal; limitControls.spacing = 20
+        let limitControls = NSStackView(views: [label("Limit"), limitChoice, limit, label("pixels")])
+        limitControls.orientation = .horizontal; limitControls.alignment = .firstBaseline; limitControls.spacing = DesignTokens.Space.s3
         limitRow = limitControls
 
-        let ratio = NSButton(checkboxWithTitle: "Lock proportions", target: self,
-                             action: #selector(changeRatio(_:)))
-        ratio.font = DesignTokens.Typography.font(.body)
-        ratioButton = ratio
-        let popup = NSPopUpButton(frame: .zero, pullsDown: false)
-        popup.font = DesignTokens.Typography.font(.body)
-        popup.addItems(withTitles: ResizePanelAnchor.allCases.map(\.title))
-        for item in popup.itemArray {
-            item.attributedTitle = NSAttributedString(string: item.title,
-                attributes: [.font: DesignTokens.Typography.font(.body)])
-        }
-        popup.target = self
-        popup.action = #selector(changeAnchor(_:))
-        popup.setAccessibilityLabel("Crop anchor")
-        anchorPopup = popup
-        let anchor = NSStackView(views: [label("Crop anchor"), popup])
-        anchor.orientation = .horizontal
-        anchor.spacing = 20
+        // Crop: the 3 x 3 grid is the picture; the cell picked is the part of the image that stays.
+        let grid = ResizeAnchorGrid()
+        grid.onChange = { [weak self] anchor in self?.chooseAnchor(anchor) }
+        anchorGrid = grid
+        let anchorCaption = NSTextField(wrappingLabelWithString: "Part of the image to keep when the crop is smaller than the picture.")
+        anchorCaption.font = DesignTokens.Typography.font(.body)
+        anchorCaption.textColor = DesignTokens.Palette.Text.secondary
+        anchorCaption.preferredMaxLayoutWidth = 300
+        let anchor = NSStackView(views: [grid, anchorCaption])
+        anchor.orientation = .horizontal; anchor.alignment = .centerY; anchor.spacing = DesignTokens.Space.s4
         anchorRow = anchor
+
+        // Presets: the choice is one pop-up; naming, saving and removing are behind the disclosure.
+        let presetChoice = NSPopUpButton(frame: .zero, pullsDown: false)
+        presetChoice.font = DesignTokens.Typography.font(.body)
+        presetChoice.target = self; presetChoice.action = #selector(selectPreset(_:))
+        presetChoice.setAccessibilityLabel("Size preset")
+        presetPopup = presetChoice
+        let disclosure = NSButton(title: "", target: self, action: #selector(togglePresetManagement(_:)))
+        disclosure.setButtonType(.pushOnPushOff); disclosure.bezelStyle = .disclosure
+        disclosure.setAccessibilityLabel("Manage presets")
+        presetDisclosure = disclosure
+        let presetLine = NSStackView(views: [label("Preset"), presetChoice, label("Manage"), disclosure])
+        presetLine.orientation = .horizontal; presetLine.alignment = .centerY; presetLine.spacing = DesignTokens.Space.s3
+        presetLine.setCustomSpacing(DesignTokens.Space.s5, after: presetChoice)
+        presetLine.setCustomSpacing(DesignTokens.Space.s1, after: presetLine.views[2])
+        let presetTitle = dimensionField(value: "New Size", name: "Preset name")
+        presetName = presetTitle
+        let addPreset = button("Add Preset", action: #selector(addPreset(_:)))
+        let savePreset = button("Save Preset", action: #selector(savePreset(_:)))
+        let removePreset = button("Remove", action: #selector(removePreset(_:)))
+        savePresetButton = savePreset; removePresetButton = removePreset
+        let presetActions = NSStackView(views: [presetTitle, addPreset, savePreset, removePreset])
+        presetActions.orientation = .horizontal; presetActions.alignment = .centerY; presetActions.spacing = DesignTokens.Space.s3
+        presetManagement = presetActions
+        reloadPresets()
 
         let error = NSTextField(wrappingLabelWithString: "")
         error.font = DesignTokens.Typography.font(.body)
         error.textColor = DesignTokens.Palette.feedbackError
         error.setAccessibilityRole(.staticText)  // the message is the label: VoiceOver reads "Error: ...", never a fixed caption over it
         errorLabel = error
+
+        // Buttons sit on the trailing edge in the standard order: Cancel, Apply, OK (the default).
         let cancel = button("Cancel", action: #selector(cancelSheet(_:)))
         cancel.keyEquivalent = "\u{1b}"
         let apply = button("Apply", action: #selector(previewSheet(_:)))
         let ok = button("OK", action: #selector(applySheet(_:)))
         ok.keyEquivalent = "\r"
         panel.defaultButtonCell = ok.cell as? NSButtonCell
-        let buttons = NSStackView(views: [cancel, apply, ok])
-        buttons.orientation = .horizontal
-        buttons.spacing = 16
+        let spacer = NSView()
+        spacer.setContentHuggingPriority(NSLayoutConstraint.Priority(1), for: .horizontal)
+        let buttons = NSStackView(views: [spacer, cancel, apply, ok])
+        buttons.orientation = .horizontal; buttons.spacing = DesignTokens.Space.s4
 
-        let stack = NSStackView(views: [heading, presetChoice, presetTitle, presetActions, mode, help, grid, ratio, anchor, limitControls, error, buttons])
+        let separator = NSBox(); separator.boxType = .separator
+        let stack = NSStackView(views: [heading, mode, help, dimensions, ratio, limitControls, anchor, separator, presetLine, presetActions, error, buttons])
         stack.orientation = .vertical
         stack.alignment = .leading
-        stack.spacing = 14
+        stack.spacing = DesignTokens.Space.s4
+        stack.setCustomSpacing(DesignTokens.Space.s2, after: dimensions)
         stack.detachesHiddenViews = true
         stack.translatesAutoresizingMaskIntoConstraints = false
+        contentStack = stack
         content.addSubview(stack)
+        let inset = DesignTokens.Space.s5 + DesignTokens.Space.s1
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: 28),
-            stack.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -28),
-            stack.topAnchor.constraint(equalTo: content.topAnchor, constant: 28),
+            stack.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: inset),
+            stack.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -inset),
+            stack.topAnchor.constraint(equalTo: content.topAnchor, constant: inset),
+            stack.bottomAnchor.constraint(equalTo: content.bottomAnchor, constant: -inset),
+            mode.widthAnchor.constraint(equalTo: stack.widthAnchor),
             help.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            presetChoice.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            presetChoice.heightAnchor.constraint(greaterThanOrEqualToConstant: 38),
-            presetTitle.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            presetTitle.heightAnchor.constraint(greaterThanOrEqualToConstant: 36),
+            separator.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            buttons.widthAnchor.constraint(equalTo: stack.widthAnchor),
             error.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            error.heightAnchor.constraint(greaterThanOrEqualToConstant: 62),
-            width.heightAnchor.constraint(greaterThanOrEqualToConstant: 36),
-            height.heightAnchor.constraint(greaterThanOrEqualToConstant: 36),
-            mode.heightAnchor.constraint(greaterThanOrEqualToConstant: 38),
-            popup.widthAnchor.constraint(greaterThanOrEqualToConstant: 280),
-            popup.heightAnchor.constraint(greaterThanOrEqualToConstant: 38),
-            ratio.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
-            limit.heightAnchor.constraint(greaterThanOrEqualToConstant: 36),
-            limit.widthAnchor.constraint(equalToConstant: 190),
-            limitChoice.heightAnchor.constraint(greaterThanOrEqualToConstant: 38),
-            anchor.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
-            cancel.heightAnchor.constraint(greaterThanOrEqualToConstant: 38),
-            apply.heightAnchor.constraint(greaterThanOrEqualToConstant: 38),
-            ok.heightAnchor.constraint(greaterThanOrEqualToConstant: 38)
+            presetActions.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            presetTitle.widthAnchor.constraint(greaterThanOrEqualToConstant: 160),
+            presetChoice.widthAnchor.constraint(greaterThanOrEqualToConstant: 220),
+            presetChoice.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.field),
+            width.widthAnchor.constraint(equalToConstant: 120), height.widthAnchor.constraint(equalToConstant: 120),
+            width.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.control),
+            height.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.control),
+            mode.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.field),
+            ratio.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.control),
+            limit.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.control),
+            limit.widthAnchor.constraint(equalToConstant: 140),
+            limitChoice.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.field),
+            presetTitle.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.control),
+            cancel.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.field),
+            apply.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.field),
+            ok.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.field)
         ])
         renderState()
         if presets.hasMalformedData { showError(ResizePresetError.malformedDefaults.localizedDescription) }
-        panel.setContentSize(NSSize(width: 600, height: max(500, stack.fittingSize.height + 56)))
-        // Measure before pinning the bottom so the initial frame cannot compress
-        // the controls. Both mode-specific rows reserve the same readable height.
-        stack.bottomAnchor.constraint(equalTo: content.bottomAnchor, constant: -28).isActive = true
         width.nextKeyView = height
         height.nextKeyView = ratio
-        ratio.nextKeyView = popup
-        popup.nextKeyView = cancel
+        ratio.nextKeyView = limit
+        limit.nextKeyView = grid
+        grid.nextKeyView = presetChoice
+        presetChoice.nextKeyView = disclosure
+        disclosure.nextKeyView = cancel
         cancel.nextKeyView = apply
         apply.nextKeyView = ok
         ok.nextKeyView = mode
         mode.nextKeyView = width
+        fitPanelToContent()
     }
+
+    /// The sheet is exactly as tall as what it shows: a mode with less to ask is a shorter sheet, never a sheet with a gap in it.
+    private func fitPanelToContent() {
+        guard let panel, let stack = contentStack else { return }
+        panel.contentView?.layoutSubtreeIfNeeded()
+        let inset = DesignTokens.Space.s5 + DesignTokens.Space.s1
+        let size = NSSize(width: Self.sheetWidth, height: ceil(stack.fittingSize.height + 2 * inset))
+        if panel.contentView?.frame.size != size { panel.setContentSize(size) }
+        panel.contentView?.layoutSubtreeIfNeeded()
+    }
+    static let sheetWidth: CGFloat = 620
 
     private func label(_ text: String, style: DesignTokens.Typography.Style = .body) -> NSTextField {
         let label = NSTextField(labelWithString: text)
@@ -543,6 +697,8 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
     /// Errors say "Error:" in words, so they never rest on the red colour alone.
     private func showError(_ text: String) {
         errorLabel?.stringValue = text.hasPrefix("Error:") ? text : "Error: " + text
+        errorLabel?.isHidden = false
+        fitPanelToContent()
     }
 
     private func renderState(editing field: NSTextField? = nil) {
@@ -553,16 +709,18 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         let limit = session.state.mode == .limit
         if field !== limitField { limitField?.stringValue = session.state.displayLimitText }
         limitPopup?.selectItem(at: session.state.limitMode.rawValue)
-        dimensionGrid?.isHidden = limit
+        dimensionRow?.isHidden = limit
         limitRow?.isHidden = !limit
         ratioButton?.isHidden = crop || limit
         ratioButton?.state = session.state.preserveRatio ? .on : .off
         anchorRow?.isHidden = !crop
-        anchorPopup?.selectItem(at: session.state.anchor.rawValue)
-        helpLabel?.stringValue = crop ? "Choose crop dimensions and the part of the image to keep."
+        anchorGrid?.anchor = session.state.anchor
+        helpLabel?.stringValue = crop ? "Choose the crop size and which part of the image to keep."
             : limit ? "Set the width, height, or longest side. Larger limits enlarge the image."
             : "Fit the image to these dimensions. Unlock proportions to add space around it without stretching."
-        errorLabel?.stringValue = ""
+        presetManagement?.isHidden = presetDisclosure?.state != .on
+        errorLabel?.stringValue = ""; errorLabel?.isHidden = true
+        fitPanelToContent()
     }
 
     func controlTextDidChange(_ notification: Notification) {
@@ -604,10 +762,21 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         schedulePreview()
     }
 
-    @objc private func changeAnchor(_ sender: NSPopUpButton) {
-        guard let anchor = ResizePanelAnchor(rawValue: sender.indexOfSelectedItem) else { return }
+    private func chooseAnchor(_ anchor: ResizePanelAnchor) {
+        panel?.makeFirstResponder(anchorGrid)
         session.state.anchor = anchor
         schedulePreview()
+    }
+
+    @objc private func togglePresetManagement(_ sender: NSButton) {
+        presetManagement?.isHidden = sender.state != .on
+        fitPanelToContent()
+    }
+    /// Test seam and keyboard path: opens or folds the preset management row.
+    func setPresetManagementShown(_ shown: Bool) {
+        presetDisclosure?.state = shown ? .on : .off
+        presetManagement?.isHidden = !shown
+        fitPanelToContent()
     }
 
     @objc private func changeLimit(_ sender: NSPopUpButton) {
@@ -665,7 +834,7 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
             let name = selected?.editable == false ? (selected?.name ?? "New Size") + " Copy" : (presetName?.stringValue ?? "New Size")
             let preset = try session.state.preset(name: name, format: selected?.format ?? 0)
             try presets.add(preset); selectedPresetID = preset.id
-            reloadPresets(); errorLabel?.stringValue = ""
+            reloadPresets(); errorLabel?.stringValue = ""; errorLabel?.isHidden = true; fitPanelToContent()
         } catch { showError(error.localizedDescription) }
     }
 
@@ -684,7 +853,7 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
 
     @objc private func removePreset(_ sender: Any?) {
         guard let id = selectedPresetID else { return }
-        do { try presets.remove(id: id); selectedPresetID = nil; reloadPresets(); errorLabel?.stringValue = "" }
+        do { try presets.remove(id: id); selectedPresetID = nil; reloadPresets(); errorLabel?.stringValue = ""; errorLabel?.isHidden = true; fitPanelToContent() }
         catch { showError(error.localizedDescription) }
     }
 
