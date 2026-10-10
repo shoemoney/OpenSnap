@@ -467,8 +467,12 @@ final class UploadSettingsTab: SettingsTabViewController {
 
 /// Escape and Command-W close it; so does the close button. It calls `onClose` so the owner decides what closing means.
 @MainActor
-final class SettingsWindow: NSWindow {
+class SettingsWindow: NSWindow {
     var onClose: (() -> Void)?
+
+    required override init(contentRect: NSRect, styleMask style: NSWindow.StyleMask, backing backingStoreType: NSWindow.BackingStoreType, defer flag: Bool) {
+        super.init(contentRect: contentRect, styleMask: style, backing: backingStoreType, defer: flag)
+    }
 
     func requestClose() {
         guard attachedSheet == nil else { return }
@@ -503,6 +507,8 @@ final class SettingsTabs: NSTabViewController {
 final class SettingsWindowController: NSObject, NSWindowDelegate {
     /// Where the window's frame is stored. The app passes it; a test leaves it out so nothing is written to defaults.
     static let autosaveName = "OpenSnap.Settings"
+    /// The window class a new controller builds. The app's isolated tests substitute a subclass that never reaches the screen.
+    static var windowClass: SettingsWindow.Type = SettingsWindow.self
     private static let icons: [(String, FAIcon)] = [("General", .toolbox), ("Drawing", .paintbrush), ("Capture", .crosshairs), ("Upload", .upload)]
 
     let window: SettingsWindow
@@ -537,7 +543,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
          frameAutosaveName: String? = nil) {
         stateProvider = state
         model = SettingsPreferencesModel(state: state())
-        window = SettingsWindow(contentRect: NSRect(x: 0, y: 0, width: SettingsLayout.contentWidth, height: 300),
+        window = Self.windowClass.init(contentRect: NSRect(x: 0, y: 0, width: SettingsLayout.contentWidth, height: 300),
                                 styleMask: [.titled, .closable], backing: .buffered, defer: false)
         general = GeneralSettingsTab(model: model); drawing = DrawingSettingsTab(model: model)
         capture = CaptureSettingsTab(defaults: defaults, hotkeys: hotkeys)
