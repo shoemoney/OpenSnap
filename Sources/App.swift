@@ -54,7 +54,7 @@ final class DragExportView: NSView, NSDraggingSource, NSFilePromiseProviderDeleg
         }
         if let overview { overview.draw(in: bounds.insetBy(dx: 4, dy: 4), from: .zero, operation: .sourceOver, fraction: 0.2) }
         let title = "Drag Me"
-        let attrs: [NSAttributedString.Key: Any] = [.font: NSFont.boldSystemFont(ofSize: 20), .foregroundColor: NSColor.labelColor]
+        let attrs = DesignTokens.Typography.attributes(.bodyStrong)
         let size = title.size(withAttributes: attrs)
         title.draw(at: NSPoint(x: (bounds.width-size.width)/2, y: (bounds.height-size.height)/2), withAttributes: attrs)
     }
@@ -201,7 +201,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     private var colorHoverDismissal: DispatchWorkItem?
     var presetColorButtons: [BezelColorButton] = []
     var sizeUndoGrouping = false
-    var customDrawingColor = NSColor(calibratedRed: 0, green: 1, blue: 1, alpha: 1)
+    var customDrawingColor = NSColor(calibratedRed: 0, green: 1, blue: 1, alpha: 1) // token-exempt: drawing colour data, not chrome
     let zoomControl = ZoomPopUpButton(frame: .zero, pullsDown: false)
     let dragFormatToggle = NSSegmentedControl(labels: FormatToggle.titles, trackingMode: .selectOne, target: nil, action: nil)
     let dragOriginalControl = NSButton(checkboxWithTitle: "Export at original size", target: nil, action: nil)
@@ -619,8 +619,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         sender.reply(toOpenOrPrint: .success)
     }
 
-    func label(_ text: String) -> NSTextField { let f = NSTextField(labelWithString: text); f.font = .systemFont(ofSize: 18); return f }
-    func button(_ title: String, _ action: Selector) -> NSButton { let b = OriginalActionButton(title: title, target: self, action: action); b.font = .systemFont(ofSize: 18); return b }
+    func label(_ text: String) -> NSTextField { let f = NSTextField(labelWithString: text); f.font = DesignTokens.Typography.font(.body); return f }
+    func button(_ title: String, _ action: Selector) -> NSButton { let b = OriginalActionButton(title: title, target: self, action: action); b.font = DesignTokens.Typography.font(.body); return b }
     /// A live copy of the main-menu item for `action`, so a popup never carries wording of its own.
     func copiedMainMenuItem(_ action: Selector) -> NSMenuItem? {
         func find(_ menu: NSMenu) -> NSMenuItem? {
@@ -639,7 +639,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     /// The Toolbox is a subset of the main menu by action: every row is a copy of the menu-bar item, so titles, keys and symbols match.
     func bezelToolbox() -> NSPopUpButton {
         let control = NSPopUpButton(frame: .zero, pullsDown: true)
-        control.font = .systemFont(ofSize: 20)
+        control.font = DesignTokens.Typography.font(.body)
         let choices = NSMenu(title: "Toolbox")
         choices.addItem(withTitle: "Toolbox", action: nil, keyEquivalent: "")
         let groups: [[Selector]] = [
@@ -869,7 +869,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         paletteButton.image = NSImage(size: swatchSize, flipped: false) { rect in
             NSColor.white.setFill(); rect.fill()
             indicatorColor.setFill(); rect.insetBy(dx: 1, dy: 1).fill()
-            NSColor.darkGray.setStroke(); NSBezierPath(rect: rect.insetBy(dx: 0.5, dy: 0.5)).stroke(); return true
+            DesignTokens.Palette.SwatchOutline.rest.setStroke(); NSBezierPath(rect: rect.insetBy(dx: 0.5, dy: 0.5)).stroke(); return true
         }
         let chosen = SketchColor(canvas.strokeColor)
         for button in presetColorButtons {
@@ -922,14 +922,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         presetColorButtons.removeAll()
         for (index, preset) in OriginalDrawingControls.presets.enumerated() {
             let button = BezelColorButton(frame: NSRect(x: CGFloat(12+(index%5)*44), y: CGFloat(68-(index/5)*34), width: 42, height: 32))
-            button.title = ""; button.isBordered = false; button.font = .systemFont(ofSize: 18)
+            button.title = ""; button.isBordered = false; button.font = DesignTokens.Typography.font(.body)
             button.drawingColor = preset.swatchColor; button.tag = preset.tag
             button.target = self; button.action = #selector(choosePresetColor(_:))
             button.setAccessibilityLabel(preset.name); button.toolTip = preset.name + "; Shift changes the background"
             trackHint(button, owner: "color-" + String(preset.tag)) { OriginalHintMessages.hover(actionTag: preset.tag) }
             presetColorButtons.append(button); view.addSubview(button)
         }
-        let custom = button("Custom color…", #selector(chooseCustomColor(_:))); custom.font = .systemFont(ofSize: 20)
+        let custom = button("Custom color…", #selector(chooseCustomColor(_:))); custom.font = DesignTokens.Typography.font(.body)
         custom.frame = NSRect(x: 12, y: 2, width: 222, height: 30); custom.tag = 110; view.addSubview(custom)
         let controller = NSViewController(); controller.view = view
         let popover = NSPopover(); popover.behavior = .transient; popover.contentViewController = controller
@@ -974,7 +974,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         }
         if let custom = OriginalDrawingControls.legacyColor(drawingDefaults.values["customColor"], alpha: drawingDefaults.values["customColorAlpha"]) {
             let rgba = SketchColor(custom)
-            customDrawingColor = NSColor(calibratedRed: rgba.red, green: rgba.green, blue: rgba.blue, alpha: rgba.alpha)
+            customDrawingColor = NSColor(calibratedRed: rgba.red, green: rgba.green, blue: rgba.blue, alpha: rgba.alpha) // token-exempt: drawing colour data, not chrome
         }
         if let size = Double(drawingDefaults.values["brushSize"] ?? ""), size.isFinite {
             canvas.strokeWidth = CGFloat(OriginalDrawingControls.size(size, continuous: true))
@@ -1855,7 +1855,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmed.isEmpty { nameField.stringValue = trimmed }
     }
-    func prompt(_ title: String, text: String, value: String) -> String? { let a = NSAlert(); a.messageText = title; a.informativeText = text; let field = NSTextField(string: value); field.font = .systemFont(ofSize: 20); field.frame = NSRect(x: 0,y: 0,width: 340,height: 32); a.accessoryView = field; a.addButton(withTitle: "OK"); a.addButton(withTitle: "Cancel"); return a.runModal() == .alertFirstButtonReturn ? field.stringValue : nil }
+    func prompt(_ title: String, text: String, value: String) -> String? { let a = NSAlert(); a.messageText = title; a.informativeText = text; let field = NSTextField(string: value); field.font = DesignTokens.Typography.font(.body); field.frame = NSRect(x: 0,y: 0,width: 340,height: 32); a.accessoryView = field; a.addButton(withTitle: "OK"); a.addButton(withTitle: "Cancel"); return a.runModal() == .alertFirstButtonReturn ? field.stringValue : nil }
     @objc func chooseFont() {
         guard !terminationStarted else { return }
         if let panel = fontPanel, panel.isVisible { panel.orderOut(nil); fontPanelRefreshTimer?.invalidate(); return }
@@ -1908,7 +1908,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         guard fontPanel != nil, !applyingFontChange else { return }
         let selected = canvas.selectedTextElements
         let first = selected.first
-        let source = NSFont(name: first?.fontName ?? canvas.fontName, size: first?.fontSize ?? canvas.fontSize) ?? .boldSystemFont(ofSize: 24)
+        let source = NSFont(name: first?.fontName ?? canvas.fontName, size: first?.fontSize ?? canvas.fontSize) ?? .boldSystemFont(ofSize: 24) // token-exempt: annotation text fallback face (document content)
         // Original displayFontScale is output/logical height; editor zoom is a
         // view transform and must not change the point size in the Fonts panel.
         let scale = canvas.outputSize.height / canvas.canvasSize.height
@@ -1931,7 +1931,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             return manager.convert(changed, toSize: changed.pointSize / scale)
         }
         let first = canvas.selectedTextElements.first
-        let source = NSFont(name: first?.fontName ?? canvas.fontName, size: first?.fontSize ?? canvas.fontSize) ?? .boldSystemFont(ofSize: 24)
+        let source = NSFont(name: first?.fontName ?? canvas.fontName, size: first?.fontSize ?? canvas.fontSize) ?? .boldSystemFont(ofSize: 24) // token-exempt: annotation text fallback face (document content)
         guard let future = convert(source), future.pointSize.isFinite, future.pointSize > 0, future.pointSize <= 4096,
               future.pointSize >= 18 || future.pointSize == source.pointSize else { return }
         applyingFontChange = true

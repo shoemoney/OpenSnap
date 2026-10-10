@@ -6,7 +6,7 @@ Scans Sources/*.swift for
   color   NSColor(white:, .darkGray, NSColor(calibratedRed:, NSColor(deviceRed:
   radius  cornerRadius = <digit>
 Default mode prints counts per file and per kind and exits 0 (the sweeps that remove the literals land later).
---strict exits 1 on any hit. --self-test proves --strict can fail. --sources DIR scans DIR instead of Sources/.
+A line ending in `// token-exempt: <reason>` is skipped. --strict exits 1 on any hit. --self-test proves --strict can fail. --sources DIR scans DIR instead of Sources/.
 """
 from pathlib import Path
 import argparse, re, subprocess, sys, tempfile
@@ -21,6 +21,9 @@ PATTERNS = {
 COMPILED = {kind: [re.compile(p) for p in patterns] for kind, patterns in PATTERNS.items()}
 
 # Files where a literal is correct, with the reason. Keep this explicit: a new entry needs a reason.
+# A single line is exempt when it carries `token-exempt: <reason>` (document or annotation colour data inside a chrome file).
+LINE_EXEMPT = "token-exempt:"
+
 EXEMPT = {
     "DesignTokens.swift": "the one place the literals are defined",
     "Canvas.swift": "annotation drawing: sizes and colours are document data, not chrome",
@@ -39,7 +42,7 @@ def scan(sources):
         if path.name in EXEMPT:
             continue
         for number, line in enumerate(path.read_text(errors="replace").splitlines(), 1):
-            if line.lstrip().startswith("//"):
+            if line.lstrip().startswith("//") or LINE_EXEMPT in line:
                 continue
             for kind, patterns in COMPILED.items():
                 if any(p.search(line) for p in patterns):
@@ -67,6 +70,7 @@ def self_test():
         ("colour literal", "Bad.swift", "let c = NSColor(white: 0.5, alpha: 1)\n", 1),
         ("radius literal", "Bad.swift", "layer.cornerRadius = 8\n", 1),
         ("token use", "Good.swift", "let f = DesignTokens.Typography.font(.body)\n// ofSize: 12 in a comment\n", 0),
+        ("exempt line", "Good.swift", "let c = NSColor(calibratedRed: 0, green: 1, blue: 1, alpha: 1) // token-exempt: drawing colour data\n", 0),
         ("exempt file", "Canvas.swift", "let f = NSFont.systemFont(ofSize: 20)\n", 0),
     ]
     failed = False

@@ -164,21 +164,21 @@ final class ExportAccessory: NSObject {
 
     private func buildContent() -> NSView {
         let content = NSView(frame: NSRect(x: 0, y: 0, width: 600, height: 380))
-        let heading = label("Export options", size: 24, weight: .semibold)
+        let heading = label("Export options", style: .title)
         let popup = NSPopUpButton(frame: .zero, pullsDown: false)
-        popup.font = .systemFont(ofSize: 20)
+        popup.font = DesignTokens.Typography.font(.body)
         popup.addItems(withTitles: ExportAccessoryFormat.allCases.map(\.title))
         for (item, format) in zip(popup.itemArray, ExportAccessoryFormat.allCases) {
             item.representedObject = format.rawValue
             item.attributedTitle = NSAttributedString(string: format.title,
-                attributes: [.font: NSFont.systemFont(ofSize: 20)])
+                attributes: [.font: DesignTokens.Typography.font(.body)])
         }
         popup.target = self
         popup.action = #selector(selectFormat(_:))
         popup.setAccessibilityLabel("Export format")
         formatPopup = popup
         let formatLabel = NSTextField(labelWithString: "Format")
-        formatLabel.font = .systemFont(ofSize: 20)
+        formatLabel.font = DesignTokens.Typography.font(.body)
         formatLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
         let formatRow = NSStackView(views: [formatLabel, popup])
         formatRow.orientation = .horizontal
@@ -204,7 +204,7 @@ final class ExportAccessory: NSObject {
 
         let checkbox = NSButton(checkboxWithTitle: "Export at original size", target: self,
                                 action: #selector(selectOriginalSize(_:)))
-        checkbox.font = .systemFont(ofSize: 20)
+        checkbox.font = DesignTokens.Typography.font(.body)
         originalSizeCheckbox = checkbox
         let dimensions = label(preview.dimensionsLabel)
         dimensionsLabel = dimensions
@@ -241,10 +241,9 @@ final class ExportAccessory: NSObject {
         return content
     }
 
-    private func label(_ text: String, size: CGFloat = 20,
-                       weight: NSFont.Weight = .regular) -> NSTextField {
+    private func label(_ text: String, style: DesignTokens.Typography.Style = .body) -> NSTextField {
         let label = NSTextField(wrappingLabelWithString: text)
-        label.font = .systemFont(ofSize: size, weight: weight)
+        label.font = DesignTokens.Typography.font(style)
         return label
     }
 

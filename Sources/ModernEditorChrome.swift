@@ -285,8 +285,8 @@ final class ModernEditorChrome: NSView {
         return surface
     }
 
-    private func readable(_ control: NSControl, _ size: CGFloat) {
-        if (control.font?.pointSize ?? 0) < 18 { control.font = .systemFont(ofSize: size) }
+    private func readable(_ control: NSControl) {
+        control.font = DesignTokens.Typography.floored(control.font)
     }
 
     private func build(actions: Actions) {
@@ -295,8 +295,7 @@ final class ModernEditorChrome: NSView {
         let headerTop: CGFloat = 4, rowHeight: CGFloat = 44, footerBottom: CGFloat = 8
 
         for control in [controls.dragFormatControl, controls.toolbox, controls.paletteButton] as [NSControl] { GlassChrome.useExtraLarge(control) }
-        for control in [controls.dragFormatControl, controls.toolbox] as [NSControl] { readable(control, 20) }
-        for control in [controls.status, controls.zoomControl, controls.dragOriginalControl, controls.widthControl] as [NSControl] { readable(control, 18) }
+        for control in [controls.dragFormatControl, controls.toolbox, controls.status, controls.zoomControl, controls.dragOriginalControl, controls.widthControl] as [NSControl] { readable(control) }
         // Color shows only its swatch: the title stays on the control (and its accessibility label) but is never drawn.
         controls.paletteButton.isBordered = false
         controls.paletteButton.imagePosition = .imageOnly

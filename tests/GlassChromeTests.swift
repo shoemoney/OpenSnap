@@ -672,7 +672,7 @@ private enum GlassChromeTests {
         expect(stack?.arrangedSubviews.count == 2 && stack?.spacing == GlassChrome.Metrics.surfaceSpacing && stack?.orientation == .horizontal, "Group stacks its surfaces")
         let metrics = GlassChrome.Metrics.self
         expect(metrics.toolButton == NSSize(width: 44, height: 40) && metrics.commandHeight == 36 && metrics.headerHeight == 44 && metrics.groupGap == 12, "Metrics match the plan with Apple's 36 pt Extra Large commands and 44 pt tool tiles")
-        expect(metrics.iconPointSize == 22 && metrics.labelPointSize == 20 && metrics.surfaceSpacing == 6 && metrics.containerSpacing == 2, "Spacing and type metrics match the plan")
+        expect(metrics.iconPointSize == 22 && metrics.surfaceSpacing == 6 && metrics.containerSpacing == 2, "Spacing and type metrics match the plan")
     }
 
     // MARK: ModernEditorChrome

@@ -33,7 +33,7 @@ final class TextStyleForm: NSView {
         overflow.autohidesScrollers = true; overflow.scrollerStyle = .overlay
         overflow.documentView = content; addSubview(overflow)
         for control in [outline, shadowControl, defaults] {
-            control.font = .systemFont(ofSize: 20)
+            control.font = DesignTokens.Typography.font(.body)
             control.setContentCompressionResistancePriority(.required, for: .horizontal)
             control.setContentCompressionResistancePriority(.required, for: .vertical)
         }
@@ -183,8 +183,8 @@ final class TextStyleForm: NSView {
         if browserSupportsRowHeight(browser) {
             browser.rowHeight = max(32, browser.rowHeight)
         }
-        if let prototype = browser.cellPrototype as? NSCell, prototype.font != .systemFont(ofSize: 20) {
-            prototype.font = .systemFont(ofSize: 20)
+        if let prototype = browser.cellPrototype as? NSCell, prototype.font != DesignTokens.Typography.font(.body) {
+            prototype.font = DesignTokens.Typography.font(.body)
         }
     }
 
@@ -208,8 +208,8 @@ final class TextStyleForm: NSView {
             if let table = view as? NSTableView {
                 table.rowHeight = max(32, table.rowHeight)
                 for column in table.tableColumns {
-                    column.headerCell.font = .systemFont(ofSize: 20)
-                    (column.dataCell as? NSCell)?.font = .systemFont(ofSize: 20)
+                    column.headerCell.font = DesignTokens.Typography.font(.body)
+                    (column.dataCell as? NSCell)?.font = DesignTokens.Typography.font(.body)
                 }
             }
             for child in view.subviews { visit(child) }
@@ -223,12 +223,12 @@ final class TextStyleForm: NSView {
                     // Keep attributed menu styling and native flexible sizing.
                     // sizeToFit here used to overwrite AppKit's toolbar allocation
                     // and pin both minSize and maxSize to the same small width.
-                    popup.menu?.font = .systemFont(ofSize: 20)
+                    popup.menu?.font = DesignTokens.Typography.font(.body)
                     for choice in popup.itemArray {
                         let title = NSMutableAttributedString(attributedString: choice.attributedTitle ?? NSAttributedString(string: choice.title))
                         var updates: [(NSRange, NSFont)] = []
                         title.enumerateAttribute(.font, in: NSRange(location: 0, length: title.length)) { value, range, _ in
-                            let font = value as? NSFont ?? popup.font ?? .systemFont(ofSize: 20)
+                            let font = value as? NSFont ?? popup.font ?? DesignTokens.Typography.font(.body)
                             if value == nil || font.pointSize < 20 {
                                 updates.append((range, NSFontManager.shared.convert(font, toSize: max(20, font.pointSize))))
                             }

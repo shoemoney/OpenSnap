@@ -98,7 +98,7 @@ enum FontAwesomeFont {
         var error: Unmanaged<CFError>?
         let ok = CTFontManagerRegisterFontsForURL(url as CFURL, .process, &error)
         error?.release()
-        guard NSFont(name: family.postScriptName, size: 12) != nil else {
+        guard NSFont(name: family.postScriptName, size: DesignTokens.Typography.iconInline) != nil else {
             if ok { CTFontManagerUnregisterFontsForURL(url as CFURL, .process, nil) }
             return false
         }
