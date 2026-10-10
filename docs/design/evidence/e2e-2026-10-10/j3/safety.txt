@@ -1,0 +1,104 @@
+### run base-a (/tmp/j3/base-a)
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+bundle id        com.shoemoney.opensnap.eyedump-54245 (real id com.shoemoney.opensnap is never launched)
+display options  none (simulated inside the throwaway copy only; no system setting is written)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-54245) dropped BEFORE the final compare; the compare below would show any damage cleanup did
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+### run base-sizes (/tmp/j3/base-sizes)
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+bundle id        com.shoemoney.opensnap.eyedump-40720 (real id com.shoemoney.opensnap is never launched)
+display options  none (simulated inside the throwaway copy only; no system setting is written)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-40720) dropped BEFORE the final compare; the compare below would show any damage cleanup did
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+### run rt (/tmp/j3/rt)
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+bundle id        com.shoemoney.opensnap.eyedump-41804 (real id com.shoemoney.opensnap is never launched)
+display options  reduceTransparency (simulated inside the throwaway copy only; no system setting is written)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-41804) dropped BEFORE the final compare; the compare below would show any damage cleanup did
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+### run ic (/tmp/j3/ic)
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+bundle id        com.shoemoney.opensnap.eyedump-65325 (real id com.shoemoney.opensnap is never launched)
+display options  increaseContrast (simulated inside the throwaway copy only; no system setting is written)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-65325) dropped BEFORE the final compare; the compare below would show any damage cleanup did
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+### run dwc (/tmp/j3/dwc)
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+bundle id        com.shoemoney.opensnap.eyedump-10523 (real id com.shoemoney.opensnap is never launched)
+display options  differentiateWithoutColor (simulated inside the throwaway copy only; no system setting is written)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-10523) dropped BEFORE the final compare; the compare below would show any damage cleanup did
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT STORES CHANGED
+### run rm (/tmp/j3/rm)
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+bundle id        com.shoemoney.opensnap.eyedump-44381 (real id com.shoemoney.opensnap is never launched)
+display options  reduceMotion (simulated inside the throwaway copy only; no system setting is written)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-44381) dropped BEFORE the final compare; the compare below would show any damage cleanup did
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+### run combo-rt-ic (/tmp/j3/combo-rt-ic)
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+bundle id        com.shoemoney.opensnap.eyedump-48903 (real id com.shoemoney.opensnap is never launched)
+display options  reduceTransparency,increaseContrast (simulated inside the throwaway copy only; no system setting is written)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-48903) dropped BEFORE the final compare; the compare below would show any damage cleanup did
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+### run combo-all (/tmp/j3/combo-all)
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+bundle id        com.shoemoney.opensnap.eyedump-60073 (real id com.shoemoney.opensnap is never launched)
+display options  reduceTransparency,increaseContrast,differentiateWithoutColor,reduceMotion (simulated inside the throwaway copy only; no system setting is written)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-60073) dropped BEFORE the final compare; the compare below would show any damage cleanup did
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+### run icons-sf (/tmp/j3/icons-sf)
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+bundle id        com.shoemoney.opensnap.eyedump-68020 (real id com.shoemoney.opensnap is never launched)
+display options  none (simulated inside the throwaway copy only; no system setting is written)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-68020) dropped BEFORE the final compare; the compare below would show any damage cleanup did
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+### run rm-overlays (/tmp/j3/rm-overlays2)
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+bundle id        com.shoemoney.opensnap.eyedump-78361 (real id com.shoemoney.opensnap is never launched)
+display options  reduceMotion (simulated inside the throwaway copy only; no system setting is written)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-78361) dropped BEFORE the final compare; the compare below would show any damage cleanup did
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+### run ic-more (/tmp/j3/ic-more2)
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+bundle id        com.shoemoney.opensnap.eyedump-62036 (real id com.shoemoney.opensnap is never launched)
+display options  increaseContrast (simulated inside the throwaway copy only; no system setting is written)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-62036) dropped BEFORE the final compare; the compare below would show any damage cleanup did
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT STORES CHANGED
+### run rt-more (/tmp/j3/rt-more)
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+bundle id        com.shoemoney.opensnap.eyedump-78879 (real id com.shoemoney.opensnap is never launched)
+display options  reduceTransparency (simulated inside the throwaway copy only; no system setting is written)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-78879) dropped BEFORE the final compare; the compare below would show any damage cleanup did
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+### run dwc-more (/tmp/j3/dwc-more)
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+bundle id        com.shoemoney.opensnap.eyedump-84991 (real id com.shoemoney.opensnap is never launched)
+display options  differentiateWithoutColor (simulated inside the throwaway copy only; no system setting is written)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-84991) dropped BEFORE the final compare; the compare below would show any damage cleanup did
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
