@@ -1126,7 +1126,7 @@ private enum GlassChromeTests {
             rig.target.hits.removeAll()
             button.performClick(nil)
             expect(rig.target.hits == [hit], "\(label): \(title) sends its action (\(rig.target.hits))")
-            expect((button as? GlassChromeButton)?.plate.isSelected == false, "\(label): clicking \(title) never leaves it selected")
+            expect(!button.plate.isSelected, "\(label): clicking \(title) never leaves it selected")
         }
         expect(chrome.shareButton.accessibilityLabel() == "Upload to destination" && chrome.shareButton.title.isEmpty && chrome.shareButton.imagePosition == .imageOnly,
                "\(label): the upload button is icon-only with an explicit label")
