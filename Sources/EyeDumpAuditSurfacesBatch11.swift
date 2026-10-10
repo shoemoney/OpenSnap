@@ -51,9 +51,10 @@ extension AuditRun {
         prepare("Audit 11 actual", ticked: false)
         let ownPixels = PixelSizeText.text(canvas.canvasSize)
         if auditResize(toWidth: 1600) {
-            let item = NSApp.mainMenu?.items.first { $0.title == "Image" }?.submenu?.items.first { $0.title == "Actual Size" }
+            let imageMenu = NSApp.mainMenu?.items.compactMap(\.submenu).first { $0.title == "Image" }
+            let item = imageMenu?.items.first { $0.title == "Actual Size" }
             let enabled = item.map { app.validateMenuItem($0) } ?? false
-            if let imageMenu = NSApp.mainMenu?.items.first(where: { $0.title == "Image" })?.submenu, let content = window.contentView {
+            if let imageMenu, let content = window.contentView {
                 captureTrackedMenu("S47", "image-menu-actual-size-enabled", surface: "menus",
                                    state: "Image menu open after a \(ownPixels) snap was resized to 1600 wide and is shown at \(percent()): Actual Size is enabled (\(enabled)) although the output equals the picture (R4-001)",
                                    refs: ["AppViewport.swift|var canToggleActualSize"],
