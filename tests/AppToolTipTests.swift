@@ -131,6 +131,18 @@ private enum AppToolTipTests {
         let size = tip.panel!.frame.size
         expect(size.width <= AppToolTip.maxWidth + 0.5 && size.height > 60, "Long text wraps at the 420 pt maximum width (\(size))")
         expect(tip.label!.frame.maxX <= size.width && tip.label!.frame.maxY <= size.height, "The wrapped text fits inside the plate")
+        func needed(_ field: NSTextField) -> CGFloat {
+            field.cell!.cellSize(forBounds: NSRect(x: 0, y: 0, width: field.frame.width, height: .greatestFiniteMagnitude)).height
+        }
+        expect(needed(tip.label!) <= tip.label!.frame.height + 0.5, "The label's frame is tall enough for every wrapped line (\(needed(tip.label!)) needed, \(tip.label!.frame.height) given)")
+        for sentence in ["Snap: drag an area or click a window; right-click or Control-click for Fullscreen", "Hover for original preset colors; hold Shift to change the canvas background",
+                         "Capture the area inside the frame; hold Shift for a six-second timer", "Upload and copy link · Right-click for destinations"] {
+            AppToolTip.setText(sentence, for: r.plain)
+            tip.show(for: r.plain)
+            expect(needed(tip.label!) <= tip.label!.frame.height + 0.5, "No wrapped line of '\(sentence.prefix(24))…' is clipped (\(needed(tip.label!)) needed, \(tip.label!.frame.height) given)")
+        }
+        AppToolTip.setText(long, for: r.plain)
+        tip.show(for: r.plain)
         let plain = tip.panel!.contentView
         expect(plain != nil && !(tip.panel!.canBecomeKey) && tip.panel!.ignoresMouseEvents && !tip.panel!.isOpaque, "The plate is a non-activating panel that ignores the mouse")
         expect(tip.panel!.styleMask.contains(.nonactivatingPanel) && tip.panel!.styleMask.contains(.borderless), "The plate is borderless and non-activating")

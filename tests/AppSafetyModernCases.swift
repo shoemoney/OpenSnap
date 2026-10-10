@@ -1437,6 +1437,11 @@ extension AppSafetyTests {
         }
         try expect(app.status.accessibilityHelp() == nil && (app.status.accessibilityValue() as? String) == AppToolTip.text(for: app.status),
                    "The status line speaks its full text as its value, so it is not repeated as help")
+        for view in [app.snapButton!, chrome.undoButton, app.widthControl] as [NSView] {
+            let anchor = AppToolTip.anchorRect(of: view, in: app.window)
+            try expect(anchor.width < 200 && anchor.height < 100 && app.window.frame.insetBy(dx: -1, dy: -1).contains(anchor),
+                       "The tooltip anchors on the control itself, not its window: \(view.accessibilityLabel() ?? "") \(anchor) in \(app.window.frame) (bounds \(view.bounds), visible \(view.visibleRect), window \(String(describing: view.window === app.window)))")
+        }
         // The plate itself: 20 pt, and the dynamic Size text follows the control.
         let tip = AppToolTip.shared
         tip.dismiss(); tip.present = { _ in }; tip.reduceMotion = { true }

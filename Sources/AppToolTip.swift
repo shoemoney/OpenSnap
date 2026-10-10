@@ -33,6 +33,8 @@ final class AppToolTip: NSObject {
     /// How the plate reaches the screen. Tests replace it so no panel is ever ordered onto the desktop.
     var present: (NSPanel) -> Void = { $0.orderFrontRegardless() }
     var delay: TimeInterval = AppToolTip.hoverDelay
+    /// The screenshot harness pins a plate for a capture while it juggles window focus; nothing else turns this off.
+    var dismissesOnWindowChanges = true
 
     // MARK: State
     private(set) var panel: NSPanel?
@@ -167,7 +169,9 @@ final class AppToolTip: NSObject {
 
     // MARK: Geometry
     static func anchorRect(of view: NSView, in window: NSWindow) -> NSRect {
-        let local = view.visibleRect.isEmpty ? view.bounds : view.visibleRect
+        // visibleRect can run far past a control's own bounds inside glass containers, so it only ever narrows the bounds.
+        let clipped = view.bounds.intersection(view.visibleRect)
+        let local = clipped.isNull || clipped.isEmpty ? view.bounds : clipped
         return window.convertToScreen(view.convert(local, to: nil))
     }
 
@@ -217,9 +221,14 @@ final class AppToolTip: NSObject {
         guard let label, let plate = panel else { return .zero }
         label.stringValue = text
         let available = Self.maxWidth - 2 * Self.padding.width
-        let bounds = NSAttributedString(string: text, attributes: DesignTokens.Typography.attributes(.body))
-            .boundingRect(with: NSSize(width: available, height: .greatestFiniteMagnitude), options: [.usesLineFragmentOrigin, .usesFontLeading])
-        let textSize = NSSize(width: min(available, ceil(bounds.width) + 2), height: ceil(bounds.height))
+        // Measured with the label's own cell, so the frame always fits what the field really wraps to.
+        func measure(_ width: CGFloat) -> NSSize {
+            label.cell?.cellSize(forBounds: NSRect(x: 0, y: 0, width: width, height: .greatestFiniteMagnitude)) ?? .zero
+        }
+        // Narrow to the widest wrapped line, then measure again at that width: a tighter column can wrap onto one more line.
+        let first = measure(available)
+        let width = min(available, ceil(first.width) + 2)
+        let textSize = NSSize(width: width, height: ceil(max(first.height, measure(width).height)))
         let size = NSSize(width: textSize.width + 2 * Self.padding.width, height: textSize.height + 2 * Self.padding.height)
         label.frame = NSRect(origin: NSPoint(x: Self.padding.width, y: Self.padding.height), size: textSize)
         plate.setContentSize(size)
@@ -237,7 +246,7 @@ final class AppToolTip: NSObject {
         for name in [NSWindow.didResignKeyNotification, NSWindow.didResignMainNotification, NSWindow.willCloseNotification,
                      NSWindow.didMiniaturizeNotification, NSApplication.didResignActiveNotification] {
             observers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
-                MainActor.assumeIsolated { self?.dismiss(lockingView: true) }
+                MainActor.assumeIsolated { if self?.dismissesOnWindowChanges == true { self?.dismiss(lockingView: true) } }
             })
         }
     }
