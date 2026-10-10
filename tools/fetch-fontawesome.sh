@@ -1,6 +1,7 @@
 #!/bin/sh
 # Optional: fetch Font Awesome Pro and subset it to the glyphs Sources/FontAwesomeIcons.swift uses.
-# Needs your own Pro token: $FONTAWESOME_TOKEN, else the aigate "fontawesome" key.
+# Needs your own Pro token: $FONTAWESOME_TOKEN, else the aigate "fontawesome" key, read through the env file named by
+# $OPENSNAP_FA_TOKEN_FILE (it must define AIGATE_URL and AIGATE_TOKEN; there is no default path).
 # Output goes to the git-ignored build/fonts; nothing from Font Awesome Pro is ever committed.
 # Exit 3 means no token was available. Requires npm, woff2_decompress and fontTools (pyftsubset).
 set -eu
@@ -11,8 +12,8 @@ FONTS="$ROOT/build/fonts"
 
 fail() { echo "fetch-fontawesome: $1" >&2; exit "${2:-1}"; }
 aigate_token() {
-    [ -r "$HOME/.claude/aigate/env" ] || return 1
-    set -a; . "$HOME/.claude/aigate/env"; set +a
+    [ -n "${OPENSNAP_FA_TOKEN_FILE:-}" ] && [ -r "$OPENSNAP_FA_TOKEN_FILE" ] || return 1
+    set -a; . "$OPENSNAP_FA_TOKEN_FILE"; set +a
     # The aigate credential travels through curl's stdin config so it never lands in argv.
     printf 'header = "Authorization: Bearer %s"\n' "${AIGATE_TOKEN:-}" |
         curl -fsS -m 20 -K - "${AIGATE_URL:-}/api/keys/fontawesome" |

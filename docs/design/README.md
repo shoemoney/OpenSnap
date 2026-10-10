@@ -6,19 +6,19 @@ Open [audit-overview.html](audit-overview.html) for the self-contained interacti
 
 ## Files
 
-| File | Owner | Model | Purpose |
-|---|---|---|---|
-| `README.md` | docs child C (round 2) | `claude-haiku-5-5` | This index: files, evidence key, screenshot location, rerun commands, safety proof, coverage gaps, counts. |
-| `roadmap.md` | docs child C (round 2) | `claude-haiku-5-5` | Summary, drift, owner decisions, findings, milestones, lane and file ownership, estimates, gates, risks, outward-facing steps, source inconsistencies. |
-| `todo-checklist.md` | docs child C (round 2) | `claude-haiku-5-5` | One section per todo (36 todos, OSN-001 to OSN-072 as numbered in `visual-audit.md` section 9), in milestone order: main state, substeps, files, prerequisites, estimates, acceptance, visual checks with BEFORE stems, and tests. |
-| `backlog.json` | docs child C (round 2), implementation update | `claude-haiku-5-5` | The same backlog as JSON: `meta`, `decisions` (10), `milestones` (8), `todos` (36), `findings` (29). Each todo has a `status`, a `mainState` and an `implementation` block at `658a16f`. Each decision has a `resolution`. |
-| `progress.md` | implementation docs writer | `claude-haiku-5-5` | Implementation progress at `284f028`: baseline and merge map (18 merges), E2E audit (journeys, fix batches, finding dispositions, coverage, gaps), todo to commit to test to evidence table, AWS live validation, OS-owned limitations, open items and gaps. |
-| `visual-audit.md` | orchestrator | `claude-opus-5-5` | Source, read-only here. FINAL audit: summary, drift (section 0), coverage (section 5), findings VF-01 to VF-29 (section 6, with status at `dc1eb26` in 6.0), reconciliation (section 7), owner layout (section 8), backlog (section 9). |
-| `technical-spec.md` | source and spec child B | `claude-sonnet-5-5` | Source, read-only here. Decisions Q1 to Q5 (section 0), implementation specs T1 to T15, file ownership map (section O). |
-| `source-inventory.md` | source and spec child B | `claude-sonnet-5-5` | Source, read-only here. File and line inventory at `4b2ae0f`. |
-| `user-feedback.md` | root (owner) | not applicable | Source, read-only here. The owner's 10:24 CDT layout request and its acceptance checks. |
-| `evidence/source-font-sizes.json` | source and spec child B | `claude-sonnet-5-5` | Source, read-only here. Font sizes by file and line. |
-| `evidence/2026-10-09/` | evidence child A | `claude-sonnet-5-5` | Captures, metrics, AX dumps, menus, `manifest.json`, `captures.md`, `gaps.md`, `layout-width-budget.*`, `safety.txt`. See below. |
+| File | Owner | Purpose |
+|---|---|---|
+| `README.md` | docs child C (round 2) | This index: files, evidence key, screenshot location, rerun commands, safety proof, coverage gaps, counts. |
+| `roadmap.md` | docs child C (round 2) | Summary, drift, owner decisions, findings, milestones, lane and file ownership, estimates, gates, risks, outward-facing steps, source inconsistencies. |
+| `todo-checklist.md` | docs child C (round 2) | One section per todo (36 todos, OSN-001 to OSN-072 as numbered in `visual-audit.md` section 9), in milestone order: main state, substeps, files, prerequisites, estimates, acceptance, visual checks with BEFORE stems, and tests. |
+| `backlog.json` | docs child C (round 2), implementation update | The same backlog as JSON: `meta`, `decisions` (10), `milestones` (8), `todos` (36), `findings` (29). Each todo has a `status`, a `mainState` and an `implementation` block at `658a16f`. Each decision has a `resolution`. |
+| `progress.md` | implementation docs writer | Implementation progress at `284f028`: baseline and merge map (18 merges), E2E audit (journeys, fix batches, finding dispositions, coverage, gaps), todo to commit to test to evidence table, AWS live validation, OS-owned limitations, open items and gaps. |
+| `visual-audit.md` | orchestrator | Source, read-only here. FINAL audit: summary, drift (section 0), coverage (section 5), findings VF-01 to VF-29 (section 6, with status at `dc1eb26` in 6.0), reconciliation (section 7), owner layout (section 8), backlog (section 9). |
+| `technical-spec.md` | source and spec child B | Source, read-only here. Decisions Q1 to Q5 (section 0), implementation specs T1 to T15, file ownership map (section O). |
+| `source-inventory.md` | source and spec child B | Source, read-only here. File and line inventory at `4b2ae0f`. |
+| `user-feedback.md` | root (owner) | Source, read-only here. The owner's 10:24 CDT layout request and its acceptance checks. |
+| `evidence/source-font-sizes.json` | source and spec child B | Source, read-only here. Font sizes by file and line. |
+| `evidence/2026-10-09/` | evidence child A | Captures, metrics, AX dumps, menus, `manifest.json`, `captures.md`, `gaps.md`, `layout-width-budget.*`, `safety.txt`. See below. |
 
 ## Evidence classes
 

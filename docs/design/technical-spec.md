@@ -21,8 +21,8 @@ Owner decisions of 2026-10-09 (declassic-plan §4) override its defaults: **Open
 migration-only legacy reader, **silent + minimal** (no sounds, no sound pref, drawn countdown digits, no welcome doc, own minimal
 cursor/menu-bar drawings), copy-never-move migration, no history rewrite, repo rename later.
 
-**Estimate unit.** "d" = one Sonnet implementer-day at the pace assumed in `declassic-plan.md §Sizing` (WP2 ≈ 1.5 d). Each estimate
-assumes: tests are written with the change, Opus review is separate, and the Classic branch is already gone (otherwise add 30–50 %
+**Estimate unit.** "d" = one implementer-day at the pace assumed in `declassic-plan.md §Sizing` (WP2 ≈ 1.5 d). Each estimate
+assumes: tests are written with the change, independent review is separate, and the Classic branch is already gone (otherwise add 30–50 %
 for double edits).
 
 ---
@@ -85,7 +85,7 @@ true captions. Status line and drag-size label stay `caption`/`numeric`.
 
 **Files touched.** New: `DesignTokens.swift`. Edited (all mechanical): `App.swift`, `App+ModernChrome.swift`, `GlassChrome.swift`, `ModernEditorChrome.swift`, `ExportAccessory.swift`, `GeneralPreferencesForm.swift`, `GlobalHotkeys.swift`, `HistoryBrowser.swift`, `PhotoBrowser.swift`, `Publishing.swift`, `PublishingDestinationsView.swift`, `ResizePanel.swift`, `TextStyleForm.swift`, `OriginalHelpBevel.swift`, `OriginalCapturePicker.swift`, `OriginalCaptureMagnifier.swift`, `CanvasNavigator.swift`, `BezelDrawingControls.swift`, `Canvas.swift` (menus only), `tools/test.py`.
 
-**Ownership/parallelism.** `App.swift` is serial (also WP2/WP4/T3/T8/T9/T10/T12). Everything except `App.swift`, `Canvas.swift`, `GlassChrome.swift`, `ModernEditorChrome.swift` can be swept in parallel per file (one Sonnet per file group).
+**Ownership/parallelism.** `App.swift` is serial (also WP2/WP4/T3/T8/T9/T10/T12). Everything except `App.swift`, `Canvas.swift`, `GlassChrome.swift`, `ModernEditorChrome.swift` can be swept in parallel per file (one implementer per file group).
 
 **Prerequisites.** Land **after WP2** (the Classic branch holds 17 of the 124 rows and 26 of App.swift's constraint literals) and **after WP4** (string renames touch the same lines). `DesignTokens.swift` itself can land at any time.
 
@@ -696,7 +696,7 @@ Shortcuts are read from the live main menu by `ModernEditorChrome.menuShortcut(f
 
 **Collision hotspots and order.** `ModernEditorChrome.swift` and both Modern test files are hotspots (§O). T15 must be the **first** writer after the baseline: it fixes the final *contents and positions* of the bars, and T4 → T6 → T7 → T9 restyle them. WP1 touches this region in 3 lines (`classicArtworkName`, `:98,186,283`), WP2 only strips `@available`/Classic branches around it, WP3/WP5 do not touch these files. **Recommendation: land T15 BEFORE the declassic WPs.** It is owner-priority, almost entirely in Modern-only files, and `BezelSizeSlider`'s new style is additive (the `.classic` path and its Classic tests are untouched). *Conflict cost:* WP1/WP2 implementers rebase over one rewritten region (≈ 170 lines of `build()`, mostly orthogonal to their 3-line deletions) and ≈ 10 test regions; if T15 landed *after* WP2 the cost would be the reverse (T15 re-deriving against deleted Classic scaffolding, ≈ 30–50 % extra edits) and the owner's request would wait behind five foundation work packages. Do not interleave T15 with T3's token sweep on the same file in the same pass.
 
-**Estimate (d = one Sonnet implementer-day, Classic branch still present):** chrome rebuild 1.0 · pill + popover + AX 1.0 · tests (≈ 10 changed regions, 10 new) 1.0 · `App.swift`/metrics/status merge/zoom 0.5 · fit-up after the evidence agent's real widths 0.5 ⇒ **≈ 4 d** (3 d if the width oracle confirms the estimates first time). Opus review is separate. T4/T6 estimates shrink by ≈ 0.5 d each because the rail never needs restyling.
+**Estimate (d = one implementer-day, Classic branch still present):** chrome rebuild 1.0 · pill + popover + AX 1.0 · tests (≈ 10 changed regions, 10 new) 1.0 · `App.swift`/metrics/status merge/zoom 0.5 · fit-up after the evidence agent's real widths 0.5 ⇒ **≈ 4 d** (3 d if the width oracle confirms the estimates first time). Independent review is separate. T4/T6 estimates shrink by ≈ 0.5 d each because the rail never needs restyling.
 
 ### j. Visual acceptance checklist (captures to take after implementation; each capture records its `sourceSha`)
 

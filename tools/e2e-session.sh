@@ -1,6 +1,6 @@
 #!/bin/sh
 # Safe interactive session for real-click end-to-end testing. Launches ONE isolated COPY of the built app (throwaway bundle id,
-# throwaway home, support folder and TMPDIR) and leaves it running so a driver (the kimi-cu computer-use tools) can click it.
+# throwaway home, support folder and TMPDIR) and leaves it running so a computer-use driver can click it.
 # build/OpenSnap.app is never run in place and the real bundle id is never used, so the owner's defaults domain, support folder
 # and Keychain are never reachable. The real stores are hashed at start and compared again at stop, after all cleanup.
 #
@@ -331,6 +331,8 @@ cmd_start() {
     APP="$TMP/$(basename "$APP_SRC")"
     cp -R "$APP_SRC" "$APP"
     /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $THROWAWAY_ID" "$APP/Contents/Info.plist"
+    # Font Awesome Free vectors only: a Pro subset sitting in the source bundle never reaches the session copy.
+    rm -f "$APP/Contents/Resources"/FontAwesome*Pro*.ttf "$APP/Contents/Resources"/FontAwesome*Pro*.otf
     codesign --force --sign - "$APP" >/dev/null 2>&1 || true
     mkdir -p "$TMP/home" "$TMP/tmp" "$TMP/support"
     seed_fixtures "$TMP/support" "$SEED" "$AWS"
@@ -355,8 +357,10 @@ cmd_start() {
     } > "$SESSIONS/$THROWAWAY_ID.session"
     LAUNCHED=yes
     start_watchdog "$THROWAWAY_ID"
+    echo "icons: Font Awesome Free"
+    echo "warning          real-click sessions need real input: anything you type or click lands in the isolated app window, so keep personal text out of it"
     echo "session          $THROWAWAY_ID"
-    echo "pid              $APP_PID   (drive it with mcp__kimi-cu__get_app_state pid=$APP_PID)"
+    echo "pid              $APP_PID   (drive it with the computer-use driver: app state, click, type, by this pid)"
     echo "app copy         $APP (copied from $APP_SRC; the source bundle is never executed)"
     echo "isolation        env -i; HOME and CFFIXED_USER_HOME, TMPDIR and OPENSNAP_APP_SUPPORT all under $TMP; OPENSNAP_FIXTURE unset; no sandbox fence"
     echo "seed             $SEED"

@@ -386,7 +386,7 @@
       "title": "Visual acceptance + release readiness",
       "purpose": "Gates, full gallery, migration on a copy of real data, clean-clone release dry run",
       "entry": "M1–M6",
-      "exit": "Opus visual sign-off; all gates green",
+      "exit": "Independent visual sign-off; all gates green",
       "entryFrom": [
         "M1",
         "M2",
@@ -773,11 +773,11 @@
     },
     {
       "id": "OSN-013",
-      "title": "Rail-removal visual acceptance capture set and Opus review",
+      "title": "Rail-removal visual acceptance capture set and independent review",
       "priority": "P1",
       "milestone": "M1",
       "status": "done",
-      "mainState": "Done: 80 rail-removal captures at fef46c7 (light and dark, 980 to full screen, empty and populated, Frame, popovers, PNG and JPG) are in m1-rail, reviewed by Opus, merged in c53155c.",
+      "mainState": "Done: 80 rail-removal captures at fef46c7 (light and dark, 980 to full screen, empty and populated, Frame, popovers, PNG and JPG) are in m1-rail, independently reviewed, merged in c53155c.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -796,16 +796,16 @@
         "tools/eye-dump-audit.sh (run only)"
       ],
       "estimateDays": null,
-      "estimateNote": "Not costed in the spec. Opus review is separate.",
+      "estimateNote": "Not costed in the spec. Independent review is separate.",
       "userVisibleIssue": "The owner asked for evidence that the rail is gone and that the canvas uses the space. Without captures, that is an assertion.",
       "substeps": [
         "Run the harness (OSN-001) with the T15 matrix: light and dark x 980 (min height), 1024 x 740, 1280 x 800, 1440 x 900, full screen (1728 x 1117); empty and populated; Frame mode; selection and text editing; the Size popover open; PNG and JPG states.",
         "Record each capture's sourceSha. Measure the title-bar height and the popover translucency (R05, R06).",
-        "Opus reviews the set against T15 section j and the D1 to D10 targets in visual-audit section 3."
+        "The independent reviewer checks the set against T15 section j and the D1 to D10 targets in visual-audit section 3."
       ],
       "acceptance": [
         "Every capture in the T15 matrix exists in the manifest with sourceSha.",
-        "The Opus review is recorded with a pass or the specific failures."
+        "The independent review is recorded with a pass or the specific failures."
       ],
       "visualChecks": [
         "Before: S01-editor-empty-light@dc1eb26, S02-populated-light@dc1eb26, S11-width-980-light@dc1eb26, S11-width-1440-dark@dc1eb26, S11-size-fullscreen-dark@dc1eb26 and S12-frame-w980-light@dc1eb26.",
@@ -2774,11 +2774,11 @@
     },
     {
       "id": "OSN-071",
-      "title": "Visual acceptance run: full gallery, light and dark, widths, states, icon modes, and Opus sign-off",
+      "title": "Visual acceptance run: full gallery, light and dark, widths, states, icon modes, and independent visual sign-off",
       "priority": "P0",
       "milestone": "M7",
       "status": "pending",
-      "mainState": "Open: the full visual acceptance gallery and the Opus sign-off have not been run on the implemented surfaces.",
+      "mainState": "Open: the full visual acceptance gallery and the independent visual sign-off have not been run on the implemented surfaces.",
       "remainingWork": null,
       "openItems": [],
       "findings": [
@@ -2825,24 +2825,24 @@
         "tools/eye-dump-audit.sh (run only)"
       ],
       "estimateDays": null,
-      "estimateNote": "No figure in the spec. The gate set is OSN-070. Opus review is separate.",
+      "estimateNote": "No figure in the spec. The gate set is OSN-070. Independent review is separate.",
       "userVisibleIssue": "No end-user symptom. This is the evidence that the visible result matches the target.",
       "substeps": [
         "Run the harness (OSN-001) over the full gallery: light and dark x 980, 1024, 1280, 1440 and full screen x states x FA and SF icon modes.",
         "Include Frame mode, the popover open, populated and empty, selection, text editing, PNG and JPG states, and injected DisplayOptions (OSN-061).",
         "Record sourceSha on every manifest entry. Record any gap in gaps.md (non-Retina, multi-display and live desktop stay gaps).",
-        "Opus reviews every capture against T15 section j and D1 to D10 (visual-audit section 3). Record the sign-off."
+        "The independent reviewer checks every capture against T15 section j and D1 to D10 (visual-audit section 3). Record the sign-off."
       ],
       "acceptance": [
         "Each surface in the coverage matrix has at least one capture per mode.",
         "No unexplained gap in gaps.md.",
-        "Opus sign-off recorded.",
+        "Independent visual sign-off recorded.",
         "The walker (OSN-070) reports no text violations on the captured surfaces."
       ],
       "visualChecks": [
         "Before: S01-editor-empty-light@dc1eb26, S02-populated-light@dc1eb26, S11-width-980-light@dc1eb26, S11-width-1440-dark@dc1eb26, S11-size-fullscreen-dark@dc1eb26, S12-frame-w980-light@dc1eb26 and PROTO-w980-normal-light@dc1eb26 (rail-less mock, not product).",
         "Full matrix: light and dark x 980 (minimum height), 1024 x 740, 1280 x 800, 1440 and full screen x empty, populated, selection, text editing, Frame, popover open, PNG and JPG; in FA and SF icon modes.",
-        "Each capture is checked against D1 to D10 (visual-audit section 3). Opus sign-off is recorded."
+        "Each capture is checked against D1 to D10 (visual-audit section 3). The independent visual sign-off is recorded."
       ],
       "tests": [
         "Gate results from OSN-070 attached to the sign-off."

@@ -2,7 +2,7 @@
 
 Status of every todo at main `658a16f` (implementation baseline `bad6617`): **24 done, 2 verified, 1 not-a-bug, 5 in-progress, 4 pending.** Each todo has an Implementation note (merge, evidence, open items). Counts and the commit map are in `progress.md`. IDs, priorities, milestones, dependencies and Lane A match `visual-audit.md` section 9 exactly. Each section records the main state at `658a16f`. The audit's section 9 state at `dc1eb26` is in `visual-audit.md`. This file is generated from the same data as `backlog.json`. Edit the source, not the output.
 
-Snapshot: briefed at `b9319c4`; drift to `4b2ae0f` and then `dc1eb26` (checked 11:01 CDT). WP4 (rename) merged before the implementation baseline (`f7ff86b`, `d2dc3c9`). Reconcile each todo against main before starting it (roadmap section 2a). Line numbers, counts and words such as 'today' in substeps and acceptance describe the `4b2ae0f` source unless a todo says otherwise. Estimates are in d, following the round-1 method (one Sonnet implementer-day). Lane A means the todo edits `Sources/App.swift`, which is serial.
+Snapshot: briefed at `b9319c4`; drift to `4b2ae0f` and then `dc1eb26` (checked 11:01 CDT). WP4 (rename) merged before the implementation baseline (`f7ff86b`, `d2dc3c9`). Reconcile each todo against main before starting it (roadmap section 2a). Line numbers, counts and words such as 'today' in substeps and acceptance describe the `4b2ae0f` source unless a todo says otherwise. Estimates are in d, following the round-1 method (one implementer-day). Lane A means the todo edits `Sources/App.swift`, which is serial.
 
 Visual validation checklists cite BEFORE capture stems from `evidence/2026-10-09/manifest.json`. A stem with `@dc1eb26` is a capture at the current main SHA; a stem without a suffix is from `b9319c4`.
 
@@ -15,7 +15,7 @@ Visual validation checklists cite BEFORE capture stems from `evidence/2026-10-09
 | OSN-010 | P1 | M1 | Remove the right rail; relocate its actions per the T15 mapping | OSN-001, OSN-002, OSN-030 | yes |
 | OSN-011 | P1 | M1 | Stroke width: horizontal pill and popover replace the vertical rail slider | OSN-010 | yes |
 | OSN-012 | P1 | M1 | Can-fail layout regression tests for the rail removal | OSN-010, OSN-011 | no |
-| OSN-013 | P1 | M1 | Rail-removal visual acceptance capture set and Opus review | OSN-012 | no |
+| OSN-013 | P1 | M1 | Rail-removal visual acceptance capture set and independent review | OSN-012 | no |
 | OSN-014 | P1 | M1 | Frame mode: keep overlay scrollers out of the snapped image (verify live first) | OSN-010 | yes |
 | OSN-020 | P0 | M2 | WP3 build, runners and gates: clean-clone build and check-no-original | OSN-001 | no |
 | OSN-021 | P0 | M2 | WP1: own assets in shared code (drawn digits, system cursor, sounds removed, PNG chain removed) | OSN-020 | yes |
@@ -44,7 +44,7 @@ Visual validation checklists cite BEFORE capture stems from `evidence/2026-10-09
 | OSN-061 | P1 | M6 | Display-option consumers and an injected DisplayOptions capture mode | OSN-001, OSN-042, OSN-044 | no |
 | OSN-062 | P1 | M6 | VoiceOver labels, announcements, and a recorded manual VoiceOver pass | OSN-060 | yes |
 | OSN-070 | P0 | M7 | Regression gates in tools/test.py: font-floor walker, glass depth and budget, glyphs, original bytes, Skitch strings, layout fit at 980 | OSN-012, OSN-040 | yes |
-| OSN-071 | P0 | M7 | Visual acceptance run: full gallery, light and dark, widths, states, icon modes, and Opus sign-off | OSN-070 | no |
+| OSN-071 | P0 | M7 | Visual acceptance run: full gallery, light and dark, widths, states, icon modes, and independent visual sign-off | OSN-070 | no |
 | OSN-072 | P0 | M7 | WP7: migration verified on a copy of the owner's real store; clean-clone build, test and release dry run | OSN-030, OSN-070 | no |
 
 Counts: 36 todos. P0 12, P1 20, P2 4. M0 2, M1 5, M2 5, M3 3, M4 6, M5 9, M6 3, M7 3. Lane A 22.
@@ -355,13 +355,13 @@ Status at `284f028`: 29 done, 2 verified, 1 not-a-bug, 3 in-progress (OSN-062, O
 - 7 Frame capture rect: with a larger canvas, frameViewportScreenRect equals the window's scroll viewport in screen coordinates, and the hole's maxX equals chrome.width - 12. With a smaller canvas, the rect equals the centred canvas and lies inside the hole.
 - 8 Stroke popover undo grouping: one undo restores the font size after a drag, a preset click, and a popover dismissed mid-drag (dismissPopover ends the group).
 
-## OSN-013 · Rail-removal visual acceptance capture set and Opus review
+## OSN-013 · Rail-removal visual acceptance capture set and independent review
 
 `OSN-013 · P1 · M1 · Status: done`
 
 **Implementation (main 658a16f):** merge `c53155c`. Evidence: `docs/design/evidence/impl-2026-10-09/m1-rail`. Open: FA icon mode unavailable in this run. No live screen capture; the captures are harness-rendered.
 
-**Main state (658a16f):** Done: 80 rail-removal captures at fef46c7 (light and dark, 980 to full screen, empty and populated, Frame, popovers, PNG and JPG) are in m1-rail, reviewed by Opus, merged in c53155c.
+**Main state (658a16f):** Done: 80 rail-removal captures at fef46c7 (light and dark, 980 to full screen, empty and populated, Frame, popovers, PNG and JPG) are in m1-rail, independently reviewed, merged in c53155c.
 
 **Findings:** VF-07. **Spec:** T15 j, §8.
 
@@ -371,7 +371,7 @@ Status at `284f028`: 29 done, 2 verified, 1 not-a-bug, 3 in-progress (OSN-062, O
 
 1. Run the harness (OSN-001) with the T15 matrix: light and dark x 980 (min height), 1024 x 740, 1280 x 800, 1440 x 900, full screen (1728 x 1117); empty and populated; Frame mode; selection and text editing; the Size popover open; PNG and JPG states.
 2. Record each capture's sourceSha. Measure the title-bar height and the popover translucency (R05, R06).
-3. Opus reviews the set against T15 section j and the D1 to D10 targets in visual-audit section 3.
+3. The independent reviewer checks the set against T15 section j and the D1 to D10 targets in visual-audit section 3.
 
 **File owners** (`Sources/App.swift` is Lane A)
 
@@ -385,12 +385,12 @@ Status at `284f028`: 29 done, 2 verified, 1 not-a-bug, 3 in-progress (OSN-062, O
 
 **Scope and estimate assumptions**
 
-- Estimate: not split in the spec. Not costed in the spec. Opus review is separate.
+- Estimate: not split in the spec. Not costed in the spec. Independent review is separate.
 
 **Measurable acceptance**
 
 - Every capture in the T15 matrix exists in the manifest with sourceSha.
-- The Opus review is recorded with a pass or the specific failures.
+- The independent review is recorded with a pass or the specific failures.
 
 **Visual validation checklist**
 
@@ -2017,13 +2017,13 @@ Status at `284f028`: 29 done, 2 verified, 1 not-a-bug, 3 in-progress (OSN-062, O
 - G1 to G12 as listed in T14. Each gate states what makes it fail today; each must be shown to fail on a seeded violation (can-fail).
 - ViewTreeAuditTests (G4), GlassDepthTests (G5).
 
-## OSN-071 · Visual acceptance run: full gallery, light and dark, widths, states, icon modes, and Opus sign-off
+## OSN-071 · Visual acceptance run: full gallery, light and dark, widths, states, icon modes, and independent visual sign-off
 
 `OSN-071 · P0 · M7 · Status: pending`
 
 **Implementation (main 658a16f):** no merge. Evidence: none. Open: none.
 
-**Main state (658a16f):** Open: the full visual acceptance gallery and the Opus sign-off have not been run on the implemented surfaces.
+**Main state (658a16f):** Open: the full visual acceptance gallery and the independent visual sign-off have not been run on the implemented surfaces.
 
 **Findings:** VF-01, VF-02, VF-03, VF-04, VF-05, VF-06, VF-07, VF-08, VF-09, VF-10, VF-11, VF-12, VF-13, VF-14, VF-15, VF-16, VF-17, VF-18, VF-19, VF-20, VF-21, VF-22, VF-23, VF-24, VF-25, VF-26, VF-27, VF-28, VF-29. **Spec:** T14, T15 j.
 
@@ -2034,7 +2034,7 @@ Status at `284f028`: 29 done, 2 verified, 1 not-a-bug, 3 in-progress (OSN-062, O
 1. Run the harness (OSN-001) over the full gallery: light and dark x 980, 1024, 1280, 1440 and full screen x states x FA and SF icon modes.
 2. Include Frame mode, the popover open, populated and empty, selection, text editing, PNG and JPG states, and injected DisplayOptions (OSN-061).
 3. Record sourceSha on every manifest entry. Record any gap in gaps.md (non-Retina, multi-display and live desktop stay gaps).
-4. Opus reviews every capture against T15 section j and D1 to D10 (visual-audit section 3). Record the sign-off.
+4. The independent reviewer checks every capture against T15 section j and D1 to D10 (visual-audit section 3). Record the sign-off.
 
 **File owners** (`Sources/App.swift` is Lane A)
 
@@ -2048,20 +2048,20 @@ Status at `284f028`: 29 done, 2 verified, 1 not-a-bug, 3 in-progress (OSN-062, O
 
 **Scope and estimate assumptions**
 
-- Estimate: not split in the spec. No figure in the spec. The gate set is OSN-070. Opus review is separate.
+- Estimate: not split in the spec. No figure in the spec. The gate set is OSN-070. Independent review is separate.
 
 **Measurable acceptance**
 
 - Each surface in the coverage matrix has at least one capture per mode.
 - No unexplained gap in gaps.md.
-- Opus sign-off recorded.
+- Independent visual sign-off recorded.
 - The walker (OSN-070) reports no text violations on the captured surfaces.
 
 **Visual validation checklist**
 
 - Before: S01-editor-empty-light@dc1eb26, S02-populated-light@dc1eb26, S11-width-980-light@dc1eb26, S11-width-1440-dark@dc1eb26, S11-size-fullscreen-dark@dc1eb26, S12-frame-w980-light@dc1eb26 and PROTO-w980-normal-light@dc1eb26 (rail-less mock, not product).
 - Full matrix: light and dark x 980 (minimum height), 1024 x 740, 1280 x 800, 1440 and full screen x empty, populated, selection, text editing, Frame, popover open, PNG and JPG; in FA and SF icon modes.
-- Each capture is checked against D1 to D10 (visual-audit section 3). Opus sign-off is recorded.
+- Each capture is checked against D1 to D10 (visual-audit section 3). The independent visual sign-off is recorded.
 
 **Regression tests**
 

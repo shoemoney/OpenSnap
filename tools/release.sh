@@ -27,7 +27,7 @@ fi
 unset OPENSNAP_FETCH_FONTAWESOME
 # build.sh reuses the bundle in place, so start clean or stale resources ship.
 rm -rf "$APP"
-OPENSNAP_NO_PRO_FONTS=1 sh "$ROOT/tools/build.sh"
+OPENSNAP_PRO_FONTS=0 sh "$ROOT/tools/build.sh"
 
 # Everything below works on a private copy so a concurrent build or test run
 # that rewrites build/OpenSnap.app cannot change what is checked and shipped.

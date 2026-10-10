@@ -56,7 +56,7 @@ Tests print `SKIPPED (FA not bundled)` only for the Font Awesome glyph branch, w
 
 Run `tools/build.sh` before `tools/test-native-startup.py`; a running copy of the app is not affected, because the smoke only runs its own throwaway copy. The Xcode command line tools provide the Swift toolchain.
 
-The app icon is a Liquid Glass `.icon` built with `actool`, with a flattened `.icns` fallback. The icons in the UI use Font Awesome Pro when it is available and SF Symbols otherwise. The Pro fonts are licensed, so they are optional and never committed: with your own token in `FONTAWESOME_TOKEN`, run `OPENSNAP_FETCH_FONTAWESOME=1 ./tools/build.sh` and the build downloads the package, subsets only the glyphs the app uses into the git-ignored `build/fonts` and bundles them.
+The app icon is a Liquid Glass `.icon` built with `actool`, with a flattened `.icns` fallback. The icons in the UI are Font Awesome Free vectors (embedded, CC BY 4.0) with SF Symbols behind them; the default build, the tests, the evidence runs and the release never bundle a Pro font. Font Awesome Pro is an opt-in experiment only, never committed and never shipped: with your own token in `FONTAWESOME_TOKEN`, run `OPENSNAP_FETCH_FONTAWESOME=1 OPENSNAP_PRO_FONTS=1 ./tools/build.sh` and the build downloads the package, subsets only the glyphs the app uses into the git-ignored `build/fonts` and bundles them.
 
 ## 📦 Releases
 
