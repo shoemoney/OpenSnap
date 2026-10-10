@@ -1,0 +1,770 @@
+{
+ "sourceSha": "0edc3ce",
+ "bundleId": "com.shoemoney.opensnap.eyedump-32814",
+ "iconMode": "sf",
+ "faMode": "FA unavailable: no FontAwesome7Pro subset fonts are bundled in this build, so every capture uses SF Symbols (nothing was faked)",
+ "captureCount": 24,
+ "unavailable": [],
+ "gaps": [
+  {
+   "appearance": "dark",
+   "iconMode": "sf",
+   "id": "S42",
+   "reason": "menu tracking returned before the capture timer fired (menu did not open)",
+   "surface": "menus / Toolbox pull-down open: 18 drawing-session rows, no app or file plumbing (F-J1-009)"
+  },
+  {
+   "appearance": "light",
+   "iconMode": "sf",
+   "id": "S42",
+   "reason": "menu tracking returned before the capture timer fired (menu did not open)",
+   "surface": "menus / Toolbox pull-down open: 18 drawing-session rows, no app or file plumbing (F-J1-009)"
+  }
+ ],
+ "captures": [
+  {
+   "id": "S11F",
+   "slug": "size-fullscreen",
+   "surface": "window sizes",
+   "state": "true full screen (styleMask.fullScreen)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    2056,
+    1290
+   ],
+   "pixelSize": [
+    4112,
+    2580
+   ],
+   "pointSize": [
+    2056,
+    1290
+   ],
+   "scale": 2,
+   "sourceSha": "0edc3ce",
+   "method": "cacheDisplay (CGWindowList image was blank)",
+   "file": "S11F-size-fullscreen-dark@0edc3ce.png",
+   "storedPixelSize": [
+    1200,
+    753
+   ],
+   "downscaled": true,
+   "layout": "layout/S11F-size-fullscreen-dark@0edc3ce.json",
+   "before": null
+  },
+  {
+   "id": "S11F",
+   "slug": "size-fullscreen",
+   "surface": "window sizes",
+   "state": "true full screen (styleMask.fullScreen)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    2056,
+    1290
+   ],
+   "pixelSize": [
+    4112,
+    2580
+   ],
+   "pointSize": [
+    2056,
+    1290
+   ],
+   "scale": 2,
+   "sourceSha": "0edc3ce",
+   "method": "cacheDisplay (CGWindowList image was blank)",
+   "file": "S11F-size-fullscreen-light@0edc3ce.png",
+   "storedPixelSize": [
+    1200,
+    753
+   ],
+   "downscaled": true,
+   "layout": "layout/S11F-size-fullscreen-light@0edc3ce.json",
+   "before": null
+  },
+  {
+   "id": "S42",
+   "slug": "history-hide-on-history",
+   "surface": "alerts / sheets",
+   "state": "Hide drawings from History? raised on the History window the click came from (F-J2-001)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "0edc3ce",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S42-history-hide-on-history-dark@0edc3ce.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S42",
+   "slug": "history-hide-on-history",
+   "surface": "alerts / sheets",
+   "state": "Hide drawings from History? raised on the History window the click came from (F-J2-001)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "0edc3ce",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S42-history-hide-on-history-light@0edc3ce.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S42",
+   "slug": "photos-empty",
+   "surface": "Photos sheet",
+   "state": "Photos sheet with nothing chosen: the grid holds the explanation and both source buttons (F-J1-013)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    1800,
+    1400
+   ],
+   "pointSize": [
+    900,
+    700
+   ],
+   "scale": 2,
+   "sourceSha": "0edc3ce",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S42-photos-empty-dark@0edc3ce.png",
+   "storedPixelSize": [
+    1200,
+    933
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/e2e-2026-10-10/j1/32-photos-sheet-empty-state.jpg"
+  },
+  {
+   "id": "S42",
+   "slug": "photos-empty",
+   "surface": "Photos sheet",
+   "state": "Photos sheet with nothing chosen: the grid holds the explanation and both source buttons (F-J1-013)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    1800,
+    1400
+   ],
+   "pointSize": [
+    900,
+    700
+   ],
+   "scale": 2,
+   "sourceSha": "0edc3ce",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S42-photos-empty-light@0edc3ce.png",
+   "storedPixelSize": [
+    1200,
+    933
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/e2e-2026-10-10/j1/32-photos-sheet-empty-state.jpg"
+  },
+  {
+   "id": "S42",
+   "slug": "photos-empty-in-context",
+   "surface": "Photos sheet",
+   "state": "Photos sheet with nothing chosen: the grid holds the explanation and both source buttons (F-J1-013) (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    2358
+   ],
+   "pointSize": [
+    1561,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "0edc3ce",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S42-photos-empty-in-context-dark@0edc3ce.png",
+   "storedPixelSize": [
+    1200,
+    906
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S42",
+   "slug": "photos-empty-in-context",
+   "surface": "Photos sheet",
+   "state": "Photos sheet with nothing chosen: the grid holds the explanation and both source buttons (F-J1-013) (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    2358
+   ],
+   "pointSize": [
+    1561,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "0edc3ce",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S42-photos-empty-in-context-light@0edc3ce.png",
+   "storedPixelSize": [
+    1200,
+    906
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S42",
+   "slug": "resize-crop",
+   "surface": "Resize panel",
+   "state": "Resize or Crop sheet, crop mode: mode control and dimensions first, presets folded into one row, buttons trailing (F-J1-014)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    1240,
+    1014
+   ],
+   "pointSize": [
+    620,
+    507
+   ],
+   "scale": 2,
+   "sourceSha": "0edc3ce",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S42-resize-crop-dark@0edc3ce.png",
+   "storedPixelSize": [
+    1200,
+    981
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/e2e-2026-10-10/j1/27-resize-sheet-crop-mode-anchor-popup.jpg"
+  },
+  {
+   "id": "S42",
+   "slug": "resize-crop",
+   "surface": "Resize panel",
+   "state": "Resize or Crop sheet, crop mode: mode control and dimensions first, presets folded into one row, buttons trailing (F-J1-014)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    1240,
+    1014
+   ],
+   "pointSize": [
+    620,
+    507
+   ],
+   "scale": 2,
+   "sourceSha": "0edc3ce",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S42-resize-crop-light@0edc3ce.png",
+   "storedPixelSize": [
+    1200,
+    981
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/e2e-2026-10-10/j1/27-resize-sheet-crop-mode-anchor-popup.jpg"
+  },
+  {
+   "id": "S42",
+   "slug": "resize-crop-in-context",
+   "surface": "Resize panel",
+   "state": "Resize or Crop sheet, crop mode: mode control and dimensions first, presets folded into one row, buttons trailing (F-J1-014) (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    2358
+   ],
+   "pointSize": [
+    1561,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "0edc3ce",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S42-resize-crop-in-context-dark@0edc3ce.png",
+   "storedPixelSize": [
+    1200,
+    906
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/e2e-2026-10-10/j1/27-resize-sheet-crop-mode-anchor-popup.jpg"
+  },
+  {
+   "id": "S42",
+   "slug": "resize-crop-in-context",
+   "surface": "Resize panel",
+   "state": "Resize or Crop sheet, crop mode: mode control and dimensions first, presets folded into one row, buttons trailing (F-J1-014) (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    2358
+   ],
+   "pointSize": [
+    1561,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "0edc3ce",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S42-resize-crop-in-context-light@0edc3ce.png",
+   "storedPixelSize": [
+    1200,
+    906
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/e2e-2026-10-10/j1/27-resize-sheet-crop-mode-anchor-popup.jpg"
+  },
+  {
+   "id": "S42",
+   "slug": "resize-limit",
+   "surface": "Resize panel",
+   "state": "Resize or Crop sheet, limit mode: mode control and dimensions first, presets folded into one row, buttons trailing (F-J1-014)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    1240,
+    794
+   ],
+   "pointSize": [
+    620,
+    397
+   ],
+   "scale": 2,
+   "sourceSha": "0edc3ce",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S42-resize-limit-dark@0edc3ce.png",
+   "storedPixelSize": [
+    1200,
+    768
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/e2e-2026-10-10/j1/29-resize-sheet-limit-mode.jpg"
+  },
+  {
+   "id": "S42",
+   "slug": "resize-limit",
+   "surface": "Resize panel",
+   "state": "Resize or Crop sheet, limit mode: mode control and dimensions first, presets folded into one row, buttons trailing (F-J1-014)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    1240,
+    794
+   ],
+   "pointSize": [
+    620,
+    397
+   ],
+   "scale": 2,
+   "sourceSha": "0edc3ce",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S42-resize-limit-light@0edc3ce.png",
+   "storedPixelSize": [
+    1200,
+    768
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/e2e-2026-10-10/j1/29-resize-sheet-limit-mode.jpg"
+  },
+  {
+   "id": "S42",
+   "slug": "resize-limit-in-context",
+   "surface": "Resize panel",
+   "state": "Resize or Crop sheet, limit mode: mode control and dimensions first, presets folded into one row, buttons trailing (F-J1-014) (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    2358
+   ],
+   "pointSize": [
+    1561,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "0edc3ce",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S42-resize-limit-in-context-dark@0edc3ce.png",
+   "storedPixelSize": [
+    1200,
+    906
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/e2e-2026-10-10/j1/29-resize-sheet-limit-mode.jpg"
+  },
+  {
+   "id": "S42",
+   "slug": "resize-limit-in-context",
+   "surface": "Resize panel",
+   "state": "Resize or Crop sheet, limit mode: mode control and dimensions first, presets folded into one row, buttons trailing (F-J1-014) (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    2358
+   ],
+   "pointSize": [
+    1561,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "0edc3ce",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S42-resize-limit-in-context-light@0edc3ce.png",
+   "storedPixelSize": [
+    1200,
+    906
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": "docs/design/evidence/e2e-2026-10-10/j1/29-resize-sheet-limit-mode.jpg"
+  },
+  {
+   "id": "S42",
+   "slug": "resize-resize",
+   "surface": "Resize panel",
+   "state": "Resize or Crop sheet, resize mode: mode control and dimensions first, presets folded into one row, buttons trailing (F-J1-014)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    1240,
+    862
+   ],
+   "pointSize": [
+    620,
+    431
+   ],
+   "scale": 2,
+   "sourceSha": "0edc3ce",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S42-resize-resize-dark@0edc3ce.png",
+   "storedPixelSize": [
+    1200,
+    834
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S42",
+   "slug": "resize-resize",
+   "surface": "Resize panel",
+   "state": "Resize or Crop sheet, resize mode: mode control and dimensions first, presets folded into one row, buttons trailing (F-J1-014)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    1240,
+    862
+   ],
+   "pointSize": [
+    620,
+    431
+   ],
+   "scale": 2,
+   "sourceSha": "0edc3ce",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S42-resize-resize-light@0edc3ce.png",
+   "storedPixelSize": [
+    1200,
+    834
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S42",
+   "slug": "resize-resize-in-context",
+   "surface": "Resize panel",
+   "state": "Resize or Crop sheet, resize mode: mode control and dimensions first, presets folded into one row, buttons trailing (F-J1-014) (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    2358
+   ],
+   "pointSize": [
+    1561,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "0edc3ce",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S42-resize-resize-in-context-dark@0edc3ce.png",
+   "storedPixelSize": [
+    1200,
+    906
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S42",
+   "slug": "resize-resize-in-context",
+   "surface": "Resize panel",
+   "state": "Resize or Crop sheet, resize mode: mode control and dimensions first, presets folded into one row, buttons trailing (F-J1-014) (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    2358
+   ],
+   "pointSize": [
+    1561,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "0edc3ce",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S42-resize-resize-in-context-light@0edc3ce.png",
+   "storedPixelSize": [
+    1200,
+    906
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S42",
+   "slug": "status-after-notice",
+   "surface": "Bottom bar",
+   "state": "the normal status back, now naming the export format (F-J1-010)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    120
+   ],
+   "pointSize": [
+    1561,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "0edc3ce",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S42-status-after-notice-dark@0edc3ce.png",
+   "storedPixelSize": [
+    1200,
+    46
+   ],
+   "downscaled": true,
+   "layout": "layout/S42-status-after-notice-dark@0edc3ce.json",
+   "before": "docs/design/evidence/e2e-2026-10-10/j1/47-fullscreen-exited-status-text-stale.jpg"
+  },
+  {
+   "id": "S42",
+   "slug": "status-after-notice",
+   "surface": "Bottom bar",
+   "state": "the normal status back, now naming the export format (F-J1-010)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    120
+   ],
+   "pointSize": [
+    1561,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "0edc3ce",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S42-status-after-notice-light@0edc3ce.png",
+   "storedPixelSize": [
+    1200,
+    46
+   ],
+   "downscaled": true,
+   "layout": "layout/S42-status-after-notice-light@0edc3ce.json",
+   "before": "docs/design/evidence/e2e-2026-10-10/j1/47-fullscreen-exited-status-text-stale.jpg"
+  },
+  {
+   "id": "S42",
+   "slug": "status-notice",
+   "surface": "Bottom bar",
+   "state": "a transient message in the status slot (F-J1-010)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    120
+   ],
+   "pointSize": [
+    1561,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "0edc3ce",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S42-status-notice-dark@0edc3ce.png",
+   "storedPixelSize": [
+    1200,
+    46
+   ],
+   "downscaled": true,
+   "layout": "layout/S42-status-notice-dark@0edc3ce.json",
+   "before": "docs/design/evidence/e2e-2026-10-10/j1/33-save-to-history-status-confirms.jpg"
+  },
+  {
+   "id": "S42",
+   "slug": "status-notice",
+   "surface": "Bottom bar",
+   "state": "a transient message in the status slot (F-J1-010)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    120
+   ],
+   "pointSize": [
+    1561,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "0edc3ce",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S42-status-notice-light@0edc3ce.png",
+   "storedPixelSize": [
+    1200,
+    46
+   ],
+   "downscaled": true,
+   "layout": "layout/S42-status-notice-light@0edc3ce.json",
+   "before": "docs/design/evidence/e2e-2026-10-10/j1/33-save-to-history-status-confirms.jpg"
+  }
+ ]
+}
