@@ -32,6 +32,7 @@ final class DragExportView: NSView, NSDraggingSource, NSFilePromiseProviderDeleg
     private(set) var isHovered = false, isPressed = false
     private var hoverArea: NSTrackingArea?
     override var acceptsFirstResponder: Bool { true }
+    override var canBecomeKeyView: Bool { KeyboardNavigation.reaches(self) }
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         focusRingType = .exterior
@@ -174,7 +175,7 @@ final class DragExportView: NSView, NSDraggingSource, NSFilePromiseProviderDeleg
     static func fileExtension(forFormat format: String) -> String { format == "jpeg" ? "jpg" : format }
     func filePromiseProvider(_ filePromiseProvider: NSFilePromiseProvider, fileNameForType fileType: String) -> String {
         let payload = payloads[ObjectIdentifier(filePromiseProvider)]?.payload
-        return (payload?.name ?? "OpenSnap") + "." + Self.fileExtension(forFormat: payload?.format ?? "png")
+        return (payload?.name ?? MainWindowFrame.untitled) + "." + Self.fileExtension(forFormat: payload?.format ?? "png")
     }
     func filePromiseProvider(_ filePromiseProvider: NSFilePromiseProvider, writePromiseTo url: URL, completionHandler: @escaping (Error?) -> Void) {
         let export = payloads.removeValue(forKey: ObjectIdentifier(filePromiseProvider))
@@ -247,8 +248,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     static let publishingStore = PublishingDestinationStore.forEnvironment(ProcessInfo.processInfo.environment)
     let publishing: PublishingCoordinator = { let coordinator = PublishingCoordinator(); coordinator.store = AppDelegate.publishingStore; return coordinator }()
     var webpostButton: NSButton?
-    /// Progress text for a running upload; updateStatus() keeps showing it while publishing.isBusy.
-    var uploadStatus: String?
+    /// Where the upload stands (OSN-054). It drives the status slot in the bottom bar: refreshStatusText() shows its text while it is not idle,
+    /// the chrome shows the matching spinner and commands, and each change is announced to VoiceOver.
+    var uploadState: UploadState = .idle { didSet { if uploadState != oldValue { uploadStateChanged(from: oldValue) } } }
+    /// What Retry sends again after a failure: the same bytes, file name and document the failed attempt had.
+    var retryablePayload: UploadPayload?
+    var uploadSuccessTimer: Timer?
+    /// How long "Link copied" stays in the status slot before the normal status returns.
+    var uploadSuccessDuration: TimeInterval = 4
+    /// The failure belongs to the document it was raised for; a different document drops it.
+    var uploadFailureGeneration: UUID?
+    /// Test seam: opens the uploaded link in the browser.
+    var linkOpener: (URL) -> Void = { NSWorkspace.shared.open($0) }
     /// Test seams: replace the real NSSharingServicePicker and the Sharing Settings sheet.
     var sharePickerPresenter: ((NSImage, NSView?) -> Void)?
     var sharingSettingsPresenter: (() -> Void)?
@@ -557,7 +568,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     func applicationWillResignActive(_ notification: Notification) { helpBevel?.clear() }
     func applicationDidHide(_ notification: Notification) { helpBevel?.clear() }
     func windowDidResignKey(_ notification: Notification) {
-        if (notification.object as? NSWindow) === window { helpBevel?.clear() }
+        if (notification.object as? NSWindow) === window { helpBevel?.clear(); KeyboardNavigation.toolbarFocusActive = false }
     }
     func windowWillMiniaturize(_ notification: Notification) {
         if (notification.object as? NSWindow) === window { helpBevel?.clear() }
@@ -741,7 +752,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     }
     /// The Toolbox is a subset of the main menu by action: every row is a copy of the menu-bar item, so titles, keys and symbols match.
     func bezelToolbox() -> NSPopUpButton {
-        let control = NSPopUpButton(frame: .zero, pullsDown: true)
+        let control = ToolboxPopUpButton(frame: .zero, pullsDown: true)
         control.font = DesignTokens.Typography.font(.body)
         let choices = NSMenu(title: "Toolbox")
         choices.addItem(withTitle: "Toolbox", action: nil, keyEquivalent: "")
@@ -773,7 +784,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             if let item = copiedMainMenuItem(action) { choices.addItem(item) }
         }
         MenuTypography.apply(to: choices)
-        control.menu = choices; control.setAccessibilityLabel("Toolbox")
+        control.menu = choices; control.setAccessibilityLabel("Toolbox menu")
         AppToolTip.setText("Common drawing and capture commands; additional actions are in More Commands", for: control)
         return control
     }
@@ -784,6 +795,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         window.title = MainWindowFrame.untitled; window.delegate = self; window.minSize = NSSize(width: 900, height: MainWindowFrame.minimumHeight)
         buildModernWindowContent()
         configureWindowChrome()
+        configureKeyViewLoop()
     }
     func configureDragExport(_ drag: DragExportView) {
         drag.prepare = { [weak self] in
@@ -896,6 +908,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         for item in windows.items { item.target = nil }
         let minimize = NSMenuItem(title: "Minimize", action: #selector(vanish), keyEquivalent: "m")
         minimize.target = self; windows.insertItem(minimize, at: 0)
+        // The bars are not an NSToolbar, so the system's Move-focus-to-toolbar shortcut has nothing to find: this command is the way in.
+        let focusItem = NSMenuItem(title: "Focus Toolbar", action: #selector(focusToolbar), keyEquivalent: "t")
+        focusItem.keyEquivalentModifierMask = [.command, .option]; focusItem.target = self; windows.insertItem(focusItem, at: 1)
         for m in [appMenu, file, edit, image, drawing, text, snap, windows] { let i = NSMenuItem(); i.submenu = m; bar.addItem(i) }
         MenuSymbols.apply(to: bar)
         MenuTypography.applyToDropdowns(of: bar)
@@ -1048,6 +1063,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         }
         let custom = button("Custom color…", #selector(chooseCustomColor(_:))); custom.font = DesignTokens.Typography.font(.body)
         custom.frame = NSRect(x: 12, y: 2, width: 222, height: 30); custom.tag = 110; view.addSubview(custom)
+        // The popover is its own window: the preset swatches in reading order, then Custom color…, then round again.
+        let swatchOrder: [NSView] = presetColorButtons + [custom]
+        for (index, swatch) in swatchOrder.enumerated() { swatch.nextKeyView = swatchOrder[(index + 1) % swatchOrder.count] }
         AppToolTip.install(on: view)
         let controller = NSViewController(); controller.view = view
         let popover = NSPopover(); popover.behavior = .transient; popover.contentViewController = controller
@@ -1150,6 +1168,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         return nil
     }
     func updateStatus() {
+        expireStaleUploadFailure()
         refreshStatusText()
         updateViewportChrome(); scheduleDragPreview() }
     /// The one status line: tool, saved state and the export size and bytes the drag preview last measured.
@@ -1158,7 +1177,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     func refreshStatusText() {
         guard !frameMode else { return }
         let variants: [String]
-        if let uploadStatus, publishing.isBusy { variants = [uploadStatus] }
+        if let text = uploadState.statusText { variants = [text] }
         else {
             let tool = canvas.tool.rawValue.capitalized, state = dirty ? "Unsaved changes" : "Saved"
             let detail = dragSizeLabel.stringValue
@@ -1169,8 +1188,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             }
         }
         status.setVariants(variants)
-        AppToolTip.setText(variants[0], for: status, mirrorsToAccessibility: false)
-        status.setAccessibilityHelp(nil)
+        AppToolTip.setText(uploadState.detailText ?? variants[0], for: status, mirrorsToAccessibility: false)
+        status.setAccessibilityHelp(uploadState.detailText)
     }
     var dragFormat: String {
         FormatToggle.payload(forSegment: dragFormatToggle.selectedSegment).format
@@ -1206,7 +1225,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             dragExportView?.overview = ImageExport.image(document: document, size: CGSize(width: max(1, ceil(document.size.width * scale)), height: max(1, ceil(document.size.height * scale))))
         }
     }
-    func safeName() -> String { let s = nameField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines); return (s.isEmpty ? "OpenSnap" : s).replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ":", with: "-") }
+    func safeName() -> String { let s = nameField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines); return (s.isEmpty ? MainWindowFrame.untitled : s).replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ":", with: "-") }
     func applyFrameWindowValues() {
         window.hasShadow = false
         window.alphaValue = CGFloat(Float32(bitPattern: 0x3f4ccccd))
@@ -1601,7 +1620,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         writeLayoutEvidence()
     }
     @objc func printImage() { let view = NSImageView(frame: NSRect(origin: .zero,size: canvas.outputSize)); view.image = canvas.renderedImage(); view.imageScaling = .scaleProportionallyUpOrDown; let p = NSPrintInfo.shared.copy() as! NSPrintInfo; p.horizontalPagination = .fit; p.verticalPagination = .fit; NSPrintOperation(view: view, printInfo: p).run() }
-    static let webpostHelp = "Upload and copy link · Right-click for destinations"
+    static let webpostHelp = "Upload image and copy link · Right-click for destinations"
     struct UploadDestination: Equatable { let id: String; let title: String }
     /// Left-click uploads to the default destination; right-click or Control-click shows the destination menu.
     func configureWebpostButton(_ button: NSButton) {
@@ -1741,13 +1760,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         guard publishing.isConfigured else {
             openDestinationSettings(); return
         }
-        let encoding = uploadEncoding
         guard let (data, fileExtension) = uploadPayload(), let snapshot = try? historySnapshot() else { return }
-        let name = safeName(), generation = documentGeneration
+        let name = safeName()
         let fileName = name+"-"+UUID().uuidString.lowercased()+"."+fileExtension
         let binding = try? historyRemoteDeletion.captureBinding(fileName: fileName)
-        uploadStatus = "Uploading \(name)…"; status.stringValue = uploadStatus!
-        publishing.publish(data: data, fileName: fileName) { [weak self] result in
+        beginUpload(UploadPayload(data: data, fileName: fileName, name: name, snapshot: snapshot, generation: documentGeneration, binding: binding))
+    }
+    /// Starts one transfer of `payload`. A failed one is kept so Retry can send exactly the same thing again.
+    func beginUpload(_ payload: UploadPayload) {
+        retryablePayload = payload
+        uploadFailureGeneration = payload.generation
+        uploadState = .uploading(name: payload.name)
+        publishing.publish(data: payload.data, fileName: payload.fileName) { [weak self] result in
             // Publishing guarantees delivery on main, including nested AppKit
             // termination loops. Archive success before its shutdown barrier can
             // acknowledge completion; an extra Task could run after app exit.
@@ -1756,22 +1780,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
                 self.receivePublishing(result)
                 if case .success(let url) = result {
                     let currentBinding = try? self.historyRemoteDeletion.captureBinding(for: url)
-                    let retainedBinding = binding == currentBinding ? binding : nil
-                    self.archive(snapshot, name: name, action: .shared, destination: url.absoluteString, remoteURL: url, remoteBinding: retainedBinding, generation: generation)
+                    let retainedBinding = payload.binding == currentBinding ? payload.binding : nil
+                    self.archive(payload.snapshot, name: payload.name, action: .shared, destination: url.absoluteString, remoteURL: url, remoteBinding: retainedBinding, generation: payload.generation)
                 }
             }
         }
     }
     func receivePublishing(_ result: Result<URL, Error>) {
-        uploadStatus = nil
+        // The spinner never outlives the transfer, even when the answer arrives during Quit and is otherwise ignored.
+        if uploadState.isUploading { uploadState = .idle }
         guard !terminationStarted else { return }
         switch result {
         case .success(let url):
-            if publishing.lastTransferCopiedLink { status.stringValue = "Link copied: \(url.absoluteString)" }
-            else { status.stringValue = ["http", "https"].contains(url.scheme ?? "") ? "Published image" : "Uploaded image to destination" }
+            retryablePayload = nil
+            uploadState = .success(url: url, copied: publishing.lastTransferCopiedLink)
         case .failure(let error):
-            if (error as NSError).domain == NSCocoaErrorDomain && (error as NSError).code == NSUserCancelledError { status.stringValue = "Upload cancelled" }
-            else { updateStatus(); self.error(error) }
+            if (error as NSError).domain == NSCocoaErrorDomain && (error as NSError).code == NSUserCancelledError {
+                retryablePayload = nil; updateStatus(); status.stringValue = "Upload cancelled"
+            } else { uploadState = .failure(message: error.localizedDescription) }
         }
     }
     /// Snap & Upload hotkey: a crosshair capture whose installed result is published.
@@ -1820,6 +1846,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     private func installCapture(_ image: NSImage, pixels: CGImage, afterInstalling: (() -> Void)?) {
         preferencesWindow?.orderOut(nil)
         followHistory(); currentArchiveID = nil; activeResizeSession?.cancel(); endWindowGesture(cancelled: true); leaveActualSize(); canvas.newBlank(size: NSSize(width: pixels.width, height: pixels.height)); canvas.setBackground(image); documentGeneration = UUID(); drawingDefaults = .init(); canvas.editingUndoManager.removeAllActions(); currentURL = nil; adoptRasterViewport(); nameField.stringValue = "Screenshot"; dirty = true; replaceDragPresentation(); window.makeKeyAndOrderFront(nil); updateStatus()
+        Announcer.announce(Announcer.Message.captureSucceeded)
         afterInstalling?()
     }
     @objc func screenSnap() {
@@ -1870,7 +1897,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             frameScrollersShown = (canvas.enclosingScrollView?.hasHorizontalScroller ?? true, canvas.enclosingScrollView?.hasVerticalScroller ?? true)
         }
         frameTimedSnap = frameTimedSnap || (manualFlags ?? NSApp.currentEvent?.modifierFlags ?? []).contains(.shift)
+        let enteringFrame = !frameMode
         frameMode = true; frameKeepsAnnotations = keepingAnnotations
+        if enteringFrame { Announcer.announce(Announcer.Message.frameEntered) }
         window.isOpaque = false; window.backgroundColor = .clear
         window.collectionBehavior.remove(.fullScreenPrimary)
         // Recovered -[PlatformController(snap) setSnapMode:] (decompiled.c:20481): shadow off, screen-saver level, alpha 0x3f4ccccd (0.8f).
@@ -1908,6 +1937,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     }
     func leaveFrame() {
         guard frameMode else { return }
+        Announcer.announce(Announcer.Message.frameLeft)
         frameMode = false; frameKeepsAnnotations = false; frameTimedSnap = false
         frameTitlebarBackdrop?.removeFromSuperview(); frameTitlebarBackdrop = nil
         canvas.framePreview = false
@@ -1978,6 +2008,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
                     return
                 }
                 leaveFrame(); updateStatus()
+                Announcer.announce(Announcer.Message.captureSucceeded)
             } else {
                 confirmDiscard { [weak self] allowed in
                     guard let self, allowed, !self.terminationStarted, expectedGeneration == nil || expectedGeneration == self.documentGeneration else { return }
@@ -2146,14 +2177,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     }
     var activeUndoManager: UndoManager { activeTextEditor?.undoManager ?? canvas.editingUndoManager }
     @objc func undo() {
-        if let editor = activeTextEditor { editor.undoManager?.undo(); return }
+        if let editor = activeTextEditor { stepHistory(editor.undoManager, redo: false) { editor.undoManager?.undo() }; return }
         endWindowGesture(cancelled: true)
-        canvas.undo()
+        stepHistory(canvas.editingUndoManager, redo: false) { canvas.undo() }
     }
     @objc func redo() {
-        if let editor = activeTextEditor { editor.undoManager?.redo(); return }
+        if let editor = activeTextEditor { stepHistory(editor.undoManager, redo: true) { editor.undoManager?.redo() }; return }
         endWindowGesture(cancelled: true)
-        canvas.redo()
+        stepHistory(canvas.editingUndoManager, redo: true) { canvas.redo() }
+    }
+    /// Runs one Undo or Redo and tells VoiceOver what it did, by the action's name ("Undid Draw"); nothing is said when there was nothing to step.
+    private func stepHistory(_ manager: UndoManager?, redo: Bool, _ step: () -> Void) {
+        let possible = redo ? manager?.canRedo == true : manager?.canUndo == true
+        let name = (redo ? manager?.redoActionName : manager?.undoActionName) ?? ""
+        step()
+        guard possible else { return }
+        Announcer.announce(redo ? Announcer.Message.redone(name) : Announcer.Message.undone(name))
     }
     @objc func cut() { if let editor = activeTextEditor { editor.cut(nil) } else { canvas.copySelection(); canvas.deleteSelection() } }
     @objc func copyArtwork() { if let editor = activeTextEditor { editor.copy(nil) } else { canvas.copySelection() } }

@@ -1241,40 +1241,51 @@ extension AuditRun {
         var mode = "success"
     }
 
+    /// OSN-054: the upload states in the status slot of the bottom bar, at 980 and 1280. The uploader is a stub; nothing leaves the process.
     func s21() {
         syntheticDestinations()
-        loadSynthetic(size: CGSize(width: 1000, height: 700), name: "Upload demo")
+        loadSynthetic(size: CGSize(width: 1000, height: 700), name: "Quarterly planning review of the new upload flow")
         let gate = UploadGate()
         app.publishing.clipboardWriter = { _ in }
+        app.linkOpener = { _ in }
+        // The "Link copied" state is held for the capture and ended by hand; in the app it lasts four seconds.
+        app.uploadSuccessDuration = 600
         app.publishing.uploader = { _, _, plan, _ in
             if gate.mode == "wait" { _ = gate.release.wait(timeout: .now() + 8) }
             if gate.mode == "fail" { throw PublishingFailure("Upload to Example S3 failed: the connection was refused (stub, no network was used).") }
             return plan.publicURL ?? plan.remoteURL
         }
-        gate.mode = "wait"
-        app.publishImage()
-        pump(1.0)
-        shoot("S21", "publish-progress", surface: "publish progress", state: "Uploading… status in footer while the stub uploader waits", refs: ["App.swift|@objc func publishImage()", "App.swift|uploadStatus = \"Uploading"], extra: ["status": app.status.stringValue])
-        shoot("S21", "publish-progress-footer", surface: "publish progress", state: "footer crop during upload", crop: footerCrop(), refs: ["App.swift|func updateStatus()"], settle: 0.1)
-        if let share = app.webpostButton, let menu = share.menu {
-            captureTrackedMenu("S21", "upload-menu-busy", surface: "publish progress", state: "destination menu while an upload runs (Cancel Upload offered)", refs: ["App.swift|Cancel Upload"],
-                               dismiss: { menu.cancelTracking() }, trigger: { menu.popUp(positioning: nil, at: NSPoint(x: 0, y: share.bounds.height + 4), in: share) })
+        let refs = ["UploadStatus.swift|enum UploadState", "App+Upload.swift|func uploadStateChanged", "App.swift|func beginUpload", "ModernEditorChrome.swift|let uploadControls"]
+        for spec in ["980xmin", "1280x800"] {
+            guard let size = windowSize(for: spec, surface: "S21") else { continue }
+            placeWindow(size)
+            window.makeKeyAndOrderFront(nil); pump(0.4)
+            let width = spec.hasPrefix("980") ? "w980" : "w1280"
+            app.uploadState = .idle
+            gate.mode = "wait"
+            app.publishImage()
+            pump(0.8)
+            shoot("S21", "publish-progress-\(width)", surface: "publish progress", state: "Uploading <name>\u{2026}: 20 pt spinner, truncating status, Cancel; no Original size checkbox, at \(width)", refs: refs, extra: ["status": app.status.stringValue, "uploadState": String(describing: app.uploadState)])
+            shoot("S21", "publish-progress-footer-\(width)", surface: "publish progress", state: "footer crop during the upload, at \(width)", crop: footerCrop(), refs: refs, settle: 0.1)
+            if width == "w980", let share = app.webpostButton, let menu = share.menu {
+                captureTrackedMenu("S21", "upload-menu-busy", surface: "publish progress", state: "destination menu while an upload runs (Cancel Upload offered)", refs: ["App.swift|Cancel Upload"],
+                                   dismiss: { menu.cancelTracking() }, trigger: { menu.popUp(positioning: nil, at: NSPoint(x: 0, y: share.bounds.height + 4), in: share) })
+            }
+            gate.release.signal()
+            pump(1.5)
+            shoot("S21", "publish-success-\(width)", surface: "publish success", state: "Link copied with Open and Copy after a stubbed upload, at \(width)", refs: refs, extra: ["status": app.status.stringValue, "uploadState": String(describing: app.uploadState)])
+            shoot("S21", "publish-success-footer-\(width)", surface: "publish success", state: "footer crop with Link copied, Open and Copy, at \(width)", crop: footerCrop(), refs: refs, settle: 0.1)
+            app.expireUploadSuccess()
+            pump(0.4)
+            gate.mode = "fail"
+            app.publishImage()
+            pump(1.5)
+            shoot("S21", "publish-error-\(width)", surface: "publish error", state: "inline Error: with Retry and Details\u{2026} after a stubbed failed upload, at \(width)", refs: refs, extra: ["status": app.status.stringValue, "uploadState": String(describing: app.uploadState)])
+            shoot("S21", "publish-error-footer-\(width)", surface: "publish error", state: "footer crop with the inline error, Retry and Details\u{2026}, at \(width)", crop: footerCrop(), refs: refs, settle: 0.1)
+            captureAlertSheet("S21", "publish-error-details-\(width)", surface: "publish error", state: "the Details\u{2026} sheet with the whole error, at \(width)", refs: ["App+Upload.swift|func showUploadErrorDetails"]) { app.showUploadErrorDetails() }
+            app.uploadState = .idle
+            pump(0.3)
         }
-        gate.release.signal()
-        pump(2.5)
-        shoot("S21", "publish-success", surface: "publish success", state: "status after a stubbed successful upload", refs: ["App.swift|func receivePublishing"], extra: ["status": app.status.stringValue])
-        shoot("S21", "publish-success-footer", surface: "publish success", state: "footer crop after success", crop: footerCrop(), refs: ["App.swift|func receivePublishing"], settle: 0.1)
-        pump(0.5)
-        gate.mode = "fail"
-        app.publishImage()
-        pump(3.0)
-        if let alert = AppAlert.presentedAlerts.last {
-            shoot("S21", "publish-error", surface: "publish error", state: "error sheet after a stubbed failed upload", windows: [alert.panel, window], refs: ["App.swift|func receivePublishing", "App.swift|func error(_ error: Error)"], settle: 0,
-                  extra: ["alertTitle": alert.title, "presentedAs": window.attachedSheet === alert.panel ? "sheet on the document window" : "separate panel"])
-            alert.cancel()
-        } else { gap("S21", "publish error alert", "no error sheet appeared") }
-        pump(0.5)
-        shoot("S21", "publish-error-footer", surface: "publish error", state: "footer crop after the error alert was dismissed", crop: footerCrop(), refs: ["App.swift|func receivePublishing"], settle: 0.2)
     }
 
     /// OSN-043: the window titled with the document name and its size, the proxy icon, and the app-owned alert sheets.
@@ -1305,8 +1316,8 @@ extension AuditRun {
         syntheticDestinations()
         app.publishing.clipboardWriter = { _ in }
         app.publishing.uploader = { _, _, _, _ in throw PublishingFailure("Upload to Example S3 failed: the connection was refused (stub, no network was used).") }
-        captureAlertSheet("S39", "upload-error-sheet", surface: "alerts / sheets", state: "error sheet after a stubbed failed upload, over the titled window",
-                          refs: ["App.swift|func receivePublishing", "App.swift|func error(_ error: Error)"]) { app.publishImage(); pump(2.5) }
+        captureAlertSheet("S39", "upload-error-sheet", surface: "alerts / sheets", state: "Details\u{2026} sheet after a stubbed failed upload (the error itself is inline), over the titled window",
+                          refs: ["App.swift|func receivePublishing", "App+Upload.swift|func showUploadErrorDetails"]) { app.publishImage(); pump(2.5); app.showUploadErrorDetails() }
     }
 
     func s22() {

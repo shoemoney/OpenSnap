@@ -74,9 +74,10 @@ extension AppSafetyTests {
         try webpostButton(app).performClick(nil)
         try expect(app.window.attachedSheet == nil && app.status.stringValue == "Uploading Shot…", "Webpost starts at once: no sheet, status reads Uploading Shot… (\(app.status.stringValue))")
         try waitForMain("The upload finishes") { !app.publishing.isBusy && probe.count == 1 }
-        try waitForMain("Success is reported") { app.status.stringValue.hasPrefix("Link copied: https://cdn.example.com/imgs/Shot-") }
-        try expect(probe.copied.count == 1 && probe.copied[0].absoluteString.hasPrefix("https://cdn.example.com/imgs/Shot-") && app.status.stringValue == "Link copied: " + probe.copied[0].absoluteString,
-                   "The verified public URL is copied and named in the status")
+        try waitForMain("Success is reported") { app.status.stringValue == "Link copied" }
+        try expect(probe.copied.count == 1 && probe.copied[0].absoluteString.hasPrefix("https://cdn.example.com/imgs/Shot-")
+                   && app.uploadState == .success(url: probe.copied[0], copied: true) && AppToolTip.text(for: app.status) == "Link copied: " + probe.copied[0].absoluteString,
+                   "The verified public URL is copied; the status says Link copied and the link itself rides on the tooltip (OSN-054 changed this from the long, cut-off URL)")
         try expect(app.window.attachedSheet == nil && AppSafetyAlert.seen.isEmpty, "No sheet or alert at any point")
     }
 
@@ -113,10 +114,9 @@ extension AppSafetyTests {
         let fixture = try Fixture(), app = fixture.app
         let probe = UploadProbe(); probe.failure = PublishingFailure("Server said no."); install(probe, on: app)
         let button = try webpostButton(app)
-        AppSafetyAlert.answers = [.init(title: "Server said no.", response: .alertFirstButtonReturn)]
         button.performClick(nil)
-        try waitForMain("The failure is surfaced") { AppSafetyAlert.seen == ["Server said no."] && !app.publishing.isBusy }
-        try expect(probe.copied.isEmpty, "A failed upload copies nothing")
+        try waitForMain("The failure is surfaced inline") { app.status.stringValue == "Error: Server said no." && !app.publishing.isBusy }
+        try expect(probe.copied.isEmpty && AppSafetyAlert.seen.isEmpty && app.window.attachedSheet == nil, "A failed upload copies nothing and raises no alert (OSN-054 moved the error inline)")
         probe.failure = nil
         button.performClick(nil)
         try waitForMain("Webpost works again after a failure") { probe.count == 2 && app.status.stringValue.hasPrefix("Link copied") }
@@ -204,7 +204,7 @@ extension AppSafetyTests {
         let fixture = try Fixture(), app = fixture.app
         let button = try webpostButton(app)
         try expect(button.menu != nil && (button as? OriginalActionButton)?.showMenuOnLeftClick == false
-                   && AppToolTip.text(for: button) == "Upload and copy link · Right-click for destinations", "The button has a right-click menu, left-click stays the action, and the tooltip says so")
+                   && AppToolTip.text(for: button) == "Upload image and copy link · Right-click for destinations", "The button has a right-click menu, left-click stays the action, and the tooltip says so")
         try expect(try menuLayout(app) == ["✓ SFTP · test-host", "-", "Destination Settings…", "Share with macOS…"], "Configured menu: \(try menuLayout(app))")
         try configureDestinations(app, [])
         try expect(try menuLayout(app) == ["No destination configured (disabled)", "-", "Destination Settings…", "Share with macOS…"], "Unconfigured menu: \(try menuLayout(app))")
@@ -250,7 +250,7 @@ extension AppSafetyTests {
         try expect(app.status.stringValue == "Uploading Held…", "A tool change and an edit keep the upload text (\(app.status.stringValue))")
         probe.gate.signal()
         try waitForMain("The upload finishes") { !app.publishing.isBusy && app.status.stringValue.hasPrefix("Link copied") }
-        app.updateStatus()
+        app.expireUploadSuccess() // the 4 s of "Link copied" are over
         try expect(app.status.stringValue.contains("Unsaved changes") || app.status.stringValue.contains("Saved"), "After completion the normal status returns (\(app.status.stringValue))")
     }
 
@@ -309,8 +309,8 @@ extension AppSafetyTests {
         try expect(button.title.isEmpty && button.imagePosition == .imageOnly && button.icon == nil && button.image?.isTemplate == true,
                    "The upload button has no title and a native symbol image")
         try expect(ModernEditorChrome.uploadSymbolName == "icloud.and.arrow.up" && NSImage(systemSymbolName: ModernEditorChrome.uploadSymbolName, accessibilityDescription: nil) != nil
-                   && button.image?.accessibilityDescription == "Upload", "It shows icloud.and.arrow.up")
-        try expect(button.accessibilityLabel() == "Upload to destination", "VoiceOver reads the label, not the symbol name")
+                   && button.image?.accessibilityDescription == "Upload image", "It shows icloud.and.arrow.up")
+        try expect(button.accessibilityLabel() == "Upload image", "VoiceOver reads the label, not the symbol name")
         try expect(button.action == #selector(AppDelegate.share(_:)) && button.menu != nil, "It uploads on click and carries the destination menu")
         try expect(button.frame.width <= 48 && button.frame.height == 36 && button.frame.height >= DesignTokens.Size.hitMin, "It is a compact icon button, not a labelled capsule (\(button.frame.size))")
     }

@@ -25,9 +25,13 @@ private enum ExportAccessoryTests {
                    "File-export defaults")
         try expect(!options.jpegControlsEnabled, "PNG disables JPEG controls")
         try expect(options.qualityLabel == "JPEG quality: 70%", "Readable default quality label")
-        let formats = ["png", "jpeg", "tiff", "gif", "bmp", "pdf", "svg", "opensnap"]
-        let titles = ["PNG", "JPEG", "TIFF", "GIF", "BMP", "PDF", "SVG", "OpenSnap"]
-        try expect(ExportAccessoryFormat.allCases.map(\.rawValue) == formats, "All eight formats in order")
+        // T9 / OSN-054: the Export panel offers PNG, JPG, PDF, TIFF and SVG only; GIF, BMP and OpenSnap are no longer choices.
+        let formats = ["png", "jpeg", "pdf", "tiff", "svg"]
+        let titles = ["PNG", "JPG", "PDF", "TIFF", "SVG"]
+        try expect(ExportAccessoryFormat.allCases.map(\.rawValue) == formats, "The five export formats in order")
+        for retired in ["gif", "bmp", "opensnap"] {
+            try expect(ExportAccessoryFormat.validated(retired) == .png, "A stored \(retired) choice falls back to PNG")
+        }
         try expect(ExportAccessoryFormat.allCases.map(\.title) == titles, "Format popup labels")
         for format in formats {
             _ = options.setFormat(format.uppercased())
@@ -145,8 +149,8 @@ private enum ExportAccessoryTests {
             live.updateByteCount(500, size: CGSize(width: 100, height: 50))
             live.format = live.format // Idempotent callback reentry.
         })
-        live.format = "gif"
-        try expect(liveCallbacks == 1 && live.preview.byteCount == 500 && live.format == "gif",
+        live.format = "pdf"
+        try expect(liveCallbacks == 1 && live.preview.byteCount == 500 && live.format == "pdf",
                    "Synchronous fresh preview survives callback reentry")
         var assignedCallbacks = 0
         let assigned = ExportAccessory(format: "jpeg", originalSize: true, jpegQuality: 0.5,
@@ -159,6 +163,10 @@ private enum ExportAccessoryTests {
         try expect(assignedCallbacks == 3, "Assigned callback handles all three option changes")
         assigned.updateByteCount(500, size: CGSize(width: 100, height: 50))
         try expect(assignedCallbacks == 3, "Preview update does not notify assigned callback")
+
+        // T9: the quality is stated as text ("JPG quality 75 %"), whole percent; the view itself is checked in the accessibility audit suite.
+        try expect(ExportAccessory.qualityText(0.75) == "JPG quality 75 %" && ExportAccessory.qualityText(0.5) == "JPG quality 50 %" && ExportAccessory.qualityText(1) == "JPG quality 100 %",
+                   "The quality text follows the quality, in whole percent")
         print("ExportAccessoryTests: \(checks) checks passed (no UI creation or desktop input)")
     }
 }

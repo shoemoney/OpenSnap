@@ -424,7 +424,7 @@ private enum GlassChromeTests {
         expect(OriginalDrawingControls.sizeSteps == [1.5, 4.125, 6.75, 9.375, 12], "There are five steps")
         expect(slider.accessibilityRole() == .slider && slider.accessibilityLabel() == "Drawing size" && slider.isAccessibilityElement(), "The pill is an accessible slider")
         expect((slider.accessibilityMinValue() as? NSNumber)?.doubleValue == 1.5 && (slider.accessibilityMaxValue() as? NSNumber)?.doubleValue == 12
-               && (slider.accessibilityValue() as? NSNumber)?.doubleValue == 6.75, "Min, max and value are exposed")
+               && (slider.accessibilityValue() as? NSNumber)?.doubleValue == 7, "Min, max and the whole-number value are exposed (6.75 reads 7)")
         expect(slider.acceptsFirstResponder && slider.frame.height >= 36, "The pill takes the keyboard and is at least 36 pt tall")
 
         // Pixels: the glyph is a horizontal line whose thickness is the value.
@@ -1304,6 +1304,7 @@ private enum GlassChromeTests {
             verifyLayout(rig, label + " after frame mode")
             toolGroupBalanceChecks(rig, label)
             canvasCentreChecks(rig, label)
+            footerUploadChecks(rig, label)
             if size == minimum {
                 widthBudgetChecks(rig, label)
                 accessibilityChecks(rig, label)
@@ -1383,6 +1384,83 @@ private enum GlassChromeTests {
         if rig.size.width <= ModernEditorChrome.minimumWindowWidth + 0.5 {
             expect(rect(shared.status, in: rig).width >= 120, "\(label): the status keeps 120 pt beside the Original size checkbox (\(rect(shared.status, in: rig).width))")
         }
+    }
+
+    /// FooterLayoutTests (OSN-054): an upload swaps what sits in the status slot and never widens the bar. In each state the commands that
+    /// belong to it are inside the bar, whole and clear of every other control, the status gives way (truncating at its tail) before any
+    /// control clips, the Original size checkbox is out of the way while uploading, and the PNG | JPG toggle still exposes its two children.
+    private static func footerUploadChecks(_ rig: Rig, _ label: String) {
+        let chrome = rig.chrome, shared = rig.controls, upload = chrome.uploadControls
+        let footer = rect(descendantsOf(chrome).first { $0.identifier?.rawValue == "OpenSnapFooter" }!, in: rig)
+        let url = URL(string: "https://cdn.example.com/pics/x.png")!
+        let longName = String(repeating: "A very long screenshot name ", count: 6)
+        let fixed: [NSView] = [chrome.undoButton, chrome.wipeButton, shared.zoomControl, chrome.resizeButton, chrome.saveButton, chrome.historyButton,
+                               shared.dragFormatControl, shared.dragExportView, chrome.shareButton]
+        let widthBefore = chrome.measuredWindowWidth()
+        func fixedWidth(_ button: CommandButton) -> CGFloat {
+            if button.visibleTitle.isEmpty { return GlassChrome.Metrics.iconButton.width }
+            return ceil((button.visibleTitle as NSString).size(withAttributes: [.font: button.font as Any]).width) + 2 * DesignTokens.Space.s3
+        }
+        let all: [(String, CommandButton)] = [("Cancel upload", upload.cancelButton), ("Open link", upload.openButton), ("Copy link", upload.copyButton), ("Retry", upload.retryButton), ("Details…", upload.detailsButton)]
+        let states: [(String, UploadState, [String])] = [
+            ("uploading", .uploading(name: longName), ["Cancel upload"]),
+            ("uploading a short name", .uploading(name: "Shot"), ["Cancel upload"]),
+            ("success", .success(url: url, copied: true), ["Open link", "Copy link"]),
+            ("failure", .failure(message: "The file uploaded, but public URL verification failed or timed out. No link was copied."), ["Retry", "Details…"])
+        ]
+        for (name, state, commands) in states {
+            let tag = "\(label) \(name)"
+            upload.apply(state)
+            shared.dragOriginalControl.isHidden = state.occupiesStatusSlot // the app hides the checkbox while an upload has the slot
+            shared.status.stringValue = state.statusText ?? ""
+            shared.status.invalidateIntrinsicContentSize()
+            rig.content.layoutSubtreeIfNeeded()
+            let spinnerShown = state.isUploading
+            expect(upload.spinner.isHiddenOrHasHiddenAncestor == !spinnerShown, "\(tag): the spinner is shown only while uploading")
+            if spinnerShown {
+                let spinner = rect(upload.spinner, in: rig)
+                expect(abs(spinner.width - 20) < 0.5 && abs(spinner.height - 20) < 0.5 && footer.insetBy(dx: -0.5, dy: -0.5).contains(spinner), "\(tag): the spinner is 20 pt and inside the bar (\(spinner))")
+            }
+            var occupied: [(String, NSRect)] = fixed.map { ("control", rect($0, in: rig)) }
+            if spinnerShown { occupied.append(("spinner", rect(upload.spinner, in: rig))) }
+            for (title, button) in all {
+                let shown = commands.contains(title)
+                expect(button.isHiddenOrHasHiddenAncestor == !shown, "\(tag): \(title) is \(shown ? "shown" : "hidden")")
+                guard shown else { continue }
+                let frame = rect(button, in: rig)
+                expect(footer.insetBy(dx: -0.5, dy: -0.5).contains(frame), "\(tag): \(title) lies inside the bottom bar (\(frame) vs \(footer))")
+                expect(abs(frame.width - fixedWidth(button)) < 0.5, "\(tag): \(title) is not squeezed (\(frame.width) of \(fixedWidth(button)))")
+                expect(frame.height >= 36 && (button.font?.pointSize ?? 0) >= 18, "\(tag): \(title) is 36 pt tall with readable type")
+                occupied.append((title, frame))
+            }
+            let status = rect(shared.status, in: rig)
+            occupied.append(("status", status))
+            for (index, a) in occupied.enumerated() {
+                for b in occupied[(index + 1)...] {
+                    let overlap = a.1.intersection(b.1)
+                    expect(overlap.isNull || overlap.width <= 0.5 || overlap.height <= 0.5, "\(tag): \(a.0) overlaps \(b.0) by \(overlap)")
+                }
+            }
+            let slot = rect(descendantsOf(chrome).first { $0.identifier?.rawValue == "OpenSnapStatusRow" }!, in: rig)
+            expect(status.width >= 60 && footer.insetBy(dx: -0.5, dy: -0.5).contains(status), "\(tag): the status keeps at least 60 pt (\(status.width); the slot is \(slot.width) pt wide, the checkbox \(shared.dragOriginalControl.isHidden ? "hidden" : "shown"))")
+            if name == "uploading" || name == "failure" {
+                let needed = shared.status.cell?.cellSize.width ?? 0
+                expect(needed > status.width + 0.5 && shared.status.lineBreakMode == .byTruncatingTail, "\(tag): the status truncates at its tail (\(needed) wanted, \(status.width) given) before any command clips")
+            }
+            if let first = all.first(where: { commands.contains($0.0) }) {
+                expect(status.maxX <= rect(first.1, in: rig).minX + 0.5, "\(tag): the status ends before the first command (\(status.maxX) vs \(rect(first.1, in: rig).minX))")
+            }
+            expect(shared.dragOriginalControl.isHidden, "\(tag): the Original size checkbox is out of the way while the upload has the slot")
+            if name != "uploading a short name" { print("  footer @\(Int(rig.size.width)) \(name): the status gets \(Int(status.width)) of the \(Int(slot.width)) pt slot") }
+            expect(abs(chrome.measuredWindowWidth() - widthBefore) < 0.5, "\(tag): the bar does not widen (\(chrome.measuredWindowWidth()) vs \(widthBefore))")
+            let children = shared.dragFormatControl.accessibilityChildren() ?? []
+            expect(children.count == 2 && (children as? [NSAccessibilityElement])?.compactMap { $0.accessibilityLabel() } == ["PNG", "JPG"], "\(tag): the toggle still exposes two children, PNG and JPG")
+        }
+        upload.apply(.idle)
+        shared.dragOriginalControl.isHidden = false
+        shared.status.stringValue = longStatus
+        rig.content.layoutSubtreeIfNeeded()
+        expect(upload.commandButtons.allSatisfy { $0.isHiddenOrHasHiddenAncestor } && upload.spinner.isHiddenOrHasHiddenAncestor, "\(label): idle shows none of the upload controls")
     }
 
     /// The sums of the width budget, from live Metrics and from the real laid-out plates; the minimum window width must cover the worst case.
@@ -1483,7 +1561,7 @@ private enum GlassChromeTests {
                          rig.controls.dragFormatControl, rig.controls.dragExportView, chrome.shareButton] as [NSView]
             for part in parts { expect(ancestors(part).contains { $0 === footer }, "\(label): \(describe(part)) is in the single footer row") }
             expect(footer.subviews.count == 5 && footer.frame.height <= 44.5, "\(label): the footer is one row of four glass plates and the status row (\(footer.frame.height) pt)")
-            let known = Set(parts.map(ObjectIdentifier.init) + [ObjectIdentifier(rig.controls.dragOriginalControl)])
+            let known = Set(parts.map(ObjectIdentifier.init) + [ObjectIdentifier(rig.controls.dragOriginalControl), ObjectIdentifier(chrome.uploadControls.spinner)] + chrome.uploadControls.commandButtons.map(ObjectIdentifier.init))
             let leaves = descendants(footer).filter { ($0 is NSControl) && !($0 is NSStackView) && $0.window != nil && !$0.isHidden }
             let strays = leaves.filter { leaf in !known.contains(ObjectIdentifier(leaf)) && !ancestors(leaf).contains { known.contains(ObjectIdentifier($0)) } }
             expect(strays.isEmpty, "\(label): the footer holds only its own controls (strays: \(strays.map(describe)))")
@@ -1521,7 +1599,7 @@ private enum GlassChromeTests {
         for id in toolOrder {
             guard let button = chrome.toolButtons[id] else { continue }
             expect(button.identifier?.rawValue == id, "\(label): tool identifier \(id)")
-            expect(button.accessibilityLabel() == id.capitalized, "\(label): tool AX label \(id)")
+            expect(button.accessibilityLabel() == id.capitalized + " tool", "\(label): tool AX label \(id)")
             expect(AppToolTip.text(for: button) == id.capitalized + " tool", "\(label): tool tooltip \(id)")
             expect(button.imagePosition == .imageOnly && button.image != nil, "\(label): tool \(id) is icon only")
             expect(button.action == #selector(ActionTarget.chooseTool(_:)) && button.target === rig.target, "\(label): tool \(id) sends chooseTool")
@@ -1549,7 +1627,7 @@ private enum GlassChromeTests {
             expect(rig.target.hits == [hit], "\(label): \(title) sends its action (\(rig.target.hits))")
             expect(!button.plate.isSelected, "\(label): clicking \(title) never leaves it selected")
         }
-        expect(chrome.shareButton.accessibilityLabel() == "Upload to destination" && chrome.shareButton.title.isEmpty && chrome.shareButton.imagePosition == .imageOnly,
+        expect(chrome.shareButton.accessibilityLabel() == "Upload image" && chrome.shareButton.title.isEmpty && chrome.shareButton.imagePosition == .imageOnly,
                "\(label): the upload button is icon-only with an explicit label")
         rig.target.hits.removeAll(); chrome.shareButton.performClick(nil)
         expect(rig.target.hits == ["share"], "\(label): the upload button sends its action")
@@ -1632,7 +1710,7 @@ private enum GlassChromeTests {
             (chrome.historyButton, "History", "History"), (chrome.snapButton, "Snap", snapToolTip), (chrome.cancelFrameButton, "Cancel", "Cancel"),
             (chrome.fontButton, "Font", "Font"), (chrome.undoButton, "Undo", "Undo (⌘Z)"), (chrome.wipeButton, "Wipe", "Wipe"),
             (chrome.resizeButton, "Resize…", "Resize…"),
-            (chrome.shareButton, "Upload to destination", "Upload")]
+            (chrome.shareButton, "Upload image", "Upload image")]
         for (button, name, tip) in expected {
             expect(button.imagePosition == .imageOnly, "\(label): \(name) draws only its icon")
             expect((button as? CommandButton).map { $0.visibleTitle.isEmpty } ?? button.title.isEmpty, "\(label): \(name) shows no title text")

@@ -2033,6 +2033,11 @@ final class CanvasView: NSView, NSTextViewDelegate {
         if !event.modifierFlags.contains(.command) && event.keyCode == 49 {
             spaceHeld = true; onHintModifiers?(event.modifierFlags); window?.invalidateCursorRects(for: self); return
         }
+        // Control-Tab leaves the canvas, as it leaves a text view; plain Tab stays the pencil swap.
+        if event.keyCode == 48 && event.modifierFlags.contains(.control) && !event.modifierFlags.contains(.command) {
+            if event.modifierFlags.contains(.shift) { window?.selectPreviousKeyView(self) } else { window?.selectNextKeyView(self) }
+            return
+        }
         if event.keyCode == 48 && !event.isARepeat && !event.modifierFlags.contains(.command) && dragMode == .none {
             togglingPencil = true
             if tool == .brush {
