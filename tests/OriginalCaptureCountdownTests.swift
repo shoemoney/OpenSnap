@@ -94,6 +94,9 @@ private final class Harness {
     var factoryHook: (() -> Void)?
     var imageHook: ((Int) -> Void)?
     var screenHook: (() -> Void)?
+    var reduceMotion = false
+    var increaseContrast = false
+    var announcements: [String] = []
     init(artwork: Bool = true) {
         guard artwork else { return }
         for number in 1...3 { resources[number] = OriginalCaptureCountdown.numeral(number) }
@@ -107,7 +110,9 @@ private final class Harness {
         }, images: { [self] number in
             requestedImages.append(number); imageHook?(number); return resources[number]
         }, scheduler: { [self] interval, tick in clock.schedule(interval, tick) },
-        screenFrames: { [self] in screenHook?(); return screens })
+        screenFrames: { [self] in screenHook?(); return screens },
+        reduceMotion: { [self] in reduceMotion }, increaseContrast: { [self] in increaseContrast },
+        announce: { [self] in announcements.append($0) })
     }
 }
 
@@ -128,8 +133,11 @@ enum OriginalCaptureCountdownTests {
         cancellationAndAttachment()
         reentrantCallbacks()
         registrationAndProviderReentry()
+        reduceMotionKeepsNumeralSteady()
+        announcements()
         boundaryInputs(artwork: true)
         drawnNumerals()
+        plateStyle()
         geometry()
         print("OriginalCaptureCountdownTests: \(checks) checks passed (no window ordering)")
     }
@@ -149,7 +157,7 @@ enum OriginalCaptureCountdownTests {
         expect(countdown.isRunning && h.clock.activeCount == 1 && h.clock.entries.count == 1, "One owned timer")
         expect(h.clock.intervals == [0.1], "Recovered interval")
         let panel = h.panels[0]
-        expect(panel.frame == NSRect(x: 300, y: 150, width: 200, height: 200), "Centered drawn numeral")
+        expect(panel.frame == NSRect(x: 330, y: 180, width: 140, height: 140), "Centered 140 x 140 drawn plate")
         expect(panel.frontCount == 1 && panel.focusCount == 0 && !panel.canBecomeKey && !panel.canBecomeMain, "Standalone presentation never focuses")
         expect(panel.ignoresMouseEvents && !panel.isOpaque && panel.backgroundColor == .clear, "Transparent mouse pass-through")
         expect(!panel.canHide && !panel.hidesOnDeactivate, "App hiding does not hide owned countdown")
@@ -157,7 +165,7 @@ enum OriginalCaptureCountdownTests {
         expect(panel.level.rawValue == Int(CGWindowLevelForKey(.popUpMenuWindow)) + 100, "Recovered window level")
         expect(panel.alphaValue == 0, "Initial overlay invisible")
         let view = panel.contentView as! NSImageView
-        expect(view.image === h.resources[3] && view.imageScaling == .scaleNone, "Original PNG retained without rescaling")
+        expect(view.image === h.resources[3] && view.imageScaling == .scaleNone, "Drawn numeral shown without rescaling")
         expect(view.accessibilityLabel() == "Capture countdown: 3", "Accessible initial numeral")
         expect(!view.acceptsFirstResponder && view.hitTest(.zero) == nil, "View owns no input")
         var policy = OriginalCaptureTiming(delay: delay)!
@@ -177,6 +185,52 @@ enum OriginalCaptureCountdownTests {
         expect(Array(h.events.log.suffix(4)) == ["invalidate", "out", "close", "complete"], "Clear BEFORE completion")
         h.clock.fire(); countdown.cancel()
         expect(completions == 1 && h.clock.entries[0].cancellations == 1 && cueTicks == cues, "Stale ticks and cancel cannot repeat completion")
+    }
+
+
+    /// Reduce Motion: the blink is motion, so the numeral stays at alpha 1 from the first frame to the last, for both delays.
+    private static func reduceMotionKeepsNumeralSteady() {
+        for (delay, ticks) in [(3.0, 31), (6.0, 61)] {
+            let h = Harness(); h.reduceMotion = true
+            let countdown = h.make()
+            var done = 0
+            countdown.start(rect: rect, parent: nil, delay: delay, cue: {}, completion: { done += 1 })
+            let panel = h.panels[0]
+            var alphas = [panel.alphaValue]
+            for _ in 1..<ticks { h.clock.fire(); alphas.append(panel.alphaValue) }
+            expect(alphas.count == ticks && Set(alphas) == [1], "Reduce Motion alpha is constant 1 over \(ticks) ticks, got \(Set(alphas).sorted())")
+            expect(done == 0 && countdown.isRunning, "Numeral still up one tick before the end")
+            h.clock.fire()
+            expect(done == 1 && panel.outCount == 1 && panel.closeCount == 1, "Hidden (closed) when the countdown finishes")
+        }
+        // Without Reduce Motion the same run really does blink, so the constant above is the setting's doing.
+        let h = Harness(); let countdown = h.make()
+        countdown.start(rect: rect, parent: nil, delay: 3, cue: {}, completion: {})
+        var alphas = Set<CGFloat>()
+        for _ in 1..<31 { h.clock.fire(); alphas.insert(h.panels[0].alphaValue) }
+        expect(alphas == [0, 1], "Normal motion still blinks between 0 and 1")
+        countdown.cancel()
+    }
+
+    private static func announcements() {
+        for (delay, ticks) in [(3.0, 31), (6.0, 61)] {
+            for reduce in [false, true] {
+                let h = Harness(); h.reduceMotion = reduce
+                let countdown = h.make()
+                countdown.start(rect: rect, parent: nil, delay: delay, cue: {}, completion: {})
+                for _ in 0..<ticks { h.clock.fire() }
+                expect(h.announcements == ["3", "2", "1"], "VoiceOver hears 3, 2, 1 once each, in order (delay \(delay), reduce \(reduce)): \(h.announcements)")
+            }
+        }
+        // A countdown that never gets a panel (no screens) is still announced: the announcement does not depend on drawing.
+        let h = Harness(); h.screens = []
+        let countdown = h.make()
+        countdown.start(rect: rect, parent: nil, delay: 3, cue: {}, completion: {})
+        for _ in 0..<31 { h.clock.fire() }
+        expect(h.announcements == ["3", "2", "1"], "Announcements do not depend on a visible panel")
+        let none = Harness(); let idle = none.make()
+        idle.start(rect: rect, parent: nil, delay: 0, cue: {}, completion: {})
+        expect(none.announcements.isEmpty, "Zero delay announces nothing")
     }
 
     private static func cancellationAndAttachment() {
@@ -283,25 +337,76 @@ enum OriginalCaptureCountdownTests {
         expect(complete == expected && h.panels.isEmpty && h.clock.activeCount == 0, "A missing numeral cannot strand expiry")
     }
 
+    /// Draws the numeral at 1x into a known bitmap so pixel checks do not depend on the display's scale.
+    private static func render(_ image: NSImage) -> NSBitmapImageRep {
+        let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(image.size.width), pixelsHigh: Int(image.size.height),
+                                   bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                                   colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
+        image.draw(in: NSRect(origin: .zero, size: image.size))
+        NSGraphicsContext.restoreGraphicsState()
+        return rep
+    }
+
     private static func drawnNumerals() {
         expect(OriginalCaptureCountdown.numeralFontSize >= 18, "Numeral text is at least 18pt")
+        expect(OriginalCaptureCountdown.numeralFontSize == DesignTokens.Typography.font(.countdown).pointSize, "Numeral uses the countdown type token")
         expect(OriginalCaptureCountdown.numeral(0) == nil && OriginalCaptureCountdown.numeral(4) == nil, "Only 1 to 3 draw")
         var signatures: [Data] = []
+        let plate = NSRect(origin: .zero, size: OriginalCaptureCountdown.numeralSize)
+        expect(plate.size == NSSize(width: 140, height: 140), "The plate is 140 x 140")
         for number in 1...3 {
-            guard let image = OriginalCaptureCountdown.numeral(number),
-                  let tiff = image.tiffRepresentation, let rep = NSBitmapImageRep(data: tiff) else {
+            guard let image = OriginalCaptureCountdown.numeral(number), let layout = OriginalCaptureCountdown.numeralLayout(number) else {
                 expect(false, "Numeral \(number) draws"); return
             }
             expect(image.size == OriginalCaptureCountdown.numeralSize, "Numeral \(number) uses the shared size")
+            expect(plate.insetBy(dx: 8, dy: 8).contains(layout.ink), "Numeral \(number) glyph outline \(layout.ink) fits the 140 plate with 8 pt to spare")
+            let rep = render(image)
             var white = 0, dark = 0
+            var minX = Int.max, maxX = -1, minY = Int.max, maxY = -1
             for y in 0..<rep.pixelsHigh { for x in 0..<rep.pixelsWide {
                 guard let c = rep.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB), c.alphaComponent > 0.5 else { continue }
-                if c.redComponent > 0.9 { white += 1 } else if c.redComponent < 0.2 { dark += 1 }
+                if c.redComponent > 0.9 {
+                    white += 1
+                    minX = min(minX, x); maxX = max(maxX, x); minY = min(minY, y); maxY = max(maxY, y)
+                } else if c.redComponent < 0.2 { dark += 1 }
             } }
-            expect(white > 500 && dark > white, "Numeral \(number) is white text on a dark backing")
-            signatures.append(tiff)
+            expect(white > 500 && dark > 1000, "Numeral \(number) is white text on a dark plate (\(white) white, \(dark) dark pixels)")
+            expect(minX >= 8 && maxX <= 131 && minY >= 8 && maxY <= 131, "Numeral \(number) drawn pixels sit inside the plate: x \(minX)...\(maxX), y \(minY)...\(maxY)")
+            expect(abs((minX + maxX) / 2 - 70) <= 4 && abs((minY + maxY) / 2 - 70) <= 4, "Numeral \(number) is centred on the plate")
+            signatures.append(rep.tiffRepresentation!)
         }
         expect(Set(signatures).count == 3, "Each numeral draws differently")
+    }
+
+    /// The plate itself: hud fill at 0.55 (0.8 with Increase Contrast), extra-large corners, white text with a shadow.
+    private static func plateStyle() {
+        expect(OriginalCaptureCountdown.plateAlpha(highContrast: false) == 0.55 && OriginalCaptureCountdown.plateAlpha(highContrast: true) == 0.8,
+               "Plate alpha is 0.55, and 0.8 under Increase Contrast")
+        expect(DesignTokens.Radius.xl == 16, "xl radius is 16")
+        for (contrast, alpha) in [(false, 0.55), (true, 0.8)] {
+            let rep = render(OriginalCaptureCountdown.numeral(1, highContrast: contrast)!)
+            let edge = rep.colorAt(x: 6, y: 70)!.usingColorSpace(.deviceRGB)!
+            expect(abs(edge.alphaComponent - alpha) < 0.02 && edge.redComponent < 0.05, "Plate edge is hud black at \(alpha), got \(edge.alphaComponent)")
+            expect(rep.colorAt(x: 0, y: 0)!.alphaComponent < 0.05 && rep.colorAt(x: 139, y: 139)!.alphaComponent < 0.05,
+                   "Corners are rounded away (radius 16)")
+            expect(rep.colorAt(x: 70, y: 4)!.alphaComponent > 0.4, "Straight edges are filled")
+        }
+        // Production default reads the system; the closure seam is what the harness above exercises.
+        let h = Harness(); h.increaseContrast = true
+        let countdown = h.make()
+        countdown.start(rect: rect, parent: nil, delay: 3, cue: {}, completion: {})
+        expect(h.panels.count == 1, "Seams build a real countdown")
+        countdown.cancel()
+        let shadowImage = render(OriginalCaptureCountdown.numeral(1)!)
+        var shadowPixels = 0
+        let plain = shadowImage
+        for y in 0..<plain.pixelsHigh { for x in 0..<plain.pixelsWide {
+            let c = plain.colorAt(x: x, y: y)!.usingColorSpace(.deviceRGB)!
+            if c.alphaComponent > 0.8 && c.redComponent < 0.05 { shadowPixels += 1 }
+        } }
+        expect(shadowPixels > 0, "The digit's shadow darkens the plate beneath the glyph")
     }
 
     private static func geometry() {

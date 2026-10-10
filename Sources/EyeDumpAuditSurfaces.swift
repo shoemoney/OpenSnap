@@ -141,7 +141,7 @@ extension AuditRun {
         sheet.displayIfNeeded()
         shoot(id, slug, surface: surface, state: state, windows: [sheet], refs: refs, settle: 0.4,
               extra: ["capturedWindow": "sheet itself", "sheetClass": String(describing: type(of: sheet)), "sheetOnScreen": sheet.isVisible])
-        shoot(id, slug + "-in-context", surface: surface, state: state + " (parent window + sheet composite)", windows: [host, sheet], refs: refs, settle: 0.1,
+        shoot(id, slug + "-in-context", surface: surface, state: state + " (parent window + sheet composite)", windows: [sheet, host], refs: refs, settle: 0.1,
               extra: ["capturedWindow": "parent + sheet composite"])
     }
 
@@ -834,10 +834,19 @@ extension AuditRun {
     }
 
     func s16() {
-        let message = "Screen Recording access is not granted. Enable this app in System Settings > Privacy & Security > Screen Recording, then reopen it if macOS requests that."
-        let error = NSError(domain: "OpenSnap.Capture", code: 6, userInfo: [NSLocalizedDescriptionKey: message])
-        captureModal("S16", "permission-alert", surface: "Screen Recording permission alert", state: "the alert Capture.swift raises when Screen Recording is missing (built in-process; TCC never asked)",
-                     refs: ["Capture.swift|Screen Recording access is not granted", "App.swift|func error(_ error: Error)"]) { app.error(error) }
+        // The sheet Capture presents when Screen Recording is missing, over the editor. Its Settings opener is a no-op here and TCC is never asked.
+        loadSynthetic(size: CGSize(width: 1000, height: 700), name: "Permission")
+        let sheet = ScreenRecordingPermissionSheet(openURL: { _ in })
+        sheet.present(on: window)
+        pump(1.0)
+        let refs = ["Capture.swift|final class ScreenRecordingPermissionSheet", "Capture.swift|struct ScreenRecordingGate"]
+        shoot("S16", "permission-sheet", surface: "Screen Recording permission sheet", state: "app-owned sheet: title, instructions, Open System Settings (default) and Cancel",
+              windows: [sheet.panel], refs: refs, settle: 0.4, extra: ["capturedWindow": "sheet itself", "sheetOnScreen": sheet.panel.isVisible])
+        // The overlay goes FIRST: CGWindowListCreateImageFromArray treats the first window as frontmost.
+        shoot("S16", "permission-sheet-in-context", surface: "Screen Recording permission sheet", state: "the sheet over the dimmed editor (sheet + parent composite, sheet in front)",
+              windows: [sheet.panel, window], refs: refs, settle: 0.1, extra: ["capturedWindow": "sheet + parent composite"])
+        sheet.cancel()
+        pump(0.4)
     }
 
     func s17() {
@@ -1154,14 +1163,41 @@ extension AuditRun {
     func s29() {
         // Help bevel (tool-tip overlay) -- off by default; force it on only inside this process.
         loadSynthetic(size: CGSize(width: 1000, height: 700), name: "Extras")
+        // The bevel only renders over the key window; a second launch can still be activating when this step starts.
+        window.makeKeyAndOrderFront(nil)
+        pump(0.4)
         app.helpBevel?.enabled = true
-        app.helpBevel?.hover(owner: "audit", message: "Rectangle tool: drag to draw a rectangle. Hold Shift for a square.")
-        pump(1.2)
+        let bands = OriginalHelpBevel.discoverBands(in: window)
+        let hint = "Rectangle tool: drag to draw a rectangle. Hold Shift for a square."
+        // The editor is at the top of the screen, so the plate goes inside the window: under the top bar for a top-bar control,
+        // above the bottom bar for a bottom-bar control, and never over the title bar or the traffic lights.
+        for (slug, control, point) in [("help-bevel", "top-bar control (Rectangle tool)", NSPoint(x: bands.header.midX, y: bands.header.midY)),
+                                       ("help-bevel-bottom", "bottom-bar control (Wipe)", NSPoint(x: bands.footer.minX + 60, y: bands.footer.midY))] {
+            app.helpBevel?.pointer = { point }
+            app.helpBevel?.hover(owner: "audit-" + slug, message: hint)
+            pump(1.2)
+            let known = Set([window.windowNumber])
+            let helpers = NSApp.windows.filter { !known.contains($0.windowNumber) && $0.isVisible && String(describing: type(of: $0)).contains("Help") }
+            shoot("S29", slug, surface: "help bevel (tool-tip overlay)", state: "OriginalHelpBevel HUD with a hover hint for a \(control) (feature is off by default); editor at the top of the screen, so the plate sits inside the window, clear of the title bar and both bars", windows: helpers + [window], refs: ["OriginalHelpBevel.swift|final class OriginalHelpBevelView", "OriginalHelpBevel.swift|private func insideFrame"],
+                  extra: ["helpWindowFound": !helpers.isEmpty, "plateFrame": NSStringFromRect(helpers.first?.frame ?? .zero), "titleBar": NSStringFromRect(bands.titleBar),
+                          "header": NSStringFromRect(bands.header), "footer": NSStringFromRect(bands.footer)])
+            app.helpBevel?.clear()
+        }
         let known = Set([window.windowNumber])
-        let helpers = NSApp.windows.filter { !known.contains($0.windowNumber) && $0.isVisible && String(describing: type(of: $0)).contains("Help") }
-        shoot("S29", "help-bevel", surface: "help bevel (tool-tip overlay)", state: "OriginalHelpBevel HUD with a hover hint (feature is off by default)", windows: [window] + helpers, refs: ["OriginalHelpBevel.swift|final class OriginalHelpBevelView"],
-              extra: ["helpWindowFound": !helpers.isEmpty])
-        app.helpBevel?.clear()
+        // With room above the editor the plate hangs from its top edge instead of sitting inside it.
+        if let screen = window.screen ?? NSScreen.main {
+            var frame = window.frame
+            frame.origin.y = min(frame.origin.y, screen.visibleFrame.maxY - frame.height - 140)
+            window.setFrame(frame, display: true)
+            window.makeKeyAndOrderFront(nil)
+            pump(0.4)
+            app.helpBevel?.hover(owner: "audit", message: hint)
+            pump(1.2)
+            let hanging = NSApp.windows.filter { !known.contains($0.windowNumber) && $0.isVisible && String(describing: type(of: $0)).contains("Help") }
+            shoot("S29", "help-bevel-hanging", surface: "help bevel (tool-tip overlay)", state: "the same hint with 140 pt free above the editor: the plate hangs from its top edge, behind it",
+                  windows: hanging + [window], refs: ["OriginalHelpBevel.swift|private func layout"], extra: ["helpWindowFound": !hanging.isEmpty])
+            app.helpBevel?.clear()
+        }
         app.helpBevel?.enabled = false
         // Drag-out thumbnail panel with its hover overlay.
         let id = UUID()
@@ -1203,7 +1239,7 @@ extension AuditRun {
             if let move = NSEvent.mouseEvent(with: .mouseMoved, location: local, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: panel.windowNumber, context: nil, eventNumber: 0, clickCount: 0, pressure: 0) {
                 selection.mouseMoved(with: move)
             }
-            shoot("S13", "picker-\(label)", surface: "capture picker / crosshair + magnifier", state: "crosshair overlay with magnifier (lens \(image ? "fed synthetic pixels" : "grey, as without a Screen Recording grant")), no drag yet",
+            shoot("S13", "picker-\(label)", surface: "capture picker / crosshair + magnifier", state: "crosshair overlay with magnifier (lens \(image ? "fed synthetic pixels" : "hatched placeholder reading Screen Recording off, as without a grant")), no drag yet",
                   windows: [panel], refs: ["OriginalCapturePicker.swift|func begin(windowOnly", "OriginalCapturePicker.swift|func mountMagnifierIfEnabled"], settle: 0.4)
             let start = NSPoint(x: local.x - 240, y: local.y - 140), end = NSPoint(x: local.x + 260, y: local.y + 160)
             for (type, point) in [(NSEvent.EventType.leftMouseDown, start), (.leftMouseDragged, end)] {
@@ -1211,18 +1247,35 @@ extension AuditRun {
                     if type == .leftMouseDown { selection.mouseDown(with: event) } else { selection.mouseDragged(with: event) }
                 }
             }
-            shoot("S13", "picker-\(label)-dragging", surface: "capture picker / crosshair + magnifier", state: "mid-drag selection rectangle with dimmed surround (lens \(image ? "synthetic" : "grey"))",
+            shoot("S13", "picker-\(label)-dragging", surface: "capture picker / crosshair + magnifier", state: "mid-drag selection rectangle with dimmed surround and the size read-out (lens \(image ? "synthetic" : "placeholder"))",
                   windows: [panel], refs: ["OriginalCapturePicker.swift|override func draw(_ dirtyRect"], settle: 0.4)
             picker.cancel()
             pump(0.4)
         }
+        // Magnifier, lens and size label together at the screen's corners: both stay on screen with the gap between them.
+        let edgePicker = OriginalCapturePicker(displayFrames: { [screen.frame] }, windowRecords: { [] }, screenImage: { _ in nil }, mouseLocation: { centre })
+        edgePicker.begin(windowOnly: false) { _ in }
+        pump(0.8)
+        if let panel = edgePicker.panels.first, let selection = panel.contentView as? OriginalCaptureSelectionView {
+            for (corner, point) in [("top-left", NSPoint(x: selection.bounds.minX + 6, y: selection.bounds.minY + 6)),
+                                    ("bottom-right", NSPoint(x: selection.bounds.maxX - 6, y: selection.bounds.maxY - 6))] {
+                if let move = NSEvent.mouseEvent(with: .mouseMoved, location: point, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: panel.windowNumber, context: nil, eventNumber: 0, clickCount: 0, pressure: 0) {
+                    selection.mouseMoved(with: move)
+                }
+                shoot("S13", "picker-no-recording-grant-edge-\(corner)", surface: "capture picker / crosshair + magnifier", state: "magnifier with the pointer at the \(corner) corner of the display (placeholder lens): lens and size label both stay on screen, the label 4 pt below the lens border",
+                      windows: [panel], refs: ["OriginalCaptureMagnifier.swift|static func labelRect", "OriginalCaptureMagnifier.swift|static func placementFrame"], settle: 0.4)
+            }
+        } else { gap("S13", "capture picker (screen edge)", "picker did not create an overlay panel") }
+        edgePicker.cancel()
+        pump(0.4)
         UserDefaults.standard.removeObject(forKey: OriginalCaptureMagnifierGeometry.defaultsKey)
     }
 
     func s14() {
         guard let screen = window.screen ?? NSScreen.main else { gap("S14", "countdown", "no screen"); return }
         var tick: (@MainActor @Sendable () -> Void)?
-        let countdown = OriginalCaptureCountdown(scheduler: { _, action in tick = action; return { tick = nil } }, screenFrames: { [screen.visibleFrame] })
+        let countdown = OriginalCaptureCountdown(scheduler: { _, action in tick = action; return { tick = nil } }, screenFrames: { [screen.visibleFrame] },
+                                                 reduceMotion: { false }, increaseContrast: { false }, announce: { _ in })
         let rect = window.frame.insetBy(dx: window.frame.width / 3, dy: window.frame.height / 3)
         countdown.start(rect: rect, parent: nil, delay: OriginalCaptureTiming.originalDelay, cue: {}, completion: {})
         var seen = Set<String>()
@@ -1238,21 +1291,31 @@ extension AuditRun {
         }
         countdown.cancel()
         if seen.isEmpty { gap("S14", "countdown overlay", "no countdown panel became visible at full alpha during 90 manual ticks") }
+        // Increase Contrast: the plate is darker (0.8 instead of 0.55). Reduce Motion: the panel is at full alpha from the first frame.
+        var contrastTick: (@MainActor @Sendable () -> Void)?
+        let contrast = OriginalCaptureCountdown(scheduler: { _, action in contrastTick = action; return { contrastTick = nil } }, screenFrames: { [screen.visibleFrame] },
+                                                reduceMotion: { true }, increaseContrast: { true }, announce: { _ in })
+        contrast.start(rect: rect, parent: nil, delay: OriginalCaptureTiming.originalDelay, cue: {}, completion: {})
+        if let panel = NSApp.windows.first(where: { String(describing: type(of: $0)).contains("Countdown") && $0.isVisible }) {
+            shoot("S14", "countdown-3-contrast-reduce-motion", surface: "countdown overlay", state: "digit 3 with Increase Contrast (plate 0.8) and Reduce Motion (alpha 1 on the first frame)",
+                  windows: [panel], refs: ["OriginalCaptureCountdown.swift|static func plateAlpha"], settle: 0.2, extra: ["panelAlpha": Double(panel.alphaValue)])
+        } else { gap("S14", "countdown overlay (contrast)", "no countdown panel became visible") }
+        contrast.cancel()
         for panel in NSApp.windows where String(describing: type(of: panel)).contains("Countdown") { panel.orderOut(nil) }
     }
 
     func s15() {
         loadSynthetic(size: CGSize(width: 1000, height: 700), name: "Flash")
-        let controller = OriginalCaptureFlashController(timerFactory: { _, _ in { } })
+        let controller = OriginalCaptureFlashController(timerFactory: { _, _ in { } }, reduceMotion: { false }, showFlash: { true })
         controller.play(frame: window.frame, deflashDuration: 0.5)
         pump(0.3)
         guard let flash = NSApp.windows.first(where: { String(describing: type(of: $0)).contains("Flash") }) else {
             gap("S15", "capture flash", "flash window not found"); controller.cancel(); return
         }
-        flash.alphaValue = 1
-        shoot("S15", "flash-full", surface: "capture flash", state: "flash panel at full alpha over the editor frame (pure white fill)", windows: [flash], refs: ["OriginalCaptureFlash.swift|final class OriginalCaptureFlashWindow", "OriginalCaptureFlash.swift|final class OriginalCaptureFlashView"], settle: 0.3)
-        flash.alphaValue = 0.55
-        shoot("S15", "flash-half", surface: "capture flash", state: "flash at 55% alpha composited over the editor", windows: [window, flash], refs: ["OriginalCaptureFlash.swift|static func alpha(elapsed"], settle: 0.3)
+        flash.alphaValue = CGFloat(OriginalCaptureFlashTiming.peakAlpha)
+        shoot("S15", "flash-peak", surface: "capture flash", state: "flash panel at its peak alpha (0.7) in front of the editor, editor behind it", windows: [flash, window], refs: ["OriginalCaptureFlash.swift|final class OriginalCaptureFlashWindow", "OriginalCaptureFlash.swift|final class OriginalCaptureFlashView"], settle: 0.3)
+        flash.alphaValue = CGFloat(OriginalCaptureFlashTiming.peakAlpha) / 2
+        shoot("S15", "flash-half", surface: "capture flash", state: "flash halfway up the ramp (0.35) in front of the editor", windows: [flash, window], refs: ["OriginalCaptureFlash.swift|static func alpha(elapsed"], settle: 0.3)
         controller.cancel()
     }
 }

@@ -11,6 +11,9 @@ protocol CaptureCountdownPresenting: AnyObject, Sendable {
 /// Native presentation for snapTimer: (0x23d28). Capture and sound remain parent-owned.
 @MainActor
 final class OriginalCaptureCountdown: CaptureCountdownPresenting {
+    typealias Flag = @MainActor () -> Bool
+    /// Speaks one numeral to VoiceOver.
+    typealias Announcer = @MainActor (String) -> Void
     typealias PanelFactory = @MainActor (NSRect) -> NSPanel
     typealias Images = @MainActor (Int) -> NSImage?
     typealias ScreenFrames = @MainActor () -> [NSRect]
@@ -25,11 +28,13 @@ final class OriginalCaptureCountdown: CaptureCountdownPresenting {
         var panel: NSPanel?
         var imageView: NSImageView?
         var cancelTimer: Cancellation?
+        let reduceMotion: Bool
+        var announced: Int?
         var advancing = false
         var registering = false
         var completionPending = false
-        init(timing: OriginalCaptureTiming, cue: @escaping () -> Void, completion: @escaping () -> Void) {
-            self.timing = timing; self.cue = cue; self.completion = completion
+        init(timing: OriginalCaptureTiming, reduceMotion: Bool, cue: @escaping () -> Void, completion: @escaping () -> Void) {
+            self.timing = timing; self.reduceMotion = reduceMotion; self.cue = cue; self.completion = completion
         }
     }
 
@@ -37,6 +42,8 @@ final class OriginalCaptureCountdown: CaptureCountdownPresenting {
     private let images: Images
     private let scheduler: Scheduler
     private let screenFrames: ScreenFrames
+    private let reduceMotion: Flag
+    private let announce: Announcer
     private var session: Session?
     private var cleaningUp = false
     private var lifetime: OriginalCaptureCountdown?
@@ -44,14 +51,20 @@ final class OriginalCaptureCountdown: CaptureCountdownPresenting {
 
     /// Frames and rect use AppKit global bottom-left coordinates. Supply VISIBLE
     /// screen frames in NSScreen order. Test factories must suppress window ordering.
+    /// `reduceMotion`, `increaseContrast` and `announce` default to the system; tests force them. Reduce Motion is read once per
+    /// countdown so a setting flipped mid-count cannot change how that count looks.
     init(panelFactory: PanelFactory? = nil, images: Images? = nil,
-         scheduler: Scheduler? = nil, screenFrames: ScreenFrames? = nil) {
+         scheduler: Scheduler? = nil, screenFrames: ScreenFrames? = nil,
+         reduceMotion: Flag? = nil, increaseContrast: Flag? = nil, announce: Announcer? = nil) {
+        self.reduceMotion = reduceMotion ?? { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
+        self.announce = announce ?? Self.postAnnouncement
+        let increaseContrast = increaseContrast ?? { NSWorkspace.shared.accessibilityDisplayShouldIncreaseContrast }
         self.panelFactory = panelFactory ?? { rect in
             OriginalCountdownPanel(contentRect: rect, styleMask: [.borderless, .nonactivatingPanel],
                                    backing: .buffered, defer: true)
         }
         self.images = images ?? { number in
-            Self.numeral(number)
+            Self.numeral(number, highContrast: increaseContrast())
         }
         self.scheduler = scheduler ?? Self.schedule
         self.screenFrames = screenFrames ?? { NSScreen.screens.map(\.visibleFrame) }
@@ -62,12 +75,14 @@ final class OriginalCaptureCountdown: CaptureCountdownPresenting {
         // Original startCountdownForRect: (0x23876) ignores a second active start.
         guard session == nil, !cleaningUp, Self.valid(rect, allowZero: true),
               let timing = OriginalCaptureTiming(delay: delay) else { return }
-        let request = Session(timing: timing, cue: cue, completion: completion)
+        let request = Session(timing: timing, reduceMotion: reduceMotion(), cue: cue, completion: completion)
         session = request
         lifetime = self
         if timing.total == 0 { finish(request, complete: true); return }
 
         let initialImage = images(3)
+        guard session === request else { return }
+        speak(3, in: request)
         guard session === request else { return }
         let frames = screenFrames().filter { Self.valid($0) }
         guard session === request else { return }
@@ -80,7 +95,7 @@ final class OriginalCaptureCountdown: CaptureCountdownPresenting {
             request.panel = panel
             panel.isReleasedWhenClosed = false
             panel.setFrame(frame, display: false)
-            panel.alphaValue = 0
+            panel.alphaValue = request.reduceMotion ? 1 : 0
             panel.backgroundColor = .clear
             panel.isOpaque = false
             panel.isMovable = false
@@ -118,21 +133,60 @@ final class OriginalCaptureCountdown: CaptureCountdownPresenting {
         } else { cancellation() }
     }
 
-    /// Plain drawn digit: bold system font, white, on a dark rounded backing. No artwork files.
-    static let numeralSize = NSSize(width: 200, height: 200)
-    static let numeralFontSize: CGFloat = 140
-    static func numeral(_ number: Int) -> NSImage? {
+    /// The plate is 140 x 140: a rounded HUD square with the digit centred on its ink, not on the font's line box.
+    static let numeralSize = NSSize(width: 140, height: 140)
+    static var numeralFontSize: CGFloat { DesignTokens.Typography.font(.countdown).pointSize }
+    /// Plate opacity over the screen; Increase Contrast darkens it.
+    static func plateAlpha(highContrast: Bool) -> CGFloat { highContrast ? 0.8 : 0.55 }
+    static let shadowOffset = NSSize(width: 0, height: -2)
+
+    private static func numeralLine(_ number: Int) -> CTLine {
+        let text = NSAttributedString(string: String(number), attributes: [
+            .font: DesignTokens.Typography.font(.countdown)])
+        return CTLineCreateWithAttributedString(text)
+    }
+
+    /// Where the digit's glyph outline sits inside the plate, and the baseline origin that puts it there.
+    static func numeralLayout(_ number: Int) -> (ink: NSRect, origin: NSPoint)? {
         guard (1...3).contains(number) else { return nil }
+        let bounds = CTLineGetBoundsWithOptions(numeralLine(number), .useGlyphPathBounds)
+        let origin = NSPoint(x: numeralSize.width / 2 - bounds.midX, y: numeralSize.height / 2 - bounds.midY)
+        return (bounds.offsetBy(dx: origin.x, dy: origin.y), origin)
+    }
+
+    static func numeral(_ number: Int, highContrast: Bool = false) -> NSImage? {
+        guard let layout = numeralLayout(number) else { return nil }
         return NSImage(size: numeralSize, flipped: false) { bounds in
-            NSColor(white: 0.08, alpha: 0.78).setFill()
-            NSBezierPath(roundedRect: bounds, xRadius: 44, yRadius: 44).fill()
+            let palette = DesignTokens.Palette.Overlay.self
+            palette.hudFill.withAlphaComponent(plateAlpha(highContrast: highContrast)).setFill()
+            NSBezierPath(roundedRect: bounds, xRadius: DesignTokens.Radius.xl, yRadius: DesignTokens.Radius.xl).fill()
+            guard let context = NSGraphicsContext.current?.cgContext else { return true }
+            let shadow = NSShadow()
+            shadow.shadowColor = palette.hudFill
+            shadow.shadowBlurRadius = 2
+            shadow.shadowOffset = shadowOffset
+            NSGraphicsContext.saveGraphicsState()
+            shadow.set()
             let text = NSAttributedString(string: String(number), attributes: [
-                .font: NSFont.systemFont(ofSize: numeralFontSize, weight: .bold),
-                .foregroundColor: NSColor.white])
-            let size = text.size()
-            text.draw(at: NSPoint(x: bounds.midX - size.width / 2, y: bounds.midY - size.height / 2))
+                .font: DesignTokens.Typography.font(.countdown), .foregroundColor: palette.hudText])
+            context.textPosition = layout.origin
+            CTLineDraw(CTLineCreateWithAttributedString(text), context)
+            NSGraphicsContext.restoreGraphicsState()
             return true
         }
+    }
+
+    private func speak(_ number: Int, in request: Session) {
+        guard request.announced != number else { return }
+        request.announced = number
+        announce(String(number))
+    }
+
+    /// VoiceOver hears "3", "2", "1" without the panel taking focus.
+    static func postAnnouncement(_ text: String) {
+        guard let app = NSApp else { return }
+        NSAccessibility.post(element: app, notification: .announcementRequested, userInfo: [
+            .announcement: text, .priority: NSAccessibilityPriorityLevel.high.rawValue])
     }
 
     func cancel() {
@@ -153,8 +207,11 @@ final class OriginalCaptureCountdown: CaptureCountdownPresenting {
             guard session === request else { return }
             request.imageView?.image = image
             request.imageView?.setAccessibilityLabel("Capture countdown: \(frame.imageNumber)")
+            speak(frame.imageNumber, in: request)
+            guard session === request else { return }
         }
-        request.panel?.alphaValue = CGFloat(frame.alpha)
+        // The blink is motion: Reduce Motion keeps the numeral steady at full alpha until the countdown ends.
+        request.panel?.alphaValue = request.reduceMotion ? 1 : CGFloat(frame.alpha)
         guard session === request else { return }
         if frame.finished { finish(request, complete: true) }
     }

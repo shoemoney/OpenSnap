@@ -27,14 +27,17 @@ enum OriginalCaptureMagnifierGeometry {
         magnifierBorderRect.union(labelRect).insetBy(dx: -3, dy: -3).size
     }
 
-    /// decompiled.c:69462-69530 (labelRect): centered under the border, overlapping
-    /// its bottom by 10, 8 wider and 14 taller than the text.
+    /// Clear air between the lens border and the size label. The original (decompiled.c:69462-69530) overlapped the border's
+    /// bottom by 10, so the label sat on the lens; the plate now starts below the border instead.
+    static let labelGap = DesignTokens.Space.s1
+
+    /// Centered under the border, `labelGap` below it, 8 wider and 10 taller than the text, so the text sits in the middle of the plate.
     static func labelRect(textSize: NSSize) -> NSRect {
         let border = magnifierBorderRect
         return NSRect(x: border.minX + border.width * 0.5 - (textSize.width * 0.5 + 4),
-                      y: border.maxY - 10,
+                      y: border.maxY + labelGap,
                       width: textSize.width + 8,
-                      height: textSize.height + 10 + 4)
+                      height: textSize.height + 10)
     }
 
     /// Point-space source square (decompiled.c:69150-69168): zero rect at mouse+0.5,
@@ -56,6 +59,39 @@ enum OriginalCaptureMagnifierGeometry {
     }
 }
 
+/// What the lens shows when there are no screen pixels to magnify (Screen Recording not granted): a hatched
+/// lens with the reason written on a plate, at a readable size, inside the 100 x 100 lens.
+enum OriginalCaptureMagnifierPlaceholder {
+    static let text = "Screen Recording off"
+    /// Three short lines: "Recording" is the longest and is the only one that has to fit the lens at 18 pt.
+    static let lines = ["Screen", "Recording", "off"]
+    static let hatchSpacing: CGFloat = 8
+    static var font: NSFont { DesignTokens.Typography.font(.caption) }
+
+    struct Layout: Equatable {
+        let plate: NSRect
+        /// Each line's draw origin (top-left of its text box in the view's flipped coordinates).
+        let origins: [NSPoint]
+    }
+
+    /// Centred on the lens, in view coordinates.
+    static func layout(in lens: NSRect = OriginalCaptureMagnifierGeometry.magnifierRect) -> Layout {
+        let attributes = DesignTokens.Typography.attributes(.caption)
+        let sizes = lines.map { ($0 as NSString).size(withAttributes: attributes) }
+        let pad = DesignTokens.Space.s1
+        let width = (sizes.map(\.width).max() ?? 0) + 2 * pad
+        let height = sizes.reduce(0) { $0 + ceil($1.height) } + 2 * pad
+        let plate = NSRect(x: lens.midX - width / 2, y: lens.midY - height / 2, width: width, height: height)
+        var y = plate.minY + pad
+        var origins: [NSPoint] = []
+        for size in sizes {
+            origins.append(NSPoint(x: lens.midX - size.width / 2, y: y))
+            y += ceil(size.height)
+        }
+        return Layout(plate: plate, origins: origins)
+    }
+}
+
 final class OriginalCaptureMagnifierView: NSView {
     var mousePoint = NSPoint.zero { didSet { needsDisplay = true } }
     var labelString = "" { didSet { needsDisplay = true } }
@@ -66,8 +102,11 @@ final class OriginalCaptureMagnifierView: NSView {
 
     override var isFlipped: Bool { true }
 
+    /// Non-nil exactly while the lens has no pixels to show.
+    var placeholderText: String? { sourceImage == nil ? OriginalCaptureMagnifierPlaceholder.text : nil }
+
     private var labelAttributes: [NSAttributedString.Key: Any] {
-        [.font: NSFont.systemFont(ofSize: 20), .foregroundColor: NSColor.black]
+        DesignTokens.Typography.attributes(.numeric, color: DesignTokens.Palette.Overlay.plateText)
     }
     private var labelTextSize: NSSize { (labelString as NSString).size(withAttributes: labelAttributes) }
     var labelRect: NSRect { OriginalCaptureMagnifierGeometry.labelRect(textSize: labelTextSize) }
@@ -83,13 +122,14 @@ final class OriginalCaptureMagnifierView: NSView {
 
     override func draw(_ dirtyRect: NSRect) {
         let geometry = OriginalCaptureMagnifierGeometry.self
+        let overlay = DesignTokens.Palette.Overlay.self
         let border = geometry.magnifierBorderRect
         let lens = geometry.magnifierRect
         NSGraphicsContext.saveGraphicsState()
         let shadow = NSShadow()
-        shadow.shadowColor = .black; shadow.shadowBlurRadius = 4
+        shadow.shadowColor = overlay.hudFill; shadow.shadowBlurRadius = 4
         shadow.set()
-        NSColor.white.setFill(); border.fill()
+        overlay.hudText.setFill(); border.fill()
         NSGraphicsContext.restoreGraphicsState()
         if let image = sourceImage, let cg = NSGraphicsContext.current?.cgContext,
            let crop = image.cropping(to: samplePixelRect(imageHeight: image.height)) {
@@ -99,16 +139,44 @@ final class OriginalCaptureMagnifierView: NSView {
             cg.scaleBy(x: 1, y: -1)
             cg.draw(crop, in: CGRect(origin: .zero, size: lens.size))
             cg.restoreGState()
+            overlay.plateText.setStroke()
+            let centre = NSRect(x: lens.midX - geometry.zoom * 0.5, y: lens.midY - geometry.zoom * 0.5,
+                                width: geometry.zoom, height: geometry.zoom)
+            NSBezierPath(rect: centre).stroke()
         } else {
-            NSColor(calibratedWhite: 0.5, alpha: 1).setFill(); lens.fill()
+            drawPlaceholder(in: lens)
         }
-        NSColor.black.setStroke()
-        let centre = NSRect(x: lens.midX - geometry.zoom * 0.5, y: lens.midY - geometry.zoom * 0.5,
-                            width: geometry.zoom, height: geometry.zoom)
-        NSBezierPath(rect: centre).stroke()
         let label = labelRect
-        NSColor(calibratedWhite: 1, alpha: 0.75).setFill()
-        NSBezierPath(roundedRect: label, xRadius: 3, yRadius: 3).fill()
+        overlay.plateFill.setFill()
+        NSBezierPath(roundedRect: label, xRadius: DesignTokens.Radius.sm, yRadius: DesignTokens.Radius.sm).fill()
         (labelString as NSString).draw(at: NSPoint(x: label.minX + 4, y: label.minY + 5), withAttributes: labelAttributes)
+    }
+
+    /// No pixels to magnify: a dark lens crossed by diagonal hatching, with the reason on a plate so it is never an unexplained grey square.
+    private func drawPlaceholder(in lens: NSRect) {
+        let overlay = DesignTokens.Palette.Overlay.self
+        overlay.hudFill.setFill(); lens.fill()
+        NSGraphicsContext.saveGraphicsState()
+        NSBezierPath(rect: lens).addClip()
+        let hatch = NSBezierPath()
+        let step = OriginalCaptureMagnifierPlaceholder.hatchSpacing
+        var offset = -lens.height
+        while offset < lens.width {
+            hatch.move(to: NSPoint(x: lens.minX + offset, y: lens.maxY))
+            hatch.line(to: NSPoint(x: lens.minX + offset + lens.height, y: lens.minY))
+            offset += step
+        }
+        hatch.lineWidth = 1
+        overlay.hudText.withAlphaComponent(0.25).setStroke()
+        hatch.stroke()
+        NSGraphicsContext.restoreGraphicsState()
+        let layout = OriginalCaptureMagnifierPlaceholder.layout(in: lens)
+        let plate = NSBezierPath(roundedRect: layout.plate, xRadius: DesignTokens.Radius.sm, yRadius: DesignTokens.Radius.sm)
+        overlay.plateFill.setFill(); plate.fill()
+        DesignTokens.Palette.separator.setStroke(); plate.lineWidth = 1; plate.stroke()
+        let attributes = DesignTokens.Typography.attributes(.caption, color: overlay.plateText)
+        for (line, origin) in zip(OriginalCaptureMagnifierPlaceholder.lines, layout.origins) {
+            (line as NSString).draw(at: origin, withAttributes: attributes)
+        }
     }
 }

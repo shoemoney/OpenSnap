@@ -29,10 +29,16 @@ private final class OriginalHelpPanel: NSPanel {
 
 @MainActor
 final class OriginalHelpBevelView: NSView {
-    static let font = NSFont(name: "LucidaGrande", size: 20) ?? .systemFont(ofSize: 20)
+    static var font: NSFont { DesignTokens.Typography.font(.hud) }
     static let originalBodyHeight: CGFloat = 44
     static let heightAllowance: CGFloat = 3
     static let horizontalInset: CGFloat = 3
+    /// Air above and below the text block: the line box of a 1.5x line height is exactly as tall as the measured text, so
+    /// without it the first line sits on the plate edge and reads as clipped.
+    static let verticalPadding = DesignTokens.Space.s2
+    /// The plate hangs from the top of the host and its bottom corners join it; false when it has to sit inside the host
+    /// instead, where all four corners are rounded.
+    var joinsHost = true { didSet { needsDisplay = true } }
     private(set) var message = ""
     private(set) var attributedMessage = NSAttributedString(string: "")
     private(set) var textRect = NSRect.zero
@@ -50,19 +56,15 @@ final class OriginalHelpBevelView: NSView {
         paragraph.alignment = .center
         paragraph.lineBreakMode = .byWordWrapping
         paragraph.lineHeightMultiple = 1.5
-        let shadow = NSShadow()
-        shadow.shadowBlurRadius = 1
-        shadow.shadowColor = .black
-        shadow.shadowOffset = NSSize(width: 0, height: -1)
         attributedMessage = NSAttributedString(string: message, attributes: [
-            .font: Self.font, .foregroundColor: NSColor.white,
-            .paragraphStyle: paragraph, .shadow: shadow
+            .font: Self.font, .foregroundColor: DesignTokens.Palette.Overlay.hudText,
+            .paragraphStyle: paragraph
         ])
         let textWidth = max(1, width - 2 * Self.horizontalInset)
         let measured = attributedMessage.boundingRect(
             with: NSSize(width: textWidth, height: .greatestFiniteMagnitude),
             options: [.usesLineFragmentOrigin, .usesFontLeading])
-        let bodyHeight = max(Self.originalBodyHeight, ceil(measured.height))
+        let bodyHeight = max(Self.originalBodyHeight, ceil(measured.height) + 2 * Self.verticalPadding)
         let height = bodyHeight + Self.heightAllowance
         frame = NSRect(x: 0, y: 0, width: width, height: height)
         textRect = NSRect(x: Self.horizontalInset, y: (height - ceil(measured.height)) / 2,
@@ -76,9 +78,11 @@ final class OriginalHelpBevelView: NSView {
         // SKTopBevelAttachmentBackgroundView_drawRect:. Mach-O floats at
         // 0x2609e0 / 0x260aec are -12 / +12: bottom corners join the host.
         var rect = bounds.insetBy(dx: 1, dy: 1)
-        rect.origin.y -= 12
-        rect.size.height += 12
-        let path = NSBezierPath(roundedRect: rect, xRadius: 12, yRadius: 12)
+        if joinsHost {
+            rect.origin.y -= DesignTokens.Radius.lg
+            rect.size.height += DesignTokens.Radius.lg
+        }
+        let path = NSBezierPath(roundedRect: rect, xRadius: DesignTokens.Radius.lg, yRadius: DesignTokens.Radius.lg)
         path.lineWidth = 2
         return path
     }
@@ -87,13 +91,26 @@ final class OriginalHelpBevelView: NSView {
         NSColor.clear.setFill()
         bounds.fill(using: .copy)
         let path = backgroundPath
-        NSColor(calibratedWhite: 0, alpha: 0.85).setFill()
+        DesignTokens.Palette.Overlay.hudFill.setFill()
         path.fill()
-        NSColor(calibratedWhite: 0.95, alpha: 1).setStroke()
+        DesignTokens.Palette.Overlay.hudStroke.setStroke()
         path.stroke()
         attributedMessage.draw(with: textRect, options: [.usesLineFragmentOrigin, .usesFontLeading])
     }
 }
+
+/// Where the hint plate may sit inside its host, all in screen coordinates: the title bar and the two chrome bars it must never
+/// cover, and the canvas viewport between them.
+struct OriginalHelpBevelBands: Equatable {
+    var content: NSRect
+    var titleBar: NSRect
+    var header: NSRect
+    var footer: NSRect
+    var viewport: NSRect
+}
+
+/// Which bar the hinted control lives in; a plate that has to sit inside the window goes under the top bar or over the bottom bar.
+enum OriginalHelpBevelAnchor { case top, bottom }
 
 /// Parent supplies local hover/modifier events and clears on focus, hide, sheet,
 /// miniaturization and termination. This controller installs no event monitors.
@@ -104,12 +121,26 @@ final class OriginalHelpBevel {
     static let showStep: CGFloat = 0.15 // Mach-O double DAT_00260af8.
     static let hideStep: CGFloat = 0.1 // Negated DAT_00260b00.
 
+    typealias ReduceMotion = () -> Bool
+    typealias ScreenFrame = @MainActor (NSWindow) -> NSRect?
+    typealias Bands = @MainActor (NSWindow) -> OriginalHelpBevelBands
+    typealias Pointer = @MainActor () -> NSPoint
+    /// Clear air between the plate and the bar or viewport edge it sits against when it is inside the window.
+    static let insideMargin = DesignTokens.Space.s3
+
     var enabled = false { didSet { if !enabled { clear() } } }
     private(set) var displayedMessage: String?
     private(set) var panel: NSPanel?
     private weak var host: NSWindow?
     private let makePanel: () -> NSPanel
     private let scheduler: any OriginalHelpBevelScheduling
+    private let reduceMotion: ReduceMotion
+    private let screenFrame: ScreenFrame
+    private let bands: Bands
+    /// Where the pointer is when a hint starts; the harness points it at a bar to show each placement.
+    var pointer: Pointer
+    private var anchor = OriginalHelpBevelAnchor.top
+    private var attachedAbove = false
     private var hoverOwner: String?
     private var hoverMessage: String?
     private var hoverReady = false
@@ -121,9 +152,18 @@ final class OriginalHelpBevel {
     private var fadingIn = false
     private var stopped = false
 
+    /// `reduceMotion` defaults to the system setting, `screenFrame` to the host's visible screen area, `bands` to the host's
+    /// title bar and chrome bars found by identifier, and `pointer` to the mouse; tests force all four.
+    /// OSN-061 replaces the Reduce Motion closure with the shared display options.
     init(host: NSWindow, makePanel: (() -> NSPanel)? = nil,
-         scheduler: (any OriginalHelpBevelScheduling)? = nil) {
+         scheduler: (any OriginalHelpBevelScheduling)? = nil,
+         reduceMotion: ReduceMotion? = nil, screenFrame: ScreenFrame? = nil,
+         bands: Bands? = nil, pointer: Pointer? = nil) {
         self.host = host
+        self.reduceMotion = reduceMotion ?? { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
+        self.screenFrame = screenFrame ?? { $0.screen?.visibleFrame }
+        self.bands = bands ?? { Self.discoverBands(in: $0) }
+        self.pointer = pointer ?? { NSEvent.mouseLocation }
         self.makePanel = makePanel ?? {
             OriginalHelpPanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel],
                               backing: .buffered, defer: true)
@@ -144,6 +184,7 @@ final class OriginalHelpBevel {
     func hover(owner: String, message: String?) {
         guard canRender else { clear(); return }
         cancelHover()
+        latchAnchor()
         hoverOwner = owner
         hoverMessage = normalized(message)
         hoverReady = false
@@ -173,6 +214,7 @@ final class OriginalHelpBevel {
             updateDisplay() // Original hideHelp clears both slots, then fades out.
             return
         }
+        latchAnchor()
         modifierMessage = message
         updateDisplay()
     }
@@ -188,8 +230,8 @@ final class OriginalHelpBevel {
 
     func reposition() {
         guard canRender else { clear(); return }
-        guard let message = displayedMessage else { return }
-        _ = layout(message)
+        guard let message = displayedMessage, layout(message) else { return }
+        syncAttachment()
     }
 
     func shutdown() {
@@ -216,12 +258,21 @@ final class OriginalHelpBevel {
         }
         displayedMessage = message
         guard layout(message) else { return }
-        guard let panel, let host else { return }
-        if panel.parent == nil {
-            panel.orderFront(nil)
-            host.addChildWindow(panel, ordered: .below)
-        }
+        syncAttachment()
         fade(show: true)
+    }
+
+    /// Attached below the host while the plate hangs above it, in front of it while it had to move inside; re-attached whenever
+    /// a move or resize of the host flips that.
+    private func syncAttachment() {
+        guard let panel, let host else { return }
+        let inside = (panel.contentView as? OriginalHelpBevelView)?.joinsHost == false
+        if panel.parent != nil, attachedAbove != inside { host.removeChildWindow(panel) }
+        if panel.parent == nil {
+            attachedAbove = inside
+            panel.orderFront(nil)
+            host.addChildWindow(panel, ordered: inside ? .above : .below)
+        }
     }
 
     private func layout(_ message: String) -> Bool {
@@ -247,15 +298,78 @@ final class OriginalHelpBevel {
         }
         guard let panel, let view = panel.contentView as? OriginalHelpBevelView else { return false }
         let height = view.update(message: message, width: width)
-        panel.setFrame(NSRect(x: host.frame.minX + 40, y: host.frame.maxY,
-                              width: width, height: height), display: false)
+        // Hangs from the host's top edge. A host at the top of the screen leaves no room above it, and the plate would be
+        // cut off by the screen edge; then it sits inside the window, in front of it, fully rounded, clear of the title bar
+        // and both chrome bars.
+        let top = host.frame.maxY
+        view.joinsHost = true
+        if let visible = screenFrame(host), top + height > visible.maxY {
+            view.joinsHost = false
+            panel.setFrame(insideFrame(host: host, width: width, height: height, visible: visible), display: false)
+            return true
+        }
+        panel.setFrame(NSRect(x: host.frame.minX + 40, y: top, width: width, height: height), display: false)
         return true
+    }
+
+    private func latchAnchor() {
+        guard let host else { return }
+        anchor = pointer().y < bands(host).viewport.minY ? .bottom : .top
+    }
+
+    /// Centred in the window, inset by the margin from the top bar (hint for a top-bar control or the canvas) or from the bottom
+    /// bar (hint for a bottom-bar control), then held inside the content rect and the visible screen.
+    private func insideFrame(host: NSWindow, width: CGFloat, height: CGFloat, visible: NSRect) -> NSRect {
+        let zones = bands(host)
+        let margin = Self.insideMargin
+        let fit = zones.content.intersection(visible)
+        var y: CGFloat
+        switch anchor {
+        case .top:
+            y = min(zones.viewport.maxY, zones.header.minY) - margin - height
+        case .bottom:
+            y = max(zones.viewport.minY, zones.footer.maxY) + margin
+        }
+        y = min(y, fit.maxY - height)
+        y = max(y, fit.minY)
+        var x = zones.content.midX - width / 2
+        x = min(x, fit.maxX - width)
+        x = max(x, fit.minX)
+        return NSRect(x: x, y: y, width: width, height: height)
+    }
+
+    /// The title bar is the strip above the layout rect; the bars are the views the editor chrome names; the viewport is its
+    /// scroll view. Anything missing collapses to an empty strip at the edge of the content rect.
+    static func discoverBands(in host: NSWindow) -> OriginalHelpBevelBands {
+        let frame = host.frame
+        let content = host.convertToScreen(host.contentLayoutRect)
+        let titleBar = NSRect(x: frame.minX, y: content.maxY, width: frame.width, height: max(0, frame.maxY - content.maxY))
+        func screenRect(of view: NSView) -> NSRect { host.convertToScreen(view.convert(view.bounds, to: nil)) }
+        func find(_ matches: (NSView) -> Bool, in view: NSView?) -> NSView? {
+            guard let view else { return nil }
+            if matches(view) { return view }
+            for sub in view.subviews { if let found = find(matches, in: sub) { return found } }
+            return nil
+        }
+        let root = host.contentView
+        let header = find({ $0.identifier?.rawValue == "OpenSnapHeader" }, in: root).map(screenRect)
+            ?? NSRect(x: content.minX, y: content.maxY, width: content.width, height: 0)
+        let footer = find({ $0.identifier?.rawValue == "OpenSnapFooter" }, in: root).map(screenRect)
+            ?? NSRect(x: content.minX, y: content.minY, width: content.width, height: 0)
+        let viewport = find({ $0 is NSScrollView }, in: root).map(screenRect)
+            ?? NSRect(x: content.minX, y: footer.maxY, width: content.width, height: max(0, header.minY - footer.maxY))
+        return OriginalHelpBevelBands(content: content, titleBar: titleBar, header: header, footer: footer, viewport: viewport)
     }
 
     private func fade(show: Bool) {
         cancelFade()
         guard let panel else { return }
         fadingIn = show
+        // Reduce Motion: no ramp, the plate is simply there or gone.
+        if reduceMotion() {
+            if show { panel.alphaValue = 1 } else { hidePanel() }
+            return
+        }
         if show && panel.alphaValue >= 1 { return }
         if !show && panel.alphaValue <= 0 { hidePanel(); return }
         let generation = fadeGeneration

@@ -334,6 +334,7 @@ private enum CaptureTests {
             try await captureFlashOnlyAfterSuccess()
             try captureFlashTimingRamp()
             try await captureFlashControllerTimeline()
+            try captureFlashPeakAndReduceMotion()
             try await queuedShutdown()
             try await delayedCancellation()
             try await nativeSelectionAndTiming()
@@ -355,13 +356,18 @@ private enum CaptureTests {
             try await shutdownAdmission()
             try await shutdownVoidAPI()
             try await reentrantQueuedShutdown()
+            try expect(NSApp == nil, "pure tests must never construct NSApplication")
+            // The permission sheet is real AppKit UI (never ordered), so it runs after the NSApplication-free checks above.
+            try await permissionPreflightDenied()
+            try await permissionGrantedAndFirstRun()
+            try await permissionFailureInFlight()
+            try permissionSheetContent()
             for coordinator in coordinators {
                 let record = CaptureRecord()
                 coordinator.shutdown(completion: record.acknowledged)
                 try await wait { record.acknowledgements.count == 1 }
                 try expect(record.allMain, "final shutdown callback must be main")
             }
-            try expect(NSApp == nil, "pure tests must never construct NSApplication")
             print("PASS CaptureTests (\(checks) checks; local fake helper, no desktop capture or permissions)")
         } catch { failure = error }
         if let failure {
@@ -411,6 +417,7 @@ private enum CaptureTests {
                      selectionPicker: (any CaptureSelectionPicking)? = nil,
                      countdown: (any CaptureCountdownPresenting)? = nil,
                      captureFlash: (any CaptureFlashPresenting)? = nil,
+                     permission: ScreenRecordingGate? = nil,
                      displays: [NSRect]? = nil, mouse: NSPoint? = nil) throws -> Rig {
         let directory = root.appendingPathComponent(UUID().uuidString, isDirectory: true)
         let temporary = directory.appendingPathComponent("captures", isDirectory: true)
@@ -424,7 +431,7 @@ private enum CaptureTests {
             displays: displays ?? [NSRect(x: -1000, y: -1000, width: 3000, height: 3000)], mouseLocation: mouse,
             timeout: timeout, killDelay: killDelay,
             applicationVisibility: visibility, selectionPicker: selectionPicker, countdown: countdown,
-            captureFlash: captureFlash)
+            captureFlash: captureFlash, permission: permission)
         coordinators.append(coordinator)
         return Rig(coordinator: coordinator, directory: directory, temporary: temporary, marker: marker)
     }
@@ -570,7 +577,7 @@ private enum CaptureTests {
                 precondition(interval == 0.02)
                 ticks.append(tick)
                 return { invalidated += 1 }
-            })
+            }, reduceMotion: { false }, showFlash: { true })
         controller.play(frame: NSRect(x: 0, y: 0, width: 50, height: 50),
                         deflashDuration: Float32(0.2))
         try expect(window.fronted == 1 && controller.isRunning, "play must order the flash window front")
@@ -579,9 +586,10 @@ private enum CaptureTests {
             ticks.last?()
             try expect(abs((window.alphas.last ?? -1) - expected) < 1e-3, "\(what): got \(window.alphas.last ?? -1), want \(expected)")
         }
-        try tick(to: 0.025, expecting: 0.25, "flash at 0.025 of 0.1s")
-        try tick(to: 0.075, expecting: 0.75, "flash at 0.075 of 0.1s")
-        try tick(to: 0.11, expecting: 1, "flash reaching duration pins 1")
+        let peak = OriginalCaptureFlashTiming.peakAlpha
+        try tick(to: 0.025, expecting: 0.25 * peak, "flash at 0.025 of 0.1s")
+        try tick(to: 0.075, expecting: 0.75 * peak, "flash at 0.075 of 0.1s")
+        try tick(to: 0.11, expecting: peak, "flash reaching duration pins the peak, 0.7")
         try expect(ticks.count == 2 && controller.isRunning, "flash reaching duration begins deflash")
         let deflashStart = now
         func deflashTick(_ elapsed: TimeInterval, _ expected: Float32, _ what: String) throws {
@@ -589,8 +597,8 @@ private enum CaptureTests {
             ticks.last?()
             try expect(abs((window.alphas.last ?? -1) - expected) < 1e-3, "\(what): got \(window.alphas.last ?? -1), want \(expected)")
         }
-        try deflashTick(0.05, 0.75, "deflash at 0.05 of 0.2s")
-        try deflashTick(0.15, 0.25, "deflash at 0.15 of 0.2s")
+        try deflashTick(0.05, 0.75 * peak, "deflash at 0.05 of 0.2s")
+        try deflashTick(0.15, 0.25 * peak, "deflash at 0.15 of 0.2s")
         try expect(controller.isRunning && window.ordered == 0, "deflash mid-ramp keeps the window up")
         let before = window.alphas.count
         try deflashTick(0.21, 0, "deflash ramp final tick")
@@ -598,6 +606,215 @@ private enum CaptureTests {
                    "deflash ramp itself reaches 0 before tearDown writes its own 0, got \(window.alphas.suffix(2))")
         try expect(window.ordered == 1 && !controller.isRunning, "deflash end hides the window")
         try expect(invalidated >= 2, "timers are invalidated")
+    }
+
+
+    /// A UserDefaults that answers from a dictionary and never touches a plist or the preferences daemon.
+    private final class StubDefaults: UserDefaults {
+        var values: [String: Any] = [:]
+        init() { super.init(suiteName: nil)! }
+        override func object(forKey defaultName: String) -> Any? { values[defaultName] }
+    }
+
+    /// Peak white 0.7, a single 0.05 s frame under Reduce Motion, and no flash at all whenever the preference is off.
+    static func captureFlashPeakAndReduceMotion() throws {
+        typealias T = OriginalCaptureFlashTiming
+        try expect(T.peakAlpha <= 0.7 && T.peakAlpha == 0.7, "flash peak is 0.7, not 1.0")
+        try expect(T.showFlashKey == "showCaptureFlash", "the preference key is showCaptureFlash")
+        let defaults = StubDefaults()
+        try expect(T.showFlash(defaults: defaults), "a missing preference means the flash is on")
+        defaults.values[T.showFlashKey] = false
+        try expect(!T.showFlash(defaults: defaults), "an explicit off is read as off")
+        defaults.values[T.showFlashKey] = true
+        try expect(T.showFlash(defaults: defaults), "an explicit on is read as on")
+        try expect(T.shouldFlash(showFlash: true) && !T.shouldFlash(showFlash: false), "the preference alone decides whether it flashes")
+
+        // Normal motion: whatever the ramp does, the window never goes above the peak.
+        var now: TimeInterval = 0
+        var ticks: [@MainActor () -> Void] = []
+        let window = FakeFlashWindow()
+        let normal = OriginalCaptureFlashController(clock: { now }, windowFactory: { _ in window },
+                                                    timerFactory: { _, tick in ticks.append(tick); return {} },
+                                                    reduceMotion: { false }, showFlash: { true })
+        normal.play(frame: NSRect(x: 0, y: 0, width: 50, height: 50), deflashDuration: 0.1)
+        for step in 1...30 { now = Double(step) * 0.01; ticks.last?() }
+        try expect(!window.alphas.isEmpty && window.alphas.max()! <= 0.7 + 1e-6 && window.alphas.max()! > 0.69,
+                   "the ramp peaks at 0.7 and never above, peak \(window.alphas.max() ?? -1)")
+        try expect(window.ordered == 1 && !normal.isRunning, "the ramp ends by hiding the window")
+
+        // Reduce Motion: one frame at the peak for 0.05 s, no ramp.
+        var intervals: [TimeInterval] = []
+        var fire: (@MainActor () -> Void)?
+        var invalidations = 0
+        let single = FakeFlashWindow()
+        let reduced = OriginalCaptureFlashController(clock: { 0 }, windowFactory: { _ in single },
+                                                     timerFactory: { interval, tick in intervals.append(interval); fire = tick; return { invalidations += 1 } },
+                                                     reduceMotion: { true }, showFlash: { true })
+        reduced.play(frame: NSRect(x: 0, y: 0, width: 50, height: 50), deflashDuration: 0.1)
+        try expect(single.alphas == [0.7] && single.fronted == 1 && reduced.isRunning, "Reduce Motion shows one frame at the peak, got \(single.alphas)")
+        try expect(intervals == [0.05], "that frame lasts 0.05 s: one timer, no ramp ticks, got \(intervals)")
+        fire?()
+        try expect(single.alphas == [0.7, 0] && single.ordered == 1 && !reduced.isRunning && invalidations >= 1,
+                   "after 0.05 s the frame is gone, got \(single.alphas)")
+
+        // "Show capture flash" off: nothing at all, with Reduce Motion on or off.
+        for reduce in [true, false] {
+            var made = 0, timers = 0
+            let skipped = OriginalCaptureFlashController(clock: { 0 }, windowFactory: { _ in made += 1; return FakeFlashWindow() },
+                                                         timerFactory: { _, _ in timers += 1; return {} },
+                                                         reduceMotion: { reduce }, showFlash: { false })
+            skipped.play(frame: NSRect(x: 0, y: 0, width: 50, height: 50), deflashDuration: 0.1)
+            try expect(made == 0 && timers == 0 && !skipped.isRunning,
+                       "preference off (Reduce Motion \(reduce)) creates no window and no timer")
+        }
+    }
+
+    /// What a test needs to watch a coordinator's trip through the Screen Recording gate.
+    final class GateProbe {
+        var preflightAnswers: [Bool]
+        var requestAnswer = false
+        var alreadyRequested = true
+        var preflights = 0, requests = 0, marks = 0
+        var opened: [URL] = []
+        var sheets: [ScreenRecordingPermissionSheet] = []
+        init(preflight: [Bool]) { preflightAnswers = preflight }
+        @MainActor var gate: ScreenRecordingGate {
+            var gate = ScreenRecordingGate()
+            gate.preflight = { [self] in preflights += 1; return preflightAnswers.count > 1 ? preflightAnswers.removeFirst() : preflightAnswers[0] }
+            gate.request = { [self] in requests += 1; return requestAnswer }
+            gate.hasRequested = { [self] in alreadyRequested }
+            gate.markRequested = { [self] in marks += 1; alreadyRequested = true }
+            gate.openURL = { [self] in opened.append($0) }
+            gate.hostWindow = { nil }
+            gate.present = { [self] in sheets.append($0) }
+            return gate
+        }
+    }
+
+    static func press(_ button: NSButton) {
+        _ = button.sendAction(button.action, to: button.target)
+    }
+
+    /// No Screen Recording: our sheet appears, the picker never starts, nothing is launched, and the caller sees a silent cancel.
+    static func permissionPreflightDenied() async throws {
+        let probe = GateProbe(preflight: [false])
+        let journal = CapturePhaseJournal()
+        let picker = FakeCaptureSelectionPicker(journal), countdown = FakeCaptureCountdown(journal)
+        let rig = try make(selectionPicker: picker, countdown: countdown, permission: probe.gate)
+        let record = start(rig, mode: "crosshair", delay: 3)
+        try await wait { record.results.count == 1 }
+        try expect(cancellation(record.results.first), "a denied pre-flight ends as a silent cancel, so the app shows no second alert")
+        try expect(picker.requests.isEmpty && countdown.requests.isEmpty && journal.events.isEmpty, "the picker and countdown never start without permission")
+        try expect(!FileManager.default.fileExists(atPath: rig.marker.path), "no capture helper is launched without permission")
+        try expect(probe.sheets.count == 1, "exactly one permission sheet is presented")
+        try expect(probe.requests == 0, "the system prompt is not requested when this app has asked before")
+        guard let sheet = probe.sheets.first else { return }
+        try expect(sheet.settingsButton.title == "Open System Settings" && sheet.cancelButton.title == "Cancel", "the sheet offers Open System Settings and Cancel")
+        try expect(sheet.settingsButton.keyEquivalent == "\r" && sheet.cancelButton.keyEquivalent == "\u{1b}",
+                   "Return opens Settings (default) and Escape cancels")
+        try expect(sheet.panel.defaultButtonCell === sheet.settingsButton.cell, "Open System Settings is the default button")
+        try expect(probe.opened.isEmpty, "showing the sheet opens nothing")
+        press(sheet.settingsButton)
+        try expect(probe.opened == [URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")!],
+                   "Open System Settings uses exactly the Screen Recording privacy URL, got \(probe.opened)")
+        press(sheet.settingsButton); press(sheet.cancelButton)
+        try expect(probe.opened.count == 1, "a dismissed sheet cannot open Settings again")
+        try expect(picker.requests.isEmpty, "opening Settings does not start the picker")
+
+        // Cancel: dismisses, opens nothing, starts nothing, and the sheet can be shown again next time.
+        let second = start(rig, mode: "crosshair")
+        try await wait { second.results.count == 1 && probe.sheets.count == 2 }
+        press(probe.sheets[1].cancelButton)
+        try expect(probe.opened.count == 1 && picker.requests.isEmpty, "Cancel opens no URL and starts no picker")
+        let third = start(rig, mode: "crosshair")
+        try await wait { third.results.count == 1 && probe.sheets.count == 3 }
+        try expect(cancellation(third.results.first), "after Cancel the next attempt shows the sheet again")
+        press(probe.sheets[2].cancelButton)
+        // The fullscreen path is gated by the same sheet, not only the picker modes.
+        let fullscreen = start(rig, mode: "fullscreen")
+        try await wait { fullscreen.results.count == 1 && probe.sheets.count == 4 }
+        try expect(!FileManager.default.fileExists(atPath: rig.marker.path), "fullscreen is gated too")
+        press(probe.sheets[3].cancelButton)
+    }
+
+    /// Granted proceeds untouched; the first denied attempt asks macOS once through the seam, later ones never do.
+    static func permissionGrantedAndFirstRun() async throws {
+        let granted = GateProbe(preflight: [true])
+        let journal = CapturePhaseJournal()
+        let picker = FakeCaptureSelectionPicker(journal)
+        let rig = try make(selectionPicker: picker, permission: granted.gate)
+        let record = start(rig, mode: "crosshair")
+        try await wait { picker.requests.count == 1 }
+        try expect(granted.sheets.isEmpty && granted.requests == 0, "with Screen Recording granted there is no sheet and no request")
+        try await stopped(rig, record)
+
+        let firstRun = GateProbe(preflight: [false]); firstRun.alreadyRequested = false
+        let firstPicker = FakeCaptureSelectionPicker(journal)
+        let firstRig = try make(selectionPicker: firstPicker, permission: firstRun.gate)
+        let one = start(firstRig, mode: "crosshair")
+        try await wait { one.results.count == 1 }
+        try expect(firstRun.requests == 1 && firstRun.marks == 1, "the first denied attempt asks macOS once and remembers it")
+        try expect(firstRun.sheets.count == 1 && firstPicker.requests.isEmpty, "a denied answer still gets our sheet and no picker")
+        press(firstRun.sheets[0].cancelButton)
+        let two = start(firstRig, mode: "crosshair")
+        try await wait { two.results.count == 1 }
+        try expect(firstRun.requests == 1 && firstRun.marks == 1 && firstRun.sheets.count == 2, "later denied attempts never ask macOS again")
+        press(firstRun.sheets[1].cancelButton)
+
+        // Granted from the system prompt on that first attempt: carry on, no sheet.
+        let accepted = GateProbe(preflight: [false]); accepted.alreadyRequested = false; accepted.requestAnswer = true
+        let acceptedPicker = FakeCaptureSelectionPicker(journal)
+        let acceptedRig = try make(selectionPicker: acceptedPicker, permission: accepted.gate)
+        let three = start(acceptedRig, mode: "crosshair")
+        try await wait { acceptedPicker.requests.count == 1 }
+        try expect(accepted.requests == 1 && accepted.sheets.isEmpty, "allowing it in the system prompt goes straight on to the picker")
+        try await stopped(acceptedRig, three)
+    }
+
+    /// A helper that fails after Screen Recording was taken away gets the same sheet rather than a raw error.
+    static func permissionFailureInFlight() async throws {
+        let revoked = GateProbe(preflight: [true, false])
+        let rig = try make("failure", permission: revoked.gate)
+        let record = start(rig)
+        try await wait { record.results.count == 1 }
+        try expect(cancellation(record.results.first) && revoked.sheets.count == 1,
+                   "a capture that fails once permission is gone routes through the permission sheet, not a raw error")
+        press(revoked.sheets[0].cancelButton)
+        // A failure with permission intact keeps its own typed error and shows no sheet.
+        let intact = GateProbe(preflight: [true])
+        let other = try make("failure", permission: intact.gate)
+        let result = start(other)
+        try await wait { result.results.count == 1 }
+        try expect(errorCode(result.results.first) == 7 && intact.sheets.isEmpty, "an unrelated failure still reports its own error and shows no sheet")
+    }
+
+    /// The sheet is laid out at readable sizes with the agreed words, and nothing is clipped.
+    static func permissionSheetContent() throws {
+        typealias T = DesignTokens.Typography
+        let sheet = ScreenRecordingPermissionSheet(openURL: { _ in })
+        try expect(sheet.titleLabel.stringValue == "OpenSnap needs Screen Recording", "title wording")
+        try expect(sheet.messageLabel.stringValue == "Allow OpenSnap in System Settings \u{203A} Privacy & Security \u{203A} Screen & System Audio Recording, then reopen it.",
+                   "body wording with the proper \u{203A} separators")
+        try expect(!sheet.messageLabel.stringValue.contains(">"), "no ASCII > separators")
+        try expect(sheet.titleLabel.font == T.font(.title) && sheet.messageLabel.font == T.font(.body), "title is the title token, body is the 20 pt body token")
+        try expect([sheet.settingsButton, sheet.cancelButton].allSatisfy { $0.font == T.font(.body) && ($0.font?.pointSize ?? 0) >= 20 }, "buttons are 20 pt")
+        guard let content = sheet.panel.contentView else { throw NSError(domain: "CaptureTests", code: -2) }
+        let views: [NSView] = [sheet.titleLabel, sheet.messageLabel, sheet.settingsButton, sheet.cancelButton]
+        for view in views {
+            try expect(content.bounds.contains(view.frame), "every control sits inside the sheet: \(view.frame) in \(content.bounds)")
+        }
+        let inner = sheet.messageLabel.frame.width
+        for label in [sheet.titleLabel, sheet.messageLabel] {
+            let needed = label.cell?.cellSize(forBounds: NSRect(x: 0, y: 0, width: inner, height: .greatestFiniteMagnitude)).height ?? 0
+            try expect(label.frame.height >= needed - 0.5, "label '\(label.stringValue.prefix(14))…' is tall enough for all its lines")
+        }
+        for button in [sheet.settingsButton, sheet.cancelButton] {
+            let text = (button.title as NSString).size(withAttributes: [.font: T.font(.body)]).width
+            try expect(button.frame.width >= text && button.frame.height >= DesignTokens.Size.control, "button '\(button.title)' fits its title and the 36 pt control height")
+        }
+        try expect(!sheet.cancelButton.frame.intersects(sheet.settingsButton.frame), "the two buttons do not overlap")
+        try expect(sheet.cancelButton.frame.maxX < sheet.settingsButton.frame.minX, "Cancel sits left of the default button")
+        try expect(!sheet.panel.isVisible, "building the sheet shows nothing")
     }
 
     static func queuedShutdown() async throws {

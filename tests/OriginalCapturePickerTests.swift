@@ -110,8 +110,11 @@ private enum OriginalCapturePickerTests {
         cancellationAndBusy()
         reentrancyAndStaleEvents()
         rendering()
+        readoutStyle()
+        crosshairTokens()
         reachability()
         magnifier()
+        magnifierPlaceholder()
         activeDisplayOnly()
         dragCannotLeaveActiveDisplay()
         pointerOnScreenEdges()
@@ -124,6 +127,25 @@ private enum OriginalCapturePickerTests {
         expect(G.magnifierBorderRect == NSRect(x: 3, y: 3, width: 106, height: 106), "border inset -3 (69437)")
         expect(G.requiredDisplaySize(labelRect: NSRect(x: 6, y: 112, width: 80, height: 14)) == NSSize(width: 112, height: 129),
                "requiredDisplaySize is inset(-3) of border union label (69338)")
+        let labelText = NSSize(width: 54, height: 22)
+        let label = G.labelRect(textSize: labelText)
+        expect(label.minY - G.magnifierRect.maxY >= 4 && !label.intersects(G.magnifierRect) && !label.intersects(G.magnifierBorderRect),
+               "The size label starts at least 4 pt below the lens and clears its border: label \(label), lens \(G.magnifierRect)")
+        expect(label.midX == G.magnifierBorderRect.midX && label.size == NSSize(width: labelText.width + 8, height: labelText.height + 10),
+               "The label stays centred under the lens, 4 pt left and right and 5 pt above and below its text")
+        let labelled = OriginalCaptureMagnifierView(frame: NSRect(origin: .zero, size: G.initialSize))
+        labelled.labelString = "1028x664"
+        labelled.frame.size = labelled.requiredDisplaySize
+        expect(labelled.bounds.contains(labelled.labelRect) && labelled.labelRect.minY - G.magnifierRect.maxY >= 4,
+               "The mounted view is sized to hold lens and label together, with the 4 pt gap")
+        let display = NSRect(x: 0, y: 0, width: 1000, height: 800)
+        for pointer in [NSPoint(x: 5, y: 5), NSPoint(x: 995, y: 795), NSPoint(x: 5, y: 795), NSPoint(x: 995, y: 5), NSPoint(x: 500, y: 400)] {
+            let frame = G.placementFrame(mousePoint: pointer, requiredSize: labelled.requiredDisplaySize, in: display)
+            let onScreenLabel = labelled.labelRect.offsetBy(dx: frame.minX, dy: frame.minY)
+            let onScreenLens = G.magnifierRect.offsetBy(dx: frame.minX, dy: frame.minY)
+            expect(display.contains(onScreenLabel) && display.contains(onScreenLens) && onScreenLabel.minY - onScreenLens.maxY >= 4,
+                   "At \(pointer) lens and label are both on screen and keep the gap: label \(onScreenLabel), lens \(onScreenLens)")
+        }
         // DAT_00260520 = -2.0f (disassembly 0x1e417: movss 0x242463(%ebx), ebx=0x1e0bd).
         expect(G.placementOffset == -2, "Placement offset DAT_00260520")
         expect(G.sourceRect(mousePoint: NSPoint(x: 40, y: 50)) == NSRect(x: 35, y: 45, width: 11, height: 11),
@@ -493,6 +515,131 @@ private enum OriginalCapturePickerTests {
         let labelPixels = (190..<240).contains { y in (240..<395).contains { x in image.colorAt(x: x, y: 300 - y - 1)!.redComponent > 0.4 } }
         expect(labelPixels, "Production size label renders outside cutout with readable adapted type")
         r.picker.cancel(); cleaned(r)
+    }
+
+
+    /// Draws a view the way AppKit does (flipped views included) at 1x.
+    private static func display(_ view: NSView) -> NSBitmapImageRep {
+        let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(view.bounds.width), pixelsHigh: Int(view.bounds.height),
+                                   bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                                   colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
+        view.cacheDisplay(in: view.bounds, to: rep)
+        return rep
+    }
+
+    private static func rgba(_ rep: NSBitmapImageRep, _ x: Int, _ y: Int) -> (r: CGFloat, a: CGFloat) {
+        let color = rep.colorAt(x: x, y: y)!.usingColorSpace(.deviceRGB)!
+        return (color.redComponent, color.alphaComponent)
+    }
+
+    /// The size read-out: HUD type (20 pt medium) in plate text colour, on a plate-fill rounded plate with a 1 pt separator edge.
+    private static func readoutStyle() {
+        typealias T = DesignTokens
+        let attributes = OriginalCaptureSelectionView.readoutAttributes()
+        let font = attributes[.font] as! NSFont
+        expect(font == T.Typography.font(.hud) && font.pointSize == 20, "Read-out uses the HUD type token (20 pt medium)")
+        expect((attributes[.foregroundColor] as! NSColor) == T.Palette.Overlay.plateText, "Read-out text uses the plate text colour")
+
+        let r = PickerRig(); r.displays = [NSRect(x: 0, y: 0, width: 400, height: 300)]; r.begin()
+        r.mouse(.mouseMoved, NSPoint(x: 100, y: 100))
+        r.mouse(.leftMouseDown, NSPoint(x: 99, y: 50))
+        r.mouse(.leftMouseDragged, NSPoint(x: 240, y: 190))
+        let rep = raster(r.view)
+        // Plate pixels: translucent white; text pixels are dark. Scan the strip to the right of the cutout, top-left origin.
+        var plate: [(x: Int, y: Int)] = []
+        for y in 0..<300 { for x in 200..<400 {
+            let c = rgba(rep, x, y)
+            if c.a > 0.88 && c.a < 0.97 && c.r > 0.7 { plate.append((x, y)) }
+        } }
+        expect(!plate.isEmpty, "Read-out plate is drawn")
+        let xs = plate.map(\.x), ys = plate.map(\.y)
+        let box = (minX: xs.min()!, maxX: xs.max()!, minY: ys.min()!, maxY: ys.max()!)
+        let interior = rgba(rep, box.minX + 3, (box.minY + box.maxY) / 2)
+        // The plate is white at 0.75 laid over the 0.65 scrim, so the composite alpha is 0.75 + 0.65 * 0.25.
+        expect(abs(interior.a - 0.9125) < 0.02 && interior.r > 0.8, "Plate fill is the plate token (white at 0.75), got alpha \(interior.a), red \(interior.r)")
+        // The stroke is half outside the fill: just beyond the plate the pixels are scrim plus a faint tint, not bare scrim.
+        let midY = (box.minY + box.maxY) / 2, midX = (box.minX + box.maxX) / 2
+        let scrim = rgba(rep, 390, 290)
+        let outside = [rgba(rep, box.minX - 1, midY), rgba(rep, midX, box.minY - 1), rgba(rep, midX, box.maxY + 1)]
+        expect(outside.allSatisfy { $0.a < 0.8 } && outside.allSatisfy { $0.r > scrim.r + 0.03 },
+               "The plate has a 1 pt separator edge: ring pixels \(outside.map(\.r)) are lighter than bare scrim \(scrim.r)")
+        // Rounded with the small radius: the plate's own corner pixel is not filled, but one 6 pt in is.
+        let corner = rgba(rep, box.minX, box.minY)
+        expect(corner.a < interior.a - 0.1 || corner.a < 0.05, "Plate corner is rounded off")
+        // Text is dark ink: the plate text token is black.
+        let ink = plate.isEmpty ? 0 : (box.minY...box.maxY).reduce(0) { total, y in
+            total + (box.minX...box.maxX).filter { rgba(rep, $0, y).r < 0.3 && rgba(rep, $0, y).a > 0.5 }.count
+        }
+        expect(ink > 50, "Read-out text is dark ink on the plate, \(ink) px")
+        r.picker.cancel(); cleaned(r)
+    }
+
+    /// Crosshair strokes come from the overlay tokens: white at 0.2 under black at 0.4, 3 pt then 1 pt.
+    private static func crosshairTokens() {
+        typealias O = DesignTokens.Palette.Overlay
+        let outer = DesignTokens.Palette.resolve(O.crosshairOuter, arm: .aqua), inner = DesignTokens.Palette.resolve(O.crosshairInner, arm: .aqua)
+        expect(abs(outer.alphaComponent - 0.2) < 0.001 && outer.redComponent > 0.99, "Outer crosshair token is white at 0.2")
+        expect(abs(inner.alphaComponent - 0.4) < 0.001 && inner.redComponent < 0.01, "Inner crosshair token is black at 0.4")
+        let r = PickerRig(); r.displays = [NSRect(x: 0, y: 0, width: 400, height: 300)]; r.begin()
+        r.mouse(.mouseMoved, NSPoint(x: 100, y: 100))
+        let rep = raster(r.view)
+        let line = rgba(rep, 100, 20), beside = rgba(rep, 101, 20), far = rgba(rep, 130, 20)
+        expect(line.a > beside.a && beside.a > far.a - 0.0001 && far.a == 0,
+               "Crosshair is a dark 1 pt line inside a faint 3 pt halo (\(line.a), \(beside.a), \(far.a))")
+        r.picker.cancel(); cleaned(r)
+    }
+
+    /// No pixels to magnify: a hatched lens that says why, readable and inside the 100 x 100 lens.
+    private static func magnifierPlaceholder() {
+        typealias P = OriginalCaptureMagnifierPlaceholder
+        typealias G = OriginalCaptureMagnifierGeometry
+        expect(P.text == "Screen Recording off" && P.lines.joined(separator: " ") == P.text, "Placeholder says Screen Recording off")
+        expect(P.font.pointSize >= 18, "Placeholder text is at least 18 pt")
+        let layout = P.layout()
+        expect(G.magnifierRect.contains(layout.plate), "Placeholder plate \(layout.plate) fits inside the lens \(G.magnifierRect)")
+        expect(layout.origins.count == P.lines.count && layout.origins.allSatisfy { layout.plate.contains($0) }, "Every line starts on the plate")
+        let attributes = DesignTokens.Typography.attributes(.caption)
+        for (line, origin) in zip(P.lines, layout.origins) {
+            let size = (line as NSString).size(withAttributes: attributes)
+            expect(layout.plate.contains(NSRect(origin: origin, size: size)), "Line '\(line)' fits the plate")
+        }
+
+        let view = OriginalCaptureMagnifierView(frame: NSRect(origin: .zero, size: G.initialSize))
+        view.labelString = "500x400"
+        view.frame.size = view.requiredDisplaySize
+        expect(view.placeholderText == "Screen Recording off", "No screen image: the lens carries the placeholder text")
+        let labelText = ("500x400" as NSString).size(withAttributes: DesignTokens.Typography.attributes(.numeric))
+        expect(view.labelRect == G.labelRect(textSize: labelText), "Label is measured in the numeric type token")
+        let rep = display(view)
+        let lens = G.magnifierRect
+        // The plate: light fill with dark text; the lens around it: dark with lighter hatch lines.
+        let plate = layout.plate
+        let plateMid = rgba(rep, Int(plate.minX) + 2, Int(plate.midY))
+        expect(plateMid.r > 0.7 && plateMid.a > 0.9, "Plate is light (plate fill token over the dark lens), got \(plateMid)")
+        var inkPixels = 0
+        for y in Int(plate.minY)..<Int(plate.maxY) { for x in Int(plate.minX)..<Int(plate.maxX) where rgba(rep, x, y).r < 0.35 { inkPixels += 1 } }
+        expect(inkPixels > 100, "Placeholder text is drawn as dark ink on the plate (\(inkPixels) px)")
+        var lightHatch = 0, darkLens = 0
+        for y in Int(lens.minY)..<Int(lens.minY) + 20 { for x in Int(lens.minX)..<Int(lens.minX) + 20 {
+            let c = rgba(rep, x, y)
+            if c.r > 0.15 { lightHatch += 1 } else { darkLens += 1 }
+        } }
+        expect(lightHatch > 10 && darkLens > 100, "Lens corner is dark with diagonal hatch lines (\(lightHatch) light, \(darkLens) dark px)")
+        let diagonal = (0..<20).map { rgba(rep, Int(lens.minX) + $0, Int(lens.minY) + $0).r }
+        expect(Set(diagonal.map { $0 > 0.15 }).count >= 1, "Hatch sampled along the diagonal")
+
+        // Fed with pixels, the placeholder is gone and the lens shows them.
+        let pixel = CGContext(data: nil, width: 4, height: 4, bitsPerComponent: 8, bytesPerRow: 16,
+                              space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+        pixel.setFillColor(CGColor(red: 1, green: 0, blue: 0, alpha: 1)); pixel.fill(CGRect(x: 0, y: 0, width: 4, height: 4))
+        view.sourceImage = pixel.makeImage()
+        view.mousePoint = NSPoint(x: 2, y: 2)
+        expect(view.placeholderText == nil, "With a screen image there is no placeholder")
+        let live = display(view)
+        let sample = live.colorAt(x: Int(lens.minX) + 20, y: Int(lens.minY) + 20)!.usingColorSpace(.deviceRGB)!
+        expect(sample.redComponent > 0.9 && sample.greenComponent < 0.2, "The lens shows the supplied pixels (red)")
+        // Magnifier geometry is untouched.
+        expect(G.zoom == 10 && lens.size == NSSize(width: 100, height: 100), "10x zoom and the 100 x 100 lens are unchanged")
     }
 
     private static func reachability() {
