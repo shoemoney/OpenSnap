@@ -9,10 +9,11 @@ extension AppSafetyTests {
             ("Modern chrome fills the Frame-aware content view and replaces the old controls", modernWindowStructure),
             ("Modern shared controls keep the recovered accessibility labels, tooltips, titles and hint tracking", modernControlStrings),
             ("Every Modern command is icon-only with a native tooltip and its old title as the VoiceOver label, whatever the overlay preference says", modernIconOnlyCommands),
-            ("setTool selects one glass surface in the solid family for every path that changes the tool", modernToolSelection),
+            ("setTool fills exactly one tool button and uses the solid family for every path that changes the tool", modernToolSelection),
             ("Frame enter and leave swap Snap and Cancel, clear and restore the Fullscreen alternate, and dim Resize", modernFrameMode),
             ("Modern Frame mode drops the window shadow, raises the level and sets alpha 0.8, and leaving restores the pre-Frame values", modernFrameWindowShadowLevelAlpha),
-            ("updateDragPreview feeds the canvas bleed, and Frame mode and Reduce Transparency hide it", modernCanvasBleed),
+            ("The canvas well is solid surface.canvasWell; Frame mode punches the hole and leaving restores it; no backdrop or bleed remains", modernCanvasWell),
+            ("G5 on the real window: 8 plates, no nested glass, no overlap with the well at default, minimum and Frame, one accent, no phantom", modernGlassDepth),
             ("Injected display options reach every glass surface and clear again", modernAccessibilityInjection),
             ("Header and footer buttons reach the real AppDelegate actions", modernActionRouting),
             ("Modern Wipe presses follow the Blank/Clear/Wipe stages with the dimmed glass and the stage spoken", modernWipeStages),
@@ -187,7 +188,7 @@ extension AppSafetyTests {
             let frame = part.convert(part.bounds, to: content)
             try expect(row.insetBy(dx: -0.5, dy: -0.5).contains(frame) && abs(frame.midY - row.midY) <= 6, "The footer row holds \(part)")
         }
-        try expect(footer.subviews.count == 5, "The footer is one row of four glass groups and the status")
+        try expect(footer.subviews.count == 5, "The footer is one row of four glass plates and the status")
         try expect(app.window.title == app.nameField.stringValue, "The window title shows the document name: \(app.window.title)")
         let file = try NSApp.mainMenu.unwrap("main menu").items.compactMap(\.submenu).first { $0.title == "File" }.unwrap("File menu")
         try expect(file.items.contains { $0.action == #selector(AppDelegate.renameDocument) && $0.title == "Rename…" }, "File has a Rename… command")
@@ -473,16 +474,16 @@ extension AppSafetyTests {
         try expect(tools.allSatisfy { $0.target === app && $0.action == #selector(AppDelegate.chooseTool(_:)) }, "Every tool sends chooseTool to the AppDelegate")
 
         // Shared controls take the Modern treatment but keep their behavior.
-        try expect(app.dragExportView?.drawsBackground == false, "Drag Me lets its glass be the plate")
-        try expect(try surface(chrome, app.dragExportView).shape == .capsule && (try surface(chrome, app.dragExportView).fixedSize) == NSSize(width: 48, height: 36),
-                   "Drag Me is a compact 48x36 capsule like the other icon buttons")
-        try expect(try surface(chrome, app.paletteButton).fixedSize == NSSize(width: 48, height: 36)
-                   && chrome.surface(for: app.dragFormatToggle)?.shape == .capsule, "Color and the format popup have their glass")
-        try expect(chrome.surface(for: app.zoomControl)?.shape == .capsule && chrome.surface(for: app.status) == nil && chrome.surface(for: app.canvas) == nil, "Zoom has its glass capsule; status and the canvas stay outside glass")
+        try expect(app.dragExportView?.drawsBackground == false, "Drag Me draws no plate of its own")
+        try expect((app.dragExportView?.superview as? ChromeFillCell)?.fixedSize == NSSize(width: 48, height: 36) && (try surface(chrome, app.dragExportView)).identifier?.rawValue == "GlassFooterRow",
+                   "Drag Me is a compact 48x36 cell on the footer plate like the other icon buttons")
+        try expect((app.paletteButton.superview as? ChromeFillCell)?.fixedSize == NSSize(width: 48, height: 36)
+                   && chrome.surface(for: app.dragFormatToggle)?.identifier?.rawValue == "GlassFooterRow" && app.dragFormatToggle.superview is NSStackView, "Color is a 48x36 cell; the format toggle sits on the footer plate with no plate of its own")
+        try expect(chrome.surface(for: app.zoomControl)?.identifier?.rawValue == "GlassViewGroup" && chrome.surface(for: app.status) == nil && chrome.surface(for: app.canvas) == nil, "Zoom sits on the view plate; status and the canvas stay outside glass")
         try expect((app.status.font?.pointSize ?? 0) >= 18 && (app.zoomControl.font?.pointSize ?? 0) >= 18, "Text stays at its readable sizes")
         try expect(app.widthControl.target === app && app.widthControl.action == #selector(AppDelegate.changeWidth(_:)) && app.widthControl.onBegin != nil && app.widthControl.onEnd != nil
-                   && (try surface(chrome, app.widthControl)).shape == .capsule && app.widthControl.frame.size == BezelSizeSlider.pillSize,
-                   "The size pill keeps its undo-grouping callbacks and is a 48x36 capsule")
+                   && (try surface(chrome, app.widthControl)).identifier?.rawValue == "GlassAnnotationGroup" && app.widthControl.frame.size == BezelSizeSlider.pillSize,
+                   "The size pill keeps its undo-grouping callbacks and is a 48x36 control on the annotation plate")
         try expect(app.zoomControl.target === app && app.zoomControl.action == #selector(AppDelegate.changeZoom(_:)) && app.zoomControl.titleOfSelectedItem == "100%", "Zoom keeps its action and 100% default")
         try expect(app.dragFormatToggle.target === app && app.dragFormatToggle.segmentCount == 2 && app.dragOriginalControl.target === app, "Drag format and original-size controls keep their actions")
         try expect(app.paletteButton.target === app && app.paletteButton.action == #selector(AppDelegate.showDrawingColors(_:)) && app.paletteButton.onHover != nil, "Color keeps its click and hover routes")
@@ -826,15 +827,15 @@ extension AppSafetyTests {
         func verify(_ selected: SketchTool, _ label: String) throws {
             for tool in SketchTool.allCases {
                 guard let button = app.toolButtons[tool] as? GlassChromeButton else { throw Failure(description: "\(label): \(tool) is not a glass button") }
-                let surface = try surface(chrome, button), isOn = tool == selected
+                let isOn = tool == selected
                 try expect(button.state == (isOn ? .on : .off), "\(label): \(tool) state")
-                try expect(surface.isSelected == isOn, "\(label): \(tool) surface selection")
-                try expect((surface.currentTint != nil) == isOn, "\(label): only the selected tool is tinted (\(tool))")
+                try expect(button.plate.isSelected == isOn, "\(label): \(tool) selection")
+                try expect((button.plate.style.fill != nil) == isOn, "\(label): only the selected tool is filled (\(tool))")
                 try expect(button.activeFamily == (isOn ? .solid : .regular), "\(label): \(tool) glyph family")
                 try expect(AppToolTip.text(for: button)?.contains("(selected)") == isOn, "\(label): \(tool) tooltip '\(AppToolTip.text(for: button) ?? "")'")
                 if isOn {
-                    try expect(abs((surface.currentTint?.alphaComponent ?? 0) - 0.85) < 0.001, "\(label): \(tool) carries the accent tint")
-                    try expect(sameColor(button.contentTintColor, GlassChromeButton.textColor(on: .controlAccentColor)), "\(label): \(tool) glyph contrasts with the accent")
+                    try expect(abs((button.plate.style.fill?.alphaComponent ?? 0) - 0.20) < 0.001 && button.layer?.borderWidth == 1, "\(label): \(tool) carries the 0.20 accent fill and a 1 pt border")
+                    try expect(sameColor(button.contentTintColor, .controlAccentColor), "\(label): \(tool) glyph is the accent")
                     let free = button.icon.flatMap { FontAwesomeFree.glyph(for: $0, family: .solid) }
                     let expected: ChromeIconSource = FontAwesomeFont.isAvailable(.solid) ? .fontAwesome(.solid) : free.map { .fontAwesomeFree($0.name) } ?? .sfSymbol(button.icon?.sfSymbolFallback ?? "")
                     try expect(button.iconSource == expected, "\(label): \(tool) icon source \(button.iconSource)")
@@ -886,11 +887,11 @@ extension AppSafetyTests {
             try expect(AppToolTip.text(for: snap) == (frame ? ModernEditorChrome.snapFrameToolTip : ModernEditorChrome.snapToolTip), "\(label): Snap tooltip")
             try expect(snap.alternateAction == (frame ? nil : fullscreen), "\(label): the Fullscreen alternate is \(frame ? "cleared" : "restored")")
             try expect(snap.alternateTarget === app, "\(label): the alternate target")
-            try expect(snap.isPrimary && (try surface(chrome, snap)).prominence == .primary, "\(label): Snap stays the one primary command")
-            try expect(cancel.isHidden == !frame && (try surface(chrome, cancel)).isHidden == !frame, "\(label): Cancel \(frame ? "shows" : "hides") with its glass")
-            try expect(chrome.backdropIsVisible == !frame && content.showsCanvasHole == frame, "\(label): backdrop gives way to the Frame hole")
+            try expect(snap.isPrimary && snap.plate.isPrimary, "\(label): Snap stays the one primary command")
+            try expect(cancel.isHidden == !frame, "\(label): Cancel \(frame ? "shows" : "hides")")
+            try expect(chrome.wellIsSolid == !frame && content.showsCanvasHole == frame, "\(label): the solid well gives way to the Frame hole")
             app.updateViewportChrome()
-            try expect(chrome.resizeButton.isEnabled == !frame && (try surface(chrome, chrome.resizeButton)).isDisabled == frame, "\(label): Resize is \(frame ? "dimmed" : "live")")
+            try expect(chrome.resizeButton.isEnabled == !frame && chrome.resizeButton.plate.isDisabled == frame, "\(label): Resize is \(frame ? "dimmed" : "live")")
         }
         try state("launch", frame: false)
         app.frameSnap()
@@ -905,34 +906,100 @@ extension AppSafetyTests {
         try state("newFile", frame: false)
     }
 
-    private static func modernCanvasBleed() throws {
+    /// Renders the window content and returns the pixel `point` points from the content's bottom-left corner.
+    private static func pixel(in content: NSView, at point: NSPoint) throws -> NSColor {
+        guard let rep = content.bitmapImageRepForCachingDisplay(in: content.bounds) else { throw Failure(description: "The window content does not render") }
+        content.cacheDisplay(in: content.bounds, to: rep)
+        let scale = CGFloat(rep.pixelsWide) / content.bounds.width
+        guard let color = rep.colorAt(x: Int(point.x * scale), y: rep.pixelsHigh - 1 - Int(point.y * scale)) else { throw Failure(description: "No pixel at \(point)") }
+        return color.usingColorSpace(.sRGB) ?? color
+    }
+
+    private static func modernCanvasWell() throws {
         let (fixture, chrome) = try modernFixture()
         let app = fixture.app
-        let image = { chrome.subviews.compactMap { $0 as? NSBackgroundExtensionView }.first?.contentView as? NSImageView }
-        app.dragPreviewTimer?.invalidate(); app.dragPreviewTimer = nil
-        app.dragExportView?.overview = nil
-        chrome.updateCanvasBleed(nil)
-        try expect(!chrome.bleedIsVisible, "No thumbnail, no bleed")
-        app.updateDragPreview()
-        guard let overview = app.dragExportView?.overview else { throw Failure(description: "updateDragPreview produced no thumbnail") }
-        try expect(!GlassChrome.usesCanvasBleed && !chrome.bleedIsVisible && chrome.backdropIsVisible, "The bleed is hidden by default even with a thumbnail; the backdrop stays")
-        GlassChrome.usesCanvasBleed = true
-        defer { GlassChrome.usesCanvasBleed = false }
-        app.updateDragPreview()
-        try expect(chrome.bleedIsVisible && chrome.backdropIsVisible, "updateDragPreview shows the bleed over the backdrop when the flag is on")
-        guard let overview = app.dragExportView?.overview else { throw Failure(description: "updateDragPreview produced no thumbnail") }
-        try expect(image()?.image === overview, "The bleed shows the Drag Me thumbnail itself")
-        try expect(max(overview.size.width, overview.size.height) <= 128, "The thumbnail is the 128 px preview")
+        guard let content = app.window.contentView as? FrameChromeView else { throw Failure(description: "Frame content view") }
+        app.window.appearance = NSAppearance(named: .aqua)
+        defer { app.window.appearance = nil }
+        let tree = collect(NSView.self, in: content)
+        try expect(!tree.contains { $0 is NSVisualEffectView || $0 is NSBackgroundExtensionView }, "No material backdrop and no canvas bleed anywhere in the window")
+        try expect(chrome.wellIsSolid && !content.showsCanvasHole, "At launch the well is solid and there is no hole")
+        let scroll = chrome.scrollView
+        let well = DesignTokens.Palette.resolve(DesignTokens.Palette.Surface.canvasWell, for: NSAppearance(named: .aqua)!)
+        try expect(well.alphaComponent == 1 && sameColor(DesignTokens.Palette.resolve(scroll.backgroundColor, for: NSAppearance(named: .aqua)!), well)
+                   && sameColor(DesignTokens.Palette.resolve(scroll.contentView.backgroundColor, for: NSAppearance(named: .aqua)!), well), "The scroll view and clip view draw the opaque canvasWell colour")
+        content.layoutSubtreeIfNeeded()
+        // A point inside the well, just under its top-left corner, away from any centred canvas.
+        let corner = scroll.convert(NSPoint(x: 4, y: scroll.bounds.height - 4), to: content)
+        let solid = try pixel(in: content, at: corner)
+        try expect(solid.alphaComponent == 1 && sameColor(solid, well), "The well renders as the opaque canvasWell colour (\(solid) vs \(well))")
+        // Outside the well and outside any bar the window is the solid window surface.
+        let windowColor = DesignTokens.Palette.resolve(DesignTokens.Palette.Surface.window, for: NSAppearance(named: .aqua)!)
+        let margin = try pixel(in: content, at: NSPoint(x: 5, y: content.bounds.midY))
+        try expect(margin.alphaComponent == 1 && sameColor(margin, windowColor), "The margin around the well is the solid window surface (\(margin) vs \(windowColor))")
+        try expect(!sameColor(well, windowColor), "The well is distinguishable from the window surface")
+
         app.frameSnap()
-        try expect(!chrome.bleedIsVisible && !chrome.backdropIsVisible, "Frame mode hides the bleed and backdrop")
+        content.layoutSubtreeIfNeeded()
+        try expect(content.showsCanvasHole && !chrome.wellIsSolid && !scroll.drawsBackground && !scroll.contentView.drawsBackground, "Frame mode clears the scroll view and clip view backgrounds")
+        let hole = try pixel(in: content, at: corner)
+        try expect(hole.alphaComponent == 0, "Frame mode shows a transparent hole where the well was (alpha \(hole.alphaComponent))")
+        let framedMargin = try pixel(in: content, at: NSPoint(x: 5, y: content.bounds.midY))
+        try expect(framedMargin.alphaComponent == 1, "Frame mode keeps the chrome margin opaque")
         app.leaveFrame()
-        try expect(chrome.bleedIsVisible && chrome.backdropIsVisible, "Leaving Frame mode brings them back")
-        chrome.accessibility = ChromeAccessibility(reduceTransparency: true, increaseContrast: false, reduceMotion: false)
-        try expect(!chrome.bleedIsVisible, "Reduce Transparency hides the bleed")
-        app.updateDragPreview()
-        try expect(!chrome.bleedIsVisible, "A fresh thumbnail stays hidden under Reduce Transparency")
+        content.layoutSubtreeIfNeeded()
+        try expect(chrome.wellIsSolid && !content.showsCanvasHole, "Leaving Frame mode restores the solid well")
+        let restored = try pixel(in: content, at: corner)
+        try expect(restored.alphaComponent == 1 && sameColor(restored, well), "And it renders opaque again")
+    }
+
+    private static func modernGlassDepth() throws {
+        let (fixture, chrome) = try modernFixture()
+        let app = fixture.app
+        guard let content = app.window.contentView else { throw Failure(description: "content view") }
+        func glass(in view: NSView) -> [NSGlassEffectView] { ((view as? NSGlassEffectView).map { [$0] } ?? []) + view.subviews.flatMap { glass(in: $0) } }
+        func check(_ label: String) throws {
+            content.layoutSubtreeIfNeeded()
+            let found = glass(in: content)
+            try expect(found.count == 8 && found.allSatisfy { $0 is GlassSurfaceView }, "\(label): exactly the eight group plates (\(found.count))")
+            for view in found {
+                var ancestor = view.superview
+                while let current = ancestor { try expect(!(current is NSGlassEffectView), "\(label): no glass ancestor above a plate"); ancestor = current.superview }
+                try expect(glass(in: view.contentView ?? view).isEmpty, "\(label): no glass inside a plate")
+            }
+            try expect(collect(NSGlassEffectContainerView.self, in: content).count == 2, "\(label): inside the two bar containers")
+            let well = chrome.scrollView.convert(chrome.scrollView.bounds, to: content)
+            for view in found where !view.isHiddenOrHasHiddenAncestor {
+                let overlap = view.convert(view.bounds, to: content).intersection(well)
+                try expect(overlap.isNull || overlap.width <= 0.5 || overlap.height <= 0.5, "\(label): glass never overlaps the canvas well")
+            }
+            let capture = try surface(chrome, chrome.snapButton)
+            try expect(capture.identifier?.rawValue == "GlassCaptureGroup" && glass(in: capture.contentView ?? capture).isEmpty, "\(label): no glass capsule hides in the capture group (phantom)")
+            let owners = collect(GlassChromeButton.self, in: content).filter { !$0.isHiddenOrHasHiddenAncestor }.map { $0.plate } + collect(ChromeFillCell.self, in: content).map { $0.plate }
+            let saturated = collect(GlassChromeButton.self, in: content).filter { !$0.isHiddenOrHasHiddenAncestor && ($0.plate.style.fill?.alphaComponent ?? 0) > 0.5 }
+            try expect(saturated.count == 1 && saturated[0] === chrome.snapButton, "\(label): Snap is the only saturated accent at rest (\(saturated.count))")
+            try expect(owners.count > 20, "\(label): the state fills were found (\(owners.count))")
+            let selected = app.toolButtons.values.compactMap { $0 as? GlassChromeButton }.filter { $0.plate.isSelected }
+            try expect(selected.count == 1 && abs((selected[0].plate.style.fill?.alphaComponent ?? 0) - 0.20) < 0.001 && selected[0].layer?.borderWidth == 1, "\(label): the one selected tool is the 0.20 fill with a border")
+        }
+        try check("default size")
+        let minimum = app.window.contentRect(forFrameRect: NSRect(origin: .zero, size: app.window.minSize)).size
+        let original = app.window.contentView?.frame.size ?? .zero
+        app.window.setContentSize(minimum)
+        try check("minimum size")
+        app.frameSnap()
+        try check("Frame mode at the minimum")
+        try expect(chrome.cancelFrameButton.superview != nil && !chrome.cancelFrameButton.isHidden, "Cancel is visible in Frame mode")
+        app.leaveFrame()
+        app.window.setContentSize(original)
+        try check("restored default size")
+
+        // Reduce Transparency and Increase Contrast, injected, on the real window.
+        chrome.accessibility = ChromeAccessibility(reduceTransparency: true, increaseContrast: true, reduceMotion: false)
+        for plate in glass(in: content).compactMap({ $0 as? GlassSurfaceView }) {
+            try expect(plate.tintColor == nil && plate.transparencyPlate?.layer?.backgroundColor?.alpha == 1 && plate.layer?.borderWidth == 1, "Every plate is solid, untinted and bordered under both options")
+        }
         chrome.accessibility = .none
-        try expect(chrome.bleedIsVisible && image()?.image === app.dragExportView?.overview, "Clearing the option restores the current thumbnail")
     }
 
     /// Real mouse and key events into the CanvasBorderView that ModernEditorChrome hosts, compared with the same
@@ -1052,20 +1119,24 @@ extension AppSafetyTests {
         let (fixture, chrome) = try modernFixture()
         let app = fixture.app
         let surfaces = collect(GlassSurfaceView.self, in: app.window.contentView!)
-        try expect(surfaces.count >= 26, "Both bars have their glass surfaces (\(surfaces.count))")
-        let snap = try surface(chrome, chrome.snapButton), arrow = try surface(chrome, app.toolButtons[.arrow]), undo = try surface(chrome, chrome.undoButton)
+        let buttons = collect(GlassChromeButton.self, in: app.window.contentView!)
+        try expect(surfaces.count == 8, "Both bars have their eight plates (\(surfaces.count))")
+        let snap = chrome.snapButton, arrow = try (app.toolButtons[.arrow] as? GlassChromeButton).unwrap("arrow"), undo = chrome.undoButton
+        for button in buttons { button.appearance = NSAppearance(named: .aqua) }
         undo.setHovered(true)
-        try expect(surfaces.allSatisfy { $0.accessibility == .none && $0.lastAnimationDuration == GlassSurfaceView.animationDuration }, "Surfaces start with no display options and animate")
-        try expect(abs((undo.currentTint?.alphaComponent ?? 0) - 0.08) < 0.001 && abs((snap.currentTint?.alphaComponent ?? 0) - 0.85) < 0.001, "Baseline hover and primary tints")
-        try expect(arrow.isSelected && !arrow.showsContrastRing, "Arrow is selected without a ring")
+        try expect(buttons.allSatisfy { $0.plate.accessibility == .none && $0.plate.lastAnimationDuration == StatePlate.animationDuration }, "Buttons start with no display options and animate")
+        try expect(abs((undo.plate.style.fill?.alphaComponent ?? 0) - 0.08) < 0.001 && snap.plate.style.fill?.alphaComponent == 1, "Baseline hover fill and primary accent")
+        try expect(arrow.plate.isSelected && abs((arrow.plate.style.fill?.alphaComponent ?? 0) - 0.20) < 0.001, "Arrow is selected at 0.20")
         let options = ChromeAccessibility(reduceTransparency: true, increaseContrast: true, reduceMotion: true)
         chrome.accessibility = options
-        try expect(surfaces.allSatisfy { $0.accessibility == options && $0.lastAnimationDuration == 0 }, "Every surface receives the injected options and stops animating")
-        try expect(abs((undo.currentTint?.alphaComponent ?? 0) - 0.16) < 0.001 && abs((snap.currentTint?.alphaComponent ?? 0) - 1) < 0.001, "Increase Contrast strengthens hover and primary tints")
-        try expect(arrow.showsContrastRing && arrow.layer?.borderWidth == 1, "Increase Contrast rings the selected tool")
+        try expect(surfaces.allSatisfy { $0.accessibility == options && $0.transparencyPlate != nil && $0.layer?.borderWidth == 1 }, "Every plate receives the injected options: solid plate and contrast border")
+        try expect(buttons.allSatisfy { $0.plate.accessibility == options && $0.plate.lastAnimationDuration == 0 }, "Every button receives them and stops animating")
+        try expect(abs((undo.plate.style.fill?.alphaComponent ?? 0) - 0.16) < 0.001 && snap.plate.style.fill?.alphaComponent == 1, "Increase Contrast strengthens the hover fill; Snap stays the accent")
+        try expect(abs((arrow.plate.style.fill?.alphaComponent ?? 0) - 0.32) < 0.001 && arrow.layer?.borderWidth == 1, "Increase Contrast strengthens the selected tool and keeps its border")
         chrome.accessibility = .none
-        try expect(surfaces.allSatisfy { $0.accessibility == .none && $0.lastAnimationDuration == GlassSurfaceView.animationDuration }, "Clearing the options restores every surface")
-        try expect(abs((undo.currentTint?.alphaComponent ?? 0) - 0.08) < 0.001 && !arrow.showsContrastRing && arrow.layer?.borderWidth == 0, "And the tints and ring")
+        try expect(surfaces.allSatisfy { $0.accessibility == .none && $0.transparencyPlate == nil && $0.layer?.borderWidth == 0 }, "Clearing the options restores every plate")
+        try expect(buttons.allSatisfy { $0.plate.accessibility == .none && $0.plate.lastAnimationDuration == StatePlate.animationDuration }, "And every button")
+        try expect(abs((undo.plate.style.fill?.alphaComponent ?? 0) - 0.08) < 0.001 && abs((arrow.plate.style.fill?.alphaComponent ?? 0) - 0.20) < 0.001, "And the fills")
         undo.setHovered(false)
     }
 
@@ -1100,7 +1171,7 @@ extension AppSafetyTests {
         // Hidden/disabled state reaches the glass the way AppDelegate toggles it for the viewport.
         app.updateViewportChrome()
         chrome.resizeButton.isEnabled = false
-        try expect(try surface(chrome, chrome.resizeButton).isDisabled, "A disabled command dims its glass")
+        try expect(chrome.resizeButton.plate.isDisabled, "A disabled command dims itself")
         chrome.resizeButton.isEnabled = true
     }
 
@@ -1112,15 +1183,14 @@ extension AppSafetyTests {
         guard app.wipeButton === button, button.action == #selector(AppDelegate.wipe), button.target === app else {
             throw Failure(description: "The Wipe button must be the chrome's, located by its action")
         }
-        let glass = try surface(chrome, button)
         func reads(_ title: String, _ enabled: Bool) -> Bool {
             button.title == title && button.isEnabled == enabled && button.accessibilityLabel() == title
                 && button.isAccessibilityEnabled() == enabled
-                && glass.isDisabled == !enabled && glass.alphaValue == (enabled ? 1 : 0.5) && glass.currentTint == nil
+                && button.plate.isDisabled == !enabled && button.alphaValue == (enabled ? 1 : 0.5) && button.plate.style.fill == nil
         }
         func detail() -> String {
             "title '\(button.title)', enabled \(button.isEnabled), VoiceOver '\(button.accessibilityLabel() ?? "nil")' enabled \(button.isAccessibilityEnabled()), "
-                + "glass disabled \(glass.isDisabled), alpha \(glass.alphaValue), tint \(String(describing: glass.currentTint))"
+                + "disabled \(button.plate.isDisabled), alpha \(button.alphaValue), fill \(String(describing: button.plate.style.fill))"
         }
         let shape = SketchElement(kind: .rectangle)
         let untouched = canvas.editingUndoManager.undoActionName
@@ -1409,11 +1479,11 @@ extension AppSafetyTests {
         try expect((zoom.accessibilityValue() as? String) == "150%" && abs(app.canvas.zoom - 1.5) < 0.001, "Picking a plain zoom speaks only its percentage, never the previous mode word")
         try expect(AppToolTip.text(for: zoom) == nil, "Picking a plain zoom clears the previous mode word from the app tooltip")
         // The capsule is sized once for the widest face, so no title is ever clipped. The menu-only Actual Size command is never a face.
-        let surface = try surface(chrome, zoom)
+        let cell = try (zoom.superview as? ChromeFillCell).unwrap("zoom cell")
         for item in zoom.itemArray where item.tag != ZoomPopUpButton.actualSizeTag && !item.isSeparatorItem {
             let title = item.title
             zoom.select(item)
-            try expect(zoom.fittingSize.width <= surface.frame.width - 8 + 0.5, "\(title) fits the zoom capsule (\(zoom.fittingSize.width) in \(surface.frame.width))")
+            try expect(zoom.fittingSize.width <= cell.frame.width - 8 + 0.5, "\(title) fits the zoom cell (\(zoom.fittingSize.width) in \(cell.frame.width))")
         }
         try expect(AppToolTip.text(for: zoom) == nil || AppToolTip.text(for: zoom) == "Canvas zoom", "Zoom keeps its tooltip")
     }
@@ -1563,7 +1633,7 @@ extension AppSafetyTests {
         let app = fixture.app
         guard let window = app.window as? AppSafetyWindow else { throw Failure(description: "Isolated window") }
         window.simulatesVisibility = true; window.shown = true
-        app.showDrawingColors(chrome.surface(for: app.paletteButton)?.contentView as? NSButton ?? app.paletteButton)
+        app.showDrawingColors(app.paletteButton)
         try expect(app.colorPopover?.isShown == true, "The Modern Color popover opens")
         try expect(app.colorPopover?.preferredEdge == .minY && app.colorPopover?.anchor === app.paletteButton && app.paletteButton.isDescendant(of: chrome.header),
                    "Color sits in the top bar, so its popover opens below it")

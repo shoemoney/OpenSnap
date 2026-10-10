@@ -1063,7 +1063,7 @@ Status at `f3ba77f`: 20 done, 2 verified, 1 not-a-bug, 1 in-progress (OSN-041), 
 
 ## OSN-042 · Glass consolidation: one plate per group, solid canvas well, backdrop and bleed deleted, fallbacks
 
-`OSN-042 · P1 · M4 · Status: pending`
+`OSN-042 · P1 · M4 · Status: implemented on impl/m4-glass (pending review)`
 
 **Implementation (main f3ba77f):** no merge. Evidence: none. Open: Q3 spike (NSToolbar or custom bars) first; reconcile the glass budget (5 in spec section 0, 8 in T4). Deferred visual defects: phantom capsule under Snap (hidden Cancel glass surface); full-screen salmon tint and accent loss (backdrop vibrancy); legacy-scroller white corner.
 

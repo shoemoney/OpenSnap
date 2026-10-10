@@ -78,7 +78,7 @@ for name, (path, data) in snapshot.items():
         text = text.replace('NSApp.currentEvent', 'AppSafetyEvents.current')
         text = text.replace('NSApp.setActivationPolicy(', 'AppSafetyPresence.setPolicy(')
         text = text.replace('else if presence != 2 { installMenuPresence() }', 'else if presence != 2 { AppSafetyPresence.installs += 1 }')
-        text = text.replace('NSWorkspace.shared.accessibilityDisplayShouldReduceMotion', 'AppSafetyAnimations.reduceMotion')
+        text = text.replace('!DisplayOptions.current.reduceMotion', '!AppSafetyAnimations.reduceMotion')
         text = text.replace('statusItem?.button?.window?.frame ?? .zero', 'AppSafetyMenuDestination.rect')
         replacements = {
             'NSAlert(': 'AppSafetyAlert(',
