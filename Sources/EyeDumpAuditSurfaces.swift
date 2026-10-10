@@ -121,6 +121,20 @@ extension AuditRun {
         if !fired { gap(id, surface + " / " + state, "the modal call returned before any window could be captured (it did not block; the panel is out-of-process or was refused in this environment)") }
     }
 
+    /// Raises an app-owned alert (a sheet, so `trigger` returns at once), captures the window with the sheet on it, then answers Cancel.
+    func captureAlertSheet(_ id: String, _ slug: String, surface: String, state: String, refs: [String], trigger: () -> Void) {
+        trigger()
+        pump(0.9)
+        guard let alert = AppAlert.presentedAlerts.last else { gap(id, surface + " / " + state, "no app-owned alert was on screen after the trigger"); return }
+        var fonts: [String: Any] = ["title": fontInfo(alert.titleLabel.font) as Any, "message": fontInfo(alert.messageLabel.font) as Any,
+                                    "buttons": alert.buttonViews.map { fontInfo($0.font) as Any }]
+        if let field = alert.accessoryView as? NSTextField { fonts["field"] = fontInfo(field.font) as Any }
+        shoot(id, slug, surface: surface, state: state, windows: [alert.panel, window], refs: refs, settle: 0.1,
+              extra: ["alertTitle": alert.title, "alertButtons": alert.buttons.map(\.title), "fonts": fonts, "presentedAs": window.attachedSheet === alert.panel ? "sheet on the document window" : "separate panel"])
+        alert.cancel()
+        pump(0.3)
+    }
+
     /// Runs `trigger` (which blocks while a menu tracks), captures the app's windows including the menu, cancels tracking.
     func captureTrackedMenu(_ id: String, _ slug: String, surface: String, state: String, refs: [String],
                             delay: TimeInterval = 0.8, dismiss: @escaping () -> Void, trigger: () -> Void) {
@@ -348,6 +362,7 @@ extension AuditRun {
             step("S36", "selection and text editing at 980/1280") { s36() }
             step("S37", "PNG and JPG at 980") { s37() }
             step("S38", "app tooltips") { s38() }
+            step("S39", "titled window and alert sheets") { s39() }
             step("S13", "capture picker") { s13() }
             step("S14", "countdown") { s14() }
             step("S15", "capture flash") { s15() }
@@ -1065,19 +1080,47 @@ extension AuditRun {
         shoot("S21", "publish-success-footer", surface: "publish success", state: "footer crop after success", crop: footerCrop(), refs: ["App.swift|func receivePublishing"], settle: 0.1)
         pump(0.5)
         gate.mode = "fail"
-        let failureTimer = Timer(timeInterval: 2.0, repeats: false) { [self] _ in
-            MainActor.assumeIsolated {
-                if let modal = NSApp.modalWindow {
-                    shoot("S21", "publish-error", surface: "publish error", state: "error alert after a stubbed failed upload", windows: [modal], refs: ["App.swift|func receivePublishing", "App.swift|func error(_ error: Error)"], settle: 0)
-                } else { gap("S21", "publish error alert", "no modal alert appeared") }
-                NSApp.abortModal()
-            }
-        }
-        RunLoop.main.add(failureTimer, forMode: .common)
         app.publishImage()
-        pump(3.5)
-        failureTimer.invalidate()
+        pump(3.0)
+        if let alert = AppAlert.presentedAlerts.last {
+            shoot("S21", "publish-error", surface: "publish error", state: "error sheet after a stubbed failed upload", windows: [alert.panel, window], refs: ["App.swift|func receivePublishing", "App.swift|func error(_ error: Error)"], settle: 0,
+                  extra: ["alertTitle": alert.title, "presentedAs": window.attachedSheet === alert.panel ? "sheet on the document window" : "separate panel"])
+            alert.cancel()
+        } else { gap("S21", "publish error alert", "no error sheet appeared") }
+        pump(0.5)
         shoot("S21", "publish-error-footer", surface: "publish error", state: "footer crop after the error alert was dismissed", crop: footerCrop(), refs: ["App.swift|func receivePublishing"], settle: 0.2)
+    }
+
+    /// OSN-043: the window titled with the document name and its size, the proxy icon, and the app-owned alert sheets.
+    func s39() {
+        loadSynthetic(size: CGSize(width: 1000, height: 700), name: "Quarterly mockup")
+        _ = addAllAnnotationKinds(scale: 1)
+        // A saved document: the file is written into the throwaway support folder, so the title bar shows a proxy icon for it.
+        app.currentURL = app.support.appendingPathComponent("Quarterly mockup.opensnap")
+        _ = app.save()
+        app.updateDragPreview()
+        for spec in ["980xmin", "1280x800"] {
+            guard let size = windowSize(for: spec, surface: "S39") else { continue }
+            placeWindow(size)
+            window.makeKeyAndOrderFront(nil); pump(0.4)
+            let width = spec.hasPrefix("980") ? "w980" : "w1280"
+            let facts: [String: Any] = ["windowTitle": window.title, "subtitle": window.subtitle, "representedURL": window.representedURL?.lastPathComponent ?? "none",
+                                        "titlebarSeparatorStyle": String(describing: window.titlebarSeparatorStyle), "backgroundIsSurfaceWindow": window.backgroundColor == DesignTokens.Palette.Surface.window,
+                                        "fullScreenPrimary": window.collectionBehavior.contains(.fullScreenPrimary), "minSize": NSStringFromSize(window.minSize)]
+            shoot("S39", "titled-window-\(width)", surface: "titled window", state: "title = document name, subtitle = size, proxy icon, no title-bar separator, at \(width)",
+                  refs: ["App+ModernChrome.swift|func configureWindowChrome()", "App.swift|window?.subtitle = dragSizeLabel.stringValue"], extra: facts)
+            shoot("S39", "titlebar-crop-\(width)", surface: "titled window", state: "the title bar and top bar only, at \(width)", crop: headerCrop(),
+                  refs: ["App+ModernChrome.swift|func configureWindowChrome()"], settle: 0.1, extra: facts)
+        }
+        app.dirty = true
+        captureAlertSheet("S39", "discard-sheet", surface: "alerts / sheets", state: "Save your drawing? sheet over the titled window (Save / Cancel / Don\u{2019}t Save)",
+                          refs: ["App.swift|func confirmDiscard(", "AppAlert.swift|final class AppAlert"]) { app.confirmDiscard { _ in } }
+        app.dirty = false
+        syntheticDestinations()
+        app.publishing.clipboardWriter = { _ in }
+        app.publishing.uploader = { _, _, _, _ in throw PublishingFailure("Upload to Example S3 failed: the connection was refused (stub, no network was used).") }
+        captureAlertSheet("S39", "upload-error-sheet", surface: "alerts / sheets", state: "error sheet after a stubbed failed upload, over the titled window",
+                          refs: ["App.swift|func receivePublishing", "App.swift|func error(_ error: Error)"]) { app.publishImage(); pump(2.5) }
     }
 
     func s22() {
@@ -1165,18 +1208,18 @@ extension AuditRun {
     }
 
     func s26() {
-        captureModal("S26", "rename", surface: "alerts / sheets", state: "Rename… alert with text field", refs: ["App.swift|@objc func renameDocument()", "App.swift|func prompt("]) { app.renameDocument() }
+        captureAlertSheet("S26", "rename", surface: "alerts / sheets", state: "Rename… sheet with text field", refs: ["App.swift|@objc func renameDocument()", "App.swift|func prompt(", "AppAlert.swift|final class AppAlert"]) { app.renameDocument() }
         app.dirty = true
-        captureModal("S26", "close-unsaved", surface: "alerts / sheets", state: "Save your drawing? (Save / Cancel / Discard)", refs: ["App.swift|func allowDiscard("]) { _ = app.allowDiscard() }
+        captureAlertSheet("S26", "close-unsaved", surface: "alerts / sheets", state: "Save your drawing? sheet (Save / Cancel / Don’t Save)", refs: ["App.swift|func confirmDiscard(", "AppAlert.swift|final class AppAlert"]) { app.confirmDiscard { _ in } }
         app.dirty = false
-        captureModal("S26", "error-generic", surface: "alerts / sheets", state: "generic NSAlert(error:) alert", refs: ["App.swift|func error(_ error: Error)"]) {
+        captureAlertSheet("S26", "error-generic", surface: "alerts / sheets", state: "generic error sheet", refs: ["App.swift|func error(_ error: Error)", "AppAlert.swift|convenience init(error: Error)"]) {
             app.error(NSError(domain: "OpenSnap", code: 5, userInfo: [NSLocalizedDescriptionKey: "This capture is too large or cannot be decoded safely."]))
         }
         if let store = try? app.archiveStore() {
             if store.entries.isEmpty, let snapshot = try? app.historySnapshot() { _ = try? store.archive(snapshot, name: "Alert demo", action: .archived) }
             if let id = store.entries.first?.id {
-                captureModal("S26", "history-hide", surface: "alerts / sheets", state: "Hide drawings from History?", refs: ["App.swift|func removeHistory("]) { app.removeHistory([id], deleteFiles: false) }
-                captureModal("S26", "history-trash", surface: "alerts / sheets", state: "Move archived drawings to Trash?", refs: ["App.swift|func removeHistory("]) { app.removeHistory([id], deleteFiles: true) }
+                captureAlertSheet("S26", "history-hide", surface: "alerts / sheets", state: "Hide drawings from History? sheet", refs: ["App.swift|func removeHistory("]) { app.removeHistory([id], deleteFiles: false) }
+                captureAlertSheet("S26", "history-trash", surface: "alerts / sheets", state: "Move archived drawings to Trash? sheet", refs: ["App.swift|func removeHistory("]) { app.removeHistory([id], deleteFiles: true) }
             }
         }
         syntheticDestinations()
