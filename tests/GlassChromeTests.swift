@@ -580,6 +580,11 @@ private enum GlassChromeTests {
         expect(first.layer?.cornerRadius == DesignTokens.Radius.concentric(outer: plate.cornerRadius, inset: M.groupInset), "The fills inside are concentric with the plate: 16 - 4 = 12")
         expect(abs(first.frame.minX - M.groupInset) < 0.5 && abs(first.frame.minY - M.groupInset) < 0.5 && first.frame.size == M.iconButton, "A control sits 4 pt inside the plate at its own size")
         expect(plate.style == .regular && plate.tintColor == nil, "One glass variant, never tinted")
+        if #available(macOS 27, *) {
+            expect(plate.effectIsInteractive, "A plate holds interactive controls, so it opts into the system press response on macOS 27")
+        } else {
+            notes.append("effectIsInteractive (macOS 27 only)")
+        }
         expect(plate.transparencyPlate == nil && plate.layer?.borderWidth == 0, "Default: material glass, no plate, no border")
         expect(plate.contentView?.subviews.contains { $0 is NSGlassEffectView } == false, "No glass inside the plate")
 

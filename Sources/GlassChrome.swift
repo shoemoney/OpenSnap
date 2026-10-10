@@ -496,6 +496,8 @@ final class GlassSurfaceView: NSGlassEffectView {
         translatesAutoresizingMaskIntoConstraints = false
         wantsLayer = true
         style = .regular
+        // A plate is the container of interactive controls, which is what the system's press response is for (macOS 27 only).
+        if #available(macOS 27, *) { effectIsInteractive = true }
 
         solidPlate.wantsLayer = true
         solidPlate.translatesAutoresizingMaskIntoConstraints = false
@@ -589,8 +591,8 @@ enum GlassChrome {
         static let groupInset: CGFloat = DesignTokens.Space.s1
         /// The smallest gap between two glass groups in one bar.
         static let groupGap: CGFloat = 12
-        // NSGlassEffectContainerView fuses glass shapes closer than its spacing, so it must stay below the group gap.
-        static let containerSpacing: CGFloat = 2
+        // NSGlassEffectContainerView merges glass closer than its spacing; Apple's default of 0 batches the plates without distorting them.
+        static let containerSpacing: CGFloat = 0
     }
 
     /// Apple's over-glass Extra Large control size (36 pt) for every control that supports a control size;

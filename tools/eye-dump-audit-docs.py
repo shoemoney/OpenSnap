@@ -31,7 +31,7 @@ STATIC_GAPS = [
     ("Non-Retina 1x display", "Only the built-in 2x Retina display exists on this machine; 1x rendering (hairlines, glyph hinting) was not captured."),
     ("Multi-display", "A single display is attached; active-display capture and cross-display window placement were not exercised."),
     ("Live screen capture / real crosshair over real pixels", "No Screen Recording grant and capturing the screen is forbidden for this audit. The picker lens is shown grey (what renders without a grant) and with synthetic pixels."),
-    ("Native tooltips / hover-only affordances", "AppKit tooltips are window-server drawn on real pointer dwell; they cannot be forced. Tooltip strings are recorded in metrics/*.json (toolTip). Hover/pressed glass states were forced through GlassSurfaceView.setHovered/isPressed only."),
+    ("Native tooltips / hover-only affordances", "AppKit tooltips are window-server drawn on real pointer dwell; they cannot be forced. Tooltip strings are recorded in metrics/*.json (toolTip). Hover/pressed states were forced through GlassChromeButton.setHovered/highlight only."),
     ("NSSharingServicePicker / system share sheet", "Out-of-process and lists the user's real accounts; not opened."),
     ("Photo browser (S22)", "Reads the user's Photos library and Desktop with no synthetic-content seam; not opened (privacy)."),
     ("Real drag-and-drop to Finder", "A real drag session needs a real pointer and writes files; only the drag thumbnail panel states were driven."),
