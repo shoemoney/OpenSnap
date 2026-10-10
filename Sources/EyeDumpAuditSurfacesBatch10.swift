@@ -44,11 +44,13 @@ extension AuditRun {
             placeWindow(windowSize(for: "980xmin", surface: "S46") ?? CGSize(width: 980, height: window.minSize.height))
             app.dragOriginalControl.state = ticked ? .on : .off; app.changeDragOptions(nil); app.updateDragPreview(); pump(0.4)
             let before = app.window.subtitle
+            // The harness display is 2x, so the 2560 × 1800 point snap has 5120 × 3600 pixels: the captions name the picture's own pixels.
+            let ownPixels = PixelSizeText.text(canvas.canvasSize)
             if resizeTo(typedWidth) {
                 shoot("S46", "resize-oversized-\(word)", surface: "Editor title and footer",
-                      state: "Original size \(word) on a \(Int(snap.width)) × \(Int(snap.height)) snap, Resize to \(typedWidth) wide (above the \(Int(capacity.width)) × \(Int(capacity.height)) pt of room this display gives it): the title reads \(app.window.subtitle) (was \(before)), the picture is \(NSStringFromSize(canvas.canvasSize)) and the box has nothing to offer (R3-001)",
-                      refs: ["AppViewport.swift|let rewritten = plan.scaleTo", "AppViewport.swift|func refitPictureZoom"], settle: 0.3, extra: facts())
-                shoot("S46", "resize-oversized-\(word)-footer", surface: "Editor title and footer", state: "the footer of the same editor: size and format \(app.window.subtitle), no Original size box (R3-001)",
+                      state: "Original size \(word) on a \(ownPixels) snap, Resize to \(typedWidth) wide (above the \(Int(capacity.width)) × \(Int(capacity.height)) pt of room this display gives it): the title reads \(app.window.subtitle) (was \(before)), the picture is \(NSStringFromSize(canvas.canvasSize)) and the box has nothing to offer (R3-001)",
+                      refs: ["AppViewport.swift|output: plan.size)", "AppViewport.swift|func refitPictureZoom"], settle: 0.3, extra: facts())
+                shoot("S46", "resize-oversized-\(word)-footer", surface: "Editor title and footer", state: "the footer of the same editor, which carries the tool and the saved state (\(app.status.stringValue)) and no Original size box; the size and format \(app.window.subtitle) are in the title bar above (R3-001)",
                       crop: footerCrop(), refs: ["AppViewport.swift|var isLargeShot"], settle: 0.2, extra: facts())
             } else { gap("S46", "oversized Resize \(word)", "the Resize sheet, its Width field or its Apply button was not found") }
             app.activeResizeSession?.cancel()
@@ -61,11 +63,12 @@ extension AuditRun {
             placeWindow(windowSize(for: "980xmin", surface: "S46") ?? CGSize(width: 980, height: window.minSize.height))
             app.dragOriginalControl.state = ticked ? .on : .off; app.changeDragOptions(nil); app.updateDragPreview(); pump(0.4)
             let before = app.window.subtitle
+            let gestureSource = canvas.canvasSize
             if app.beginWindowGesture(.corner(.bottomRight)) {
                 app.previewBorderGesture(delta: CGPoint(x: -150, y: 0), flags: [])
                 app.endWindowGesture(); app.updateDragPreview(); pump(0.5)
                 shoot("S46", "corner-drag-\(word)", surface: "Editor title and footer",
-                      state: "Original size \(word), the canvas border's bottom-right corner dragged 150 pt narrower: the title reads \(app.window.subtitle) (was \(before)), the picture is \(NSStringFromSize(canvas.canvasSize)) and the Undo step is \(canvas.editingUndoManager.undoActionName) (R3-002)",
+                      state: "Original size \(word) on a \(PixelSizeText.text(gestureSource)) snap, the canvas border's bottom-right corner dragged 150 pt narrower: the title reads \(app.window.subtitle) (was \(before)), the picture is \(NSStringFromSize(canvas.canvasSize)) and the Undo step is \(canvas.editingUndoManager.undoActionName) (R3-002)",
                       refs: ["AppViewport.swift|func endWindowGesture"], settle: 0.3,
                       extra: facts().merging(["undoName": canvas.editingUndoManager.undoActionName], uniquingKeysWith: { $1 }))
             } else { gap("S46", "corner drag \(word)", "the corner gesture did not begin") }
@@ -78,12 +81,13 @@ extension AuditRun {
             let word = ticked ? "ticked" : "unticked"
             app.dragOriginalControl.state = ticked ? .on : .off; app.changeDragOptions(nil); pump(0.3)
             let accessory = app.exportPanelAccessory()
+            refreshExportAccessory(accessory)
             let view = accessory.view
             view.frame = NSRect(origin: .zero, size: view.fittingSize.width > 10 ? view.fittingSize : NSSize(width: 460, height: 120))
             let host = NSWindow(contentRect: view.frame, styleMask: [.titled], backing: .buffered, defer: false)
             host.title = "Export accessory"; host.contentView = view
             host.orderFront(nil); pump(0.4)
-            shoot("S46", "export-accessory-footer-\(word)", surface: "export save panel", state: "the footer's Original size box \(word): the Export accessory opens with Export at original size \(word) too (R3-003)", windows: [host],
+            shoot("S46", "export-accessory-footer-\(word)", surface: "export save panel", state: "the footer's Original size box \(word): the Export accessory opens with Export at original size \(word) too, and states \(accessory.preview.dimensionsLabel) and \(accessory.preview.byteCountLabel) (R3-003)", windows: [host],
                   refs: ["App.swift|func exportPanelAccessory"], settle: 0.2, extra: ["accessoryOriginalSize": accessory.originalSize, "footerTicked": ticked])
             host.orderOut(nil)
         }
