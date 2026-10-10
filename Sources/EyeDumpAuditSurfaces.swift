@@ -1072,7 +1072,7 @@ extension AuditRun {
         var meta: [String: Any] = ["id": id, "slug": slug, "surface": surface, "state": state, "appearance": appearance, "file": stem + ".png",
             "pixelSize": [rep.pixelsWide, rep.pixelsHigh], "pointSize": [Double(view.bounds.width), Double(view.bounds.height)],
             "scale": Double(rep.pixelsWide) / Double(view.bounds.width), "method": "NSView.cacheDisplay (view only, not a window capture)", "sourceRefs": refs,
-            "sourceSha": sourceSha, "iconMode": iconMode, "windowSize": [Double(window.frame.width.rounded()), Double(window.frame.height.rounded())], "appActive": NSApp.isActive]
+            "sourceSha": sourceSha, "iconMode": iconMode, "displayOptions": displayOptionsJSON, "windowSize": [Double(window.frame.width.rounded()), Double(window.frame.height.rounded())], "appActive": NSApp.isActive]
         for (key, item) in extra { meta[key] = item }
         write(meta, to: "meta/\(stem).json")
     }

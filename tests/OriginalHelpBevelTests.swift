@@ -102,7 +102,7 @@ private enum OriginalHelpBevelTests {
         let factoryCalls: NSMutableArray
         var panel: HelpPanel { bevel.panel as! HelpPanel }
     }
-    private static func make(reduceMotion: Bool = false, screen: NSRect? = nil, frame: NSRect = NSRect(x: -700, y: 100, width: 800, height: 500),
+    private static func make(reduceMotion: Bool = false, motion: (@MainActor () -> Bool)? = nil, screen: NSRect? = nil, frame: NSRect = NSRect(x: -700, y: 100, width: 800, height: 500),
                              bands: OriginalHelpBevel.Bands? = nil, pointer: NSPoint = NSPoint(x: 0, y: 1_000_000)) -> Rig {
         let host = HelpHost(contentRect: frame,
                             styleMask: [.borderless], backing: .buffered, defer: true)
@@ -113,7 +113,7 @@ private enum OriginalHelpBevelTests {
             factoryCalls.add(true)
             return HelpPanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel],
                              backing: .buffered, defer: true)
-        }, scheduler: scheduler, reduceMotion: { reduceMotion }, screenFrame: { _ in screen }, bands: bands, pointer: { pointer })
+        }, scheduler: scheduler, reduceMotion: { motion?() ?? reduceMotion }, screenFrame: { _ in screen }, bands: bands, pointer: { pointer })
         return Rig(host: host, scheduler: scheduler, bevel: bevel, factoryCalls: factoryCalls)
     }
 
@@ -124,6 +124,8 @@ private enum OriginalHelpBevelTests {
         fadesAndReversal()
         layoutAndRendering()
         reduceMotionSkipsFade()
+        displayOptionsDriveTheDefault()
+        reduceMotionFollowsDisplayOptionChanges()
         plateFitsText()
         tokensOnly()
         staysOnScreen()
@@ -362,6 +364,86 @@ private enum OriginalHelpBevelTests {
         motion.bevel.modifiers(message: "One")
         _ = motion.scheduler.finishFade()
         expect(Array(motion.panel.alphaLog.dropFirst()).count == 7 && motion.panel.alphaLog.last == 1, "Normal motion fades in over seven steps")
+    }
+
+    /// A bevel built with NO reduceMotion seam reads `DisplayOptions.current`: the injected value decides whether it fades.
+    private static func displayOptionsDriveTheDefault() {
+        let saved = DisplayOptions.override
+        defer { DisplayOptions.override = saved }
+        func bare() -> Rig {
+            let host = HelpHost(contentRect: NSRect(x: -700, y: 100, width: 800, height: 500), styleMask: [.borderless], backing: .buffered, defer: true)
+            host.isReleasedWhenClosed = false
+            let scheduler = ControlledHelpScheduler()
+            let bevel = OriginalHelpBevel(host: host, makePanel: {
+                HelpPanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: true)
+            }, scheduler: scheduler, screenFrame: { _ in nil }, pointer: { NSPoint(x: 0, y: 1_000_000) })
+            return Rig(host: host, scheduler: scheduler, bevel: bevel, factoryCalls: NSMutableArray())
+        }
+        DisplayOptions.override = DisplayOptions(reduceMotion: true)
+        let still = bare()
+        defer { still.bevel.shutdown() }
+        still.bevel.enabled = true
+        still.bevel.hover(owner: "A", message: "Hover")
+        still.scheduler.fire(still.scheduler.latest(0.25))
+        expect(Array(still.panel.alphaLog.dropFirst()) == [1], "Injected Reduce Motion: the tick sequence is just the final alpha, got \(still.panel.alphaLog)")
+        expect(still.scheduler.entries.allSatisfy { $0.interval != 0.02 }, "Injected Reduce Motion schedules no fade timer")
+        DisplayOptions.override = DisplayOptions.none
+        let moving = bare()
+        defer { moving.bevel.shutdown() }
+        moving.bevel.enabled = true
+        moving.bevel.hover(owner: "A", message: "Hover")
+        moving.scheduler.fire(moving.scheduler.latest(0.25))
+        _ = moving.scheduler.finishFade()
+        expect(Array(moving.panel.alphaLog.dropFirst()).count == 7, "Without it the same bevel fades in over seven steps, got \(moving.panel.alphaLog)")
+    }
+
+    /// Reduce Motion switching on while the plate is fading lands the plate on its end state at once, in both directions.
+    private static func reduceMotionFollowsDisplayOptionChanges() {
+        final class Switch { var on = false }
+        func post() {
+            NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: NSWorkspace.shared)
+        }
+        // Fading in.
+        let flag = Switch()
+        let rig = make(motion: { flag.on })
+        defer { rig.bevel.shutdown() }
+        rig.bevel.enabled = true
+        rig.bevel.hover(owner: "A", message: "Hover")
+        rig.scheduler.fire(rig.scheduler.latest(0.25))
+        let fade = rig.scheduler.latest(0.02)
+        rig.scheduler.fire(fade); rig.scheduler.fire(fade)
+        expect(rig.panel.alphaValue > 0 && rig.panel.alphaValue < 1 && rig.scheduler.entries[fade].timer.isValid, "Two ticks into the fade-in, got \(rig.panel.alphaLog)")
+        post()
+        expect(rig.panel.alphaValue < 1 && rig.scheduler.entries[fade].timer.isValid, "A notification while Reduce Motion is still off changes nothing")
+        flag.on = true
+        post()
+        expect(rig.panel.alphaValue == 1 && !rig.scheduler.entries[fade].timer.isValid, "Reduce Motion on mid fade-in: the plate is at 1 and the timer is gone, got \(rig.panel.alphaLog)")
+        // Fading out.
+        flag.on = false
+        rig.bevel.exit(owner: "A")
+        let out = rig.scheduler.latest(0.02)
+        rig.scheduler.fire(out); rig.scheduler.fire(out)
+        expect(rig.panel.alphaValue > 0 && rig.panel.alphaValue < 1 && rig.scheduler.entries[out].timer.isValid, "Two ticks into the fade-out, got \(rig.panel.alphaLog)")
+        flag.on = true
+        post()
+        expect(rig.panel.alphaValue == 0 && rig.host.attachments.isEmpty && !rig.scheduler.entries[out].timer.isValid,
+               "Reduce Motion on mid fade-out: the plate is gone and detached, got \(rig.panel.alphaLog)")
+        // Nothing fading: a notification touches nothing.
+        let logged = rig.panel.alphaLog.count
+        post()
+        expect(rig.panel.alphaLog.count == logged, "With no fade running a notification assigns no alpha")
+        // A shut-down bevel no longer listens.
+        let gone = make(motion: { flag.on })
+        gone.bevel.enabled = true
+        gone.bevel.hover(owner: "B", message: "Hover")
+        flag.on = false
+        gone.scheduler.fire(gone.scheduler.latest(0.25))
+        let panel = gone.panel
+        gone.bevel.shutdown()
+        flag.on = true
+        let before = panel.alphaLog.count
+        post()
+        expect(panel.alphaLog.count == before, "A shut-down bevel ignores display-option changes")
     }
 
     /// The plate is as tall as its text needs plus air, never less: no line sits on or past an edge.

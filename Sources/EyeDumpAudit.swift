@@ -10,20 +10,13 @@ import Darwin
 /// Run it only through tools/eye-dump-audit.sh, which supplies the isolation this file refuses to run without.
 extension AppDelegate {
     /// Every bundle id a harness copy may carry. The real ids (com.shoemoney.opensnap, and the retired product's) never match.
-    static let auditBundlePrefix = "com.shoemoney.opensnap.eyedump-"
+    static let auditBundlePrefix = HarnessGate.bundlePrefix
 
-    /// The audit draws on the live canvas and quits clean, so it is ignored unless the process is fully isolated:
-    /// an isolated support folder, an isolated home, a throwaway bundle id (its own defaults domain) and no document fixture.
+    /// The audit draws on the live canvas and quits clean, so it is ignored unless the process is fully isolated
+    /// (`HarnessGate`: an isolated support folder, an isolated home, a throwaway bundle id and no document fixture).
     static func eyeDumpAuditDirectory(arguments: [String] = CommandLine.arguments, environment: [String: String] = ProcessInfo.processInfo.environment,
                                       bundleIdentifier: String? = Bundle.main.bundleIdentifier) -> URL? {
-        guard let flag = arguments.firstIndex(of: "--eye-dump-audit"), arguments.indices.contains(flag + 1) else { return nil }
-        var isDirectory: ObjCBool = false
-        guard let support = environment["OPENSNAP_APP_SUPPORT"], !support.isEmpty,
-              FileManager.default.fileExists(atPath: support, isDirectory: &isDirectory), isDirectory.boolValue,
-              let home = environment["CFFIXED_USER_HOME"], !home.isEmpty,
-              (environment["OPENSNAP_FIXTURE"] ?? "").isEmpty,
-              let bundleIdentifier, bundleIdentifier.hasPrefix(auditBundlePrefix) else { return nil }
-        return URL(fileURLWithPath: arguments[flag + 1], isDirectory: true)
+        HarnessGate.auditDirectory(arguments: arguments, environment: environment, bundleIdentifier: bundleIdentifier)
     }
 
     func runEyeDumpAudit(to dir: URL) {
@@ -66,7 +59,17 @@ final class AuditRun {
     /// (the harness script removes the font files from its throwaway copy to force "sf").
     var iconMode: String { FontAwesomeFont.isAvailable(.regular) && FontAwesomeFont.isAvailable(.solid) ? "fa" : "sf" }
     var sourceSha: String { ProcessInfo.processInfo.environment["AUDIT_SOURCE_SHA"] ?? "unknown" }
-    var stemSuffix: String { ProcessInfo.processInfo.environment["AUDIT_STEM_SUFFIX"] ?? "" }
+    /// Display options the harness script asked this copy to simulate (nil on a normal system-state run). Gated by `HarnessGate`.
+    var injectedDisplayOptions: DisplayOptions? { DisplayOptions.injection() }
+    /// The options this run really resolved, and whether they were injected, for every manifest entry and layout JSON.
+    var displayOptionsJSON: [String: Any] {
+        let effective = DisplayOptions.current
+        return ["injected": injectedDisplayOptions != nil, "active": effective.activeNames,
+                "reduceTransparency": effective.reduceTransparency, "increaseContrast": effective.increaseContrast,
+                "differentiateWithoutColor": effective.differentiateWithoutColor, "reduceMotion": effective.reduceMotion]
+    }
+    /// Script suffix plus one tag per injected display option (-rt, -ic, -dwc, -rm), so each option set has its own file stems.
+    var stemSuffix: String { (ProcessInfo.processInfo.environment["AUDIT_STEM_SUFFIX"] ?? "") + (injectedDisplayOptions?.stemSuffix ?? "") }
     func pump(_ seconds: TimeInterval = 0.45) { RunLoop.current.run(until: Date(timeIntervalSinceNow: seconds)) }
     func gap(_ id: String, _ surface: String, _ reason: String) {
         gaps.append(["id": id, "surface": surface, "appearance": appearance, "iconMode": iconMode, "reason": reason])
@@ -189,11 +192,11 @@ final class AuditRun {
         try? png.write(to: dir.appendingPathComponent(stem + ".png"))
 
         let windowsInfo = targets.map { windowMetrics($0) }
-        write(["sourceSha": sourceSha, "id": id, "appearance": appearance, "iconMode": iconMode, "windows": windowsInfo], to: "metrics/\(stem).json")
-        write(["sourceSha": sourceSha, "id": id, "appearance": appearance, "iconMode": iconMode, "windows": targets.map { accessibilityDump($0) }], to: "ax/\(stem).json")
+        write(["sourceSha": sourceSha, "id": id, "appearance": appearance, "iconMode": iconMode, "displayOptions": displayOptionsJSON, "windows": windowsInfo], to: "metrics/\(stem).json")
+        write(["sourceSha": sourceSha, "id": id, "appearance": appearance, "iconMode": iconMode, "displayOptions": displayOptionsJSON, "windows": targets.map { accessibilityDump($0) }], to: "ax/\(stem).json")
         if targets.first === window, app.modernChrome != nil {
             var layout = chromeMetrics()
-            for (key, item) in ["sourceSha": sourceSha, "id": id, "stem": stem, "appearance": appearance, "iconMode": iconMode] { layout[key] = item }
+            for (key, item) in ["sourceSha": sourceSha, "id": id, "stem": stem, "appearance": appearance, "iconMode": iconMode, "displayOptions": displayOptionsJSON] as [String: Any] { layout[key] = item }
             write(layout, to: "layout/\(stem).json")
         }
 
@@ -202,7 +205,7 @@ final class AuditRun {
             "pixelSize": [image.width, image.height], "pointSize": [Double(pointSize.width.rounded()), Double(pointSize.height.rounded())],
             "scale": Double(scale), "method": method, "sourceRefs": refs,
             "windows": targets.map { ["title": $0.title, "class": String(describing: type(of: $0)), "frame": rectJSON($0.frame), "isKey": $0.isKeyWindow] },
-            "sourceSha": sourceSha, "iconMode": iconMode, "windowSize": [Double(window.frame.width.rounded()), Double(window.frame.height.rounded())],
+            "sourceSha": sourceSha, "iconMode": iconMode, "displayOptions": displayOptionsJSON, "windowSize": [Double(window.frame.width.rounded()), Double(window.frame.height.rounded())],
             "windowAlpha": Double(targets.first?.alphaValue ?? 1), "appActive": NSApp.isActive, "opaqueFraction": opaqueFraction(image)
         ]
         for (key, item) in extra { meta[key] = item }
@@ -391,6 +394,7 @@ final class AuditRun {
             "accessibilityDisplayShouldIncreaseContrast": workspace.accessibilityDisplayShouldIncreaseContrast,
             "accessibilityDisplayShouldReduceMotion": workspace.accessibilityDisplayShouldReduceMotion,
             "accessibilityDisplayShouldDifferentiateWithoutColor": workspace.accessibilityDisplayShouldDifferentiateWithoutColor,
+            "displayOptions": displayOptionsJSON,
             "isVoiceOverEnabled": workspace.isVoiceOverEnabled,
             "isSwitchControlEnabled": workspace.isSwitchControlEnabled,
             "fullKeyboardAccess_AppleKeyboardUIMode": global("AppleKeyboardUIMode"),

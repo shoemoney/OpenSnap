@@ -37,8 +37,8 @@ enum OriginalCaptureFlashTiming {
         defaults.object(forKey: showFlashKey) as? Bool ?? true
     }
 
-    /// Stand-in until the unified display options land: the one place Reduce Motion is read for the flash.
-    static func systemReduceMotion() -> Bool { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
+    /// The one place Reduce Motion is read for the flash.
+    @MainActor static func systemReduceMotion() -> Bool { DisplayOptions.current.reduceMotion }
 }
 
 /// pqFlashView: solid white fill. The window alpha, capped at `peakAlpha`, makes it a cue instead of a glare.

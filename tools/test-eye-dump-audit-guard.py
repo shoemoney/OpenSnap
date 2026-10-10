@@ -8,6 +8,9 @@
  (d) the defaults cleanup cannot touch a real domain: a script copy forced onto a real/odd id exits non-zero and records no
      delete, drop_throwaway_defaults refuses a bad id, and a normal run only deletes eyedump throwaway ids. Every script run
      here uses the scratch HOME and a fake `defaults` recorder; mutated copies with the protections stripped must go red.
+ (e) --display (injected display options): an unknown name is refused before anything launches, a valid set reaches only the
+     throwaway child as OPENSNAP_AUDIT_DISPLAY_OPTIONS, no --display sets nothing, and (static) the Swift side reads that variable
+     in exactly one place, behind the same HarnessGate the audit needs; mutated sources that read it ungated must go red.
 Run: python3 -I tools/test-eye-dump-audit-guard.py
 """
 from pathlib import Path
@@ -122,6 +125,7 @@ BUNDLE=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$(dirname "$0")
     echo "fixture=${OPENSNAP_FIXTURE-unset}"
     echo "home=${HOME-unset}"
     echo "cfhome=${CFFIXED_USER_HOME-unset}"
+    echo "displayopts=${OPENSNAP_AUDIT_DISPLAY_OPTIONS-unset}"
     echo "args=$*"
 } > "$RAW/launch-$$.txt"
 TAMPER="$(dirname "$0")/../Resources/tamper.txt"
@@ -357,6 +361,92 @@ def test_cleanup_protection(base, home):
     check(got[1] is False and got[0] is True, f"cleanup (can fail): drop-only removal fails exactly the drop-refusal check (got {got})")
 
 
+DISPLAY_KEY = "OPENSNAP_AUDIT_DISPLAY_OPTIONS"
+SWIFT_SOURCES = root / "Sources"
+
+
+def function_body(text, signature):
+    """The brace-balanced body of the function whose declaration contains `signature`, or None."""
+    start = text.find(signature)
+    if start < 0:
+        return None
+    open_at = text.find("{", text.index(")", start))
+    depth = 0
+    for index in range(open_at, len(text)):
+        depth += {"{": 1, "}": -1}.get(text[index], 0)
+        if depth == 0:
+            return text[open_at:index + 1]
+    return None
+
+
+def display_read_is_gated(sources):
+    """True when `sources` ({name: text}) read the harness display-option variable exactly once, inside harnessInjection, after the gate."""
+    holders = [name for name, text in sources.items() if DISPLAY_KEY in text or "harnessEnvironmentKey" in text.replace("static let harnessEnvironmentKey", "")]
+    if holders != ["DisplayOptions.swift"]:
+        return False
+    text = sources["DisplayOptions.swift"]
+    if text.count(f'"{DISPLAY_KEY}"') != 1 or text.count("environment[harnessEnvironmentKey]") != 1:
+        return False
+    body = function_body(text, "static func harnessInjection(")
+    if body is None or body.count("environment[harnessEnvironmentKey]") != 1:
+        return False
+    gate = body.find("HarnessGate.auditDirectory(")
+    guard_clause = re.search(r"guard\s+HarnessGate\.auditDirectory\([^\n]*\)\s*!=\s*nil\s+else\s*\{\s*return nil\s*\}", body)
+    return guard_clause is not None and 0 <= gate < body.index("environment[harnessEnvironmentKey]")
+
+
+def test_display_injection(base, home):
+    text = SCRIPT.read_text()
+    swift = {path.name: path.read_text() for path in sorted(SWIFT_SOURCES.glob("*.swift"))}
+    check(display_read_is_gated(swift), "display: the Swift sources read the injection variable in one place, behind HarnessGate")
+    check("HarnessGate.auditDirectory(" in swift["EyeDumpAudit.swift"], "display: the audit and the injection share one gate (HarnessGate)")
+    code = "\n".join(line for line in text.splitlines() if not line.lstrip().startswith("#"))
+    check(code.count(DISPLAY_KEY) == 1 and re.search(rf'DISPLAY_ENV="{DISPLAY_KEY}=\$DISPLAY_OPTIONS"', code) is not None
+          and code.index("DISPLAY_ENV=") < code.index("env -i PATH="), "display: the script names the variable once, only as the child's env assignment")
+    check(re.search(r"env -i PATH=[^\n]*\\\n([^\n]*\\\n){0,2}[^\n]*\$DISPLAY_ENV", code) is not None, "display: the variable rides the env -i launch line")
+
+    # Can-fail proof: ungated, doubled, foreign and relocated reads must all be rejected by the static check.
+    source = swift["DisplayOptions.swift"]
+    ungated = source.replace("guard HarnessGate.auditDirectory(arguments: arguments, environment: environment, bundleIdentifier: bundleIdentifier) != nil else { return nil }\n", "")
+    check(ungated != source and not display_read_is_gated({**swift, "DisplayOptions.swift": ungated}), "display (can fail): a read with the gate removed is rejected")
+    after = ungated.replace("        guard let list = environment[harnessEnvironmentKey], !list.isEmpty else { return nil }\n",
+                            "        guard let list = environment[harnessEnvironmentKey], !list.isEmpty else { return nil }\n        guard HarnessGate.auditDirectory(arguments: arguments, environment: environment, bundleIdentifier: bundleIdentifier) != nil else { return nil }\n")
+    check(after != ungated and not display_read_is_gated({**swift, "DisplayOptions.swift": after}), "display (can fail): a read before the gate is rejected")
+    check(not display_read_is_gated({**swift, "Elsewhere.swift": f'let x = ProcessInfo.processInfo.environment["{DISPLAY_KEY}"]\n'}), "display (can fail): a second reader in another file is rejected")
+    check(not display_read_is_gated({**swift, "DisplayOptions.swift": source + f'\nfunc leak(_ e: [String: String]) -> String? {{ e["{DISPLAY_KEY}"] }}\n'}), "display (can fail): a second literal in the same file is rejected")
+    check(not display_read_is_gated({**swift, "DisplayOptions.swift": source.replace("static func harnessInjection(", "static func harnessInjectionX(")}), "display (can fail): moving the read out of harnessInjection is rejected")
+
+    app = fake_app(base)
+    out = Path(base) / "out-display"
+    result = run_harness(SCRIPT, out, ["--app", str(app), "--guard-home", str(home), "--no-wait-gui", "--sha", "testsha", "--groups", "main",
+                                       "--appearances", "light", "--icons", "sf", "--display", "reduceTransparency,increaseContrast"])
+    launches = read_launches(out)
+    check(result.returncode == 0 and launches and all(launch.get("displayopts") == "reduceTransparency,increaseContrast" for launch in launches),
+          f"display: --display reaches the throwaway child as the variable (exit {result.returncode}, {[l.get('displayopts') for l in launches]})")
+    check("display options  reduceTransparency,increaseContrast" in (out / "safety.txt").read_text(), "display: safety.txt records the simulated options")
+    check(only_eyedump_deletes(result.defaults_log), "display: a --display run still only deletes eyedump throwaway ids")
+    out = Path(base) / "out-no-display"
+    result = run_harness(SCRIPT, out, ["--app", str(app), "--guard-home", str(home), "--no-wait-gui", "--sha", "testsha", "--groups", "main",
+                                       "--appearances", "light", "--icons", "sf"], extra_env={DISPLAY_KEY: "reduceMotion"})
+    launches = read_launches(out)
+    check(result.returncode == 0 and launches and all(launch.get("displayopts") == "unset" for launch in launches),
+          f"display: without --display the child gets no variable, even if the caller's own environment has one ({[l.get('displayopts') for l in launches]})")
+    for bad in ("bogus", "reduceMotion,reduce-motion", "increaseContrast,"[:-1] + ";x"):
+        out = Path(base) / ("out-bad-" + re.sub(r"\W", "_", bad))
+        result = run_harness(SCRIPT, out, ["--app", str(app), "--guard-home", str(home), "--no-wait-gui", "--sha", "testsha", "--groups", "main",
+                                           "--appearances", "light", "--icons", "sf", "--display", bad])
+        check(result.returncode == 2 and not list(out.glob("raw-*/launch-*.txt")) and not result.defaults_log and not (out / "safety.txt").exists(),
+              f"display: --display '{bad}' is refused (exit 2) before anything launches or any defaults call (exit {result.returncode})")
+    # Can fail: with the validation loop stripped the same bad name launches the app.
+    stripped = re.sub(r"for option in \$\(echo \"\$DISPLAY_OPTIONS\".*?\ndone\n", "", text, flags=re.S)
+    check(stripped != text, "display (can fail): the validation loop was found to strip")
+    copy = script_copy(base, "display-unvalidated", stripped)
+    out = Path(base) / "out-bad-unvalidated"
+    run_harness(copy, out, ["--app", str(app), "--guard-home", str(home), "--no-wait-gui", "--sha", "testsha", "--groups", "main",
+                            "--appearances", "light", "--icons", "sf", "--display", "bogus"])
+    check(any(read_launches(out)), "display (can fail): without the validation loop a bogus name does launch, so the refusal above is the validation's doing")
+
+
 def test_runs_were_safe():
     check(len(RUNS) > 0 and all(env_problem(env) is None for env in RUNS),
           f"every one of the {len(RUNS)} script runs used the scratch HOME and the fake defaults recorder")
@@ -373,6 +463,7 @@ with tempfile.TemporaryDirectory(prefix="eyedump-guard-test.") as scratch:
     SAFE.update(home=str(scratch_home), defaults=str(fake_recorder), log=str(fake_log))
     test_script(scratch, scratch_home)
     test_cleanup_protection(scratch, scratch_home)
+    test_display_injection(scratch, scratch_home)
     test_runs_were_safe()
 if failures:
     raise SystemExit(f"FAIL test-eye-dump-audit-guard: {len(failures)} check(s) failed")
