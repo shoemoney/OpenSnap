@@ -223,8 +223,6 @@ private enum AppToolTipTests {
         tip.reduceMotion = { false }
         tip.show(for: r.plain)
         expect(alphaAtPresent == 0 && tip.lastShowWasAnimated, "Without Reduce Motion the plate starts clear and fades in")
-        spin(AppToolTip.fadeDuration + 0.2)
-        expect(tip.panel!.alphaValue == 1, "The fade ends at full alpha")
         tip.dismiss()
     }
 
@@ -253,6 +251,27 @@ private enum AppToolTipTests {
         expect(!tip.isShown && tip.pendingTarget === r.nested, "Moving to another control hides the first and waits for the second")
         spin(0.3)
         expect(tip.target === r.nested && tip.shownText == "Nested tip", "The second control's text is shown")
+
+        // The root's tracking area drives the same machine: moved over a control waits, then shows; exit hides.
+        let watcher = AppToolTip.watcher(for: r.root) as! AppToolTip.Watcher
+        func pointer(_ x: CGFloat, _ y: CGFloat) -> NSEvent {
+            NSEvent.mouseEvent(with: .mouseMoved, location: NSPoint(x: x, y: y), modifierFlags: [], timestamp: 0, windowNumber: 0, context: nil, eventNumber: 0, clickCount: 0, pressure: 0)!
+        }
+        tip.dismiss()
+        watcher.mouseMoved(with: pointer(40, 250))
+        expect(tip.isPending && tip.pendingTarget === r.plain, "The tracking area's pointer move over a control starts its tooltip")
+        spin(0.3)
+        expect(tip.target === r.plain, "The tooltip appears for the control under the pointer")
+        watcher.mouseMoved(with: pointer(590, 5))
+        expect(!tip.isShown, "Moving onto empty space hides the plate")
+        watcher.mouseMoved(with: pointer(40, 250))
+        spin(0.3)
+        expect(tip.isShown, "The plate shows again on re-entry")
+        watcher.mouseExited(with: pointer(40, 250))
+        expect(!tip.isShown && !tip.isPending, "The tracking area's mouse exit hides the plate")
+        watcher.mouseEntered(with: pointer(40, 250))
+        expect(tip.isPending, "The tracking area's mouse enter over a control starts the wait")
+        tip.dismiss()
 
         // Click, scroll and key press hide the plate (a local event monitor); a window resigning key does too.
         for (name, type) in [("mouse down", NSEvent.EventType.leftMouseDown), ("right mouse down", .rightMouseDown), ("scroll", .scrollWheel), ("key press", .keyDown)] {

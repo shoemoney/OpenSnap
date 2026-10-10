@@ -37,6 +37,7 @@ extension AppSafetyTests {
             ("The status carries the export size once, truncates with the full text as tooltip, and the drag-preview timer is not re-armed by it", modernStatusMergesDragSize),
             ("The zoom face is the percentage alone while VoiceOver and the tooltip carry the mode word", modernZoomFace),
             ("Every relocated control keeps its target and action, and the top and bottom bars run in reading order", modernRelocatedOwnership),
+            ("OSN-041: controls are 20 pt body text; only the status line is the 18 pt caption", modernBodyType),
             ("The chrome's tooltips are app-owned at 20 pt: none left on the system, VoiceOver keeps the words, dynamic text stays live", modernAppToolTips),
             ("The two bars render in light and dark, normal and Frame mode, with the Size popover, and the bitmaps land in the evidence folder", modernLayoutBitmaps),
             ("Modern footer is a [PNG | JPG] toggle: PNG on a fresh install, JPG encodes drag, export and upload at 0.75, and a stored JPEG row reads as JPG", modernFormatToggle)
@@ -1414,6 +1415,23 @@ extension AppSafetyTests {
             try expect(zoom.fittingSize.width <= surface.frame.width - 8 + 0.5, "\(title) fits the zoom capsule (\(zoom.fittingSize.width) in \(surface.frame.width))")
         }
         try expect(AppToolTip.text(for: zoom) == nil || AppToolTip.text(for: zoom) == "Canvas zoom", "Zoom keeps its tooltip")
+    }
+
+    private static func modernBodyType() throws {
+        let (fixture, _) = try modernFixture()
+        let app = fixture.app
+        let content = try (app.window.contentView).unwrap("content")
+        let body = DesignTokens.Typography.font(.body).pointSize, caption = DesignTokens.Typography.font(.caption).pointSize
+        let controls: [(String, NSControl)] = [("zoom popup", app.zoomControl), ("Original size checkbox", app.dragOriginalControl), ("Color button", app.paletteButton),
+                                               ("Toolbox", try collect(NSPopUpButton.self, in: content).first { $0.accessibilityLabel() == "Toolbox" }.unwrap("Toolbox")), ("PNG | JPG", app.dragFormatToggle)]
+        for (name, control) in controls {
+            try expect(control.font?.pointSize == body && body == 20, "\(name) is body text, 20 pt (is \(control.font?.pointSize ?? 0))")
+        }
+        try expect(app.status.font?.pointSize == caption && caption == 18, "The status line is the 18 pt caption")
+        try expect(app.zoomControl.menu?.font.pointSize == 20, "The zoom menu is 20 pt")
+        for button in collect(NSButton.self, in: content) {
+            try expect((button.font?.pointSize ?? 0) >= 18, "\(type(of: button)) '\(button.accessibilityLabel() ?? button.title)' keeps at least the readable floor")
+        }
     }
 
     private static func modernAppToolTips() throws {
