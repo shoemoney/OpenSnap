@@ -103,7 +103,7 @@ final class AboutWindow: DismissibleWindow {
         for button in [.miniaturizeButton, .zoomButton] as [NSWindow.ButtonType] { standardWindowButton(button)?.isHidden = true }
 
         iconView.imageScaling = .scaleProportionallyUpOrDown
-        iconView.setAccessibilityElement(false)
+        iconView.setAccessibilityElement(false); iconView.setAccessibilityIdentifier("decorative.about-icon")  // the name beside it says it all
         nameLabel.font = Typography.font(.title)
         for label in [versionLabel, creditLabel] { label.font = Typography.font(.body); label.textColor = .secondaryLabelColor }
         nameLabel.setAccessibilityIdentifier("about.name"); versionLabel.setAccessibilityIdentifier("about.version")

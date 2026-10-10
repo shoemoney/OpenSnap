@@ -174,6 +174,16 @@ suites = [
                                "GeneralPreferencesState.swift", "TextStyleForm.swift", "ExportAccessory.swift", "TestDefaults.swift", "ViewTreeAudit.swift",
                                "SettingsWindow.swift", "GlobalHotkeys.swift", "AppToolTip.swift", "DisplayOptions.swift", "OriginalCaptureFlash.swift"],
      "ViewTreeAuditTests.swift", "VIEW_TREE_AUDIT_TESTS", ()),
+    # G10: the accessibility walker over every surface whose sources compile in isolation, plus Return and Escape in each sheet outside
+    # the editor. The main window joins via app-safety (it needs App.swift). VoiceOver speech itself is a manual pass.
+    ("accessibility-audit-tests", ["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift",
+                                   "AboutWindow.swift", "HistoryBrowser.swift", "ResizePresets.swift", "ResizePanel.swift", *ICONS, "StrokeFitting.swift",
+                                   "GeneralPreferencesState.swift", "TextStyleForm.swift", "ExportAccessory.swift", "TestDefaults.swift", "AccessibilityAudit.swift",
+                                   "SettingsWindow.swift", "GlobalHotkeys.swift", "AppToolTip.swift", "DisplayOptions.swift", "OriginalCaptureFlash.swift",
+                                   "PhotoBrowser.swift", "AppAlert.swift"],
+     "AccessibilityAuditTests.swift", "ACCESSIBILITY_AUDIT_TESTS", ()),
+    # OSN-062: the VoiceOver announcement helper with an injected poster.
+    ("announcer-tests", ["Announcer.swift"], "AnnouncerTests.swift", "ANNOUNCER_TESTS", ()),
 ]
 # These need the Modern chrome sources; a missing file fails the suite. Only the Font Awesome glyph branch inside them
 # is licence-gated, and it prints "SKIPPED (FA not bundled)" when the Pro subsets are absent.

@@ -459,7 +459,7 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         let error = NSTextField(wrappingLabelWithString: "")
         error.font = DesignTokens.Typography.font(.body)
         error.textColor = DesignTokens.Palette.feedbackError
-        error.setAccessibilityLabel("Dimension validation")
+        error.setAccessibilityRole(.staticText)  // the message is the label: VoiceOver reads "Error: ...", never a fixed caption over it
         errorLabel = error
         let cancel = button("Cancel", action: #selector(cancelSheet(_:)))
         cancel.keyEquivalent = "\u{1b}"
@@ -504,7 +504,7 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
             ok.heightAnchor.constraint(greaterThanOrEqualToConstant: 38)
         ])
         renderState()
-        if presets.hasMalformedData { errorLabel?.stringValue = ResizePresetError.malformedDefaults.localizedDescription }
+        if presets.hasMalformedData { showError(ResizePresetError.malformedDefaults.localizedDescription) }
         panel.setContentSize(NSSize(width: 600, height: max(500, stack.fittingSize.height + 56)))
         // Measure before pinning the bottom so the initial frame cannot compress
         // the controls. Both mode-specific rows reserve the same readable height.
@@ -538,6 +538,11 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         button.bezelStyle = .rounded
         button.font = DesignTokens.Typography.font(.body)
         return button
+    }
+
+    /// Errors say "Error:" in words, so they never rest on the red colour alone.
+    private func showError(_ text: String) {
+        errorLabel?.stringValue = text.hasPrefix("Error:") ? text : "Error: " + text
     }
 
     private func renderState(editing field: NSTextField? = nil) {
@@ -609,7 +614,7 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
                 self.previewTimer = nil
                 self.persistSelectedPreset()
                 do { _ = try self.session.preview() }
-                catch { self.errorLabel?.stringValue = error.localizedDescription }
+                catch { self.showError(error.localizedDescription) }
             }
         }
         previewTimer = timer
@@ -650,7 +655,7 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
             let preset = try session.state.preset(name: name, format: selected?.format ?? 0)
             try presets.add(preset); selectedPresetID = preset.id
             reloadPresets(); errorLabel?.stringValue = ""
-        } catch { errorLabel?.stringValue = error.localizedDescription }
+        } catch { showError(error.localizedDescription) }
     }
 
     @objc private func savePreset(_ sender: Any?) {
@@ -663,13 +668,13 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         do {
             let replacement = try session.state.preset(id: selected.id, name: presetName?.stringValue ?? selected.name, format: selected.format)
             if replacement != selected { try presets.update(replacement) }
-        } catch { errorLabel?.stringValue = error.localizedDescription }
+        } catch { showError(error.localizedDescription) }
     }
 
     @objc private func removePreset(_ sender: Any?) {
         guard let id = selectedPresetID else { return }
         do { try presets.remove(id: id); selectedPresetID = nil; reloadPresets(); errorLabel?.stringValue = "" }
-        catch { errorLabel?.stringValue = error.localizedDescription }
+        catch { showError(error.localizedDescription) }
     }
 
     @objc private func applySheet(_ sender: Any?) {
@@ -679,7 +684,7 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
             try session.apply(beforeDelivery: { self.endSheet(.OK) })
         } catch {
             // Failed admission never ends the sheet or delivers the callback.
-            errorLabel?.stringValue = error.localizedDescription
+            showError(error.localizedDescription)
         }
     }
 
@@ -687,7 +692,7 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         previewTimer?.invalidate(); previewTimer = nil
         panel?.makeFirstResponder(nil)
         do { _ = try session.preview() }
-        catch { errorLabel?.stringValue = error.localizedDescription }
+        catch { showError(error.localizedDescription) }
     }
 
     @objc private func cancelSheet(_ sender: Any?) {

@@ -632,6 +632,7 @@ final class GlobalHotkeyForm: NSView {
             gridRows.append([label(action.title + ":"), line])
         }
         statusField.font = Typography.font(.body)
+        statusField.setAccessibilityRole(.staticText)
         statusField.preferredMaxLayoutWidth = statusWidth
         statusField.widthAnchor.constraint(equalToConstant: statusWidth).isActive = true
         gridRows.append([NSGridCell.emptyContentView, statusField])
@@ -742,7 +743,7 @@ private final class GlobalHotkeyDocumentView: NSView {
 }
 
 @MainActor
-private final class GlobalHotkeySettingsPanel: NSWindowController, NSWindowDelegate {
+final class GlobalHotkeySettingsPanel: NSWindowController, NSWindowDelegate {
     static let width: CGFloat = 760, margin = DesignTokens.Space.s5
     private weak var manager: GlobalHotkeyManager?
     private var form: GlobalHotkeyForm?
