@@ -698,9 +698,31 @@ extension AuditRun {
                 panel.makeFirstResponder(control); break
             }
             shootSheet("S19", "destinations-form-focus", surface: "Preferences text field focus", state: "first visible text field focused in the destination edit form", refs: ["PublishingDestinationsView.swift|private func buildForm()"], host: window, sheet: panel)
-            app.publishing.cancelSettings()
+            // Test-result states are fed straight to the view, so nothing contacts a destination.
+            view.showTestResult(ok: true, message: "OK: credentials and bucket verified. Nothing was uploaded.")
+            pump(0.4)
+            shootSheet("S19", "destinations-test-connected", surface: "Destinations / Publishing", state: "S3 form after a synthetic successful Test: check glyph, Connected, detail line", refs: ["PublishingDestinationsView.swift|func showTestResult", "PublishingDestinationsView.swift|final class DestinationStatusRow"], host: window, sheet: panel)
+            view.showTestResult(ok: false, message: "The request signature does not match the signature provided.")
+            pump(0.4)
+            shootSheet("S19", "destinations-test-error", surface: "Destinations / Publishing", state: "S3 form after a synthetic failed Test: octagon glyph and an Error: line", refs: ["PublishingDestinationsView.swift|func showTestResult", "PublishingDestinationsView.swift|final class DestinationStatusRow"], host: window, sheet: panel)
+            closeHarnessSheet(panel)
+            // Short display: the sheet is sized for a 1280 x 500 visible frame, so the form scrolls and the buttons stay pinned.
+            let (shortPanel, shortView) = try app.publishing.buildSettings(visibleFrame: NSRect(x: 0, y: 0, width: 1280, height: 500))
+            window.beginSheet(shortPanel)
+            pump(0.8)
+            shortView.select(id: try AppDelegate.publishingStore.load().defaultID ?? "")
+            shortView.editTapped()
             pump(0.5)
+            shootSheet("S19", "destinations-short-screen", surface: "Destinations / Publishing", state: "edit form on a short display (visible frame 1280 x 500): the form scrolls and Test, Cancel and Save stay pinned", refs: ["Publishing.swift|func buildSettings(visibleFrame", "PublishingDestinationsView.swift|static func sheetSize"], host: window, sheet: shortPanel)
+            closeHarnessSheet(shortPanel)
         } catch { gap("S19", "Destinations list/edit form", "buildSettings threw: \(error.localizedDescription)") }
+    }
+
+    /// These sheets are begun on the window directly, not through the coordinator, so ending the sheet first keeps the
+    /// coordinator's quit barrier from waiting forever for a dismissal callback it never registered.
+    func closeHarnessSheet(_ panel: NSPanel) {
+        window.endSheet(panel); pump(0.4)
+        app.publishing.cancelSettings(); pump(0.3)
     }
 
     func s20() {
@@ -718,7 +740,7 @@ extension AuditRun {
             _ = addAllAnnotationKinds(scale: 0.75)
             canvas.document.elements.removeLast(max(0, canvas.document.elements.count - 4 - index))
             if let snapshot = try? app.historySnapshot(), let store = try? app.archiveStore() {
-                let date = calendar.date(byAdding: .day, value: -index * 3, to: Date()) ?? Date()
+                let date = calendar.date(byAdding: .day, value: -(index / 3) * 3, to: Date())?.addingTimeInterval(-Double(index) * 600) ?? Date()
                 _ = try? store.archive(snapshot, name: name, action: actions[index], destination: actions[index] == .shared ? "Example S3" : nil,
                                        remoteURL: actions[index] == .shared ? URL(string: "https://cdn.example.com/pics/\(index).png") : nil, date: date)
             }
@@ -731,6 +753,16 @@ extension AuditRun {
             if let first = app.historyStore?.entries.first?.id {
                 app.historyBrowser?.select(ids: [first])
                 shoot("S20", "history-selected", surface: "History browser", state: "one entry selected (action buttons enabled)", windows: [history], refs: ["HistoryBrowser.swift|private func updateControls()"])
+                for (width, height) in [(880, 600), (1120, 850), (1280, 800)] as [(CGFloat, CGFloat)] {
+                    history.setFrame(NSRect(x: history.frame.minX, y: max(40, history.frame.maxY - height), width: width, height: height), display: true)
+                    pump(0.8)
+                    shoot("S20", "history-\(Int(width))x\(Int(height))-selected", surface: "History browser", state: "six synthetic entries, one selected, window \(Int(width)) x \(Int(height)): grid reflow, check badge, details beside the grid", windows: [history], refs: ["HistoryBrowser.swift|final class HistoryTileView", "HistoryBrowser.swift|func layoutDetails"])
+                }
+                history.setFrame(NSRect(x: history.frame.minX, y: max(40, history.frame.maxY - 600), width: 880, height: 600), display: true)
+                app.historyBrowser?.setFilters(category: .posted, date: .all, query: "no such snap")
+                pump(0.6)
+                shoot("S20", "history-no-match", surface: "History browser", state: "filters that match nothing at 880 x 600: centred message, no save hint", windows: [history], refs: ["HistoryBrowser.swift|private func updateEmptyState"])
+                app.historyBrowser?.setFilters(category: .all)
             }
             history.orderOut(nil)
         }

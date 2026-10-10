@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 
 // Standalone pure checks for multi-destination storage and S3 transport. No network, no Keychain,
@@ -31,6 +32,7 @@ enum PublishingDestinationsTests {
         try credentialsFile()
         try migration()
         try storeOperations()
+        try MainActor.assumeIsolated { try destinationsSheet() }
         print("Destination and S3 self-checks passed: \(checks). No uploads were executed.")
     }
 
@@ -351,6 +353,251 @@ enum PublishingDestinationsTests {
 
     /// --live-s3 "<destination name>": upload a tiny PNG, verify its public URL, print it, then DELETE the object.
     /// Reads the saved destination (and AWS profile or Keychain secret) exactly as the app would.
+    // MARK: Destinations sheet (OSN-052): size, scrolling, keys, result row, Default pill, placeholders, message sheets, shutdown barrier
+
+    static func keyEvent(_ characters: String, keyCode: UInt16, window: NSWindow) -> NSEvent {
+        NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0, windowNumber: window.windowNumber, context: nil,
+                         characters: characters, charactersIgnoringModifiers: characters, isARepeat: false, keyCode: keyCode)!
+    }
+    @MainActor static func descendants(_ view: NSView) -> [NSView] { [view] + view.subviews.flatMap(descendants) }
+    @MainActor static func spin(_ seconds: Double, until done: () -> Bool = { false }) {
+        let end = Date().addingTimeInterval(seconds)
+        while !done() && Date() < end { _ = RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.02)) }
+    }
+    @MainActor static func coordinator(destinations: [PublishingDestination]) throws -> PublishingCoordinator {
+        let coordinator = PublishingCoordinator()
+        coordinator.store = PublishingDestinationStore(directory: try temporaryDirectory(), secrets: PublishingMemorySecrets())
+        for destination in destinations { try coordinator.store.save(destination, password: "") }
+        return coordinator
+    }
+    @MainActor static func fixtureDestinations() -> [PublishingDestination] {
+        var s3 = awsCDN(); s3.s3?.credentialsProfile = "default"
+        var dav = PublishingSettings(); dav.endpoint = "https://dav.example.com/files"; dav.publicBaseURL = "https://dav.example.com/files"
+        return [PublishingDestination(name: "Example S3", settings: s3), PublishingDestination(name: "Example WebDAV", settings: dav)]
+    }
+
+    @MainActor static func destinationsSheet() throws {
+        _ = NSApplication.shared
+        NSApp.setActivationPolicy(.prohibited)
+        let fake = NSRect(x: 0, y: 0, width: 1280, height: 800)
+
+        // Size: 720 wide, min(720, visible height - 120), never taller than the screen.
+        let size = PublishingDestinationsView.sheetSize(visibleFrame: fake)
+        try expect(size.width == 720 && size.height == 680, "1280 x 800 gives a 720 x 680 sheet, got \(size)")
+        try expect(PublishingDestinationsView.sheetSize(visibleFrame: NSRect(x: 0, y: 0, width: 1920, height: 1200)).height == 720, "a tall screen caps the sheet at 720")
+        let short = NSRect(x: 0, y: 0, width: 1280, height: 500)
+        try expect(PublishingDestinationsView.sheetSize(visibleFrame: short).height == 380 && PublishingDestinationsView.sheetSize(visibleFrame: short).height <= 500, "a short screen shrinks the sheet")
+        try expect(PublishingDestinationsView.sheetSize(visibleFrame: NSRect(x: 0, y: 0, width: 800, height: 300)).height <= 300, "the sheet never exceeds a tiny screen")
+
+        let destinations = fixtureDestinations()
+        let publisher = try coordinator(destinations: destinations)
+        let (panel, view) = try publisher.buildSettings(visibleFrame: fake)
+        defer { panel.orderOut(nil) }
+        panel.contentView?.layoutSubtreeIfNeeded()
+        try expect(view.scrollView.hasVerticalScroller && !view.scrollView.hasHorizontalScroller && view.scrollView.documentView != nil, "the form lives in a vertical NSScrollView")
+
+        // The list page hugs its content: table, buttons and footer, with no blank slab under them (two rows here, shown as the four-row minimum).
+        func contentHeight(_ p: NSPanel) -> CGFloat { p.contentRect(forFrameRect: p.frame).height }
+        func listSlack(_ p: NSPanel, _ v: PublishingDestinationsView) throws -> (slack: CGFloat, height: CGFloat) {
+            p.contentView?.layoutSubtreeIfNeeded()
+            let title = try unwrap(descendants(v).compactMap { $0 as? NSTextField }.first { $0.stringValue.hasPrefix("Upload destinations") })
+            let add = try unwrap(descendants(v).compactMap { $0 as? NSButton }.first { $0.title == "Add…" })
+            let table = try unwrap(v.table.enclosingScrollView)
+            // Title, table and buttons plus the two gaps between them, the page margins, separator, footer gap, footer and its bottom margin.
+            let needed = title.frame.height + table.frame.height + add.frame.height + 2 * DesignTokens.Space.s4
+                + 2 * DesignTokens.Space.s5 + 1 + DesignTokens.Space.s3 + v.doneButton.frame.height + DesignTokens.Space.s4
+            return (contentHeight(p) - needed, contentHeight(p))
+        }
+        let hugged = try listSlack(panel, view)
+        try expect(hugged.slack <= 40 && hugged.slack >= -1, "the list page has \(hugged.slack) pt of slack (sheet \(hugged.height)); it should hug table, buttons and footer")
+        try expect(hugged.height < 600, "the list sheet is \(hugged.height) tall; it must not stretch to the form's 680")
+        let listRowHeight = DesignTokens.Size.row + view.table.intercellSpacing.height
+        try expect((view.table.enclosingScrollView?.frame.height ?? 0) >= 4 * listRowHeight, "the table shows fewer than four rows")
+        let listPanelWidth = panel.contentRect(forFrameRect: panel.frame).width
+        try expect(listPanelWidth == 720 && panel.frame.height <= fake.height, "the sheet is 720 wide: \(listPanelWidth)")
+        // Paging to the form grows the sheet to the full height (top edge fixed); Cancel hugs the list again.
+        let topEdge = panel.frame.maxY
+        view.addTapped(); panel.contentView?.layoutSubtreeIfNeeded()
+        try expect(contentHeight(panel) == 680 && panel.frame.maxY == topEdge, "the form page is 720 wide by 680 with the top edge fixed: \(contentHeight(panel)), top \(panel.frame.maxY) vs \(topEdge)")
+        view.cancelFormTapped()
+        let back = try listSlack(panel, view)
+        try expect(abs(back.height - hugged.height) <= 0.5 && panel.frame.maxY == topEdge, "Cancel did not return to the hugged list height: \(back.height) vs \(hugged.height)")
+        // A long list stops growing at eight rows and scrolls.
+        let many = try coordinator(destinations: (0..<12).map { PublishingDestination(name: "Destination \($0)", settings: destinations[1].settings) })
+        let (manyPanel, manyView) = try many.buildSettings(visibleFrame: fake)
+        defer { manyPanel.orderOut(nil) }
+        manyPanel.contentView?.layoutSubtreeIfNeeded()
+        let manyHeight = try unwrap(manyView.table.enclosingScrollView).frame.height
+        try expect(abs(manyHeight - (CGFloat(PublishingDestinationsView.maxListRows) * listRowHeight + 4)) <= 0.5 && contentHeight(manyPanel) <= 680,
+                   "twelve destinations show \(manyHeight) pt of table in a \(contentHeight(manyPanel)) sheet; the cap is eight rows")
+
+        // A short screen: the S3 form is taller than the sheet, so it scrolls, and Save/Cancel stay on screen.
+        let (shortPanel, shortView) = try publisher.buildSettings(visibleFrame: short)
+        defer { shortPanel.orderOut(nil) }
+        shortPanel.contentView?.layoutSubtreeIfNeeded()
+        shortView.select(id: destinations[0].id); shortView.editTapped()
+        shortPanel.contentView?.layoutSubtreeIfNeeded()
+        let document = try unwrap(shortView.scrollView.documentView), clip = shortView.scrollView.contentView.bounds
+        try expect(shortPanel.contentRect(forFrameRect: shortPanel.frame).height <= short.height, "the short-screen sheet fits the visible frame")
+        try expect(document.frame.height > clip.height, "the S3 form (\(document.frame.height)) is not taller than the visible scroll area (\(clip.height)): nothing would need to scroll")
+        try expect(document.frame.width <= clip.width + 0.5, "the form is wider than the sheet and would scroll sideways")
+        let bounds = try unwrap(shortPanel.contentView).bounds
+        for button in [shortView.saveButton, shortView.cancelButton] {
+            let frame = button.convert(button.bounds, to: shortPanel.contentView)
+            try expect(bounds.contains(frame) && !button.isHiddenOrHasHiddenAncestor, "\(button.title) scrolled out of the short sheet: \(frame) in \(bounds)")
+        }
+
+        // Section headers group the rows.
+        view.addTapped(); panel.contentView?.layoutSubtreeIfNeeded()
+        try expect(view.sectionHeaders.map(\.stringValue) == ["Connection", "Credentials"], "section headers: \(view.sectionHeaders.map(\.stringValue))")
+        try expect(view.sectionHeaders.allSatisfy { $0.font?.pointSize == 22 && !$0.isHiddenOrHasHiddenAncestor }, "section headers use the headline style")
+        let doc = try unwrap(view.scrollView.documentView)
+        func y(_ item: NSView) -> CGFloat { item.convert(item.bounds, to: doc).minY }
+        try expect(y(view.sectionHeaders[0]) < y(view.endpointField) && y(view.endpointField) < y(view.sectionHeaders[1]) && y(view.sectionHeaders[1]) < y(view.usernameField),
+                   "Connection rows sit under Connection and Credentials rows under Credentials")
+
+        // Text sizes: body everywhere readable, headline for headers.
+        for control in descendants(view).compactMap({ $0 as? NSControl }) where !control.isHiddenOrHasHiddenAncestor {
+            try expect((control.font?.pointSize ?? 20) >= 18, "\(type(of: control)) is below 18 pt")
+        }
+        try expect([view.saveButton, view.cancelButton, view.doneButton, view.testButton].allSatisfy { $0.font?.pointSize == 20 }, "dialog buttons are body size (20 pt)")
+
+        // Placeholders are neutral.
+        let fields = descendants(view).compactMap { $0 as? NSTextField }.compactMap(\.placeholderString)
+        try expect(!fields.isEmpty && !fields.contains { $0.lowercased().contains("shoemoney") }, "a placeholder names the owner: \(fields.filter { $0.lowercased().contains("shoemoney") })")
+        try expect(view.aliasField.placeholderString == "myserver (from ~/.ssh/config)" && view.remoteRootField.placeholderString == "/var/www/site/uploads"
+                   && view.endpointField.placeholderString == "https://example.com/uploads" && view.folderField.placeholderString?.hasPrefix("screenshots") == true,
+                   "neutral SSH alias, SFTP root, endpoint and folder placeholders")
+
+        // The product word is Upload: no user-visible string on either page says Webpost.
+        func visibleStrings(_ root: NSView) -> [String] {
+            var strings: [String] = []
+            for item in descendants(root) {
+                strings.append(contentsOf: [item.toolTip, item.accessibilityLabel()].compactMap { $0 })
+                if let field = item as? NSTextField { strings.append(contentsOf: [field.stringValue, field.placeholderString].compactMap { $0 }) }
+                if let button = item as? NSButton { strings.append(button.title) }
+                if let popup = item as? NSPopUpButton { strings.append(contentsOf: popup.itemArray.flatMap { [$0.title, $0.toolTip ?? ""] }) }
+            }
+            return strings
+        }
+        func noWebpost(_ page: String) throws {
+            let offenders = visibleStrings(view).filter { $0.lowercased().contains("webpost") }
+            try expect(offenders.isEmpty, "\(page) page still says Webpost: \(offenders)")
+        }
+        view.cancelFormTapped()
+        try noWebpost("list")
+        try expect(visibleStrings(view).contains { $0.contains("Upload click") }, "the list intro names the Upload click")
+        for transport in PublishingProtocol.allCases {
+            view.addTapped(); view.protocolPopup.selectItem(withTitle: transport.title); view.formChanged()
+            try noWebpost("\(transport.title) form")
+            view.cancelFormTapped()
+        }
+        let lastOne = PublishingDestinationList(defaultID: destinations[0].id, destinations: [destinations[0]])
+        try expect(!PublishingDestinationsView.removalPrompt(for: destinations[0], in: lastOne).detail.lowercased().contains("webpost"), "the remove prompt still says Webpost")
+
+        // No form label wraps or truncates at 720 wide, for any protocol and credential source, and the Protocol popup shows every title whole.
+        view.addTapped()
+        for transport in PublishingProtocol.allCases {
+            for source in 0...1 {
+                view.protocolPopup.selectItem(withTitle: transport.title); view.sourcePopup.selectItem(at: source); view.formChanged()
+                panel.contentView?.layoutSubtreeIfNeeded()
+                let captions = view.visibleFormCaptions
+                try expect(captions.count >= 6, "\(transport.title)/\(source): only \(captions.count) form captions found")
+                for caption in captions {
+                    let cell = try unwrap(caption.cell)
+                    let natural = cell.cellSize(forBounds: NSRect(x: 0, y: 0, width: 10_000, height: 1_000))
+                    try expect(natural.width <= caption.frame.width + 0.5,
+                               "“\(caption.stringValue)” needs \(natural.width) pt on one line but its column is \(caption.frame.width) (\(transport.title)/\(source))")
+                    try expect(caption.frame.height <= natural.height + 0.5, "“\(caption.stringValue)” wraps to \(caption.frame.height) pt tall (\(transport.title)/\(source))")
+                }
+            }
+        }
+        view.protocolPopup.selectItem(withTitle: PublishingProtocol.s3.title); view.formChanged()
+        try expect(view.visibleFormCaptions.contains { $0.stringValue == "Endpoint" } && view.endpointField.placeholderString?.contains("blank for AWS") == true,
+                   "the S3 endpoint row is labelled Endpoint with the AWS hint as its placeholder")
+        panel.contentView?.layoutSubtreeIfNeeded()
+        let popupFont = try unwrap(view.protocolPopup.font)
+        for item in view.protocolPopup.itemArray {
+            let width = (item.title as NSString).size(withAttributes: [.font: popupFont]).width
+            try expect(width + 30 <= view.protocolPopup.frame.width && view.protocolPopup.frame.width >= view.protocolPopup.intrinsicContentSize.width - 0.5,
+                       "the Protocol item “\(item.title)” (\(width) pt) truncates in a \(view.protocolPopup.frame.width) pt popup that wants \(view.protocolPopup.intrinsicContentSize.width)")
+            try expect(item.toolTip?.isEmpty == false && item.title.count <= 16, "“\(item.title)” is a short title with the provider detail in its tooltip")
+        }
+        view.cancelFormTapped()
+
+        view.addTapped(); panel.contentView?.layoutSubtreeIfNeeded()
+        // Return saves, Escape cancels (form page).
+        var saved: [String] = []
+        view.onSave = { destination, _ in saved.append(destination.name) }
+        view.nameField.stringValue = "Keys"; view.endpointField.stringValue = "https://dav.example.com/up"
+        try expect(view.saveButton.keyEquivalent == "\r" && view.cancelButton.keyEquivalent == "\u{1b}", "Save is the Return button and Cancel the Escape button")
+        panel.contentView?.layoutSubtreeIfNeeded()
+        try expect(panel.contentView?.performKeyEquivalent(with: keyEvent("\r", keyCode: 36, window: panel)) == true && saved == ["Keys"], "Return did not save (saved \(saved))")
+        try expect(panel.contentView?.performKeyEquivalent(with: keyEvent("\u{1b}", keyCode: 53, window: panel)) == true && view.editing == nil && view.cancelButton.isHiddenOrHasHiddenAncestor,
+                   "Escape did not cancel the form back to the list")
+        // List page: Return and Escape both finish.
+        var done = 0
+        view.onDone = { done += 1 }
+        try expect(!view.doneButton.isHiddenOrHasHiddenAncestor && view.doneButton.keyEquivalent == "\r", "Done is the list sheet's Return button")
+        try expect(panel.contentView?.performKeyEquivalent(with: keyEvent("\r", keyCode: 36, window: panel)) == true && done == 1, "Return did not finish the list sheet")
+        try expect(panel.contentView?.performKeyEquivalent(with: keyEvent("\u{1b}", keyCode: 53, window: panel)) == true && done == 2, "Escape did not finish the list sheet")
+
+        // Test result: glyph and words together.
+        view.addTapped()
+        view.showTestResult(ok: true, message: "OK: credentials and bucket verified. Nothing was uploaded.")
+        var row = view.formResult
+        try expect(!row.isHiddenOrHasHiddenAncestor && row.kind == .success && row.text.stringValue == "Connected" && row.glyph.image != nil && !row.glyph.isHidden, "success shows a glyph and the word Connected")
+        try expect(row.detail.stringValue.contains("Nothing was uploaded") && !row.detail.isHidden, "the server's detail follows the word Connected")
+        let successGlyph = row.glyph.image
+        view.showTestResult(ok: false, message: "AccessDenied: no such bucket")
+        row = view.formResult
+        try expect(row.kind == .failure && row.text.stringValue == "Error: AccessDenied: no such bucket" && row.glyph.image != nil && !row.glyph.isHidden, "failure shows a glyph and an Error: line")
+        try expect(row.glyph.image !== successGlyph, "success and failure use different glyphs")
+        view.showStatus("Network is down")
+        try expect(view.formResult.text.stringValue == "Error: Network is down" && view.formResult.glyph.image != nil, "a coordinator failure is prefixed and carries the failure glyph")
+        view.protocolPopup.selectItem(withTitle: PublishingProtocol.s3.title); view.formChanged()
+        view.sourcePopup.selectItem(at: 0); view.formChanged(); view.profileField.stringValue = ""
+        view.saveTapped()
+        try expect(view.formResult.text.stringValue.hasPrefix("Error: ") && view.formResult.glyph.image != nil, "a validation error also gets the prefix and glyph: \(view.formResult.text.stringValue)")
+        view.cancelFormTapped()
+
+        // Default pill instead of the "(Default)" suffix.
+        view.reload(try publisher.store.load())
+        let defaultRow = try unwrap(view.table.view(atColumn: 0, row: 0, makeIfNecessary: true) as? DestinationRowView)
+        let otherRow = try unwrap(view.table.view(atColumn: 0, row: 1, makeIfNecessary: true) as? DestinationRowView)
+        let pill = try unwrap(defaultRow.pill)
+        try expect(pill.label.stringValue == "Default" && pill.glyph.image != nil, "the Default pill has the word and a check glyph")
+        try expect(otherRow.pill == nil, "a non-default destination has no pill")
+        try expect(!defaultRow.nameField.stringValue.contains("(Default)") && defaultRow.nameField.stringValue == "Example S3" && defaultRow.transportField.stringValue == "S3", "the name no longer carries a (Default) suffix")
+        try publisher.setDefaultDestination(destinations[1].id); view.reload(try publisher.store.load())
+        let moved = try unwrap(view.table.view(atColumn: 0, row: 1, makeIfNecessary: true) as? DestinationRowView)
+        try expect(moved.pill != nil && (view.table.view(atColumn: 0, row: 0, makeIfNecessary: true) as? DestinationRowView)?.pill == nil, "the pill follows the default")
+
+        // Message sheets are at least 560 wide.
+        let parent = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 600), styleMask: [.titled], backing: .buffered, defer: false)
+        parent.isReleasedWhenClosed = false
+        let messenger = PublishingCoordinator()
+        messenger.presentMessage("The sharing settings could not be opened because the destination list is unreadable.", relativeTo: parent)
+        let message = try unwrap(parent.attachedSheet)
+        try expect(message.frame.width >= 560 && PublishingCoordinator.messageSheetMinimumWidth == 560, "message sheet is \(message.frame.width) wide, below 560")
+        try expect(message.contentMinSize.width >= 560, "message sheet minimum width is below 560")
+        messenger.cancelSettings(); spin(1) { parent.attachedSheet == nil }
+
+        // The shutdown barrier still runs with the Destinations sheet open.
+        let shutdownParent = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 600), styleMask: [.titled], backing: .buffered, defer: false)
+        shutdownParent.isReleasedWhenClosed = false
+        let closing = try coordinator(destinations: destinations)
+        closing.showSettings(relativeTo: shutdownParent)
+        try expect(shutdownParent.attachedSheet != nil, "the Destinations sheet did not open")
+        var acknowledged = false
+        closing.shutdown { acknowledged = true }
+        spin(5) { acknowledged && shutdownParent.attachedSheet == nil }
+        try expect(acknowledged, "shutdown never acknowledged with the sheet open")
+        try expect(shutdownParent.attachedSheet == nil, "shutdown left the Destinations sheet attached")
+        closing.showSettings(relativeTo: shutdownParent)
+        try expect(shutdownParent.attachedSheet == nil, "a sheet opened after shutdown")
+    }
+
     static func liveS3() throws {
         let arguments = CommandLine.arguments
         guard let flag = arguments.firstIndex(of: "--live-s3"), flag + 1 < arguments.count else {

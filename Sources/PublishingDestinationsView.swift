@@ -4,6 +4,9 @@ import AppKit
 // Make Default) and a form for one destination. It owns no storage; the coordinator supplies
 // callbacks, so every action is testable without a window or a network.
 final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableViewDelegate {
+    private typealias Typography = DesignTokens.Typography
+    private typealias Space = DesignTokens.Space
+
     var onMakeDefault: ((String) -> Void)?
     var onRemove: ((String) -> Void)?
     var onSave: ((PublishingDestination, String) -> Void)?
@@ -13,12 +16,39 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
     /// Asks before a destination is removed. Tests replace it; the default is a modal alert.
     var confirmRemoval: (_ title: String, _ detail: String) -> Bool = PublishingDestinationsView.askToRemove
 
+    /// The sheet is 720 wide and at most 720 tall; on a short screen it shrinks and the form scrolls instead of clipping.
+    static let sheetWidth: CGFloat = 720, sheetMaxHeight: CGFloat = 720, sheetScreenMargin: CGFloat = 120, sheetMinHeight: CGFloat = 360
+    static var contentWidth: CGFloat { sheetWidth - 2 * Space.s5 }
+    /// The list page shows between `minListRows` and `maxListRows` rows, so a short list does not leave the sheet mostly blank.
+    static let minListRows = 4, maxListRows = 8
+    static func sheetSize(visibleFrame: NSRect) -> NSSize {
+        let height = max(sheetMinHeight, min(sheetMaxHeight, visibleFrame.height - sheetScreenMargin))
+        return NSSize(width: sheetWidth, height: min(height, visibleFrame.height))
+    }
+
     private(set) var list: PublishingDestinationList
     private(set) var editing: PublishingDestination?
 
-    private let table = NSTableView()
+    /// The tallest the sheet may be (set from the screen). The form page always asks for all of it and scrolls;
+    /// the list page asks only for what its content needs.
+    var maxSheetHeight: CGFloat = PublishingDestinationsView.sheetMaxHeight
+    /// Called when the page the sheet should hug changes, so the coordinator can resize the panel.
+    var onPreferredHeightChange: ((CGFloat) -> Void)?
+    /// The content height the visible page wants: the form page fills the sheet, the list page hugs table, buttons and footer.
+    var preferredHeight: CGFloat { listPage.isHidden ? maxSheetHeight : min(maxSheetHeight, listPageHeight) }
+    /// Page content, the separator, the footer, and the margins around them.
+    var listPageHeight: CGFloat {
+        Space.s5 + listPage.fittingSize.height + Space.s5 + 1 + Space.s3 + listFooter.fittingSize.height + Space.s4
+    }
+    private func notifyPreferredHeight() { onPreferredHeightChange?(preferredHeight) }
+    private var tableHeight: NSLayoutConstraint?
+
+    let table = NSTableView()
+    let scrollView = NSScrollView()
     private let listPage = NSStackView(), formPage = NSStackView()
-    private let status = NSTextField(wrappingLabelWithString: "")
+    private let listStatus = DestinationStatusRow()
+    /// The inline Test / Save result: a glyph and text together, never colour alone.
+    let formResult = DestinationStatusRow()
 
     // Form controls (internal so tests can fill them in like a user would).
     let nameField = NSTextField(), endpointField = NSTextField(), usernameField = NSTextField()
@@ -27,67 +57,144 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
     let regionField = NSTextField(), bucketField = NSTextField(), profileField = NSTextField()
     let protocolPopup = NSPopUpButton(frame: .zero, pullsDown: false)
     let sourcePopup = NSPopUpButton(frame: .zero, pullsDown: false)
-    let aclCheckbox = NSButton(checkboxWithTitle: "Make uploads public-read (leave off when the bucket disables ACLs)", target: nil, action: nil)
+    let aclCheckbox = NSButton(checkboxWithTitle: "Make uploads public-read", target: nil, action: nil)
+    private(set) var sectionHeaders: [NSTextField] = []
+    /// The caption of every visible form row, so tests can check each fits its column on one line.
+    var visibleFormCaptions: [NSTextField] { rows.values.filter { !$0.stack.isHidden && !$0.label.stringValue.isEmpty }.map(\.label) }
 
     private struct Row { let label: NSTextField; let stack: NSStackView; let visible: (PublishingProtocol, Bool) -> Bool }
     private var rows: [String: Row] = [:]
 
-    private static func font(_ size: CGFloat) -> NSFont { .systemFont(ofSize: size) }
     private static func button(_ title: String, _ target: AnyObject, _ action: Selector) -> NSButton {
         let button = NSButton(title: title, target: target, action: action)
-        button.font = font(18); button.heightAnchor.constraint(greaterThanOrEqualToConstant: 36).isActive = true
+        Typography.apply(.body, to: button); button.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.control).isActive = true
         return button
     }
+    static func symbol(_ name: String, pointSize: CGFloat = Typography.iconInline, description: String? = nil) -> NSImage? {
+        NSImage(systemSymbolName: name, accessibilityDescription: description)?
+            .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: pointSize, weight: .semibold))
+    }
+
+    // Footer buttons: pinned below the scroll view so Return and Escape always have a visible target.
+    private(set) lazy var doneButton: NSButton = {
+        let button = Self.button("Done", self, #selector(doneTapped)); button.keyEquivalent = "\r"; return button
+    }()
+    private(set) lazy var cancelButton: NSButton = {
+        let button = Self.button("Cancel", self, #selector(cancelFormTapped)); button.keyEquivalent = "\u{1b}"; return button
+    }()
+    private(set) lazy var saveButton: NSButton = {
+        let button = Self.button("Save", self, #selector(saveTapped)); button.keyEquivalent = "\r"; return button
+    }()
+    private(set) lazy var testButton: NSButton = Self.button("Test", self, #selector(testTapped))
+    private let listFooter = NSStackView(), formFooter = NSStackView()
 
     init(list: PublishingDestinationList) {
         self.list = list
         super.init(frame: .zero)
-        buildList(); buildForm()
-        let root = NSStackView(views: [listPage, formPage]); root.orientation = .vertical; root.alignment = .leading
-        root.translatesAutoresizingMaskIntoConstraints = false; addSubview(root)
-        NSLayoutConstraint.activate([root.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 24),
-                                     root.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -24),
-                                     root.topAnchor.constraint(equalTo: topAnchor, constant: 24),
-                                     root.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -24)])
+        buildList(); buildForm(); buildFooters()
+
+        let pages = NSStackView(views: [listPage, formPage]); pages.orientation = .vertical; pages.alignment = .leading
+        let document = DestinationFlippedView()
+        pages.translatesAutoresizingMaskIntoConstraints = false; document.addSubview(pages)
+        document.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.documentView = document
+        scrollView.hasVerticalScroller = true; scrollView.hasHorizontalScroller = false; scrollView.autohidesScrollers = true
+        scrollView.drawsBackground = false; scrollView.borderType = .noBorder
+        scrollView.translatesAutoresizingMaskIntoConstraints = false; addSubview(scrollView)
+
+        let separator = NSBox(); separator.boxType = .separator; separator.translatesAutoresizingMaskIntoConstraints = false; addSubview(separator)
+        for footer in [listFooter, formFooter] { footer.translatesAutoresizingMaskIntoConstraints = false; addSubview(footer) }
+        let clip = scrollView.contentView
+        NSLayoutConstraint.activate([
+            document.leadingAnchor.constraint(equalTo: clip.leadingAnchor), document.trailingAnchor.constraint(equalTo: clip.trailingAnchor),
+            document.topAnchor.constraint(equalTo: clip.topAnchor),
+            pages.leadingAnchor.constraint(equalTo: document.leadingAnchor, constant: Space.s5),
+            pages.trailingAnchor.constraint(equalTo: document.trailingAnchor, constant: -Space.s5),
+            pages.topAnchor.constraint(equalTo: document.topAnchor, constant: Space.s5),
+            pages.bottomAnchor.constraint(equalTo: document.bottomAnchor, constant: -Space.s5),
+            scrollView.leadingAnchor.constraint(equalTo: leadingAnchor), scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            scrollView.topAnchor.constraint(equalTo: topAnchor),
+            separator.leadingAnchor.constraint(equalTo: leadingAnchor), separator.trailingAnchor.constraint(equalTo: trailingAnchor),
+            separator.topAnchor.constraint(equalTo: scrollView.bottomAnchor),
+            bottomAnchor.constraint(equalTo: listFooter.bottomAnchor, constant: Space.s4),
+            bottomAnchor.constraint(equalTo: formFooter.bottomAnchor, constant: Space.s4),
+        ])
+        for footer in [listFooter, formFooter] {
+            NSLayoutConstraint.activate([footer.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Space.s5),
+                                         footer.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Space.s5),
+                                         footer.topAnchor.constraint(equalTo: separator.bottomAnchor, constant: Space.s3)])
+        }
         showList()
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
 
+    override func viewDidMoveToWindow() { super.viewDidMoveToWindow(); updateDefaultButton() }
+
+    /// Return is Done on the list and Save on the form; Escape is Done on the list (the button owns Return, so this owns Escape) and Cancel on the form.
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        if super.performKeyEquivalent(with: event) { return true }
+        guard event.keyCode == 53, event.modifierFlags.intersection(.deviceIndependentFlagsMask).isEmpty, !listPage.isHidden else { return false }
+        doneTapped(); return true
+    }
+    private func updateDefaultButton() {
+        window?.defaultButtonCell = (listPage.isHidden ? saveButton : doneButton).cell as? NSButtonCell
+    }
+
+    private func buildFooters() {
+        for footer in [listFooter, formFooter] { footer.orientation = .horizontal; footer.alignment = .centerY; footer.spacing = Space.s4; footer.distribution = .fill }
+        let spacer = NSView(); spacer.setContentHuggingPriority(.init(1), for: .horizontal)
+        listFooter.setViews([spacer, doneButton], in: .trailing)
+        let flexible = NSView(); flexible.setContentHuggingPriority(.init(1), for: .horizontal)
+        let buttons = NSStackView(views: [testButton, flexible, cancelButton, saveButton]); buttons.spacing = Space.s4
+        formResult.translatesAutoresizingMaskIntoConstraints = false
+        let column = NSStackView(views: [formResult, buttons]); column.orientation = .vertical; column.alignment = .leading; column.spacing = Space.s2
+        buttons.widthAnchor.constraint(equalTo: column.widthAnchor).isActive = true
+        formResult.widthAnchor.constraint(equalTo: column.widthAnchor).isActive = true
+        formFooter.addArrangedSubview(column)
+        column.widthAnchor.constraint(equalTo: formFooter.widthAnchor).isActive = true
+    }
+
     // MARK: List page
 
     private func buildList() {
-        listPage.orientation = .vertical; listPage.alignment = .leading; listPage.spacing = 16
-        let title = label("Upload destinations. The checked one receives a Webpost click; right-click Webpost to switch.")
-        title.preferredMaxLayoutWidth = 720
+        listPage.orientation = .vertical; listPage.alignment = .leading; listPage.spacing = Space.s4
+        let title = label("Upload destinations. The one marked Default receives an Upload click; right-click Upload to switch.")
+        title.preferredMaxLayoutWidth = Self.contentWidth
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("destination"))
-        column.width = 700
-        let cell = NSTextFieldCell(); cell.font = Self.font(18); cell.lineBreakMode = .byTruncatingTail
-        column.dataCell = cell
-        table.addTableColumn(column); table.headerView = nil; table.rowHeight = 34
+        column.resizingMask = .autoresizingMask; column.minWidth = 200; column.width = Self.contentWidth - 24
+        table.addTableColumn(column); table.headerView = nil; table.rowHeight = DesignTokens.Size.row
+        table.columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle
         table.dataSource = self; table.delegate = self; table.allowsEmptySelection = true
         table.setAccessibilityLabel("Destinations")
         let scroll = NSScrollView(); scroll.documentView = table; scroll.hasVerticalScroller = true
         scroll.borderType = .bezelBorder
         scroll.translatesAutoresizingMaskIntoConstraints = false
-        scroll.heightAnchor.constraint(equalToConstant: 300).isActive = true
-        scroll.widthAnchor.constraint(equalToConstant: 740).isActive = true
+        let tableHeight = scroll.heightAnchor.constraint(equalToConstant: 0); tableHeight.isActive = true
+        self.tableHeight = tableHeight; fitTable()
+        scroll.widthAnchor.constraint(equalToConstant: Self.contentWidth).isActive = true
         let add = Self.button("Add…", self, #selector(addTapped))
         let edit = Self.button("Edit…", self, #selector(editTapped))
         let remove = Self.button("Remove", self, #selector(removeTapped))
         let makeDefault = Self.button("Make Default", self, #selector(makeDefaultTapped))
-        let actions = NSStackView(views: [add, edit, remove, makeDefault]); actions.spacing = 16
-        status.font = Self.font(18); status.maximumNumberOfLines = 0; status.preferredMaxLayoutWidth = 720
-        let done = Self.button("Done", self, #selector(doneTapped))
-        listPage.setViews([title, scroll, actions, status, done], in: .leading)
+        let actions = NSStackView(views: [add, edit, remove, makeDefault]); actions.spacing = Space.s4
+        listStatus.translatesAutoresizingMaskIntoConstraints = false
+        listPage.setViews([title, scroll, actions, listStatus], in: .leading)
+        listStatus.widthAnchor.constraint(equalToConstant: Self.contentWidth).isActive = true
         listButtons = (edit, remove, makeDefault)
     }
     private var listButtons: (edit: NSButton, remove: NSButton, makeDefault: NSButton)?
+    /// The table shows every row it has, between four and eight, and scrolls past that.
+    private func fitTable() {
+        let rows = min(Self.maxListRows, max(Self.minListRows, list.destinations.count))
+        tableHeight?.constant = CGFloat(rows) * (DesignTokens.Size.row + table.intercellSpacing.height) + 4
+    }
 
     func numberOfRows(in tableView: NSTableView) -> Int { list.destinations.count }
-    func tableView(_ tableView: NSTableView, objectValueFor tableColumn: NSTableColumn?, row: Int) -> Any? {
+    func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+        guard list.destinations.indices.contains(row) else { return nil }
         let destination = list.destinations[row]
-        let isDefault = destination.id == list.defaultDestination?.id
-        return destination.name + "  ·  " + destination.settings.transport.shortTitle + (isDefault ? "   (Default)" : "")
+        return DestinationRowView(name: destination.name, transport: destination.settings.transport.shortTitle,
+                                  isDefault: destination.id == list.defaultDestination?.id)
     }
     func tableViewSelectionDidChange(_ notification: Notification) { updateListButtons() }
 
@@ -109,12 +216,24 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
     /// Replaces the list (after a save, remove or default change) and returns to the list page.
     func reload(_ list: PublishingDestinationList, status text: String = "", selecting id: String? = nil) {
         self.list = list
+        fitTable()
         table.reloadData()
         if let id { select(id: id) }
         showList()
-        status.stringValue = text
+        listStatus.show(text.isEmpty ? .idle : .info, text)
+        notifyPreferredHeight()
     }
-    func showStatus(_ text: String) { status.stringValue = text; formStatus.stringValue = text }
+    /// A failure from storage or a worker. The row says "Error:" and carries a glyph, so it never relies on colour.
+    func showStatus(_ text: String) {
+        let message = text.hasPrefix("Error:") ? text : "Error: " + text
+        listStatus.show(.failure, message); formResult.show(.failure, message)
+        notifyPreferredHeight()
+    }
+    /// The S3 Test result: "Connected" with the server's detail, or "Error: <message>".
+    func showTestResult(ok: Bool, message: String) {
+        if ok { formResult.show(.success, "Connected", detail: message) }
+        else { formResult.show(.failure, message.hasPrefix("Error:") ? message : "Error: " + message) }
+    }
 
     /// Set by the coordinator: the credential an older build's destination.json still points at.
     var legacyCredentialID: String?
@@ -140,7 +259,7 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
             if let next = list.destinations.first(where: { $0.id != destination.id }) {
                 detail += " It is the default, so “\(next.name)” becomes the default."
             } else {
-                detail += " It is the only destination, so Webpost will need a new one before it can upload."
+                detail += " It is the only destination, so Upload will need a new one before it can upload."
             }
         }
         return ("Remove “\(destination.name)”?", detail)
@@ -150,9 +269,9 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         let alert = NSAlert()
         alert.messageText = title; alert.informativeText = detail; alert.alertStyle = .warning
         let remove = alert.addButton(withTitle: "Remove"), cancel = alert.addButton(withTitle: "Cancel")
-        remove.font = font(18); cancel.font = font(18)
-        for case let field as NSTextField in alert.window.contentView?.subviews ?? [] where field.font != nil {
-            field.font = font(max(field.font!.pointSize, 18))
+        Typography.apply(.body, to: remove); Typography.apply(.body, to: cancel)
+        for case let field as NSTextField in alert.window.contentView?.subviews ?? [] {
+            field.font = Typography.floored(field.font)
         }
         return alert.runModal() == .alertFirstButtonReturn
     }
@@ -161,72 +280,83 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
 
     private func showList() {
         formPage.isHidden = true; listPage.isHidden = false
-        editing = nil; updateListButtons()
+        formFooter.isHidden = true; listFooter.isHidden = false
+        editing = nil; updateListButtons(); updateDefaultButton(); scrollToTop(); notifyPreferredHeight()
+    }
+    private func scrollToTop() {
+        scrollView.contentView.scroll(to: .zero); scrollView.reflectScrolledClipView(scrollView.contentView)
     }
 
     // MARK: Form page
 
-    private let formStatus = NSTextField(wrappingLabelWithString: "")
     private let formHelp = NSTextField(wrappingLabelWithString: "")
 
+    private static let captionWidth: CGFloat = 200
+
     private func styled(_ field: NSTextField, _ placeholder: String) -> NSTextField {
-        field.font = Self.font(20); field.placeholderString = placeholder; return field
-    }
-    private func label(_ text: String) -> NSTextField {
-        let field = NSTextField(wrappingLabelWithString: text); field.font = Self.font(18); field.textColor = .labelColor
+        Typography.apply(.body, to: field); field.placeholderString = placeholder
+        field.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.control).isActive = true
         return field
     }
+    private func label(_ text: String, style: Typography.Style = .body) -> NSTextField {
+        let field = NSTextField(wrappingLabelWithString: text); field.font = Typography.font(style); field.textColor = DesignTokens.Palette.Text.primary
+        return field
+    }
+    private func sectionHeader(_ title: String) -> NSTextField {
+        let header = NSTextField(labelWithString: title); header.font = Typography.font(.headline); header.textColor = DesignTokens.Palette.Text.primary
+        header.setAccessibilityRole(.staticText); header.setAccessibilityLabel(title)
+        sectionHeaders.append(header)
+        return header
+    }
     private func addRow(_ id: String, _ title: String, _ control: NSView, visible: @escaping (PublishingProtocol, Bool) -> Bool) {
-        let caption = label(title)
-        let stack = NSStackView(views: [caption, control]); stack.orientation = .horizontal; stack.alignment = .centerY; stack.spacing = 16
-        caption.widthAnchor.constraint(equalToConstant: 175).isActive = true
-        control.widthAnchor.constraint(greaterThanOrEqualToConstant: 440).isActive = true
+        let caption = label(title, style: .bodyStrong)
+        let stack = NSStackView(views: [caption, control]); stack.orientation = .horizontal; stack.alignment = .centerY; stack.spacing = Space.s4
+        caption.widthAnchor.constraint(equalToConstant: Self.captionWidth).isActive = true
+        caption.preferredMaxLayoutWidth = Self.captionWidth
+        control.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        stack.widthAnchor.constraint(equalToConstant: Self.contentWidth).isActive = true
         control.setAccessibilityLabel(title)
         rows[id] = Row(label: caption, stack: stack, visible: visible)
         formPage.addArrangedSubview(stack)
     }
 
     private func buildForm() {
-        formPage.orientation = .vertical; formPage.alignment = .leading; formPage.spacing = 14
-        for popup in [protocolPopup, sourcePopup] {
-            popup.font = Self.font(18); popup.menu?.font = Self.font(18); popup.menu?.autoenablesItems = false
-        }
+        formPage.orientation = .vertical; formPage.alignment = .leading; formPage.spacing = Space.s3
+        for popup in [protocolPopup, sourcePopup] { Typography.apply(.body, to: popup); popup.menu?.autoenablesItems = false }
         protocolPopup.addItems(withTitles: PublishingProtocol.allCases.map(\.title))
+        for (index, transport) in PublishingProtocol.allCases.enumerated() { protocolPopup.item(at: index)?.toolTip = transport.detail }
         protocolPopup.target = self; protocolPopup.action = #selector(formChanged)
         sourcePopup.addItems(withTitles: ["AWS credentials profile", "Access key stored in Keychain"])
         sourcePopup.target = self; sourcePopup.action = #selector(formChanged)
-        aclCheckbox.font = Self.font(18)
-        passwordField.font = Self.font(20)
+        Typography.apply(.body, to: aclCheckbox)
+        Typography.apply(.body, to: passwordField)
         let all: (PublishingProtocol, Bool) -> Bool = { _, _ in true }
-        addRow("name", "Name", styled(nameField, "Shown in the Webpost right-click menu"), visible: all)
+        formPage.addArrangedSubview(sectionHeader("Connection"))
+        addRow("name", "Name", styled(nameField, "Shown in the Upload right-click menu"), visible: all)
         addRow("protocol", "Protocol", protocolPopup, visible: all)
         addRow("endpoint", "Endpoint URL", styled(endpointField, "https://example.com/uploads"), visible: all)
         addRow("region", "Region", styled(regionField, "us-east-1 (auto for Cloudflare R2)"), visible: { p, _ in p == .s3 })
         addRow("bucket", "Bucket", styled(bucketField, "cdn.example.com"), visible: { p, _ in p == .s3 })
         addRow("folder", "Remote folder", styled(folderField, "screenshots (relative to endpoint)"), visible: all)
         addRow("public", "Public base URL", styled(publicField, "https://example.com/screenshots (optional)"), visible: all)
-        addRow("source", "Credentials", sourcePopup, visible: { p, _ in p == .s3 })
+        addRow("alias", "SSH host alias", styled(aliasField, "myserver (from ~/.ssh/config)"), visible: { p, _ in p == .sftp })
+        addRow("root", "SFTP remote root", styled(remoteRootField, "/var/www/site/uploads"), visible: { p, _ in p == .sftp })
+        addRow("port", "SFTP port", styled(portField, "Use SSH configuration (optional)"), visible: { p, _ in p == .sftp })
+        addRow("acl", "", aclCheckbox, visible: { p, _ in p == .s3 })
+        if let last = rows["acl"]?.stack { formPage.setCustomSpacing(Space.s5, after: last) }
+        formPage.addArrangedSubview(sectionHeader("Credentials"))
+        addRow("source", "Source", sourcePopup, visible: { p, _ in p == .s3 })
         addRow("profile", "AWS profile", styled(profileField, "default (from ~/.aws/credentials)"), visible: { p, keychain in p == .s3 && !keychain })
-        addRow("username", "Username", styled(usernameField, "Username (optional for anonymous destinations)"),
+        addRow("username", "Username", styled(usernameField, "Optional for anonymous destinations"),
                visible: { p, keychain in p == .s3 ? keychain : true })
         addRow("password", "Password", { passwordField.placeholderString = "Password stored in macOS Keychain"; return passwordField }(),
                visible: { p, keychain in p == .s3 ? keychain : p != .sftp })
-        addRow("alias", "SSH host alias", styled(aliasField, "shoemoney.com (from ~/.ssh/config)"), visible: { p, _ in p == .sftp })
-        addRow("root", "SFTP remote root", styled(remoteRootField, "/var/www/shoemoney.com/shared/imgs"), visible: { p, _ in p == .sftp })
-        addRow("port", "SFTP port", styled(portField, "Use SSH configuration (optional)"), visible: { p, _ in p == .sftp })
-        addRow("acl", "", aclCheckbox, visible: { p, _ in p == .s3 })
-        formHelp.font = Self.font(18); formHelp.maximumNumberOfLines = 0; formHelp.preferredMaxLayoutWidth = 740
-        formStatus.font = Self.font(18); formStatus.maximumNumberOfLines = 0; formStatus.preferredMaxLayoutWidth = 740
-        formPage.addArrangedSubview(formHelp); formPage.addArrangedSubview(formStatus)
-        let test = Self.button("Test", self, #selector(testTapped))
-        let cancel = Self.button("Cancel", self, #selector(cancelFormTapped))
-        let save = Self.button("Save", self, #selector(saveTapped))
-        formButtons = (test, cancel, save)
-        let buttons = NSStackView(views: [cancel, save, test]); buttons.spacing = 16
-        formPage.addArrangedSubview(buttons)
+        Typography.apply(.caption, to: formHelp); formHelp.textColor = DesignTokens.Palette.Text.secondary
+        formHelp.maximumNumberOfLines = 0; formHelp.preferredMaxLayoutWidth = Self.contentWidth
+        formPage.addArrangedSubview(formHelp)
+        formPage.setCustomSpacing(Space.s4, after: rows["password"]!.stack)
         formPage.isHidden = true
     }
-    private var formButtons: (test: NSButton, cancel: NSButton, save: NSButton)?
 
     private var keychainSource: Bool { sourcePopup.indexOfSelectedItem == 1 }
     private var selectedProtocol: PublishingProtocol {
@@ -238,20 +368,24 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
     private func refreshForm() {
         let transport = selectedProtocol, keychain = keychainSource
         for row in rows.values { row.stack.isHidden = !row.visible(transport, keychain) }
+        let endpointExample = "https://example.com/uploads"
         func caption(_ id: String, _ text: String) { rows[id]?.label.stringValue = text; rows[id]?.stack.arrangedSubviews.last?.setAccessibilityLabel(text) }
         switch transport {
         case .s3:
-            caption("endpoint", "Endpoint (blank = AWS)"); caption("folder", "Key prefix")
+            caption("endpoint", "Endpoint"); caption("folder", "Key prefix")
+            endpointField.placeholderString = "Leave blank for AWS, or https://s3.example.com"
             caption("username", "Access key ID"); caption("password", "Secret access key")
-            formHelp.stringValue = "Path-style S3 over system curl. Public base URL maps to the key prefix; the uploaded file is downloaded from it to verify the exact bytes. Test lists the bucket without uploading."
+            formHelp.stringValue = "Path-style S3 over system curl, for AWS, Cloudflare R2, Backblaze B2, DigitalOcean Spaces, Wasabi and MinIO. Public base URL maps to the key prefix; the uploaded file is downloaded from it to verify the exact bytes. Test lists the bucket without uploading. Leave public-read off when the bucket disables ACLs."
         case .sftp:
             caption("endpoint", "Endpoint URL"); caption("folder", "Remote folder"); caption("username", "Username"); caption("password", "Password")
+            endpointField.placeholderString = endpointExample
             formHelp.stringValue = "SFTP uses keys from SSH configuration or your agent, with strict known-host checks. Leave username and port empty to use the alias settings. Folders must exist."
         default:
             caption("endpoint", "Endpoint URL"); caption("folder", "Remote folder"); caption("username", "Username"); caption("password", "Password")
+            endpointField.placeholderString = endpointExample
             formHelp.stringValue = "FTPS: ftp:// is explicit TLS, ftps:// is implicit TLS. Folders must exist. Public base URL maps to the upload folder; only the filename is appended."
         }
-        formButtons?.test.isHidden = transport != .s3
+        testButton.isHidden = transport != .s3
     }
 
     /// Disables protocols the system tools cannot run.
@@ -274,9 +408,10 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         sourcePopup.selectItem(at: destination != nil && options.credentialsProfile.isEmpty && settings.transport == .s3 ? 1 : 0)
         aclCheckbox.state = options.publicReadACL ? .on : .off
         passwordField.stringValue = destination.map { settings.storesSecretInKeychain ? passwordFor($0) : "" } ?? ""
-        formStatus.stringValue = ""
+        formResult.show(.idle, "")
         listPage.isHidden = true; formPage.isHidden = false
-        refreshForm()
+        listFooter.isHidden = true; formFooter.isHidden = false
+        refreshForm(); updateDefaultButton(); scrollToTop(); notifyPreferredHeight()
     }
 
     /// Assembles the destination the form describes, preserving the edited entry's id.
@@ -317,12 +452,12 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
     }
 
     @objc func saveTapped() {
-        do { let draft = try makeDraft(); formStatus.stringValue = "Saving…"; onSave?(draft.destination, draft.password) }
-        catch { formStatus.stringValue = error.localizedDescription }
+        do { let draft = try makeDraft(); formResult.show(.working, "Saving…"); onSave?(draft.destination, draft.password) }
+        catch { showStatus(error.localizedDescription) }
     }
     @objc func testTapped() {
-        do { let draft = try makeDraft(); formStatus.stringValue = "Testing…"; onTest?(draft.destination, draft.password) }
-        catch { formStatus.stringValue = error.localizedDescription }
+        do { let draft = try makeDraft(); formResult.show(.working, "Testing…"); onTest?(draft.destination, draft.password) }
+        catch { showStatus(error.localizedDescription) }
     }
     @objc func cancelFormTapped() { showList() }
 }
@@ -342,5 +477,127 @@ extension PublishingProtocol {
 private extension NSStackView {
     func setViews(_ views: [NSView], in gravity: NSStackView.Gravity) {
         views.forEach { addArrangedSubview($0) }
+    }
+}
+
+/// Top-left origin, so a short form starts at the top of the scroll view instead of floating at the bottom.
+final class DestinationFlippedView: NSView {
+    override var isFlipped: Bool { true }
+}
+
+/// One line of feedback: a glyph and words together, so the meaning never rests on colour alone.
+final class DestinationStatusRow: NSStackView {
+    enum Kind { case idle, working, info, success, failure }
+    private(set) var kind: Kind = .idle
+    let glyph = NSImageView()
+    let text = NSTextField(wrappingLabelWithString: "")
+    let detail = NSTextField(wrappingLabelWithString: "")
+    private typealias Palette = DesignTokens.Palette
+
+    override init(frame: NSRect) {
+        super.init(frame: frame)
+        orientation = .horizontal; alignment = .top; spacing = DesignTokens.Space.s2
+        glyph.imageScaling = .scaleProportionallyDown
+        glyph.widthAnchor.constraint(equalToConstant: DesignTokens.Typography.iconRegular).isActive = true
+        glyph.heightAnchor.constraint(equalToConstant: DesignTokens.Typography.iconRegular).isActive = true
+        DesignTokens.Typography.apply(.body, to: text); DesignTokens.Typography.apply(.caption, to: detail)
+        let textWidth = PublishingDestinationsView.contentWidth - DesignTokens.Typography.iconRegular - DesignTokens.Space.s2
+        text.preferredMaxLayoutWidth = textWidth; detail.preferredMaxLayoutWidth = textWidth
+        text.maximumNumberOfLines = 0; detail.maximumNumberOfLines = 0
+        detail.textColor = Palette.Text.secondary
+        let column = NSStackView(views: [text, detail]); column.orientation = .vertical; column.alignment = .leading; column.spacing = 2
+        addArrangedSubview(glyph); addArrangedSubview(column)
+        show(.idle, "")
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+
+    func show(_ kind: Kind, _ message: String, detail extra: String = "") {
+        self.kind = kind
+        text.stringValue = message; detail.stringValue = extra; detail.isHidden = extra.isEmpty
+        let symbol: String?
+        switch kind {
+        case .success: symbol = "checkmark.circle"
+        case .failure: symbol = "xmark.octagon"
+        case .idle, .working, .info: symbol = nil
+        }
+        glyph.image = symbol.flatMap { PublishingDestinationsView.symbol($0, pointSize: DesignTokens.Typography.iconInline, description: kind == .success ? "Connected" : "Error") }
+        glyph.isHidden = glyph.image == nil
+        let color = kind == .failure ? Palette.feedbackError : Palette.Text.primary
+        text.textColor = color; glyph.contentTintColor = color
+        isHidden = kind == .idle || message.isEmpty
+        setAccessibilityElement(!isHidden); setAccessibilityRole(.staticText)
+        setAccessibilityLabel(message + (extra.isEmpty ? "" : ". " + extra))
+    }
+}
+
+/// The "Default" pill: a check glyph and the word, drawn with theme-aware layer colours.
+final class DefaultPillView: NSView {
+    let glyph = NSImageView(), label = NSTextField(labelWithString: "Default")
+    private typealias Palette = DesignTokens.Palette
+    var emphasized = false { didSet { refreshColors(); needsDisplay = true } }
+
+    init() {
+        super.init(frame: .zero)
+        wantsLayer = true; layer?.borderWidth = 1
+        glyph.image = PublishingDestinationsView.symbol("checkmark", pointSize: DesignTokens.Typography.readableMinimum)
+        glyph.imageScaling = .scaleProportionallyDown
+        label.font = DesignTokens.Typography.font(.bodyStrong)
+        let stack = NSStackView(views: [glyph, label]); stack.orientation = .horizontal; stack.spacing = DesignTokens.Space.s1; stack.alignment = .centerY
+        stack.translatesAutoresizingMaskIntoConstraints = false; addSubview(stack)
+        NSLayoutConstraint.activate([stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: DesignTokens.Space.s3),
+                                     stack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -DesignTokens.Space.s3),
+                                     stack.centerYAnchor.constraint(equalTo: centerYAnchor),
+                                     heightAnchor.constraint(equalToConstant: DesignTokens.Size.control - DesignTokens.Space.s1)])
+        setAccessibilityElement(true); setAccessibilityRole(.staticText); setAccessibilityLabel("Default destination")
+        refreshColors()
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+
+    override var wantsUpdateLayer: Bool { true }
+    override func layout() { super.layout(); layer?.cornerRadius = bounds.height / 2 }
+    override func updateLayer() {
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            layer?.backgroundColor = (emphasized ? NSColor.clear : Palette.State.selectedFill).cgColor
+            layer?.borderColor = (emphasized ? NSColor.alternateSelectedControlTextColor : Palette.accent).cgColor
+        }
+    }
+    private func refreshColors() {
+        let color = emphasized ? NSColor.alternateSelectedControlTextColor : Palette.Text.primary
+        label.textColor = color; glyph.contentTintColor = color
+    }
+}
+
+/// A destination row: name, transport, and a Default pill for the destination Upload uses.
+final class DestinationRowView: NSTableCellView {
+    let nameField: NSTextField, transportField: NSTextField
+    private(set) var pill: DefaultPillView?
+    private typealias Palette = DesignTokens.Palette
+
+    init(name: String, transport: String, isDefault: Bool) {
+        nameField = NSTextField(labelWithString: name); transportField = NSTextField(labelWithString: transport)
+        super.init(frame: .zero)
+        nameField.font = DesignTokens.Typography.font(.body); nameField.lineBreakMode = .byTruncatingTail
+        transportField.font = DesignTokens.Typography.font(.caption)
+        nameField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        let flexible = NSView(); flexible.setContentHuggingPriority(.init(1), for: .horizontal)
+        var views: [NSView] = [nameField, transportField, flexible]
+        if isDefault { let pill = DefaultPillView(); self.pill = pill; views.append(pill) }
+        let stack = NSStackView(views: views); stack.orientation = .horizontal; stack.alignment = .centerY; stack.spacing = DesignTokens.Space.s3
+        stack.distribution = .fill; stack.translatesAutoresizingMaskIntoConstraints = false; addSubview(stack)
+        NSLayoutConstraint.activate([stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: DesignTokens.Space.s2),
+                                     stack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -DesignTokens.Space.s2),
+                                     stack.centerYAnchor.constraint(equalTo: centerYAnchor)])
+        textField = nameField
+        setAccessibilityLabel([name, transport, isDefault ? "Default" : nil].compactMap { $0 }.joined(separator: ", "))
+        refreshColors()
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+
+    override var backgroundStyle: NSView.BackgroundStyle { didSet { refreshColors() } }
+    private func refreshColors() {
+        let emphasized = backgroundStyle == .emphasized
+        nameField.textColor = emphasized ? .alternateSelectedControlTextColor : Palette.Text.primary
+        transportField.textColor = emphasized ? .alternateSelectedControlTextColor : Palette.Text.secondary
+        pill?.emphasized = emphasized
     }
 }
