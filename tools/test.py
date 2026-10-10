@@ -46,6 +46,11 @@ def secrets_guard():
 print("PASS", secrets_guard(), flush=True)
 # The retired product name stays confined to the migration; the reader of retired formats stays unreachable from the app.
 subprocess.run([sys.executable, str(root / "tools" / "check-skitch-strings.py")], cwd=root, check=True)
+# OSN-024: nothing under Sources, tests or tools may name the retired original-archive folder.
+subprocess.run([sys.executable, str(root / "tools" / "check-no-original.py"), "--sources"], cwd=root, check=True)
+# OSN-031: Info.plist names follow DesignTokens.Brand.name and no title uses three ASCII dots; the self-test proves it can fail.
+subprocess.run([sys.executable, str(root / "tools" / "check-brand.py")], cwd=root, check=True)
+subprocess.run([sys.executable, str(root / "tools" / "check-brand.py"), "--self-test"], cwd=root, check=True)
 # The screenshot harness's protections (store guard, isolation of the launched copy, sandbox fence) must be able to fail.
 subprocess.run([sys.executable, "-I", str(root / "tools" / "test-eye-dump-audit-guard.py")], cwd=root, check=True)
 # G9: literal fonts, colours and radii outside the tokens. Report mode until the token sweeps land; the self-test proves --strict can fail.
@@ -68,13 +73,12 @@ for path, data in contents.items():
 manifest = {str(path.relative_to(root)): hashlib.sha256(data).hexdigest() for path, data in contents.items()}
 (snapshot / "source-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
 
-def suite(name, sources, test, define=None, arguments=(), environment=None, optional=False):
+def suite(name, sources, test, define=None, arguments=(), environment=None):
     # Every suite compiles the design tokens, so a file that adopts them never breaks its own suite.
     sources = [*sources, "DesignTokens.swift"] if "DesignTokens.swift" not in sources else sources
-    if optional:
-        for needed in [*sources, test]:
-            if not (snapshot / needed).exists():
-                return "SKIP", f"{name}: {needed} not present"
+    for needed in [*sources, test]:
+        if not (snapshot / needed).exists():
+            raise SystemExit(f"FAIL {name}: {needed} is missing from the source snapshot")
     binary = snapshot / name
     command = ["xcrun", "swiftc", "-swift-version", "5", "-target", options.arch + "-apple-macosx26.0"]
     if define:
@@ -133,15 +137,16 @@ suites = [
     ("about-window-tests", ["AboutWindow.swift"], "AboutWindowTests.swift", "ABOUT_WINDOW_TESTS", ()),
     ("metrics-tests", [], "MetricsTests.swift", "METRICS_TESTS", ()),
 ]
-# Modern appearance suites are skipped, not failed, while their files are not in the tree yet.
-optional_suites = [
+# These need the Modern chrome sources; a missing file fails the suite. Only the Font Awesome glyph branch inside them
+# is licence-gated, and it prints "SKIPPED (FA not bundled)" when the Pro subsets are absent.
+modern_suites = [
     ("fontawesome-icons-tests", ["FontAwesomeIcons.swift", "ChromeIcons.swift"], "FontAwesomeIconsTests.swift", "FONTAWESOME_ICONS_TESTS", (), font_environment),
     ("menu-symbols-tests", ["FontAwesomeIcons.swift", "ChromeIcons.swift", "MenuSymbols.swift"], "MenuSymbolsTests.swift", "MENU_SYMBOLS_TESTS", ()),
     ("glass-chrome-tests", ["OriginalActionButton.swift", "FontAwesomeIcons.swift", "ChromeIcons.swift", "BezelDrawingControls.swift", "SVGPath.swift", "DocumentModel.swift", "GlassChrome.swift", "ModernEditorChrome.swift"], "GlassChromeTests.swift", "GLASS_CHROME_TESTS", ()),
 ]
-with ThreadPoolExecutor(max_workers=len(suites) + len(optional_suites)) as executor:
+with ThreadPoolExecutor(max_workers=len(suites) + len(modern_suites)) as executor:
     futures = [executor.submit(suite, *args) for args in suites]
-    futures += [executor.submit(suite, *args, optional=True) for args in optional_suites]
+    futures += [executor.submit(suite, *args) for args in modern_suites]
     failures = []
     for future in futures:
         try:

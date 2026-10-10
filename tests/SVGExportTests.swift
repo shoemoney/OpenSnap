@@ -54,11 +54,6 @@ fileprivate enum SVGExportTests {
         let description: String
         init(_ description: String) { self.description = description }
     }
-    /// A case that cannot run in this environment; reported as SKIP, never as a failure.
-    struct Skip: Error, CustomStringConvertible {
-        let description: String
-        init(_ description: String) { self.description = description }
-    }
     static func expect(_ condition: @autoclosure () throws -> Bool, _ message: String) throws {
         if try !condition() { throw Failure(message) }
     }
@@ -235,7 +230,7 @@ fileprivate enum SVGExportTests {
     }
 
     static func main() {
-        var passed = 0, skipped = 0, failures: [String] = []
+        var passed = 0, failures: [String] = []
         let cases: [(String, () throws -> Void)] = [
             ("Explicit SVG output retains exact fractional crop viewBox and source geometry", {
                 var document = SketchDocument(size: CGSize(width: 399.5, height: 299.5))
@@ -471,10 +466,9 @@ fileprivate enum SVGExportTests {
         ]
         for (name, test) in cases {
             do { try test(); passed += 1; print("PASS \(name)") }
-            catch let skip as Skip { skipped += 1; print("SKIP \(name): \(skip)") }
             catch { let message = "\(name): \(error)"; failures.append(message); print("FAIL \(message)") }
         }
-        print("SVGExportTests: \(passed)/\(cases.count) passed; \(failures.count) failed" + (skipped > 0 ? "; \(skipped) skipped" : ""))
+        print("SVGExportTests: \(passed)/\(cases.count) passed; \(failures.count) failed")
         if !failures.isEmpty { exit(1) }
     }
 }

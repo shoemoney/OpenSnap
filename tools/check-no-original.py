@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Exit 1 if a built bundle contains any recovered original-app asset or any sound file.
 
-Usage: check-no-original.py PATH   (the whole .app)
-The name list is static on purpose: this gate must work with no original/ folder on disk.
+Usage: check-no-original.py PATH      (the whole .app)
+       check-no-original.py --sources (the source tree: no file under Sources/, tests/ or tools/, nor build.sh, names the
+                                       retired archive folder; this script builds the needle in pieces so it never matches itself)
+The name list is static on purpose: this gate must work with no archive folder on disk.
 Three independent checks, all of which must come up empty:
   1. every file name in the bundle against the original's names and numbered families,
      and any sound file (.m4a .wav .aif .aiff .caf .mp3);
@@ -106,9 +108,38 @@ def catalog_names(car):
            {e["RenditionName"] for e in entries if isinstance(e, dict) and e.get("RenditionName")}
 
 
+def scan_sources():
+    """Exit 1 if any source, test or tool file names the retired original-archive folder (OSN-024)."""
+    repository = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    needle = ("original" + "/").encode()
+    scanned, problems = 0, []
+    for folder in ("Sources", "tests", "tools"):
+        for directory, _, names in os.walk(os.path.join(repository, folder)):
+            for name in names:
+                path = os.path.join(directory, name)
+                if "__pycache__" in path or name == ".DS_Store" or os.path.islink(path):
+                    continue
+                with open(path, "rb") as handle:
+                    data = handle.read()
+                scanned += 1
+                for number, line in enumerate(data.split(b"\n"), 1):
+                    if needle in line:
+                        problems.append("%s:%d names the retired archive folder" % (os.path.relpath(path, repository), number))
+    if scanned < 50:
+        problems.append("only %d files scanned; the source tree was not found" % scanned)
+    for line in problems:
+        print(line, file=sys.stderr)
+    if problems:
+        sys.exit(1)
+    print("PASS check-no-original --sources (%d files under Sources, tests and tools; none names the retired archive folder)" % scanned)
+    sys.exit(0)
+
+
+if len(sys.argv) > 1 and sys.argv[1] == "--sources":
+    scan_sources()
 root = sys.argv[1] if len(sys.argv) > 1 else None
 if not root or not os.path.isdir(root):
-    print("usage: check-no-original.py APP_BUNDLE", file=sys.stderr)
+    print("usage: check-no-original.py APP_BUNDLE | --sources", file=sys.stderr)
     sys.exit(2)
 hits = []
 for directory, _, names in os.walk(root):
