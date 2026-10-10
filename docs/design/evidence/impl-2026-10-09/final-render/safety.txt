@@ -1,0 +1,132 @@
+Merged from sequential harness runs; each run is a separate throwaway copy under env -i with its own HOME, defaults domain and support folder (see the first block of each run for its guard line).
+== run fa-all
+sourceSha        5b30929
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+display options  reduceTransparency,increaseContrast,differentiateWithoutColor,reduceMotion (simulated inside the throwaway copy only; no system setting is written)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+input fence      swallowed 0 real input events across 2 runs
+cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-93884) dropped BEFORE the final compare; the compare below would show any damage cleanup did
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+   fence files: input-fence-dark-sf-96153.json=0, input-fence-light-sf-93932.json=0
+== run fa-dwc
+sourceSha        5b30929
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+display options  differentiateWithoutColor (simulated inside the throwaway copy only; no system setting is written)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+input fence      swallowed 0 real input events across 2 runs
+cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-46143) dropped BEFORE the final compare; the compare below would show any damage cleanup did
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+   fence files: input-fence-dark-sf-72815.json=0, input-fence-light-sf-46279.json=0
+== run fa-ic
+sourceSha        5b30929
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+display options  increaseContrast (simulated inside the throwaway copy only; no system setting is written)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+input fence      swallowed 0 real input events across 2 runs
+cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-74194) dropped BEFORE the final compare; the compare below would show any damage cleanup did
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+   fence files: input-fence-dark-sf-81501.json=0, input-fence-light-sf-74255.json=0
+== run fa-rt
+sourceSha        5b30929
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+display options  reduceTransparency (simulated inside the throwaway copy only; no system setting is written)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+input fence      swallowed 0 real input events across 2 runs
+cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-88769) dropped BEFORE the final compare; the compare below would show any damage cleanup did
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+   fence files: input-fence-dark-sf-91984.json=0, input-fence-light-sf-88951.json=0
+== run fb-all
+sourceSha        5b30929
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+display options  reduceTransparency,increaseContrast,differentiateWithoutColor,reduceMotion (simulated inside the throwaway copy only; no system setting is written)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+input fence      swallowed 131 real input events across 2 runs (somebody used the machine during the run; check the captures)
+cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-33730) dropped BEFORE the final compare; the compare below would show any damage cleanup did
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+   fence files: input-fence-dark-sf-34704.json=61, input-fence-light-sf-33782.json=70
+== run fb-base
+sourceSha        5b30929
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+display options  none (simulated inside the throwaway copy only; no system setting is written)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+input fence      swallowed 129 real input events across 2 runs (somebody used the machine during the run; check the captures)
+cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-97946) dropped BEFORE the final compare; the compare below would show any damage cleanup did
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+   fence files: input-fence-dark-sf-99092.json=65, input-fence-light-sf-98002.json=64
+== run fb-dwc
+sourceSha        5b30929
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+display options  differentiateWithoutColor (simulated inside the throwaway copy only; no system setting is written)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+input fence      swallowed 126 real input events across 2 runs (somebody used the machine during the run; check the captures)
+cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-1054) dropped BEFORE the final compare; the compare below would show any damage cleanup did
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+   fence files: input-fence-dark-sf-7127.json=61, input-fence-light-sf-1146.json=65
+== run fb-ic
+sourceSha        5b30929
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+display options  increaseContrast (simulated inside the throwaway copy only; no system setting is written)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+input fence      swallowed 129 real input events across 2 runs (somebody used the machine during the run; check the captures)
+cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-25163) dropped BEFORE the final compare; the compare below would show any damage cleanup did
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+   fence files: input-fence-dark-sf-30510.json=66, input-fence-light-sf-25213.json=63
+== run fb-rt
+sourceSha        5b30929
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+display options  reduceTransparency (simulated inside the throwaway copy only; no system setting is written)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+input fence      swallowed 138 real input events across 2 runs (somebody used the machine during the run; check the captures)
+cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-31381) dropped BEFORE the final compare; the compare below would show any damage cleanup did
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+   fence files: input-fence-dark-sf-32256.json=70, input-fence-light-sf-31425.json=68
+== run fc-base
+sourceSha        5b30929
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+display options  none (simulated inside the throwaway copy only; no system setting is written)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+input fence      swallowed 0 real input events across 2 runs
+cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-49963) dropped BEFORE the final compare; the compare below would show any damage cleanup did
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+   fence files: input-fence-dark-sf-65423.json=0, input-fence-light-sf-50361.json=0
+== run fc-s10
+sourceSha        5b30929
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+display options  none (simulated inside the throwaway copy only; no system setting is written)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+input fence      swallowed 22 real input events across 2 runs (somebody used the machine during the run; check the captures)
+cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-69045) dropped BEFORE the final compare; the compare below would show any damage cleanup did
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+   fence files: input-fence-dark-sf-69237.json=11, input-fence-light-sf-69089.json=11
+== run rm
+sourceSha        5b30929
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+display options  reduceMotion (simulated inside the throwaway copy only; no system setting is written)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+input fence      swallowed 0 real input events across 2 runs
+cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-98784) dropped BEFORE the final compare; the compare below would show any damage cleanup did
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+   fence files: input-fence-dark-sf-99644.json=0, input-fence-light-sf-98869.json=0
+== run s42-2
+sourceSha        5b30929
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+display options  none (simulated inside the throwaway copy only; no system setting is written)
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+input fence      swallowed 17 real input events across 1 runs (somebody used the machine during the run; check the captures)
+cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-40074) dropped BEFORE the final compare; the compare below would show any damage cleanup did
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+   fence files: input-fence-light-sf-40121.json=17
+TOTAL input fence: swallowed 692 real input events across the merged runs
