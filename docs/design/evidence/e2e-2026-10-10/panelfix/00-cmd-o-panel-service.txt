@@ -1,4 +1,4 @@
-F-J5-005 fix verification, real-click driver (mcp kimi-cu), isolated session started by tools/e2e-session.sh (watchdog threshold 2097152 KB, kills 0).
+F-J5-005 fix verification, real-click driver, isolated session started by tools/e2e-session.sh (watchdog threshold 2097152 KB, kills 0).
 Session home was canonical (/private/var/folders/.../T/e2e-session.XXXXXX, no "//").
 
 Cmd+O pressed once on pid 68590; panel-service samples 1 s apart (pid, RSS, CPU):
