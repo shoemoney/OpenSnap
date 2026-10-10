@@ -820,6 +820,12 @@ final class SegmentedToggle: NSControl, ChromeFillable {
                 let inset = NSBezierPath(roundedRect: rect.insetBy(dx: style.borderWidth / 2, dy: style.borderWidth / 2), xRadius: radius - style.borderWidth / 2, yRadius: radius - style.borderWidth / 2)
                 border.setStroke(); inset.lineWidth = style.borderWidth; inset.stroke()
             }
+            if style.indicator {
+                let size = StateStyles.indicatorSize(highContrast: accessibility.increaseContrast)
+                let capsule = NSBezierPath(roundedRect: NSRect(x: rect.midX - size.width / 2, y: rect.minY + StateStyles.indicatorInset, width: size.width, height: size.height),
+                                           xRadius: size.height / 2, yRadius: size.height / 2)
+                style.content.setFill(); capsule.fill()
+            }
             let font = textFont(forSegment: index)
             let attributes: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: style.content]
             let size = (titles[index] as NSString).size(withAttributes: attributes)

@@ -598,7 +598,9 @@ final class SettingsTabButton: NSButton {
             guard let layer else { return }
             if isCurrent {
                 layer.backgroundColor = (isPressed ? accent.withAlphaComponent(0.32) : Palette.State.selectedFill).cgColor
-                layer.borderColor = accent.cgColor; layer.borderWidth = 1
+                // Differentiate Without Color: the current tab is also a 2 pt outline in the text colour, a shape and not a tint alone.
+                let outline = DisplayOptions.current.differentiateWithoutColor
+                layer.borderColor = (outline ? Palette.Text.primary : accent).cgColor; layer.borderWidth = outline ? 2 : 1
             } else {
                 layer.borderWidth = 0; layer.borderColor = nil
                 layer.backgroundColor = (isPressed ? Palette.State.pressed : (isHovered ? Palette.State.hover : NSColor.clear)).cgColor
