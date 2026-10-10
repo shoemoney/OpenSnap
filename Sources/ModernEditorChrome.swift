@@ -193,18 +193,31 @@ final class ModernEditorChrome: NSView {
     /// news and the checkbox is an option, so the checkbox steps aside before the message is squeezed further.
     static let minimumUploadStatusWidth: CGFloat = 200
 
+    /// The width the status line's cell wants for `text`.
+    func statusCellWidth(of text: String) -> CGFloat {
+        guard let probe = controls.status.cell?.copy() as? NSCell else { return 0 }
+        probe.stringValue = text
+        return ceil(probe.cellSize.width)
+    }
+    /// The least room a message needs. An error has a whole-line, a coded and a bare ("Failed") form and is read at the narrowest of them, so
+    /// at 980 pt it gives up its words before the Original size checkbox is asked to leave (F-J7-006); the others keep the twenty characters.
+    func minimumMessageWidth(for state: UploadState) -> CGFloat {
+        guard state.isFailure, let narrowest = state.statusVariants.last else { return Self.minimumUploadStatusWidth }
+        return min(Self.minimumUploadStatusWidth, statusCellWidth(of: narrowest))
+    }
+
     /// What a transfer needs of the slot besides the Original size checkbox: the spinner when one runs, the message at its minimum, and the
     /// commands (one icon for Cancel, two for Open and Copy or Retry and Details), each with the gap before it.
     func slotNeed(for state: UploadState) -> CGFloat {
         let commands = state.isUploading ? 1 : (state.isFailure || state.link != nil ? 2 : 0)
-        var need = Self.minimumUploadStatusWidth
+        var need = minimumMessageWidth(for: state)
         if state.isUploading { need += UploadStatusControls.spinnerSide + Self.statusRowSpacing }
         return need + CGFloat(commands) * (GlassChrome.Metrics.iconButton.width + Self.statusRowSpacing)
     }
 
     /// Whether the Original size checkbox can stay beside the upload's message and commands: only when the slot, measured at the window's
-    /// current width, holds the checkbox as well as everything `slotNeed` lists. At 980 it does not, so the checkbox steps aside; from about
-    /// 1100 on it stays.
+    /// current width, holds the checkbox as well as everything `slotNeed` lists. At 980 an error keeps it (the message shrinks to "Failed"); an upload
+    /// in progress or done does not have the room, so the checkbox steps aside there; from about 1100 on it stays.
     func slotHasRoomForCheckbox(during state: UploadState) -> Bool {
         statusSlotWidth() >= slotNeed(for: state) + Self.statusRowSpacing + controls.dragOriginalControl.fittingSize.width
     }
