@@ -146,7 +146,7 @@ extension AuditRun {
                 fired = true
                 let extra = ownWindowNumbers(excluding: known)
                 shoot(id, slug, surface: surface, state: state, windows: [window] + extra, refs: refs, settle: 0,
-                      extra: ["menuWindows": extra.map { String(describing: type(of: $0)) }])
+                      extra: ["menuWindows": extra.map { String(describing: type(of: $0)) }], includeMenus: true)
                 dismiss()
                 // Keep asking until tracking really ends; a single cancelTracking() has left a popUp blocking before.
                 let again = Timer(timeInterval: 0.3, repeats: true) { _ in MainActor.assumeIsolated { dismiss(); NSApp.mainMenu?.cancelTracking() } }
@@ -1172,7 +1172,7 @@ extension AuditRun {
         var stored = GeneralPreferencesState(drawingPrecision: .medium, arrowHead: 2, includeApp: true, statusMenu: 0)
         var destinations = list
         let controller = SettingsWindowController(state: { stored }, hotkeys: GlobalHotkeyManager(defaults: .standard, backend: AuditInertHotkeyBackend()), defaults: .standard,
-                                                  destinations: { destinations }, manageDestinations: { _ in })
+                                                  destinations: { destinations })
         controller.onChange = { stored = $0 }
         let screen = (window.screen ?? NSScreen.main)?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
         let refs = ["SettingsWindow.swift|final class SettingsWindowController", "SettingsWindow.swift|final class SettingsTabViewController"]
@@ -1224,11 +1224,11 @@ extension AuditRun {
         destinations = PublishingDestinationList()
         controller.refresh()
         capture(3, "upload-empty", "Upload tab, no destination saved")
-        // Eight destinations: the list shows five and says so, the window grows to hold them and the caption stays in view.
+        // Eight destinations: every one is listed, the window grows to hold them (up to the screen) and the buttons and caption stay in view.
         let extra = ["Backup WebDAV", "Team SFTP", "Archive S3", "Staging WebDAV", "Press kit SFTP"].map { PublishingDestination(name: $0, settings: $0.contains("S3") ? s3 : ($0.contains("SFTP") ? sftp : dav)) }
         destinations = PublishingDestinationList(defaultID: items[0].id, destinations: items + extra)
         controller.refresh()
-        capture(3, "upload-many", "Upload tab, eight saved destinations: five listed, then 'and 3 more', the caption and Manage button in view")
+        capture(3, "upload-many", "Upload tab, eight saved destinations, all listed: the list is as tall as the screen allows and scrolls past that; Add…, Edit…, Remove, Make Default and the caption in view")
         // A 640 pt tall screen: the list gives up room and scrolls inside its frame, so the window still fits and the caption is still seen.
         let short = NSRect(x: screen.minX, y: screen.maxY - 616, width: 1136, height: 616)
         controller.select(3)
@@ -1272,64 +1272,68 @@ extension AuditRun {
         }
     }
 
+    /// The Settings window on its Upload tab, opened the way the app opens it (Sharing Settings…), and the sheet the destination editor hangs from.
+    func openSettingsUpload() -> SettingsWindowController? {
+        app.openPreferences(tab: SettingsWindowController.uploadTabIndex)
+        pump(0.8)
+        app.settingsController?.window.contentView?.layoutSubtreeIfNeeded()
+        return app.settingsController
+    }
+
     func s19() {
-        app.openDestinationSettings()
-        pump(1.2)
-        captureSheet("S19", "destinations-empty", surface: "Destinations / Publishing", state: "Upload Destinations sheet, no destination saved",
-                     refs: ["Publishing.swift|public func showSettings(relativeTo", "PublishingDestinationsView.swift|private func buildList()"], wait: 0.3, dismiss: { [self] in app.publishing.cancelSettings() })
-        pump(0.5)
+        guard let controller = openSettingsUpload() else { gap("S19", "Destinations", "Sharing Settings… did not open Settings"); return }
+        let host = controller.window
+        shoot("S19", "settings-upload-empty", surface: "Destinations / Publishing", state: "Settings, Upload tab, no destination saved: No destinations yet and Add… inside the list",
+              windows: [host], refs: ["SettingsWindow.swift|final class UploadSettingsTab", "App.swift|@objc func sharingSettings()"], settle: 0.4)
+        app.closePreferences(); pump(0.3)
         syntheticDestinations()
-        do {
-            let (panel, view) = try app.publishing.buildSettings()
-            window.beginSheet(panel)
-            pump(1.0)
-            shootSheet("S19", "destinations-list", surface: "Destinations / Publishing", state: "three synthetic destinations (Example S3 default, SFTP, WebDAV)", refs: ["PublishingDestinationsView.swift|private func buildList()"], host: window, sheet: panel)
-            view.reload(try AppDelegate.publishingStore.load(), selecting: try AppDelegate.publishingStore.load().defaultID)
-            view.editTapped()
-            pump(0.5)
-            shootSheet("S19", "destinations-edit-form", surface: "Destinations / Publishing", state: "edit form for the selected destination", refs: ["PublishingDestinationsView.swift|private func showForm(for"], host: window, sheet: panel)
-            for control in [view.nameField, view.endpointField, view.bucketField, view.regionField] where control.superview != nil && !control.isHidden && control.window === panel {
-                panel.makeFirstResponder(control); break
-            }
-            shootSheet("S19", "destinations-form-focus", surface: "Preferences text field focus", state: "first visible text field focused in the destination edit form", refs: ["PublishingDestinationsView.swift|private func buildForm()"], host: window, sheet: panel)
-            // Test-result states are fed straight to the view, so nothing contacts a destination.
-            view.showTestResult(ok: true, message: "OK: credentials and bucket verified. Nothing was uploaded.")
+        guard let listed = openSettingsUpload() else { return }
+        let settings = listed.window
+        shoot("S19", "settings-upload-list", surface: "Destinations / Publishing", state: "Settings, Upload tab: three synthetic destinations (Example S3 default, SFTP, WebDAV) with Add…, Edit…, Remove and Make Default",
+              windows: [settings], refs: ["SettingsWindow.swift|final class UploadSettingsTab"], settle: 0.4)
+        let list = (try? AppDelegate.publishingStore.load()) ?? PublishingDestinationList()
+        guard let target = list.destinations.first(where: { $0.id == list.defaultID }) ?? list.destinations.first else { return }
+        // The editor is begun on the Settings window directly so the harness can close it the way Cancel would.
+        func edit(_ destination: PublishingDestination?, visibleFrame: NSRect? = nil, hostWidth: CGFloat? = nil) -> (NSPanel, PublishingDestinationsView) {
+            let (panel, view) = app.publishing.buildEditor(editing: destination, visibleFrame: visibleFrame, hostWidth: hostWidth)
+            settings.beginSheet(panel); pump(0.8)
+            return (panel, view)
+        }
+        func close(_ panel: NSPanel) { settings.endSheet(panel); pump(0.4); app.publishing.cancelSettings(); pump(0.3) }
+        let (panel, view) = edit(target)
+        shootSheet("S19", "destinations-edit-form", surface: "Destinations / Publishing", state: "edit form for the selected destination, a sheet on the Settings window", refs: ["PublishingDestinationsView.swift|private func showForm(for"], host: settings, sheet: panel)
+        for control in [view.nameField, view.endpointField, view.bucketField, view.regionField] where control.superview != nil && !control.isHidden && control.window === panel {
+            panel.makeFirstResponder(control); break
+        }
+        shootSheet("S19", "destinations-form-focus", surface: "Preferences text field focus", state: "first visible text field focused in the destination edit form", refs: ["PublishingDestinationsView.swift|private func buildForm()"], host: settings, sheet: panel)
+        // Test-result states are fed straight to the view, so nothing contacts a destination.
+        view.showTestResult(ok: true, message: "OK: credentials and bucket verified. Nothing was uploaded.")
+        pump(0.4)
+        shootSheet("S19", "destinations-test-connected", surface: "Destinations / Publishing", state: "S3 form after a synthetic successful Test: check glyph, Connected, detail line", refs: ["PublishingDestinationsView.swift|func showTestResult", "PublishingDestinationsView.swift|final class DestinationStatusRow"], host: settings, sheet: panel)
+        view.showTestResult(ok: false, message: "The request signature does not match the signature provided.")
+        pump(0.4)
+        shootSheet("S19", "destinations-test-error", surface: "Destinations / Publishing", state: "S3 form after a synthetic failed Test: octagon glyph and an Error: line", refs: ["PublishingDestinationsView.swift|func showTestResult", "PublishingDestinationsView.swift|final class DestinationStatusRow"], host: settings, sheet: panel)
+        close(panel)
+        // Short display: the sheet is sized for a 1280 x 500 visible frame, so the form scrolls and the buttons stay pinned.
+        let (shortPanel, _) = edit(target, visibleFrame: NSRect(x: 0, y: 0, width: 1280, height: 500))
+        shootSheet("S19", "destinations-short-screen", surface: "Destinations / Publishing", state: "edit form on a short display (visible frame 1280 x 500): the form scrolls and Test, Cancel and Save stay pinned", refs: ["Publishing.swift|func buildEditor(editing", "PublishingDestinationsView.swift|static func sheetSize"], host: settings, sheet: shortPanel)
+        close(shortPanel)
+        // One form per protocol with its own placeholders, help and Test note; a Test result for a non-S3 protocol.
+        let (formPanel, formView) = edit(nil)
+        for transport in PublishingProtocol.allCases {
+            formView.protocolPopup.selectItem(withTitle: transport.title); formView.formChanged()
             pump(0.4)
-            shootSheet("S19", "destinations-test-connected", surface: "Destinations / Publishing", state: "S3 form after a synthetic successful Test: check glyph, Connected, detail line", refs: ["PublishingDestinationsView.swift|func showTestResult", "PublishingDestinationsView.swift|final class DestinationStatusRow"], host: window, sheet: panel)
-            view.showTestResult(ok: false, message: "The request signature does not match the signature provided.")
-            pump(0.4)
-            shootSheet("S19", "destinations-test-error", surface: "Destinations / Publishing", state: "S3 form after a synthetic failed Test: octagon glyph and an Error: line", refs: ["PublishingDestinationsView.swift|func showTestResult", "PublishingDestinationsView.swift|final class DestinationStatusRow"], host: window, sheet: panel)
-            closeHarnessSheet(panel)
-            // Short display: the sheet is sized for a 1280 x 500 visible frame, so the form scrolls and the buttons stay pinned.
-            let (shortPanel, shortView) = try app.publishing.buildSettings(visibleFrame: NSRect(x: 0, y: 0, width: 1280, height: 500))
-            window.beginSheet(shortPanel)
-            pump(0.8)
-            shortView.select(id: try AppDelegate.publishingStore.load().defaultID ?? "")
-            shortView.editTapped()
-            pump(0.5)
-            shootSheet("S19", "destinations-short-screen", surface: "Destinations / Publishing", state: "edit form on a short display (visible frame 1280 x 500): the form scrolls and Test, Cancel and Save stay pinned", refs: ["Publishing.swift|func buildSettings(visibleFrame", "PublishingDestinationsView.swift|static func sheetSize"], host: window, sheet: shortPanel)
-            closeHarnessSheet(shortPanel)
-            // Audit batch 3b: one form per protocol with its own placeholders, help and Test note; a Test result for a non-S3 protocol;
-            // and the sheet as it hangs from the 640 pt Settings window (as wide as its parent, never overhanging it).
-            let (formPanel, formView) = try app.publishing.buildSettings()
-            window.beginSheet(formPanel); pump(0.8)
-            formView.addTapped()
-            for transport in PublishingProtocol.allCases {
-                formView.protocolPopup.selectItem(withTitle: transport.title); formView.formChanged()
-                pump(0.4)
-                shootSheet("S19", "destinations-form-\(transport.rawValue.lowercased())", surface: "Destinations / Publishing", state: "new \(transport.title) destination: its own endpoint scheme, placeholders and help, and the Test note in the one-line result band", refs: ["PublishingDestinationsView.swift|static func formCopy", "PublishingDestinationsView.swift|private func refreshForm"], host: window, sheet: formPanel)
-            }
-            formView.protocolPopup.selectItem(withTitle: PublishingProtocol.webDAV.title); formView.formChanged()
-            formView.showTestResult(ok: false, message: "The server rejected the user name or password (HTTP 401).")
-            pump(0.4)
-            shootSheet("S19", "destinations-test-error-webdav", surface: "Destinations / Publishing", state: "WebDAV form after a synthetic failed Test (HTTP 401): the band grows to its lines and the form above it shrinks to make room", refs: ["Publishing.swift|enum PublishingConnectionTest", "PublishingDestinationsView.swift|func showTestResult"], host: window, sheet: formPanel)
-            closeHarnessSheet(formPanel)
-            let (narrowPanel, narrowView) = try app.publishing.buildSettings(hostWidth: SettingsLayout.contentWidth)
-            window.beginSheet(narrowPanel); pump(0.8)
-            narrowView.select(id: try AppDelegate.publishingStore.load().defaultID ?? ""); narrowView.editTapped(); pump(0.5)
-            shootSheet("S19", "destinations-from-settings-640", surface: "Destinations / Publishing", state: "the sheet as hosted by the 640 pt Settings window: 640 wide, so it never overhangs its parent", refs: ["Publishing.swift|func buildSettings(visibleFrame", "PublishingDestinationsView.swift|static func sheetWidth(forHostWidth"], host: window, sheet: narrowPanel)
-            closeHarnessSheet(narrowPanel)
-        } catch { gap("S19", "Destinations list/edit form", "buildSettings threw: \(error.localizedDescription)") }
+            shootSheet("S19", "destinations-form-\(transport.rawValue.lowercased())", surface: "Destinations / Publishing", state: "new \(transport.title) destination: its own endpoint scheme, placeholders and help, and the Test note in the one-line result band", refs: ["PublishingDestinationsView.swift|static func formCopy", "PublishingDestinationsView.swift|private func refreshForm"], host: settings, sheet: formPanel)
+        }
+        formView.protocolPopup.selectItem(withTitle: PublishingProtocol.webDAV.title); formView.formChanged()
+        formView.showTestResult(ok: false, message: "The server rejected the user name or password (HTTP 401).")
+        pump(0.4)
+        shootSheet("S19", "destinations-test-error-webdav", surface: "Destinations / Publishing", state: "WebDAV form after a synthetic failed Test (HTTP 401): the band grows to its lines and the form above it shrinks to make room", refs: ["Publishing.swift|enum PublishingConnectionTest", "PublishingDestinationsView.swift|func showTestResult"], host: settings, sheet: formPanel)
+        close(formPanel)
+        let (narrowPanel, _) = edit(target, hostWidth: settings.frame.width)
+        shootSheet("S19", "destinations-from-settings-640", surface: "Destinations / Publishing", state: "the editor as hosted by the 640 pt Settings window: 640 wide, so it never overhangs its parent", refs: ["Publishing.swift|func buildEditor(editing", "PublishingDestinationsView.swift|static func sheetWidth(forHostWidth"], host: settings, sheet: narrowPanel)
+        close(narrowPanel)
+        app.closePreferences()
     }
 
     /// These sheets are begun on the window directly, not through the coordinator, so ending the sheet first keeps the
@@ -1511,7 +1515,7 @@ extension AuditRun {
     func s23() {
         var menus: [String: Any] = [:]
         if let main = NSApp.mainMenu { menus["mainMenu"] = menuNode(main) }
-        if let toolbox = firstView(of: NSPopUpButton.self, label: "Toolbox"), let menu = toolbox.menu { menus["toolboxPopupMenu"] = menuNode(menu) }
+        if let toolbox = firstView(of: NSPopUpButton.self, label: "Toolbox menu"), let menu = toolbox.menu { menus["toolboxPopupMenu"] = menuNode(menu) }
         if let menu = app.webpostButton?.menu { menus["uploadDestinationMenu"] = menuNode(menu) }
         if let format = firstView(of: NSPopUpButton.self, label: "Drag Me format"), let menu = format.menu { menus["dragFormatPopupMenu"] = menuNode(menu) }
         menus["zoomPopupMenu"] = app.zoomControl.menu.map { menuNode($0) } as Any
@@ -1530,8 +1534,8 @@ extension AuditRun {
                                "iconIsTemplate": StatusIcon.image()?.isTemplate as Any,
                                "note": "Clicking the icon opens statusItemMenu; the first row follows the editor's visibility. The menu-bar strip titles are system-owned."]
         write(menus, to: "menus" + stemSuffix + ".json")
-        guard let toolbox = firstView(of: NSPopUpButton.self, label: "Toolbox") else { gap("S23", "Toolbox menu open", "toolbox popup not found"); return }
-        captureTrackedMenu("S23", "toolbox-menu-open", surface: "menus", state: "Toolbox pull-down open", refs: ["App.swift|func bezelToolbox()"],
+        guard let toolbox = firstView(of: NSPopUpButton.self, label: "Toolbox menu") else { gap("S23", "Toolbox menu open", "toolbox popup not found"); return }
+        captureTrackedMenu("S23", "toolbox-menu-open", surface: "menus", state: "Toolbox menu open (a selection-style pop-up, so its rows draw their icons)", refs: ["App.swift|func bezelToolbox()"],
                            dismiss: { toolbox.menu?.cancelTracking() }, trigger: { toolbox.performClick(nil) })
         pump(0.4)
         if let text = named["text"], let event = mouse(.rightMouseDown, docPoint: CGPoint(x: text.rect.minX + 20, y: text.rect.minY + 20)), let menu = canvas.menu(for: event) {
@@ -1613,26 +1617,22 @@ extension AuditRun {
         gap("S26", "Wipe confirmation", "No Wipe confirmation exists: Wipe/Undo (Canvas.wipe) acts immediately, so there is nothing to capture; recorded as a finding")
     }
 
-    /// The Remove destination question as an app-owned sheet on the Upload Destinations sheet (a surface of its own so it can run alone).
+    /// The Remove destination question as an app-owned sheet on the Settings window (a surface of its own so it can run alone).
     func s26d() {
         syntheticDestinations()
-        do {
-            let (panel, view) = try app.publishing.buildSettings()
-            window.beginSheet(panel); pump(0.8)
-            let list = try AppDelegate.publishingStore.load()
-            if let name = list.destinations.first?.name, let target = list.destinations.first {
-                view.select(id: target.id)
-                view.removeTapped(); pump(0.9)
-                if let alert = AppAlert.presentedAlerts.last {
-                    shoot("S26", "remove-destination", surface: "alerts / sheets", state: "Remove “\(name)”? sheet on the Upload Destinations sheet (default destination): Cancel is the default, Remove is destructive",
-                          windows: [alert.panel, panel, window], refs: ["PublishingDestinationsView.swift|private func askToRemove", "AppAlert.swift|final class AppAlert"], settle: 0.1,
-                          extra: ["alertTitle": alert.title, "alertButtons": alert.buttons.map(\.title), "titleFont": fontInfo(alert.titleLabel.font) as Any, "messageFont": fontInfo(alert.messageLabel.font) as Any,
-                                  "buttonFonts": alert.buttonViews.map { fontInfo($0.font) as Any }, "presentedAs": panel.attachedSheet === alert.panel ? "sheet on the Upload Destinations sheet" : "separate panel"])
-                    alert.cancel(); pump(0.3)
-                } else { gap("S26", "Remove destination alert", "no app-owned alert was on screen after Remove was pressed") }
-            }
-            closeHarnessSheet(panel)
-        } catch { gap("S26", "Remove destination alert", "buildSettings threw: \(error.localizedDescription)") }
+        guard let controller = openSettingsUpload() else { gap("S26", "Remove destination alert", "Sharing Settings… did not open Settings"); return }
+        let settings = controller.window, list = (try? AppDelegate.publishingStore.load()) ?? PublishingDestinationList()
+        guard let target = list.destinations.first else { gap("S26", "Remove destination alert", "no destination to remove"); return }
+        controller.upload.select(id: target.id)
+        controller.upload.removeButton.performClick(nil); pump(0.9)
+        if let alert = AppAlert.presentedAlerts.last {
+            shoot("S26", "remove-destination", surface: "alerts / sheets", state: "Remove “\(target.name)”? sheet on the Settings window (default destination): Cancel is the default, Remove is destructive",
+                  windows: [alert.panel, settings], refs: ["SettingsWindow.swift|private func confirmRemoval", "AppAlert.swift|final class AppAlert"], settle: 0.1,
+                  extra: ["alertTitle": alert.title, "alertButtons": alert.buttons.map(\.title), "titleFont": fontInfo(alert.titleLabel.font) as Any, "messageFont": fontInfo(alert.messageLabel.font) as Any,
+                          "buttonFonts": alert.buttonViews.map { fontInfo($0.font) as Any }, "presentedAs": settings.attachedSheet === alert.panel ? "sheet on the Settings window" : "separate panel"])
+            alert.cancel(); pump(0.3)
+        } else { gap("S26", "Remove destination alert", "no app-owned alert was on screen after Remove was pressed") }
+        app.closePreferences()
     }
 
     func s28() {

@@ -10,12 +10,12 @@ enum MenuSymbols {
         ("saveFile", "square.and.arrow.down"), ("saveAs", "square.and.arrow.down.on.square"),
         ("saveHistory", "tray.and.arrow.down"), ("showHistory", "clock.arrow.circlepath"),
         ("exportFile", "square.and.arrow.up"), ("publishImage", "globe"), ("printImage", "printer"),
-        ("pageSetup", "doc.badge.gearshape"), ("closeCurrentWindow", "xmark.circle"),
+        ("pageSetup", "doc.badge.gearshape"), ("closeCurrentWindow", "xmark.rectangle"),
         ("undo", "arrow.uturn.backward"), ("redo", "arrow.uturn.forward"), ("cut", "scissors"),
         ("copyArtwork", "doc.on.doc"), ("copyImage", "doc.on.clipboard"), ("paste", "clipboard"),
         ("deleteSelection", "trash"), ("selectAll", "square.dashed"), ("duplicate", "plus.square.on.square"),
         ("wipe", "clear"), ("wipeSnap", "rectangle.slash"), ("clear", "pencil.slash"),
-        ("toggleActualSize", "arrow.up.left.and.arrow.down.right"), ("shareFromMenu", "paperplane"), ("normalSize", "1.magnifyingglass"), ("addShadow", "rectangle.on.rectangle"), ("resize", "arrow.up.right.and.arrow.down.left"), ("renameDocument", "pencil"), ("crop", "crop"),
+        ("toggleActualSize", "arrow.up.left.and.down.right.magnifyingglass"), ("shareFromMenu", "paperplane"), ("normalSize", "1.magnifyingglass"), ("addShadow", "rectangle.on.rectangle"), ("resize", "square.resize"), ("renameDocument", "pencil"), ("crop", "crop"),
         ("trimSnap", "rectangle.compress.vertical"), ("rotateCW", "rotate.right"), ("rotateCCW", "rotate.left"),
         ("flipH", "arrow.left.and.right.righttriangle.left.righttriangle.right"),
         ("flipV", "arrow.up.and.down.righttriangle.up.righttriangle.down"),
@@ -27,7 +27,7 @@ enum MenuSymbols {
         ("fullscreenSnap", "rectangle.inset.filled"), ("windowSnap", "macwindow"), ("frameSnap", "viewfinder"),
         ("resnap", "arrow.triangle.2.circlepath"), ("cancelFrame", "xmark"), ("timedSnap", "timer"),
         ("cancelSnapshot", "xmark.circle"), ("webSnap", "link"), ("focusToolbar", "menubar.rectangle"),
-        ("toggleFullScreen:", "arrow.up.backward.and.arrow.down.forward"),
+        ("toggleFullScreen:", "arrow.up.left.and.arrow.down.right"),
     ].map { (Selector($0.0), $0.1) })
 
     /// Test seam for a symbol that is missing on the host.
@@ -36,8 +36,10 @@ enum MenuSymbols {
     static func apply(to menu: NSMenu) {
         for item in menu.items where !item.isSeparatorItem {
             if item.image == nil, let action = item.action, let name = map[action], let image = symbolImage(name) {
-                image.isTemplate = true
-                item.image = image
+                // Sized to the menu's own text, so the row's icon is as tall as its 20 pt title and every row's icon column is one width.
+                let sized = image.withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: DesignTokens.Typography.font(.body).pointSize, weight: .regular)) ?? image
+                sized.isTemplate = true
+                item.image = sized
             }
             if let submenu = item.submenu { apply(to: submenu) }
         }

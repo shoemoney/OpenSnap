@@ -32,6 +32,12 @@ private enum MenuSymbolsTests {
             expect(NSImage(systemSymbolName: name, accessibilityDescription: nil) != nil, "\(selector) maps to \(name), which exists on this host")
         }
         expect(MenuSymbols.map[NSSelectorFromString("about")] == "info.circle" && MenuSymbols.map[NSSelectorFromString("quit")] == "power", "Spot-checked symbols")
+        // R1-005: Actual Size, Full Screen and Resize were three near-identical diagonal arrows; Close and Cancel Snapshot shared one symbol.
+        var byName: [String: [String]] = [:]
+        for (selector, name) in MenuSymbols.map { byName[name, default: []].append(NSStringFromSelector(selector)) }
+        expect(byName.values.allSatisfy { $0.count == 1 }, "No two menu rows share a symbol: \(byName.filter { $0.value.count > 1 })")
+        let distinct = ["toggleActualSize", "toggleFullScreen:", "resize", "closeCurrentWindow", "cancelSnapshot"].map { MenuSymbols.map[NSSelectorFromString($0)] }
+        expect(Set(distinct).count == 5 && !distinct.contains(nil), "Actual Size, Full Screen, Resize, Close and Cancel Snapshot each have their own symbol: \(distinct)")
         expect(MenuSymbols.map[NSSelectorFromString("changeSmoothing:")] == nil && MenuSymbols.map[NSSelectorFromString("hideOtherApplications:")] == nil,
                "Stateful and system items stay unmapped")
     }
@@ -73,7 +79,10 @@ private enum MenuSymbolsTests {
         MenuSymbols.apply(to: root)
         for (entry, name) in [(about, "info.circle"), (undo, "arrow.uturn.backward"), (group, "rectangle.3.group"), (snap, "scope"), (web, "link")] {
             expect(entry.image != nil && entry.image?.isTemplate == true && (entry.image?.size.width ?? 0) > 0, "\(entry.title) received a template symbol")
-            expect(entry.image?.size == NSImage(systemSymbolName: name, accessibilityDescription: nil)?.size, "\(entry.title) received \(name)")
+            let configured = NSImage(systemSymbolName: name, accessibilityDescription: nil)?
+                .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: DesignTokens.Typography.font(.body).pointSize, weight: .regular))
+            expect(entry.image?.size == configured?.size, "\(entry.title) received \(name), sized to the 20 pt menu text")
+            expect(entry.image?.size != NSImage(systemSymbolName: name, accessibilityDescription: nil)?.size, "\(entry.title): the symbol is not left at its default 13 pt size")
         }
         expect(kept.image === preset, "Existing images are left alone")
         expect(unknown.image == nil && bare.image == nil && top.image == nil && nested.image == nil && deep.image == nil, "Unmapped, action-less and container items stay bare")

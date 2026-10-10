@@ -14,10 +14,10 @@ enum FAIcon: String, CaseIterable, Sendable {
     case eyeSlash = "eye-slash", toolbox, images, boxArchive = "box-archive", clockRotateLeft = "clock-rotate-left",
          arrowPointer = "arrow-pointer", paintbrush, slashForward = "slash-forward", circle, square, fillDrip = "fill-drip",
          eraser, text, arrowUpRight = "arrow-up-right", cropSimple = "crop-simple", crosshairs, frameViewfinder = "camera-viewfinder",
-         xmark, font, arrowRotateLeft = "arrow-rotate-left", broom, resizeDiagonal = "up-right-and-down-left-from-center",
-         upload = "cloud-arrow-up", dragHand = "hand", check, warning = "circle-exclamation", xmarkCircle = "circle-xmark",
+         xmark, font, arrowRotateLeft = "arrow-rotate-left", broom,
+         upload = "cloud-arrow-up", dragHand = "hand", check, xmarkCircle = "circle-xmark",
          openExternal = "up-right-from-square", copy, link, globe, trash, linkSlash = "link-slash", circleCheck = "circle-check", gear,
-         arrowRotateRight = "arrow-rotate-right", circleInfo = "circle-info"
+         arrowRotateRight = "arrow-rotate-right", circleInfo = "circle-info", chevronDown = "chevron-down", folderMinus = "folder-minus"
 
     var codepoint: UInt32 {
         switch self {
@@ -42,11 +42,9 @@ enum FAIcon: String, CaseIterable, Sendable {
         case .font: return 0xF031
         case .arrowRotateLeft: return 0xF0E2
         case .broom: return 0xF51A
-        case .resizeDiagonal: return 0xF424
         case .upload: return 0xF0EE
         case .dragHand: return 0xF256
         case .check: return 0xF00C
-        case .warning: return 0xF06A
         case .xmarkCircle: return 0xF057
         case .openExternal: return 0xF35D
         case .copy: return 0xF0C5
@@ -58,6 +56,8 @@ enum FAIcon: String, CaseIterable, Sendable {
         case .gear: return 0xF013
         case .arrowRotateRight: return 0xF01E
         case .circleInfo: return 0xF05A
+        case .chevronDown: return 0xF078
+        case .folderMinus: return 0xF65D
         }
     }
 
@@ -83,23 +83,23 @@ enum FAIcon: String, CaseIterable, Sendable {
         case .xmark: return "xmark"
         case .font: return "textformat.size"
         case .arrowRotateLeft: return "arrow.uturn.backward"
-        case .broom: return "eraser.line.dashed"
-        case .resizeDiagonal: return "arrow.up.right.and.arrow.down.left"
+        case .broom: return "clear"
         case .upload: return "icloud.and.arrow.up"
         case .dragHand: return "hand.raised"
         case .check: return "checkmark"
-        case .warning: return "exclamationmark.circle"
         case .xmarkCircle: return "xmark.circle"
         case .openExternal: return "arrow.up.right.square"
         case .copy: return "doc.on.doc"
         case .link: return "link"
-        case .globe: return "safari"
+        case .globe: return "globe"
         case .trash: return "trash"
-        case .linkSlash: return "icloud.slash"
+        case .linkSlash: return "xmark.icloud"
         case .circleCheck: return "checkmark.circle.fill"
         case .gear: return "gearshape.fill"
         case .arrowRotateRight: return "arrow.clockwise"
         case .circleInfo: return "info.circle"
+        case .chevronDown: return "chevron.down"
+        case .folderMinus: return "folder.badge.minus"
         }
     }
 }

@@ -840,7 +840,8 @@ enum PublishingConnectionTest {
                      "write-out = \"%{response_code}\\n\""]
         if !username.isEmpty { lines.append("user = " + (try PublishingPlan.configQuote(username + ":" + password))) }
         switch plan.transport {
-        case .webDAV: lines.append("request = \"OPTIONS\"")
+        // PROPFIND Depth 0 asks about the folder itself, and a server that has a login asks for it; OPTIONS is answered without one.
+        case .webDAV: lines += ["request = \"PROPFIND\"", "header = \"Depth: 0\""]
         case .ftp: lines += ["list-only", "ftp-skip-pasv-ip"]
         case .ftps: lines += ["list-only", "ftp-skip-pasv-ip", "ssl-reqd"]
         case .sftp, .s3: break
@@ -864,18 +865,23 @@ enum PublishingConnectionTest {
         return Outcome(ok: false, message: "\(cause) (curl \(exitCode))." + (detail.isEmpty ? "" : "\n" + detail))
     }
 
-    /// Reads the answer to the WebDAV OPTIONS. Any answer proves the server is there; 401 and 403 are about the login and the folder.
+    /// Reads the answer to the WebDAV PROPFIND. With a login set, a 2xx means the server accepted it; a 3xx is not a pass, because the check
+    /// does not follow redirects and the folder the answer points at was never asked.
     static func webDAVOutcome(stdout: String, exitCode: Int32, stderr: String, username: String, password: String) -> Outcome {
         guard exitCode == 0 else { return failure(exitCode: exitCode, stderr: stderr, username: username, password: password) }
         guard let code = Int(stdout.trimmingCharacters(in: .whitespacesAndNewlines)), (100...599).contains(code) else {
             return Outcome(ok: false, message: "The server did not answer with an HTTP status, so the connection could not be checked.")
         }
+        let hasLogin = !username.isEmpty
         switch code {
-        case 401: return Outcome(ok: false, message: "The server rejected the user name or password (HTTP 401).")
+        case 401: return Outcome(ok: false, message: hasLogin ? "The server rejected the user name or password (HTTP 401)." : "The server asks for a user name and password (HTTP 401). Enter them and test again.")
         case 403: return Outcome(ok: false, message: "The server refused access to this folder (HTTP 403).")
         case 404, 410: return Outcome(ok: false, message: "The server answered, but the folder was not found (HTTP \(code)). Create it first.")
-        // 405 and 501 come from a plain PUT-only endpoint that does not know OPTIONS: it is there and did not refuse the login.
-        case 200..<400, 405, 501: return Outcome(ok: true, message: "Reached the server (HTTP \(code)) and the folder was not refused. Nothing was uploaded.")
+        case 300..<400: return Outcome(ok: false, message: "The server redirected the check (HTTP \(code)) to another address, and the test does not follow redirects. Use the address it redirects to as the endpoint.")
+        // 405 and 501 come from a plain PUT-only endpoint that does not know PROPFIND: it is there and did not refuse the request, but it
+        // cannot say whether the login is right.
+        case 405, 501: return Outcome(ok: true, message: "Reached the server (HTTP \(code)). It does not answer folder questions, so " + (hasLogin ? "the login could not be checked." : "the folder could not be checked.") + " Nothing was uploaded.")
+        case 200..<300: return Outcome(ok: true, message: hasLogin ? "Reached the server (HTTP \(code)); it accepted the login and the folder was not refused. Nothing was uploaded." : "Reached the server (HTTP \(code)) and the folder was not refused. Nothing was uploaded.")
         default: return Outcome(ok: false, message: "The server answered with HTTP \(code).")
         }
     }
@@ -924,7 +930,7 @@ public final class PublishingCoordinator: NSObject {
     private var quiescenceCallbacks: [(Result<Void, Error>) -> Void] = []
     private var successfulQuiescenceCallbacks: [() -> Void] = []
     private var settingsPanel: NSPanel?
-    private var destinationsView: PublishingDestinationsView?
+    private(set) var destinationsView: PublishingDestinationsView?
     private var pendingCompletion: ((Result<URL, Error>) -> Void)?
     /// True when the last successful transfer wrote its verified public URL to the clipboard.
     private(set) var lastTransferCopiedLink = false
@@ -1022,39 +1028,40 @@ public final class PublishingCoordinator: NSObject {
 
     public static var settingsFileURL: URL { PublishingDestinationStore.system.file }
 
-    /// Settings never start a network request. Passwords are saved only in macOS Keychain.
-    public func showSettings(relativeTo window: NSWindow) {
-        if !Thread.isMainThread { PublishingMainDelivery.enqueue { self.showSettings(relativeTo: window) }; return }
+    /// The destination editor: one sheet, hung from the Settings window, for adding a destination (`nil`) or editing one. It never starts a
+    /// network request on its own, and passwords are saved only in the macOS Keychain. The list of destinations lives in Settings, Upload.
+    func showEditor(editing destination: PublishingDestination?, relativeTo window: NSWindow) {
+        if !Thread.isMainThread { PublishingMainDelivery.enqueue { self.showEditor(editing: destination, relativeTo: window) }; return }
         guard !isShuttingDown, !isCancellationPending, !isPreparingPublish, workController.acceptsWork else { return }
         if let panel = settingsPanel { panel.makeKeyAndOrderFront(nil); return }
         guard window.attachedSheet == nil else { return }
-        do {
-            let (panel, view) = try buildSettings(visibleFrame: (window.screen ?? NSScreen.main)?.visibleFrame, hostWidth: window.frame.width)
-            beginSheet(panel, relativeTo: window)
-            workController.start(work: { try PublishingCurl.capabilities(cancellation: $0) }) { result in
-                guard self.settingsPanel === panel else { return }
-                switch result {
-                case .success(let capabilities):
-                    view.setUnavailable(Set(PublishingProtocol.allCases.filter { transport in
-                        if transport == .sftp { return !PublishingSFTP.available }
-                        return !transport.schemes.contains(where: { scheme in (try? capabilities.validate(transport, scheme: scheme)) != nil })
-                    }))
-                case .failure: view.setUnavailable(Set(PublishingProtocol.allCases.filter { $0 != .sftp }))
-                }
+        let (panel, view) = buildEditor(editing: destination, visibleFrame: (window.screen ?? NSScreen.main)?.visibleFrame, hostWidth: window.frame.width)
+        beginSheet(panel, relativeTo: window)
+        workController.start(work: { try PublishingCurl.capabilities(cancellation: $0) }) { result in
+            guard self.settingsPanel === panel else { return }
+            switch result {
+            case .success(let capabilities):
+                view.setUnavailable(Set(PublishingProtocol.allCases.filter { transport in
+                    if transport == .sftp { return !PublishingSFTP.available }
+                    return !transport.schemes.contains(where: { scheme in (try? capabilities.validate(transport, scheme: scheme)) != nil })
+                }))
+            case .failure: view.setUnavailable(Set(PublishingProtocol.allCases.filter { $0 != .sftp }))
             }
-        } catch { presentMessage(error.localizedDescription, relativeTo: window) }
+        }
     }
 
-    /// Creates the settings panel and wires every list action to storage. Tests drive the returned view directly.
-    /// `visibleFrame` is the screen the sheet will appear on; the sheet is 720 wide and shrinks to fit a short screen, scrolling its form.
-    func buildSettings(visibleFrame: NSRect? = nil, hostWidth: CGFloat? = nil) throws -> (NSPanel, PublishingDestinationsView) {
+    /// Creates the editor panel and wires Save and Test to storage. Tests drive the returned view directly.
+    /// `visibleFrame` is the screen the sheet will appear on; the sheet is 720 wide at most and shrinks to fit a short screen, scrolling its form.
+    func buildEditor(editing destination: PublishingDestination?, visibleFrame: NSRect? = nil, hostWidth: CGFloat? = nil) -> (NSPanel, PublishingDestinationsView) {
         var size = PublishingDestinationsView.sheetSize(visibleFrame: visibleFrame ?? NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1280, height: 800))
         // A sheet never overhangs the window it hangs from: under the 640 pt Settings window it is that wide.
         if let hostWidth { size.width = PublishingDestinationsView.sheetWidth(forHostWidth: hostWidth) }
-        let view = PublishingDestinationsView(list: try store.load(), width: size.width)
+        let view = PublishingDestinationsView(editing: destination, width: size.width, passwordFor: { [unowned self] in
+            (try? self.store.secrets.read($0.settings.credentialID, allowMissing: true)) ?? ""
+        })
         view.maxSheetHeight = size.height
-        let panel = makePanel(title: "Upload Destinations", width: size.width, height: view.preferredHeight)
-        // The list page hugs its content and the form page fills the sheet, so the panel follows the page (top edge fixed).
+        let panel = makePanel(title: destination == nil ? "Add Destination" : "Edit Destination", width: size.width, height: view.preferredHeight)
+        // The form hugs its content, so the panel follows its height (top edge fixed).
         view.onPreferredHeightChange = { [weak panel] height in
             guard let panel else { return }
             let current = panel.frame
@@ -1062,23 +1069,13 @@ public final class PublishingCoordinator: NSObject {
             guard abs(target.height - current.height) > 0.5 else { return }
             panel.setFrame(NSRect(x: current.minX, y: current.maxY - target.height, width: current.width, height: target.height), display: true)
         }
-        view.legacyCredentialID = store.legacyCredentialID()
         view.translatesAutoresizingMaskIntoConstraints = false
         panel.contentView?.addSubview(view)
         if let content = panel.contentView {
             NSLayoutConstraint.activate([view.leadingAnchor.constraint(equalTo: content.leadingAnchor), view.trailingAnchor.constraint(equalTo: content.trailingAnchor),
                                          view.topAnchor.constraint(equalTo: content.topAnchor), view.bottomAnchor.constraint(equalTo: content.bottomAnchor)])
         }
-        view.passwordFor = { [unowned self] in (try? self.store.secrets.read($0.settings.credentialID, allowMissing: true)) ?? "" }
-        view.onDone = { [unowned self] in self.cancelSettings() }
-        view.onMakeDefault = { [unowned self] id in
-            do { try self.setDefaultDestination(id); view.reload(try self.store.load(), selecting: id) }
-            catch { view.showStatus(error.localizedDescription) }
-        }
-        view.onRemove = { [unowned self] id in
-            do { try self.removeDestination(id); view.reload(try self.store.load()) }
-            catch { view.showStatus(error.localizedDescription) }
-        }
+        view.onCancel = { [unowned self] in self.cancelSettings() }
         view.onSave = { [unowned self] destination, password in self.saveDestination(destination, password: password, panel: panel) }
         view.onTest = { [unowned self] destination, password in self.testDestination(destination, password: password, panel: panel) }
         destinationsView = view; settingsPanel = panel
@@ -1166,7 +1163,6 @@ public final class PublishingCoordinator: NSObject {
         pendingCompletion = nil; completion?(result)
     }
     @objc func cancelSettings() {
-        destinationsView?.dismissRemovalQuestion()
         if let panel = settingsPanel { dismissSheet(panel) }
         settingsPanel = nil; destinationsView = nil
     }
@@ -1186,7 +1182,7 @@ public final class PublishingCoordinator: NSObject {
         }) { result in
             guard self.settingsPanel === panel, let view = self.destinationsView else { return }
             switch result {
-            case .success(let list): view.reload(list, selecting: destination.id)
+            case .success: self.cancelSettings()
             case .failure(let error): view.showStatus(error.localizedDescription)
             }
         }
@@ -1225,47 +1221,5 @@ public final class PublishingCoordinator: NSObject {
         let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: width, height: height),
                             styleMask: [.titled], backing: .buffered, defer: false)
         panel.title = title; panel.isReleasedWhenClosed = false; return panel
-    }
-    private func label(_ text: String) -> NSTextField {
-        let field = NSTextField(wrappingLabelWithString: text); DesignTokens.Typography.apply(.body, to: field)
-        field.textColor = DesignTokens.Palette.Text.primary; return field
-    }
-    private func field(_ text: String, placeholder: String) -> NSTextField {
-        let field = NSTextField(string: text); DesignTokens.Typography.apply(.body, to: field)
-        field.placeholderString = placeholder; return field
-    }
-    private func button(_ title: String, _ action: Selector) -> NSButton {
-        let button = NSButton(title: title, target: self, action: action); DesignTokens.Typography.apply(.body, to: button)
-        button.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.control).isActive = true; return button
-    }
-    private func buttonRow(_ buttons: [NSButton]) -> NSStackView {
-        let stack = NSStackView(views: buttons); stack.orientation = .horizontal; stack.spacing = DesignTokens.Space.s4; return stack
-    }
-    private func verticalStack() -> NSStackView {
-        let stack = NSStackView(); stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = DesignTokens.Space.s5 - DesignTokens.Space.s1; return stack
-    }
-    private func install(_ form: NSStackView, in panel: NSPanel) {
-        guard let content = panel.contentView else { return }
-        let margin = DesignTokens.Space.s5
-        form.translatesAutoresizingMaskIntoConstraints = false; content.addSubview(form)
-        NSLayoutConstraint.activate([form.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: margin),
-                                     form.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -margin),
-                                     form.topAnchor.constraint(equalTo: content.topAnchor, constant: margin),
-                                     form.bottomAnchor.constraint(lessThanOrEqualTo: content.bottomAnchor, constant: -margin)])
-    }
-    /// Message sheets are never narrower than this; the text wraps inside it and the height follows the text.
-    static let messageSheetMinimumWidth: CGFloat = 560
-
-    func presentMessage(_ message: String, relativeTo window: NSWindow) {
-        guard window.attachedSheet == nil else { return }
-        let margin = DesignTokens.Space.s5, width = Self.messageSheetMinimumWidth
-        let panel = makePanel(title: "Publishing Settings", width: width, height: 300)
-        let form = verticalStack(); let text = label(message); text.preferredMaxLayoutWidth = width - 2 * margin
-        form.addArrangedSubview(text); form.addArrangedSubview(button("Close", #selector(cancelSettings)))
-        install(form, in: panel)
-        form.layoutSubtreeIfNeeded()
-        panel.setContentSize(NSSize(width: width, height: max(160, form.fittingSize.height + 2 * margin)))
-        panel.contentMinSize = NSSize(width: Self.messageSheetMinimumWidth, height: 0)
-        settingsPanel = panel; beginSheet(panel, relativeTo: window)
     }
 }

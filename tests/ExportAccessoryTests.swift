@@ -164,8 +164,8 @@ private enum ExportAccessoryTests {
         assigned.updateByteCount(500, size: CGSize(width: 100, height: 50))
         try expect(assignedCallbacks == 3, "Preview update does not notify assigned callback")
 
-        // T9: the quality is stated as text ("JPG quality 75 %"), whole percent; the view itself is checked in the accessibility audit suite.
-        try expect(ExportAccessory.qualityText(0.75) == "JPG quality 75 %" && ExportAccessory.qualityText(0.5) == "JPG quality 50 %" && ExportAccessory.qualityText(1) == "JPG quality 100 %",
+        // T9: the quality is stated as text ("JPG quality 75%"), whole percent; the view itself is checked in the accessibility audit suite.
+        try expect(ExportAccessory.qualityText(0.75) == "JPG quality 75%" && ExportAccessory.qualityText(0.5) == "JPG quality 50%" && ExportAccessory.qualityText(1) == "JPG quality 100%",
                    "The quality text follows the quality, in whole percent")
         print("ExportAccessoryTests: \(checks) checks passed (no UI creation or desktop input)")
     }

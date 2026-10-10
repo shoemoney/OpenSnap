@@ -89,8 +89,8 @@ extension AppSafetyTests {
         try waitForMain("The first upload reaches the transfer") { probe.count == 1 }
         try expect(app.publishing.isBusy, "The coordinator is busy during the transfer")
         button.performClick(nil)
-        try expect(app.status.stringValue == "An upload is already running…" && app.window.attachedSheet == nil && AppSafetyAlert.seen.isEmpty,
-                   "A second click only sets a status message (\(app.status.stringValue))")
+        try expect(app.status.stringValue.hasPrefix("Uploading") && app.window.attachedSheet == nil && AppSafetyAlert.seen.isEmpty,
+                   "A second click changes nothing on screen: the running upload keeps the status line (\(app.status.stringValue))")
         probe.gate.signal()
         try waitForMain("The first upload completes") { !app.publishing.isBusy && app.status.stringValue.hasPrefix("Link copied") }
         try expect(probe.count == 1 && probe.copied.count == 1, "Exactly one upload ran (\(probe.count))")
@@ -159,39 +159,46 @@ extension AppSafetyTests {
     static func webpostDestinationSettingsRoundTrip() throws {
         let fixture = try Fixture(), app = fixture.app
         try configureDestinations(app, [try fakeDestination()], names: ["Home SFTP"])
-        let (_, view) = try app.publishing.buildSettings()
+        let (_, view) = app.publishing.buildEditor(editing: nil)
         defer { app.publishing.cancelSettings() }
-        try expect(view.list.destinations.map(\.name) == ["Home SFTP"], "The sheet lists the saved destination")
-        // Add an S3 destination the way a user would: Add…, fill the form, Save.
-        view.addTapped()
+        try expect(app.publishing.destinations().destinations.map(\.name) == ["Home SFTP"], "The saved destination is there to start with")
+        // Add an S3 destination the way a user would: Add…, fill the form, Save. A saved editor closes itself.
         view.nameField.stringValue = "AWS cdn"
         view.protocolPopup.selectItem(withTitle: PublishingProtocol.s3.title); view.formChanged()
         view.bucketField.stringValue = "cdn.example.com"; view.regionField.stringValue = "us-east-1"
         view.folderField.stringValue = "pics"; view.publicField.stringValue = "https://cdn.example.com/pics/"
         view.sourcePopup.selectItem(at: 0); view.formChanged(); view.profileField.stringValue = "default"
         view.saveTapped()
-        try waitForMain("The new destination is saved") { view.list.destinations.count == 2 }
-        let saved = try view.list.destinations.first { $0.name == "AWS cdn" }.unwrap("saved S3 destination")
+        try waitForMain("The new destination is saved") { app.publishing.destinations().destinations.count == 2 && app.publishing.destinationsView == nil }
+        let list = app.publishing.destinations()
+        let saved = try list.destinations.first { $0.name == "AWS cdn" }.unwrap("saved S3 destination")
         try expect(saved.settings.transport == .s3 && saved.settings.s3?.credentialsProfile == "default" && saved.settings.s3?.bucket == "cdn.example.com", "S3 fields round-trip")
-        try expect(try app.publishing.store.load() == view.list && view.list.defaultDestination?.name == "Home SFTP", "Storage matches the sheet and the default is unchanged")
-        // Make Default.
-        view.select(id: saved.id); view.makeDefaultTapped()
-        try expect(try app.publishing.store.defaultDestination()?.id == saved.id, "Make Default persists")
+        try expect(try app.publishing.store.load() == list && list.defaultDestination?.name == "Home SFTP", "Storage matches and the default is unchanged")
+        // Make Default, through the Settings › Upload button.
+        app.openPreferences(tab: SettingsWindowController.uploadTabIndex)
+        let settings = try app.settingsController.unwrap("Settings controller")
+        try expect(settings.upload.listedNames == ["Home SFTP", "AWS cdn"], "Settings, Upload lists both (\(settings.upload.listedNames))")
+        settings.upload.select(id: saved.id); settings.upload.defaultButton.performClick(nil)
+        try expect(try app.publishing.store.defaultDestination()?.id == saved.id && settings.upload.rows[1].pill != nil, "Make Default persists and the pill moves")
         // A bad edit is refused and nothing changes.
-        view.editTapped(); view.bucketField.stringValue = "NOT_VALID"; view.saveTapped()
-        try waitForMain("The invalid edit is refused") { view.list.destinations.count == 2 && !(view.list.destinations.first { $0.id == saved.id }?.settings.s3?.bucket == "NOT_VALID") }
+        let (_, editView) = app.publishing.buildEditor(editing: saved)
+        editView.bucketField.stringValue = "NOT_VALID"; editView.saveTapped()
+        try waitForMain("The invalid edit is refused") { editView.formResult.kind == .failure }
         try expect(try app.publishing.store.load().destinations.first { $0.id == saved.id }?.settings.s3?.bucket == "cdn.example.com", "An invalid bucket is not saved")
-        view.cancelFormTapped()
-        // Remove the default; the other becomes default.
-        var asked: [(String, String)] = []
-        view.confirmRemoval = { title, detail, answer in asked.append((title, detail)); answer(false) }
-        view.select(id: saved.id); view.removeTapped()
-        try expect(asked.count == 1 && asked[0].0 == "Remove “AWS cdn”?" && asked[0].1.contains("Home SFTP") && asked[0].1.contains("default") && view.list.destinations.count == 2,
-                   "Declining the confirmation removes nothing, and the prompt names the destination and the next default (\(asked))")
-        view.confirmRemoval = { _, _, answer in answer(true) }
-        view.removeTapped()
-        try expect(view.list.destinations.map(\.name) == ["Home SFTP"] && (try app.publishing.store.defaultDestination()?.name) == "Home SFTP", "Removing the default promotes the remaining destination")
+        app.publishing.cancelSettings()
+        // Remove the default: the prompt names the destination and the next default; declining removes nothing.
+        let prompt = app.publishing.destinations().removalPrompt(for: saved)
+        try expect(prompt.title == "Remove “AWS cdn”?" && prompt.detail.contains("default") , "the prompt names the destination and says what becomes the default (\(prompt))")
+        settings.upload.select(id: saved.id)
+        AppSafetyAlert.answers.append(.init(title: "Remove “AWS cdn”?", response: .alertFirstButtonReturn))
+        settings.upload.removeButton.performClick(nil)
+        try expect(app.publishing.destinations().destinations.count == 2, "Declining the confirmation removes nothing")
+        AppSafetyAlert.answers.append(.init(title: "Remove “AWS cdn”?", response: .alertSecondButtonReturn))
+        settings.upload.removeButton.performClick(nil)
+        try expect(app.publishing.destinations().destinations.map(\.name) == ["Home SFTP"] && (try app.publishing.store.defaultDestination()?.name) == "Home SFTP" && settings.upload.listedNames == ["Home SFTP"],
+                   "Removing the default promotes the remaining destination, and the list follows")
         try expect(app.publishing.isConfigured, "The remaining destination keeps Webpost configured")
+        app.closePreferences()
     }
 
     private static func menuLayout(_ app: AppDelegate) throws -> [String] {

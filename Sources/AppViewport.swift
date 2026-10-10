@@ -11,7 +11,9 @@ extension AppDelegate {
               window.attachedSheet == nil, activeResizeSession == nil else { return nil }
         let generation = documentGeneration
         var baseline: (output: CGSize, source: CGSize, frame: CGRect, zoom: CGFloat, dirty: Bool)?
-        let session = ResizePanelSession(size: canvas.outputSize, onPreview: { [weak self] request in
+        // The fields open at the size the title shows; the geometry maps what is typed back into output pixels.
+        let displayed = titlePixelSize
+        let session = ResizePanelSession(size: displayed, onPreview: { [weak self] request in
             guard let self, !self.terminationStarted, self.documentGeneration == generation else {
                 throw NSError(domain: "OpenSnap", code: 5, userInfo: [NSLocalizedDescriptionKey: "This image has changed. Close Resize and try again."])
             }
@@ -28,7 +30,7 @@ extension AppDelegate {
                 baseline = first
             }
             guard let baseline else { return }
-            let preview = try ResizePanelGeometry.preview(source: baseline.source, output: baseline.output, request: request)
+            let preview = try ResizePanelGeometry.preview(source: baseline.source, output: baseline.output, displayed: displayed, request: request)
             let accepted: Bool
             if let rect = preview.rect { accepted = self.canvas.previewViewportCrop(to: rect, outputSize: preview.output) }
             else { accepted = self.canvas.previewViewportResize(to: preview.output) }

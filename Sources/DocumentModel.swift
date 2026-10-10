@@ -353,6 +353,8 @@ enum OriginalTextGeometry {
 
 /// Shared by screen drawing and exports. Selection handles and editor chrome are never exported.
 enum SketchRenderer {
+    /// The one place a size rounds UP: a bitmap must contain all of the content, so a fractional size gets the next whole pixel.
+    /// Stored and shown sizes are whole already (`wholePixels`, half up), so for them `ceil` changes nothing.
     static func bitmap(size: CGSize, draw: () -> Void) -> NSBitmapImageRep? {
         guard SketchDocument.validSize(size),
               let bitmap = NSBitmapImageRep(bitmapDataPlanes: nil,

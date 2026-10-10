@@ -85,8 +85,7 @@ extension AppSafetyTests {
     private static func menuToolboxParity() throws {
         let fixture = try Fixture(), app = fixture.app
         let main = menuItems(try NSApp.mainMenu.unwrap("main")).filter { $0.action != nil && $0.submenu == nil }
-        // The first row of a pull-down is the button's own title, not a command.
-        let toolbox = menuItems(try toolboxMenu(app)).dropFirst().filter { $0.action != nil && $0.submenu == nil }
+        let toolbox = menuItems(try toolboxMenu(app)).filter { $0.action != nil && $0.submenu == nil }
         try expect(toolbox.count == 18, "The Toolbox has its short list of drawing-session rows (\(toolbox.count))")
         for row in toolbox {
             let sameAction = main.filter { $0.action == row.action }
@@ -109,7 +108,7 @@ extension AppSafetyTests {
 
     private static func menuSymbolCoverage() throws {
         let fixture = try Fixture(), app = fixture.app
-        let rows = (menuItems(try NSApp.mainMenu.unwrap("main")) + menuItems(try toolboxMenu(app)).dropFirst() + menuItems(app.makeStatusMenu())).filter { $0.submenu == nil }
+        let rows = (menuItems(try NSApp.mainMenu.unwrap("main")) + menuItems(try toolboxMenu(app)) + menuItems(app.makeStatusMenu())).filter { $0.submenu == nil }
         var missing: [String] = [], exempted = Set<String>()
         for row in rows {
             guard let action = row.action else { continue }

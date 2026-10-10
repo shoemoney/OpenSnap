@@ -171,15 +171,21 @@ final class PublishingDestinationStore {
         }
         let index = list.destinations.firstIndex { $0.id == next.id }
         let previous = index.map { list.destinations[$0].settings }
-        next.settings.credentialID = UUID().uuidString
-        if next.settings.storesSecretInKeychain { try secrets.add(password, id: next.settings.credentialID) }
+        // The Keychain item stays put while its secret is unchanged: a rename or a folder edit is not a new credential, and
+        // keeping the id keeps everything that points at the destination (older History posts, the default) pointing at it.
+        let keepsSecret = previous.map { old in
+            old.storesSecretInKeychain && next.settings.storesSecretInKeychain && old.transport == next.settings.transport
+                && (try? secrets.read(old.credentialID, allowMissing: true)) == password
+        } ?? false
+        if keepsSecret, let previous { next.settings.credentialID = previous.credentialID } else { next.settings.credentialID = UUID().uuidString }
+        if next.settings.storesSecretInKeychain, !keepsSecret { try secrets.add(password, id: next.settings.credentialID) }
         if let index { list.destinations[index] = next } else { list.destinations.append(next) }
         if list.defaultID == nil || !list.destinations.contains(where: { $0.id == list.defaultID }) { list.defaultID = next.id }
         do { try write(list) } catch {
-            if next.settings.storesSecretInKeychain { secrets.remove(next.settings.credentialID) }
+            if next.settings.storesSecretInKeychain, !keepsSecret { secrets.remove(next.settings.credentialID) }
             throw error
         }
-        if let previous, previous.storesSecretInKeychain, previous.credentialID != legacyCredentialID() {
+        if let previous, !keepsSecret, previous.storesSecretInKeychain, previous.credentialID != legacyCredentialID() {
             secrets.remove(previous.credentialID)
         }
     }
@@ -257,5 +263,24 @@ enum PublishingS3Credentials {
         if !profile.isEmpty { return try AWSSharedCredentials.load(profile: profile, from: credentialsFile) }
         let secret = try secrets.read(settings.credentialID, allowMissing: false)
         return S3Credentials(accessKeyID: settings.username, secretAccessKey: secret, sessionToken: "")
+    }
+}
+
+extension PublishingDestinationList {
+    /// The question asked before a destination is removed: it names the destination, says its saved secret goes with it, and says who becomes
+    /// the default. The Keychain item an older build's destination.json still uses is kept for downgrades.
+    func removalPrompt(for destination: PublishingDestination, legacyCredentialID: String? = nil) -> (title: String, detail: String) {
+        let keepsSecret = legacyCredentialID != nil && legacyCredentialID == destination.settings.credentialID
+        var detail = destination.settings.storesSecretInKeychain && !keepsSecret
+            ? "Its saved password or secret key is removed from the Keychain too. This cannot be undone."
+            : "Any saved settings for it are removed. This cannot be undone."
+        if destination.id == defaultDestination?.id {
+            if let next = destinations.first(where: { $0.id != destination.id }) {
+                detail += " It is the default, so “\(next.name)” becomes the default."
+            } else {
+                detail += " It is the only destination, so Upload will need a new one before it can upload."
+            }
+        }
+        return ("Remove “\(destination.name)”?", detail)
     }
 }

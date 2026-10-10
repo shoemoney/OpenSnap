@@ -36,13 +36,13 @@ private enum SettingsWindowTests {
 
     private static func makeController(state: GeneralPreferencesState = initialState, destinations: PublishingDestinationList = PublishingDestinationList(),
                                        name: String = "OpenSnap.SettingsTests." + UUID().uuidString,
-                                       manage: @escaping (NSWindow) -> Void = { _ in }) -> (SettingsWindowController, TestDefaults, GlobalHotkeyManager, FakeHotkeyBackend, Box<GeneralPreferencesState>, Box<[GeneralPreferencesState]>) {
+                                       actions: SettingsDestinationActions = SettingsDestinationActions()) -> (SettingsWindowController, TestDefaults, GlobalHotkeyManager, FakeHotkeyBackend, Box<GeneralPreferencesState>, Box<[GeneralPreferencesState]>) {
         let defaults = TestDefaults(name: name)
         let backend = FakeHotkeyBackend()
         let manager = GlobalHotkeyManager(defaults: defaults, backend: backend)
         let current = Box(state), delivered = Box<[GeneralPreferencesState]>([])
         let controller = SettingsWindowController(state: { current.value }, hotkeys: manager, defaults: defaults,
-                                                  destinations: { destinations }, manageDestinations: manage)
+                                                  destinations: { destinations }, destinationActions: actions)
         controller.visibleFrame = { fakeVisible }
         controller.onChange = { delivered.value.append($0); current.value = $0 }
         return (controller, defaults, manager, backend, current, delivered)
@@ -97,6 +97,8 @@ private enum SettingsWindowTests {
         shortcuts()
         upload()
         uploadWithPublishing()
+        shortcutPause()
+        liveDifferentiateOutline()
         words()
         viewTreeAudit()
         print("SettingsWindowTests: \(checks) checks passed (standalone controller; no window ordered onto the desktop)")
@@ -686,21 +688,20 @@ private enum SettingsWindowTests {
         expect(!modifiers.isEnabled && (0..<4).allSatisfy { !modifiers.isSelected(forSegment: $0) }, "None clears and disables the modifiers")
         form.enabledCheckbox.state = .off; _ = form.enabledCheckbox.target?.perform(form.enabledCheckbox.action, with: form.enabledCheckbox)
         expect(!manager.settings.enabled && !hotkeySettings(defaults).enabled, "the enable box turns every shortcut off")
-        form.resetButton.performClick(nil)
-        expect(manager.settings == .defaults && form.enabledCheckbox.state == .on, "Reset Defaults applies the defaults at once")
-        form.disableButton.performClick(nil)
-        expect(!manager.settings.enabled, "Disable All applies at once")
-        // F-J2-020: a duplicate the manager refused leaves a red line; Disable All answers it instead of validating the same draft again.
-        form.resetButton.performClick(nil)
+        form.clearButton.performClick(nil)
+        expect(manager.settings == .defaults && form.enabledCheckbox.state == .on && GlobalHotkeyAction.allCases.allSatisfy { manager.settings[$0] == .none }, "Clear All sets every key to None at once")
+        expect(form.clearButton.title == "Clear All" && !descendants(form).contains { ($0 as? NSButton)?.title == "Disable All" || ($0 as? NSButton)?.title == "Reset Defaults" },
+               "Reset Defaults is Clear All, and Disable All is gone: the enable box is the one switch")
+        // F-J2-020: a duplicate the manager refused leaves a red line; unticking the box answers it instead of validating the same draft again.
         for action in [GlobalHotkeyAction.screen, .window] {
             let key = form.keyPopup(for: action), mods = form.modifierControl(for: action)
             key.selectItem(at: k); _ = key.target?.perform(key.action, with: key)
             mods.setSelected(true, forSegment: 0); _ = mods.target?.perform(mods.action, with: mods)
         }
         expect(form.statusField.stringValue.hasPrefix("Error: ") && form.statusField.stringValue.contains("same shortcut"), "the duplicate leaves its error on screen: '\(form.statusField.stringValue)'")
-        form.disableButton.performClick(nil)
+        form.enabledCheckbox.state = .off; _ = form.enabledCheckbox.target?.perform(form.enabledCheckbox.action, with: form.enabledCheckbox)
         expect(!manager.settings.enabled && form.enabledCheckbox.state == .off && form.statusField.stringValue == GlobalHotkeyForm.idleLiveStatus && form.statusField.textColor == DesignTokens.Palette.Text.primary,
-               "Disable All clears the stale duplicate error: '\(form.statusField.stringValue)'")
+               "Unticking the box clears the stale duplicate error: '\(form.statusField.stringValue)'")
         expect(form.keyPopup(for: .window).indexOfSelectedItem == 0, "the rejected draft is dropped, not kept beside a disabled form")
         expect(GlobalHotkeyAction.allCases.allSatisfy { form.modifierControl(for: $0).selectedSegmentBezelColor == DesignTokens.Palette.accent }, "a chosen modifier is drawn in the accent")
         controller.show(); controller.window.orderOut(nil)
@@ -717,8 +718,12 @@ private enum SettingsWindowTests {
 
     private static func upload() {
         let list = sampleDestinations(count: 2)
-        let managed = Box<[NSWindow]>([])
-        let (controller, _, _, _, _, _) = makeController(destinations: list, manage: { managed.value.append($0) })
+        var edits: [(String?, NSWindow)] = [], defaults: [String] = [], removed: [String] = []
+        var actions = SettingsDestinationActions()
+        actions.edit = { edits.append(($0?.name, $1)) }
+        actions.makeDefault = { defaults.append($0) }
+        actions.remove = { removed.append($0) }
+        let (controller, _, _, _, _, _) = makeController(destinations: list, actions: actions)
         controller.select(3)
         let tab = controller.upload
         _ = tab.view
@@ -726,37 +731,73 @@ private enum SettingsWindowTests {
         expect(tab.listedNames == ["Destination 0", "Destination 1"], "the tab lists the saved destinations: \(tab.listedNames)")
         expect(tab.rows[1].pill != nil && tab.rows[0].pill == nil, "the default destination carries the Default pill")
         expect(tab.rows[0].transportField.stringValue == PublishingProtocol.webDAV.title && tab.rows[1].transportField.stringValue == PublishingProtocol.s3.title, "each row names its transport")
-        expect(tab.emptyStateText == nil && tab.summaryText == nil, "no empty state while destinations exist")
-        expect(tab.manageButton.title == "Manage Destinations…" && !tab.manageButton.title.contains("..."), "the Manage button uses a real ellipsis")
-        tab.manageButton.performClick(nil)
-        expect(managed.value.count == 1 && managed.value[0] === controller.window, "Manage hands the Settings window to the sheet opener, so the sheet attaches to it")
+        expect(tab.emptyStateText == nil && tab.emptyAddButton.isHidden, "no empty state while destinations exist")
+        expect(["Add…", "Edit…", "Remove", "Make Default"] == [tab.addButton, tab.editButton, tab.removeButton, tab.defaultButton].map(\.title)
+               && !tab.addButton.title.contains("..."), "the list has Add…, Edit…, Remove and Make Default with a real ellipsis")
+        expect(tab.selectedID == list.defaultID && tab.rows[1].isSelected && !tab.rows[0].isSelected, "the default destination starts selected, so the buttons are ready")
+        expect(tab.editButton.isEnabled && tab.removeButton.isEnabled && !tab.defaultButton.isEnabled, "Make Default is off for the destination that already is the default")
+        tab.rows[0].onClick?(1)
+        expect(tab.selectedID == list.destinations[0].id && tab.rows[0].isSelected && !tab.rows[1].isSelected && tab.defaultButton.isEnabled, "a click selects a row and turns Make Default on")
+        expect(tab.rows[0].accessibilityRole() == .row && tab.rows[0].isAccessibilitySelected() && !tab.rows[1].isAccessibilitySelected(), "the selected row is said to be selected")
+        tab.defaultButton.performClick(nil)
+        expect(defaults == [list.destinations[0].id], "Make Default hands the selected destination to the owner")
+        tab.addButton.performClick(nil)
+        expect(edits.count == 1 && edits[0].0 == nil && edits[0].1 === controller.window, "Add… opens the editor on the Settings window with no destination")
+        tab.editButton.performClick(nil)
+        expect(edits.count == 2 && edits[1].0 == "Destination 0" && edits[1].1 === controller.window, "Edit… opens the selected destination on the Settings window")
+        tab.rows[1].onClick?(2)
+        expect(edits.count == 3 && edits[2].0 == "Destination 1", "a double click edits that row")
         // A sheet already open is not stacked on.
         let sheet = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 300, height: 100), styleMask: [.titled], backing: .buffered, defer: false)
         sheet.isReleasedWhenClosed = false
         controller.window.beginSheet(sheet)
-        tab.manageButton.performClick(nil)
-        expect(managed.value.count == 1, "Manage does nothing while a sheet is attached")
+        tab.addButton.performClick(nil); tab.editButton.performClick(nil)
+        expect(edits.count == 3, "Add… and Edit… do nothing while a sheet is attached")
         controller.window.endSheet(sheet); sheet.orderOut(nil)
+
+        // Remove asks first, as an app-owned sheet on Settings: Cancel is the default, Remove is destructive, and nothing is removed before the answer.
+        var shown: [(alert: AppAlert, host: NSWindow?)] = []
+        AppAlert.presenter = { alert, host, _ in shown.append((alert, host)) }
+        defer { AppAlert.presenter = nil }
+        tab.select(id: list.destinations[0].id)
+        tab.removeButton.performClick(nil)
+        expect(shown.count == 1 && controller.pendingRemoval === shown[0].alert && shown[0].host === controller.window, "Remove opens one app-owned alert hanging from the Settings window")
+        let alert = shown[0].alert
+        expect(alert.title == "Remove “Destination 0”?" && alert.buttons == [.init(title: "Cancel", role: .cancel), .init(title: "Remove", role: .destructive)], "the title names the destination; Cancel first, Remove destructive")
+        expect(alert.buttonViews[0].keyEquivalent == "\r" && alert.buttonViews[1].keyEquivalent.isEmpty && alert.unansweredResponse == .alertFirstButtonReturn, "a stray Return or Escape is Cancel, never Remove")
+        tab.removeButton.performClick(nil)
+        expect(shown.count == 1 && removed.isEmpty, "a second Remove does not stack another question, and nothing is removed before the answer")
+        alert.dismiss(withButton: 0)
+        expect(controller.pendingRemoval == nil && removed.isEmpty, "Cancel removes nothing and frees the window")
+        tab.removeButton.performClick(nil)
+        shown[1].alert.dismiss(withButton: 1)
+        expect(removed == [list.destinations[0].id] && controller.pendingRemoval == nil, "Remove removes exactly the selected destination")
 
         let empty = makeController()
         empty.0.select(3); _ = empty.0.upload.view; empty.0.upload.refresh()
-        expect(empty.0.upload.listedNames.isEmpty && empty.0.upload.emptyStateText == "No upload destination yet.", "an empty list says so")
+        expect(empty.0.upload.listedNames.isEmpty && empty.0.upload.emptyStateText == "No destinations yet", "an empty list says so: \(String(describing: empty.0.upload.emptyStateText))")
+        expect(!empty.0.upload.emptyAddButton.isHidden && empty.0.upload.emptyAddButton.title == "Add…" && empty.0.upload.emptyAddButton.isDescendant(of: empty.0.upload.listScroll),
+               "the empty list carries its own Add… button inside the list")
+        expect(empty.0.upload.view.subviews.isEmpty == false && empty.0.upload.addButton.isHiddenOrHasHiddenAncestor && empty.0.upload.removeButton.isHiddenOrHasHiddenAncestor, "the four-button row steps aside while the list is empty, so there is one Add…")
+        var addedFromEmpty = 0
+        empty.0.upload.onAdd = { addedFromEmpty += 1 }
+        empty.0.upload.emptyAddButton.performClick(nil)
+        expect(addedFromEmpty == 1, "the in-list Add… adds")
         let many = makeController(destinations: sampleDestinations(count: 8))
         many.0.select(3); _ = many.0.upload.view; many.0.upload.refresh()
-        expect(many.0.upload.listedNames.count == UploadSettingsTab.visibleRows && many.0.upload.summaryText == "and 3 more in Manage Destinations…", "a long list is summarised, not scrolled: \(String(describing: many.0.upload.summaryText))")
+        expect(many.0.upload.listedNames.count == 8, "every destination is listed, none is summarised away: \(many.0.upload.listedNames.count)")
         expect(many.0.windowHeight(forTabAt: 3) <= fakeVisible.height, "even a long list fits the fake screen")
         // F-J2-012: the Upload tab grows with its rows, and its caption is never below the fold.
         let emptyHeight = empty.0.windowHeight(forTabAt: 3), fullHeight = many.0.windowHeight(forTabAt: 3)
         expect(fullHeight > emptyHeight + 20 && abs(many.0.window.frame.height - fullHeight) < 0.5, "the Upload window grows with its list: empty \(emptyHeight), full \(fullHeight)")
         many.0.window.contentView?.layoutSubtreeIfNeeded()
         expect(many.0.content.scrollableExtent < 0.5 && captionInside(many.0.upload), "the caption under a full list is on screen without scrolling")
-        expect(many.0.upload.listScroll.documentView.map { $0.frame.height <= many.0.upload.listScroll.contentView.bounds.height + 0.5 } == true, "a list that fits its screen does not scroll inside")
         uploadOnShortScreens()
     }
 
     private static func captionInside(_ tab: UploadSettingsTab) -> Bool {
         tab.view.layoutSubtreeIfNeeded()
-        guard let caption = descendants(tab.view).compactMap({ $0 as? NSTextField }).first(where: { $0.stringValue == "Uploads go to the default destination." }) else { return false }
+        guard let caption = descendants(tab.view).compactMap({ $0 as? NSTextField }).first(where: { $0.stringValue == "Uploads go to the default destination. Right-click Upload to switch." }) else { return false }
         let box = frame(of: caption, in: tab.view)
         return !caption.isHidden && box.height >= caption.intrinsicContentSize.height - 0.5 && tab.view.bounds.insetBy(dx: -0.5, dy: -0.5).contains(box)
     }
@@ -779,8 +820,8 @@ private enum SettingsWindowTests {
             expect(window.frame.height <= screen.height + 0.5 && window.frame.maxY <= screen.maxY + 0.5 && window.frame.minY >= screen.minY - 0.5, "\(label): the window stays on the screen (\(window.frame) in \(screen))")
             expect(controller.content.scrollableExtent < 0.5, "\(label): the tab does not scroll as a whole (\(controller.content.scrollableExtent))")
             expect(captionInside(tab), "\(label): the caption 'Uploads go to the default destination.' is visible")
-            let manage = tab.manageButton.convert(tab.manageButton.bounds, to: tab.view)
-            expect(tab.view.bounds.contains(manage), "\(label): the Manage button is visible")
+            let add = tab.addButton.convert(tab.addButton.bounds, to: tab.view)
+            expect(tab.view.bounds.contains(add), "\(label): the Add… button row is visible")
             let overflow = tab.listScroll.documentView!.frame.height - tab.listScroll.contentView.bounds.height
             if natural > screen.height + 0.5 {
                 expect(overflow > 1, "\(label): the list scrolls inside its frame (\(overflow) pt past it)")
@@ -799,7 +840,8 @@ private enum SettingsWindowTests {
         expect(abs(window.frame.height - natural) < 0.5 && tab.listScroll.contentView.bounds.origin.y < 0.5, "a taller screen shows the whole list again")
     }
 
-    /// The real coordinator: the sheet attaches to the Settings window, the list refreshes when it ends, and the shutdown barrier still runs.
+    /// The real coordinator: the editor attaches to the Settings window as a sheet, the list refreshes when it ends, a save closes it, and the
+    /// shutdown barrier still runs.
     private static func uploadWithPublishing() {
         func coordinator(_ destinations: [PublishingDestination]) -> PublishingCoordinator {
             let publisher = PublishingCoordinator()
@@ -813,20 +855,24 @@ private enum SettingsWindowTests {
         let publisher = coordinator([first])
         let name = "OpenSnap.SettingsTests.publishing." + UUID().uuidString
         let defaults = TestDefaults(name: name)
+        var actions = SettingsDestinationActions()
+        actions.edit = { publisher.showEditor(editing: $0, relativeTo: $1) }
+        actions.makeDefault = { try publisher.setDefaultDestination($0) }
+        actions.remove = { try publisher.removeDestination($0) }
         let controller = SettingsWindowController(state: { initialState }, hotkeys: GlobalHotkeyManager(defaults: defaults, backend: FakeHotkeyBackend()), defaults: defaults,
-                                                  destinations: { publisher.destinations() }, manageDestinations: { publisher.showSettings(relativeTo: $0) })
+                                                  destinations: { publisher.destinations() }, destinationActions: actions)
         controller.visibleFrame = { fakeVisible }
         var closes = 0
         controller.onClose = { closes += 1 }
         controller.select(3)
         controller.upload.refresh()
         expect(controller.upload.listedNames == ["Work"], "the tab reads the coordinator's saved list: \(controller.upload.listedNames)")
-        controller.upload.manageButton.performClick(nil)
-        guard let sheet = controller.window.attachedSheet else { return expect(false, "the Destinations sheet did not attach to the Settings window") }
-        expect(sheet.title == "Upload Destinations", "the existing Destinations sheet is the one that opens: '\(sheet.title)'")
+        controller.upload.addButton.performClick(nil)
+        guard let sheet = controller.window.attachedSheet else { return expect(false, "the editor sheet did not attach to the Settings window") }
+        expect(sheet.title == "Add Destination" && publisher.destinationsView?.editing == nil, "Add… opens the editor for a new destination: '\(sheet.title)'")
         controller.window.cancelOperation(nil)
         expect(closes == 0 && controller.window.attachedSheet === sheet, "Escape on the Settings window leaves its sheet alone")
-        // Adding a destination while the sheet is open shows up in the list as soon as the sheet ends.
+        // Adding a destination while the editor is open shows up in the list as soon as the sheet ends.
         let second = PublishingDestination(name: "Backup", settings: dav)
         try? publisher.store.save(second, password: "")
         publisher.cancelSettings()
@@ -834,17 +880,66 @@ private enum SettingsWindowTests {
         expect(controller.window.attachedSheet == nil, "closing the sheet detaches it")
         expect(controller.upload.listedNames == ["Work", "Backup"], "the list refreshes when the sheet ends: \(controller.upload.listedNames)")
 
+        // Edit opens the selected destination; Make Default and Remove go through the coordinator and the list follows.
+        controller.upload.select(id: second.id)
+        controller.upload.editButton.performClick(nil)
+        expect(controller.window.attachedSheet?.title == "Edit Destination" && publisher.destinationsView?.editing?.name == "Backup" && publisher.destinationsView?.nameField.stringValue == "Backup", "Edit… opens the selected destination")
+        publisher.cancelSettings(); spin(2) { controller.window.attachedSheet == nil }
+        controller.upload.defaultButton.performClick(nil)
+        expect(publisher.destinations().defaultID == second.id && controller.upload.rows[1].pill != nil && controller.upload.rows[0].pill == nil, "Make Default stores the choice and the pill follows")
+        var shown: [AppAlert] = []
+        AppAlert.presenter = { alert, _, _ in shown.append(alert) }
+        defer { AppAlert.presenter = nil }
+        controller.upload.select(id: first.id)
+        controller.upload.removeButton.performClick(nil)
+        shown.last?.dismiss(withButton: 1)
+        expect(publisher.destinations().destinations.map(\.name) == ["Backup"] && controller.upload.listedNames == ["Backup"], "Remove removes it from storage and from the list")
+
         // The shutdown barrier with the Settings window as the sheet's parent.
-        controller.upload.manageButton.performClick(nil)
-        expect(controller.window.attachedSheet != nil, "the sheet opens again")
+        controller.upload.addButton.performClick(nil)
+        expect(controller.window.attachedSheet != nil, "the editor opens again")
         var acknowledged = false
         publisher.shutdown { acknowledged = true }
         spin(5) { acknowledged && controller.window.attachedSheet == nil }
-        expect(acknowledged, "shutdown acknowledged with the Destinations sheet attached to Settings")
+        expect(acknowledged, "shutdown acknowledged with the editor sheet attached to Settings")
         expect(controller.window.attachedSheet == nil, "shutdown dismissed the sheet from the Settings window")
-        controller.upload.manageButton.performClick(nil)
+        controller.upload.addButton.performClick(nil)
         expect(controller.window.attachedSheet == nil, "no sheet opens after shutdown")
         TestDefaults.dispose(defaults, name: name)
+    }
+
+    /// R1-017: while the Capture tab is open the shortcuts are paused; leaving the tab or hiding the window lets them go live again.
+    private static func shortcutPause() {
+        let (controller, _, manager, backend, _, _) = makeController()
+        try? manager.install(globalScreen: {}, globalWindow: {}, globalFullscreen: {}, globalFrame: {}, globalUpload: {}, globalShow: {})
+        var custom = GlobalHotkeySettings(); custom.screen = .init(keyCode: UInt32(GlobalHotkeyKeys.choices.first { $0.name == "K" }!.code), modifiers: .command)
+        try? manager.apply(custom)
+        expect(backend.bindings[GlobalHotkeyAction.screen.carbonID] != nil && !manager.editing, "a saved shortcut is live while Settings is closed")
+        controller.show(tab: SettingsWindowController.captureTabIndex)
+        expect(manager.editing && backend.bindings.isEmpty, "opening Settings on Capture pauses every shortcut")
+        controller.select(0)
+        expect(!manager.editing && backend.bindings[GlobalHotkeyAction.screen.carbonID] != nil, "switching to another tab lets them go live again")
+        controller.select(SettingsWindowController.captureTabIndex)
+        expect(manager.editing && backend.bindings.isEmpty, "coming back to Capture pauses them again")
+        controller.windowHidden()
+        expect(!manager.editing && backend.bindings[GlobalHotkeyAction.screen.carbonID] != nil, "hiding the window resumes them")
+        controller.window.orderOut(nil)
+    }
+
+    /// R1-018: the current tab's outline follows Differentiate Without Color while the window is up, not only when the tab is next selected.
+    private static func liveDifferentiateOutline() {
+        let (controller, _, _, _, _, _) = makeController()
+        let tab = controller.strip.buttons[0]
+        DisplayOptions.override = DisplayOptions.none
+        defer { DisplayOptions.override = nil }
+        tab.setCurrent(true)
+        expect(tab.layer?.borderWidth == 1, "the current tab has a 1 pt accent edge by default (\(tab.layer?.borderWidth ?? -1))")
+        DisplayOptions.override = DisplayOptions(differentiateWithoutColor: true)
+        NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
+        expect(tab.layer?.borderWidth == 2, "turning Differentiate Without Color on redraws the outline at once, with no tab change (\(tab.layer?.borderWidth ?? -1))")
+        DisplayOptions.override = DisplayOptions.none
+        NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
+        expect(tab.layer?.borderWidth == 1, "and turning it off puts the thin edge back")
     }
 
     // MARK: Words
@@ -864,7 +959,7 @@ private enum SettingsWindowTests {
             expect(!string.localizedCaseInsensitiveContains(retired), "no retired product name anywhere: '\(string)'")
             expect(!string.contains("..."), "no ASCII ellipsis: '\(string)'")
         }
-        expect(strings.contains("Manage Destinations…") && strings.contains("Show capture flash") && strings.contains("Holding Option reverses the setting."), "the walk saw the real strings")
+        expect(strings.contains("Add…") && strings.contains("Make Default") && strings.contains("Show capture flash") && strings.contains("Holding Option reverses the setting."), "the walk saw the real strings")
     }
 
     // MARK: The font floor (G4)

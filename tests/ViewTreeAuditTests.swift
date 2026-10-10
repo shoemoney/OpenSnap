@@ -244,15 +244,16 @@ private enum ViewTreeAuditTests {
         history.window!.contentView?.layoutSubtreeIfNeeded()
         record("History (populated)", Audit.audit(history.window!, surface: "History (populated)"))
 
-        // Destinations: list page, the blank form, and the form for every protocol (the Protocol popup swaps rows).
+        // Destination editor: the blank form, and the form for every protocol (the Protocol popup swaps rows).
         var dav = PublishingSettings(); dav.endpoint = "https://dav.example.invalid/shots"; dav.username = "user"
         var s3 = PublishingSettings(); s3.transport = .s3; s3.endpoint = "https://s3.example.invalid"; s3.s3 = S3Options()
         let first = PublishingDestination(name: "Work", settings: dav), second = PublishingDestination(name: "Backup", settings: s3)
-        let destinations = PublishingDestinationsView(list: PublishingDestinationList(defaultID: first.id, destinations: [first, second]))
+        _ = second
+        let destinations = PublishingDestinationsView(editing: first)
         destinations.frame = NSRect(x: 0, y: 0, width: PublishingDestinationsView.sheetWidth, height: 600)
         destinations.layoutSubtreeIfNeeded()
-        record("Destinations (list)", Audit.audit(destinations, surface: "Destinations (list)"))
-        destinations.addTapped()
+        record("Destinations (edit form)", Audit.audit(destinations, surface: "Destinations (edit form)"))
+        destinations.showForm(for: nil)
         for (index, transport) in PublishingProtocol.allCases.enumerated() {
             destinations.protocolPopup.selectItem(at: index)
             _ = destinations.protocolPopup.target?.perform(destinations.protocolPopup.action, with: destinations.protocolPopup)
@@ -283,7 +284,7 @@ private enum ViewTreeAuditTests {
         defer { TestDefaults.dispose(settingsDefaults, name: settingsSuite) }
         let settings = SettingsWindowController(state: { GeneralPreferencesState(drawingPrecision: .medium, arrowHead: 2, includeApp: true, statusMenu: 0, showToolTips: true) },
                                                 hotkeys: GlobalHotkeyManager(defaults: settingsDefaults, backend: InertHotkeyBackend()), defaults: settingsDefaults,
-                                                destinations: { PublishingDestinationList(defaultID: first.id, destinations: [first, second]) }, manageDestinations: { _ in })
+                                                destinations: { PublishingDestinationList(defaultID: first.id, destinations: [first, second]) })
         for (index, item) in settings.tabItems.enumerated() {
             settings.select(index)
             settings.window.contentView?.layoutSubtreeIfNeeded()
@@ -320,9 +321,9 @@ private enum ViewTreeAuditTests {
         about.versionLabel.font = font(12)
         let shrunkAbout = Audit.audit(about, surface: "About (seeded)").violations
         expect(shrunkAbout.count == 1 && shrunkAbout[0].pointSize == 12, "About: a 12 pt version label is caught on the real window: \(shrunkAbout)")
-        destinations.doneButton.font = font(14)
+        destinations.cancelButton.font = font(14)
         let shrunkDestinations = Audit.audit(destinations, surface: "Destinations (seeded)").violations
-        expect(shrunkDestinations.count == 1 && shrunkDestinations[0].role == .control, "Destinations: a 14 pt Done button is caught on the real sheet: \(shrunkDestinations)")
+        expect(shrunkDestinations.count == 1 && shrunkDestinations[0].role == .control, "Destinations: a 14 pt Cancel button is caught on the real sheet: \(shrunkDestinations)")
 
         var total = 0
         for (surface, report) in reports {

@@ -73,6 +73,14 @@ extension AppSafetyTests {
         try expect(history.attachedSheet == nil, "History is left with no sheet")
     }
 
+    /// A destination saved the way a person would, and the binding an upload to it records, so Delete from Web is really available for it.
+    static func b3cRealBinding(_ app: AppDelegate, url: URL) throws -> [String: String] {
+        var dav = PublishingSettings(); dav.endpoint = "https://dav.example.com/files"; dav.remoteFolder = "pics"; dav.publicBaseURL = "https://cdn.example.com/pics"
+        try configureDestinations(app, [dav], names: ["Pics"])
+        app.historyRemoteDeletion = HistoryRemoteDeletionCoordinator(destinationBinding: nil, store: app.publishing.store)
+        return try app.historyRemoteDeletion.captureBinding(for: url)
+    }
+
     private static func b3cDeleteFromWebRefusal() throws {
         let fixture = try Fixture(), app = fixture.app, store = try isolatedHistory(app)
         let history = try b3cShowHistory(app)
@@ -80,7 +88,9 @@ extension AppSafetyTests {
         let local = try store.archive(snapshot, name: "Local", action: .archived)
         let url = try XCTestURL("https://cdn.example.com/pics/a.png")
         let unbound = try store.archive(snapshot, name: "Old", action: .shared, destination: url.absoluteString, remoteURL: url)
-        let bound = try store.archive(snapshot, name: "New", action: .shared, destination: url.absoluteString, remoteURL: url,
+        let bound = try store.archive(snapshot, name: "New", action: .shared, destination: url.absoluteString, remoteURL: url, remoteBinding: try b3cRealBinding(app, url: url))
+        // R1-010: a binding for a destination that is no longer the default is refused with the reason, not offered and then failed.
+        let stale = try store.archive(snapshot, name: "Moved", action: .shared, destination: url.absoluteString, remoteURL: url,
                                       remoteBinding: ["version": "1", "destinationSHA256": String(repeating: "a", count: 64), "publicURL": url.absoluteString])
         let refusal = "Can\u{2019}t delete this from the web"
         var messages: [String] = []
@@ -90,12 +100,18 @@ extension AppSafetyTests {
             messages.append(AppSafetyAlert.pending.last?.alert.message ?? "")
             b3cAnswerNext(.alertFirstButtonReturn)
         }
+        app.deleteHistoryRemote([stale])
+        messages.append(AppSafetyAlert.pending.last?.alert.message ?? "")
+        b3cAnswerNext(.alertFirstButtonReturn)
         AppSafetyAlert.holdAnswers = false
         AppSafetyAlert.answers = [.init(title: "Delete this web post?", response: .alertFirstButtonReturn)]
         app.deleteHistoryRemote([bound])
         try expect(AppSafetyAlert.hosts.allSatisfy { $0 === history }, "Every Delete from Web answer is on History, never a dead click")
-        try expect(AppSafetyAlert.seen == [refusal, refusal, refusal, "Delete this web post?"], "Refused three times (never uploaded, unrecorded, several at once) with a reason, asked once with a binding: \(AppSafetyAlert.seen)")
-        try expect(messages.count == 3 && messages[2].contains("one post at a time"), "A multiple selection is told it is one post at a time: \(messages)")
+        try expect(AppSafetyAlert.seen == [refusal, refusal, refusal, refusal, "Delete this web post?"], "Refused four times (never uploaded, unrecorded, several at once, destination changed) with a reason, asked once with a live binding: \(AppSafetyAlert.seen)")
+        try expect(messages.count == 4 && messages[2].contains("one post at a time") && messages[3].contains("no longer the server, bucket or folder it was published to"), "A destination that moved says so: \(messages[3])")
+        try expect(app.historyRemoteDeletion.deletionBlocks(for: [(stale, url, store.entry(stale)?.remoteBinding ?? [:])])[stale] != nil && app.historyRemoteDeletion.deletionBlocks(for: [(bound, url, store.entry(bound)?.remoteBinding ?? [:])]).isEmpty,
+                   "The History button is off, with that reason, for the moved one only")
+        try expect(messages.count == 4 && messages[2].contains("one post at a time"), "A multiple selection is told it is one post at a time: \(messages)")
         try expect(AppDelegate.deleteFromWebRefusal(for: store.entry(local)).contains("never uploaded"), "A local drawing says it was never uploaded")
         try expect(AppDelegate.deleteFromWebRefusal(for: store.entry(unbound)).contains("before OpenSnap recorded"), "An upload without a recorded destination says so")
         try expect(store.entry(bound)?.remoteURL != nil && store.entry(unbound)?.remoteURL != nil, "Cancel and refusal change nothing")
@@ -200,12 +216,20 @@ extension AppSafetyTests {
     private static func b3cToolbox() throws {
         let fixture = try Fixture(), app = fixture.app
         let toolbox = try b3cFind(NSPopUpButton.self, in: app.window.contentView) { $0.accessibilityLabel() == "Toolbox menu" }.b3cUnwrap("Toolbox")
-        let rows = (toolbox.menu?.items ?? []).dropFirst().filter { !$0.isSeparatorItem }
+        let rows = (toolbox.menu?.items ?? []).filter { !$0.isSeparatorItem }
         try expect(rows.count == 18 && rows.count < 33, "The Toolbox is \(rows.count) rows, not the old 33")
-        try expect(rows.allSatisfy { b4RowHasIcon($0) || $0.action == #selector(AppDelegate.toggleBezelFill(_:)) || $0.action == #selector(AppDelegate.toggleBezelShadow(_:)) },
-                   "Every row draws its menu symbol in its title (a pull-down does not draw item images; the two checkmark rows keep the check instead): \(rows.filter { !b4RowHasIcon($0) }.map(\.title))")
-        try expect(rows.filter { b4RowHasIcon($0) }.allSatisfy { $0.image == nil && !$0.title.contains("\u{FFFC}") && $0.title == $0.attributedTitle?.string.replacingOccurrences(of: "\u{FFFC}  ", with: "") },
-                   "The icon lives in the attributed title only; the plain title stays the command's name for accessibility")
+        // R1-005: AppKit draws a row's image only in a selection-style pop-up, so the Toolbox is one, with real NSMenuItem images.
+        try expect(toolbox is ToolboxPopUpButton && !toolbox.pullsDown && toolbox.selectedItem == nil, "The Toolbox is a selection-style pop-up with nothing selected, not a pull-down")
+        let toggles: Set<Selector> = [#selector(AppDelegate.toggleBezelFill(_:)), #selector(AppDelegate.toggleBezelShadow(_:))]
+        try expect(rows.allSatisfy { $0.image != nil || ($0.action.map(toggles.contains) ?? false) },
+                   "Every row carries its menu symbol as its image (the two checkmark rows keep the check instead): \(rows.filter { $0.image == nil }.map(\.title))")
+        let text = DesignTokens.Typography.font(.body).pointSize
+        try expect(rows.compactMap(\.image).allSatisfy { $0.isTemplate && $0.size.height >= text * 0.6 && $0.size.height <= text * 1.5 },
+                   "The symbols are template images sized to the 20 pt menu text, not the 13 pt default: \(rows.compactMap { $0.image?.size })")
+        try expect(rows.allSatisfy { $0.attributedTitle == nil && !$0.title.contains("\u{FFFC}") }, "No text-attachment workaround is left in the row titles")
+        let face = try (toolbox.cell as? NSPopUpButtonCell).b3cUnwrap("popup cell")
+        try expect(!face.usesItemFromMenu && face.menuItem === (toolbox as? ToolboxPopUpButton)?.faceItem && (toolbox as? ToolboxPopUpButton)?.faceItem.image != nil,
+                   "The closed button shows its own face item (icon and chevron), whatever row was last chosen")
         let titles = rows.map(\.title)
         try expect(["About OpenSnap", "Settings…", "Quit OpenSnap", "New", "Open…", "Print…"].allSatisfy { !titles.contains($0) }, "No app or file plumbing in the Toolbox: \(titles)")
         let bar = try NSApp.mainMenu.b3cUnwrap("main").items.compactMap(\.submenu).flatMap(\.items)

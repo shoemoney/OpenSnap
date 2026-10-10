@@ -1437,11 +1437,17 @@ private enum GlassChromeTests {
         expect(variants.first == "Link copied · cdn.shoemoney.com/pics/Shot-20261010-153012.png", "The longest variant is Link copied · the address without its scheme (\(variants.first ?? ""))")
         expect(variants.count > 5 && variants.last == variants.first, "There are middle-cut steps, and the whole sentence comes last so the cell cuts it at its tail when nothing fits (\(variants.count))")
         expect(zip(variants.dropLast(), variants.dropLast().dropFirst()).allSatisfy { $0.count > $1.count }, "The steps only get shorter")
-        expect(variants.dropFirst().dropLast().allSatisfy { $0.hasPrefix("Link copied · ") && $0.contains("…") }, "Every step after the first keeps Link copied · and cuts the address in its middle")
-        expect(variants.dropFirst().dropLast().allSatisfy { ($0.hasPrefix("Link copied · cdn") || $0.hasPrefix("Link copied · Sh")) && $0.hasSuffix("png") }, "The host's start (or, narrower, the file name's start) and the file name's end survive the cuts (\(variants[3]))")
-        let nameSteps = variants.dropFirst().dropLast().filter { $0.hasPrefix("Link copied · Sh") }
-        expect(nameSteps.count >= 3 && nameSteps.allSatisfy { !$0.contains("cdn") } && variants.dropLast().last == nameSteps.last && nameSteps.last!.count <= "Link copied · ".count + 10,
-               "At 980 the last steps keep the file name, middle-cut, rather than a host stump (\(nameSteps))")
+        let middle = Array(variants.dropFirst().dropLast())
+        expect(middle.allSatisfy { ($0.hasPrefix("Link copied · ") || $0.hasPrefix("Copied · …")) && $0.contains("…") }, "Every step after the first keeps the lead and cuts the address (or, narrowest, shortens the lead and keeps the file name's end)")
+        let longSteps = middle.filter { $0.hasPrefix("Link copied · ") }
+        expect(longSteps.allSatisfy { ($0.hasPrefix("Link copied · cdn") || $0.hasPrefix("Link copied · Sh")) && $0.hasSuffix("png") }, "The host's start (or, narrower, the file name's start) and the file name's end survive the cuts (\(variants[3]))")
+        let nameSteps = middle.filter { $0.hasPrefix("Link copied · Sh") }
+        expect(nameSteps.count >= 3 && nameSteps.allSatisfy { !$0.contains("cdn") }, "At 980 the later steps keep the file name, middle-cut, rather than a host stump (\(nameSteps))")
+        // R1-014: narrower still, "Copied · …" and the end of the file name, which is what tells one upload from the next.
+        let tailSteps = middle.filter { $0.hasPrefix("Copied · …") }
+        expect(tailSteps.count >= 2 && tailSteps.allSatisfy { $0.hasSuffix("12.png") } && variants.dropLast().last == tailSteps.last && tailSteps.last!.count <= "Copied · …".count + UploadState.minimumNameCharacters,
+               "The last steps are Copied · …<end of the name>, down to \(UploadState.minimumNameCharacters) characters (\(tailSteps))")
+        expect(UploadState.minimumNameCharacters == 6 && tailSteps.last == "Copied · …12.png", "the shortest step is 'Copied · …12.png' (\(tailSteps.last ?? "nil"))")
         expect(UploadState.success(url: url, copied: true).detailText == "Link copied: " + url.absoluteString, "The full URL stays in the tooltip and the VoiceOver help")
         expect(UploadState.success(url: url, copied: false).statusVariants == ["Published image"] && UploadState.idle.statusVariants.isEmpty, "An uncopied link and idle have no link text")
         expect(UploadState.uploading(name: "Shot").statusVariants == ["Uploading Shot…"] && UploadState.failure(message: "No.\nMore").statusVariants == ["Error: No."], "Uploading and error stay one sentence")
@@ -1686,7 +1692,8 @@ private enum GlassChromeTests {
         let formatWidth = rect(shared.dragFormatControl, in: rig).width
         let checkbox = shared.dragOriginalControl.fittingSize.width
         let icons = pad + 2 * M.iconButton.width + spacing
-        let bottom = icons + (pad + zoomWidth + spacing + M.iconButton.width) + icons + (pad + formatWidth + 2 * spacing + 2 * M.iconButton.width)
+        let resizeWidth = rect(chrome.resizeButton, in: rig).width
+        let bottom = icons + (pad + zoomWidth + spacing + resizeWidth) + icons + (pad + formatWidth + 2 * spacing + 2 * M.iconButton.width)
             + 4 * M.groupGap + checkbox + 12 + 120
         expect(bottom <= usable, "\(label): the bottom bar with the checkbox and a 120 pt status needs \(bottom) of \(usable) (zoom \(zoomWidth), format \(formatWidth), checkbox \(checkbox))")
         expect(ModernEditorChrome.minimumWindowWidth >= max(frame, bottom) + 24, "\(label): the minimum window width \(ModernEditorChrome.minimumWindowWidth) covers the worst case \(max(frame, bottom) + 24)")
@@ -1806,7 +1813,7 @@ private enum GlassChromeTests {
         for (button, title, hit) in [(chrome.hideButton, "Hide", "hide"), (chrome.photosButton, "Photos", "photos"), (chrome.saveButton, "Save", "saveHistory"),
                                      (chrome.historyButton, "History", "showHistory"), (chrome.snapButton, "Snap", "snap"),
                                      (chrome.cancelFrameButton, "Cancel", "cancelFrame"), (chrome.fontButton, "Font", "font"), (chrome.undoButton, "Undo", "undo"),
-                                     (chrome.wipeButton, "Clear image", "wipe"), (chrome.resizeButton, "Resize…", "resize")] {
+                                     (chrome.wipeButton, "Clear image", "wipe")] {
             expect(button.title == title, "\(label): \(title) keeps its name")
             expect(button.accessibilityLabel() == title, "\(label): \(title) is read by its title")
             expect(button.controlSize == .extraLarge, "\(label): \(title) uses Apple's Extra Large control size")
@@ -1820,6 +1827,16 @@ private enum GlassChromeTests {
             expect(rig.target.hits == [hit], "\(label): \(title) sends its action (\(rig.target.hits))")
             expect(!button.plate.isSelected, "\(label): clicking \(title) never leaves it selected")
         }
+        // R1-006: Resize… is the one command that wears its name, because its glyph read as "expand" or "full screen".
+        let resize = chrome.resizeButton
+        expect(resize.visibleTitle == "Resize…" && resize.icon == nil && resize.imagePosition == .noImage && resize.accessibilityLabel() == "Resize…" && resize.controlSize == .extraLarge,
+               "\(label): Resize… is a text button with no glyph")
+        expect((resize.font?.pointSize ?? 0) >= 20 && abs(rect(resize, in: rig).height - GlassChrome.Metrics.iconButton.height) < 0.5 && chrome.surface(for: resize)?.cornerRadius == 16,
+               "\(label): Resize… is 20 pt text on the group plate, as tall as its neighbours (\(rect(resize, in: rig).size))")
+        let titleWidth = (resize.visibleTitle as NSString).size(withAttributes: [.font: resize.font as Any]).width
+        expect(rect(resize, in: rig).width >= titleWidth + DesignTokens.Space.s3 && AppToolTip.text(for: resize) == "Resize or crop the picture", "\(label): Resize… fits its label with room (\(rect(resize, in: rig).width) pt for \(titleWidth)) and explains itself")
+        rig.target.hits.removeAll(); resize.performClick(nil)
+        expect(rig.target.hits == ["resize"] && !resize.plate.isSelected, "\(label): Resize… sends its action (\(rig.target.hits))")
         expect(chrome.shareButton.accessibilityLabel() == "Upload image" && chrome.shareButton.title.isEmpty && chrome.shareButton.imagePosition == .imageOnly,
                "\(label): the upload button is icon-only with an explicit label")
         rig.target.hits.removeAll(); chrome.shareButton.performClick(nil)
@@ -1902,7 +1919,6 @@ private enum GlassChromeTests {
             (chrome.hideButton, "Hide", "Hide (⌘M)"), (chrome.photosButton, "Photos", "Photos"), (chrome.saveButton, "Save", "Save to History"),
             (chrome.historyButton, "History", "History"), (chrome.snapButton, "Snap", snapToolTip), (chrome.cancelFrameButton, "Cancel", "Cancel"),
             (chrome.fontButton, "Font", "Font"), (chrome.undoButton, "Undo", "Undo (⌘Z)"), (chrome.wipeButton, "Clear image", "Clear image"),
-            (chrome.resizeButton, "Resize…", "Resize…"),
             (chrome.shareButton, "Upload image", "Upload image")]
         for (button, name, tip) in expected {
             expect(button.imagePosition == .imageOnly, "\(label): \(name) draws only its icon")

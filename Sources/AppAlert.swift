@@ -22,6 +22,8 @@ final class AppAlert: NSObject {
 
     /// Test seam: replaces showing the panel. The closure must call `completion` with the response (now or later).
     static var presenter: (@MainActor (AppAlert, NSWindow?, @escaping @MainActor (NSApplication.ModalResponse) -> Void) -> Void)?
+    /// Whether the app is the active one; a test replaces it.
+    static var appIsActive: @MainActor () -> Bool = { NSApp?.isActive == true }
     /// Whether a window can carry a sheet right now: on screen and not in the Dock.
     static var hostIsPresentable: @MainActor (NSWindow) -> Bool = { $0.isVisible && !$0.isMiniaturized }
     /// Alerts on screen; the panel's buttons only hold their target weakly.
@@ -37,6 +39,12 @@ final class AppAlert: NSObject {
     let titleLabel: NSTextField
     let messageLabel: NSTextField
     private(set) var buttonViews: [NSButton] = []
+    /// Asked when a button is pressed (not for Escape or a dismissal): a message keeps the sheet open and shows it under the accessory
+    /// as "Error: …"; nil lets the answer through. A prompt uses it so a wrong entry is explained instead of closing the sheet.
+    var validator: ((_ buttonIndex: Int) -> String?)?
+    /// The inline error line, once one has been shown.
+    private(set) var errorLabel: NSTextField?
+    private var layoutInset: CGFloat = 0, layoutGap: CGFloat = 0
     private(set) var response: NSApplication.ModalResponse?
     private weak var host: NSWindow?
     private var completion: (@MainActor (NSApplication.ModalResponse) -> Void)?
@@ -52,6 +60,7 @@ final class AppAlert: NSObject {
         self.buttons = buttons
         self.accessoryView = accessoryView
         let inset = DesignTokens.Space.s5, gap = DesignTokens.Space.s4, spacing = DesignTokens.Space.s3
+        layoutInset = inset; layoutGap = gap
         func label(_ text: String, _ style: Typography.Style, lines: Int) -> NSTextField {
             let field = NSTextField(wrappingLabelWithString: text)
             field.font = Typography.font(style)
@@ -170,6 +179,9 @@ final class AppAlert: NSObject {
             watchForClose(of: [parent, panel])
             // Whoever ends the sheet (endSheet, a window close) answers it; only a button used to.
             parent.beginSheet(panel) { [weak self] _ in self?.endedWithoutAnswer() }
+            // A sheet takes the keys only when its parent had them: a question hung from History while the editor was key left Return and
+            // Command-D going to the wrong window (F-J5-002). It is the question now, so it takes them.
+            if Self.appIsActive() { panel.makeKey() }
         } else {
             watchForClose(of: [panel])
             panel.setAccessibilityRole(.window)
@@ -189,7 +201,47 @@ final class AppAlert: NSObject {
         finish(NSApplication.ModalResponse(rawValue: NSApplication.ModalResponse.alertFirstButtonReturn.rawValue + index))
     }
 
-    @objc private func pressed(_ sender: NSButton) { dismiss(withButton: sender.tag) }
+    @objc private func pressed(_ sender: NSButton) {
+        if let message = validator?(sender.tag) {
+            showInlineError(message)
+            if let field = accessoryView as? NSTextField { panel.makeFirstResponder(field); field.selectText(nil) }
+            return
+        }
+        dismiss(withButton: sender.tag)
+    }
+
+    /// Shows (or replaces) the "Error: …" line under the accessory and grows the sheet to hold it, its top edge fixed. Assistive technology is told.
+    func showInlineError(_ message: String) {
+        let text = message.hasPrefix("Error:") ? message : "Error: " + message
+        guard let content = panel.contentView else { return }
+        let inner = content.frame.width - 2 * layoutInset
+        let field: NSTextField
+        if let existing = errorLabel { field = existing } else {
+            field = NSTextField(wrappingLabelWithString: text)
+            field.font = DesignTokens.Typography.font(.body); field.textColor = DesignTokens.Palette.feedbackError
+            field.isSelectable = false; field.preferredMaxLayoutWidth = inner
+            field.setAccessibilityRole(.staticText)
+            errorLabel = field
+        }
+        field.stringValue = text; field.setAccessibilityLabel(text)
+        let height = ceil(field.cell?.cellSize(forBounds: NSRect(x: 0, y: 0, width: inner, height: .greatestFiniteMagnitude)).height ?? 0)
+        let isNew = field.superview == nil
+        let growth = isNew ? height + layoutGap : height - field.frame.height
+        // A new line sits where the accessory's bottom edge was; a taller or shorter one keeps its bottom edge.
+        let y = isNew ? (accessoryView ?? messageLabel).frame.minY : field.frame.minY
+        if growth != 0 {
+            let buttonIDs = Set(buttonViews.map(ObjectIdentifier.init))
+            for view in content.subviews where view !== field && !buttonIDs.contains(ObjectIdentifier(view)) { view.frame.origin.y += growth }
+            let top = panel.frame.maxY
+            content.frame.size.height += growth
+            panel.setContentSize(content.frame.size)
+            var frame = panel.frame; frame.origin.y = top - frame.height
+            panel.setFrame(frame, display: true)
+        }
+        field.frame = NSRect(x: layoutInset, y: y, width: inner, height: height)
+        if isNew { content.addSubview(field) }
+        NSAccessibility.post(element: field, notification: .announcementRequested, userInfo: [.announcement: text, .priority: NSAccessibilityPriorityLevel.high.rawValue])
+    }
 
     /// What Escape does: the Cancel button, or the only button.
     func cancel() {
@@ -231,6 +283,9 @@ final class AppAlert: NSObject {
 /// Escape reaches a panel with no Cancel button (an alert with one OK) through `cancelOperation`.
 final class AppAlertPanel: NSPanel {
     var onCancel: (() -> Void)?
+    /// How many times the panel was asked to become key.
+    private(set) var keyRequests = 0
+    override func makeKey() { keyRequests += 1; super.makeKey() }
     override var canBecomeKey: Bool { true }
     override func cancelOperation(_ sender: Any?) { onCancel?() }
 }

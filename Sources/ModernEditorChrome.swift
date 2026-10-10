@@ -78,8 +78,28 @@ final class ZoomPopUpButton: NSPopUpButton {
 }
 
 /// The Toolbox pop-up; like every chrome button it joins the key-view loop with Full Keyboard Access.
-final class ToolboxPopUpButton: NSPopUpButton {
+/// The Toolbox is a selection-style pop-up (not a pull-down) because AppKit draws a menu row's `image` only in that style: a
+/// pull-down's rows come out as bare titles (measured on macOS 26 with the same items, images and fonts). Nothing is ever
+/// "selected" here: the face is its own item (the toolbox icon with a chevron), and the selection is cleared when the menu closes
+/// so no row keeps a checkmark that is not a real state.
+final class ToolboxPopUpButton: NSPopUpButton, NSMenuDelegate {
+    let faceItem = NSMenuItem(title: "Toolbox", action: nil, keyEquivalent: "")
+
+    convenience init() {
+        self.init(frame: .zero, pullsDown: false)
+        if let popUpCell = cell as? NSPopUpButtonCell { popUpCell.usesItemFromMenu = false; popUpCell.menuItem = faceItem; popUpCell.arrowPosition = .noArrow }
+        imagePosition = .imageOnly
+    }
     override var canBecomeKeyView: Bool { KeyboardNavigation.reaches(self) }
+
+    /// Rows go in `menu`; the closed button shows `image`.
+    func setFace(_ image: NSImage?) { faceItem.image = image; needsDisplay = true }
+    func install(_ rows: NSMenu) {
+        rows.delegate = self
+        menu = rows
+        select(nil)
+    }
+    func menuDidClose(_ menu: NSMenu) { DispatchQueue.main.async { [weak self] in self?.select(nil) } }
 }
 
 /// The Modern editor layout: a top bar holding capture and annotation, the solid canvas well across the full width and a
@@ -105,6 +125,20 @@ final class ModernEditorChrome: NSView {
         "select": .arrowPointer, "brush": .paintbrush, "line": .slashForward, "ellipse": .circle, "rectangle": .square,
         "fill": .fillDrip, "eraser": .eraser, "text": .text, "arrow": .arrowUpRight, "crop": .cropSimple
     ]
+
+    /// The closed Toolbox: its icon and a small chevron after it, both template, so the button reads as a menu and follows the tint.
+    static func toolboxFace(icon: NSImage) -> NSImage {
+        let chevron = ChromeIcons.resolve(.chevronDown, family: .solid, pointSize: GlassChrome.Metrics.iconPointSize * 0.5).image
+        let gap: CGFloat = DesignTokens.Space.s1
+        let width = icon.size.width + (chevron.map { gap + $0.size.width } ?? 0)
+        let face = NSImage(size: NSSize(width: width, height: icon.size.height), flipped: false) { rect in
+            icon.draw(in: NSRect(x: 0, y: 0, width: icon.size.width, height: rect.height))
+            if let chevron { chevron.draw(in: NSRect(x: icon.size.width + gap, y: (rect.height - chevron.size.height) / 2, width: chevron.size.width, height: chevron.size.height)) }
+            return true
+        }
+        face.isTemplate = true
+        return face
+    }
 
     /// Narrowest window both one-row bars fit in without clipping. The Frame-mode top bar is the widest at about 970 pt
     /// (see GlassChromeTests' width budget), so 980 is a floor derived from `Metrics`, not a guess.
@@ -216,7 +250,11 @@ final class ModernEditorChrome: NSView {
         fontButton = make("Font", .font, actions.font)
         undoButton = make("Undo", .arrowRotateLeft, actions.undo, shortcut: Self.menuShortcut(for: actions.undo))
         wipeButton = make("Clear image", .broom, actions.wipe)
-        resizeButton = make("Resize…", .resizeDiagonal, actions.resize)
+        // Resize… is the one command in the bars that wears its name: the diagonal-arrows glyph read as "expand" or "full screen" (R1-006).
+        resizeButton = CommandButton(title: "Resize…", target: actions.target, action: actions.resize)
+        GlassChrome.useExtraLarge(resizeButton)
+        resizeButton.font = DesignTokens.Typography.font(.body)
+        AppToolTip.setText("Resize or crop the picture", for: resizeButton)
         // Icon-only upload command: the semantic Upload icon, no title, so nothing but the explicit label is read aloud.
         shareButton = CommandButton(title: "", target: actions.target, action: actions.share)
         GlassChrome.useExtraLarge(shareButton)
@@ -358,8 +396,12 @@ final class ModernEditorChrome: NSView {
         // Top bar: [Hide][Toolbox][Photos] · [Snap][Cancel] · ten tools · [Color][Size][Font], one plate per group.
         header.identifier = NSUserInterfaceItemIdentifier("OpenSnapHeader")
         let toolboxIcon = ChromeIcons.resolve(.toolbox, family: .regular, pointSize: Metrics.iconPointSize)
-        if let image = toolboxIcon.image, let first = controls.toolbox.itemArray.first {
-            first.image = image
+        if let image = toolboxIcon.image {
+            if let toolbox = controls.toolbox as? ToolboxPopUpButton {
+                toolbox.setFace(Self.toolboxFace(icon: image))
+            } else if let first = controls.toolbox.itemArray.first {
+                first.image = image
+            }
             controls.toolbox.imagePosition = .imageOnly
         }
         controls.toolbox.isBordered = false
@@ -422,7 +464,8 @@ final class ModernEditorChrome: NSView {
         }.max() ?? 0
         if selectedZoom >= 0 { controls.zoomControl.selectItem(at: selectedZoom) }
         let zoomCell = cell(controls.zoomControl, size: NSSize(width: ceil(widestZoom) + 2 * zoomInset, height: Metrics.commandHeight), fit: .centered(inset: zoomInset))
-        let viewGroup = plate([zoomCell, fixed(resizeButton)], "GlassViewGroup")
+        let resizeWidth = ceil((resizeButton.visibleTitle as NSString).size(withAttributes: [.font: DesignTokens.Typography.font(.body)]).width) + 2 * DesignTokens.Space.s2
+        let viewGroup = plate([zoomCell, fixed(resizeButton, NSSize(width: resizeWidth, height: Metrics.commandHeight))], "GlassViewGroup")
 
         let saveGroup = plate([fixed(saveButton), fixed(historyButton)], "GlassSaveGroup")
 

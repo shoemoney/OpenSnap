@@ -342,13 +342,40 @@ extension AppSafetyTests {
         let windowMenu = try NSApp.mainMenu.unwrapped("main menu").items.compactMap(\.submenu).first { $0.title == "Window" }.unwrapped("Window menu")
         let item = try windowMenu.items.first { $0.action == #selector(NSWindow.toggleFullScreen(_:)) }.unwrapped("Window > Enter Full Screen")
         try expect(item.keyEquivalent == "f" && item.keyEquivalentModifierMask == [.command, .control], "Full Screen is Control-Command-F, the system shortcut")
+        window.simulatesVisibility = true; window.shown = true
+        defer { app.keyWindowProvider = { NSApp.keyWindow }; window.simulatesVisibility = false; window.simulatedSheet = nil }
+        app.keyWindowProvider = { window }
         window.simulatesFullScreen = false
         try expect(app.validateMenuItem(item) && item.title == "Enter Full Screen", "Windowed, the item reads Enter Full Screen (\(item.title))")
         window.simulatesFullScreen = true
         try expect(app.validateMenuItem(item) && item.title == "Exit Full Screen", "In full screen it reads Exit Full Screen (\(item.title))")
         window.simulatesFullScreen = false
-        // It is the standard toggle: the app's own target answers it and hands it to the window.
-        try expect(item.target === app || item.target == nil, "The item is answered by the app or the responder chain")
+        // R1-020: Full Screen acts on the editor only while the editor is on screen, free of sheets, and the window the keys go to.
+        let other = AppSafetyWindow(contentRect: NSRect(x: 0, y: 0, width: 200, height: 100), styleMask: [.titled], backing: .buffered, defer: true)
+        try expect(app.validateMenuItem(item) && app.editorCanToggleFullScreen, "With the editor visible and key, Full Screen is available")
+        app.keyWindowProvider = { other }
+        try expect(!app.validateMenuItem(item) && !app.editorCanToggleFullScreen, "With History or Settings key, ⌃⌘F does not reach into the editor")
+        window.simulatesFullScreen = true
+        try expect(!app.validateMenuItem(item), "…not even to leave full screen from another window")
+        window.simulatesFullScreen = false
+        app.keyWindowProvider = { window }
+        window.shown = false
+        try expect(!app.validateMenuItem(item), "A hidden editor is not toggled")
+        window.shown = true
+        window.simulatedSheet = AppSafetyWindow(contentRect: .zero, styleMask: [], backing: .buffered, defer: true)
+        try expect(!app.validateMenuItem(item), "With a sheet attached (Save your drawing?) it waits")
+        window.simulatedSheet = nil
+        try expect(app.validateMenuItem(item), "and is available again once the sheet is gone")
+        // The item's own target is the app, and the action it sends reaches the window only when the editor may toggle.
+        try expect(item.target === app, "The item is answered by the app itself, not by whatever is first in the responder chain")
+        window.fullScreenToggles = 0
+        try expect(NSApp.sendAction(try item.action.unwrapped("action"), to: item.target, from: item) && window.fullScreenToggles == 1, "Choosing it with the editor key asks the editor window to toggle (\(window.fullScreenToggles))")
+        app.keyWindowProvider = { other }
+        app.toggleFullScreen(item)
+        try expect(window.fullScreenToggles == 1, "The same command with History key reaches no window, even called straight (\(window.fullScreenToggles))")
+        window.shown = false; app.keyWindowProvider = { window }
+        app.toggleFullScreen(item)
+        try expect(window.fullScreenToggles == 1, "…nor a hidden editor")
     }
 
     // MARK: F-J1-011

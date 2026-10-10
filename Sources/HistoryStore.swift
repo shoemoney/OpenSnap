@@ -130,11 +130,11 @@ final class HistoryStore {
     private static func hash(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
     @discardableResult
     func archive(_ snapshot: Snapshot, name: String, action: Action, destination: String? = nil,
-                 remoteURL: URL? = nil, remoteBinding: [String: String]? = nil, date: Date = Date()) throws -> UUID {
+                 remoteURL: URL? = nil, remoteBinding: [String: String]? = nil, publishedSize: CGSize? = nil, date: Date = Date()) throws -> UUID {
         let id = UUID()
         let entry = Entry(id: id, name: name, date: date, updated: date, size: snapshot.size, text: snapshot.text,
                           action: action, destination: destination, remoteURL: remoteURL, remoteBinding: remoteBinding,
-                          publishedSize: remoteURL == nil ? nil : snapshot.size, nativeFile: "", digest: Self.hash(snapshot.native))
+                          publishedSize: remoteURL == nil ? nil : publishedSize ?? snapshot.size, nativeFile: "", digest: Self.hash(snapshot.native))
         try writeRevision(snapshot, entry: entry, inserting: true)
         return id
     }
@@ -195,7 +195,7 @@ final class HistoryStore {
     func clearRemote(_ id: UUID) throws {
         var next = index
         if let position = next.entries.firstIndex(where: { $0.id == id }) {
-            next.entries[position].remoteURL = nil; next.entries[position].remoteBinding = nil
+            next.entries[position].remoteURL = nil; next.entries[position].remoteBinding = nil; next.entries[position].publishedSize = nil
             try commit(next)
         }
     }

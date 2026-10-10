@@ -176,7 +176,7 @@ struct GlobalHotkeySettings: Codable, Equatable, Sendable {
         // kShowApplicationHotkey has no default.
         .upload: .init(keyCode: UInt32(kVK_ANSI_5), modifiers: [.command, .shift, .control])
     ]
-    // First launch and Reset Defaults claim no shortcuts. Only explicit saved
+    // First launch and Clear All claim no shortcuts. Only explicit saved
     // choices are activated; an invalid saved choice remains an actual error.
     static var defaults: Self { Self() }
     static var disabled: Self { var settings = Self(); settings.enabled = false; return settings }
@@ -443,7 +443,7 @@ final class GlobalHotkeyManager: NSObject, GlobalHotkeyEditing {
             let reserved = try currentReservedBindings(includingSystem: !settings.activeBindings.isEmpty)
             try settings.validate(additionalReserved: reserved)
             try backend.installHandler { [weak self] id in self?.enqueue(id: id) }
-            try transition(to: settings.activeBindings)
+            try transition(to: editing ? [:] : settings.activeBindings)
             isRunning = true; lastError = nil
         } catch {
             lastError = error
@@ -473,17 +473,31 @@ final class GlobalHotkeyManager: NSObject, GlobalHotkeyEditing {
             if isRunning || activationRequested {
                 // A launch-time conflict must not require relaunch after the
                 // user repairs it in Preferences. Explicit unregister still
-                // keeps the manager stopped while settings are edited.
+                // keeps the manager stopped while settings are edited, and so
+                // does editing: a change is saved at once but goes live only
+                // when the editor lets go (`setEditing(false)`).
                 try backend.installHandler { [weak self] id in self?.enqueue(id: id) }
-                try transition(to: candidate.activeBindings)
+                if !editing { try transition(to: candidate.activeBindings) }
                 isRunning = true
             }
             store.write(data)
             settings = candidate; lastError = nil; loadError = nil
         } catch { lastError = error; throw error }
     }
-    func disableAll() throws { var candidate = settings; candidate.enabled = false; try apply(candidate) }
-    func resetDefaults() throws { try apply(.defaults) }
+    func clearAll() throws { try apply(.defaults) }
+
+    /// True while the shortcut editor is on screen. The saved shortcuts stay saved but none is registered, so a half-entered binding never
+    /// goes live system-wide, and pressing a chord to see what it does cannot start a capture from inside the editor.
+    private(set) var editing = false
+    func setEditing(_ value: Bool) {
+        guard value != editing else { return }
+        editing = value
+        guard isRunning || activationRequested else { return }
+        do {
+            try transition(to: value ? [:] : settings.activeBindings)
+            if !value { lastError = nil }
+        } catch { lastError = error }
+    }
 
     private func currentReservedBindings(includingSystem: Bool) throws -> Set<GlobalHotkeyBinding> {
         var result = reservedBindings
@@ -550,7 +564,10 @@ protocol GlobalHotkeyEditing: AnyObject {
     var settings: GlobalHotkeySettings { get }
     var lastError: Error? { get }
     func apply(_ candidate: GlobalHotkeySettings) throws
+    /// The editor is on screen (true) or gone (false); see `GlobalHotkeyManager.setEditing`. A stand-in with nothing registered ignores it.
+    func setEditing(_ value: Bool)
 }
+extension GlobalHotkeyEditing { func setEditing(_ value: Bool) {} }
 
 /// The shortcut editor, the one surface for capture shortcuts (Settings › Capture; the app menu's Capture Shortcuts… opens it there).
 /// Every edit is applied through the manager at once, and one the manager rejects stays on screen with an "Error:" line until the
@@ -563,7 +580,7 @@ final class GlobalHotkeyForm: NSView {
     /// Segment order of the modifier control: symbol, spoken name.
     static let modifierSegments: [(GlobalHotkeyModifiers, String, String)] = [
         (.command, "\u{2318}", "Command"), (.option, "\u{2325}", "Option"), (.control, "\u{2303}", "Control"), (.shift, "\u{21E7}", "Shift")]
-    static let idleLiveStatus = "Shortcuts are saved as you change them."
+    static let idleLiveStatus = "Shortcuts are saved as you change them. They work again when you leave this tab."
     static let keyPopupWidth: CGFloat = 120, modifierSegmentWidth: CGFloat = 44
 
     /// The label column is shared with the form it sits in, so its labels line up with the rows around it.
@@ -580,7 +597,7 @@ final class GlobalHotkeyForm: NSView {
     private var rows: [GlobalHotkeyAction: Row] = [:]
     let enabledCheckbox = NSButton(checkboxWithTitle: "Enable global capture shortcuts", target: nil, action: nil)
     let statusField = NSTextField(wrappingLabelWithString: "")
-    private(set) var resetButton: NSButton!, disableButton: NSButton!
+    private(set) var clearButton: NSButton!
     /// The status line changed height, so the window holding the form may need a new size.
     var onResize: (() -> Void)?
 
@@ -624,9 +641,8 @@ final class GlobalHotkeyForm: NSView {
         statusField.preferredMaxLayoutWidth = statusWidth
         statusField.widthAnchor.constraint(equalToConstant: statusWidth).isActive = true
         gridRows.append([NSGridCell.emptyContentView, statusField])
-        resetButton = Self.button("Reset Defaults", self, #selector(reset(_:)))
-        disableButton = Self.button("Disable All", self, #selector(disable(_:)))
-        let buttonRow = NSStackView(views: [resetButton, disableButton]); buttonRow.orientation = .horizontal; buttonRow.spacing = Space.s3
+        clearButton = Self.button("Clear All", self, #selector(clearAll(_:)))
+        let buttonRow = NSStackView(views: [clearButton]); buttonRow.orientation = .horizontal; buttonRow.spacing = Space.s3
         gridRows.append([NSGridCell.emptyContentView, buttonRow])
 
         let grid = NSGridView(views: gridRows)
@@ -696,7 +712,7 @@ final class GlobalHotkeyForm: NSView {
         catch { setStatus("Error: " + error.localizedDescription, isError: true) }
     }
 
-    /// Disable All: switch off what is saved. A draft the manager had rejected (two actions on one key, say) is dropped with its
+    /// Unticking the box switches off what is saved. A draft the manager had rejected (two actions on one key, say) is dropped with its
     /// error instead of being validated again, so the red line does not outlive the command that made it moot.
     private func disableSaved() {
         guard let manager else { return }
@@ -705,7 +721,7 @@ final class GlobalHotkeyForm: NSView {
         catch { setStatus("Error: " + error.localizedDescription, isError: true) }
     }
 
-    @objc private func enabledChanged(_ sender: NSButton) { commit() }
+    @objc private func enabledChanged(_ sender: NSButton) { if sender.state == .off { disableSaved() } else { commit() } }
     @objc private func keyChanged(_ sender: NSPopUpButton) {
         guard let row = rows.values.first(where: { $0.key === sender }) else { return }
         row.modifiers.isEnabled = sender.indexOfSelectedItem > 0
@@ -713,10 +729,8 @@ final class GlobalHotkeyForm: NSView {
         commit()
     }
     @objc private func modifiersChanged(_ sender: NSSegmentedControl) { commit() }
-    @objc private func reset(_ sender: Any?) {
+    /// Clear All sets every key to None (first launch claims no shortcut, so this is also where a fresh install starts).
+    @objc private func clearAll(_ sender: Any?) {
         fill(.defaults); commit()
-    }
-    @objc private func disable(_ sender: Any?) {
-        enabledCheckbox.state = .off; disableSaved()
     }
 }

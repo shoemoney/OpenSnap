@@ -53,6 +53,10 @@ enum ResizePanelValidation {
         }
     }
 
+    /// The one rounding rule for a stored or shown pixel size: to the nearest whole pixel, halves up, never below 1
+    /// (the same rule as `SketchDocument.wholePixels`, which the app-safety suite checks agrees).
+    static func wholePixel(_ value: CGFloat) -> CGFloat { value.isFinite ? max(1, (value + 0.5).rounded(.down)) : 1 }
+
     static func isValidDimension(_ value: CGFloat) -> Bool {
         value.isFinite && value >= 1 && value <= maximumDimension && value.rounded() == value
     }
@@ -84,7 +88,7 @@ enum ResizePanelValidation {
         return String(Double(value))
     }
 
-    /// What a dimension field shows for a stored size. Whole pixels, rounded half away from zero (1516.5 reads 1517,
+    /// What a dimension field shows for a stored size. Whole pixels, rounded half up like `wholePixel` (1516.5 reads 1517,
     /// 1516.4 reads 1516). Only the shown text is rounded: `ResizePanelState` keeps the source size at full precision for
     /// the proportional math, and typed text still goes through `dimension(from:)` unchanged, so a typed 1516 stays 1516.
     static func displayText(for value: CGFloat) -> String {
@@ -103,17 +107,25 @@ struct ResizePanelSubmission: Equatable {
 enum ResizePanelGeometry {
     /// Original Scale first fits proportionally; an unconstrained request then
     /// expands/crops the centered viewport to the requested output dimensions.
-    static func preview(source: CGSize, output: CGSize, request: ResizePanelSubmission) throws -> (rect: CGRect?, output: CGSize) {
+    /// `displayed` is the whole-pixel size the sheet's fields were seeded with when that is not the output size (the title shows the
+    /// picture's own pixel size while Original size is ticked): the typed request is validated in those pixels, then mapped back into
+    /// output pixels, rounding half up like every other stored size, before the crop or fit math runs.
+    static func preview(source: CGSize, output: CGSize, displayed: CGSize? = nil, request: ResizePanelSubmission) throws -> (rect: CGRect?, output: CGSize) {
         guard source.width.isFinite, source.height.isFinite, output.width.isFinite, output.height.isFinite,
               source.width > 0, source.height > 0, output.width > 0, output.height > 0 else { throw ResizePanelValidation.Failure.dimension }
-        let target = try ResizePanelValidation.validate(request.size)
+        var target = try ResizePanelValidation.validate(request.size)
+        if let displayed, displayed != output {
+            guard displayed.width.isFinite, displayed.height.isFinite, displayed.width > 0, displayed.height > 0 else { throw ResizePanelValidation.Failure.dimension }
+            target = try ResizePanelValidation.validate(CGSize(width: ResizePanelValidation.wholePixel(target.width * output.width / displayed.width),
+                                                               height: ResizePanelValidation.wholePixel(target.height * output.height / displayed.height)))
+        }
         if request.isCrop {
             let size = CGSize(width: target.width * source.width / output.width, height: target.height * source.height / output.height)
             return (CGRect(x: (source.width-size.width)*request.anchor.x, y: (source.height-size.height)*request.anchor.y,
                            width: size.width, height: size.height), target)
         }
         let factor = min(target.width / output.width, target.height / output.height)
-        let fitted = CGSize(width: max(1, (output.width * factor).rounded()), height: max(1, (output.height * factor).rounded()))
+        let fitted = CGSize(width: ResizePanelValidation.wholePixel(output.width * factor), height: ResizePanelValidation.wholePixel(output.height * factor))
         if request.constrainProportions { return (nil, try ResizePanelValidation.validate(fitted)) }
         let size = CGSize(width: target.width * source.width / (output.width * factor),
                           height: target.height * source.height / (output.height * factor))
@@ -217,7 +229,7 @@ struct ResizePanelState {
             case .width: reference = originalSize.width; case .height: reference = originalSize.height }
             guard reference.isFinite, reference > 0 else { throw ResizePanelValidation.Failure.dimension }
             let factor = limit / reference
-            let size = CGSize(width: max(1, (originalSize.width * factor).rounded()), height: max(1, (originalSize.height * factor).rounded()))
+            let size = CGSize(width: ResizePanelValidation.wholePixel(originalSize.width * factor), height: ResizePanelValidation.wholePixel(originalSize.height * factor))
             return ResizePanelSubmission(size: try ResizePanelValidation.validate(size), isCrop: false, anchor: anchor.point)
         }
         return ResizePanelSubmission(size: try ResizePanelValidation.size(width: submittedWidthText, height: submittedHeightText),
@@ -239,7 +251,7 @@ struct ResizePanelState {
     private func pixelText(_ value: CGFloat) -> String {
         // Round the paired dimension once against the original ratio, avoiding
         // cumulative drift. A subpixel result occupies at least one pixel.
-        let rounded = max(1, value.rounded())
+        let rounded = ResizePanelValidation.wholePixel(value)
         if rounded.isFinite && rounded <= ResizePanelValidation.maximumDimension {
             return String(Int(rounded))
         }

@@ -16,7 +16,10 @@ extension AppSafetyTests {
             ("A second click while uploading changes nothing; an unconfigured destination opens Settings and stays idle", uploadSecondClickAndUnconfigured),
             ("Upload status commands are named for VoiceOver, are 36 pt icon buttons with a rest plate, and only the commands of the current state are shown", uploadCommandsAreLabelled),
             ("Link copied shows the link itself (full URL on the tooltip and as VoiceOver help) and gives it up to the width the slot has", uploadLinkInStatus),
-            ("The Original size checkbox steps aside during an upload only where the measured slot cannot hold it: hidden at 980, kept at 1440, following a resize", uploadCheckboxFollowsWidth)
+            ("The Original size checkbox steps aside during an upload only where the measured slot cannot hold it: hidden at 980, kept at 1440, following a resize", uploadCheckboxFollowsWidth),
+            ("Upload with no destination says so in the status line and opens Settings › Upload, whose empty list offers Add… (F-J5-004)", uploadWithoutDestinationExplains),
+            ("The upload result keeps the end of the file name at 980, 1024 and 1440, narrowing to Copied · …name (R1-014)", uploadStatusAtWidths),
+            ("Upload sends the picture at its own pixel size when Original size is ticked and as shown when it is not, and History records the size that went out (R1-002)", uploadHonoursOriginalSize)
         ]
     }
 
@@ -115,7 +118,7 @@ extension AppSafetyTests {
             stub.gate.signal()
             try waitForMain("The upload succeeds") { if case .success = app.uploadState { return true } else { return false } }
             guard case .success(let url, let copied) = app.uploadState else { throw Failure(description: "Not a success") }
-            try expect(copied && stub.copied == [url] && app.status.stringValue.hasPrefix("Link copied"), "Success: Link copied, and the clipboard behaviour is unchanged (\(app.status.stringValue))")
+            try expect(copied && stub.copied == [url] && (app.status.stringValue.hasPrefix("Link copied") || app.status.stringValue.hasPrefix("Copied")), "Success: Link copied (narrowed to Copied · …name at 980), and the clipboard behaviour is unchanged (\(app.status.stringValue))")
             try expect(visibleCommands(chrome) == ["open", "copy"], "Success shows Open and Copy (\(visibleCommands(chrome)))")
             try expect(app.dragOriginalControl.isHidden, "At 980 the checkbox stays out of the way while Link copied and its commands are showing")
             try expect(log.texts.contains("Upload complete. Link copied."), "Success is announced: \(log.texts)")
@@ -254,15 +257,33 @@ extension AppSafetyTests {
         try waitForMain("The transfer starts") { stub.count == 1 }
         let state = app.uploadState
         button.performClick(nil)
-        try expect(app.uploadState == state && stub.count == 1 && app.status.stringValue == "An upload is already running…", "A second click starts nothing and leaves the state alone (\(app.status.stringValue))")
+        try expect(app.uploadState == state && stub.count == 1 && app.status.stringValue.hasPrefix("Uploading"), "A second click starts nothing and leaves the state and the Uploading… line alone (\(app.status.stringValue))")
+        // R1-022: a notice posted while the spinner is turning does not hide "Uploading…"; the transfer owns the slot until it ends.
+        app.postStatusNotice("Exported Shot.png")
+        try expect(app.status.stringValue.hasPrefix("Uploading"), "A notice posted mid-upload leaves the Uploading… line alone (\(app.status.stringValue))")
         stub.gate.signal()
         try waitForMain("The upload finishes") { if case .success = app.uploadState { return true } else { return false } }
         app.expireUploadSuccess()
+    }
+
+    /// F-J5-004: Upload with no destination says why and lands on Settings › Upload, whose empty list offers Add….
+    static func uploadWithoutDestinationExplains() throws {
+        let fixture = try Fixture(), app = fixture.app
+        let stub = Stub(); install(stub, on: app)
+        let button = try uploadButton(app)
         try configureDestinations(app, [])
         var opened = 0
         app.sharingSettingsPresenter = { opened += 1 }
         button.performClick(nil)
-        try expect(opened == 1 && app.uploadState == .idle && stub.count == 1, "With no destination the click opens Settings, as before, and the state stays idle")
+        try expect(opened == 1 && app.uploadState == .idle && stub.count == 0, "With no destination the click opens Settings, as before, and the state stays idle")
+        try expect(app.status.stringValue == AppDelegate.noDestinationNotice, "and the editor says why: \(app.status.stringValue)")
+        // Without the test seam it really lands on Settings › Upload, whose empty list says there is nothing yet and offers Add….
+        app.sharingSettingsPresenter = nil
+        button.performClick(nil)
+        guard let settings = app.settingsController else { throw Failure(description: "Settings did not open") }
+        try expect(settings.selectedIndex == SettingsWindowController.uploadTabIndex && settings.upload.emptyStateText == "No destinations yet" && !settings.upload.emptyAddButton.isHidden,
+                   "Upload with nothing configured opens Settings on the Upload tab, where the empty list explains itself and offers Add…")
+        app.closePreferences()
     }
 
     static func uploadCommandsAreLabelled() throws {
@@ -300,11 +321,16 @@ extension AppSafetyTests {
         let address = UploadState.displayAddress(of: url)
         try expect(status.variants.first == "Link copied · " + address && status.variants.last?.hasPrefix("Link copied · ") == true && status.variants.count > 3,
                    "The status carries the link after Link copied, and shorter middle-cut steps (\(status.variants.first ?? ""))")
-        try expect(status.stringValue.hasPrefix("Link copied · ") && status.frame.width > 150,
+        try expect((status.stringValue.hasPrefix("Link copied · ") || status.stringValue.hasPrefix("Copied · …")) && status.frame.width > 100,
                    "At 980 the \(Int(status.frame.width)) pt slot is used for the link, not left empty (\(status.stringValue))")
         try expect(AppToolTip.text(for: status) == "Link copied: " + url.absoluteString && status.accessibilityHelp() == "Link copied: " + url.absoluteString,
                    "The full URL stays on the tooltip and in the VoiceOver help, whatever the status shows")
-        try expect(status.accessibilityValue() == (status.stringValue == status.variants.first ? status.stringValue : status.variants.first), "VoiceOver is told the whole sentence")
+        // However much of the sentence a narrow slot shows, VoiceOver is told all of it.
+        let wide = status.frame.size
+        status.setFrameSize(NSSize(width: 340, height: wide.height))
+        try expect(status.stringValue != status.variants.first && status.stringValue.hasPrefix("Link copied · ") && (status.accessibilityValue() as? String) == status.variants.first,
+                   "A narrow slot cuts what is drawn (\(status.stringValue)) but VoiceOver is told the whole sentence (\(String(describing: status.accessibilityValue())))")
+        status.setFrameSize(wide)
         // Four seconds in production: the countdown is untouched by the longer text.
         try expect(productionDuration == UploadState.successDuration && productionDuration >= 10 && app.uploadSuccessTimer != nil, "The expiry timer is running, and the production expiry is the long one, at least ten seconds (\(productionDuration))")
         app.expireUploadSuccess()
@@ -342,6 +368,53 @@ extension AppSafetyTests {
         app.uploadState = .idle
         try expect(!app.dragOriginalControl.isHidden, "and idle brings it back")
         stub.gate.signal()
+    }
+
+    static func uploadHonoursOriginalSize() throws {
+        let fixture = try Fixture(), app = fixture.app
+        try largeUploadShot(app)
+        let stub = Stub(); install(stub, on: app)
+        app.uploadSuccessDuration = 600
+        let own = SketchDocument.wholePixels(app.canvas.canvasSize), shown = SketchDocument.wholePixels(app.canvas.outputSize)
+        try expect(own != shown && own.width > shown.width, "A large shot is stored larger than it is shown (own \(own), shown \(shown))")
+        func uploaded(ticked: Bool) throws -> (pixels: CGSize, published: CGSize?) {
+            app.dragOriginalControl.state = ticked ? .on : .off
+            let before = stub.count
+            try uploadButton(app).performClick(nil)
+            try waitForMain("The upload succeeds (ticked \(ticked))") { stub.count == before + 1 && { if case .success = app.uploadState { return true } else { return false } }() }
+            guard let rep = NSBitmapImageRep(data: stub.datas[before]) else { throw Failure(description: "The uploaded bytes do not decode") }
+            guard let entry = try app.archiveStore().entries.first(where: { $0.action == .shared }) else { throw Failure(description: "No History entry for the upload") }
+            app.expireUploadSuccess()
+            try app.archiveStore().remove([entry.id], deleteFiles: true)
+            return (CGSize(width: rep.pixelsWide, height: rep.pixelsHigh), entry.publishedSize)
+        }
+        let on = try uploaded(ticked: true), off = try uploaded(ticked: false)
+        try expect(on.pixels == own, "Ticked: the uploaded picture is \(own), its own pixel size (\(on.pixels))")
+        try expect(off.pixels == shown, "Unticked: the uploaded picture is \(shown), as shown (\(off.pixels))")
+        try expect(on.published == own && off.published == shown, "History records the size that went out: \(String(describing: on.published)) / \(String(describing: off.published))")
+    }
+
+    /// R1-014: the upload result keeps its useful part at every window width: the file name's end, which tells one upload from the next.
+    static func uploadStatusAtWidths() throws {
+        for width in [ModernEditorChrome.minimumWindowWidth, 1024, 1440] as [CGFloat] {
+            let fixture = try Fixture(), app = fixture.app
+            try resizeWindow(app, contentWidth: width)
+            let stub = Stub(); install(stub, on: app)
+            app.uploadSuccessDuration = 600
+            app.nameField.stringValue = "Shot"
+            try uploadButton(app).performClick(nil)
+            try waitForMain("The upload succeeds at \(Int(width))") { if case .success = app.uploadState { return true } else { return false } }
+            guard case .success(let url, true) = app.uploadState, let status = app.status as? StatusTextField else { throw Failure(description: "Not a copied success at \(Int(width))") }
+            let tail = String(url.lastPathComponent.suffix(6))
+            let text = status.stringValue
+            // At the minimum width the slot is small: the narrowest steps keep the end of the name. Wider, a middle-cut name is enough.
+            let keepsName = width == ModernEditorChrome.minimumWindowWidth ? text.contains(tail) : (text.contains(tail) || (text.hasPrefix("Link copied · ") && text.contains("…") && text.hasSuffix("png")))
+            try expect(keepsName && (text.hasPrefix("Link copied") || text.hasPrefix("Copied")), "\(Int(width)): the status keeps the file name's end (…\(tail)) and leads with Copied (\(text))")
+            if width >= 1440 { try expect(text.hasPrefix("Link copied · cdn.example.com") && text.hasSuffix("png"), "1440: a wide slot keeps the host and the end of the name (\(text))") }
+            else { try expect(!text.hasSuffix("cdn.exa…") && !text.hasSuffix(String(UploadState.displayAddress(of: url).prefix(6)) + "…"), "\(Int(width)): the line is not the sentence cut off after the host (\(text))") }
+            try expect(status.frame.width > 100, "\(Int(width)): the slot is used (\(Int(status.frame.width)) pt)")
+            app.expireUploadSuccess()
+        }
     }
 }
 #endif

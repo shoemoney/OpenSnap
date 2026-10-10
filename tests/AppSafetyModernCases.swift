@@ -241,8 +241,8 @@ extension AppSafetyTests {
         accessory.jpegQuality = 0.3
         func everyView(_ view: NSView) -> [NSView] { [view] + view.subviews.flatMap(everyView) }
         let panelViews = everyView(accessory.view)
-        try expect(panelViews.compactMap { $0 as? NSSlider }.isEmpty && panelViews.compactMap { $0 as? NSTextField }.contains { $0.stringValue == "JPG quality 75 %" },
-                   "The export quality is stated as 'JPG quality 75 %', not offered as a slider (OSN-054)")
+        try expect(panelViews.compactMap { $0 as? NSSlider }.isEmpty && panelViews.compactMap { $0 as? NSTextField }.contains { $0.stringValue == "JPG quality 75%" },
+                   "The export quality is stated as 'JPG quality 75%', not offered as a slider (OSN-054)")
         try expect(try app.exportPanelData(accessory) == want, "The real export bytes are exactly the 0.75 encoding")
         let historyID = try app.archiveStore().archive(try app.historySnapshot(), name: "Toggle", action: .archived)
         let history = try app.historyExport(historyID, format: "jpeg")
@@ -701,7 +701,7 @@ extension AppSafetyTests {
             "tool.text.id": "text",
             "tool.text.label": "Text tool",
             "tool.text.tip": "Text tool",
-            "toolbox.items": "Toolbox|Save to History|Export…||Copy|Paste|Duplicate|Delete|Select All||Crosshair Snapshot|Fullscreen Snapshot|Frame Snapshot|Re-snap (Keep Pen)||Rotate Clockwise|Flip Horizontal|Crop Snap at Current Edges|Remove Snap Picture||Filled Shapes|Shadow|Text Style…",
+            "toolbox.items": "Save to History|Export…||Copy|Paste|Duplicate|Delete|Select All||Crosshair Snapshot|Fullscreen Snapshot|Frame Snapshot|Re-snap (Keep Pen)||Rotate Clockwise|Flip Horizontal|Crop Snap at Current Edges|Remove Snap Picture||Filled Shapes|Shadow|Text Style…",
             "toolbox.label": "Toolbox menu",
             "toolbox.tip": "Drawing, edit and capture commands; everything else is in the menu bar",
             "zoom.label": "Canvas zoom"
@@ -735,10 +735,12 @@ extension AppSafetyTests {
             (#selector(AppDelegate.saveHistory), "Save", "Save to History"), (#selector(AppDelegate.showHistory), "History", "History"),
             (#selector(AppDelegate.snapButtonPressed), "Snap", ModernEditorChrome.snapToolTip), (#selector(AppDelegate.chooseFont), "Font", "Font"),
             (#selector(AppDelegate.undo), "Undo", "Undo (⌘Z)"), (#selector(AppDelegate.wipe), "Clear image", "Nothing to clear"),
-            (#selector(AppDelegate.resize), "Resize…", "Resize…"),
             (#selector(AppDelegate.share(_:)), "Upload image", AppDelegate.webpostHelp)]
         func verify(_ label: String) throws {
             let buttons = collect(NSButton.self, in: content)
+            // R1-006: Resize… is the one command that wears its name (its glyph read as expand or full screen), with a tooltip that explains it.
+            let resize = try buttons.first { $0.action == #selector(AppDelegate.resize) }.unwrap("Resize… button")
+            try expect((resize as? CommandButton)?.visibleTitle == "Resize…" && resize.accessibilityLabel() == "Resize…" && AppToolTip.text(for: resize) == "Resize or crop the picture", "\(label): Resize… shows its name and explains itself")
             for (action, name, tip) in expected {
                 let button = try buttons.first { $0.action == action }.unwrap("\(name) button")
                 try expect(button.imagePosition == .imageOnly && ((button as? CommandButton)?.visibleTitle ?? button.title).isEmpty, "\(label): \(name) shows no title text")
@@ -879,6 +881,9 @@ extension AppSafetyTests {
         let (fixture, chrome) = try modernFixture()
         let app = fixture.app, content = try (app.window.contentView).unwrap("content view")
         try largeShot(app)
+        // The long status (size, format, bytes) is what the footer says where the title bar is not on screen, in full screen; it is swept
+        // here at every window width. A windowed footer is checked at the end.
+        app.footerShowsPictureFactsOverride = true
         app.dragPreviewTimer?.invalidate(); app.dragPreviewTimer = nil
         let origin = app.window.frame.origin
         var sawShortened = false, sawWhole = false
@@ -918,6 +923,18 @@ extension AppSafetyTests {
         content.layoutSubtreeIfNeeded()
         try expect(app.status.stringValue == AppToolTip.text(for: app.status), "A wide window shows the whole status again: \(app.status.stringValue)")
 
+        // R1-013: with the title bar up (windowed) the footer does not repeat "W × H · PNG · bytes": the tool and the state only, whole at every width.
+        app.footerShowsPictureFactsOverride = nil
+        app.setTool(.arrow); app.dirty = true; app.updateDragPreview()
+        try expect(app.status.variants == ["Arrow · Unsaved changes", "Unsaved changes"] && !(AppToolTip.text(for: app.status) ?? "").contains("×") && (app.window.subtitle.contains("×")),
+                   "Windowed, the footer is the tool and state while the title bar carries the size (\(app.status.variants), title \(app.window.subtitle))")
+        for width in [app.window.minSize.width, 1024, 1440] {
+            app.setWindowFrame(CGRect(origin: origin, size: CGSize(width: width, height: app.window.frame.height)))
+            app.updateViewportChrome(); content.layoutSubtreeIfNeeded()
+            // Beside the Original size checkbox at 980 the slot holds only the state, which is never the part given up; wider, the tool comes back.
+            let shown = app.status.stringValue
+            try expect(shown.hasSuffix("Unsaved changes") && !shown.contains("×") && (width < 1100 || shown == "Arrow · Unsaved changes"), "\(Int(width)): the windowed footer keeps the state whole and drops the tool only where it must (\(shown))")
+        }
         // An upload message is one text: it keeps its priority and is cut only at its tail. A plain write is one fixed text too.
         let field = StatusTextField(labelWithString: "")
         field.font = .systemFont(ofSize: 18); field.lineBreakMode = .byTruncatingTail
@@ -1589,6 +1606,7 @@ extension AppSafetyTests {
         let app = fixture.app
         guard let content = app.window.contentView else { throw Failure(description: "content") }
         app.dragPreviewTimer?.invalidate(); app.dragPreviewTimer = nil
+        app.footerShowsPictureFactsOverride = true   // the footer carries the picture's facts only where the title bar is gone (full screen)
         app.updateDragPreview()
         let text = app.status.stringValue
         try expect(text.hasPrefix("Arrow · ") && text.contains("×") && text.components(separatedBy: " · ").count == 5 && text.contains(" · PNG · ") && text.hasSuffix("KB"), "The status reads tool, state, export size and format in one line: \(text)")

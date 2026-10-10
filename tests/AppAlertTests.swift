@@ -47,7 +47,35 @@ private enum AppAlertTests {
         contrast()
         errorAlert()
         presenterSeam()
+        inlineValidation()
         print("AppAlertTests: \(checks) checks passed (windows never ordered on screen)")
+    }
+
+    /// F-J5-001: a prompt whose entry is wrong stays open and says why, instead of closing without a word.
+    private static func inlineValidation() {
+        let field = NSTextField(string: "abc"); field.frame = NSRect(x: 0, y: 0, width: 300, height: 40)
+        let alert = AppAlert(title: "Timed Snapshot", message: "Delay in seconds", buttons: [.init(title: "OK"), .init(title: "Cancel", role: .cancel)], accessoryView: field)
+        alert.validator = { $0 == 0 ? (Double(field.stringValue) == nil ? "Enter a number of seconds from 0 to 120." : nil) : nil }
+        let before = alert.panel.contentView!.frame.height, button = alert.buttonViews[0].frame
+        let titleTop = alert.titleLabel.frame.maxY - alert.panel.contentView!.frame.height
+        alert.buttonViews[0].performClick(nil)
+        expect(alert.response == nil && alert.errorLabel?.stringValue == "Error: Enter a number of seconds from 0 to 120.", "OK with a wrong entry keeps the sheet open and says why")
+        guard let line = alert.errorLabel, let content = alert.panel.contentView else { return expect(false, "the error line exists") }
+        expect(line.superview === content && line.textColor == DesignTokens.Palette.feedbackError && (line.font?.pointSize ?? 0) >= 20, "the line is in the sheet, in the warning colour, at the app's size")
+        expect(content.frame.height > before && alert.buttonViews[0].frame == button, "the sheet grew to hold it and the buttons stayed where they were")
+        expect(abs((alert.titleLabel.frame.maxY - content.frame.height) - titleTop) < 0.5, "the title kept its distance from the top")
+        expect(line.frame.maxY <= field.frame.minY && line.frame.minY >= alert.buttonViews[0].frame.maxY, "the line sits between the field and the buttons: \(line.frame) \(field.frame) \(alert.buttonViews[0].frame)")
+        expect(line.accessibilityLabel() == "Error: Enter a number of seconds from 0 to 120.", "VoiceOver reads it")
+        alert.buttonViews[0].performClick(nil)
+        let grown = content.frame.height
+        expect(alert.response == nil && grown == content.frame.height, "pressing OK again does not grow the sheet again")
+        field.stringValue = "7"
+        alert.buttonViews[0].performClick(nil)
+        expect(alert.response == .alertFirstButtonReturn, "a right entry answers OK")
+        let escape = AppAlert(title: "t", buttons: [.init(title: "OK"), .init(title: "Cancel", role: .cancel)], accessoryView: field)
+        escape.validator = { _ in "never" }
+        escape.cancel()
+        expect(escape.response == .alertSecondButtonReturn && escape.errorLabel == nil, "Cancel and Escape are never validated")
     }
 
     private static func host() -> RecordingHost {
@@ -164,6 +192,20 @@ private enum AppAlertTests {
         alert.buttonViews[2].performClick(nil)
         expect(answers == [.alertFirstButtonReturn, .alertThirdButtonReturn], "Each answer arrives once, in the order given")
         expect(AppAlert.presentedAlerts.isEmpty && window.ended.contains(alert.panel), "Answered alerts leave the screen and release the host window")
+        // F-J5-002: a sheet hung from a window that is not key still takes the keys, so Return and Command-D answer it wherever it hangs.
+        let savedActive = AppAlert.appIsActive
+        defer { AppAlert.appIsActive = savedActive }
+        AppAlert.appIsActive = { true }
+        let history = host(), discard = AppAlert(title: "Save your drawing?", buttons: discardButtons)
+        var discardAnswers: [NSApplication.ModalResponse] = []
+        discard.present(on: history) { discardAnswers.append($0) }
+        expect(history.attachedSheet === discard.panel && discard.panel.keyRequests == 1, "A sheet on a window that is not key asks to become key (\(discard.panel.keyRequests))")
+        expect(discard.panel.contentView?.performKeyEquivalent(with: key("d", keyCode: 2, flags: .command, in: discard.panel)) == true && discardAnswers == [.alertThirdButtonReturn],
+               "Command-D answers Don't Save on a sheet hung from History or Settings, as on the editor")
+        AppAlert.appIsActive = { false }
+        let quiet = AppAlert(title: "t", buttons: [.init(title: "OK")]); quiet.present(on: history) { _ in }
+        expect(quiet.panel.keyRequests == 0, "An app that is not active is not made to grab the keys")
+        quiet.dismiss(withButton: 0)
         // A window that cannot carry a sheet (hidden, in the Dock) gets no sheet.
         AppAlert.hostIsPresentable = { _ in false }
         expect(AppAlert.sheetParent(of: window) == nil && AppAlert.sheetParent(of: nil) == nil, "No presentable window, no sheet parent")
