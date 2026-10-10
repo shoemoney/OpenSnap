@@ -79,7 +79,7 @@ Harness notes that affect how to read the evidence (not app defects):
 - **Suggested fix:** clear transient messages on a timer or on the next state change; add the format to the size text.
 
 ### F-J1-011 · P2 · Crop tool gives no way to learn Return applies it, and its overlay lingers
-- **Observed:** after a drag the status says only "Crop · Unsaved changes" (`52-crop-tool-region-dimmed-no-apply-hint.jpg`). After an Undo and a Tab-driven switch to Brush the dim crop overlay is still drawn (`55-keyboard-trap-...jpg`).
+- **Observed:** after a drag the status says only "Crop · Unsaved changes" (`52-crop-tool-region-dimmed-no-apply-hint.jpg`). After an Undo and a Tab-driven switch to Brush the dim crop overlay is still drawn (`55-keyboard-trap-tab-in-canvas-toggles-brush-crop-overlay-lingers.jpg`).
 - **Suggested fix:** status "Crop: press Return to apply, Esc to cancel"; drop the overlay when the tool changes.
 
 ### F-J1-012 · P2 (plausible) · Drag well activation never shows an Export panel
@@ -113,7 +113,7 @@ Harness notes that affect how to read the evidence (not app defects):
 - **Suggested fix:** zoom to fit or cap the chrome width.
 
 ### F-J1-019 · P3 · Popovers disagree on dismissal
-- **Observed:** the Colour popover closes after a pick, the Size popover stays open after a preset (`12-size-popover-open-size7.jpg`, `13-...jpg`).
+- **Observed:** the Colour popover closes after a pick, the Size popover stays open after a preset (`12-size-popover-open-size7.jpg`, `13-size-popover-preset12-text-frame-balloons.jpg`).
 
 ### F-J1-020 · P3 · Undo is enabled on a blank document
 - **Observed:** on a fresh launch the Undo button is drawn enabled and AX has no `disabled`, while Wipe is correctly disabled (`00-brush-tool-selected.jpg`).
