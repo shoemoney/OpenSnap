@@ -1291,3 +1291,24 @@ No row changed class: the J8 results confirm batch 8 on rows that were already E
 ### Clipboard
 
 The pasteboard held 13 bytes of text before the run; it was saved to a temp file (not printed), replaced by the upload's link (read back once to learn the exact key of the object this lane created), restored byte for byte (`cmp` identical) after the session was stopped, and the temp file was deleted.
+
+## Independent review round 3 (focused, pinned 5af9ac0)
+
+Scope set by the integration owner: the round 2 regression fixes only — capture-shortcut pause lifecycle, chosen document size against viewport fit and outputs, Toolbox placement and accessibility, session-only watchdog ownership, ledger categories and fresh evidence. The reviewer received the round 1 and round 2 findings, every response since, the open objections, and the paths of the latest captures.
+
+**Verdict:** needs fixes. Areas A (pause lifecycle), C (Toolbox) and D (watchdog ownership) confirmed; batch 9 contrast and status-notice claims re-measured and confirmed (Select glyph under Increase Contrast 20.9:1 light, 10.7:1 dark). Area B (size paths) still reproduces F-J6-001/F-J7-005 outside the sizes the tests used; area E has two stale rows.
+
+**Findings** (severity · ID · surface · finding · routing):
+- P2 · R3-001 · Resize · with Original size unticked, a Resize larger than the window can fit resamples the picture but refits the shown size, so the title and all four outputs stay at the fitted size and ticking the box jumps to the typed size · batch 10.
+- P2 · R3-002 · canvas corner drag · a corner drag on a snap changes only the shown size, never the picture (same two symptoms by another entry point) · batch 10.
+- P3 · R3-003 · File › Export… · the accessory seeds Original size from its own default (off) while the footer box (on) promises export follows it · batch 10.
+- P3 · R3-004 · ledger · E2E-STATE-018 and E2E-STATE-019 still describe the pre-batch-9 state (and STATE-019 cites the wrong finding ID) · batch 10.
+- P4 · R3-005 · harness and inventory text · "selection-style pop-up" wording survives for the Toolbox · batch 10.
+- P4 · R3-006 · ledger rules · the gap-reason vocabulary still accepts `retired` on an unverified row although retired is its own class · batch 10.
+- P4 · R3-007 · Settings › Upload under Differentiate Without Color · the selection check uses the same glyph as the Default pill's check · batch 10.
+- P4 · R3-008 · capture shortcuts · a failed re-registration when the pause lifts is not shown; no test posts the real app-deactivation notification; one code path orders Settings out without marking it hidden · batch 10.
+- P4 · R3-009 · History Details · after Delete from Web the dead link shows with nothing saying it was deleted · batch 10 (optional).
+
+**Objections and decisions:** accepted — R1-016 (navigator column), R1-021 (eraser shadow on cut fragments; format change), the record-shortcut field (deferred; the 69-item key pop-up remains UX debt), F-J1-012 (OS-owned panel), R2-014 percentage (no byte progress), F-J8-001 and F-J8-002, the final-render manifest's two historic menu gaps. Accepted with conditions — F-J1-023 (text editor accessibility selection) is next in line; the deactivation pause stays unit-tested only once a test posts the real notification (R3-008). Root-owned before any push — model and tool names in the audit plan and the presentation page, and removal of the withdrawn capture from history.
+
+**Ledger sample:** 597 rows (E2E 312 · rendered 45 · unit/source 93 · unverified 120 · retired 27); every unverified row carries exactly one reason, no other class carries one, 0 missing evidence paths; 20 E2E rows sampled (13 viewed, no overclaim), 10 rendered rows (STATE-019 stale), 10 unverified rows (reasons plausible), all 27 retired rows belong to removed surfaces.
