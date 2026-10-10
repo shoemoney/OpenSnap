@@ -401,17 +401,29 @@ final class SettingsDestinationRow: NSView {
     /// Called on a click (the count says whether it was a double click, which edits).
     var onClick: ((Int) -> Void)?
     /// The row the buttons below act on: a filled plate with an accent edge, and "selected" for VoiceOver, so it never relies on colour alone.
+    /// Differentiate Without Color adds a 2 pt edge in the text colour and a check ahead of the name: a shape, not a tint.
     var isSelected = false {
-        didSet { guard isSelected != oldValue else { return }; needsDisplay = true; setAccessibilitySelected(isSelected) }
+        didSet { guard isSelected != oldValue else { return }; refreshMark(); needsDisplay = true; setAccessibilitySelected(isSelected) }
+    }
+    /// The check ahead of the name. Hidden (and out of the layout) unless Differentiate Without Color is on; then every row keeps the
+    /// slot and only the selected one shows the glyph, so the names stay aligned.
+    let selectionMark = NSImageView()
+    private var displayObservation: DisplayOptions.Observation?
+    private var differentiates: Bool { DisplayOptions.current.differentiateWithoutColor }
+
+    private func refreshMark() {
+        selectionMark.isHidden = !differentiates
+        selectionMark.alphaValue = isSelected ? 1 : 0
     }
 
     override var wantsUpdateLayer: Bool { true }
     override func updateLayer() {
+        let outline = differentiates
         effectiveAppearance.performAsCurrentDrawingAppearance {
             layer?.backgroundColor = (isSelected ? DesignTokens.Palette.State.selectedFill : NSColor.clear).cgColor
-            layer?.borderColor = DesignTokens.Palette.accent.cgColor
+            layer?.borderColor = (outline ? DesignTokens.Palette.Text.primary : DesignTokens.Palette.accent).cgColor
         }
-        layer?.borderWidth = isSelected ? 1 : 0
+        layer?.borderWidth = isSelected ? (outline ? 2 : 1) : 0
     }
     override func mouseDown(with event: NSEvent) { onClick?(event.clickCount) }
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
@@ -427,7 +439,11 @@ final class SettingsDestinationRow: NSView {
         let text = NSStackView(views: [nameField, transportField])
         text.orientation = .vertical; text.alignment = .leading; text.spacing = 0
         let flexible = NSView(); flexible.setContentHuggingPriority(.init(1), for: .horizontal)
-        var views: [NSView] = [text, flexible]
+        selectionMark.image = PublishingDestinationsView.icon(.check, pointSize: DesignTokens.Typography.readableMinimum)
+        selectionMark.contentTintColor = DesignTokens.Palette.Text.primary
+        selectionMark.imageScaling = .scaleProportionallyDown
+        selectionMark.setAccessibilityElement(false)
+        var views: [NSView] = [selectionMark, text, flexible]
         if isDefault { let pill = DefaultPillView(); self.pill = pill; views.append(pill) }
         let row = NSStackView(views: views)
         row.orientation = .horizontal; row.alignment = .centerY; row.spacing = DesignTokens.Space.s3
@@ -439,6 +455,8 @@ final class SettingsDestinationRow: NSView {
             row.centerYAnchor.constraint(equalTo: centerYAnchor)])
         setAccessibilityElement(true); setAccessibilityRole(.row); setAccessibilitySelected(false)
         setAccessibilityLabel([name, transport, isDefault ? "Default" : nil].compactMap { $0 }.joined(separator: ", "))
+        refreshMark()
+        displayObservation = DisplayOptions.observe { [weak self] _ in self?.refreshMark(); self?.needsDisplay = true }
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
 }

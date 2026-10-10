@@ -99,6 +99,7 @@ private enum SettingsWindowTests {
         uploadWithPublishing()
         shortcutPause()
         liveDifferentiateOutline()
+        liveDifferentiateRow()
         words()
         viewTreeAudit()
         print("SettingsWindowTests: \(checks) checks passed (standalone controller; no window ordered onto the desktop)")
@@ -1002,6 +1003,67 @@ private enum SettingsWindowTests {
         DisplayOptions.override = DisplayOptions.none
         NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
         expect(tab.layer?.borderWidth == 1, "and turning it off puts the thin edge back")
+    }
+
+    /// F-R-003: the selected destination row has a cue that is not hue under Differentiate Without Color (a 2 pt edge in the text colour and
+    /// a check ahead of the name), measured on drawn pixels, and it follows the option while the window is up.
+    private static func liveDifferentiateRow() {
+        let (controller, _, _, _, _, _) = makeController(destinations: sampleDestinations(count: 2))
+        controller.select(3)
+        let tab = controller.upload
+        _ = tab.view
+        tab.refresh()
+        controller.window.contentView?.layoutSubtreeIfNeeded()
+        DisplayOptions.override = DisplayOptions.none
+        defer { DisplayOptions.override = nil }
+        let selected = tab.rows[1], other = tab.rows[0]
+        expect(selected.isSelected && !other.isSelected, "the default destination starts selected")
+
+        /// The edge pixel and an interior pixel of the row as drawn, in sRGB, for one appearance.
+        func drawn(_ name: NSAppearance.Name) -> (edge: DesignTokens.Palette.RGB, inside: DesignTokens.Palette.RGB, border: CGFloat) {
+            let appearance = NSAppearance(named: name)!
+            selected.appearance = appearance
+            appearance.performAsCurrentDrawingAppearance { selected.updateLayer() }
+            let scale: CGFloat = 2, width = Int(selected.bounds.width * scale), height = Int(selected.bounds.height * scale)
+            let space = CGColorSpace(name: CGColorSpace.sRGB)!
+            let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4, space: space,
+                                    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+            // The row sits on the list surface, so its translucent fill is judged over that, not over nothing.
+            context.setFillColor(DesignTokens.Palette.resolve(DesignTokens.Palette.Surface.content, for: appearance).cgColor)
+            context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+            context.scaleBy(x: scale, y: scale)
+            appearance.performAsCurrentDrawingAppearance { selected.layer?.render(in: context) }
+            let data = context.data!.assumingMemoryBound(to: UInt8.self)
+            func pixel(_ x: Int, _ y: Int) -> DesignTokens.Palette.RGB {
+                let offset = (y * width + x) * 4
+                return .init(red: CGFloat(data[offset]) / 255, green: CGFloat(data[offset + 1]) / 255, blue: CGFloat(data[offset + 2]) / 255)
+            }
+            return (pixel(1, height / 2), pixel(Int(6 * scale), height / 2), selected.layer?.borderWidth ?? -1)
+        }
+        for name in [NSAppearance.Name.aqua, .darkAqua] {
+            let plain = drawn(name)
+            let plainRatio = DesignTokens.Palette.contrastRatio(plain.edge, plain.inside)
+            // Light only: the accent edge is 1.95:1 there (the finding), while dark already reads at 6:1 or better.
+            expect(plain.border == 1 && (name == .darkAqua || plainRatio < 3) && selected.selectionMark.isHidden, "\(name.rawValue): by default the selected row is a 1 pt accent edge (\(plainRatio):1 against its fill) and no check")
+        }
+        DisplayOptions.override = DisplayOptions(differentiateWithoutColor: true)
+        NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
+        expect(!selected.selectionMark.isHidden && selected.selectionMark.alphaValue == 1 && selected.selectionMark.image != nil, "turning the option on shows the check on the selected row at once")
+        expect(!other.selectionMark.isHidden && other.selectionMark.alphaValue == 0, "an unselected row keeps the slot, empty, so the names stay aligned")
+        for name in [NSAppearance.Name.aqua, .darkAqua] {
+            let marked = drawn(name)
+            let ratio = DesignTokens.Palette.contrastRatio(marked.edge, marked.inside)
+            expect(marked.border == 2 && ratio >= 3, "\(name.rawValue): under Differentiate Without Color the selected row's edge is 2 pt and \(ratio):1 against the row (needs 3:1)")
+        }
+        tab.rows[0].onClick?(1)
+        expect(other.selectionMark.alphaValue == 1 && selected.selectionMark.alphaValue == 0, "the check follows the selection")
+        tab.rows[1].onClick?(1)
+        DisplayOptions.override = DisplayOptions.none
+        NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
+        expect(selected.selectionMark.isHidden && other.selectionMark.isHidden, "turning the option off takes the check and its slot away again")
+        selected.appearance = NSAppearance(named: .aqua)
+        NSAppearance(named: .aqua)!.performAsCurrentDrawingAppearance { selected.updateLayer() }
+        expect(selected.layer?.borderWidth == 1, "and the edge returns to 1 pt")
     }
 
     // MARK: Words
