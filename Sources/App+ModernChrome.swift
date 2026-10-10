@@ -5,8 +5,8 @@ enum MainWindowFrame {
     /// AppKit stores a window's frame under "NSWindow Frame <autosave name>" in the app's defaults.
     static let autosaveName = "OpenSnap.Main"
     static func defaultsKey(_ name: String) -> String { "NSWindow Frame " + name }
-    static func hasSavedFrame(named name: String, in defaults: UserDefaults) -> Bool {
-        defaults.string(forKey: defaultsKey(name))?.isEmpty == false
+    static func savedFrame(named name: String, in defaults: UserDefaults) -> String? {
+        defaults.string(forKey: defaultsKey(name)).flatMap { $0.isEmpty ? nil : $0 }
     }
 
     static let untitled = "Untitled"
@@ -49,11 +49,12 @@ extension AppDelegate {
     }
 
     /// Shows the window where it was left. With no saved frame it opens centred at the default size.
+    /// The saved frame is read from `frameDefaults` and applied here; AppKit then keeps saving every move and resize under the name.
     func restoreWindowFrame() {
         guard let name = frameAutosaveName else { window.center(); return }
-        let saved = MainWindowFrame.hasSavedFrame(named: name, in: frameDefaults)
+        if let saved = MainWindowFrame.savedFrame(named: name, in: frameDefaults) { window.setFrame(from: saved) }
+        else { window.center() }
         window.setFrameAutosaveName(name)
-        if !saved { window.center() }
     }
 
     /// What this process's window is built from, so tools/test-native-startup.py can tell the glass chrome really built.

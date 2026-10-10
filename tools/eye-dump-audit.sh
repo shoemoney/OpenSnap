@@ -14,7 +14,7 @@
 # folder and home, --eye-dump-audit). No system accessibility setting is ever written. Any subset; default none (the system's own
 # state). The app tags each capture's file stem (-rt -ic -dwc -rm) and records the effective options in every meta/layout JSON and the manifest.
 #
-# Other groups: pairs (the S01/S02/S03/S12 captures that have a pre-rail twin), states (rail-removal state captures S30-S38, S38 being the app tooltip plate: popovers, Frame at 980/1280, large shot, centring, selection, PNG|JPG),
+# Other groups: pairs (the S01/S02/S03/S12 captures that have a pre-rail twin), states (rail-removal state captures S30-S38, S38 being the app tooltip plate, S39 the titled window and the app-owned alert sheets: popovers, Frame at 980/1280, large shot, centring, selection, PNG|JPG),
 # layout (width budget), delta (a short regression subset). sizes runs the populated (S11M) and empty (S11E) matrix. --surfaces IDS runs exactly those surface ids.
 # --app APP uses a pre-built bundle instead of build/OpenSnap.app; --sha / --suffix tag the captures; --guard-home DIR points
 # the store guard at another home (tests only; recorded in safety.txt); --no-wait-gui skips waiting for other agents' GUI tests.
@@ -231,7 +231,7 @@ for mode in $ICON_MODES; do
                 sizes) run_one "$mode" "$appearance" "S11M,S11E" sizes ;;
                 fullscreen) run_one "$mode" "$appearance" "S11F,S11FP" fullscreen ;;
                 pairs) run_one "$mode" "$appearance" "ENV,S01,S02,S03,S12" pairs ;;
-                states) run_one "$mode" "$appearance" "S30,S31,S32,S33,S34,S35,S36,S37,S38" states ;;
+                states) run_one "$mode" "$appearance" "S30,S31,S32,S33,S34,S35,S36,S37,S38,S39" states ;;
                 layout) run_one "$mode" "$appearance" "LAYOUT" layout ;;
                 delta) run_one "$mode" "$appearance" "ENV,S01,S02,S03,S05,S07,S09,S11,S12,S14,S17,S24,S25,S29" delta ;;
                 *) echo "unknown group $group" >&2 ;;

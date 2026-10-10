@@ -48,6 +48,8 @@ if (root / 'tests/AppSafetyRetiredFormatCases.swift').exists():
     paths.append(root / 'tests/AppSafetyRetiredFormatCases.swift')
 if (root / 'tests/AppSafetyMenuCases.swift').exists():
     paths.append(root / 'tests/AppSafetyMenuCases.swift')
+if (root / 'tests/TestDefaults.swift').exists():
+    paths.append(root / 'tests/TestDefaults.swift')
 if (root / 'tests/AppSafetyWindowChromeCases.swift').exists():
     paths.append(root / 'tests/AppSafetyWindowChromeCases.swift')
 inputs = [(p.name, app_source if p.name == 'App.swift' else p) for p in paths]

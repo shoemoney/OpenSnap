@@ -1,0 +1,221 @@
+// The app-owned alert (OSN-041 step 5, D-TEXT): readable type, NSAlert's key conventions, a sheet on the document window, async answer.
+// Windows are built but never ordered on screen; the host window below records the sheet calls instead of showing a sheet.
+// xcrun swiftc -swift-version 5 -target arm64-apple-macosx26.0 -D APP_ALERT_TESTS \
+//   Sources/DesignTokens.swift Sources/AppAlert.swift tests/AppAlertTests.swift -o build/app-alert-tests
+#if APP_ALERT_TESTS
+import AppKit
+
+/// Stands in for the document window: it is "on screen", and it records what AppAlert asks of it.
+@MainActor
+final class RecordingHost: NSWindow {
+    var begun: [NSWindow] = []
+    var ended: [NSWindow] = []
+    var openSheet: NSWindow?
+    override var attachedSheet: NSWindow? { openSheet }
+    override func beginSheet(_ sheetWindow: NSWindow, completionHandler handler: ((NSApplication.ModalResponse) -> Void)? = nil) {
+        begun.append(sheetWindow); openSheet = sheetWindow
+    }
+    override func endSheet(_ sheetWindow: NSWindow) { ended.append(sheetWindow); if openSheet === sheetWindow { openSheet = nil } }
+    override func endSheet(_ sheetWindow: NSWindow, returnCode: NSApplication.ModalResponse) { endSheet(sheetWindow) }
+}
+
+@main
+@MainActor
+private enum AppAlertTests {
+    private static var checks = 0
+    private static func expect(_ value: @autoclosure () -> Bool, _ message: String) {
+        precondition(value(), message)
+        checks += 1
+    }
+
+    static let discardButtons: [AppAlert.Button] = [.init(title: "Save"), .init(title: "Cancel", role: .cancel), .init(title: "Don\u{2019}t Save", role: .destructive)]
+
+    static func main() {
+        _ = NSApplication.shared
+        typeAndGeometry()
+        keys()
+        sheetPresentation()
+        answering()
+        accessibility()
+        errorAlert()
+        presenterSeam()
+        print("AppAlertTests: \(checks) checks passed (windows never ordered on screen)")
+    }
+
+    private static func host() -> RecordingHost {
+        RecordingHost(contentRect: NSRect(x: 0, y: 0, width: 800, height: 600), styleMask: [.titled], backing: .buffered, defer: true)
+    }
+
+    private static func allViews(_ view: NSView) -> [NSView] { [view] + view.subviews.flatMap(allViews) }
+
+    private static func key(_ characters: String, keyCode: UInt16, flags: NSEvent.ModifierFlags = [], in panel: NSWindow) -> NSEvent {
+        NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: flags, timestamp: 0, windowNumber: panel.windowNumber, context: nil,
+                         characters: characters, charactersIgnoringModifiers: characters.lowercased(), isARepeat: false, keyCode: keyCode)!
+    }
+
+    // MARK: type and geometry
+
+    private static func typeAndGeometry() {
+        let field = NSTextField(string: "6"); field.font = DesignTokens.Typography.font(.body); field.frame = NSRect(x: 0, y: 0, width: 512, height: 40)
+        let alert = AppAlert(title: "Save your drawing?", message: "This document has changes that have not been saved.", buttons: discardButtons, accessoryView: field)
+        expect((alert.titleLabel.font?.pointSize ?? 0) >= DesignTokens.Typography.readableMinimum && alert.titleLabel.font == DesignTokens.Typography.font(.headline), "The title is headline type (\(alert.titleLabel.font?.pointSize ?? 0) pt)")
+        expect(alert.messageLabel.font == DesignTokens.Typography.font(.body) && alert.messageLabel.font?.pointSize == 20, "The message is 20 pt body text")
+        for button in alert.buttonViews {
+            expect(button.font?.pointSize == 20, "Button \(button.title) is 20 pt (\(button.font?.pointSize ?? 0))")
+            expect(button.frame.height >= DesignTokens.Size.control, "Button \(button.title) is at least 36 pt tall (\(button.frame.height))")
+            expect(button.frame.width >= AppAlert.minimumButtonWidth, "Button \(button.title) is wide enough to hit (\(button.frame.width))")
+            let wanted = button.cell?.cellSize.width ?? .greatestFiniteMagnitude
+            expect(button.frame.width >= wanted, "Button \(button.title) shows its whole title (\(button.frame.width) of \(wanted))")
+        }
+        for view in allViews(alert.panel.contentView!) {
+            if let field = view as? NSTextField { expect((field.font?.pointSize ?? 0) >= 18, "Every text in the alert is at least 18 pt (\(field.stringValue): \(field.font?.pointSize ?? 0))") }
+        }
+        // Nothing overlaps or leaves the panel; buttons run along the bottom, the third apart at the leading edge.
+        let content = alert.panel.contentView!.bounds
+        let frames = allViews(alert.panel.contentView!).dropFirst().map(\.frame)
+        for frame in frames { expect(content.insetBy(dx: -0.5, dy: -0.5).contains(frame), "\(frame) lies inside the panel \(content)") }
+        let b = alert.buttonViews.map(\.frame)
+        expect(b[0].maxX < content.maxX && b[1].maxX <= b[0].minX && b[2].minX < b[1].minX, "Save is rightmost, Cancel to its left, Don't Save at the leading edge")
+        expect(Set(b.map(\.minY)).count == 1, "The buttons share one baseline")
+        expect(alert.messageLabel.frame.minY >= b[0].maxY && field.frame.minY >= b[0].maxY && alert.titleLabel.frame.minY >= field.frame.maxY, "Title, message and field stack above the buttons")
+        expect(alert.panel.contentView!.frame.width >= AppAlert.width, "The panel is at least the standard width")
+        // A long message stays on screen: it is capped, not allowed to grow the sheet past a screen.
+        let long = AppAlert(title: "Could not upload the picture", message: String(repeating: "The server answered that the request could not be completed. ", count: 40), buttons: [.init(title: "OK")])
+        expect(long.panel.contentView!.frame.height < 600, "A very long message does not make a sheet taller than 600 pt (\(long.panel.contentView!.frame.height))")
+        expect(long.messageLabel.maximumNumberOfLines == 12 && long.messageLabel.accessibilityLabel() == long.message, "...and VoiceOver still gets all of it")
+        // An empty message leaves no gap.
+        let bare = AppAlert(title: "Done", message: "", buttons: [.init(title: "OK")])
+        expect(bare.messageLabel.superview == nil, "No message, no empty label")
+    }
+
+    // MARK: keys
+
+    private static func keys() {
+        func answered(_ send: (AppAlert) -> Void) -> Int? {
+            let alert = AppAlert(title: "Save your drawing?", buttons: discardButtons)
+            send(alert)
+            return alert.response.map { $0.rawValue - NSApplication.ModalResponse.alertFirstButtonReturn.rawValue }
+        }
+        func perform(_ event: @escaping (NSWindow) -> NSEvent) -> (AppAlert) -> Void {
+            { alert in _ = alert.panel.contentView?.performKeyEquivalent(with: event(alert.panel)) }
+        }
+        expect(answered(perform { key("\r", keyCode: 36, in: $0) }) == 0, "Return answers the first button, Save")
+        expect(answered(perform { key("\u{1b}", keyCode: 53, in: $0) }) == 1, "Escape answers Cancel")
+        expect(answered(perform { key("d", keyCode: 2, flags: .command, in: $0) }) == 2, "Command-D answers Don't Save")
+        expect(answered(perform { key("d", keyCode: 2, in: $0) }) == nil, "D alone answers nothing")
+        expect(answered(perform { key("x", keyCode: 7, flags: .command, in: $0) }) == nil, "Another key answers nothing")
+        expect(answered { $0.panel.cancelOperation(nil) } == 1, "cancelOperation, which Escape becomes in a text field, answers Cancel")
+        // Clicks.
+        for index in 0..<3 { expect(answered { $0.buttonViews[index].performClick(nil) } == index, "Clicking button \(index) answers \(index)") }
+        // The key equivalents, as set.
+        let alert = AppAlert(title: "t", buttons: discardButtons)
+        expect(alert.buttonViews.map(\.keyEquivalent) == ["\r", "\u{1b}", "d"] && alert.buttonViews[2].keyEquivalentModifierMask == .command, "Return, Escape and Command-D, in button order")
+        expect(alert.panel.defaultButtonCell === alert.buttonViews[0].cell, "The first button is the panel's default button")
+        // ASCII apostrophe too; a button called Cancel is Cancel without a role.
+        let ascii = AppAlert(title: "t", buttons: [.init(title: "Save"), .init(title: "Don't Save"), .init(title: "Cancel")])
+        expect(ascii.buttonViews[1].keyEquivalent == "d" && ascii.buttonViews[2].keyEquivalent == "\u{1b}", "A straight apostrophe is still Don't Save; the title Cancel is Cancel")
+        // One OK: Return and Escape both answer it. Two buttons and no Cancel: Escape answers nothing, as in NSAlert.
+        expect(answered { _ in } == nil, "Nothing is answered until a key or click")
+        let ok = AppAlert(title: "t", buttons: [.init(title: "OK")]); ok.panel.cancelOperation(nil)
+        expect(ok.response == .alertFirstButtonReturn, "Escape answers a lone OK")
+        let noCancel = AppAlert(title: "t", buttons: [.init(title: "Delete", role: .destructive), .init(title: "Keep")]); noCancel.panel.cancelOperation(nil)
+        expect(noCancel.response == nil, "With no Cancel button Escape does not choose for the user")
+        expect(noCancel.buttonViews[0].hasDestructiveAction && !noCancel.buttonViews[1].hasDestructiveAction, "Destructive styling is only on the destructive button")
+        // Return in a field with a default button: the first responder is the field, the default button still answers Return.
+        let field = NSTextField(string: "x"); field.frame = NSRect(x: 0, y: 0, width: 300, height: 40)
+        let withField = AppAlert(title: "Rename", buttons: [.init(title: "OK"), .init(title: "Cancel", role: .cancel)], accessoryView: field)
+        expect(withField.panel.initialFirstResponder === field, "A prompt starts in its text field")
+    }
+
+    // MARK: sheet
+
+    private static func sheetPresentation() {
+        let saved = AppAlert.hostIsPresentable
+        AppAlert.hostIsPresentable = { _ in true }
+        defer { AppAlert.hostIsPresentable = saved }
+        let window = host()
+        var answers: [NSApplication.ModalResponse] = []
+        let alert = AppAlert(title: "Save your drawing?", buttons: discardButtons)
+        alert.present(on: window) { answers.append($0) }
+        expect(window.begun == [alert.panel] && window.attachedSheet === alert.panel, "The alert is a sheet on the document window")
+        expect(AppAlert.presentedAlerts == [alert] && answers.isEmpty, "It does not block: present returned and nothing is answered yet")
+        // A second alert while the first is up hangs from the first sheet.
+        let second = AppAlert(title: "Upload failed", buttons: [.init(title: "OK")])
+        expect(AppAlert.sheetParent(of: window) === alert.panel, "A new alert hangs from the topmost sheet")
+        second.present(on: window) { answers.append($0) }
+        expect(AppAlert.presentedAlerts == [alert, second], "Both are on screen, oldest first")
+        second.buttonViews[0].performClick(nil)
+        alert.buttonViews[2].performClick(nil)
+        expect(answers == [.alertFirstButtonReturn, .alertThirdButtonReturn], "Each answer arrives once, in the order given")
+        expect(AppAlert.presentedAlerts.isEmpty && window.ended.contains(alert.panel), "Answered alerts leave the screen and release the host window")
+        // A window that cannot carry a sheet (hidden, in the Dock) gets no sheet.
+        AppAlert.hostIsPresentable = { _ in false }
+        expect(AppAlert.sheetParent(of: window) == nil && AppAlert.sheetParent(of: nil) == nil, "No presentable window, no sheet parent")
+    }
+
+    private static func answering() {
+        let saved = AppAlert.hostIsPresentable
+        AppAlert.hostIsPresentable = { _ in true }
+        defer { AppAlert.hostIsPresentable = saved }
+        let window = host()
+        var count = 0, last: NSApplication.ModalResponse?
+        let alert = AppAlert(title: "Delete this web post?", buttons: [.init(title: "Delete from Web", role: .destructive), .init(title: "Cancel", role: .cancel)])
+        alert.present(on: window) { count += 1; last = $0 }
+        alert.dismiss(withButton: 1)
+        alert.dismiss(withButton: 0)
+        alert.buttonViews[0].performClick(nil)
+        alert.panel.cancelOperation(nil)
+        expect(count == 1 && last == .alertSecondButtonReturn && alert.response == .alertSecondButtonReturn, "However many times it is pressed, it answers once, with the first answer")
+        expect(window.ended == [alert.panel], "The sheet ends once")
+        // Presenting twice shows once.
+        let twice = AppAlert(title: "t")
+        var seen = 0
+        twice.present(on: window) { _ in seen += 1 }
+        twice.present(on: window) { _ in seen += 100 }
+        twice.dismiss(withButton: 0)
+        expect(seen == 1 && window.begun.filter { $0 === twice.panel }.count == 1, "Presenting the same alert twice shows it once")
+        expect(AppAlert(title: "t").response == nil, "An alert nobody has answered has no response")
+        // Out-of-range dismissals are ignored.
+        let odd = AppAlert(title: "t", buttons: [.init(title: "OK")]); odd.dismiss(withButton: 5)
+        expect(odd.response == nil, "A button that does not exist answers nothing")
+    }
+
+    // MARK: accessibility
+
+    private static func accessibility() {
+        let saved = AppAlert.hostIsPresentable
+        AppAlert.hostIsPresentable = { _ in true }
+        defer { AppAlert.hostIsPresentable = saved }
+        let window = host()
+        let alert = AppAlert(title: "Move archived drawings to Trash?", message: "The selected copies will move to Trash.",
+                             buttons: [.init(title: "Move to Trash", role: .destructive), .init(title: "Cancel", role: .cancel)])
+        alert.present(on: window) { _ in }
+        expect(alert.panel.accessibilityRole() == .sheet, "A presented alert is a sheet to VoiceOver (\(String(describing: alert.panel.accessibilityRole())))")
+        expect(alert.panel.accessibilityLabel() == alert.title && alert.panel.accessibilityHelp() == alert.message, "It is labelled with its question and described by its message")
+        expect(alert.panel.initialFirstResponder === alert.buttonViews[0] && alert.panel.defaultButtonCell === alert.buttonViews[0].cell, "The default button has the focus")
+        expect(alert.buttonViews.map { $0.accessibilityLabel() } == ["Move to Trash", "Cancel"], "Every button is labelled with its title")
+        expect(alert.titleLabel.accessibilityLabel() == alert.title && alert.messageLabel.accessibilityLabel() == alert.message, "Title and message are read as written")
+        alert.dismiss(withButton: 1)
+    }
+
+    // MARK: error and seam
+
+    private static func errorAlert() {
+        let described = NSError(domain: "T", code: 1, userInfo: [NSLocalizedDescriptionKey: "The file could not be saved.", NSLocalizedRecoverySuggestionErrorKey: "Choose another location."])
+        let alert = AppAlert(error: described)
+        expect(alert.title == "The file could not be saved." && alert.message == "Choose another location." && alert.buttons == [.init(title: "OK")], "An error alert shows its description and recovery suggestion with one OK")
+        let plain = AppAlert(error: NSError(domain: "T", code: 2, userInfo: [NSLocalizedDescriptionKey: "Upload failed"]))
+        expect(plain.title == "Upload failed" && plain.message.isEmpty, "Without a suggestion the message is empty")
+    }
+
+    private static func presenterSeam() {
+        var asked: [(String, NSWindow?)] = []
+        AppAlert.presenter = { alert, window, reply in asked.append((alert.title, window)); reply(.alertSecondButtonReturn) }
+        defer { AppAlert.presenter = nil }
+        let window = host()
+        var got: NSApplication.ModalResponse?
+        AppAlert(title: "Asked").present(on: window) { got = $0 }
+        expect(asked.count == 1 && asked[0].0 == "Asked" && asked[0].1 === window && got == .alertSecondButtonReturn && window.begun.isEmpty, "The seam receives the alert and window and no real sheet is shown")
+    }
+}
+#endif

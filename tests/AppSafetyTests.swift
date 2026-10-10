@@ -19,6 +19,14 @@ final class AppSafetyWindow: NSWindow {
     override var isVisible: Bool { simulatesVisibility && shown }
     override var isMiniaturized: Bool { minimized }
     var simulatedKey = true
+    /// Reports the full-screen style bit without a Space transition, so a test can ask what the app does in full screen.
+    var simulatesFullScreen = false
+    override var styleMask: NSWindow.StyleMask {
+        get { simulatesFullScreen ? super.styleMask.union(.fullScreen) : super.styleMask }
+        set { super.styleMask = newValue }
+    }
+    var centerCalls = 0
+    override func center() { centerCalls += 1; super.center() }
     override var isKeyWindow: Bool { simulatesVisibility && shown && simulatedKey }
     override var attachedSheet: NSWindow? { simulatedSheet ?? super.attachedSheet }
     override func makeKeyAndOrderFront(_ sender: Any?) { if simulatesVisibility { shown = true } }
@@ -344,7 +352,10 @@ enum AppSafetyTests {
     @MainActor
     final class Fixture {
         let app = AppDelegate()
-        init(nativeRecovery: Data? = nil) throws {
+        /// `configure` runs on the new app before it launches (a test names its own frame autosave and defaults there).
+        /// Without it the window remembers nothing: no test writes the real "OpenSnap.Main" entry.
+        init(nativeRecovery: Data? = nil, configure: @MainActor (AppDelegate) -> Void = { $0.frameAutosaveName = nil }) throws {
+            configure(app)
             let expected = ProcessInfo.processInfo.environment["OPENSNAP_APP_SUPPORT"]!
             try expect(app.support.path == expected, "App support must be isolated")
             // Regression guard: the publishing store (migration included) must never resolve to the owner's real folder.

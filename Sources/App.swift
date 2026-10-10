@@ -1167,6 +1167,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         present(alert) { [weak self] result in
             guard let self else { return }
             if !discardingForTermination { self.discardQuestionOpen = false }
+            // A question left open while Quit went ahead is moot: it must not save or discard under a document that is closing.
+            if self.terminationStarted && !discardingForTermination { proceed(false); return }
             switch result {
             case .alertFirstButtonReturn: proceed(self.save())
             case .alertThirdButtonReturn:
@@ -1234,12 +1236,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         }
         endWindowGesture()
         var url = forceChoose ? nil : currentURL
+        let choseInPanel = url == nil
         if url == nil { let p = NSSavePanel(); p.nameFieldStringValue = safeName()+"."+OpenSnapFile.fileExtension; p.allowedContentTypes = Self.savePanelContentTypes; if p.runModal() != .OK { return false }; url = p.url }
         do {
             guard let url else { return false }
             let snapshot = try canvas.snapshotDocumentData(); let document = try CanvasView.validatedDocumentData(snapshot)
             try OpenSnapFile(document: document, drawingDefaults: drawingDefaults, canvasData: snapshot).write(to: url)
-            canvas.commitPendingTextEditing(); currentURL = url; dirty = false; window.isDocumentEdited = false; updateStatus()
+            canvas.commitPendingTextEditing(); currentURL = url; dirty = false; window.isDocumentEdited = false
+            // A file the user just named in the save panel is the document: its name, and the title that shows it, follow that name.
+            if choseInPanel { nameField.stringValue = url.deletingPathExtension().lastPathComponent }
+            updateStatus()
             status.stringValue = "Saved " + url.lastPathComponent
             if isActualSize { actualView?.savedWhileActive = true }
             archive(try HistoryStore.Snapshot(canvasData: snapshot, drawingDefaults: drawingDefaults, preview: canvas.imageData(format: "png")), name: safeName(), action: .exported, destination: url.path, generation: documentGeneration)
