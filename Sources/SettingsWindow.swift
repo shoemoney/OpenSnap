@@ -391,6 +391,23 @@ final class SettingsListSurface: NSView {
     }
 }
 
+/// The bar ahead of a selected row's name under Differentiate Without Color: a solid 4 pt bar in the text colour, 28 pt tall.
+@MainActor
+final class SettingsSelectionBar: NSView {
+    static let size = CGSize(width: DesignTokens.Space.s1, height: DesignTokens.Size.row - DesignTokens.Space.s4)
+    override var wantsUpdateLayer: Bool { true }
+    override var intrinsicContentSize: NSSize { Self.size }
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        wantsLayer = true; layer?.cornerRadius = DesignTokens.Space.s1 / 2
+        setAccessibilityElement(false)
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+    override func updateLayer() {
+        effectiveAppearance.performAsCurrentDrawingAppearance { layer?.backgroundColor = DesignTokens.Palette.Text.primary.cgColor }
+    }
+}
+
 /// One saved destination: its name over its transport, and the Default pill when Upload uses it. The name never shares a line
 /// with the transport, so a long name truncates only when it is longer than the row.
 @MainActor
@@ -401,13 +418,14 @@ final class SettingsDestinationRow: NSView {
     /// Called on a click (the count says whether it was a double click, which edits).
     var onClick: ((Int) -> Void)?
     /// The row the buttons below act on: a filled plate with an accent edge, and "selected" for VoiceOver, so it never relies on colour alone.
-    /// Differentiate Without Color adds a 2 pt edge in the text colour and a check ahead of the name: a shape, not a tint.
+    /// Differentiate Without Color adds a 2 pt edge in the text colour and a bar ahead of the name: shapes, not a tint. The bar is not a
+    /// check: the Default pill already carries one, and two checks on two rows would mean two different things (R3-007).
     var isSelected = false {
         didSet { guard isSelected != oldValue else { return }; refreshMark(); needsDisplay = true; setAccessibilitySelected(isSelected) }
     }
-    /// The check ahead of the name. Hidden (and out of the layout) unless Differentiate Without Color is on; then every row keeps the
-    /// slot and only the selected one shows the glyph, so the names stay aligned.
-    let selectionMark = NSImageView()
+    /// The bar ahead of the name. Hidden (and out of the layout) unless Differentiate Without Color is on; then every row keeps the
+    /// slot and only the selected one shows the bar, so the names stay aligned.
+    let selectionMark = SettingsSelectionBar()
     private var displayObservation: DisplayOptions.Observation?
     private var differentiates: Bool { DisplayOptions.current.differentiateWithoutColor }
 
@@ -439,10 +457,6 @@ final class SettingsDestinationRow: NSView {
         let text = NSStackView(views: [nameField, transportField])
         text.orientation = .vertical; text.alignment = .leading; text.spacing = 0
         let flexible = NSView(); flexible.setContentHuggingPriority(.init(1), for: .horizontal)
-        selectionMark.image = PublishingDestinationsView.icon(.check, pointSize: DesignTokens.Typography.readableMinimum)
-        selectionMark.contentTintColor = DesignTokens.Palette.Text.primary
-        selectionMark.imageScaling = .scaleProportionallyDown
-        selectionMark.setAccessibilityElement(false)
         var views: [NSView] = [selectionMark, text, flexible]
         if isDefault { let pill = DefaultPillView(); self.pill = pill; views.append(pill) }
         let row = NSStackView(views: views)

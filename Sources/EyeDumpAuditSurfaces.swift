@@ -1547,7 +1547,7 @@ extension AuditRun {
                                "note": "Clicking the icon opens statusItemMenu; the first row follows the editor's visibility. The menu-bar strip titles are system-owned."]
         write(menus, to: "menus" + stemSuffix + ".json")
         guard let toolbox = firstView(of: NSPopUpButton.self, label: "Toolbox") else { gap("S23", "Toolbox menu open", "toolbox popup not found"); return }
-        captureTrackedMenu("S23", "toolbox-menu-open", surface: "menus", state: "Toolbox menu open (a selection-style pop-up, so its rows draw their icons)", refs: ["App.swift|func bezelToolbox()"],
+        captureTrackedMenu("S23", "toolbox-menu-open", surface: "menus", state: "Toolbox menu open (a menu button; rows open below it, each with its icon)", refs: ["App.swift|func bezelToolbox()"],
                            dismiss: { toolbox.menu?.cancelTracking() }, trigger: { toolbox.performClick(nil) })
         pump(0.4)
         if let text = named["text"], let event = mouse(.rightMouseDown, docPoint: CGPoint(x: text.rect.minX + 20, y: text.rect.minY + 20)), let menu = canvas.menu(for: event) {

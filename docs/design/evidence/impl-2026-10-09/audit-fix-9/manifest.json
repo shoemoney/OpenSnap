@@ -941,7 +941,7 @@
    "id": "S23",
    "slug": "toolbox-menu-open",
    "surface": "menus",
-   "state": "Toolbox menu open (a selection-style pop-up, so its rows draw their icons)",
+   "state": "Toolbox menu open (a menu button; rows open below it, each with its icon)",
    "appearance": "dark",
    "iconMode": "sf",
    "windowSize": [
@@ -972,7 +972,7 @@
    "id": "S23",
    "slug": "toolbox-menu-open",
    "surface": "menus",
-   "state": "Toolbox menu open (a selection-style pop-up, so its rows draw their icons)",
+   "state": "Toolbox menu open (a menu button; rows open below it, each with its icon)",
    "appearance": "dark",
    "iconMode": "sf",
    "windowSize": [
@@ -1003,7 +1003,7 @@
    "id": "S23",
    "slug": "toolbox-menu-open",
    "surface": "menus",
-   "state": "Toolbox menu open (a selection-style pop-up, so its rows draw their icons)",
+   "state": "Toolbox menu open (a menu button; rows open below it, each with its icon)",
    "appearance": "light",
    "iconMode": "sf",
    "windowSize": [
@@ -1034,7 +1034,7 @@
    "id": "S23",
    "slug": "toolbox-menu-open",
    "surface": "menus",
-   "state": "Toolbox menu open (a selection-style pop-up, so its rows draw their icons)",
+   "state": "Toolbox menu open (a menu button; rows open below it, each with its icon)",
    "appearance": "light",
    "iconMode": "sf",
    "windowSize": [
@@ -1437,7 +1437,7 @@
    "id": "S42",
    "slug": "toolbox-menu-open",
    "surface": "menus",
-   "state": "Toolbox menu open (selection-style pop-up, icons drawn): 18 drawing-session rows, no app or file plumbing (F-J1-009)",
+   "state": "Toolbox menu open (a menu button; rows open below it, icons drawn): 18 drawing-session rows, no app or file plumbing (F-J1-009)",
    "appearance": "dark",
    "iconMode": "sf",
    "windowSize": [
@@ -1468,7 +1468,7 @@
    "id": "S42",
    "slug": "toolbox-menu-open",
    "surface": "menus",
-   "state": "Toolbox menu open (selection-style pop-up, icons drawn): 18 drawing-session rows, no app or file plumbing (F-J1-009)",
+   "state": "Toolbox menu open (a menu button; rows open below it, icons drawn): 18 drawing-session rows, no app or file plumbing (F-J1-009)",
    "appearance": "dark",
    "iconMode": "sf",
    "windowSize": [
@@ -1499,7 +1499,7 @@
    "id": "S42",
    "slug": "toolbox-menu-open",
    "surface": "menus",
-   "state": "Toolbox menu open (selection-style pop-up, icons drawn): 18 drawing-session rows, no app or file plumbing (F-J1-009)",
+   "state": "Toolbox menu open (a menu button; rows open below it, icons drawn): 18 drawing-session rows, no app or file plumbing (F-J1-009)",
    "appearance": "dark",
    "iconMode": "sf",
    "windowSize": [
@@ -1530,7 +1530,7 @@
    "id": "S42",
    "slug": "toolbox-menu-open",
    "surface": "menus",
-   "state": "Toolbox menu open (selection-style pop-up, icons drawn): 18 drawing-session rows, no app or file plumbing (F-J1-009)",
+   "state": "Toolbox menu open (a menu button; rows open below it, icons drawn): 18 drawing-session rows, no app or file plumbing (F-J1-009)",
    "appearance": "light",
    "iconMode": "sf",
    "windowSize": [
@@ -1561,7 +1561,7 @@
    "id": "S42",
    "slug": "toolbox-menu-open",
    "surface": "menus",
-   "state": "Toolbox menu open (selection-style pop-up, icons drawn): 18 drawing-session rows, no app or file plumbing (F-J1-009)",
+   "state": "Toolbox menu open (a menu button; rows open below it, icons drawn): 18 drawing-session rows, no app or file plumbing (F-J1-009)",
    "appearance": "light",
    "iconMode": "sf",
    "windowSize": [
@@ -1592,7 +1592,7 @@
    "id": "S42",
    "slug": "toolbox-menu-open",
    "surface": "menus",
-   "state": "Toolbox menu open (selection-style pop-up, icons drawn): 18 drawing-session rows, no app or file plumbing (F-J1-009)",
+   "state": "Toolbox menu open (a menu button; rows open below it, icons drawn): 18 drawing-session rows, no app or file plumbing (F-J1-009)",
    "appearance": "light",
    "iconMode": "sf",
    "windowSize": [

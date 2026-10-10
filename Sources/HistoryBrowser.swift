@@ -656,7 +656,9 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
             // swapping to it when the post is taken down made Details change under an unchanged selection (F-J7-003).
             detailValues["Size"]?.stringValue = value.publishedSize.map { Self.sizeText(for: $0) + " (published)" } ?? Self.sizeText(for: value.size)
             detailValues["Action"]?.stringValue = value.action
-            let destination = value.destination ?? value.link?.absoluteString
+            var destination = value.destination ?? value.link?.absoluteString
+            // A post that was published and then taken down keeps its address and its published size, so Details says it is gone (R3-009).
+            if value.publishedSize != nil, value.link == nil, let address = destination { destination = address + " (deleted)" }
             detailValues["Destination"]?.stringValue = destination ?? "—"
             // A snap that was never shared has no destination to show; the row would only say "—" (R2-015).
             detailPairs.last?.isHidden = destination == nil

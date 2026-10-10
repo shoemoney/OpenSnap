@@ -368,6 +368,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     var statusNoticeDuration: TimeInterval = 8
     /// The zoom full screen replaced, put back when it ends (only while the document and the zoom are still the ones full screen set).
     var fullScreenZoom: (generation: UUID, before: CGFloat, applied: CGFloat)?
+    /// The zoom a snap was last fitted to the window with because its own pixels are bigger than the window can hold (R3-001); it follows the size
+    /// both ways, while a zoom the user chose is left alone.
+    var pictureFitZoom: CGFloat?
+    /// Tests give the editor a small screen so a typed size above it can be checked without a huge fixture.
+    var maximumNormalCanvasOverride: CGSize?
     var terminationStarted = false
     var decidingTermination = false
     var shutdownPending: Set<String> = []
@@ -1225,6 +1230,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         guard let scroll = canvas.enclosingScrollView else { return }
         let viewport = scroll.contentView.bounds.size, size = canvas.outputSize
         let scale = min(maximumScale, max(0.05, min((viewport.width-20)/size.width, (viewport.height-20)/size.height)))
+        pictureFitZoom = nil
         setCanvasDisplayZoom(scale, label: "Fit")
         scroll.contentView.scroll(to: .zero); scroll.reflectScrolledClipView(scroll.contentView)
     }
@@ -1760,7 +1766,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     }
     func exportPanelAccessory() -> ExportAccessory {
         let options = ExportAccessory(format: dragFormat,
-            originalSize: UserDefaults.standard.bool(forKey: "ExportOriginalSize"),
+            // The same choice as the footer box, which says it covers export (R3-003); a second stored default let the two disagree.
+            originalSize: dragAtOriginalSize,
             jpegQuality: UserDefaults.standard.object(forKey: "ExportQuality") as? Double ?? 0.7)
         options.fixedJPEGQuality = FormatToggle.jpgQuality
         return options
@@ -1795,7 +1802,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             let data = try exportPanelData(options)
             try data.write(to: url, options: .atomic)
             UserDefaults.standard.set(options.format, forKey: "ExportFormat")
-            UserDefaults.standard.set(options.originalSize, forKey: "ExportOriginalSize")
+            if isLargeShot, (dragOriginalControl.state == .on) != options.originalSize {
+                dragOriginalControl.state = options.originalSize ? .on : .off
+                changeDragOptions(nil)
+            }
             UserDefaults.standard.set(options.jpegQuality, forKey: "ExportQuality")
             postStatusNotice("Exported " + url.lastPathComponent)
             archive(try historySnapshot(), name: safeName(), action: .exported, destination: url.path, generation: documentGeneration)
@@ -2068,7 +2078,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         case .failure(let error): if (error as NSError).code != NSUserCancelledError { self.error(error) } }
     }
     private func installCapture(_ image: NSImage, pixels: CGImage, afterInstalling: (() -> Void)?) {
-        preferencesWindow?.orderOut(nil)
+        // Hiding Settings by any route tells it, so the paused shortcuts go live again (R3-008).
+        preferencesWindow?.orderOut(nil); settingsController?.windowHidden()
         followHistory(); currentArchiveID = nil; activeResizeSession?.cancel(); endWindowGesture(cancelled: true); leaveActualSize(); canvas.newBlank(size: NSSize(width: pixels.width, height: pixels.height)); canvas.setBackground(image); documentGeneration = UUID(); drawingDefaults = .init(); canvas.editingUndoManager.removeAllActions(); currentURL = nil; adoptRasterViewport(); nameField.stringValue = "Screenshot"; dirty = true; replaceDragPresentation(); window.makeKeyAndOrderFront(nil); updateStatus()
         Announcer.announce(Announcer.Message.captureSucceeded)
         afterInstalling?()

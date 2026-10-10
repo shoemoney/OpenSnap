@@ -606,11 +606,17 @@ final class GlobalHotkeyForm: NSView {
     /// until the next accepted edit), and VoiceOver reads the same words.
     private(set) var shortcutsPaused = false
     private var showsError = false
+    /// The error on the note is the one the manager reported when the pause lifted (the shortcuts could not be put back), not one from an edit.
+    private var errorFromPause = false
     private var liveStatus: String { shortcutsPaused ? Self.pausedStatus : Self.idleLiveStatus }
     func setShortcutsPaused(_ paused: Bool) {
         guard paused != shortcutsPaused else { return }
         shortcutsPaused = paused
-        if !showsError { setStatus(liveStatus, isError: false) }
+        // Putting the shortcuts back can fail (a key another app took meanwhile): the note must not go on saying they are live (R3-008).
+        if !paused, let error = manager?.lastError {
+            setStatus("Error: " + error.localizedDescription, isError: true)
+            errorFromPause = true
+        } else if !showsError || errorFromPause { setStatus(liveStatus, isError: false) }
     }
 
     func keyPopup(for action: GlobalHotkeyAction) -> NSPopUpButton { rows[action]!.key }
@@ -689,7 +695,7 @@ final class GlobalHotkeyForm: NSView {
 
     private func setStatus(_ text: String, isError: Bool) {
         let changed = statusField.stringValue != text
-        showsError = isError
+        showsError = isError; errorFromPause = false
         statusField.stringValue = text
         statusField.textColor = isError ? DesignTokens.Palette.feedbackError : DesignTokens.Palette.Text.primary
         if changed { invalidateIntrinsicContentSize(); needsLayout = true; onResize?() }

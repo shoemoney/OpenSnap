@@ -222,7 +222,7 @@
    "id": "S23",
    "slug": "toolbox-menu-open",
    "surface": "menus",
-   "state": "Toolbox menu open (a selection-style pop-up, so its rows draw their icons)"
+   "state": "Toolbox menu open (a menu button; rows open below it, each with its icon)"
   },
   {
    "id": "S24",
@@ -2487,7 +2487,7 @@
    "icon": "toolbox",
    "entryPath": "Top bar › Toolbox (icon and chevron)",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Menu opens (a selection-style pop-up, because a pull-down draws no row icons): five groups of drawing-session commands (keep, edit, capture, adjust the picture, pen settings); no app or file plumbing",
+   "expected": "Menu opens (a menu button; rows open below it, each with its icon): five groups of drawing-session commands (keep, edit, capture, adjust the picture, pen settings); no app or file plumbing",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
