@@ -139,7 +139,9 @@ extension AppSafetyTests {
         let top = (pad + 2 * M.iconButton.width + M.toolboxButton.width + 2 * spacing) + (pad + M.primaryButton.width + spacing + M.iconButton.width)
             + (pad + tools * M.toolButton.width + (tools - 1) * spacing) + (pad + 3 * M.iconButton.width + 2 * spacing) + 3 * gap
         let required = chrome.requiredWindowWidth()
-        try expect(required >= top + 24 - 0.5, "The required width \(required) covers the Frame-mode top bar \(top + 24)")
+        // The measured width (before the floor) is the Frame-mode top bar here; a metric or a group that changes moves it.
+        try expect(abs(chrome.measuredWindowWidth() - (ceil(top) + 24)) < 1, "The measured width \(chrome.measuredWindowWidth()) is the Frame-mode top bar plus both margins \(ceil(top) + 24)")
+        try expect(required == max(ModernEditorChrome.minimumWindowWidth, chrome.measuredWindowWidth()), "The required width is the measured one, floored at 980")
         try expect(required >= ModernEditorChrome.minimumWindowWidth, "Never below the 980 floor (\(required))")
         try expect(app.window.minSize.width == required && app.window.minSize.height == MainWindowFrame.minimumHeight && MainWindowFrame.minimumHeight == 640,
                    "The window's minimum is the measured width by the 640 pt height (\(app.window.minSize))")

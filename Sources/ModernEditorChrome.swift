@@ -107,14 +107,16 @@ final class ModernEditorChrome: NSView {
     /// The narrowest window both bars fit in, measured from the live groups rather than assumed: the Frame-mode top bar (Cancel shown),
     /// and the bottom bar with the Original size checkbox beside a status that keeps `minimumStatusWidth`, each plus the two margins,
     /// and never below `minimumWindowWidth`. At 20 pt this is the 980 floor.
-    func requiredWindowWidth() -> CGFloat {
+    func requiredWindowWidth() -> CGFloat { max(Self.minimumWindowWidth, measuredWindowWidth()) }
+    /// What the bars alone need, before the 980 floor: the number a metric change moves.
+    func measuredWindowWidth() -> CGFloat {
         typealias M = GlassChrome.Metrics
         func fit(_ id: String) -> CGFloat { surfaceList.first { $0.identifier?.rawValue == id }?.fittingSize.width ?? 0 }
         let cancel = cancelFrameButton.isHidden ? M.groupSpacing + M.iconButton.width : 0
         let top = fit("GlassHeaderLeading") + fit("GlassCaptureGroup") + cancel + fit("GlassToolBar") + fit("GlassAnnotationGroup") + 3 * M.groupGap
         let status = controls.dragOriginalControl.fittingSize.width + 12 + Self.minimumStatusWidth
         let bottom = fit("GlassUndoWipeGroup") + fit("GlassViewGroup") + fit("GlassSaveGroup") + fit("GlassFooterRow") + 4 * M.groupGap + status
-        return max(Self.minimumWindowWidth, ceil(max(top, bottom)) + 2 * DesignTokens.Layout.margin)
+        return ceil(max(top, bottom)) + 2 * DesignTokens.Layout.margin
     }
     /// The status line keeps at least this much beside the Original size checkbox at the minimum window.
     static let minimumStatusWidth: CGFloat = 120

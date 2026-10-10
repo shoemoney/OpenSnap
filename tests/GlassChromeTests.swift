@@ -1001,7 +1001,7 @@ private enum GlassChromeTests {
         expect(bottom <= usable, "\(label): the bottom bar with the checkbox and a 120 pt status needs \(bottom) of \(usable) (zoom \(zoomWidth), format \(formatWidth), checkbox \(checkbox))")
         expect(ModernEditorChrome.minimumWindowWidth >= max(frame, bottom) + 24, "\(label): the minimum window width \(ModernEditorChrome.minimumWindowWidth) covers the worst case \(max(frame, bottom) + 24)")
         // The window's minimum is measured from the live plates and agrees with this arithmetic.
-        expect(chrome.requiredWindowWidth() == max(ModernEditorChrome.minimumWindowWidth, ceil(max(frame, bottom)) + 24), "\(label): the measured minimum window width \(chrome.requiredWindowWidth()) is the worst case plus both margins (\(max(frame, bottom) + 24))")
+        expect(abs(chrome.measuredWindowWidth() - (ceil(max(frame, bottom)) + 24)) < 1 && chrome.requiredWindowWidth() == max(ModernEditorChrome.minimumWindowWidth, chrome.measuredWindowWidth()), "\(label): the measured minimum window width \(chrome.requiredWindowWidth()) is the worst case plus both margins (\(max(frame, bottom) + 24))")
         print("  width budget @980: top \(normal)/\(frame) Frame of \(usable) (slack \(usable - normal)/\(usable - frame)); bottom \(bottom) of \(usable) (slack \(usable - bottom)); zoom \(zoomWidth), format \(formatWidth), checkbox \(checkbox), status \(rect(shared.status, in: rig).width)")
     }
 
