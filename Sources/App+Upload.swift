@@ -15,11 +15,14 @@ extension AppDelegate {
     /// the checkbox yields its place during a transfer, the "Link copied" countdown starts, and VoiceOver is told.
     func uploadStateChanged(from previous: UploadState) {
         uploadSuccessTimer?.invalidate(); uploadSuccessTimer = nil
+        if uploadState != .idle { UploadNotice.clear() }
+        if !uploadState.isUploading { UploadState.retryingName = nil }
         (modernChrome as? ModernEditorChrome)?.uploadControls.apply(uploadState)
         refreshStatusText(); updateViewportChrome()
         switch uploadState {
         case .idle: break
-        case .uploading(let name): Announcer.announce(Announcer.Message.uploadStarted(name))
+        case .uploading(let name):
+            Announcer.announce(UploadState.retryingName == name && !name.isEmpty ? "Retrying \(name)" : Announcer.Message.uploadStarted(name))
         case .success(_, let copied):
             Announcer.announce(copied ? Announcer.Message.uploadSucceeded : "Upload complete")
             let timer = Timer(timeInterval: uploadSuccessDuration, repeats: false) { [weak self] _ in
@@ -48,11 +51,13 @@ extension AppDelegate {
     @objc func retryUpload() {
         guard !terminationStarted, !publishing.isBusy, uploadState.isFailure, let payload = retryablePayload else { return }
         guard publishing.isConfigured else { openDestinationSettings(); return }
+        // The status says "Retrying <name>…" with the spinner and Cancel, so a failure that comes straight back is visibly a new attempt.
+        UploadState.retryingName = payload.name
         beginUpload(payload)
     }
 
     @objc func showUploadErrorDetails() {
-        guard let detail = uploadState.failureDetail, !terminationStarted else { return }
+        guard let detail = uploadState.failureBody, !terminationStarted else { return }
         present(AppAlert(title: "Upload failed", message: detail))
     }
 
@@ -68,6 +73,7 @@ extension AppDelegate {
 
     /// Points the status slot's inline commands at this delegate. The chrome builds them; the app owns what they do.
     func wireUploadControls(_ controls: UploadStatusControls) {
+        UploadNotice.onChange = { [weak self] in self?.refreshStatusText() }
         for (button, action) in [(controls.cancelButton, #selector(cancelUpload)), (controls.openButton, #selector(openUploadedLink)),
                                  (controls.copyButton, #selector(copyUploadedLink)), (controls.retryButton, #selector(retryUpload)),
                                  (controls.detailsButton, #selector(showUploadErrorDetails))] {

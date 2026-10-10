@@ -13,18 +13,41 @@ enum UploadState: Equatable {
     var occupiesStatusSlot: Bool { self != .idle }
     var isFailure: Bool { if case .failure = self { return true } else { return false } }
 
+    /// How long "Link copied" and its Open and Copy commands stay once an upload succeeds: long enough to read the link and reach for a
+    /// command (F-J2-022). The app's timer starts from this, and the next upload replaces it sooner.
+    static let successDuration: TimeInterval = 12
+    /// The file name of an upload that is being sent again, so the status says "Retrying" rather than showing the failed line's twin.
+    nonisolated(unsafe) static var retryingName: String?
+
     /// The sentence the status line shows, longest first; empty when idle, where the normal adaptive status applies. The status line shows the
     /// first one that fits whole, so a narrow slot gives up the tail of the link before it gives up "Link copied".
     var statusVariants: [String] {
         switch self {
         case .idle: return []
-        case .uploading(let name): return [name.isEmpty ? "Uploading…" : "Uploading \(name)…"]
+        case .uploading(let name):
+            let verb = Self.retryingName == name && !name.isEmpty ? "Retrying" : "Uploading"
+            return [name.isEmpty ? "\(verb)…" : "\(verb) \(name)…"]
         case .success(let url, let copied):
             guard copied else { return [["http", "https"].contains(url.scheme ?? "") ? "Published image" : "Uploaded image to destination"] }
             return Self.copiedVariants(for: url)
-        case .failure(let message): return ["Error: " + Self.firstLine(of: message)]
+        case .failure(let message): return Self.errorVariants(for: message)
         }
     }
+
+    /// "Error: <first line>", then the same with the middle of the line cut a few characters at a time (the beginning says what failed and
+    /// the end is often the code that matters), and last a sentence that always fits. The tail of a long error is never simply dropped.
+    static func errorVariants(for message: String) -> [String] {
+        let line = firstLine(of: message), prefix = "Error: "
+        var variants = [prefix + line]
+        var keep = line.count - 4
+        while keep >= minimumErrorCharacters {
+            variants.append(prefix + middleTruncated(line, to: keep))
+            keep -= 4
+        }
+        if line.count > minimumErrorCharacters { variants.append(prefix + "Upload failed") }
+        return variants
+    }
+    static let minimumErrorCharacters = 24
 
     /// The longest sentence the status line can show; nil when idle.
     var statusText: String? { statusVariants.first }
@@ -73,10 +96,17 @@ enum UploadState: Equatable {
     /// The link the Open and Copy commands act on: only a link the upload copied is a public one.
     var link: URL? { if case .success(let url, true) = self { return url } else { return nil } }
 
-    /// The whole error text for the Details sheet, always led by "Error:" so the sentence never relies on colour.
+    /// The whole error text for the tooltip and VoiceOver help, always led by "Error:" so the sentence never relies on colour.
     var failureDetail: String? {
         guard case .failure(let message) = self else { return nil }
         return message.hasPrefix("Error:") ? message : "Error: " + message
+    }
+
+    /// The whole error for the Details sheet. Its title already says "Upload failed", so the text does not begin with "Error:" again.
+    var failureBody: String? {
+        guard case .failure(let message) = self else { return nil }
+        let text = message.hasPrefix("Error:") ? String(message.dropFirst("Error:".count)) : message
+        return text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     /// The status line is one line: a multi-line error shows its first line, Details shows the rest.
@@ -84,6 +114,31 @@ enum UploadState: Equatable {
         let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
         let line = trimmed.components(separatedBy: .newlines).first ?? trimmed
         return line.hasPrefix("Error:") ? String(line.dropFirst("Error:".count)).trimmingCharacters(in: .whitespaces) : line
+    }
+}
+
+/// A one-line outcome the status slot keeps after an upload that has no state of its own: today, "Upload cancelled". It stays for
+/// `duration` seconds or until the next upload starts, instead of being overwritten by the next status refresh a moment later (F-J2-022).
+@MainActor
+enum UploadNotice {
+    static let duration: TimeInterval = 10
+    private(set) static var text: String?
+    private static var timer: Timer?
+    /// Called when the notice appears or goes, so the owner refreshes the status line.
+    static var onChange: (() -> Void)?
+
+    static func post(_ message: String, duration: TimeInterval = UploadNotice.duration) {
+        timer?.invalidate()
+        text = message
+        let expiry = Timer(timeInterval: duration, repeats: false) { _ in MainActor.assumeIsolated { clear() } }
+        timer = expiry; RunLoop.main.add(expiry, forMode: .common)
+        onChange?()
+    }
+    static func clear() {
+        timer?.invalidate(); timer = nil
+        guard text != nil else { return }
+        text = nil
+        onChange?()
     }
 }
 
