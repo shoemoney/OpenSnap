@@ -1246,11 +1246,14 @@ extension AuditRun {
     }
 
     func s18() {
+        // Capture Shortcuts… in the app menu opens Settings on the Capture tab: the one shortcut surface, applied as it is edited.
         app.shortcutSettings()
-        captureSheet("S18", "hotkeys-sheet", surface: "Preferences: Hotkeys", state: "Capture Shortcuts sheet (all actions None)",
-                     refs: ["GlobalHotkeys.swift|final class GlobalHotkeyForm", "GlobalHotkeys.swift|func present(attachedTo", "App.swift|@objc func shortcutSettings()"], dismiss: { [self] in
-                        if let sheet = window.attachedSheet { window.endSheet(sheet, returnCode: .cancel); sheet.orderOut(nil) }
-                     })
+        guard let controller = app.settingsController else { gap("S18", "Preferences: Capture", "Capture Shortcuts… did not open Settings"); return }
+        controller.window.contentView?.layoutSubtreeIfNeeded()
+        shoot("S18", "hotkeys-via-app-menu", surface: "Settings: Capture", state: "Capture Shortcuts… from the app menu: Settings opens on the Capture tab (all actions None)",
+              windows: [controller.window], refs: ["App.swift|@objc func shortcutSettings()", "SettingsWindow.swift|static let captureTabIndex", "GlobalHotkeys.swift|final class GlobalHotkeyForm"], settle: 0.5,
+              extra: ["selectedTab": controller.window.title, "selectedIndex": controller.selectedIndex])
+        app.closePreferences()
     }
 
     func syntheticDestinations() {

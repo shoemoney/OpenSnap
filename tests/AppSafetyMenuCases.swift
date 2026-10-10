@@ -113,7 +113,7 @@ extension AppSafetyTests {
         var missing: [String] = [], exempted = Set<String>()
         for row in rows {
             guard let action = row.action else { continue }
-            if row.image != nil { continue }
+            if b4RowHasIcon(row) { continue }
             let name = NSStringFromSelector(action)
             if symbolExemptions[name] != nil { exempted.insert(name) } else { missing.append("\(row.title) [\(name)]") }
         }

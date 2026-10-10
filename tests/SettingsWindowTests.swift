@@ -95,7 +95,6 @@ private enum SettingsWindowTests {
         preferenceControls()
         flash()
         shortcuts()
-        shortcutSheet()
         upload()
         uploadWithPublishing()
         words()
@@ -190,6 +189,17 @@ private enum SettingsWindowTests {
             expect(button.imagePosition == .imageLeading && button.image != nil, "\(button.title): an icon beside the label")
             expect(button.frame.height >= DesignTokens.Size.hitMin, "\(button.title): the tab is at least \(DesignTokens.Size.hitMin) pt tall (\(button.frame.height))")
         }
+        // Differentiate Without Color: the current tab is also a 2 pt outline in the text colour, not only an accent tint.
+        func currentBorder(_ options: DisplayOptions?) -> (CGFloat, Bool) {
+            DisplayOptions.override = options
+            strip.select(0); strip.select(1); strip.select(0)
+            let layer = strip.buttons[0].layer
+            let accent = DesignTokens.Palette.resolve(DesignTokens.Palette.accent, for: strip.effectiveAppearance).cgColor
+            return (layer?.borderWidth ?? 0, layer?.borderColor != nil && layer?.borderColor != accent && strip.buttons[1].layer?.borderWidth == 0)
+        }
+        let plainTab = currentBorder(.none), outlinedTab = currentBorder(DisplayOptions(differentiateWithoutColor: true))
+        DisplayOptions.override = nil
+        expect(plainTab.0 == 1 && outlinedTab.0 == 2 && outlinedTab.1 && !plainTab.1, "the current tab gains a 2 pt outline under Differentiate Without Color and the others stay bare (\(plainTab.0) -> \(outlinedTab.0))")
         expect(strip.contentWidth + 2 * DesignTokens.Space.s3 <= SettingsLayout.contentWidth, "the four tabs fit the 640 pt window: \(strip.contentWidth)")
         let stripBox = strip.convert(strip.bounds, to: window.contentView), rowBox = strip.buttons.map { $0.convert($0.bounds, to: window.contentView) }.reduce(NSRect.null) { $0.union($1) }
         expect(abs((rowBox.midX) - stripBox.midX) < 1, "the tabs are centred across the window")
@@ -652,8 +662,7 @@ private enum SettingsWindowTests {
         let (controller, defaults, manager, backend, _, _) = makeController()
         controller.select(2)
         let form = controller.capture.hotkeyForm!
-        expect(form.mode == .live && form.isDescendant(of: controller.capture.view), "the shortcut form is embedded in the Capture tab")
-        expect(form.saveButton == nil && form.cancelButton == nil, "the embedded form has no Save or Cancel: edits apply as they are made")
+        expect(form.isDescendant(of: controller.capture.view), "the shortcut form is embedded in the Capture tab")
         try? manager.install(globalScreen: {}, globalWindow: {}, globalFullscreen: {}, globalFrame: {}, globalUpload: {}, globalShow: {})
         let popup = form.keyPopup(for: .screen), modifiers = form.modifierControl(for: .screen)
         let k = GlobalHotkeyKeys.choices.firstIndex { $0.name == "K" }! + 1
@@ -695,46 +704,6 @@ private enum SettingsWindowTests {
         expect(form.keyPopup(for: .window).indexOfSelectedItem == 0, "the rejected draft is dropped, not kept beside a disabled form")
         expect(GlobalHotkeyAction.allCases.allSatisfy { form.modifierControl(for: $0).selectedSegmentBezelColor == DesignTokens.Palette.accent }, "a chosen modifier is drawn in the accent")
         controller.show(); controller.window.orderOut(nil)
-    }
-
-    // MARK: The same form as a sheet
-
-    private static func shortcutSheet() {
-        let name = "OpenSnap.SettingsTests.sheet." + UUID().uuidString
-        let defaults = TestDefaults(name: name)
-        let manager = GlobalHotkeyManager(defaults: defaults, backend: FakeHotkeyBackend())
-        let parent = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 600), styleMask: [.titled], backing: .buffered, defer: false)
-        parent.isReleasedWhenClosed = false
-        manager.showSettings(attachedTo: parent)
-        guard let sheet = parent.attachedSheet else { return expect(false, "the shortcut sheet still attaches to a parent window") }
-        guard let form = descendants(sheet.contentView!).compactMap({ $0 as? GlobalHotkeyForm }).first else { return expect(false, "the sheet holds the shortcut form") }
-        // A window adopts the Return button as its default button cell (and then reports its key equivalent as empty).
-        expect(form.mode == .sheet && sheet.defaultButtonCell === form.saveButton?.cell && form.cancelButton?.keyEquivalent == "\u{1b}", "the sheet keeps Save on Return and Cancel on Escape")
-        expect(sheet.title == "Global Capture Shortcuts" && sheet.frame.width >= 760, "the sheet is titled and 760 wide: \(sheet.frame.width)")
-        sheet.contentView?.layoutSubtreeIfNeeded()
-        if let save = form.saveButton, let content = sheet.contentView, (NSScreen.main?.visibleFrame.height ?? 0) >= 840 {
-            let box = save.convert(save.bounds, to: content)
-            expect(content.bounds.contains(box), "Save is inside the sheet without scrolling when the screen has room: \(box) in \(content.bounds)")
-        }
-        let k = GlobalHotkeyKeys.choices.firstIndex { $0.name == "L" }! + 1
-        form.keyPopup(for: .upload).selectItem(at: k)
-        _ = form.keyPopup(for: .upload).target?.perform(form.keyPopup(for: .upload).action, with: form.keyPopup(for: .upload))
-        form.modifierControl(for: .upload).setSelected(true, forSegment: 0)
-        _ = form.modifierControl(for: .upload).target?.perform(form.modifierControl(for: .upload).action, with: form.modifierControl(for: .upload))
-        expect(manager.settings.upload == .none, "a sheet edit stays in the draft until Save")
-        form.cancelButton?.performClick(nil)
-        spin(1) { parent.attachedSheet == nil }
-        expect(parent.attachedSheet == nil && manager.settings.upload == .none, "Cancel closes the sheet and discards the draft")
-        manager.showSettings(attachedTo: parent)
-        guard let again = parent.attachedSheet, let reopened = descendants(again.contentView!).compactMap({ $0 as? GlobalHotkeyForm }).first else { return expect(false, "the sheet reopens") }
-        expect(reopened.keyPopup(for: .upload).indexOfSelectedItem == 0, "a reopened sheet shows what is stored, not the cancelled draft")
-        reopened.keyPopup(for: .upload).selectItem(at: k)
-        _ = reopened.keyPopup(for: .upload).target?.perform(reopened.keyPopup(for: .upload).action, with: reopened.keyPopup(for: .upload))
-        reopened.modifierControl(for: .upload).setSelected(true, forSegment: 0)
-        reopened.saveButton?.performClick(nil)
-        spin(1) { parent.attachedSheet == nil }
-        expect(manager.settings.upload == .init(keyCode: GlobalHotkeyKeys.choices[k - 1].code, modifiers: .command) && parent.attachedSheet == nil, "Save applies through the model and closes the sheet")
-        TestDefaults.dispose(defaults, name: name)
     }
 
     // MARK: Upload

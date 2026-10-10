@@ -217,7 +217,7 @@ extension AppSafetyTests {
         guard let id = store.entries.first?.id else { throw Failure(description: "A History entry is needed for the confirmations") }
         AppSafetyAlert.answers.append(.init(title: "Hide drawings from History?", response: .alertSecondButtonReturn))
         app.removeHistory([id], deleteFiles: false)
-        AppSafetyAlert.answers.append(.init(title: "Move archived drawings to Trash?", response: .alertSecondButtonReturn))
+        AppSafetyAlert.answers.append(.init(title: "Move archived drawings to Trash?", response: .alertFirstButtonReturn))
         app.removeHistory([id], deleteFiles: true)
         try expect(AppSafetyAlert.seen == ["Save your drawing?", "Fake failure", "Rename", "Hide drawings from History?", "Move archived drawings to Trash?"],
                    "The app raised exactly these alerts: \(AppSafetyAlert.seen)")

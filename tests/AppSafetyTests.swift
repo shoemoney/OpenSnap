@@ -156,7 +156,6 @@ final class AppSafetyHotkeyManager: GlobalHotkeyEditing {
     var frame: (@MainActor () -> Void)?
     var upload: (@MainActor () -> Void)?
     var show: (@MainActor () -> Void)?
-    var settingsParents: [NSWindow?] = []
     var settings = GlobalHotkeySettings()
     var lastError: Error?
     func apply(_ candidate: GlobalHotkeySettings) throws { settings = candidate }
@@ -170,9 +169,6 @@ final class AppSafetyHotkeyManager: GlobalHotkeyEditing {
         screen = globalScreen; fullscreen = globalFullscreen; frame = globalFrame; upload = globalUpload; show = globalShow
     }
     func unregister() throws { Self.unregistrations += 1 }
-    func showSettings(attachedTo parent: NSWindow? = nil) {
-        settingsParents.append(parent)
-    }
 }
 
 // Unexpected file dialogs fail the test instead of blocking or showing UI.
@@ -2073,7 +2069,7 @@ enum AppSafetyTests {
                    "Existing Drawing menu choices keep the Preferences model and recovered precision key synchronized")
         try expect(settings.drawing.precisionButtons.first { $0.state == .on }?.tag == 0 && settings.drawing.arrowButtons.first { $0.state == .on }?.tag == 2,
                    "A menu choice refreshes the open Settings window")
-        try expect(settings.capture.hotkeyForm.mode == .live && app.hotkeys.settingsParents.isEmpty, "Shortcuts are edited inside the Capture tab, not in a sheet")
+        try expect(settings.capture.hotkeyForm.isDescendant(of: settings.capture.view) && panel.attachedSheet == nil, "Shortcuts are edited inside the Capture tab, not in a sheet")
         settings.select(3); settings.upload.manageButton.performClick(nil)
         try expect(panel.attachedSheet != nil, "Manage Destinations opens the Destinations sheet on the Settings window")
         app.closePreferences()
@@ -3864,7 +3860,7 @@ enum AppSafetyTests {
         ]
         // Development aid: APP_SAFETY_FILTER=<text> runs only the cases whose title contains it. Unset, every case runs.
         let filter = ProcessInfo.processInfo.environment["APP_SAFETY_FILTER"]
-        let tests = (sharedCases + Self.modernCases + Self.webpostCases + Self.retiredFormatCases + Self.menuCases + Self.windowChromeCases + Self.uploadCases + Self.accessibilityCases + Self.auditCases + Self.batch3cCases + Self.s3EndToEndCases).filter { filter.map($0.0.contains) ?? true }
+        let tests = (sharedCases + Self.modernCases + Self.webpostCases + Self.retiredFormatCases + Self.menuCases + Self.windowChromeCases + Self.uploadCases + Self.accessibilityCases + Self.auditCases + Self.batch3cCases + Self.batch4Cases + Self.s3EndToEndCases).filter { filter.map($0.0.contains) ?? true }
         var results: [[String: Any]] = [], failures = 0
         for (name, test) in tests {
             AppSafetyAlert.reset(); AppSafetyAlert.install(); AppSafetyEvents.current = nil

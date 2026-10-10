@@ -662,7 +662,7 @@ extension AppSafetyTests {
             "drag.tip": "Drag the drawing into Finder or another app",
             "format.label": "Image format",
             "name.placeholder": "Image name",
-            "original.label": "Drag out at original size",
+            "original.label": "Export at original size",
             "original.title": "Original size",
             "palette.label": "Drawing colors",
             "palette.tip": "Color: hover for original preset colors; hold Shift to change the canvas background",
@@ -890,14 +890,14 @@ extension AppSafetyTests {
             let full = AppToolTip.text(for: app.status) ?? ""
             let parts = full.components(separatedBy: " · ")
             try expect(parts.count == 5 && parts[1] == state && parts[2].contains("×") && parts[3] == "PNG" && parts[4].hasSuffix("B"), "The full status has tool, state, size, format and bytes: \(full)")
-            let expected = [full, parts[0...2].joined(separator: " · "), parts[1...2].joined(separator: " · "), state]
+            let expected = [full, parts[0...2].joined(separator: " · "), parts[1...2].joined(separator: " · "), parts[0...1].joined(separator: " · "), state]
             for width in stride(from: app.window.minSize.width, through: 1440, by: 20) {
                 app.setWindowFrame(CGRect(origin: origin, size: CGSize(width: width, height: app.window.frame.height)))
                 app.updateViewportChrome(); content.layoutSubtreeIfNeeded()
                 let label = "\(tool.rawValue) \(state) at \(Int(width)) wide with\(app.dragOriginalControl.isHidden ? "out" : "") the checkbox"
                 let shown = app.status.stringValue, room = app.status.frame.width
                 func need(_ text: String) -> CGFloat { let probe = app.status.cell!.copy() as! NSCell; probe.stringValue = text; return probe.cellSize.width }
-                try expect(expected.contains(shown), "\(label): the status is one of the four variants, got '\(shown)'")
+                try expect(expected.contains(shown), "\(label): the status is one of the five variants, got '\(shown)'")
                 try expect(shown.contains(state), "\(label): the state '\(state)' is whole in '\(shown)'")
                 try expect(need(shown) <= room + 0.5 || shown == state, "\(label): '\(shown)' fits whole in \(room) pt")
                 let index = expected.firstIndex(of: shown) ?? 0
@@ -1624,13 +1624,13 @@ extension AppSafetyTests {
         app.setCanvasDisplayZoom(0.83, label: "Fit")
         try expect(zoom.titleOfSelectedItem == "83%" && zoom.selectedItem?.toolTip == "Fit, 83%" && (zoom.accessibilityValue() as? String) == "Fit, 83%",
                    "The face is the percentage; the mode word travels on the tooltip and the spoken value (\(zoom.titleOfSelectedItem ?? "nil"))")
-        try expect(AppToolTip.text(for: zoom) == "Fit, 83%" && zoom.toolTip == nil, "The zoom face's app tooltip carries the live mode word, with no system tooltip")
+        try expect(AppToolTip.text(for: zoom) == AppDelegate.zoomTooltip(spoken: "Fit, 83%") && AppToolTip.text(for: zoom)?.hasPrefix("Fit, 83%") == true && zoom.toolTip == nil, "The zoom face's app tooltip carries the live mode word and what the percentage is, with no system tooltip")
         app.setCanvasDisplayZoom(1, label: "Normal")
         try expect(zoom.titleOfSelectedItem == "100%" && (zoom.accessibilityValue() as? String) == "Normal, 100%", "Normal reads 100%")
         let index = try (zoom.itemArray.firstIndex { $0.title == "150%" }).unwrap("150% item")
         zoom.selectItem(at: index); app.changeZoom(zoom)
         try expect((zoom.accessibilityValue() as? String) == "150%" && abs(app.canvas.zoom - 1.5) < 0.001, "Picking a plain zoom speaks only its percentage, never the previous mode word")
-        try expect(AppToolTip.text(for: zoom) == nil, "Picking a plain zoom clears the previous mode word from the app tooltip")
+        try expect(AppToolTip.text(for: zoom) == AppDelegate.zoomTooltip(spoken: nil) && !(AppToolTip.text(for: zoom) ?? "").contains("Fit"), "Picking a plain zoom clears the previous mode word and keeps the explanation")
         // The capsule is sized once for the widest face, so no title is ever clipped. The menu-only Actual Size command is never a face.
         let cell = try (zoom.superview as? ChromeFillCell).unwrap("zoom cell")
         for item in zoom.itemArray where item.tag != ZoomPopUpButton.actualSizeTag && !item.isSeparatorItem {
@@ -1638,7 +1638,7 @@ extension AppSafetyTests {
             zoom.select(item)
             try expect(zoom.fittingSize.width <= cell.frame.width - 8 + 0.5, "\(title) fits the zoom cell (\(zoom.fittingSize.width) in \(cell.frame.width))")
         }
-        try expect(AppToolTip.text(for: zoom) == nil || AppToolTip.text(for: zoom) == "Canvas zoom", "Zoom keeps its tooltip")
+        try expect((AppToolTip.text(for: zoom) ?? "").hasSuffix("one image pixel per screen pixel."), "Zoom keeps a tooltip that says what the percentage measures")
     }
 
     private static func modernBodyType() throws {

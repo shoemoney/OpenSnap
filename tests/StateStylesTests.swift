@@ -222,11 +222,23 @@ private enum StateStylesTests {
                     StateStyles.toggleSegment(state, focused: focused, highContrast: hc, differentiate: dwc, appearance: appearance)
                 }
                 let label = "\(name) hc=\(hc)"
-                try expect(abs(alpha(style(.rest).fill) - (hc ? 0.12 : 0.06)) < 0.004 && !style(.rest).strongText, "an unselected segment rests on label@0.06 (HC 0.12): \(label)")
+                try expect(abs(alpha(style(.rest).fill) - 0.06) < 0.004 && !style(.rest).strongText, "an unselected segment rests on label@0.06 at every contrast, so a heavier plate never sits under its label: \(label)")
+                // The label's contrast on the plate it sits on is never lower with Increase Contrast than without.
+                func labelRatio(_ high: Bool) -> CGFloat {
+                    let rest = StateStyles.toggleSegment(.rest, focused: false, highContrast: high, differentiate: false, appearance: appearance)
+                    let window = P.resolve(P.Surface.window, arm: StateStyles.arm(for: appearance, highContrast: high))
+                    let shown = rest.fill.map { P.blend($0, alpha: 1, over: window) } ?? P.rgb(window).rgb
+                    return P.contrastRatio(rest.content, shown)
+                }
+                try expect(labelRatio(true) >= labelRatio(false) - 0.001 && labelRatio(true) >= 7, "Increase Contrast never lowers the unselected label's contrast (\(labelRatio(false)) -> \(labelRatio(true))): \(label)")
+                try expect((style(.rest).border != nil && style(.rest).borderWidth == 1) == hc, "Increase Contrast adds a 1 pt outline to the unselected segment and nothing else changes: \(label)")
                 try expect(abs(alpha(style(.hover).fill) - (hc ? 0.16 : 0.08)) < 0.004 && abs(alpha(style(.pressed).fill) - (hc ? 0.28 : 0.16)) < 0.004, "hover .08 and pressed .16 (HC .16, .28): \(label)")
                 let selected = style(.selected)
                 try expect(abs(alpha(selected.fill) - (hc ? 0.32 : 0.20)) < 0.004 && selected.strongText && selected.border != nil, "the selected segment is accent@0.20 with bodyStrong text: \(label)")
-                try expect(!style(.selected, dwc: true).indicator && style(.selected, dwc: true).strongText, "weight, not a capsule, marks the selected segment under Differentiate: \(label)")
+                let marked = style(.selected, dwc: true), unmarked = style(.selected)
+                try expect(marked.indicator && marked.strongText && marked.borderWidth == 2 && marked.border != nil, "Differentiate adds the capsule and a 2 pt outline on top of the weight: \(label)")
+                try expect(!unmarked.indicator && unmarked.borderWidth == 1, "without Differentiate the selected segment keeps its 1 pt accent border and no capsule: \(label)")
+                try expect(!same(marked.border, unmarked.border), "the Differentiate outline is the label colour, not the accent: \(label)")
                 try expect(style(.disabled).contentAlpha == 0.38 && alpha(style(.disabled).fill) == alpha(style(.rest).fill), "a disabled segment keeps its plate and dims its content: \(label)")
                 try expect(!style(.rest).focusRing && style(.rest, focused: true).focusRing && !style(.disabled, focused: true).focusRing, "focus ring follows focus and never shows when disabled: \(label)")
             }

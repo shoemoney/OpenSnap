@@ -1,0 +1,383 @@
+{
+ "sourceSha": "1026e58",
+ "bundleId": "com.shoemoney.opensnap.eyedump-6798",
+ "iconMode": "sf",
+ "faMode": "FA unavailable: no FontAwesome7Pro subset fonts are bundled in this build, so every capture uses SF Symbols (nothing was faked)",
+ "captureCount": 12,
+ "unavailable": [],
+ "gaps": [],
+ "captures": [
+  {
+   "id": "S03",
+   "slug": "bottombar",
+   "surface": "bottom bar",
+   "state": "Undo, Wipe | Zoom, Resize | status | Save, History | PNG|JPG, Drag, Upload",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    120
+   ],
+   "pointSize": [
+    1488,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "1026e58",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S03-bottombar-dark-ic@1026e58.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S03-bottombar-dark-ic@1026e58.json",
+   "before": null
+  },
+  {
+   "id": "S03",
+   "slug": "bottombar",
+   "surface": "bottom bar",
+   "state": "Undo, Wipe | Zoom, Resize | status | Save, History | PNG|JPG, Drag, Upload",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    120
+   ],
+   "pointSize": [
+    1488,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "1026e58",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S03-bottombar-light-ic@1026e58.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S03-bottombar-light-ic@1026e58.json",
+   "before": null
+  },
+  {
+   "id": "S03",
+   "slug": "topbar",
+   "surface": "top bar",
+   "state": "Hide, Toolbox, Photos | Snap | ten tools | Color, Size, Font; title shows document name",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    172
+   ],
+   "pointSize": [
+    1488,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "1026e58",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S03-topbar-dark-ic@1026e58.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S03-topbar-dark-ic@1026e58.json",
+   "before": "docs/design/evidence/e2e-2026-10-10/j3/S03-topbar-dark@3194247.png"
+  },
+  {
+   "id": "S03",
+   "slug": "topbar",
+   "surface": "top bar",
+   "state": "Hide, Toolbox, Photos | Snap | ten tools | Color, Size, Font; title shows document name",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    172
+   ],
+   "pointSize": [
+    1488,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "1026e58",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S03-topbar-light-ic@1026e58.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S03-topbar-light-ic@1026e58.json",
+   "before": "docs/design/evidence/e2e-2026-10-10/j3/S03-topbar-light@3194247.png"
+  },
+  {
+   "id": "S09",
+   "slug": "footer",
+   "surface": "footer",
+   "state": "zoom, status, format, drag well, upload",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    120
+   ],
+   "pointSize": [
+    1488,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "1026e58",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S09-footer-dark-ic@1026e58.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S09-footer-dark-ic@1026e58.json",
+   "before": "docs/design/evidence/e2e-2026-10-10/j3/S09-footer-dark@3194247.png"
+  },
+  {
+   "id": "S09",
+   "slug": "footer",
+   "surface": "footer",
+   "state": "zoom, status, format, drag well, upload",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    120
+   ],
+   "pointSize": [
+    1488,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "1026e58",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S09-footer-light-ic@1026e58.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S09-footer-light-ic@1026e58.json",
+   "before": "docs/design/evidence/e2e-2026-10-10/j3/S09-footer-light@3194247.png"
+  },
+  {
+   "id": "S09",
+   "slug": "footer-long-status",
+   "surface": "footer",
+   "state": "very long status text",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    120
+   ],
+   "pointSize": [
+    1488,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "1026e58",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S09-footer-long-status-dark-ic@1026e58.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S09-footer-long-status-dark-ic@1026e58.json",
+   "before": null
+  },
+  {
+   "id": "S09",
+   "slug": "footer-long-status",
+   "surface": "footer",
+   "state": "very long status text",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    120
+   ],
+   "pointSize": [
+    1488,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "1026e58",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S09-footer-long-status-light-ic@1026e58.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S09-footer-long-status-light-ic@1026e58.json",
+   "before": "docs/design/evidence/e2e-2026-10-10/j3/S09-footer-long-status-light@3194247.png"
+  },
+  {
+   "id": "S09",
+   "slug": "format-toggle-jpg",
+   "surface": "footer",
+   "state": "PNG | JPG segmented toggle with JPG selected",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    120
+   ],
+   "pointSize": [
+    1488,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "1026e58",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S09-format-toggle-jpg-dark-ic@1026e58.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S09-format-toggle-jpg-dark-ic@1026e58.json",
+   "before": null
+  },
+  {
+   "id": "S09",
+   "slug": "format-toggle-jpg",
+   "surface": "footer",
+   "state": "PNG | JPG segmented toggle with JPG selected",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    120
+   ],
+   "pointSize": [
+    1488,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "1026e58",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S09-format-toggle-jpg-light-ic@1026e58.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S09-format-toggle-jpg-light-ic@1026e58.json",
+   "before": null
+  },
+  {
+   "id": "S09",
+   "slug": "format-toggle-png",
+   "surface": "footer",
+   "state": "PNG | JPG segmented toggle with PNG selected",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    120
+   ],
+   "pointSize": [
+    1488,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "1026e58",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S09-format-toggle-png-dark-ic@1026e58.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S09-format-toggle-png-dark-ic@1026e58.json",
+   "before": null
+  },
+  {
+   "id": "S09",
+   "slug": "format-toggle-png",
+   "surface": "footer",
+   "state": "PNG | JPG segmented toggle with PNG selected",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    120
+   ],
+   "pointSize": [
+    1488,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "1026e58",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S09-format-toggle-png-light-ic@1026e58.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S09-format-toggle-png-light-ic@1026e58.json",
+   "before": "docs/design/evidence/e2e-2026-10-10/j3/S09-format-toggle-png-light@3194247.png"
+  }
+ ]
+}

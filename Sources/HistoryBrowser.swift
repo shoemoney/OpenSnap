@@ -26,6 +26,8 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         var missing: Bool
         /// False when the entry has a link but no recorded publication destination, so the app cannot take it down; the icon then says why.
         var canDeleteFromWeb = true
+        /// The size of the image that went to the web; Details reports it for a shared entry, whose editable copy may have been resized since.
+        var publishedSize: CGSize?
     }
     /// The tab names are the tile labels (`HistoryStore.Action.title`): one vocabulary, so a tab holds exactly the tiles it names.
     enum Category: Int, CaseIterable {
@@ -140,7 +142,9 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
     let filterRow = NSStackView(), actionRow = NSStackView()
     let detailsPanel = NSStackView()
     private(set) var detailsPlacement: DetailsPlacement = .beside
-    private var besideConstraints: [NSLayoutConstraint] = [], belowConstraints: [NSLayoutConstraint] = []
+    private var besideConstraints: [NSLayoutConstraint] = [], belowConstraints: [NSLayoutConstraint] = [], fullWidthConstraints: [NSLayoutConstraint] = []
+    /// With nothing in the grid there is nothing to show in the details panel, so the grid and its message take the whole width.
+    private(set) var detailsCollapsed = false
     /// The Save to History key equivalent as the empty state should show it, or nil when the menu has none. Tests replace it.
     var saveShortcut: () -> String? = { HistoryBrowser.liveSaveToHistoryShortcut(menu: NSApp?.mainMenu) }
     private var selectionChanging = false
@@ -415,6 +419,8 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
                             scroll.topAnchor.constraint(equalTo:body.topAnchor),scroll.bottomAnchor.constraint(equalTo:detailsPanel.topAnchor,constant:-Space.s3),
                             detailsPanel.leadingAnchor.constraint(equalTo:body.leadingAnchor),detailsPanel.trailingAnchor.constraint(equalTo:body.trailingAnchor),
                             detailsPanel.bottomAnchor.constraint(equalTo:body.bottomAnchor),detailsPanel.heightAnchor.constraint(equalToConstant:Self.detailsBelowHeight)]
+        fullWidthConstraints = [scroll.leadingAnchor.constraint(equalTo:body.leadingAnchor),scroll.trailingAnchor.constraint(equalTo:body.trailingAnchor),
+                                scroll.topAnchor.constraint(equalTo:body.topAnchor),scroll.bottomAnchor.constraint(equalTo:body.bottomAnchor)]
         NSLayoutConstraint.activate(besideConstraints)
 
         buildEmptyState(over:scroll,in:body)
@@ -447,6 +453,8 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
             let isLink = name == "Destination"
             value.maximumNumberOfLines = isLink ? 1 : 2; value.lineBreakMode = isLink ? .byTruncatingMiddle : .byTruncatingTail
             value.setContentCompressionResistancePriority(.defaultLow,for:.horizontal)
+            // Beside the grid the column is 248 wide: a value wraps onto its second line there instead of losing its tail.
+            if !isLink { value.preferredMaxLayoutWidth = Self.detailsWidth }
             value.setAccessibilityLabel(name); detailValues[name] = value
             let pair = NSStackView(views:[label,value]); pair.orientation = .vertical; pair.alignment = .leading; pair.spacing = 0
             detailPairs.append(pair); fields.addArrangedSubview(pair)
@@ -484,14 +492,21 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
     func layoutDetails(forContentWidth width: CGFloat) {
         let placement: DetailsPlacement = width < Self.detailsCollapseWidth ? .below : .beside
         guard placement != detailsPlacement else { return }
-        NSLayoutConstraint.deactivate(placement == .below ? besideConstraints : belowConstraints)
-        NSLayoutConstraint.activate(placement == .below ? belowConstraints : besideConstraints)
         detailsPlacement = placement
         // Below the grid the panel is a wide strip: preview on the left, fields on the right.
         detailsPanel.orientation = placement == .below ? .horizontal : .vertical
         detailsPanel.alignment = placement == .below ? .top : .leading
         for pair in detailPairs { pair.orientation = placement == .below ? .horizontal : .vertical; pair.spacing = placement == .below ? Space.s2 : 0 }
         for width in detailLabelWidths { width.isActive = placement == .below }
+        for (name,value) in detailValues where name != "Destination" { value.preferredMaxLayoutWidth = placement == .below ? 0 : Self.detailsWidth }
+        applyDetailsConstraints()
+    }
+    /// Exactly one of the beside, below or full-width sets is active; the hidden panel keeps its own constraints out of the way.
+    private func applyDetailsConstraints() {
+        let active = detailsCollapsed ? fullWidthConstraints : (detailsPlacement == .below ? belowConstraints : besideConstraints)
+        let others = [besideConstraints,belowConstraints,fullWidthConstraints].flatMap { $0 }.filter { constraint in !active.contains { $0 === constraint } }
+        NSLayoutConstraint.deactivate(others); NSLayoutConstraint.activate(active)
+        detailsPanel.isHidden = detailsCollapsed
         window?.contentView?.layoutSubtreeIfNeeded()
     }
     func windowDidResize(_ notification: Notification) {
@@ -556,6 +571,7 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         }
         status.stringValue = transientStatus ?? Self.statusText(shown:visibleItems.count,total:items.count,selected:selected.count)
         updateEmptyState()
+        if detailsCollapsed != visibleItems.isEmpty { detailsCollapsed = visibleItems.isEmpty; applyDetailsConstraints() }
         let missingCount = selected.filter(\.missing).count
         warning.stringValue = missingCount == 0 ? "" : "Error: \(missingCount) selected \(missingCount == 1 ? "file is" : "files are") missing. You can remove the history entry or use its web link."
         warning.isHidden = missingCount == 0
@@ -575,13 +591,18 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
             detailValues["Action"]?.stringValue = Set(selected.map(\.action)).sorted().joined(separator:", ")
             detailValues["Destination"]?.stringValue = "Multiple destinations"
         } else {
-            let formatter = DateFormatter(); formatter.calendar = calendar; formatter.timeZone = calendar.timeZone; formatter.dateStyle = .long; formatter.timeStyle = .short
+            let formatter = DateFormatter(); formatter.calendar = calendar; formatter.timeZone = calendar.timeZone; formatter.dateStyle = .medium; formatter.timeStyle = .short
             detailValues["Name"]?.stringValue = value.name; detailValues["Date"]?.stringValue = formatter.string(from:value.date)
-            let size = value.size
-            detailValues["Size"]?.stringValue = size.width.isFinite && size.height.isFinite ? "\(size.width.formatted()) × \(size.height.formatted())" : "Unknown size"
+            detailValues["Size"]?.stringValue = Self.sizeText(for: value.publishedSize ?? value.size)
             detailValues["Action"]?.stringValue = value.action
             detailValues["Destination"]?.stringValue = value.destination ?? value.link?.absoluteString ?? "—"
         }
+    }
+    /// A drawing's size in whole pixels with thousands separators; an older entry that stored a fractional size still reads whole.
+    nonisolated static func sizeText(for size: CGSize) -> String {
+        guard size.width.isFinite, size.height.isFinite, abs(size.width) < 1e9, abs(size.height) < 1e9 else { return "Unknown size" }
+        func whole(_ value: CGFloat) -> Int { max(1, Int((value + 0.5).rounded(.down))) }
+        return "\(whole(size.width).formatted()) × \(whole(size.height).formatted())"
     }
     /// The headline and one line per kind for the grid's current contents, in the tab order; empty when the grid is empty.
     nonisolated static func summaryLines(for items: [Item]) -> [String] {
@@ -605,10 +626,10 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
     static let confirmationDuration: TimeInterval = 5
     private var transientStatus: String?
     private var confirmationTimer: Timer?
-    func confirm(_ message: String) {
+    func confirm(_ message: String,duration: TimeInterval? = nil) {
         transientStatus = message
         confirmationTimer?.invalidate()
-        let timer = Timer(timeInterval:Self.confirmationDuration,repeats:false) { [weak self] _ in
+        let timer = Timer(timeInterval:duration ?? Self.confirmationDuration,repeats:false) { [weak self] _ in
             MainActor.assumeIsolated { self?.clearConfirmation() }
         }
         confirmationTimer = timer; RunLoop.main.add(timer,forMode:.common)
