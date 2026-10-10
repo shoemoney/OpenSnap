@@ -17,6 +17,7 @@ extension AppSafetyTests {
             ("Every document-scoped question is a sheet on the document window: Discard, Rename, History confirmations and errors", windowAlertsAreSheetsOnTheDocumentWindow),
             ("One Discard question at a time from New, Open and captures; answering Cancel keeps the document", windowDiscardQuestionIsSingle),
             ("Quit during an open Discard question asks its own question: Cancel keeps the app, Don't Save approves and the answer reaches AppKit later", windowQuitDuringOpenAlert),
+            ("Sheets that end without a button (endSheet, panel close) answer Cancel, free the question bookkeeping, and Quit still completes", windowQuitAfterSheetsEndWithoutAnswer),
             ("Quit with Save: the save panel cancelling refuses the quit; the answer arrives after applicationShouldTerminate returned", windowQuitSaveRefused),
             ("An error raised while a Discard sheet is open stacks on it instead of waiting out of sight", windowErrorStacksOnOpenSheet),
             ("Rename and Timed Snapshot prompts take their text from the sheet's field and ignore Cancel", windowPromptsTakeSheetText)
@@ -278,6 +279,38 @@ extension AppSafetyTests {
         // The stale New question, answered now, must not touch a document that is being quit.
         newQuestion.reply(.alertFirstButtonReturn)
         try expect(app.canvas.document == before && AppSafetyFilePanel.answers.isEmpty, "A New question answered after Quit started does nothing")
+        app.applicationWillTerminate(Notification(name: NSApplication.willTerminateNotification))
+    }
+
+    /// Real sheets (not the answer seam): the paths that ended an alert with no button used to leave its completion, the
+    /// one-question flag and Quit's reply hanging.
+    private static func windowQuitAfterSheetsEndWithoutAnswer() throws {
+        let fixture = try Fixture(), app = fixture.app
+        _ = try editor(app, text: "Ended by hand")
+        let before = app.canvas.document
+        let savedPresenter = AppAlert.presenter, savedPresentable = AppAlert.hostIsPresentable
+        AppAlert.presenter = nil; AppAlert.hostIsPresentable = { _ in true }
+        defer { AppAlert.presenter = savedPresenter; AppAlert.hostIsPresentable = savedPresentable }
+        // New asks; the sheet is ended from outside with no button.
+        app.newFile()
+        try expect(AppAlert.presentedAlerts.count == 1 && app.discardQuestionOpen && app.window.attachedSheet === AppAlert.presentedAlerts[0].panel,
+                   "New raises a real sheet on the document window and marks the question open")
+        app.window.endSheet(AppAlert.presentedAlerts[0].panel)
+        try expect(AppAlert.presentedAlerts.isEmpty && !app.discardQuestionOpen && app.canvas.document == before && app.dirty,
+                   "endSheet with no button answers Cancel: the question is no longer open, nothing is discarded")
+        // Quit asks; the sheet's panel is closed with no button. AppKit must be told no, not left waiting.
+        try expect(app.applicationShouldTerminate(NSApp) == .terminateLater && AppAlert.presentedAlerts.count == 1 && AppSafetyTermination.replies.isEmpty,
+                   "Quit raises its real question and waits")
+        AppAlert.presentedAlerts[0].panel.close()
+        try waitForMain("The Quit question's end reaches AppKit") { AppSafetyTermination.replies == [false] }
+        try expect(AppSafetyTermination.replies == [false] && AppAlert.presentedAlerts.isEmpty && !app.terminationStarted && app.shutdownPending.isEmpty && app.dirty,
+                   "A closed Quit question refuses the quit once; no cleanup is pending (replies \(AppSafetyTermination.replies))")
+        // Quit once more and let the user answer: the decision completes and nothing stays pending.
+        try expect(app.applicationShouldTerminate(NSApp) == .terminateLater && AppAlert.presentedAlerts.count == 1, "A later Quit asks again")
+        AppAlert.presentedAlerts[0].buttonViews[2].performClick(nil)
+        try waitForMain("The approval reaches AppKit") { AppSafetyTermination.replies == [false, true] }
+        try expect(app.shutdownPending.isEmpty && AppAlert.presentedAlerts.isEmpty, "Don't Save approves; no shutdown participant or alert is left pending")
+        try expect(app.applicationShouldTerminate(NSApp) == .terminateNow, "The termination decision completes: terminateNow, no terminateLater left")
         app.applicationWillTerminate(Notification(name: NSApplication.willTerminateNotification))
     }
 

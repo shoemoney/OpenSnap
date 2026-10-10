@@ -945,31 +945,6 @@
   {
    "area": "MENU",
    "surface": "Menu bar › Edit",
-   "name": "Wipe",
-   "type": "menu item",
-   "icon": "clear",
-   "entryPath": "Menu bar › Edit › Wipe",
-   "prerequisite": "A drawing with annotations",
-   "expected": "First use clears the drawing; a second use erases the background (per the hint text)",
-   "owner": "app",
-   "exercise": "e2e",
-   "gap": null,
-   "note": null,
-   "shortcut": null,
-   "proof": [],
-   "rendered": [
-    "S12",
-    "S16",
-    "S17"
-   ],
-   "sources": [
-    "source"
-   ],
-   "id": "E2E-MENU-026"
-  },
-  {
-   "area": "MENU",
-   "surface": "Menu bar › Edit",
    "name": "Wipe Snap Only",
    "type": "menu item",
    "icon": "rectangle.slash",
@@ -2467,6 +2442,31 @@
     "source"
    ],
    "id": "E2E-MENU-087"
+  },
+  {
+   "area": "MENU",
+   "surface": "Menu bar › Edit",
+   "name": "Clear Image",
+   "type": "menu item",
+   "icon": "clear",
+   "entryPath": "Menu bar › Edit › Clear Image",
+   "prerequisite": "A drawing with annotations",
+   "expected": "First use clears the drawing; a second use erases the background (per the hint text)",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": null,
+   "shortcut": null,
+   "proof": [],
+   "rendered": [
+    "S12",
+    "S16",
+    "S17"
+   ],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-MENU-088"
   },
   {
    "area": "TOOLBOX",

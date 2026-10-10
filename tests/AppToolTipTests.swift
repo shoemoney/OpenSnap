@@ -155,6 +155,14 @@ private enum AppToolTipTests {
             tip.show(for: r.plain)
             expect(tip.panel!.appearance?.name == name, "The plate follows the window's appearance (\(name.rawValue))")
         }
+        // Contrast, measured from the drawn plate: the body text reads at 4.5:1 in light, dark and both Increase Contrast arms.
+        AppToolTip.setText("A short tip", for: r.plain)
+        tip.show(for: r.plain)
+        let plateView = tip.panel!.contentView!, plateLabel = tip.label!
+        for (name, appearance) in ContrastProbe.appearances {
+            let reading = ContrastProbe.measure(plateView, appearance: appearance, plateAt: NSPoint(x: 5, y: plateView.bounds.midY), textFrames: [plateLabel.frame])
+            expect(reading.plateOpaque && reading.textRatios[0] >= 4.5, "The tooltip plate is opaque and its text reads at 4.5:1 (\(name): opaque \(reading.plateOpaque), \(reading.textRatios[0]))")
+        }
         let plateFill = DesignTokens.Palette.resolve(DesignTokens.Palette.Surface.content, for: NSAppearance(named: .aqua)!)
         let darkFill = DesignTokens.Palette.resolve(DesignTokens.Palette.Surface.content, for: NSAppearance(named: .darkAqua)!)
         expect(plateFill != darkFill, "The plate's surface role resolves to different colours in light and dark")

@@ -64,9 +64,9 @@ def before_stem(c):
     table = {
         ("S01", "editor-empty"): "S01-editor-empty", ("S02", "populated"): "S02-populated", ("S03", "topbar"): "S03-topbar",
         ("S30", "size-popover-w980"): "S06-size-mid", ("S30", "size-popover-w1280"): "S06-size-mid",
-        ("S31", "color-popover-w980"): "S06-color-palette", ("S31", "color-popover-custom-w980"): "S31-color-popover-w980",
+        ("S31", "color-popover-w980"): "S06-color-palette", ("S31", "color-popover-custom-w980"): "S31-color-popover-custom-w980",
         ("S31", "color-popover-w1440"): "S31-color-popover-w980", ("S31", "color-popover-custom-w1440"): "S31-color-popover-w980",
-        ("S31", "color-popover-only-custom-w980"): "S31-color-popover-only-w980",
+        ("S31", "color-popover-only-custom-w980"): "S31-color-popover-only-custom-w980",
         ("S31", "color-popover-only-w1440"): "S31-color-popover-only-w980", ("S31", "color-popover-only-custom-w1440"): "S31-color-popover-only-w980",
         ("S32", "frame-large-w980"): "S12-frame-w980",
         ("S33", "large-shot-w980"): "S07-large-fit", ("S33", "large-shot-w980-bottombar"): "S09-footer",
