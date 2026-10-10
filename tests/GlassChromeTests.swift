@@ -1491,16 +1491,34 @@ private enum GlassChromeTests {
         expect(field.cell?.cellSize.width ?? 0 > 150 && field.lineBreakMode == .byTruncatingTail, "...that cut is the status line's own tail truncation")
     }
 
-    /// Audit batch 3b (F-J2-021, F-J2-022): a long error keeps both ends, the Details text has no second "Error:", a retry is named, the success line
+    /// Audit batch 3b (F-J2-021, F-J2-022): a long error is the sentence whole, its code, or "Upload failed" and never a cut sentence, the Details text has no second "Error:", a retry is named, the success line
     /// lasts, and "Upload cancelled" is a notice that outlives the next status refresh.
     private static func uploadOutcomeChecks() {
         let long = "The publishing password could not be read from macOS Keychain (-25300).\nSecond line."
         let failure = UploadState.failure(message: long)
         let variants = failure.statusVariants
         expect(variants.first == "The publishing password could not be read from macOS Keychain (-25300).", "The longest variant is the whole first line (\(variants.first ?? ""))")
-        expect(variants.count > 5 && variants.last == "Upload failed", "There are middle-cut steps and a sentence that always fits (\(variants.count))")
-        expect(zip(variants.dropLast(), variants.dropLast().dropFirst()).allSatisfy { $0.count >= $1.count } && variants.allSatisfy { !$0.hasPrefix("Error: ") }, "Steps only get shorter and none spends twelve characters on an Error: lead (R2-014)")
-        expect(variants.dropFirst().dropLast().allSatisfy { $0.contains("…") && $0.hasSuffix(")") || $0.hasSuffix(".") }, "A cut keeps the end of the line, where the code is (\(variants.dropFirst().first ?? ""))")
+        expect(variants == [long.components(separatedBy: "\n")[0], "Upload failed · -25300", "Upload failed"], "The sentence whole, then its code, then the plain fallback (\(variants))")
+        expect(variants.allSatisfy { !$0.contains("…") && !$0.hasPrefix("Error: ") }, "No error variant is a cut sentence or spends twelve characters on an Error: lead (R2-014)")
+        let samples: [(String, String?)] = [
+            ("The server returned HTTP 403 for this request and refused it.", "HTTP 403"),
+            ("Upload to the bucket failed: 403 Forbidden", "HTTP 403"),
+            ("http/1.1 503 Service Unavailable while sending the file to the destination", "HTTP 503"),
+            ("curl: (6) Could not resolve host: uploads.example.com and no fallback was set", "curl 6"),
+            ("curl exited with status 28 after waiting for the destination to answer", "curl 28"),
+            ("The publishing password could not be read from macOS Keychain (-25300).", "-25300"),
+            ("Keychain returned OSStatus -34018 when reading the saved password", "-34018"),
+            ("curl 7.88.1 is installed but the destination refused the connection", nil),
+            ("The destination answered after 1403 milliseconds and then went away", nil),
+            ("Connection reset by the destination before the whole picture was sent", nil),
+        ]
+        for (message, code) in samples {
+            expect(UploadState.errorCode(in: message) == code, "\(code ?? "no code") is read from \"\(message)\" (got \(UploadState.errorCode(in: message) ?? "none"))")
+            let steps = UploadState.failure(message: message).statusVariants
+            expect(steps == [message] + (code.map { ["Upload failed · " + $0] } ?? []) + ["Upload failed"] && steps.allSatisfy { !$0.contains("…") }, "\"\(message)\" has the sentence, its code if any, then Upload failed; never an ellipsis (\(steps))")
+        }
+        expect(UploadState.failure(message: "HTTP 403 Forbidden for the upload").statusVariants == ["HTTP 403 Forbidden for the upload", "Upload failed · HTTP 403", "Upload failed"], "A code already in the sentence is still offered when the sentence no longer fits")
+        expect(UploadState.failure(message: "HTTP 403").statusVariants == ["HTTP 403"] && UploadState.failure(message: "Upload failed").statusVariants == ["Upload failed"], "A line no longer than its fallback is shown alone")
         expect(UploadState.failure(message: "No.").statusVariants == ["No."] && UploadState.failure(message: "Error: Prefixed.\nMore").statusVariants == ["Prefixed."], "A short error is one sentence, and a message that carries Error: loses it from the footer")
         let field = StatusTextField(labelWithString: "")
         field.font = DesignTokens.Typography.font(.body); field.lineBreakMode = .byTruncatingTail
@@ -1508,7 +1526,7 @@ private enum GlassChromeTests {
         func shown(_ width: CGFloat) -> String { field.setFrameSize(NSSize(width: width, height: 24)); return field.stringValue }
         expect(shown(2000) == variants.first, "A wide slot shows the whole error")
         let narrow = shown(420)
-        expect(narrow != variants.first && narrow.contains("…") && narrow.hasSuffix("(-25300)."), "A narrower slot cuts the middle and keeps the code, not just a truncated head (\(narrow))")
+        expect(narrow == "Upload failed · -25300" && !narrow.contains("…") && shown(150) == "Upload failed", "A narrower slot gives the code, a narrower still the plain fallback (\(narrow))")
         // The Details sheet's text drops the prefix its title makes redundant; the tooltip and VoiceOver help keep it.
         expect(failure.failureBody == long && UploadState.failure(message: "Error: Twice.").failureBody == "Twice.", "The Details text has no leading Error:")
         expect(failure.failureDetail == "Error: " + long && UploadState.idle.failureBody == nil, "The tooltip text still leads with Error:")

@@ -1,6 +1,6 @@
 # Audit fix 6: Original size and Resize, footer at 980, Toolbox, Hide and Trash, History at 880
 
-Source `cc764dc`; icon mode **sf** (FA unavailable); 76 captures, every PNG scaled to at most 1200 px wide.
+Source `cc764dc` (the four S44 footer error captures: `1e5cb33`, the footer error shows the whole line, Upload failed · code, or Upload failed); icon mode **sf** (FA unavailable); 78 captures, every PNG scaled to at most 1200 px wide.
 Pre-change twins are referenced from `docs/design/evidence/impl-2026-10-09/audit-fix-5` at `f7f68be`; they are not copied.
 
 | Capture | Appearance | Window pt | What it shows | Layout JSON | BEFORE (pre-change) |
@@ -59,10 +59,12 @@ Pre-change twins are referenced from `docs/design/evidence/impl-2026-10-09/audit
 | `S44-editor-original-ticked-light@cc764dc.png` | light | 980×640 | Original size ticked: the title reads 4800 × 3200 · PNG · 1.4 MB (F-J6-005, F-J6-010) | `layout/S44-editor-original-ticked-light@cc764dc.json` | — |
 | `S44-editor-original-unticked-dark@cc764dc.png` | dark | 980×640 | Original size unticked: the title reads 1517 × 1011 · PNG · 305 KB (F-J6-005, F-J6-010) | `layout/S44-editor-original-unticked-dark@cc764dc.json` | — |
 | `S44-editor-original-unticked-light@cc764dc.png` | light | 980×640 | Original size unticked: the title reads 1517 × 1011 · PNG · 305 KB (F-J6-005, F-J6-010) | `layout/S44-editor-original-unticked-light@cc764dc.json` | — |
+| `S44-footer-w1440-error-dark@1e5cb33.png` | dark | 1440×900 | 1440 wide with Original size showing, a failed upload: the 61-character line does not fit the slot, so it reads Upload failed · HTTP 403, not a cut sentence | `layout/S44-footer-w1440-error-dark@1e5cb33.json` | — |
+| `S44-footer-w1440-error-light@1e5cb33.png` | light | 1440×900 | 1440 wide with Original size showing, a failed upload: the 61-character line does not fit the slot, so it reads Upload failed · HTTP 403, not a cut sentence | `layout/S44-footer-w1440-error-light@1e5cb33.json` | — |
 | `S44-footer-w1440-unsaved-dark@cc764dc.png` | dark | 1440×900 | 1440 wide: both format segments, the whole status | `layout/S44-footer-w1440-unsaved-dark@cc764dc.json` | — |
 | `S44-footer-w1440-unsaved-light@cc764dc.png` | light | 1440×900 | 1440 wide: both format segments, the whole status | `layout/S44-footer-w1440-unsaved-light@cc764dc.json` | — |
-| `S44-footer-w980-error-dark@cc764dc.png` | dark | 980×640 | 980 wide, a failed upload: the message without an Error: lead, Retry and Details beside it (R2-014) | `layout/S44-footer-w980-error-dark@cc764dc.json` | — |
-| `S44-footer-w980-error-light@cc764dc.png` | light | 980×640 | 980 wide, a failed upload: the message without an Error: lead, Retry and Details beside it (R2-014) | `layout/S44-footer-w980-error-light@cc764dc.json` | — |
+| `S44-footer-w980-error-dark@1e5cb33.png` | dark | 980×640 | 980 wide, a failed upload: the message without an Error: lead, or Upload failed · and its code, never a cut sentence; Retry and Details beside it (R2-014) | `layout/S44-footer-w980-error-dark@1e5cb33.json` | — |
+| `S44-footer-w980-error-light@1e5cb33.png` | light | 980×640 | 980 wide, a failed upload: the message without an Error: lead, or Upload failed · and its code, never a cut sentence; Retry and Details beside it (R2-014) | `layout/S44-footer-w980-error-light@1e5cb33.json` | — |
 | `S44-footer-w980-nothing-to-save-dark@cc764dc.png` | dark | 980×640 | 980 wide, Save to History on a blank canvas: the notice reads whole (F-J6-004) | `layout/S44-footer-w980-nothing-to-save-dark@cc764dc.json` | — |
 | `S44-footer-w980-nothing-to-save-light@cc764dc.png` | light | 980×640 | 980 wide, Save to History on a blank canvas: the notice reads whole (F-J6-004) | `layout/S44-footer-w980-nothing-to-save-light@cc764dc.json` | — |
 | `S44-footer-w980-saved-dark@cc764dc.png` | dark | 980×640 | 980 wide, saved | `layout/S44-footer-w980-saved-dark@cc764dc.json` | — |
