@@ -284,13 +284,19 @@ class CommandButton: OriginalActionButton, ChromeFillable {
     private func showIndicator(_ style: StateStyle) {
         showsIndicator = style.indicator
         guard let layer else { return }
+        // The capsule appears and goes at once: no implicit fade, so it never lingers half-visible after the selection moves.
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        defer { CATransaction.commit() }
         guard style.indicator else { indicatorLayer.isHidden = true; return }
         let size = StateStyles.indicatorSize(highContrast: accessibility.increaseContrast)
         if indicatorLayer.superlayer !== layer { layer.addSublayer(indicatorLayer) }
         indicatorLayer.isHidden = false
         indicatorLayer.cornerRadius = size.height / 2
         indicatorLayer.backgroundColor = style.content.cgColor
-        indicatorLayer.frame = NSRect(x: (bounds.width - size.width) / 2, y: StateStyles.indicatorInset, width: size.width, height: size.height)
+        // A button's layer follows the view's flipped coordinates, so "under the glyph" is measured from whichever edge is the bottom.
+        let y = isFlipped ? bounds.height - StateStyles.indicatorInset - size.height : StateStyles.indicatorInset
+        indicatorLayer.frame = NSRect(x: (bounds.width - size.width) / 2, y: y, width: size.width, height: size.height)
     }
 
     override func layout() {

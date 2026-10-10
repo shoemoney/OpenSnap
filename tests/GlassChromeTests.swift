@@ -618,7 +618,8 @@ private enum GlassChromeTests {
                 if dwc {
                     let size = StateStyles.indicatorSize(highContrast: hc)
                     expect(tool.indicatorLayer.superlayer === tool.layer && tool.indicatorLayer.frame.size == size && size == NSSize(width: 16, height: 2)
-                           && abs(tool.indicatorLayer.frame.midX - tool.bounds.midX) < 0.5 && tool.indicatorLayer.frame.minY == StateStyles.indicatorInset,
+                           && abs(tool.indicatorLayer.frame.midX - tool.bounds.midX) < 0.5
+                           && (tool.isFlipped ? tool.bounds.height - tool.indicatorLayer.frame.maxY : tool.indicatorLayer.frame.minY) == StateStyles.indicatorInset,
                            "\(tag): a 2 x 16 pt capsule under the glyph, centred (\(tool.indicatorLayer.frame))")
                     expect(tool.indicatorLayer.cornerRadius == 1 && tool.indicatorLayer.backgroundColor != nil, "\(tag): the indicator is a capsule with a fill")
                 }
@@ -957,7 +958,7 @@ private enum GlassChromeTests {
         expect(rig.chrome.toolButtons.filter { $0.value.showsIndicator }.keys.sorted() == ["brush"], "Only the selected tool carries it")
         rig.chrome.toolButtons["line"]!.state = .on
         brush.state = .off
-        expect(!brush.showsIndicator && rig.chrome.toolButtons["line"]!.showsIndicator, "The capsule follows the selection")
+        expect(!brush.showsIndicator && brush.indicatorLayer.isHidden && rig.chrome.toolButtons["line"]!.showsIndicator, "The capsule follows the selection and the old one is hidden at once")
         DisplayOptions.override = .none
         rig.box.value = .live
         NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)

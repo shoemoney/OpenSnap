@@ -958,7 +958,9 @@ extension AuditRun {
             swatches[2].setHovered(false); swatches[4].highlight(false)
         } else { gap("S40", "Swatch states", "the colour popover window did not appear") }
         app.closeDrawingColors()
-        pump(0.3)
+        // Closing a popover hands key status away; the focus rings below only draw in the key window.
+        window.makeKeyAndOrderFront(nil)
+        pump(0.5)
 
         // Bottom bar: Undo and Wipe, the drag well, the PNG | JPG toggle.
         chrome.undoButton.setHovered(true)
@@ -1007,6 +1009,7 @@ extension AuditRun {
         footer("toggle-disabled", "PNG | JPG disabled: both segments' content at 0.38", ["GlassChrome.swift|override var isEnabled: Bool { didSet { needsDisplay"])
         toggle.isEnabled = true
         app.updateStatus()
+        window.makeKeyAndOrderFront(nil)
 
         // The canvas border on a small canvas, so the hairline and the handles are easy to see.
         loadSynthetic(size: CGSize(width: 520, height: 300), name: "Border states")
