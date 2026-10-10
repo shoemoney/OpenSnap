@@ -2226,13 +2226,6 @@
   ],
   [
    "AXRadioButton",
-   "Archived",
-   [
-    "S20"
-   ]
-  ],
-  [
-   "AXRadioButton",
    "Both",
    [
     "S17"
@@ -2271,6 +2264,13 @@
    "End",
    [
     "S17"
+   ]
+  ],
+  [
+   "AXRadioButton",
+   "Exported",
+   [
+    "S20"
    ]
   ],
   [
@@ -2384,13 +2384,6 @@
   ],
   [
    "AXRadioButton",
-   "Posted to Web",
-   [
-    "S20"
-   ]
-  ],
-  [
-   "AXRadioButton",
    "Precise",
    [
     "S17"
@@ -2406,6 +2399,13 @@
   [
    "AXRadioButton",
    "Saved",
+   [
+    "S20"
+   ]
+  ],
+  [
+   "AXRadioButton",
+   "Shared",
    [
     "S20"
    ]
