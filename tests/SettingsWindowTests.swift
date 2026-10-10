@@ -189,6 +189,17 @@ private enum SettingsWindowTests {
             expect(button.imagePosition == .imageLeading && button.image != nil, "\(button.title): an icon beside the label")
             expect(button.frame.height >= DesignTokens.Size.hitMin, "\(button.title): the tab is at least \(DesignTokens.Size.hitMin) pt tall (\(button.frame.height))")
         }
+        // Differentiate Without Color: the current tab is also a 2 pt outline in the text colour, not only an accent tint.
+        func currentBorder(_ options: DisplayOptions?) -> (CGFloat, Bool) {
+            DisplayOptions.override = options
+            strip.select(0); strip.select(1); strip.select(0)
+            let layer = strip.buttons[0].layer
+            let accent = DesignTokens.Palette.resolve(DesignTokens.Palette.accent, for: strip.effectiveAppearance).cgColor
+            return (layer?.borderWidth ?? 0, layer?.borderColor != nil && layer?.borderColor != accent && strip.buttons[1].layer?.borderWidth == 0)
+        }
+        let plainTab = currentBorder(.none), outlinedTab = currentBorder(DisplayOptions(differentiateWithoutColor: true))
+        DisplayOptions.override = nil
+        expect(plainTab.0 == 1 && outlinedTab.0 == 2 && outlinedTab.1 && !plainTab.1, "the current tab gains a 2 pt outline under Differentiate Without Color and the others stay bare (\(plainTab.0) -> \(outlinedTab.0))")
         expect(strip.contentWidth + 2 * DesignTokens.Space.s3 <= SettingsLayout.contentWidth, "the four tabs fit the 640 pt window: \(strip.contentWidth)")
         let stripBox = strip.convert(strip.bounds, to: window.contentView), rowBox = strip.buttons.map { $0.convert($0.bounds, to: window.contentView) }.reduce(NSRect.null) { $0.union($1) }
         expect(abs((rowBox.midX) - stripBox.midX) < 1, "the tabs are centred across the window")
