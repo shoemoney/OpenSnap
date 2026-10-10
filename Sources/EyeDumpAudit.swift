@@ -44,6 +44,8 @@ final class AuditRun {
     let sizes: [String]
     var gaps: [[String: String]] = []
     var window: NSWindow { app.window }
+    /// Swallows real keyboard and mouse input for the life of the run (`HarnessInputGuard`).
+    var inputGuard: Any?
 
     init(app: AppDelegate, dir: URL, appearance: String, wanted: Set<String>, requestedIcons: String = "sf", sizes: [String] = []) {
         self.app = app; self.dir = dir; self.appearance = appearance; self.wanted = wanted

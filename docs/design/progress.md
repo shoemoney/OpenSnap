@@ -42,7 +42,7 @@ Each row is a todo that is done, verified, or not-a-bug. Commits in brackets are
 | OSN-010 | done | `c53155c` (`891c197`, `ab4373d`, `4f164ef`, `2189f4a`) | app-safety 145/145; GlassChromeTests 13266 checks | `m1-rail` |
 | OSN-011 | done | `c53155c` (`de7f511`) | same suites as OSN-010 | `m1-rail` |
 | OSN-012 | done | `c53155c` (`b30ee32`, `356dde5`) | rail-removal regression suite; same suites | n/a |
-| OSN-013 | done | `c53155c` (`f9bc0fc` to `e2db58c`) | 80-capture matrix, visual (no unit count); reviewed by Opus | `m1-rail`, 80 at `fef46c7` |
+| OSN-013 | done | `c53155c` (`f9bc0fc` to `e2db58c`) | 80-capture matrix, visual (no unit count); independently reviewed | `m1-rail`, 80 at `fef46c7` |
 | OSN-014 | done | `c53155c` (`ab4373d`, `2189f4a`, `fef46c7`) | Frame captures in the matrix | `m1-rail` |
 | OSN-020 | done | `77bad0c` (`45dc148`, `dbf7461`) | `tools/check-clean-clone.sh` passed on `dbf7461` | n/a |
 | OSN-021 | verified | before baseline: `fc77158`, `691b890`, `12c6dfa` | source gates clean | `m5-capture` (countdown) |
@@ -280,7 +280,7 @@ App-specific alerts are no longer NSAlert: they are app-owned sheets at 20 pt (O
 - **OSN-070:** not recorded as landed: G3 (`check-user-strings.py`), the dynamic Skitch-string check, and a layout-fit-at-980 gate beyond the measured-width test in `658a16f`. G5 and G9 are not further recorded in this pass.
 - **OSN-072:** migration on a copy of the owner's real store is not authorized in this run. Synthetic temp stores only. The release work is a dry run only: no tag, push, upload or release.
 - **OSN-054:** the upload UX is merged (`7c8bdb1`). The AWS run on 2026-10-09 is validation evidence; the E2E audit added a live upload (J2) and a live delete through the app (J4).
-- **Not run:** live screen capture; real popover translucency; VoiceOver speech (OSN-062 manual pass); Reduce Transparency alone and Increase Contrast alone captures (both together are in `m4-glass`); FA Pro icon mode; the OSN-071 visual gallery and Opus sign-off.
+- **Not run:** live screen capture; real popover translucency; VoiceOver speech (OSN-062 manual pass); Reduce Transparency alone and Increase Contrast alone captures (both together are in `m4-glass`); FA Pro icon mode; the OSN-071 visual gallery and independent visual sign-off.
 - **OSN-023:** manual 1x and 2x menu-bar check not done.
 - **Alert check count reconciled:** the full integration run at `a79a1d8` prints `AppAlertTests: 77 checks passed`; the `2cc0415` commit message figure (74) predates later additions.
 - **Not done:** no push and no release. The first real launch and migration on the owner's machine is parked by the owner.

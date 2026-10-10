@@ -447,6 +447,44 @@ def test_display_injection(base, home):
     check(any(read_launches(out)), "display (can fail): without the validation loop a bogus name does launch, so the refusal above is the validation's doing")
 
 
+def harness_sources():
+    return sorted((root / "Sources").glob("EyeDumpAudit*.swift"))
+
+
+def pasteboard_problems(sources):
+    """Harness code never touches the shared clipboard, and the run installs the input fence before it shows a window."""
+    problems = []
+    for path in sources:
+        if path.name == "EyeDumpAuditInputGuard.swift":
+            continue
+        for number, line in enumerate(path.read_text().splitlines(), 1):
+            if re.search(r"NSPasteboard\s*\.\s*general|NSPasteboard\s*\(\s*name\s*:\s*\.general", line):
+                problems.append(f"{path.name}:{number} uses the general pasteboard")
+    surfaces = (root / "Sources" / "EyeDumpAuditSurfaces.swift").read_text()
+    execute = surfaces[surfaces.index("func execute()"):]
+    if "HarnessInputGuard.install()" not in execute[:400]:
+        problems.append("AuditRun.execute() does not install the input fence first")
+    return problems
+
+
+def test_input_fence(base):
+    check(pasteboard_problems(harness_sources()) == [], "harness (R1-001): no EyeDumpAudit*.swift names the general pasteboard and execute() installs the input fence first")
+    scratch = Path(base) / "fence-sources"
+    scratch.mkdir()
+    for path in harness_sources():
+        shutil.copy(path, scratch / path.name)
+    leaky = scratch / "EyeDumpAuditSurfaces.swift"
+    leaky.write_text(leaky.read_text().replace("inputGuard = HarnessInputGuard.install()", "").replace("func execute() {", "func execute() {\n        NSPasteboard.general.clearContents()", 1))
+    found = [path for path in [leaky]]
+    problems = []
+    for path in found:
+        for number, line in enumerate(path.read_text().splitlines(), 1):
+            if re.search(r"NSPasteboard\s*\.\s*general", line):
+                problems.append(number)
+    check(problems != [], "harness (can fail): a planted NSPasteboard.general line in a scratch copy is detected by the same pattern")
+    check("HarnessInputGuard.install()" not in leaky.read_text()[leaky.read_text().index("func execute()"):][:400], "harness (can fail): a scratch copy without the install call fails the fence-first check")
+
+
 def test_runs_were_safe():
     check(len(RUNS) > 0 and all(env_problem(env) is None for env in RUNS),
           f"every one of the {len(RUNS)} script runs used the scratch HOME and the fake defaults recorder")
@@ -464,6 +502,7 @@ with tempfile.TemporaryDirectory(prefix="eyedump-guard-test.") as scratch:
     test_script(scratch, scratch_home)
     test_cleanup_protection(scratch, scratch_home)
     test_display_injection(scratch, scratch_home)
+    test_input_fence(scratch)
     test_runs_were_safe()
 if failures:
     raise SystemExit(f"FAIL test-eye-dump-audit-guard: {len(failures)} check(s) failed")

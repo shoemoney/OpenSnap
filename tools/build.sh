@@ -36,16 +36,14 @@ cp "$ROOT/Resources/OpenSnap.png" "$APP/Contents/Resources/"
 cp "$ROOT/LICENSE" "$APP/Contents/Resources/LICENSE.txt"
 # Font Awesome Free (CC BY 4.0) attribution, read from the About window's "Third-party notices" link.
 cp "$ROOT/THIRD_PARTY_NOTICES.md" "$APP/Contents/Resources/THIRD_PARTY_NOTICES.txt"
-# Font Awesome Pro is optional and never committed: with your own token the
-# fetch step builds glyph subsets under build/fonts; without them Modern
-# falls back to SF Symbols. A failed fetch must not fail the build.
+# The app ships and is tested with Font Awesome FREE vectors (embedded) and SF Symbols. Font Awesome Pro is opt-in only and never
+# committed: OPENSNAP_PRO_FONTS=1 bundles the subsets already sitting in build/fonts, and OPENSNAP_FETCH_FONTAWESOME=1 (your own
+# token) builds them first. A failed fetch must not fail the build. The default build never bundles a Pro font.
 if [ "${OPENSNAP_FETCH_FONTAWESOME:-0}" = 1 ]; then
   sh "$ROOT/tools/fetch-fontawesome.sh" || echo "warning: Font Awesome Pro fetch failed; building without it" >&2
 fi
 rm -f "$APP/Contents/Resources"/FontAwesome7Pro-*-subset.ttf
-# OPENSNAP_NO_PRO_FONTS=1 (used by tools/release.sh) skips bundling any
-# subsets already sitting in build/fonts.
-if [ "${OPENSNAP_NO_PRO_FONTS:-0}" != 1 ]; then
+if [ "${OPENSNAP_PRO_FONTS:-0}" = 1 ]; then
   for FONT in "$ROOT"/build/fonts/FontAwesome7Pro-*-subset.ttf; do
     if [ -f "$FONT" ]; then cp "$FONT" "$APP/Contents/Resources/"; fi
   done

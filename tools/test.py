@@ -211,7 +211,9 @@ if failures:
     check_real_store(real_store_before)
     raise SystemExit(1)
 print("== build + check-no-original", flush=True)
-subprocess.run(["sh", str(root / "tools" / "build.sh")], cwd=root, check=True, stdout=subprocess.DEVNULL)
+# R1-004: the default build never bundles a Font Awesome Pro font, whatever sits in build/fonts.
+subprocess.run(["sh", str(root / "tools" / "build.sh")], cwd=root, check=True, stdout=subprocess.DEVNULL, env={k: v for k, v in os.environ.items() if k != "OPENSNAP_PRO_FONTS"})
+subprocess.run([sys.executable, str(root / "tools" / "check-no-fonts.py"), str(build / "OpenSnap.app")], cwd=root, check=True)
 subprocess.run([sys.executable, str(root / "tools" / "check-no-original.py"), str(build / "OpenSnap.app")], cwd=root, check=True)
 # G11: a SKIP in any suite output needs a reason of "macOS < N" or "FA not bundled".
 skips = subprocess.run([sys.executable, str(root / "tools" / "check-skip-budget.py"), "-"], input="".join(SUITE_OUTPUT), text=True)

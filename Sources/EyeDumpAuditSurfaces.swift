@@ -291,6 +291,7 @@ extension AuditRun {
     // MARK: orchestration
 
     func execute() {
+        inputGuard = HarnessInputGuard.install()
         let before = NSApp.effectiveAppearance.name.rawValue
         NSApp.appearance = NSAppearance(named: appearance == "dark" ? .darkAqua : .aqua)
         NSApp.activate(ignoringOtherApps: true)

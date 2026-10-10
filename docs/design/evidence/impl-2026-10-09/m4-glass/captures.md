@@ -97,7 +97,7 @@ Pre-change twins are referenced from `docs/design/evidence/impl-2026-10-09/m1-ra
 
 | Capture | Appearance | Window pt | What it shows | Layout JSON | BEFORE |
 |---|---|---|---|---|---|
-| `S01-editor-empty-dark-rt-ic@da2738d.png` | dark | 1024×772 | fresh blank canvas, default window | `layout/S01-editor-empty-dark-rt-ic@da2738d.json` | `docs/design/evidence/impl-2026-10-09/m1-rail/S01-editor-empty-dark@fef46c7.png` |
+| `S01-editor-empty-dark-rt-ic@0ca7913.png` | dark | 1120×812 | fresh blank canvas, default window (recaptured clean at `0ca7913` with the input fence on; the `da2738d` capture was withdrawn) | `layout/S01-editor-empty-dark-rt-ic@0ca7913.json` | `docs/design/evidence/impl-2026-10-09/m1-rail/S01-editor-empty-dark@fef46c7.png` |
 | `S01-editor-empty-light-rt-ic@da2738d.png` | light | 1024×772 | fresh blank canvas, default window | `layout/S01-editor-empty-light-rt-ic@da2738d.json` | `docs/design/evidence/impl-2026-10-09/m1-rail/S01-editor-empty-light@fef46c7.png` |
 | `S11M-size-1024x740-dark-rt-ic@da2738d.png` | dark | 1024×740 | requested 1024x740 (1024x740 pt), window is 1024x740 pt | `layout/S11M-size-1024x740-dark-rt-ic@da2738d.json` | — |
 | `S11M-size-1024x740-light-rt-ic@da2738d.png` | light | 1024×740 | requested 1024x740 (1024x740 pt), window is 1024x740 pt | `layout/S11M-size-1024x740-light-rt-ic@da2738d.json` | — |

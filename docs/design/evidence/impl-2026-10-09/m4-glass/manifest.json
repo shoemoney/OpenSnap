@@ -2681,27 +2681,27 @@
       "appearance": "dark",
       "iconMode": "sf",
       "windowSize": [
-        1024,
-        772
+        1120,
+        812
       ],
       "pixelSize": [
-        2048,
-        1544
+        2240,
+        1624
       ],
       "pointSize": [
-        1024,
-        772
+        1120,
+        812
       ],
       "scale": 2,
-      "sourceSha": "da2738d",
+      "sourceSha": "0ca7913",
       "method": "CGWindowListCreateImage(bestResolution)",
-      "file": "S01-editor-empty-dark-rt-ic@da2738d.png",
+      "file": "S01-editor-empty-dark-rt-ic@0ca7913.png",
       "storedPixelSize": [
         1200,
-        905
+        870
       ],
       "downscaled": true,
-      "layout": "layout/S01-editor-empty-dark-rt-ic@da2738d.json",
+      "layout": "layout/S01-editor-empty-dark-rt-ic@0ca7913.json",
       "before": "docs/design/evidence/impl-2026-10-09/m1-rail/S01-editor-empty-dark@fef46c7.png"
     },
     {

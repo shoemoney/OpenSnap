@@ -35,6 +35,7 @@ GAPS = {
     "voiceover": "needs real VoiceOver speech (AX data is not proof of speech)",
     "global-hotkey-background": "global hotkeys firing while the app is in the background need system-level key events",
     "printer": "needs a real printer",
+    "removed": "retired: removed in d9ed8b7 (one capture-shortcut surface, Settings › Capture); kept only so the audit IDs and their evidence stay stable",
     "system-setting": "a system appearance or display option cannot be changed in an E2E session (no global accessibility/appearance changes); only harness-injected rendered evidence exists",
 }
 EXERCISE = ("e2e", "e2e-partial", "gap")   # e2e-partial: the app-owned part is real-click, the named gap is the rest
@@ -146,7 +147,7 @@ SEM = {
     "about": (D, "About window opens: name, version, credit, MIT License and Third-party notices links", "e2e", None, "app"),
     "showPreferences": ("No sheet attached, not mid Frame capture", "Settings window opens on its last tab", "e2e", None, "app"),
     "sharingSettings": (D, "Destinations sheet opens over the main window", "e2e", None, "app"),
-    "shortcutSettings": (D, "Capture Shortcuts sheet opens (Cancel / Save)", "e2e", None, "app"),
+    "shortcutSettings": (D, "Settings opens on the Capture tab (the Capture Shortcuts sheet was removed in d9ed8b7)", "e2e", None, "app"),
     "quit": ("Clean document; repeat with a dirty document", "App quits; a dirty document asks Save your drawing? first", "e2e", None, "app"),
     "toggleVisible": (D, "Editor hides; status item (if shown) reads Show OpenSnap", "e2e", None, "app"),
     "newFile": ("Dirty document for the confirm path", "Blank 800 x 600 canvas titled Untitled; dirty document asks Save your drawing? first", "e2e", None, "app"),
@@ -482,19 +483,24 @@ def build_settings():
 
 
 def build_hotkeys():
+    # The Capture Shortcuts sheet was removed in d9ed8b7; its rows stay (same IDs, same evidence) as retired. The live rows are the surface.
     for mode, where in (("sheet", "Menu bar › OpenSnap › Capture Shortcuts…"), ("live", "Settings › Capture › shortcut rows")):
         s = f"Capture shortcuts ({mode})"
-        add("HOT", s, "Enable global capture shortcuts", "preference", f"{where} › Enable", "Checkbox enables or disables all bindings",
-            rendered=["S18"])
+        retired = {"ex": "gap", "gap": "removed"} if mode == "sheet" else {}
+        what = (lambda text: f"RETIRED, removed in d9ed8b7 (the sheet no longer exists): {text}") if mode == "sheet" else (lambda text: text)
+        add("HOT", s, "Enable global capture shortcuts", "preference", f"{where} › Enable", what("Checkbox enables or disables all bindings"),
+            rendered=["S18"], **retired)
         for action in ("Screen region", "Window", "Full screen", "Frame", "Upload", "Show OpenSnap"):
-            add("HOT", s, f"{action}: key", "control", f"{where} › {action} key", "Pop-up: None plus the key choices; choosing a key enables its modifier segments", rendered=["S18"])
-            add("HOT", s, f"{action}: modifiers", "control", f"{where} › {action} modifiers", "Four selectAny segments ⌘ ⌥ ⌃ ⇧; disabled until a key is chosen", rendered=["S18"])
-        add("HOT", s, "Reset Defaults", "control", f"{where} › Reset Defaults", "Clears every binding (first launch claims no shortcut)", rendered=["S18"])
-        add("HOT", s, "Disable All", "control", f"{where} › Disable All", "Turns global shortcuts off", rendered=["S18"])
-        add("HOT", s, "Status line", "state", f"{where} › status", "Idle text, or Error: … beside a rejected draft (conflict with an internal or system binding)", rendered=["S18"])
+            add("HOT", s, f"{action}: key", "control", f"{where} › {action} key", what("Pop-up: None plus the key choices; choosing a key enables its modifier segments"), rendered=["S18"], **retired)
+            add("HOT", s, f"{action}: modifiers", "control", f"{where} › {action} modifiers", what("Four selectAny segments ⌘ ⌥ ⌃ ⇧; disabled until a key is chosen"), rendered=["S18"], **retired)
+        add("HOT", s, "Reset Defaults", "control", f"{where} › Reset Defaults", what("Clears every binding (first launch claims no shortcut)"), rendered=["S18"], **retired)
+        add("HOT", s, "Disable All", "control", f"{where} › Disable All", what("Turns global shortcuts off"), rendered=["S18"], **retired)
+        add("HOT", s, "Status line", "state", f"{where} › status", what("Idle text, or Error: … beside a rejected draft (conflict with an internal or system binding)"), rendered=["S18"], **retired)
         if mode == "sheet":
-            add("HOT", s, "Cancel", "control", f"{where} › Cancel", "Closes the sheet leaving settings unchanged (Esc)", shortcut="Esc", rendered=["S18"])
-            add("HOT", s, "Save", "control", f"{where} › Save", "Applies the draft and closes (Return)", shortcut="Return", rendered=["S18"])
+            add("HOT", s, "Cancel", "control", f"{where} › Cancel", what("Closes the sheet leaving settings unchanged (Esc)"), shortcut="Esc", rendered=["S18"], **retired)
+            add("HOT", s, "Save", "control", f"{where} › Save", what("Applies the draft and closes (Return)"), shortcut="Return", rendered=["S18"], **retired)
+    add("HOT", "Capture shortcuts (live)", "Menu entry: Capture Shortcuts…", "menu item", "Menu bar › OpenSnap › Capture Shortcuts…", "Opens the Settings window on the Capture tab (no separate sheet since d9ed8b7)",
+        shortcut=None, rendered=["S18"])
     for action in ("Screen region", "Window", "Full screen", "Frame", "Upload", "Show OpenSnap"):
         add("HOT", "Global hotkey firing", f"{action} (fires while backgrounded)", "shortcut", "Another app frontmost › the bound chord", "OpenSnap performs the action without being frontmost",
             prereq="A binding saved", ex="gap", gap="global-hotkey-background")
@@ -504,8 +510,8 @@ def build_hotkeys():
 def build_history():
     add("HIST", "History window", "History window", "window", "Menu bar › File › History, or bottom bar › History", "Opens 1000 x 720 (min 880 x 600); grid with day sections, details panel beside the grid",
         rendered=["S20"], proof=proof("HistoryBrowserTests.swift", "Window opens 1000 x 720 with an 880 x 600 minimum"))
-    for cat in ("All", "Posted to Web", "Saved", "Archived"):
-        add("HIST", "History › category control", cat, "control", f"History › {cat}", f"Filters the grid ({'Shared' if cat == 'Posted to Web' else 'Exported/Dragged' if cat == 'Saved' else 'Saved' if cat == 'Archived' else 'every'} entries)",
+    for cat in ("All", "Shared", "Exported", "Saved"):
+        add("HIST", "History › category control", cat, "control", f"History › {cat}", f"Filters the grid ({'every entry' if cat == 'All' else f'entries labelled {cat}'}; tab names are the tile labels)",
             prereq="History seeded", rendered=["S20"], proof=proof("HistoryBrowserTests.swift", "Original action filters use exact supplied core strings"))
     for date in ("All dates", "Last hour", "Yesterday", "Last 48 hours"):
         add("HIST", "History › date pop-up", date, "control", f"History › date filter › {date}", f"Filters by {date.lower()} using the strict bounds", prereq="History seeded", rendered=["S20"],
@@ -733,11 +739,15 @@ def account_for_harness(surfaces, controls):
 
 
 # ------------------------------------------------------------------------------------------------------------------------ output
+# Entries whose name changed with the product (History tabs renamed to the tile labels): the ID follows the old row, so its evidence stays.
+RENAMED = {"E2E-HIST-003": "Shared", "E2E-HIST-004": "Exported", "E2E-HIST-005": "Saved"}
+
+
 def assign_ids():
     previous = {}
     if INVENTORY.exists():
         for entry in json.loads(INVENTORY.read_text())["entries"]:
-            previous[(entry["area"], entry["surface"], entry["name"], entry["type"])] = entry["id"]
+            previous[(entry["area"], entry["surface"], RENAMED.get(entry["id"], entry["name"]), entry["type"])] = entry["id"]
     counters = collections.Counter()
     used = set(previous.values())
     for key, ident in previous.items():

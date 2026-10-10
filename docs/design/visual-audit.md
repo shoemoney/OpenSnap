@@ -36,7 +36,7 @@ budget, in `evidence/2026-10-09/`. Capture stems are written `<surface>-<slug>-<
 | `main` when the owner's layout feedback arrived (10:24 CDT) | `4b2ae0f` | The PNG/JPG footer toggle landed in `88d8865` → `f19dfde` → `4b2ae0f` (9 files: `App.swift`, `App+ModernChrome.swift`, `ModernEditorChrome.swift`, `ExportAccessory.swift`, `ImageExport.swift`, tests). |
 | Source inventory and technical spec line numbers | `4b2ae0f` | Child B re-derived every `file:line` from a pinned archive of `4b2ae0f`. |
 | First rendered capture set | `b9319c4` | Built on the harness branch `audit/visual-harness` (forked at `b9319c4`). Every manifest entry carries `sourceSha`. |
-| `main` at 11:01 CDT (re-checked by Opus) | `dc1eb26` | Nine commits after `4b2ae0f` landed declassic **WP1** (own assets: drawn countdown digits, system cursors, silent no-op sounds, FA→SF→none icons), **WP2** (Classic, Appearance, Relaunch and the welcome doc deleted; macOS 26.0 target), **WP3** (`build.sh` needs no `original/`, empties the bundle every build, `check-no-original.py` + `original-resource-hashes.txt`) and **WP6** (hint copy rewritten, README/HANDOFF, `analysis/` untracked). |
+| `main` at 11:01 CDT (re-checked by the reviewer) | `dc1eb26` | Nine commits after `4b2ae0f` landed declassic **WP1** (own assets: drawn countdown digits, system cursors, silent no-op sounds, FA→SF→none icons), **WP2** (Classic, Appearance, Relaunch and the welcome doc deleted; macOS 26.0 target), **WP3** (`build.sh` needs no `original/`, empties the bundle every build, `check-no-original.py` + `original-resource-hashes.txt`) and **WP6** (hint copy rewritten, README/HANDOFF, `analysis/` untracked). |
 | In flight, not on `main` | `opensnap/w3-rename` (worktree `.todo-worktrees/w3-rename`, uncommitted) | **WP4**: the OpenSnap rename (Info.plist, README, HANDOFF, `OpenSnap.icon`). Not audited; another agent owns it. |
 | Delta capture set (editor, footer toggle, widths, Frame, countdown, Preferences, status item, About, drag overlays) | `dc1eb26` (confirmed in the manifest) | Suffix `@dc1eb26`. These captures supersede the `b9319c4` observations wherever the two differ. The `4b2ae0f` delta was superseded before assembly and is not in the output. |
 
@@ -47,13 +47,13 @@ finding seen on `b9319c4` (12-format popup) is marked **superseded** where `4b2a
 
 ## 1. Files under `docs/design/` and who owns them
 
-| File | Owner | Model |
-|---|---|---|
-| `visual-audit.md` (this file: method, design target, surface inventory, coverage, findings, backlog skeleton) | orchestrator | Opus 5.5 |
-| `user-feedback.md` (owner layout feedback) | root | – (read-only here) |
-| `evidence/2026-10-09/**` (captures, metrics, AX dumps, menus, manifest, captures.md, gaps.md, layout-width-budget.*) | evidence child A | Sonnet 5.5 |
-| `source-inventory.md`, `technical-spec.md` (T1–T15), `evidence/source-font-sizes.json` | source/spec child B | Sonnet 5.5 |
-| `roadmap.md`, `todo-checklist.md`, `backlog.json`, `README.md` | docs child C | Haiku 5.5 |
+| File | Owner |
+|---|---|
+| `visual-audit.md` (this file: method, design target, surface inventory, coverage, findings, backlog skeleton) | orchestrator |
+| `user-feedback.md` (owner layout feedback) | root |
+| `evidence/2026-10-09/**` (captures, metrics, AX dumps, menus, manifest, captures.md, gaps.md, layout-width-budget.*) | evidence child A |
+| `source-inventory.md`, `technical-spec.md` (T1–T15), `evidence/source-font-sizes.json` | source/spec child B |
+| `roadmap.md`, `todo-checklist.md`, `backlog.json`, `README.md` | docs child C |
 
 ## 2. Evidence classes, confidence and severity
 
@@ -154,7 +154,7 @@ Known structural gaps (not fakeable, by rule):
 - Glass materials behind alerts and the status button are not captured by own-window imaging; those
   PNGs are flattened onto a neutral backdrop (`flattenedOnBackdrop` in the manifest).
 - Per-capture review: the evidence child opened about 25 PNGs one by one and reviewed the rest on
-  contact sheets. Opus opened about 30 captures across both SHAs, including every one cited below.
+  contact sheets. The reviewer opened about 30 captures across both SHAs, including every one cited below.
   Full list: `evidence/2026-10-09/gaps.md`.
 
 ## 6. Findings
@@ -162,7 +162,7 @@ Known structural gaps (not fakeable, by rule):
 Each finding: ID · title · severity · evidence class/confidence · surfaces · evidence · user-visible
 issue · direction (technical-spec section). The backlog todos in §9 reference these IDs.
 
-### 6.0 Finding status at `dc1eb26` (Opus source re-check, 11:05 CDT)
+### 6.0 Finding status at `dc1eb26` (reviewer source re-check, 11:05 CDT)
 
 Severity is unchanged: it records what the finding was at audit time. "Landed (S)" means the fix is in
 source on `main` but has **not** been visually verified or gate-verified by this audit. The owning
@@ -266,7 +266,7 @@ todo stays **pending** until its visual check and gate pass.
   original Skitch content.
 - Evidence (S, child A at `dc1eb26`): the original fixture is gone, but the script still runs the bundle in
   place with the real bundle id.
-- Evidence (M, harness QA by Opus): the audit harness's metrics walker records the **value** of secure
+- Evidence (M, harness QA by the reviewer): the audit harness's metrics walker records the **value** of secure
   text fields (the synthetic `example-secret-not-real` appears in `metrics/S19-destinations-edit-form-light.json`).
   It is harmless with synthetic data, but it must redact before the harness becomes the standard path.
 - Direction: OSN-001. Adopt the audit harness (isolated bundle id + throwaway defaults domain,
@@ -524,7 +524,7 @@ todo stays **pending** until its visual check and gate pass.
 
 ## 8. Owner-required layout: remove the right rail
 
-Full spec: `technical-spec.md` T15 (child B round 2, Sonnet 5.5, `4b2ae0f` line numbers). Opus
+Full spec: `technical-spec.md` T15 (child B round 2, `4b2ae0f` line numbers). The reviewer
 re-added the top-bar sums independently, and they hold: normal 168 + 56 + 476 + 156 + 36 = 892; Frame
 +54 = 946; 956 pt usable at the 980 minimum.
 
@@ -589,7 +589,7 @@ every former rail action reachable, with its tooltip, AX label and shortcut unch
 
 ## 9. Backlog skeleton (for the roadmap/checklist/JSON)
 
-Status of every todo: **pending** (new todos, as briefed). `main state` records what the Opus re-check
+Status of every todo: **pending** (new todos, as briefed). `main state` records what the reviewer's re-check
 found on `main` at `dc1eb26`. A "landed (S)" todo still needs its visual check and gate before it is
 closed. IDs are stable; do not renumber (the numbering has deliberate gaps). **Lane A** marks todos
 that edit `Sources/App.swift` (serial: one implementer at a time, in the order below).
@@ -603,7 +603,7 @@ that edit `Sources/App.swift` (serial: one implementer at a time, in the order b
 | **M4** Design-system foundation | Tokens, glass consolidation, window chrome, states, icons | M3 (string-bearing files) + M1 (chrome layout) + Q1/Q3/Q4 | Token gates, glass depth/budget and the font-floor walker green |
 | **M5** Surface polish | Capture, Settings, Destinations, History, upload feedback, menus/About/status, hints | M4 | Per-surface visual checklists pass |
 | **M6** Accessibility + adaptivity | Keyboard, display options, VoiceOver | M4 (parallel with M5 where files are disjoint) | T7 tests green; injected-DisplayOptions captures reviewed; manual VoiceOver pass recorded |
-| **M7** Visual acceptance + release readiness | Gates, full gallery, migration on a copy of real data, clean-clone release dry run | M1–M6 | Opus visual sign-off; all gates green |
+| **M7** Visual acceptance + release readiness | Gates, full gallery, migration on a copy of real data, clean-clone release dry run | M1–M6 | Independent visual sign-off; all gates green |
 
 | ID | P | M | Title | Findings | Spec | Depends on | Lane A | main state (`dc1eb26`) |
 |---|---|---|---|---|---|---|---|---|
@@ -612,7 +612,7 @@ that edit `Sources/App.swift` (serial: one implementer at a time, in the order b
 | OSN-010 | P1 | M1 | Remove the right rail; relocate Snap/Snap Frame, Cancel, Color, Font, stroke width, Undo, Wipe per the T15 mapping (§8); 44-pt tool tiles; zoom face trimmed; dragSizeLabel merged into status; shorter Frame hint; Actual Size added to the Zoom menu; the canvas reclaims 72 pt | VF-07, VF-22, VF-26 | T15 | OSN-001, OSN-002 (D-T15-1..3); App.swift hunks after OSN-030 | yes (5 small hunks) | open |
 | OSN-011 | P1 | M1 | Stroke width: a 48 × 36 size pill + popover on a solid surface replaces the vertical rail slider (undo grouping, Shift, stepping, AX value, popover dismissed on hide/quit) | VF-07, VF-13 | T15 d | OSN-010 | yes (`dismissPopover` + popover edge) | open |
 | OSN-012 | P1 | M1 | Can-fail layout regression tests for the rail removal (no rail, fit at 980 in both modes, centring, Frame rect = viewport, one undo per width drag) | VF-07 | T15 h | OSN-010, OSN-011 | no | open |
-| OSN-013 | P1 | M1 | Rail-removal visual acceptance capture set + Opus review | VF-07 | T15 j, §8 | OSN-012 | no | open |
+| OSN-013 | P1 | M1 | Rail-removal visual acceptance capture set + independent review | VF-07 | T15 j, §8 | OSN-012 | no | open |
 | OSN-014 | P1 | M1 | Frame mode: verify with a live capture whether overlay scrollers enter the snapped image; if so, hide scrollers in Frame mode and during the snap (needs the owner's Screen Recording grant for the verification) | VF-27 | T15 e | OSN-010 | yes (`enterFrame`/`performFrameSnap`) | open (U) |
 | OSN-020 | P0 | M2 | WP3 build/runners/gates: clean-clone build, macOS 26 target, single app-safety run, `check-no-original`, `check-skitch-strings`, clean bundle per build | VF-01, VF-24 | T13, T14 | OSN-001 | no | landed (S), except the `check-skitch-strings` gate (not found); verify with a clean-clone build |
 | OSN-021 | P0 | M2 | WP1 own assets in shared code: drawn countdown digits, system hand cursors, sounds + sound pref deleted, `ToolButton` + PNG fallback chain + slider `.classic` deleted | VF-02 | T13, T5 | OSN-020 | yes | landed (S); verify visually (countdown, cursors) |
@@ -641,7 +641,7 @@ that edit `Sources/App.swift` (serial: one implementer at a time, in the order b
 | OSN-061 | P1 | M6 | Display-option consumers (Reduce Motion/Transparency, Increase Contrast, Differentiate Without Color) + an injected-`DisplayOptions` capture mode in the harness | VF-10, VF-14 | T7, T14 | OSN-042, OSN-044, OSN-001 | no | open |
 | OSN-062 | P1 | M6 | VoiceOver labels, announcements, and a recorded manual VoiceOver pass | VF-14 | T7 | OSN-060 | yes | open |
 | OSN-070 | P0 | M7 | Regression gates in `tools/test.py`: font-floor walker, glass depth/budget, no decorative glyphs, no original bytes, no "Skitch" strings, layout fit at 980 | all | T14 | OSN-012, OSN-040 | yes (walker evidence hook) | partly (`check-no-original` exists) |
-| OSN-071 | P0 | M7 | Visual acceptance run: full gallery (light/dark × 980/1024/1280/1440/full screen × states × FA/SF icon modes), Opus sign-off | all | T14, T15 j | OSN-070 | no | open |
+| OSN-071 | P0 | M7 | Visual acceptance run: full gallery (light/dark × 980/1024/1280/1440/full screen × states × FA/SF icon modes), independent visual sign-off | all | T14, T15 j | OSN-070 | no | open |
 | OSN-072 | P0 | M7 | WP7: migration verified on a COPY of the owner's real store (source hash unchanged), clean-clone build/test/release dry run | VF-01, VF-03 | T13 | OSN-030, OSN-070 | no | open |
 
 **Recommended defaults for the owner decisions** (OSN-002; the owner decides):
@@ -664,12 +664,12 @@ non-App.swift parts of OSN-010/011 (`ModernEditorChrome.swift`, `BezelDrawingCon
 
 ## 10. Provenance
 
-Orchestrator and reviewer: Opus 5.5 (`claude-opus-5-5`). Opus wrote this file, verified the children's claims against source and captures, re-added the T15 sums, and recomputed the safety hashes (both unchanged at 11:45 CDT).
+Orchestrator and independent reviewer: the orchestrator wrote this file, verified the children's claims against source and captures, re-added the T15 sums, and recomputed the safety hashes (both unchanged at 11:45 CDT).
 
-| Child | taskId | Model requested | Model confirmed |
-|---|---|---|---|
-| A: rendered evidence harness + captures (steered 3× in-flight: snapshot drift/rail budget, sheet re-shoots, `dc1eb26` delta) | `node:delegated-task:command%3Amcp%3A1178d98b-013f-4766-81ad-b245923f6479%3Adelegate-task%3Aopensnap-visual-audit-20261009-A-evidence-r1` | `claude-sonnet-5-5` | `claude-sonnet-5-5` (task status + self-report); harness branch `audit/visual-harness` @ `6ed6828`, unmerged |
-| B: source inventory + technical spec (round 1) | `node:delegated-task:command%3Amcp%3A1178d98b-013f-4766-81ad-b245923f6479%3Adelegate-task%3Aopensnap-visual-audit-20261009-B-source-r1` | `claude-sonnet-5-5` | `claude-sonnet-5-5` (task status + self-report) |
-| B: T15 rail removal (round 2) | `node:delegated-task:command%3Amcp%3A1178d98b-013f-4766-81ad-b245923f6479%3Adelegate-task%3Aopensnap-visual-audit-20261009-B-source-r2-rail` | `claude-sonnet-5-5` | `claude-sonnet-5-5` (task status + self-report) |
-| C: roadmap/checklist/backlog/README (round 1) | `node:delegated-task:command%3Amcp%3A1178d98b-013f-4766-81ad-b245923f6479%3Adelegate-task%3Aopensnap-visual-audit-20261009-C-docs-r1` | `claude-haiku-5-5` | `claude-haiku-5-5` (task status; self-report from the session model note) |
-| C: docs regenerated from the final audit (round 2) | `node:delegated-task:command%3Amcp%3Acf19f696-6f7b-41a0-a97c-2a38c85bc6c1%3Adelegate-task%3Aopensnap-visual-audit-20261009-C-docs-r2-final` | `claude-haiku-5-5` | `claude-haiku-5-5` (task status + self-report). Opus then aligned the §0 evidence-class summary with the §6 headers, removed the now-stale mismatch note from the child's generator, re-ran `gen2.py`/`gen3.py`/`check.py` (0 failures), and ran an independent cross-check (0 errors) |
+| Child | Notes |
+|---|---|
+| A: rendered evidence harness + captures (steered 3× in-flight: snapshot drift/rail budget, sheet re-shoots, `dc1eb26` delta) | harness branch `audit/visual-harness` @ `6ed6828`, unmerged |
+| B: source inventory + technical spec (round 1) | |
+| B: T15 rail removal (round 2) | |
+| C: roadmap/checklist/backlog/README (round 1) | |
+| C: docs regenerated from the final audit (round 2) | The reviewer then aligned the §0 evidence-class summary with the §6 headers, removed the now-stale mismatch note from the child's generator, re-ran `gen2.py`/`gen3.py`/`check.py` (0 failures), and ran an independent cross-check (0 errors) |
