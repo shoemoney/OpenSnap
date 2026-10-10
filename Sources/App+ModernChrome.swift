@@ -6,7 +6,7 @@ extension AppDelegate {
         let chrome = modernChrome as? ModernEditorChrome
         chrome?.frameMode = on
         chrome?.syncSnapPresentation()
-        if !on { status.toolTip = nil; status.spokenValue = nil; status.setAccessibilityHelp(nil) }
+        if !on { AppToolTip.setText(nil, for: status); status.spokenValue = nil; status.setAccessibilityHelp(nil) }
     }
 
     /// The Drag Me thumbnail doubles as the canvas bleed under the bars.
@@ -47,7 +47,7 @@ extension AppDelegate {
         colorWell.color = OriginalDrawingControls.presets[0].color; colorWell.target = self; colorWell.action = #selector(changeColor(_:))
         paletteButton.font = DesignTokens.Typography.font(.body); paletteButton.target = self; paletteButton.action = #selector(showDrawingColors(_:))
         paletteButton.imagePosition = .imageLeading; paletteButton.setAccessibilityLabel("Drawing colors")
-        paletteButton.toolTip = "Hover for original preset colors; hold Shift to change the canvas background"
+        AppToolTip.setText("Hover for original preset colors; hold Shift to change the canvas background", for: paletteButton)
         paletteButton.onHover = { [weak self] inside in self?.drawingColorHover(inside, palette: false) }
         sizeLabel.font = DesignTokens.Typography.font(.body)
         widthControl.target = self; widthControl.action = #selector(changeWidth(_:))
@@ -75,12 +75,12 @@ extension AppDelegate {
         drag.drawsBackground = false
         configureDragExport(drag)
         drag.showsHandIconOnly = true
-        drag.toolTip = "Drag the drawing into Finder or another app"
+        AppToolTip.setText("Drag the drawing into Finder or another app", for: drag)
         dragFormatToggle.segmentStyle = .capsule
         dragFormatToggle.font = DesignTokens.Typography.font(.body)
         dragFormatToggle.setAccessibilityLabel("Image format")
-        dragFormatToggle.toolTip = FormatToggle.toolTip
-        for (index, title) in FormatToggle.titles.enumerated() { dragFormatToggle.setLabel(title, forSegment: index); dragFormatToggle.setWidth(0, forSegment: index); dragFormatToggle.setToolTip(FormatToggle.toolTip, forSegment: index) }
+        AppToolTip.setText(FormatToggle.toolTip, for: dragFormatToggle)
+        for (index, title) in FormatToggle.titles.enumerated() { dragFormatToggle.setLabel(title, forSegment: index); dragFormatToggle.setWidth(0, forSegment: index) }
         dragFormatToggle.target = self; dragFormatToggle.action = #selector(changeDragOptions(_:))
         dragFormatToggle.selectedSegment = FormatToggle.segment(forStoredChoice: UserDefaults.standard.integer(forKey: FormatToggle.defaultsKey))
         status.font = DesignTokens.Typography.font(.caption); status.lineBreakMode = .byTruncatingTail
@@ -122,5 +122,6 @@ extension AppDelegate {
 
         wireEditorChrome(scroll: chrome.scrollView)
         setTool(.arrow)
+        AppToolTip.install(on: content)
     }
 }

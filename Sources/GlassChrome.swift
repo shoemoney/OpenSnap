@@ -96,7 +96,7 @@ class GlassChromeButton: OriginalActionButton {
 
     private func refreshDerivedToolTip() {
         guard derivesToolTip, let name = iconOnlyName else { return }
-        toolTip = shortcutHint.map { "\(name) (\($0))" } ?? name
+        AppToolTip.setText(shortcutHint.map { "\(name) (\($0))" } ?? name, for: self)
     }
 
     private var explicitAccessibilityLabel: String?

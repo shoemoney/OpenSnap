@@ -129,7 +129,7 @@ final class BezelSizeSlider: NSControl, NSPopoverDelegate {
         focusRingType = .exterior
         setAccessibilityElement(true); setAccessibilityRole(.slider)
         setAccessibilityLabel("Drawing size")
-        toolTip = "Five drawing sizes; hold Shift for continuous adjustment"
+        AppToolTip.setText("Five drawing sizes; hold Shift for continuous adjustment", for: self)
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     override func accessibilityValue() -> Any? { NSNumber(value: value) }
@@ -201,6 +201,7 @@ final class BezelSizeSlider: NSControl, NSPopoverDelegate {
     func showPopover() {
         guard isEnabled, let window, window.attachedSheet == nil, !isPopoverShown else { return }
         let content = SizePopoverContent(slider: self)
+        AppToolTip.install(on: content)
         let controller = NSViewController()
         controller.view = content
         let popover = popoverProvider()
@@ -395,7 +396,7 @@ final class SizePresetButton: NSButton {
         focusRingType = .exterior
         target = self; action = #selector(choose)
         let name = "Size " + String(format: "%.0f", size.rounded())
-        setAccessibilityLabel(name); toolTip = name
+        setAccessibilityLabel(name); AppToolTip.setText(name, for: self)
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 

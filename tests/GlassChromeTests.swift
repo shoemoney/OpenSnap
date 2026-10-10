@@ -687,14 +687,15 @@ private enum GlassChromeTests {
     private static func makeRig(_ size: NSSize, status: String? = nil) -> Rig {
         let target = ActionTarget(), box = AccessibilityBox()
         let (window, content) = window(size)
-        func label(_ text: String) -> NSTextField {
+        // The rig builds the shared controls with the same type styles App+ModernChrome gives them, so the width budget is the real one.
+        func label(_ text: String, _ style: DesignTokens.Typography.Style) -> NSTextField {
             let field = NSTextField(labelWithString: text)
-            field.font = .systemFont(ofSize: 12)
+            field.font = DesignTokens.Typography.font(style)
             return field
         }
         let zoom = ZoomPopUpButton(frame: .zero, pullsDown: false)
         zoom.addItems(withTitles: ["25%", "50%", "75%", "100%", "150%", "200%"])
-        zoom.font = .systemFont(ofSize: 13)
+        zoom.font = DesignTokens.Typography.font(.body)
         zoom.setAccessibilityLabel("Canvas zoom")
         let format = NSSegmentedControl(labels: ["PNG", "JPG"], trackingMode: .selectOne, target: nil, action: nil)
         format.selectedSegment = 0
@@ -705,14 +706,14 @@ private enum GlassChromeTests {
         toolbox.font = .systemFont(ofSize: 20)
         toolbox.setAccessibilityLabel("Toolbox")
         let palette = BezelHoverButton(title: "Color…", target: nil, action: nil)
-        palette.font = .systemFont(ofSize: 18)
+        palette.font = DesignTokens.Typography.font(.body)
         palette.setAccessibilityLabel("Drawing colors")
         palette.image = NSImage(size: NSSize(width: 22, height: 18), flipped: false) { rect in NSColor.red.setFill(); rect.fill(); return true }
         let original = NSButton(checkboxWithTitle: "Original size", target: nil, action: nil)
-        original.font = .systemFont(ofSize: 11)
+        original.font = DesignTokens.Typography.font(.body)
         let controls = ModernEditorChrome.SharedControls(
             canvas: NSView(frame: NSRect(x: 0, y: 0, width: 1000, height: 700)), canvasBorder: NSView(),
-            status: label(status ?? longStatus), sizeLabel: label("Size · 6.75"),
+            status: label(status ?? longStatus, .caption), sizeLabel: label("Size · 6.75", .body),
             widthControl: BezelSizeSlider(frame: .zero), paletteButton: palette, zoomControl: zoom, dragFormatControl: format,
             dragOriginalControl: original, dragExportView: NSView(), toolbox: toolbox)
         let actions = ModernEditorChrome.Actions(
@@ -1101,7 +1102,7 @@ private enum GlassChromeTests {
             guard let button = chrome.toolButtons[id] else { continue }
             expect(button.identifier?.rawValue == id, "\(label): tool identifier \(id)")
             expect(button.accessibilityLabel() == id.capitalized, "\(label): tool AX label \(id)")
-            expect(button.toolTip == id.capitalized + " tool", "\(label): tool tooltip \(id)")
+            expect(AppToolTip.text(for: button) == id.capitalized + " tool", "\(label): tool tooltip \(id)")
             expect(button.imagePosition == .imageOnly && button.image != nil, "\(label): tool \(id) is icon only")
             expect(button.action == #selector(ActionTarget.chooseTool(_:)) && button.target === rig.target, "\(label): tool \(id) sends chooseTool")
             expect(button.isEnabled && !button.isHidden, "\(label): tool \(id) is live")
@@ -1131,13 +1132,13 @@ private enum GlassChromeTests {
                "\(label): the upload button is icon-only with an explicit label")
         rig.target.hits.removeAll(); chrome.shareButton.performClick(nil)
         expect(rig.target.hits == ["share"], "\(label): the upload button sends its action")
-        expect(chrome.snapButton.toolTip == snapToolTip, "\(label): Snap keeps its classic tooltip")
+        expect(AppToolTip.text(for: chrome.snapButton) == snapToolTip, "\(label): Snap keeps its classic tooltip")
         expect(chrome.surface(for: chrome.snapButton)?.prominence == .primary && chrome.snapButton.isPrimary, "\(label): Snap is the single primary command")
         let primaries = surfaces(rig).filter { $0.prominence == .primary }
         expect(primaries.count == 1, "\(label): exactly one primary surface")
         expect(chrome.cancelFrameButton.isHidden && chrome.surface(for: chrome.cancelFrameButton)?.isHidden == true, "\(label): Cancel starts hidden")
         expect(!chrome.frameMode, "\(label): starts outside Frame mode")
-        let controlTitles = allButtons(in: chrome).flatMap { [$0.title, $0.accessibilityLabel() ?? "", $0.toolTip ?? ""] }
+        let controlTitles = allButtons(in: chrome).flatMap { [$0.title, $0.accessibilityLabel() ?? "", AppToolTip.text(for: $0) ?? ""] }
         expect(!controlTitles.contains { $0.lowercased().contains("cam") }, "\(label): no Cam/Camera button exists in the Modern rail (screen capture only)")
         expect(Mirror(reflecting: chrome).children.allSatisfy { $0.label?.lowercased().contains("camera") != true }, "\(label): the chrome owns no camera control")
         iconOnlyChecks(rig, label)
@@ -1213,24 +1214,24 @@ private enum GlassChromeTests {
         for (button, name, tip) in expected {
             expect(button.imagePosition == .imageOnly, "\(label): \(name) draws only its icon")
             expect((button as? GlassChromeButton).map { $0.visibleTitle.isEmpty } ?? button.title.isEmpty, "\(label): \(name) shows no title text")
-            expect(button.toolTip == tip && !(button.toolTip ?? "").isEmpty, "\(label): \(name) tooltip is '\(tip)' (is '\(button.toolTip ?? "nil")')")
+            expect(AppToolTip.text(for: button) == tip, "\(label): \(name) tooltip is '\(tip)' (is '\(AppToolTip.text(for: button) ?? "nil")')")
             expect(button.accessibilityLabel() == name, "\(label): \(name) accessibility label (is '\(button.accessibilityLabel() ?? "nil")')")
         }
         let shared = rig.controls
         expect(shared.paletteButton.imagePosition == .imageOnly && shared.paletteButton.image != nil && shared.paletteButton.accessibilityLabel() == "Drawing colors"
-               && shared.paletteButton.toolTip?.hasPrefix("Color") == true, "\(label): Color shows only its swatch, with a tooltip and label")
+               && AppToolTip.text(for: shared.paletteButton)?.hasPrefix("Color") == true, "\(label): Color shows only its swatch, with a tooltip and label")
         expect(shared.toolbox.imagePosition == .imageOnly && shared.toolbox.accessibilityLabel() == "Toolbox", "\(label): Toolbox is icon-only")
-        expect(shared.sizeLabel.superview == nil && shared.widthControl.toolTip == "Size", "\(label): the Size text is gone; the pill keeps a tooltip")
+        expect(shared.sizeLabel.superview == nil && AppToolTip.text(for: shared.widthControl) == "Size", "\(label): the Size text is gone; the pill keeps a tooltip")
         // Retitles move the tooltip and label, not drawn text.
         chrome.wipeButton.title = "Blank"
-        expect(chrome.wipeButton.toolTip == "Blank" && chrome.wipeButton.accessibilityLabel() == "Blank" && chrome.wipeButton.visibleTitle.isEmpty, "\(label): Wipe's staged title becomes its tooltip and label")
+        expect(AppToolTip.text(for: chrome.wipeButton) == "Blank" && chrome.wipeButton.accessibilityLabel() == "Blank" && chrome.wipeButton.visibleTitle.isEmpty, "\(label): Wipe's staged title becomes its tooltip and label")
         chrome.wipeButton.title = "Wipe"
     }
 
     private static func frameModeChecks(_ rig: Rig, _ label: String) {
         let chrome = rig.chrome
         expect(chrome.snapButton.title == "Snap Frame" && chrome.snapButton.icon == .frameViewfinder, "\(label): Snap becomes Snap Frame with the viewfinder")
-        expect(chrome.snapButton.toolTip == snapFrameToolTip, "\(label): Snap Frame tooltip")
+        expect(AppToolTip.text(for: chrome.snapButton) == snapFrameToolTip, "\(label): Snap Frame tooltip")
         expect(chrome.snapButton.isPrimary && chrome.surface(for: chrome.snapButton)?.prominence == .primary, "\(label): Snap Frame stays primary")
         expect(!chrome.cancelFrameButton.isHidden && chrome.surface(for: chrome.cancelFrameButton)?.isHidden == false, "\(label): Cancel appears in Frame mode")
         expect(!chrome.backdropIsVisible && !chrome.bleedIsVisible, "\(label): backdrop and bleed give way to the Frame hole")

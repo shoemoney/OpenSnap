@@ -204,7 +204,7 @@ extension AppSafetyTests {
         let fixture = try Fixture(), app = fixture.app
         let button = try webpostButton(app)
         try expect(button.menu != nil && (button as? OriginalActionButton)?.showMenuOnLeftClick == false
-                   && button.toolTip == "Upload and copy link · Right-click for destinations", "The button has a right-click menu, left-click stays the action, and the tooltip says so")
+                   && AppToolTip.text(for: button) == "Upload and copy link · Right-click for destinations", "The button has a right-click menu, left-click stays the action, and the tooltip says so")
         try expect(try menuLayout(app) == ["✓ SFTP · test-host", "-", "Destination Settings…", "Share with macOS…"], "Configured menu: \(try menuLayout(app))")
         try configureDestinations(app, [])
         try expect(try menuLayout(app) == ["No destination configured (disabled)", "-", "Destination Settings…", "Share with macOS…"], "Unconfigured menu: \(try menuLayout(app))")

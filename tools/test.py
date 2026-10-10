@@ -58,6 +58,9 @@ subprocess.run([sys.executable, "-I", str(root / "tools" / "test-native-startup-
 # G9: literal fonts, colours and radii outside the tokens. Report mode until the token sweeps land; the self-test proves --strict can fail.
 subprocess.run([sys.executable, str(root / "tools" / "check-tokens.py")], cwd=root, check=True)
 subprocess.run([sys.executable, str(root / "tools" / "check-tokens.py"), "--self-test"], cwd=root, check=True)
+# D-TEXT: chrome tooltips are app-owned (20 pt); a direct system `toolTip` write fails this gate, and the self-test proves it can.
+subprocess.run([sys.executable, str(root / "tools" / "check-tooltips.py")], cwd=root, check=True)
+subprocess.run([sys.executable, str(root / "tools" / "check-tooltips.py"), "--self-test"], cwd=root, check=True)
 snapshot = Path(tempfile.mkdtemp(prefix="test-snapshot.", dir=build))
 
 def current_inputs():
@@ -138,13 +141,14 @@ suites = [
     ("status-item-tests", ["StatusItemSupport.swift"], "StatusItemSupportTests.swift", "STATUS_ITEM_TESTS", ()),
     ("about-window-tests", ["AboutWindow.swift"], "AboutWindowTests.swift", "ABOUT_WINDOW_TESTS", ()),
     ("metrics-tests", [], "MetricsTests.swift", "METRICS_TESTS", ()),
+    ("app-tooltip-tests", ["AppToolTip.swift"], "AppToolTipTests.swift", "APP_TOOLTIP_TESTS", ()),
 ]
 # These need the Modern chrome sources; a missing file fails the suite. Only the Font Awesome glyph branch inside them
 # is licence-gated, and it prints "SKIPPED (FA not bundled)" when the Pro subsets are absent.
 modern_suites = [
     ("fontawesome-icons-tests", ["FontAwesomeIcons.swift", "ChromeIcons.swift"], "FontAwesomeIconsTests.swift", "FONTAWESOME_ICONS_TESTS", (), font_environment),
     ("menu-symbols-tests", ["FontAwesomeIcons.swift", "ChromeIcons.swift", "MenuSymbols.swift"], "MenuSymbolsTests.swift", "MENU_SYMBOLS_TESTS", ()),
-    ("glass-chrome-tests", ["OriginalActionButton.swift", "FontAwesomeIcons.swift", "ChromeIcons.swift", "BezelDrawingControls.swift", "SVGPath.swift", "DocumentModel.swift", "GlassChrome.swift", "ModernEditorChrome.swift"], "GlassChromeTests.swift", "GLASS_CHROME_TESTS", ()),
+    ("glass-chrome-tests", ["OriginalActionButton.swift", "FontAwesomeIcons.swift", "ChromeIcons.swift", "BezelDrawingControls.swift", "SVGPath.swift", "DocumentModel.swift", "GlassChrome.swift", "ModernEditorChrome.swift", "AppToolTip.swift"], "GlassChromeTests.swift", "GLASS_CHROME_TESTS", ()),
 ]
 with ThreadPoolExecutor(max_workers=len(suites) + len(modern_suites)) as executor:
     futures = [executor.submit(suite, *args) for args in suites]
