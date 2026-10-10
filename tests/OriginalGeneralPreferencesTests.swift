@@ -1,5 +1,5 @@
 // rtk proxy xcrun swiftc -swift-version 5 -target arm64-apple-macosx26.0 -framework AppKit -D ORIGINAL_GENERAL_PREFERENCES_TESTS \
-//   Sources/SVGPath.swift Sources/StrokeFitting.swift Sources/DocumentModel.swift Sources/GeneralPreferencesForm.swift \
+//   Sources/SVGPath.swift Sources/StrokeFitting.swift Sources/DocumentModel.swift Sources/GeneralPreferencesState.swift \
 //   Sources/OriginalGeneralPreferences.swift tests/OriginalGeneralPreferencesTests.swift \
 //   -o build/original-general-preferences-tests
 // rtk proxy build/original-general-preferences-tests
