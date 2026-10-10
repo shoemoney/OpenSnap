@@ -1,6 +1,6 @@
 # E2E audit findings: lane J1 (editor core)
 
-Source revision `15d5ec2` (main `7c8bdb1` + tooltip crash fix + E2E infra). Driver: Sonnet J1, real clicks and keys through kimi-cu on an isolated session copy. Screenshots live in `docs/design/evidence/e2e-2026-10-10/j1/`.
+Source revision `15d5ec2` (main `7c8bdb1` + tooltip crash fix + E2E infra). Driver: J1 lane, real clicks and keys through kimi-cu on an isolated session copy. Screenshots live in `docs/design/evidence/e2e-2026-10-10/j1/`.
 
 Severity: P0 crash or data loss, P1 broken or confusing, P2 visual or space, P3 polish.
 
@@ -154,7 +154,7 @@ Harness notes that affect how to read the evidence (not app defects):
 
 # E2E audit findings: lane J2 (History, Destinations, Settings, uploads, About, status item)
 
-Source revision `10040ba` (main after J1 and audit fix batch 1). Driver: Sonnet J2, real clicks through kimi-cu on two isolated session copies (pids 39783 and 90314). Screenshots live in `docs/design/evidence/e2e-2026-10-10/j2/` (names below are relative to it). History's glass/text-button polish request is deferred by the owner and is not a finding here.
+Source revision `10040ba` (main after J1 and audit fix batch 1). Driver: J2 lane, real clicks through kimi-cu on two isolated session copies (pids 39783 and 90314). Screenshots live in `docs/design/evidence/e2e-2026-10-10/j2/` (names below are relative to it). History's glass/text-button polish request is deferred by the owner and is not a finding here.
 
 How to read the evidence: windows are captured one at a time, so menus, pop-up lists and context menus never appear in a screenshot; those were driven through AX presses and read back, and are labelled as such in the matrix.
 
@@ -285,7 +285,7 @@ How to read the evidence: windows are captured one at a time, so menus, pop-up l
 
 # E2E audit findings: lane J3 (rendered matrix)
 
-Source revision `3194247` (main after fix batches 3a and 3b). Driver: Sonnet J3, harness captures only (`tools/eye-dump-audit.sh`, throwaway bundle id, isolated HOME and defaults, display options injected inside the throwaway copy). **Nothing here is a real-click E2E result**: a capture proves how a state looks, not that a user can reach it, and the harness cannot prove VoiceOver speech or live screen capture. The 106-capture packed set is `docs/design/evidence/e2e-2026-10-10/j3/` (file names below are relative to it, with `@3194247` dropped); side-by-side composites are in `docs/design/evidence/e2e-2026-10-10/j3-diffs/`. Raw runs stayed in `/tmp/j3/` (not committed, 3,338 PNGs over 18 runs).
+Source revision `3194247` (main after fix batches 3a and 3b). Driver: J3 lane, harness captures only (`tools/eye-dump-audit.sh`, throwaway bundle id, isolated HOME and defaults, display options injected inside the throwaway copy). **Nothing here is a real-click E2E result**: a capture proves how a state looks, not that a user can reach it, and the harness cannot prove VoiceOver speech or live screen capture. The 106-capture packed set is `docs/design/evidence/e2e-2026-10-10/j3/` (file names below are relative to it, with `@3194247` dropped); side-by-side composites are in `docs/design/evidence/e2e-2026-10-10/j3-diffs/`. Raw runs stayed in `/tmp/j3/` (not committed, 3,338 PNGs over 18 runs).
 
 Severity: P0 crash or data loss, P1 broken or confusing, P2 visual or space, P3 polish. Surfaces whose fix is still in flight in batch 3c (Resize sheet, Toolbox menu, full-screen layout, History confirmations) are marked **pending 3c** instead of being filed again.
 
@@ -446,3 +446,207 @@ Legend: **ok** = captured and looked at; **ok·m** = captured and machine-checke
 Not captured and why: the native macOS tooltip and the Share picker (`S29`, window-server and out-of-process, recorded as harness gaps), the export save panel itself (`S10`: the modal call returns before a window can be captured, so only the accessory is rendered), the Wipe confirmation (none exists: Wipe acts immediately, recorded by the harness), Photos (above), Font Awesome Pro icons (not bundled), system-owned appearance and accessibility settings (injected only), VoiceOver speech and live screen capture (not provable from renders). Sizes 1024 × 740 and 1440 × 900 exist for the editor (S11M, S11E), History (1120 × 850, 1280 × 800), Settings (1280 variants), Upload (1280, 1440) and the S30-S36 states (1280, 1440); the other surfaces were captured only at their native harness size.
 
 Method note: an automated per-field contrast sweep over the metrics was tried and dropped because the nested sheet frames do not map cleanly to PNG coordinates; every contrast figure above comes from sampling the PNG at a known location.
+
+# E2E audit findings: lane J4 (real-click retest of audit batches 3a, 3b and 3c)
+
+Source revision `94b7aa5` (main after merge of batch 3c). Driver: J4 lane, real clicks and keys through kimi-cu on two isolated session copies: pid 62733 (`com.shoemoney.opensnap.e2e-62694`, `--seed all`) and pid 70107 (`com.shoemoney.opensnap.e2e-70088`, `--seed history --aws`). Both stopped with "stores unchanged". Screenshots are in `docs/design/evidence/e2e-2026-10-10/j4/` (names below are relative to it, shortened to their number). The live AWS check is logged in `j4-aws-log.md`.
+
+## J4 retest
+
+Result key: PASS = the original steps no longer reproduce the defect and the corrected behaviour was seen in a screenshot or AX read; PARTIAL = part of the fix seen, part not; unverified = not reachable here, reason given. Findings left out on purpose: F-J1-012 (gap), F-J1-023 (deferred), F-J2-024 (doc-only), F-J2-020 (partly deferred, only the stale error was retested).
+
+| Finding | Result | Evidence | Note |
+|---|---|---|---|
+| F-J1-001 eraser shadow | PASS | `12` | The erased notch is clean white with no grey halo. Side effect: the rest of the cut rectangle lost its shadow (F-J4-007). |
+| F-J1-002 swatches | PASS | `01`, `02` | Red and Blue show the check and look like the applied colour. |
+| F-J1-003 Custom color… | **PASS (P1)** | `03`, `04` | Black, Custom color…: the Colors panel opens on black (was blue); closing it leaves the colour black. |
+| F-J1-004 Resize Return | PASS | `13`, `14`, `15` | OK is the yellow default; Return on a bad width validates, Return on 400 applied and closed (400 × 300). |
+| F-J1-005 text Size | **PASS (P1)** | `05`, `06`, `07` | Preset 12 grows glyphs and frame together; the duplicate renders at the same size as the original. |
+| F-J1-006 Shadow restyle | **PASS (P1)** | `08`, `10`, `11` | Select All on a red ellipse and a blue outline rectangle (pen blue, size 9), Toolbox › Shadow off and on: only the shadow changed. |
+| F-J1-007 Tab trap | **PASS (P1)** | `19` | Focus walked Hide, Toolbox, Photos, Snap, ten tools, Color, Size, Font, canvas, then left the canvas to Undo; no Brush toggle. |
+| F-J1-008 full screen item | PASS | `18` | Window menu lists Enter Full Screen; ⌃⌘F (harness maps it to the menu item) entered and left full screen. |
+| F-J1-009 Toolbox | PARTIAL | `09` | 18 rows (was 33), a drawing session's commands; still no leading icons. |
+| F-J1-010 stale status | PASS | `00`, `21` | Status names the format and is current after full screen and after hide and restore. |
+| F-J1-011 crop hint | PASS | `26`, `27` | "Crop: Return applies, Esc cancels"; switching tool drops the overlay. |
+| F-J1-013 Photos empty | PASS | `28` | Explanation and both Choose buttons sit inside the grid. |
+| F-J1-014 Resize layout | PASS | `13`, `16`, `17` | Mode and dimensions first, presets below, 3 × 3 crop anchor grid, no blank bands in any mode. |
+| F-J1-015 paste position | PASS | `23` | Pasted copy is offset from the original. |
+| F-J1-016 handles at 25% | PARTIAL | `24` | Handles are about 12 px at 25% as at 100% (fixed screen size); on an 85 px selection they are still large. |
+| F-J1-017 command naming | PASS | AX | Edit has Arrange as a submenu and Remove Annotations / Remove Snap Picture; Image no longer holds the arrange commands (AX read of the live menus, not visible in a capture). |
+| F-J1-018 full-screen layout | PASS | `18` | Canvas fits at 200%; chrome capped and grouped. |
+| F-J1-019 popover dismissal | PASS | `05` | Both popovers close after a pick. |
+| F-J1-020 Undo enabled | PASS | `00` | Undo and Remove annotations disabled on a blank canvas. |
+| F-J1-021 floppy icon | PASS | `00` | Save is the box-archive glyph. |
+| F-J1-022 ⌘M | PASS | `20`, `21` | ⌘M (harness maps it to the menu item) hid the window (tool: window exists but is not on-screen); the status item read Show OpenSnap and restored it. No capture of the hidden state is possible. |
+| F-J1-024 Option-Return | PASS | `22` | Option-Return finished "first"; typing "second" made no box. |
+| F-J1-025 Add Shadow | PASS | AX | Disabled without a snap. |
+| F-J1-026 flip text | PASS | `25` | Shapes mirror, text stays readable. |
+| F-J2-001 sheets on the editor | **PASS (P1)** | `31`, `40`, `41`, `42` | Hide, Trash and the Delete key open their sheets on the History window; Escape cancels. |
+| F-J2-002 S3 delete | **PASS (P1)** | `69`, `70`, `71`, `j4-aws-log.md` | The app deleted its own S3 object (head-object 404). See the AWS log. |
+| F-J2-003 dirty-document guard | **PASS (P1)** | `33`, `34` | Open with unsaved changes asks Save your drawing? on History; Cancel keeps everything. |
+| F-J2-004 copy confirmation | PASS | `36`, `37` | "Link copied" and "Image copied" in the History footer. |
+| F-J2-005 Unsaved on open | PASS | `35` | Opened entry reads "Saved". |
+| F-J2-006 dim canvas | PASS | `35` | Bright after every sheet; not reproduced (it was plausible only). |
+| F-J2-007 vocabulary | PASS | `29` | Tabs All, Shared, Exported, Saved match the tiles. |
+| F-J2-008 empty states | PASS | `38`, `39` | No-match shows Clear filters and the footer "0 of 5 items". |
+| F-J2-009 space | PARTIAL | `29` | The right column now holds a summary; the 880 × 600 minimum reflow was not reachable (no window resize tool). |
+| F-J2-010 details clip | PASS | `69` | Destination is middle-truncated. The Date is still tail-cut (F-J4-002). |
+| F-J2-011 ⌘1 to ⌘4 | unverified | none | The harness maps ⌘ chords to menu items; ⌘2 would start a real full-screen capture of the owner's display, so none were pressed. |
+| F-J2-012 Settings heights | PASS | `43`, `44`, `45`, `48` | Each tab fits its own form; the Upload caption is in view. |
+| F-J2-013 sheet vs window | PASS | `49` | Destinations sheet sits inside the Settings window. |
+| F-J2-014 Test button | PARTIAL | `50`, `51`, `52`, `54` | WebDAV, SFTP and S3 forms have Test with a "never uploads" line; only the S3 local-validation Test was pressed. FTP and FTPS were not opened. |
+| F-J2-015 per-protocol copy | PARTIAL | `50`, `51` | WebDAV and SFTP copy is protocol specific and SFTP has no Endpoint field; FTP and FTPS not opened. |
+| F-J2-016 S3 fields | PASS | `53` | S3 placeholders, no "optional". |
+| F-J2-017 field names | unverified | none | A filled field still prints as `AXTextField = "value"` with no name in the tool (Name, Region, and the Resize fields); the tool cannot show whether an explicit label exists. Not confirmed fixed. |
+| F-J2-018 result band | PASS | `54` | The error band sits above the buttons and the form scrolls above it. |
+| F-J2-019 Remove default | PASS | `56` | Remove in the warning colour, Cancel focused. |
+| F-J2-020 stale error | PARTIAL | `46`, `47` | Disable All clears the error. The 69-item key menu and the two shortcut surfaces remain (suggestions). |
+| F-J2-021 failure text | PASS | `61`, `62` | Inline "Error: Upload failed", Details body has no second prefix and keeps the code (-25300). |
+| F-J2-022 outcome line | PARTIAL | `63`, `67` | The success line shows "Link copied" with Open and Copy icons about five seconds after the upload; the 12 s hold, the cancel notice and the Retrying label could not be timed (only one real upload was allowed; Retry failed instantly). |
+| F-J2-023 About | PASS | `57`, `58`, `59` | Visible title, reflowed licence, Escape closes About, licence and notices; notices match the shipped Free set. |
+
+Positive controls re-exercised and still working: drawing an ellipse, rectangle and arrow, Select All, Duplicate, Copy and Paste, Undo, Resize (Resize and Limit applied), Crop overlay, zoom 25%, Flip, History search and Clear filters, Hide with confirm, Copy and Copy Link, Settings tabs, Destinations Add forms, About, an S3 upload with link copied.
+
+**Known open item (fractional size): not reproduced in real use.** Every size seen in real use was an integer: the title and status line (400 × 300, 900 × 600, 1011 × 758), the Resize fields (Limit 1011 on 800 × 600 gives Width 1011, Height 758, not 758.25), and History Details for a real saved drawing (`73`, 1,011 × 758). The only fractional size ever seen was the harness-saved entry in J2, so it comes from that fixture, not from the app's own save path.
+
+## New findings
+
+### F-J4-001 · P3 · The Destinations list shows the cancelled form's stale Test error
+- **Surface:** Settings › Upload › Manage Destinations… › Add… › S3 form
+- **Steps:** choose S3-compatible, Access key source, press Test with the keys empty (error band appears), press Cancel.
+- **Observed:** back on the list the same red "Error: Enter the access key ID and secret…" line is drawn under the buttons, half clipped by the Done bar, and the sheet grows a vertical scrollbar (`55-NEW-…jpg`). Pressing Done and reopening the sheet clears it (`60-…jpg`). The AX tree of the list sheet contains the error text.
+- **Expected:** Cancel clears the form's result band; the list shows no error.
+- **Suggested fix:** clear the result text when the form is dismissed (or give the list its own status label).
+
+### F-J4-002 · P3 · History Details clips the Date for two-digit days
+- **Surface:** History › Details
+- **Observed:** "October 10, 2026 at 6:49…" (`30-…jpg`, `69-…jpg`) while "October 7, 2026 at 5:49 AM" fits (`36-…jpg`); the AM/PM is lost on every day from the 10th.
+- **Suggested fix:** shorten the format (for example "Oct 10, 2026, 6:49 AM"), wrap the line, or middle-truncate.
+
+### F-J4-003 · P3 (observation) · After Delete from Web the public link still answers 200
+- **Surface:** History › Delete from Web, S3 behind CloudFront
+- **Observed:** head-object returned 404 at 11:50:56Z but `curl -sI https://cdn.shoemoney.com/pics/…png` kept returning 200 with `x-cache: Hit from cloudfront` (age 69 s and still 200 20 s later). The app has no after-delete notice in the History footer (`71-…jpg`).
+- **Expected:** the user is told the origin object is gone and that a CDN may keep serving it until its cache expires.
+- **Suggested fix:** a one-line notice after a successful delete ("Removed from the server. A CDN may keep serving it for a while.").
+
+### F-J4-004 · P3 · A Shared entry's Details report the later, resized size
+- **Surface:** History › Details
+- **Steps:** upload an 800 × 600 drawing to S3 (entry Untitled · Shared, Size 800 × 600, `69-…jpg`); resize the same document to 1011 × 758; Save to History.
+- **Observed:** two entries exist (a new Untitled · Saved and the earlier Untitled · Shared); the Shared one now reads Size 1,011 × 758 (`72-NEW-…jpg`) although the published PNG is 800 × 600.
+- **Expected:** the Shared entry keeps the size it was published at, or Details says it describes the editable copy.
+- **Suggested fix:** show the publication's recorded size for the Shared action, or label the field.
+
+### F-J4-005 · P3 · The Delete from Web confirmation focuses the destructive button
+- **Surface:** History › Delete from Web sheet
+- **Observed:** AX marks Delete from Web focused on the sheet (`70-…jpg`), while the Remove-destination sheet focuses Cancel (`56-…jpg`). Return on the first deletes a server file.
+- **Suggested fix:** focus Cancel on every destructive sheet.
+
+### F-J4-006 · P3 · A freshly opened History entry shows the previous document's size for a moment
+- **Surface:** editor title and status line after History › Open
+- **Observed:** right after Don't Save the title read "Quarterly mockup – 400 × 300 · PNG" and the status "Brush · Saved · 400 × 300" while the canvas already showed the 900 × 600 entry at 79% (`75-NEW-…jpg`); a second later both read 900 × 600 · PNG · 57 KB (`35-…jpg`).
+- **Suggested fix:** compute the size text from the loaded document before the first draw.
+
+### F-J4-007 · P3 (design check) · Erasing a corner of a shape removes the shadow from the rest of it
+- **Surface:** Eraser tool
+- **Observed:** after one erase stroke across the top edge of the blue rectangle the remaining pieces draw without the drop shadow while the neighbouring ellipse keeps its shadow (`12-…jpg`). This follows the batch-3a rule "erased fragments of a real cut are unshadowed" (test `72ecadb`), so it may be intended.
+- **Suggested fix:** if intended, say so in the Eraser help; if not, keep the shadow on cut fragments and only skip it for the erase stroke itself.
+
+## Harness notes for the next driver
+
+- The session window is often not key (grey title): AX presses and `window_id` clicks work, plain clicks on sheet controls are swallowed, and the first drag after a tool switch is dropped (draw again). A real drag on the canvas makes the window key; Tab, ⌘ chords through menu mapping and Escape then work.
+- `get_app_state … rect` is ignored for images; use AX filters (`ax_filter`) to keep output small.
+- Menu-bar pick commits only while the app is active; the status item menu committed with Return.
+
+## Unverified and why
+
+F-J2-011 (⌘1 to ⌘4, see above), F-J2-017 (tool cannot show labels), F-J2-009 minimum-size reflow (no resize tool), FTP and FTPS destination forms (not opened), the Retrying label and Upload cancelled notice (needs a slow network), the 12 s success-line hold (only one upload allowed), and the clipboard: it held no text before the run, so non-text contents (if any) could not be saved; it was reset to empty text at the end.
+
+## J5 gap closure
+
+J5 lane, build e953411, three isolated sessions (pid 70334 seeded `all`, 86919 seeded `history` for the no-destination rows, 23880 seeded `empty` for the Fonts panel and zoom labels). Every row that was `unverified` was either exercised by real input and set to E2E with a viewed screenshot, or given exactly one gap reason in its notes and left `unverified`. The matrix `gap` column is regenerated from `tools/e2e-inventory.py` and was not touched; the J5 reason class is the first words of the `observed` cell (`J5 lane: gap: <reason>.`). Evidence is in `docs/design/evidence/e2e-2026-10-10/j5/` (48 jpg plus `44-ax-and-state-readouts-j5.txt`).
+
+### Counts
+
+| Evidence class | before J5 | after J5 |
+|---|---|---|
+| E2E | 258 | 305 |
+| rendered | 94 | 94 |
+| unit/source | 91 | 91 |
+| unverified | 146 | 99 |
+| total | 589 | 589 |
+
+47 rows moved to E2E, 99 stay `unverified` with an explicit reason:
+
+| Gap reason | rows | what it covers |
+|---|---|---|
+| `gap: unsafe` | 36 | capture items and shortcuts that grab the owner's display (Crosshair, Fullscreen, Window, Frame Snap, Timed, Snap…, ⌘1–⌘4, Shift/Option capture gestures), Hide Others / Show All, global-hotkey firing and the live Settings › Capture shortcut controls (system-wide registration), Move to Trash, Open Link, uploads and web deletes (network), Cancel Upload |
+| `gap: harness` | 32 | synthetic right-click context menus (History, text annotation), held modifiers and keys (Space, Shift, Option), file drop and cross-app drag-out, menu picks while the app is inactive (Spelling), clicks swallowed when the window is not key (Group/Ungroup, missing-file selection, shortcut sheet segments), full-keyboard sweeps, announcements, VoiceOver, menu check marks, the navigator panel, the dead circle-exclamation icon |
+| `gap: OS-owned` | 22 | Open, Save, Export and Print panels and the Export accessory (out-of-process panel service, invisible to the harness), Photos/Pictures folder choosers, share picker, Spelling panel, Colors panel modes |
+| `gap: hardware` | 5 | multi-display, 1x display, printer |
+| `gap: permission` | 4 | Screen Recording capture rows, Photos Library |
+
+### What changed to E2E (47)
+
+Capture menu Frame Snapshot, Cancel Frame, Snap from Link (a synthetic page on 127.0.0.1) and its sheet; Timed Snapshot sheet; Hide OpenSnap (⌘H) and the status item Show / Settings…; Arrow Head At End; Edit › Remove Annotations, Remove Snap Picture, Arrange › Bring to Front and Send to Back; zoom pop-up Actual Size, the Overview navigator (appears, follows the wheel), canvas border handles; Upload menu destination row, Destination Settings…, No destination configured and Upload with no destination; Fonts panel Text outline, Text shadow and Default Text Style; History Drag as JPG, TIFF, SVG, tile double-click, the selected-tile circle-check badge; Resize or Crop Limit by, anchors and validation message; Page Setup; ⌘, ⌘C ⌘X ⇧⌘P ⌘W ⌘H and ⌘D on the Save your drawing? sheet; Settings Esc and ⌘W; default window size; dirty then Save; AX names, roles and states of the icon-only controls; the Toolbox menu rows.
+
+### Re-check after batch 4
+
+These rows were tested against the current behaviour and need a second look once the batch 4 changes land: E2E-MENU-004 note and E2E-HOT-016 (app-menu Capture Shortcuts… still opens the sheet; the idle sheet shows no status line, only the pause note and the Original Frame footnote, `19-…jpg`), the Capture tab in Settings (`18-…jpg`), destination form heights (not opened this run), History empty states (not reached) and the Resize glyph (not compared).
+
+### New findings
+
+### F-J5-001 · P3 · Timed Snapshot throws away an invalid delay without a word
+- **Surface:** Capture › Timed Snapshot…
+- **Steps:** open the sheet (Delay in seconds, default 6), replace the value with `abc`, press OK.
+- **Observed:** the sheet closes, nothing starts, no message or status line explains it (`04-…jpg`, `05-…jpg`). The code accepts 0 to 120 only and returns silently for anything else.
+- **Expected:** keep the sheet open with an Error: line the way Resize or Crop does (`34-…jpg`: "Enter whole pixel dimensions from 1 to 16,384."), or at least a status notice.
+- **Suggested fix:** validate in the sheet and show the range (0–120 s) before closing.
+
+### F-J5-002 · P3 (observation, may be the harness) · ⌘D does not answer the Save your drawing? sheet that is attached to History
+- **Surface:** History › double-click a tile while the editor is dirty
+- **Steps:** double-click a tile; the sheet appears on the History window; press ⌘D (the Don't Save equivalent that works on the editor-attached sheet, `08-…jpg`).
+- **Observed:** the sheet stays (`27-…jpg`); pressing the Don't Save button through AX worked and opened the snap (`28-…jpg`). The History window was not key when ⌘D was posted, which may be why.
+- **Expected:** the same key equivalents on both hosts.
+- **Suggested fix:** confirm with a real key press; route AppAlert key equivalents through the sheet's own window, not the key window.
+
+### F-J5-003 · P3 · Save to History on a blank canvas does nothing and says nothing
+- **Surface:** Edit/File › Save to History and the bottom-bar Save
+- **Steps:** Snap from Link, then Remove Snap Picture and Remove Annotations so the canvas is blank white; press Save to History (menu and button, twice).
+- **Observed:** no new History entry (History still shows 6 items), status stays "Select · Unsaved changes", no notice (`22-…jpg`, History count unchanged in `23-…jpg`). With a picture plus drawings the same action works and reads "Saved to History" (`29-…jpg`).
+- **Expected:** either save the blank document or say there is nothing to save.
+- **Suggested fix:** add a status notice for the refused case.
+
+### F-J5-004 · P4 · Upload with no destination shows an empty list and no explanation
+- **Surface:** bottom-bar Upload with nothing configured
+- **Observed:** the Upload destinations sheet opens with a blank list box, Add… enabled and the help line "The one marked Default receives an Upload click" (`42-…jpg`); nothing says that no destination is configured (the menu does say No destination configured).
+- **Suggested fix:** show an empty-state line such as "No destinations yet. Add one to upload."
+
+### F-J5-005 · P1 (reported by the ops watchdog, cause not isolated) · The Open/Save panel service grows to ~66 GB when the isolated copy shows a system panel
+- **Surface:** ⌘E Export…, ⌘O Open…, ⌘S / ⇧⌘S Save (system panels, out-of-process `com.apple.appkit.xpc.openAndSavePanelService`)
+- **Steps:** in session 70334 press ⌘E, ⌘O, ⌘S, ⇧⌘S in turn, each dismissed with Esc or ⌘. after 3–6 s.
+- **Observed:** the app's AX tree collapses to one element while a panel is open and the panel is not visible to the harness. The ops log sweep (a peer session's message, not measured by this lane) reports the panel service footprint reaching ~66 GB within about two minutes, twice (07:26:29 and 07:31:04 CDT), ~52 GB of swap and free disk falling from 87 to 34 GiB; ops killed pids 77714 and 98463. This lane's own sample at 07:29 was pid 77714 at 57 % CPU and 3.3 GB resident. After that report this lane opened no further system panels (the Open Folder, Photos and Export accessory rows are therefore `gap: OS-owned`). The panel also registered `com.apple.xctest.FakeForceTouchDevice` (ops note).
+- **Expected:** a normal panel footprint (tens of MB).
+- **Suggested fix:** reproduce with `NSSavePanel` and no accessory view, then with the Export accessory, on the same macOS build, to separate an OpenSnap hand-over (accessory, preview image, directory URL) from a beta-OS bug; keep the ops watchdog (8 GB kill) in place for any future run that opens a system panel.
+
+### F-J5-006 · P4 (observation) · The circle-exclamation icon has no call site
+- **Surface:** E2E-ICON-026
+- **Observed:** `FAIcon.warning` (circle-exclamation) is defined in `FontAwesomeIcons.swift` and mapped in `FontAwesomeFree.swift`, but no source file uses it, so no UI state renders it and the row cannot be exercised. Errors use circle-xmark.
+- **Suggested fix:** drop the case or wire it where a warning (not failure) is shown.
+
+### F-J5-007 · P4 · Inventory names for three rows do not match the build
+- **Surface:** coverage matrix E2E-MENU-088 (Clear Image), E2E-HARN-001 (More Commands), E2E-HARN-002 (Wipe Snap Only)
+- **Observed:** the live Edit menu item is Remove Annotations, the bottom-bar button reads Remove annotations (AX also keeps "Clear image" on its disabled state), the Toolbox button is AXMenuButton "Toolbox menu" and its wipe row is Remove Snap Picture; no menu or button is named More Commands or Wipe Snap Only (`44-…txt`).
+- **Suggested fix:** rename in `tools/e2e-inventory.py` at the next regenerate (docs lane).
+
+### Harness notes for the next driver (J5 additions)
+
+- Menu picks commit ~3 s after the AX press and only while the app is active; indexes in the AX tree drift between menu opens, so re-query the menu item right before each press. A stale index silently presses a neighbouring item (this duplicated a rectangle once).
+- `AXShowMenu` on the Upload button opens the destinations menu without uploading (AXPress uploads); the AX press error code returned is misleading, the menu opens anyway.
+- `type_text` can report "not delivered, window occluded" while the text arrives; check the screenshot.
+- System panels (Open, Save, Export, Print) are out of process: the app's AX tree shrinks to one element and the harness cannot see or click them; ⌘. dismissed the print panel when Esc did not. Page Setup is in-process and visible. See F-J5-005 before opening any of them.
+- The owner's other windows can occlude the isolated window, after which menu bar picks are refused ("background app") and clicks are swallowed; a real drag makes the window key for one or two calls.
+- After a stop, the real-store compare may list `com.shoemoney.opensnap.eyedump-<pid>.plist` files: during this run pids 6797 and 6799 were live `tools/eye-dump-audit.sh` processes of the batch 4 lane (`/tmp/a4/ev/...`), so the plists are theirs and were not deleted. Sessions 86919 and 23880 stopped with "stores unchanged"; 70334's compare listed only those two plists.
+
+### Clipboard
+
+The pasteboard held no text before the run (`pbpaste` returned 0 bytes; any non-text contents could not be saved). ⌘C, ⌘V and ⌘X were used once each on a synthetic rectangle; the clipboard was reset to empty text at the end (`pbpaste` = 0 bytes).

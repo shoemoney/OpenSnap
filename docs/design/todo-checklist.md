@@ -49,7 +49,7 @@ Visual validation checklists cite BEFORE capture stems from `evidence/2026-10-09
 
 Counts: 36 todos. P0 12, P1 20, P2 4. M0 2, M1 5, M2 5, M3 3, M4 6, M5 9, M6 3, M7 3. Lane A 22.
 
-Status at `e124f77`: 25 done, 2 verified, 1 not-a-bug, 4 in-progress (OSN-044, OSN-061, OSN-070, OSN-072), 4 pending (OSN-054, OSN-060, OSN-062, OSN-071).
+Status at `284f028`: 29 done, 2 verified, 1 not-a-bug, 3 in-progress (OSN-062, OSN-070, OSN-072), 1 pending (OSN-071). OSN-044, OSN-054, OSN-060 and OSN-061 landed on main in `3ee9503`, `7c8bdb1` and `accfedd`; OSN-062 stays in-progress until the manual VoiceOver pass is recorded.
 
 ---
 
@@ -1191,11 +1191,11 @@ Status at `e124f77`: 25 done, 2 verified, 1 not-a-bug, 4 in-progress (OSN-044, O
 
 ## OSN-044 · Component state model: StateStyles, CommandButton, slider, swatch, drag well, History tile, canvas border rest
 
-`OSN-044 · P1 · M4 · Status: in-progress`
+`OSN-044 · P1 · M4 · Status: done`
 
-**Implementation (main 658a16f):** no merge to main; Evidence: none. Open: Branch impl/m4-states is not merged; no branch SHA is recorded in this pass.
+**Implementation (main 284f028):** merge `3ee9503` (impl/m4-states; part 2 of OSN-061 in the same merge). Tests: the merge changes 7 files under `tests/` (+1013 / −68); counts not recorded in this pass. Evidence: `docs/design/evidence/impl-2026-10-09/m4-states/` (158 captures, source `cc97054`). Open: none.
 
-**Main state (658a16f):** In progress on impl/m4-states, not merged to main. The component state model (StateStyles, CommandButton, slider, swatch, drag well, History tile, canvas border rest) is not on main yet.
+**Main state (284f028):** Done on main at `3ee9503`: StateStyles, CommandButton, the app-owned PNG | JPG toggle, swatch check, keyboard drag well and the hairline canvas border at rest.
 
 **Findings:** VF-13, VF-15. **Spec:** T6.
 
@@ -1538,11 +1538,11 @@ Status at `e124f77`: 25 done, 2 verified, 1 not-a-bug, 4 in-progress (OSN-044, O
 
 ## OSN-054 · Upload progress, success and error presentation, with announcements
 
-`OSN-054 · P1 · M5 · Status: pending`
+`OSN-054 · P1 · M5 · Status: done`
 
-**Implementation (main 658a16f):** no merge to main; Evidence: none. Open: AWS live validation on 2026-10-09 is recorded as validation evidence only (one synthetic object uploaded through OpenSnap's S3 path, read back over the CDN with identical bytes, then deleted through the app's delete path). The upload UX (progress, success, errors, announcements) is not built.
+**Implementation (main 284f028):** merge `7c8bdb1` (impl/m5-upload-a11y; branch commits `fc61ac7`, `fbe4d67`). Tests: the merge changes 12 files (+753 / −52); counts not recorded in this pass. Real-click checks: J2 (one live S3 synthetic upload) and J4 (Link copied, Retry and Details). Evidence: `docs/design/evidence/impl-2026-10-09/m5-upload/` (30 captures, source `fc61ac7`) and `audit-fix-1/` (74 captures, source `8e7a37d`). Open: none.
 
-**Main state (658a16f):** Open: upload progress, success and error presentation, with announcements, has not landed.
+**Main state (284f028):** Done on main at `7c8bdb1`: UploadState in the status slot (spinner, Link copied, inline Error with Retry and Details…), announcements. Audit batch 1 refined it (`529af8b`).
 
 **Findings:** VF-17, VF-26. **Spec:** T9, T11.
 
@@ -1790,11 +1790,11 @@ Status at `e124f77`: 25 done, 2 verified, 1 not-a-bug, 4 in-progress (OSN-044, O
 
 ## OSN-060 · Keyboard: key-view loop, operable drag well, focus rings, Escape and Return in every sheet
 
-`OSN-060 · P1 · M6 · Status: pending`
+`OSN-060 · P1 · M6 · Status: done`
 
-**Implementation (main 658a16f):** no merge. Evidence: none. Open: none.
+**Implementation (main 284f028):** merge `7c8bdb1` (branch commits in impl/m5-upload-a11y) and `4fca729` (impl/m6-a11y: sheet Return and Escape). Tests: `AccessibilityAuditTests` key-loop and Escape and Return cases (T7 tests 3 and 4); DragExportView Space and Return. Real-click checks: J1 Tab walk (F-J1-007 PASS). Open: none.
 
-**Main state (658a16f):** Open: the keyboard pass (key-view loop, operable drag well, focus rings, Escape and Return in every sheet) has not landed.
+**Main state (284f028):** Done on main: key-view loop from the canvas, Focus Toolbar in the Window menu, exterior focus rings, drag well operable from the keyboard (`3ee9503`), Escape and Return in the sheets.
 
 **Findings:** VF-14. **Spec:** T7.
 
@@ -1844,11 +1844,11 @@ Status at `e124f77`: 25 done, 2 verified, 1 not-a-bug, 4 in-progress (OSN-044, O
 
 ## OSN-061 · Display-option consumers and an injected DisplayOptions capture mode
 
-`OSN-061 · P1 · M6 · Status: in-progress`
+`OSN-061 · P1 · M6 · Status: done`
 
-**Implementation (main 658a16f):** merge `accfedd`; branch commits `de21b6e`, `d0f8013`, `2dc613e`, `eaab72f`, `f975dfa`; Evidence: none. Open: Only part 1 is on main; the todo stays in-progress.
+**Implementation (main 284f028):** merge `accfedd` (part 1: branch commits `de21b6e`, `d0f8013`, `2dc613e`, `eaab72f`, `f975dfa`; DisplayOptionsTests 92 checks) and merge `3ee9503` (part 2: Differentiate Without Color and Increase Contrast consumers). Evidence: J3 rendered positive controls for all four options (`docs/design/evidence/e2e-2026-10-10/j3/`, rendered only, not real-click). Open: none.
 
-**Main state (658a16f):** In progress: part 1 is on main (accfedd). A DisplayOptions model reads Reduce Motion, Reduce Transparency, Increase Contrast and Differentiate Without Color live and observes them. Consumers: countdown, flash and hint bevel; the glass consolidation (8015360) applies them to plates and borders. A harness-gated --display injection mode is in tools/eye-dump-audit.sh; a normal launch cannot use it. DisplayOptionsTests: 92 checks. OSN-061 stays in-progress.
+**Main state (284f028):** Done. Parts 1 and 2 are on main. A DisplayOptions model reads Reduce Motion, Reduce Transparency, Increase Contrast and Differentiate Without Color live and observes them. A harness-gated `--display` injection mode is in `tools/eye-dump-audit.sh`; a normal launch cannot use it.
 
 **Findings:** VF-10, VF-14. **Spec:** T7, T14.
 
@@ -1899,11 +1899,11 @@ Status at `e124f77`: 25 done, 2 verified, 1 not-a-bug, 4 in-progress (OSN-044, O
 
 ## OSN-062 · VoiceOver labels, announcements, and a recorded manual VoiceOver pass
 
-`OSN-062 · P1 · M6 · Status: pending`
+`OSN-062 · P1 · M6 · Status: in-progress`
 
-**Implementation (main 658a16f):** no merge. Evidence: none. Open: none.
+**Implementation (main 284f028):** merge `7c8bdb1` (labels, announcements, History keyboard) and merge `4fca729` (G10 accessibility audit walker: 32 surfaces, 0 violations). Tests: `AccessibilityAuditTests`. Evidence: none for the manual pass. Open: the recorded manual VoiceOver pass is not done. VoiceOver speech is outside what the harness can prove (see progress.md, E2E audit gaps).
 
-**Main state (658a16f):** Open: VoiceOver labels, announcements and the recorded manual VoiceOver pass have not been done.
+**Main state (284f028):** In progress. Labels, Announcer announcements and the audit walker are on main; the manual VoiceOver pass that the todo requires is not recorded.
 
 **Findings:** VF-14. **Spec:** T7.
 

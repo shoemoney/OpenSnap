@@ -1,0 +1,53 @@
+J5 lane — accessibility-tree and state readouts taken from the isolated sessions (pid 70334 and 86919; throwaway ids
+com.shoemoney.opensnap.e2e-70317 / e2e-86902; build e953411). AX data is not proof of VoiceOver speech.
+
+== Editor window, AX roles / names / states (icon-only controls) ==
+AXButton "Hide" help "Hide (⌘M)"
+AXMenuButton "Toolbox menu" help "Drawing, edit and capture commands; everything else is in the menu bar"
+AXButton "Photos" help "Photos"
+AXButton "Snap" help "Snap: drag an area or click a window; right-click or Control-click for Fullscreen"
+AXCheckBox "Select tool" / "Brush tool" / "Line tool" / "Ellipse tool" / "Rectangle tool" / "Fill tool" / "Eraser tool" / "Text tool" / "Crop tool"  Value 0|1
+AXCheckBox "Arrow tool" Value 1 help "Arrow tool (selected); Option reverses direction, Shift constrains the angle"
+AXButton "Drawing colors" help "Color: hover for original preset colors; hold Shift to change the canvas background"
+AXSlider "Drawing size" Value 7 help "Size 7"   actions AXIncrement AXDecrement AXPress "Show size options"
+AXButton "Font"
+AXButton "Undo" help "Undo (⌘Z)" (disabled when nothing to undo)
+AXButton "Clear image" help "Nothing to clear" (disabled, blank document)  — after drawing: AXButton "Remove annotations" help "Remove annotations"
+AXPopUpButton "Canvas zoom" Value "100%" (blank document) | "Output, 100%" (snap picture, default) | "Normal, 100%" (Original size ticked)
+AXButton "Resize…"
+AXCheckBox "Original size" (appears with a snap picture)
+AXButton "Save" help "Save to History"
+AXButton "History" help "History"
+AXRadioGroup "Image format" help "Format for drag, export and upload": AXRadioButton "PNG" / "JPG"
+AXButton "Drag image to another app" help "Drag the drawing into Finder or another app"
+AXButton "Upload image" help "Upload image and copy link · Right-click for destinations"
+Settings tabs: AXTabGroup "Settings sections": AXRadioButton General / Drawing / Capture / Upload
+
+== Menus read live (app active) ==
+OpenSnap menu: About OpenSnap, Settings…, Sharing Settings…, Capture Shortcuts…, Hide OpenSnap, Hide Others, Show All (DISABLED), Quit OpenSnap
+Edit menu: Undo, Redo (disabled), Cut, Copy, Copy Image, Paste, Delete, Select All, Duplicate, Arrange ▸ [Bring to Front, Send to Back, Group, Ungroup], Remove Annotations, Remove Snap Picture
+  (the matrix row E2E-MENU-088 calls Remove Annotations "Clear Image"; the bottom-bar button reads "Remove annotations" / AX "Clear image")
+Capture menu: Crosshair Snapshot, Fullscreen Snapshot, Window Snapshot, Frame Snapshot, Re-snap (Keep Pen), Cancel Frame, Timed Snapshot…, Cancel Snapshot (DISABLED while idle), Snap from Link…
+Drawing menu: Filled Shapes, Shadow, Pencil Smoothing ▸ [Precise, Medium, Loose], Arrow Head ▸ [At Start, At End]
+Image menu in Actual Size: Resize… DISABLED
+Toolbox menu: Save to History, Export…, Copy, Paste, Duplicate, Delete, Select All, Crosshair Snapshot, Fullscreen Snapshot, Frame Snapshot,
+  Re-snap (Keep Pen), Rotate Clockwise, Flip Horizontal, Crop Snap at Current Edges, Remove Snap Picture, Filled Shapes, Shadow, Text Style…
+  (no rows named "More Commands" or "Wipe Snap Only" in this build: the Toolbox button is AXMenuButton "Toolbox menu"; the wipe row is "Remove Snap Picture")
+Status-item menu (hidden app): Show OpenSnap, Snap…, Settings…, Quit OpenSnap
+Upload button menu, seeded destinations: WebDAV · demo, SFTP · e2e-host, FTPS · demo, S3 · example-bucket, Destination Settings…, Share with macOS…
+Upload button menu, no destinations (session 86919): "No destination configured" (DISABLED), Destination Settings…, Share with macOS…
+
+== Defaults / state readouts (throwaway domain only) ==
+Pencil Smoothing pick: Loose -> fittingPrecision=2 PencilSmoothing=loose ; Precise -> 0 / precise ; Medium -> 1 / medium
+Arrow Head pick: At Start -> arrowHead=1 ; At End -> arrowHead=2
+Upload menu pick "SFTP · e2e-host" -> support/Publishing/destinations.json defaultID moved to the 2nd destination; Destinations sheet showed the Default badge on SFTP (37-*.jpg)
+Settings window: Esc (window made key by a real drag first) and ⌘W each removed the Settings window from the app's window list; the editor stayed.
+⌘H: get_app_state reported "window exists but is not on-screen"; status item then read Show OpenSnap; picking it restored the editor (17-*.jpg).
+OS panels (⌘E Export, ⌘O Open, ⌘S Save, ⇧⌘S Save As, ⌘P Print): while open the app's AX tree collapsed to 1 element and the panel was not visible to
+  the harness (out-of-process openAndSavePanelService); ⌘. or Esc dismissed it. ⇧⌘P Page Setup is an in-process dialog and was imaged (20-*.jpg).
+  Note from the ops watchdog (not measured by this lane): the panel service for this session grew to ~66 GB twice (07:26 and 07:31 CDT) and was killed.
+
+== Session J5b (pid 23880, id e2e-23864) ==
+Canvas zoom AX value after Snap from Link (2560 x 1800, Original size on): "Output, 100%"; after choosing 50% in the pop-up: "50%" (no mode word); unticking Original size
+changed the status size to 1437 x 1011 and the pop-up stayed "50%". "Actual, 100%" and "Fit, NN%" were not produced in this run.
+Fonts panel accessory (in-process window "Fonts", AXFloatingWindow): AXCheckBox "Text outline" Value 1, "Text shadow" Value 1, AXButton "Default Text Style".

@@ -1,0 +1,29 @@
+# Complete post-implementation end-to-end audit
+
+Owner authorization: Jeremy, 2026-10-09 23:27 CDT. “When done do a complete e2e audit every option every icon ask yourself does this look as best as it can? Is this making the most use of space? Be bold act autonomously make a plan and execute it.”
+
+## Execution and ownership
+
+Opus 5.5 orchestrates the existing implementation and this final audit. Sonnet 5.5 implements fixes and meaningful workflow checks; Haiku 5.5 maintains coverage, findings and evidence writeups. Keep the available agent slots occupied with dependency-ready, non-overlapping work. Inventory preparation may overlap implementation; final product verdicts require an integrated source revision. Serialize shared desktop capture, App.swift ownership and final integration tests. Root owns the audit-overview.html presentation.
+
+## Phases and completion conditions
+
+- [ ] Finish the authorized visual roadmap and record the integrated source SHA. Do not confuse branch evidence with the integrated application.
+- [ ] Build a complete inventory from source and the running app: every window, menu/submenu, toolbar control, icon, preference, popover, sheet, alert, destination action, History action and keyboard shortcut. Include conditional, empty, populated and error paths. Assign each option an audit ID.
+- [ ] Create a coverage matrix recording entry path, prerequisite state, actual user action, expected outcome, observed outcome, source SHA, screenshot or interaction evidence, reviewer and any gap. Classify evidence as real end-to-end interaction, rendered harness state, unit/source check or unverified; do not merge those classes.
+- [ ] Exercise complete journeys: launch isolated app; new/open; screen/window/selection/timed/link capture where permissions allow; Frame and full-screen refusal; every annotation tool and drawing option; text editing; undo/wipe; crop/resize; zoom/Actual Size; PNG transparency and JPG 75%; save/reopen/export/drag/share; History search/filter/open/rename/removal; destination configuration/selection and upload success/failure/retry; Settings tabs, hotkeys and persisted settings; cancel/close/quit with dirty documents. Verify each meaningful state change, not just a click.
+- [ ] Audit visual quality in light and dark appearance, at the 980 pt minimum width and representative larger sizes, minimum height, empty and busy content, short and long labels, and supported display scales. Check typography, line breaks, icon meaning and consistency, alignment, contrast, button hit areas, state visibility, overlays, scroll reachability and clipped content.
+- [ ] Audit space usage for each surface: explain every large blank area, excessive row height, duplicate label, awkward grouping and unnecessary persistent control. Improve layout boldly where it makes the user's task clearer and gives the canvas more usable room. Preserve the explicit readability minimum instead of shrinking text to fit.
+- [ ] Check keyboard-only operation, focus order and focus appearance, Return/Escape and documented shortcuts, accessible names/roles/states, and announcements. Exercise Reduce Motion, Reduce Transparency, Increase Contrast and Differentiate Without Color separately as well as relevant combinations, with positive controls. AX data is not proof of VoiceOver speech.
+- [ ] Prioritize findings by impact, implement justified improvements autonomously in independent lanes, then rerun affected journeys and review fresh rendered results. Feed independent reviewers real screenshots and pinned revisions; use a new delegated task for each review round. Stop speculative churn when remaining choices are subjective and no concrete usability/visual defect remains.
+- [ ] Run required integration gates on the final revision. Publish the coverage matrix, findings and resolutions, evidence manifest and interactive screenshot gallery with previews, favorites and comparisons. Report all unresolved or permission/hardware-dependent gaps explicitly. Never label incomplete coverage a complete verified pass.
+
+## Per-control and per-icon questions
+
+Does this look as good as it can while staying clear and consistent? Does it use space well? Is the action recognizable and its icon meaningful? Is readable text at least 18 pt in app-owned native UI (normally 20 pt), or 18 CSS px in HTML (normally 20 px)? Does the control work with pointer and keyboard? Are normal, hover, focus, pressed, selected, disabled, loading, success and error states distinguishable where applicable? Does the user see the result without searching another window? Is every app-owned icon-only action accessibly named? Use actual semantic Font Awesome assets; retain functional annotation arrows only for the annotation itself.
+
+## Boundaries and evidence safeguards
+
+Use isolated app identity, defaults and support stores, synthetic documents and secure-field redaction. Do not launch the installed application against the parked real migration. AWS credentials in ~/.aws are authorized for relevant existing-destination validation; never print/copy credentials, change IAM/infrastructure or modify pre-existing objects. Only synthetic objects created by the audit may be cleaned up. Do not change global accessibility preferences. Screen Recording, 1x/multiple displays, Photos, OS panels or spoken VoiceOver that cannot be exercised must remain explicit gaps, with partial evidence described accurately. No release, tag, external message or unjustified push is implied.
+
+History text/glass-button polish was explicitly captured with scopecreep in QUEUE.md. Audit History fully, but preserve that separately deferred feature request unless subsequently authorized; ordinary correctness/accessibility findings remain in the active audit scope.
