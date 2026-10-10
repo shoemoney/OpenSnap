@@ -14,6 +14,11 @@
 # read, copied, printed or logged by this script. Secrets stay in memory because OPENSNAP_APP_SUPPORT keeps them there.
 # There is deliberately NO sandbox fence: it would block the normal UI. The isolation env and the real-store guard protect.
 #
+# NOT ISOLATED: History > Move to Trash uses FileManager.trashItem, which ignores the throwaway HOME and moves the files into the
+# owner's REAL ~/.Trash (the J2 run left two synthetic .opensnap/.png files there). The real-store guard does not watch ~/.Trash, so
+# nothing here notices. Do not drive Move to Trash in a session; if it was driven, remove only the files it trashed (the session's
+# own entries) from ~/.Trash by hand. Everything else the app writes stays under the session's temp dir.
+#
 # stop: SIGTERM, SIGKILL after E2E_STOP_TIMEOUT seconds (default 10), drop the throwaway defaults domain (E2E_DEFAULTS, default
 # /usr/bin/defaults), remove the temp dir, THEN compare the real stores. Exit non-zero when any watched real store changed.
 set -eu
@@ -280,6 +285,7 @@ cmd_start() {
     echo "app copy         $APP (copied from $APP_SRC; the source bundle is never executed)"
     echo "isolation        env -i; HOME and CFFIXED_USER_HOME, TMPDIR and OPENSNAP_APP_SUPPORT all under $TMP; OPENSNAP_FIXTURE unset; no sandbox fence"
     echo "seed             $SEED"
+    echo "not isolated     History > Move to Trash goes to the owner's real ~/.Trash (FileManager.trashItem ignores HOME); do not drive it, or remove only what it trashed afterwards"
     if [ "$AWS" = yes ]; then
         echo "aws              AWS_SHARED_CREDENTIALS_FILE points at the owner's credentials file in place; its content is never read or printed here"
     fi
