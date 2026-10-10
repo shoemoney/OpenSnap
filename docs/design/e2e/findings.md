@@ -823,3 +823,159 @@ An independent review found class inflation in `coverage-matrix.md`. Changes (th
 - — · R1-024 · F-J5-005 judgement · reviewer saw no app cause; root cause later found in the launchers (non-normalized CFFIXED_USER_HOME triggering a macOS 27.2 panel-service loop) and fixed in fa4715f.
 
 **Ledger-honesty sample.** 25 E2E, 15 rendered and 15 unverified rows were sampled. All cited files existed. Overclaims were found and corrected in b09ecc6: BAR-034/035, SHEET-017 (weak), MENU-011 and SET-010 (partial), DEST-036 and DEST-010 (stale), 6 AX-only rendered rows, SHEET-003, and HOT-014. No row claims VoiceOver speech or live capture as proven.
+
+## J6 retest (batches 4 and 5)
+
+J6 lane, build 0bd6f94, four isolated sessions through `tools/e2e-session.sh`, driven only with the computer-use driver: pid 82616 (seed `all`), pid 69609 (seed `history` plus `--aws`, the two uploads), pid 1790 (seed `empty`), pid 43171 (seed `empty`, the Resize presets). Every session stopped with `RESULT stores unchanged` and 0 panel-service watchdog kills; no system Open, Save, Export or Print panel was opened. Evidence is `docs/design/evidence/e2e-2026-10-10/j6/` (64 jpg, numbers below are the file prefixes); the AWS steps are in `j6-aws-log.md`. A local synthetic page (`http://127.0.0.1:8765/`, a gradient, a red rounded rectangle and the words "J6 synthetic page, fixture, nothing personal") served Snap from Link, which gives a 2560 × 1800 snap and the Original size checkbox without touching the real display. Result key as in J4: PASS = the corrected behaviour was seen in a screenshot I looked at; PARTIAL = part of it; FAIL = the fix did not hold; unverified = not reachable, reason given.
+
+### Result table
+
+| Finding | Result | Evidence | Note |
+|---|---|---|---|
+| R1-002 Upload honours Original size | **PASS (P1)** | `31`, `33`, `34`, `38`, `39`, `40`, `j6-aws-log.md` | Original size ticked, title 2560 × 1800: the object is **2560 × 1800** (`sips` on the downloaded file), History Details 2,560 × 1,800. Unticked, title 674 × 474: the object is **674 × 474**, Details 674 × 474. |
+| R1-003 Resize opens at the title's size | PASS (opens) / **FAIL (after apply)** | `04`, `54`, `55`, `05`, `06` | Opens at 2560 × 1800 ticked (also from the Image menu) and at 1438 × 1011 unticked, equal to the title each time. After applying 1200 × 844 the title and the export do not follow: F-J6-001. |
+| R1-005 Toolbox shows icons | PARTIAL | `01` | The real open menu draws an icon on 16 of 18 rows; Filled Shapes and Shadow (check-mark toggles) have none: F-J6-009. The old near-identical Actual Size / Full Screen / Resize / Close / Cancel Snapshot rows are no longer in the Toolbox. |
+| R1-006 Resize… text button | PASS | `03`, `06`, `53` | Text button at 980 and 1482 wide; disabled in Actual Size. |
+| R1-010 Delete from Web after edits | PARTIAL | `35`, `36`, `37`, `40`–`43`, `j6-aws-log.md` | Rename then reselect: enabled; the app deleted upload 2 (head-object 404). A folder edit disables it with a reason, but after restoring the exact folder the entry stayed undeletable until the list reloaded, so upload 1 had to be removed with the CLI: F-J6-003. |
+| R1-011 One destinations surface | PASS | `08`–`15`, `17`, `27`, `44`, `46`, `47`, `48` | Settings › Upload list with Add…, Edit…, Remove, Make Default (disabled on the Default row, moved the pill to FTPS); empty state No destinations yet with Add…; form-only editor sheet on Settings; Sharing Settings…, Capture Shortcuts… and an unconfigured Upload land on the right Settings tab. Publish… could not be pressed (app went inactive, unverified: harness). |
+| R1-012 History labelled actions | PARTIAL | `18`, `19`, `20` | All seven actions labelled at the default 1000 and at 945. 880 was not reachable by real input: dragging the edge stopped at 945 (F-J6-006), so the icon-only collapse is still rendered-only. |
+| R1-013 Footer does not repeat the title | PASS | `06`, `24` | Windowed: no size, format or bytes in the status line; full screen: `Arrow · Unsaved changes · 674 × 474 · PNG · 213 KB`. The 980 status is still tail-cut: F-J6-004. |
+| R1-014 980 upload success | PASS | `33`, `39` | `Copied · …23.png`, `Copied · …7c.png` with Open and Copy buttons. |
+| R1-015 Empty-state wording | PASS | `21`, `44`, `45` | No history yet / No history items match these filters / No destinations yet. |
+| R1-017 Settings › Capture cleanup | PASS | `07`, `48` | Clear All only (no Disable All, no Reset Defaults); note "They work again when you leave this tab." The live hotkey pause itself is not observable without registering a global hotkey (unverified: unsafe). |
+| R1-018 Tab outline follows Differentiate Without Color live | unverified | `docs/design/evidence/impl-2026-10-09/audit-fix-4/dwc/S17-settings-*` | Needs the system option; harness-injected, rendered only. |
+| R1-020 Full Screen only for a visible, key editor | unverified | `24` | ⌃⌘F aimed at the editor entered and left full screen; the refusal with another window key was not shown (harness). |
+| R1-021 Eraser keeps the shadow of what is left | unverified | none kept | The harness drag trail covers the stroke in every capture; inconclusive. |
+| R1-022 Settings commands off under a sheet | PASS (AX) | AX read | With the Add… sheet up, Settings… and Sharing Settings… in the OpenSnap menu read disabled. |
+| F-J5-001 Timed Snapshot invalid delay | PASS | `25` | `abc` plus OK keeps the sheet with `Error: Enter a number of seconds from 0 to 120.` |
+| F-J5-002 Sheets take ⌘D | PASS (caveat) | `29`, `30` | ⌘D did nothing while History was not key and answered Don't Save once a real drag had made it key. |
+| F-J5-003 Blank Save to History | PASS | `26` | Status `Nothing to sa…` (tail-cut at 980, F-J6-004); no entry added. |
+| F-J5-004 Upload with no destination | PASS | `44` | Opens Settings › Upload with No destinations yet and Add…. |
+| F-J5-006 Dead circle-exclamation icon | PASS (source) | none | `FAIcon.warning` is gone; the matrix has no ICON-107 any more. |
+| F-J5-005 Open/Save panel service | not retested | none | Out of scope; no system panel was opened (the launcher fix is E2E-KEY-004..007). |
+| F-J3-001 DWC adds a cue to PNG \| JPG | unverified | `docs/design/evidence/impl-2026-10-09/audit-fix-4/dwc/S09-format-toggle-*` | System option; rendered only. |
+| F-J3-002 History empty and no-match columns | PASS | `21`, `45` | Message centred across the full width, no details column. |
+| F-J3-003 Destination forms fit per protocol | **PASS** | `10`, `11`, `12`, `13`, `14` | WebDAV, FTP, FTPS, SFTP and S3-compatible all fit with no blank band; a new SFTP has no Endpoint field. |
+| F-J3-004 Increase Contrast glyphs | unverified | `docs/design/evidence/impl-2026-10-09/audit-fix-4/ic/` | System option; rendered only. |
+| F-J3-005 Zoom and Original size explain themselves | PARTIAL | AX | The zoom reads Output, 100% and the checkbox help says what it measures (text readout); no capture of the tooltips. |
+| F-J3-006 Size readouts disagree | PARTIAL | `04`, `05`, `55` | Title, status, Resize fields and History Details agree and are whole pixels; the Resize result is the exception (F-J6-001). |
+| F-J3-007 Status at 980 | PARTIAL | `06`, `26` | Wide: idle bar not rechecked. 980: the status is still cut, F-J6-004. |
+| F-J3-011 Resize glyph | PASS | `03`, `06` | The glyph is gone; the button is the word Resize…. |
+| F-J4-001 Stale Test error | PASS | `46`, `47` | Cancel returns to a clean list. |
+| F-J4-002 Details Date clip | PASS | `19`, `29` | `Oct 10, 2026 at 10:12 AM` fits. |
+| F-J4-003 After-delete notice | PASS | `43` | `Deleted from cdn.shoemoney.com. Cached copies of the link can persist for a while.` The public URL still answered 200 twenty seconds later, as the notice says it may. |
+| F-J4-004 Shared entry keeps the published size | PARTIAL | `34`, `40` | Details show the size each upload went out at; the resize-after-publish scenario was not run. |
+| F-J4-005 Delete from Web focus | PASS | `42` | Cancel is the focused button. |
+| F-J4-006 Stale size after History › Open | PARTIAL | `30` | The title read 940 × 600 at once after ⌘D; a similar lag shows after toggling Original size (F-J6-005). |
+| Whole-pixel sizes everywhere | PASS | `19`, `30`, `55`, `56` | Title, status, Resize fields, History Details (980 × 600, 900 × 600, 940 × 600, 1438 × 1011). |
+| Cancel-first destructive sheets | PASS | `15`, `23`, `42` | Remove destination, Move to Trash (cancelled, not confirmed) and Delete from Web focus Cancel; the non-destructive Hide sheet focuses Hide (`22`, F-J6-008). |
+| In-memory secrets message | PASS | `28` | `Upload failed: No password is stored for this destination in this session.` |
+| Resize… text button, F-J5-001/003/004 | PASS | see above | |
+| DWC and IC cues | unverified | `docs/design/evidence/impl-2026-10-09/audit-fix-4/dwc/`, `…/ic/` | The driver cannot change system appearance or accessibility options; the cues were rendered only. |
+| Shortcuts paused while the Capture tab is open | unverified | `07` | Only the note is visible; firing a global hotkey is unsafe. |
+
+### Re-check rows
+
+`E2E-MENU-004` and `E2E-HOT-041` (Capture Shortcuts… now opens Settings › Capture), `E2E-BAR-024` (Resize… text button), `E2E-DEST-010` (SFTP form), `E2E-DEST-030` (Remove sheet), `E2E-MENU-003` and `E2E-DEST-033` (land on Settings › Upload), `E2E-SHEET-004`, `006`, `018` (preset controls and Apply operated for real; `002`, `003`, `005` still only drawn or pressed without a visible result) and `E2E-HOT-016` (retired) were re-checked. `E2E-HOT-032`, `033` and `E2E-DEST-001`, `006` describe controls batch 5 removed and carry a RETIRED note.
+
+### New findings
+
+### F-J6-001 · P2 · Applying a Resize never changes the title or the exported size
+- **Surface:** Resize… › Resize with Original size ticked or unticked; title, status, Upload.
+- **Steps:** Snap from Link (2560 × 1800, Original size ticked), Resize… (the sheet opens at 2560 × 1800), type Width 1200 (Height 844), OK.
+- **Observed:** with Original size ticked the title stays `Screenshot – 2560 × 1800 · PNG · 4 MB` (`05`) and the uploaded object is 2560 × 1800: the Resize left no trace in the output. Unticked, the title reads `674 × 474 · PNG · 213 KB` (`06`), the size the picture is fitted into the 980 wide window, and the uploaded object is 674 × 474. Neither number is 1200 × 844 and nothing says so. The implementer's note ("with Original size ticked, Resize changes the output size while the title keeps showing the original") is a user-visible defect: a user who resizes to 1200 × 844 and uploads gets 2560 × 1800.
+- **Expected:** after Resize the title, status and export agree with the size just chosen, or the sheet says Original size will keep the picture's own pixels.
+- **Suggested fix:** apply Resize to the picture's own pixels (then the checkbox no longer overrides it), or untick and hide Original size once a Resize has been applied, and write a status line such as `Resized to 1200 × 844`.
+
+### F-J6-002 · P3 · Edit › Copy Image ignores Original size
+- **Surface:** Edit › Copy Image.
+- **Observed:** with Original size ticked and the title `2560 × 1800`, the pasteboard held `public.tiff` of 1438 × 1011 pixels (types and size read, content not looked at; `50` shows the state). Drag, export and upload are the three paths the checkbox names; copy is a fourth path that sends the fitted size.
+- **Expected:** the same pixels the title promises, or the checkbox help names copy.
+- **Suggested fix:** route Copy Image through the same `dragAtOriginalSize` output as upload.
+
+### F-J6-003 · P3 · History's Delete from Web state is not recomputed when a destination changes
+- **Surface:** Settings › Upload › Edit… then History › Delete from Web.
+- **Steps:** upload to the S3 destination, rename it (button still enabled after reselecting the entry), change Key prefix `pics` to `pics-j6x` and Save, reselect the entry; then restore `pics` exactly, Save, reselect.
+- **Observed:** straight after the first Save the button stayed enabled until the entry was reselected (`34`); after the edit it was disabled with the reason "the default destination is no longer the server, bucket or folder it was published to" (`37`); after restoring the exact values and reselecting, the button stayed disabled with the same reason (the Edit sheet showed us-east-1, cdn.shoemoney.com, pics) and only came back enabled after the list reloaded because a second upload added an entry (`41`). The app could not delete upload 1 in the meantime, so `aws s3api delete-object` removed that exact key (`j6-aws-log.md`).
+- **Expected:** the button follows the destination store (or the check runs again when Delete from Web is pressed).
+- **Suggested fix:** recompute the binding when the destinations change, not only on a list reload.
+
+### F-J6-004 · P3 · At 980 the plain status messages are still tail-cut
+- **Surface:** bottom bar status beside the Original size checkbox.
+- **Observed:** `Unsaved chan…` (`06`), `Nothing to sa…` (`26`) and `Error: Upload fail…` (`63`, retry and details buttons beside it) at the minimum window; the checkbox also shows on a blank canvas with no snap (`26`).
+- **Expected:** the message that replaced the repeated facts reads whole at 980.
+- **Suggested fix:** shorten to `Unsaved` and `Nothing to save`, or give the status the checkbox's width when it is not needed.
+
+### F-J6-005 · P4 · The title lags a moment behind the Original size checkbox
+- **Surface:** window title after unticking Original size.
+- **Observed:** the first capture after the untick still read `2560 × 1800 · PNG · 4 MB`, the next one `674 × 474 · PNG · 217 KB` (two sessions).
+- **Suggested fix:** compute the title text in the same pass as the checkbox state.
+
+### F-J6-006 · P4 · The History window stops at 945 wide, not at its 880 minimum
+- **Surface:** History window edge drag.
+- **Observed:** three edge drags from 1000 left the window at 945 × 720 (AX bounds); dragging further inward changed nothing (`20`). Source says `minimumSize` 880.
+- **Expected:** reach the minimum the labelled-action collapse is measured for, or change the minimum.
+- **Suggested fix:** check what holds the window at 945 (the action row's fitting width) and either lower it or raise `minimumSize`.
+
+### F-J6-007 · P4 · Resize's Apply is a preview that Cancel undoes
+- **Surface:** Resize or Crop sheet.
+- **Observed:** the title already follows typed dimensions (640 × 480, 500 × 375 behind the sheet, `58`, `59`); Apply keeps the sheet open; Cancel then returned the document to 800 × 600 (`61`). This matches the matrix expectation "Previews the change, keeps the sheet".
+- **Suggested fix:** name the button Preview.
+
+### F-J6-008 · P4 · The Hide and Trash sheets disagree on button order and default
+- **Surface:** History › Hide, History › Move to Trash.
+- **Observed:** Hide: Cancel left, Hide right, Hide focused (`22`); Move to Trash: the warning-coloured action left, Cancel right, Cancel focused (`23`). Hide is non-destructive, so the focus may be deliberate.
+- **Suggested fix:** one order for every confirmation sheet.
+
+### F-J6-009 · P4 · Toolbox: two rows without an icon, AX value Select All
+- **Surface:** Toolbox pop-up.
+- **Observed:** Filled Shapes and Shadow are the only rows with no leading icon (Shadow has a check mark, `01`); AX reports the closed pop-up's Value as `Select All`.
+- **Suggested fix:** give the toggles an icon (or say in the Toolbox help that toggles use a check mark) and set the pop-up's accessibility value to its title.
+
+### F-J6-010 · P4 (observation) · Size formats differ between the title and History Details
+- **Surface:** window title and History Details.
+- **Observed:** `2560 × 1800` in the title, `2,560 × 1,800` in Details (`34`).
+- **Suggested fix:** pick one grouping style.
+
+### Observations that are not findings
+
+- After Settings and Sharing Settings… had been used in the first session the editor window was no longer in the window list until Show OpenSnap was committed from the status item; it did not recur in the three later sessions, and the cause (a stray click on the Settings window corner, or the app going inactive) is not established.
+- Capture › Snap from Link and the Timed Snapshot… sheet were opened from the Capture menu bar item; every pick was made by item name after a fresh AX read and only those two entries were pressed. Nothing started a capture of the real display.
+
+### Class counts (matrix at the J6 build, 597 rows)
+
+| Evidence class | before J6 | after J6 |
+|---|---|---|
+| E2E | 297 | 322 |
+| rendered | 69 | 64 |
+| unit/source | 93 | 93 |
+| unverified | 138 | 118 |
+| total | 597 | 597 |
+
+25 rows moved to E2E (20 from unverified: MENU-004, 023, 029, 030, 033, 095, SET-025 to 030, HOT-041, HIST-043, 044, DEST-038, ALERT-004, ICON-109, 110, HARN-003; 5 from rendered: BAR-030, BAR-031, SHEET-004, 006, 018). Before the pass 17 unverified rows (the batch 5 TBD rows and MENU-004) had no reason in their notes. 36 further rows carry an appended J6 re-check note and keep their class.
+
+### Gap reasons of the 118 `unverified` rows (exactly one per row, in the observed cell)
+
+| Gap reason | rows | what it covers |
+|---|---|---|
+| `gap: unsafe` | 36 | captures of the real display, ⌘1–⌘4, global hotkeys and live shortcut fields, Hide Others, Move to Trash, Open Link, Cancel Upload, Timed Snapshot with a valid delay, Clear All |
+| `gap: harness` | 30 | synthetic right-click menus, held modifiers, file drops and drags to other apps, menu picks while the app is inactive, Group and Ungroup, full-keyboard sweeps, announcements |
+| `gap: AX presence only` | 18 | menu items only listed, not pressed (File, Edit, Image and Text entries; Pencil Smoothing parent) |
+| `gap: OS-owned` | 18 | Open, Save, Export and Print panels and the Export accessory, share picker, Photos and Pictures choosers, Spelling and Colors panels |
+| `gap: hardware` | 5 | multi-display, 1x display, printer |
+| `gap: text readout only` | 4 | Edit › Copy Image (pasteboard read), the Clear image tooltip, No destination configured (BAR-041) and the icon-only AX names (A11Y-003) |
+| `gap: permission` | 4 | Screen Recording captures, Photos Library |
+| `gap: AX value only` | 2 | zoom entries 75% and 100% |
+| `gap: retired` | 1 | HOT-016 (the removed Capture Shortcuts sheet's status line) |
+
+### Harness notes for the next driver (J6 additions)
+
+- Settings and History are often not key: plain clicks on them are swallowed (`suspected_noop`), AX press through `perform_secondary_action` always lands, and one real drag inside the window makes it key for the next click or key press.
+- Indexes drift on every get_app_state; query `ax_filter` for the one control and press it in the next call. Use `mode: image` for pictures: the default also returns the tree twice and costs 3–4 thousand tokens per call.
+- `drag` coordinates must lie inside the last screenshot of the same window; a window cannot be widened past its own image.
+- The harness draws a red drag trail over captures taken just after a drag (visible in `20` and `58`); it hides small details such as a thin eraser cut.
+- The synthetic page for Snap from Link: any static HTML on `127.0.0.1` through `python3 -I -m http.server --bind 127.0.0.1 --directory <dir>`; stop it afterwards.
+
+### Clipboard
+
+The pasteboard held 14 bytes of text before the run; it was saved to a temp file (not printed) and restored byte for byte after the Copy Image press and the two upload links had replaced it (`cmp` identical); the temp file was deleted.
