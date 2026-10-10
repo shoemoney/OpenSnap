@@ -7,6 +7,7 @@
 // Repeat compilation for x86_64-apple-macosx13.0 (Intel); Swift 6 is also checked.
 #if GLOBAL_HOTKEY_TESTS
 import AppKit
+import Carbon
 import Foundation
 
 @MainActor
@@ -267,8 +268,9 @@ private enum GlobalHotkeysTests {
         backend.queryFailure = NSError(domain: NSOSStatusErrorDomain, code: -50)
         let queryError = try rejects("system lookup failure") { try manager.apply(changed) }
         try expect(queryError.code == -50 && backend.bindings == activeBefore, "System lookup failure is actual, not an assumed free key")
-        try manager.disableAll()
-        try expect(!manager.settings.enabled && backend.bindings.isEmpty, "Disable All works even if system-shortcut lookup fails")
+        var switchedOff = manager.settings; switchedOff.enabled = false
+        try manager.apply(switchedOff)
+        try expect(!manager.settings.enabled && backend.bindings.isEmpty, "Switching every shortcut off works even if system-shortcut lookup fails")
         backend.queryFailure = nil
         var reenabling = manager.settings; reenabling.enabled = true
         try manager.apply(reenabling)
@@ -276,7 +278,8 @@ private enum GlobalHotkeysTests {
 
         fired = []
         backend.emit(.screen)
-        try manager.disableAll()
+        switchedOff = manager.settings; switchedOff.enabled = false
+        try manager.apply(switchedOff)
         try await drainCallbacks()
         try expect(fired.isEmpty, "Queued callback is invalidated by disabling shortcuts")
         try manager.apply(custom())
@@ -307,11 +310,28 @@ private enum GlobalHotkeysTests {
         let extraManager = GlobalHotkeyManager(defaults: defaults, reservedBindings: [custom().upload], backend: extraBackend)
         try rejects("parent's internal shortcut clashes") { try install(extraManager) }
         try expect(extraBackend.bindings.isEmpty, "Parent-provided reserved chords never register")
-        try manager.resetDefaults()
-        try expect(manager.settings == .defaults && (try store.load()) == .defaults && backend.bindings.isEmpty, "Reset persists verified safe defaults without registering while stopped")
+        try manager.clearAll()
+        try expect(manager.settings == .defaults && (try store.load()) == .defaults && backend.bindings.isEmpty, "Clear All persists verified safe defaults without registering while stopped")
         try manager.register()
-        try expect(manager.registeredActions.isEmpty, "Reset plus start claims no shortcuts until configured")
+        try expect(manager.registeredActions.isEmpty, "Clear All plus start claims no shortcuts until configured")
         try manager.unregister()
+        // R1-017: while the shortcut editor is open the saved shortcuts are not registered; edits are saved at once and go live when it closes.
+        try store.save(custom())
+        let editBackend = FakeGlobalHotkeyBackend()
+        let editManager = GlobalHotkeyManager(defaults: defaults, backend: editBackend)
+        try install(editManager)
+        let liveBefore = editBackend.bindings
+        try expect(!liveBefore.isEmpty && editManager.registeredActions.count == liveBefore.count, "The saved shortcuts are live before editing")
+        editManager.setEditing(true)
+        try expect(editBackend.bindings.isEmpty && editManager.registeredActions.isEmpty && editManager.editing, "Opening the editor unregisters every shortcut")
+        var edited = editManager.settings; edited.screen = .init(keyCode: UInt32(kVK_ANSI_8), modifiers: [.command, .option])
+        try editManager.apply(edited)
+        try expect(editManager.settings == edited && (try store.load()) == edited && editBackend.bindings.isEmpty, "An edit made meanwhile is saved but is not registered")
+        editManager.setEditing(false)
+        try expect(editBackend.bindings == edited.activeBindings.reduce(into: [UInt32: GlobalHotkeyBinding]()) { $0[$1.key.carbonID] = $1.value }, "Closing the editor registers what was saved, edit included")
+        let neverStarted = GlobalHotkeyManager(defaults: defaults, backend: FakeGlobalHotkeyBackend())
+        neverStarted.setEditing(true); neverStarted.setEditing(false)
+        try expect(neverStarted.registeredActions.isEmpty && !neverStarted.isRunning, "Editing before the manager has started registers nothing, now or after")
         try expect(NSApp == nil, "Pure test suite never creates an application or desktop window")
     }
 }

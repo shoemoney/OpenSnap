@@ -223,6 +223,26 @@ private enum ResizePanelTests {
             request: ResizePanelSubmission(size: CGSize(width: 80, height: 60), isCrop: true, anchor: CGPoint(x: 1, y: 1)))
         try expect(anchored.rect == CGRect(x: 140, y: 60, width: 160, height: 120) && anchored.output == CGSize(width: 80, height: 60),
                    "Crop anchor uses initial source/output relationship")
+        // R1-003: the sheet opens at the size the title shows (2400 × 1600) while the output is 1517 × 1011; typed pixels map back.
+        let own = CGSize(width: 2400, height: 1600), fitted = CGSize(width: 1517, height: 1011)
+        let opened = ResizePanelState(size: own)
+        try expect(opened.displayWidthText == "2400" && opened.displayHeightText == "1600", "The sheet opens at the size the title shows")
+        let untouched = try ResizePanelGeometry.preview(source: own, output: fitted, displayed: own, request: try opened.submission())
+        try expect(untouched.output == fitted, "Apply without a change maps 2400 × 1600 back to exactly the output size (\(untouched.output))")
+        let halved = try ResizePanelGeometry.preview(source: own, output: fitted, displayed: own,
+            request: ResizePanelSubmission(size: CGSize(width: 1200, height: 800), isCrop: false, anchor: .zero))
+        try expect(halved.rect == nil && halved.output == CGSize(width: 759, height: 506), "Typing 1200 × 800 asks for half the title size: half the output, halves rounded up (\(halved.output))")
+        let cropped = try ResizePanelGeometry.preview(source: own, output: fitted, displayed: own,
+            request: ResizePanelSubmission(size: CGSize(width: 600, height: 400), isCrop: true, anchor: CGPoint(x: 0.5, y: 0.5)))
+        try expect(cropped.output == CGSize(width: 379, height: 253) && abs((cropped.rect?.width ?? 0) - 600) < 0.5 && abs((cropped.rect?.height ?? 0) - 400) < 0.5,
+                   "A crop typed in title pixels keeps 600 × 400 of the source (\(String(describing: cropped.rect)))")
+        let same = try ResizePanelGeometry.preview(source: own, output: fitted, displayed: fitted,
+            request: ResizePanelSubmission(size: CGSize(width: 800, height: 100), isCrop: false, anchor: .zero))
+        let plain = try ResizePanelGeometry.preview(source: own, output: fitted, request: ResizePanelSubmission(size: CGSize(width: 800, height: 100), isCrop: false, anchor: .zero))
+        try expect(same.output == plain.output && same.rect == plain.rect, "Fields seeded with the output size behave as before")
+        try rejects { _ = try ResizePanelGeometry.preview(source: own, output: fitted, displayed: CGSize(width: 0, height: 1600), request: try opened.submission()) }
+        try expect(ResizePanelValidation.wholePixel(1516.5) == 1517 && ResizePanelValidation.wholePixel(1516.4) == 1516 && ResizePanelValidation.wholePixel(0.2) == 1
+                   && ResizePanelValidation.displayText(for: 1516.5) == "1517", "One rounding rule: halves up, never below 1")
         for preset in ResizePreset.builtins {
             var presetState = ResizePanelState(size: CGSize(width: 800, height: 600))
             presetState.selectPreset(preset)

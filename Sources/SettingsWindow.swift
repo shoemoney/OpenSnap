@@ -393,10 +393,28 @@ final class SettingsDestinationRow: NSView {
     static let height = DesignTokens.Size.row + DesignTokens.Space.s3
     let nameField: NSTextField, transportField: NSTextField
     private(set) var pill: DefaultPillView?
+    /// Called on a click (the count says whether it was a double click, which edits).
+    var onClick: ((Int) -> Void)?
+    /// The row the buttons below act on: a filled plate with an accent edge, and "selected" for VoiceOver, so it never relies on colour alone.
+    var isSelected = false {
+        didSet { guard isSelected != oldValue else { return }; needsDisplay = true; setAccessibilitySelected(isSelected) }
+    }
+
+    override var wantsUpdateLayer: Bool { true }
+    override func updateLayer() {
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            layer?.backgroundColor = (isSelected ? DesignTokens.Palette.State.selectedFill : NSColor.clear).cgColor
+            layer?.borderColor = DesignTokens.Palette.accent.cgColor
+        }
+        layer?.borderWidth = isSelected ? 1 : 0
+    }
+    override func mouseDown(with event: NSEvent) { onClick?(event.clickCount) }
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
     init(name: String, transport: String, isDefault: Bool) {
         nameField = NSTextField(labelWithString: name); transportField = NSTextField(labelWithString: transport)
         super.init(frame: .zero)
+        wantsLayer = true; layer?.cornerRadius = DesignTokens.Radius.sm
         nameField.font = DesignTokens.Typography.font(.body); nameField.textColor = DesignTokens.Palette.Text.primary
         nameField.lineBreakMode = .byTruncatingTail
         transportField.font = DesignTokens.Typography.font(.caption); transportField.textColor = DesignTokens.Palette.Text.secondary
@@ -414,45 +432,74 @@ final class SettingsDestinationRow: NSView {
             row.leadingAnchor.constraint(equalTo: leadingAnchor, constant: DesignTokens.Space.s4),
             row.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -DesignTokens.Space.s3),
             row.centerYAnchor.constraint(equalTo: centerYAnchor)])
-        setAccessibilityElement(true); setAccessibilityRole(.row)
+        setAccessibilityElement(true); setAccessibilityRole(.row); setAccessibilitySelected(false)
         setAccessibilityLabel([name, transport, isDefault ? "Default" : nil].compactMap { $0 }.joined(separator: ", "))
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
 }
 
+/// What the Upload tab's buttons do, supplied by the owner. The defaults do nothing, so a bare Settings window is inert.
+struct SettingsDestinationActions {
+    /// Opens the destination editor sheet on the given window: `nil` adds a destination, a destination edits it.
+    var edit: (PublishingDestination?, NSWindow) -> Void = { _, _ in }
+    var makeDefault: (String) throws -> Void = { _ in }
+    var remove: (String) throws -> Void = { _ in }
+    /// The wording of the question asked before a destination is removed.
+    var removalPrompt: (PublishingDestination) -> (title: String, detail: String) = { ("Remove “\($0.name)”?", "This cannot be undone.") }
+}
+
 @MainActor
 final class UploadSettingsTab: SettingsTabViewController {
-    /// More destinations than this are summarised; the full list is in the sheet.
-    static let visibleRows = 5
+    /// This tab has one label ("Destinations:"), so its label column is that wide, not as wide as the longest label on any tab: the list and
+    /// its four buttons get the room (Add…, Edit…, Remove and Make Default need about 410 pt at 20 pt).
+    static var labelColumnWidth: CGFloat { SettingsLayout.labelWidth(for: ["Destinations:"]) }
+    static var listWidth: CGFloat { SettingsLayout.availableControlWidth(labelWidth: labelColumnWidth) }
     private let destinations: () -> PublishingDestinationList
-    private let manage: () -> Void
     private let listSurface = SettingsListSurface()
     private var listStack: NSStackView { listSurface.stack }
-    private let emptyLabel = NSTextField(wrappingLabelWithString: "No upload destination yet.")
-    private let moreLabel = NSTextField(labelWithString: "")
-    private(set) var manageButton: NSButton!
+    private let emptyLabel = NSTextField(wrappingLabelWithString: "No destinations yet")
+    private(set) var addButton: NSButton!, editButton: NSButton!, removeButton: NSButton!, defaultButton: NSButton!
+    /// The Add… button inside an empty list; with destinations the row of four buttons below the list takes over.
+    private(set) var emptyAddButton: NSButton!
+    private var buttonRow: NSStackView!
     private(set) var rows: [SettingsDestinationRow] = []
+    private var listed: [PublishingDestination] = []
+    private var defaultID: String?
+    /// The destination the Edit…, Remove and Make Default buttons act on.
+    private(set) var selectedID: String?
 
-    init(destinations: @escaping () -> PublishingDestinationList, manage: @escaping () -> Void) {
-        self.destinations = destinations; self.manage = manage
+    /// What the buttons do. The owner supplies them; the tab owns no storage.
+    var onAdd: () -> Void = {}
+    var onEdit: (PublishingDestination) -> Void = { _ in }
+    var onRemove: (PublishingDestination) -> Void = { _ in }
+    var onMakeDefault: (PublishingDestination) -> Void = { _ in }
+
+    init(destinations: @escaping () -> PublishingDestinationList) {
+        self.destinations = destinations
         super.init(nibName: nil, bundle: nil)
         title = "Upload"
     }
-    required init?(coder: NSCoder) { fatalError("Use init(destinations:manage:)") }
+    required init?(coder: NSCoder) { fatalError("Use init(destinations:)") }
 
     /// What the list shows, row by row: name, transport, default.
     var listedNames: [String] { rows.map { $0.nameField.stringValue } }
     var emptyStateText: String? { emptyLabel.isHidden ? nil : emptyLabel.stringValue }
-    var summaryText: String? { moreLabel.isHidden ? nil : moreLabel.stringValue }
+    var selectedDestination: PublishingDestination? { listed.first { $0.id == selectedID } }
 
     override func makeRows() -> [[NSView]] {
+        labelWidth = Self.labelColumnWidth; controlWidth = Self.listWidth
         emptyLabel.font = DesignTokens.Typography.font(.body); emptyLabel.textColor = DesignTokens.Palette.Text.secondary
-        emptyLabel.preferredMaxLayoutWidth = SettingsLayout.controlColumnWidth - 2 * DesignTokens.Space.s4
-        moreLabel.font = DesignTokens.Typography.font(.caption); moreLabel.textColor = DesignTokens.Palette.Text.secondary
+        emptyLabel.preferredMaxLayoutWidth = Self.listWidth - 2 * DesignTokens.Space.s4
         listSurface.translatesAutoresizingMaskIntoConstraints = false
-        listSurface.widthAnchor.constraint(equalToConstant: SettingsLayout.controlColumnWidth).isActive = true
-        manageButton = SettingsLayout.pushButton("Manage Destinations…", identifier: "manageDestinations", target: self, action: #selector(manageTapped))
-        let caption = SettingsLayout.caption("Uploads go to the default destination.")
+        listSurface.widthAnchor.constraint(equalToConstant: Self.listWidth).isActive = true
+        addButton = SettingsLayout.pushButton("Add…", identifier: "addDestination", target: self, action: #selector(addTapped))
+        editButton = SettingsLayout.pushButton("Edit…", identifier: "editDestination", target: self, action: #selector(editTapped))
+        removeButton = SettingsLayout.pushButton("Remove", identifier: "removeDestination", target: self, action: #selector(removeTapped))
+        defaultButton = SettingsLayout.pushButton("Make Default", identifier: "makeDefaultDestination", target: self, action: #selector(makeDefaultTapped))
+        emptyAddButton = SettingsLayout.pushButton("Add…", identifier: "addFirstDestination", target: self, action: #selector(addTapped))
+        buttonRow = NSStackView(views: [addButton, editButton, removeButton, defaultButton])
+        buttonRow.orientation = .horizontal; buttonRow.spacing = DesignTokens.Space.s2
+        let caption = SettingsLayout.caption("Uploads go to the default destination. Right-click Upload to switch.", width: Self.listWidth)
         defer { refresh() }
         // The label sits level with the first destination row, not with the middle of a tall list.
         let label = SettingsLayout.rowLabel("Destinations:")
@@ -463,7 +510,7 @@ final class UploadSettingsTab: SettingsTabViewController {
             label.centerYAnchor.constraint(equalTo: labelCell.topAnchor, constant: SettingsDestinationRow.height / 2),
             labelCell.heightAnchor.constraint(equalToConstant: SettingsDestinationRow.height)])
         return [[labelCell, listSurface],
-                [NSGridCell.emptyContentView, manageButton],
+                [NSGridCell.emptyContentView, buttonRow],
                 [NSGridCell.emptyContentView, caption]]
     }
 
@@ -471,10 +518,11 @@ final class UploadSettingsTab: SettingsTabViewController {
         super.loadView()
         grid.row(at: 0).rowAlignment = .none
         grid.row(at: 0).yPlacement = .top
+        grid.row(at: 1).isHidden = listed.isEmpty
     }
 
     override func refresh() {
-        guard manageButton != nil else { return }
+        guard addButton != nil else { return }
         render(destinations())
     }
 
@@ -486,52 +534,64 @@ final class UploadSettingsTab: SettingsTabViewController {
     /// The list's scroll view, so a test can see whether it has something to scroll.
     var listScroll: NSScrollView { listSurface.scroll }
 
+    /// Selects a row, as a click does.
+    func select(id: String?) {
+        selectedID = id
+        for (index, row) in rows.enumerated() { row.isSelected = listed.indices.contains(index) && listed[index].id == id }
+        let selected = selectedDestination
+        editButton.isEnabled = selected != nil; removeButton.isEnabled = selected != nil
+        defaultButton.isEnabled = selected != nil && selected?.id != defaultID
+    }
+
     private func render(_ list: PublishingDestinationList) {
-        let defaultID = list.defaultDestination?.id
+        defaultID = list.defaultDestination?.id
+        listed = list.destinations
         for view in listStack.arrangedSubviews { listStack.removeArrangedSubview(view); view.removeFromSuperview() }
         rows = []
-        for (index, destination) in list.destinations.prefix(Self.visibleRows).enumerated() {
+        for (index, destination) in list.destinations.enumerated() {
             if index > 0 {
                 let line = NSBox(); line.boxType = .separator; line.translatesAutoresizingMaskIntoConstraints = false
                 listStack.addArrangedSubview(line)
-                line.widthAnchor.constraint(equalToConstant: SettingsLayout.controlColumnWidth).isActive = true
+                line.widthAnchor.constraint(equalToConstant: Self.listWidth).isActive = true
             }
             let row = SettingsDestinationRow(name: destination.name, transport: destination.settings.transport.title, isDefault: destination.id == defaultID)
             row.translatesAutoresizingMaskIntoConstraints = false
             row.heightAnchor.constraint(equalToConstant: SettingsDestinationRow.height).isActive = true
-            row.widthAnchor.constraint(equalToConstant: SettingsLayout.controlColumnWidth).isActive = true
+            row.widthAnchor.constraint(equalToConstant: Self.listWidth).isActive = true
+            row.onClick = { [weak self] count in
+                self?.select(id: destination.id)
+                if count > 1 { self?.onEdit(destination) }
+            }
             listStack.addArrangedSubview(row); rows.append(row)
         }
-        emptyLabel.isHidden = !list.destinations.isEmpty
-        if list.destinations.isEmpty {
+        let empty = list.destinations.isEmpty
+        emptyLabel.isHidden = !empty
+        emptyAddButton.isHidden = !empty
+        if empty {
+            let column = NSStackView(views: [emptyLabel, emptyAddButton])
+            column.orientation = .vertical; column.alignment = .leading; column.spacing = DesignTokens.Space.s3
             let wrapper = NSView(); wrapper.translatesAutoresizingMaskIntoConstraints = false
-            emptyLabel.translatesAutoresizingMaskIntoConstraints = false; wrapper.addSubview(emptyLabel)
+            column.translatesAutoresizingMaskIntoConstraints = false; wrapper.addSubview(column)
             NSLayoutConstraint.activate([
-                emptyLabel.leadingAnchor.constraint(equalTo: wrapper.leadingAnchor, constant: DesignTokens.Space.s4),
-                emptyLabel.trailingAnchor.constraint(equalTo: wrapper.trailingAnchor, constant: -DesignTokens.Space.s4),
-                emptyLabel.topAnchor.constraint(equalTo: wrapper.topAnchor, constant: DesignTokens.Space.s3),
-                emptyLabel.bottomAnchor.constraint(equalTo: wrapper.bottomAnchor, constant: -DesignTokens.Space.s3),
-                wrapper.widthAnchor.constraint(equalToConstant: SettingsLayout.controlColumnWidth)])
+                column.leadingAnchor.constraint(equalTo: wrapper.leadingAnchor, constant: DesignTokens.Space.s4),
+                column.trailingAnchor.constraint(lessThanOrEqualTo: wrapper.trailingAnchor, constant: -DesignTokens.Space.s4),
+                column.topAnchor.constraint(equalTo: wrapper.topAnchor, constant: DesignTokens.Space.s3),
+                column.bottomAnchor.constraint(equalTo: wrapper.bottomAnchor, constant: -DesignTokens.Space.s3),
+                wrapper.widthAnchor.constraint(equalToConstant: Self.listWidth)])
             listStack.addArrangedSubview(wrapper)
         }
-        let hidden = list.destinations.count - Self.visibleRows
-        moreLabel.isHidden = hidden <= 0
-        if hidden > 0 {
-            moreLabel.stringValue = "and \(hidden) more in Manage Destinations…"
-            let wrapper = NSView(); wrapper.translatesAutoresizingMaskIntoConstraints = false
-            moreLabel.translatesAutoresizingMaskIntoConstraints = false; wrapper.addSubview(moreLabel)
-            NSLayoutConstraint.activate([
-                moreLabel.leadingAnchor.constraint(equalTo: wrapper.leadingAnchor, constant: DesignTokens.Space.s4),
-                moreLabel.centerYAnchor.constraint(equalTo: wrapper.centerYAnchor),
-                wrapper.heightAnchor.constraint(equalToConstant: DesignTokens.Size.row),
-                wrapper.widthAnchor.constraint(equalToConstant: SettingsLayout.controlColumnWidth)])
-            listStack.addArrangedSubview(wrapper)
-        }
+        // With destinations the four buttons sit under the list; with none the Add… inside the list is the only command.
+        if isViewLoaded { grid.row(at: 1).isHidden = empty }
+        let keep = selectedID.flatMap { id in list.destinations.first { $0.id == id }?.id }
+        select(id: keep ?? defaultID ?? list.destinations.first?.id)
         listSurface.updateHeight()
         if isViewLoaded { contentChanged() }
     }
 
-    @objc private func manageTapped() { manage() }
+    @objc private func addTapped() { onAdd() }
+    @objc private func editTapped() { if let selected = selectedDestination { onEdit(selected) } }
+    @objc private func removeTapped() { if let selected = selectedDestination { onRemove(selected) } }
+    @objc private func makeDefaultTapped() { if let selected = selectedDestination { onMakeDefault(selected) } }
 }
 
 /// One tab on the strip: an icon and a 20 pt label. It is a real NSButton with a title, so the G4 walker judges its text.
@@ -548,6 +608,8 @@ final class SettingsTabButton: NSButton {
     private(set) var isHovered = false
     private(set) var isPressed = false
     private var trackingArea: NSTrackingArea?
+    /// The outline for Differentiate Without Color follows the system setting as it changes, not only when the tab is next selected.
+    private var displayObservation: DisplayOptions.Observation?
 
     init(title: String, icon: FAIcon) {
         self.icon = icon
@@ -561,6 +623,7 @@ final class SettingsTabButton: NSButton {
         setAccessibilityElement(true); setAccessibilityRole(.radioButton); setAccessibilityLabel(title)
         applyTitle()
         applyState()
+        displayObservation = DisplayOptions.observe { [weak self] _ in self?.applyState() }
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
 
@@ -866,25 +929,23 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     }
 
     init(state: @escaping () -> GeneralPreferencesState, hotkeys: any GlobalHotkeyEditing, defaults: UserDefaults,
-         destinations: @escaping () -> PublishingDestinationList, manageDestinations: @escaping (NSWindow) -> Void,
+         destinations: @escaping () -> PublishingDestinationList, destinationActions: SettingsDestinationActions = SettingsDestinationActions(),
          frameAutosaveName: String? = nil) {
+        self.destinationActions = destinationActions
         stateProvider = state
         model = SettingsPreferencesModel(state: state())
         window = Self.windowClass.init(contentRect: NSRect(x: 0, y: 0, width: SettingsLayout.contentWidth, height: 300),
                                 styleMask: [.titled, .closable], backing: .buffered, defer: false)
         general = GeneralSettingsTab(model: model); drawing = DrawingSettingsTab(model: model)
         capture = CaptureSettingsTab(defaults: defaults, hotkeys: hotkeys)
-        var presentManage: () -> Void = {}
-        upload = UploadSettingsTab(destinations: destinations, manage: { presentManage() })
+        self.hotkeys = hotkeys
+        upload = UploadSettingsTab(destinations: destinations)
         let tabs: [SettingsTabViewController] = [general, drawing, capture, upload]
         tabItems = tabs.enumerated().map { SettingsTabItem(label: SettingsLayout.tabTitles[$0.offset], icon: Self.icons[$0.offset], viewController: $0.element) }
         strip = SettingsTabStrip(items: tabItems.map { ($0.label, $0.icon) })
         content = SettingsContentView(strip: strip)
         super.init()
-        presentManage = { [weak self] in
-            guard let self, self.window.attachedSheet == nil else { return }
-            manageDestinations(self.window)
-        }
+        wireDestinationButtons()
 
         window.isReleasedWhenClosed = false
         window.delegate = self
@@ -907,6 +968,47 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         })
     }
 
+    // MARK: Destinations
+
+    private let destinationActions: SettingsDestinationActions
+    private let hotkeys: any GlobalHotkeyEditing
+    /// Whether the window is on screen, which with the Capture tab selected means the shortcut editor is open.
+    private var isShown = false
+    /// The removal question on screen now, so a second click cannot stack another.
+    private(set) var pendingRemoval: AppAlert?
+
+    private func wireDestinationButtons() {
+        upload.onAdd = { [weak self] in self?.editDestination(nil) }
+        upload.onEdit = { [weak self] in self?.editDestination($0) }
+        upload.onMakeDefault = { [weak self] destination in
+            self?.perform { try $0.makeDefault(destination.id) }
+        }
+        upload.onRemove = { [weak self] destination in self?.confirmRemoval(of: destination) }
+    }
+    private func editDestination(_ destination: PublishingDestination?) {
+        guard window.attachedSheet == nil else { return }
+        destinationActions.edit(destination, window)
+    }
+    /// Runs a storage change, refreshes the list, and answers a failure with an alert on this window.
+    private func perform(_ change: (SettingsDestinationActions) throws -> Void) {
+        do { try change(destinationActions) } catch { AppAlert(error: error).present(on: window) { _ in } }
+        upload.refresh()
+    }
+    /// "Remove “name”?" as a sheet on Settings. Cancel is first and the default, and Remove is the destructive second button, so a stray
+    /// Return never deletes a destination.
+    private func confirmRemoval(of destination: PublishingDestination) {
+        guard pendingRemoval == nil, window.attachedSheet == nil else { return }
+        let prompt = destinationActions.removalPrompt(destination)
+        let alert = AppAlert(title: prompt.title, message: prompt.detail, buttons: [.init(title: "Cancel", role: .cancel), .init(title: "Remove", role: .destructive)])
+        pendingRemoval = alert
+        alert.present(on: window) { [weak self] response in
+            guard let self else { return }
+            self.pendingRemoval = nil
+            guard response == .alertSecondButtonReturn else { return }
+            self.perform { try $0.remove(destination.id) }
+        }
+    }
+
     var selectedTab: SettingsTabViewController { tabItems[max(0, selectedIndex)].viewController }
 
     func select(_ index: Int) { select(index, animated: true) }
@@ -914,6 +1016,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     private func select(_ index: Int, animated: Bool) {
         guard tabItems.indices.contains(index), index != selectedIndex else { return }
         selectedIndex = index
+        updateShortcutEditing()
         strip.select(index)
         content.show(tabItems[index].viewController)
         window.title = tabItems[index].label
@@ -931,6 +1034,8 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
 
     /// The Capture tab: where the capture shortcuts are edited (the app menu's Capture Shortcuts… lands here).
     static let captureTabIndex = 2
+    /// The Upload tab: where the destinations are listed and edited (the app menu's Sharing Settings… lands here).
+    static let uploadTabIndex = 3
 
     func show(tab: Int? = nil) {
         if let tab { select(tab, animated: false) }
@@ -938,7 +1043,15 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         fit(animated: false)
         if !hasSavedFrame { window.center(); hasSavedFrame = true }
         window.makeKeyAndOrderFront(nil)
+        isShown = true; updateShortcutEditing()
     }
+
+    /// The owner took the window off screen (Escape, Command-W, the close button).
+    func windowHidden() { isShown = false; updateShortcutEditing() }
+
+    /// While the Capture tab is open the global shortcuts are paused: edits are saved as they are made but go live when the tab is left,
+    /// so a half-entered chord never starts working system-wide and pressing one to try it cannot start a capture.
+    private func updateShortcutEditing() { hotkeys.setEditing(isShown && selectedIndex == Self.captureTabIndex) }
 
     // MARK: Sizing
 

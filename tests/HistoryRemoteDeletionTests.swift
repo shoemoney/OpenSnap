@@ -132,11 +132,9 @@ enum HistoryRemoteDeletionTests {
         var changed = original; changed.sftpRemoteRoot = "/other"; mutations.append(changed)
         changed = original; changed.sshAlias = "other-host"; mutations.append(changed)
         changed = original; changed.sftpPort = 2222; mutations.append(changed)
-        changed = original; changed.username = "other-user"; mutations.append(changed)
         changed = original; changed.remoteFolder = "other-folder"; mutations.append(changed)
         changed = original; changed.endpoint = "sftp://other.test/root"; mutations.append(changed)
         changed = original; changed.publicBaseURL = "https://example.test/other"; mutations.append(changed)
-        changed = original; changed.credentialID = "00000000-0000-0000-0000-000000000002"; mutations.append(changed)
         changed = original; changed.transport = .webDAV; mutations.append(changed)
         for mutation in mutations {
             let adapter = FakeHistoryDeletionAdapter(original), coordinator = HistoryRemoteDeletionCoordinator(adapter: FakeHistoryDeletionAdapter(original))
@@ -144,6 +142,31 @@ enum HistoryRemoteDeletionTests {
             adapter.setSettings(mutation)
             let changedCoordinator = HistoryRemoteDeletionCoordinator(adapter: adapter)
             try expect(!succeeded(try delete(changedCoordinator, binding: binding)) && adapter.capturedCommands().isEmpty, "config drift refuses deletion before mutation")
+        }
+        // R1-010: re-saving a destination with another account or a new Keychain item does not change where the post lives, so it stays deletable;
+        // a binding made before the location-only digest (whole settings record) still works while that record is untouched.
+        var accountChanges: [PublishingSettings] = []
+        changed = original; changed.username = "other-user"; accountChanges.append(changed)
+        changed = original; changed.credentialID = "00000000-0000-0000-0000-000000000002"; accountChanges.append(changed)
+        for change in accountChanges {
+            let adapter = FakeHistoryDeletionAdapter(original), coordinator = HistoryRemoteDeletionCoordinator(adapter: FakeHistoryDeletionAdapter(original))
+            let binding = try coordinator.captureBinding(for: url)
+            adapter.setSettings(change)
+            try expect(succeeded(try delete(HistoryRemoteDeletionCoordinator(adapter: adapter), binding: binding)) && adapter.capturedCommands().count == 1,
+                       "a new account or Keychain item on the same destination still deletes")
+        }
+        do {
+            let adapter = FakeHistoryDeletionAdapter(original), coordinator = HistoryRemoteDeletionCoordinator(adapter: FakeHistoryDeletionAdapter(original))
+            var legacy = try coordinator.captureBinding(for: url)
+            legacy["destinationSHA256"] = try HistoryRemoteDeletionPlan.legacyFingerprint(original)
+            try expect(legacy["destinationSHA256"] != (try HistoryRemoteDeletionPlan.fingerprint(original)), "the two digests differ, so the next check proves the legacy one is accepted")
+            try expect(succeeded(try delete(HistoryRemoteDeletionCoordinator(adapter: adapter), binding: legacy)), "a binding made with the whole-record digest still deletes while the record is untouched")
+            let blocks = coordinator.deletionBlocks(for: [(UUID(), url, legacy)])
+            try expect(blocks.isEmpty, "and the History button stays on for it")
+            var moved = original; moved.publicBaseURL = "https://example.test/other"
+            let movedCoordinator = HistoryRemoteDeletionCoordinator(adapter: FakeHistoryDeletionAdapter(moved)), id = UUID()
+            let reason = movedCoordinator.deletionBlocks(for: [(id, url, legacy)])[id] ?? ""
+            try expect(reason.contains("no longer"), "a moved destination turns the button off and says why: \(reason)")
         }
         let adapter = FakeHistoryDeletionAdapter(original), coordinator = HistoryRemoteDeletionCoordinator(adapter: FakeHistoryDeletionAdapter(original))
         let binding = try coordinator.captureBinding(for: url)

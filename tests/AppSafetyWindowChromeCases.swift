@@ -20,7 +20,9 @@ extension AppSafetyTests {
             ("Sheets that end without a button (endSheet, panel close) answer Cancel, free the question bookkeeping, and Quit still completes", windowQuitAfterSheetsEndWithoutAnswer),
             ("Quit with Save: the save panel cancelling refuses the quit; the answer arrives after applicationShouldTerminate returned", windowQuitSaveRefused),
             ("An error raised while a Discard sheet is open stacks on it instead of waiting out of sight", windowErrorStacksOnOpenSheet),
-            ("Rename and Timed Snapshot prompts take their text from the sheet's field and ignore Cancel", windowPromptsTakeSheetText)
+            ("Rename and Timed Snapshot prompts take their text from the sheet's field and ignore Cancel", windowPromptsTakeSheetText),
+            ("Timed Snapshot and Snap from Link keep their sheet open with an Error: line for a wrong entry instead of closing without a word (F-J5-001)", windowPromptsExplainWrongEntries),
+            ("Save to History on a blank canvas says there is nothing to save (F-J5-003)", windowSaveHistoryBlankSaysSo)
         ]
     }
 
@@ -140,8 +142,14 @@ extension AppSafetyTests {
         let top = (pad + 2 * M.iconButton.width + M.toolboxButton.width + 2 * spacing) + (pad + M.primaryButton.width + spacing + M.iconButton.width)
             + (pad + tools * M.toolButton.width + (tools - 1) * spacing) + (pad + 3 * M.iconButton.width + 2 * spacing) + 3 * gap
         let required = chrome.requiredWindowWidth()
-        // The measured width (before the floor) is the Frame-mode top bar here; a metric or a group that changes moves it.
-        try expect(abs(chrome.measuredWindowWidth() - (ceil(top) + 24)) < 1, "The measured width \(chrome.measuredWindowWidth()) is the Frame-mode top bar plus both margins \(ceil(top) + 24)")
+        // The bottom bar at its worst: the Original size checkbox beside a status that keeps 120 pt, with Resize… wearing its name.
+        app.window.contentView?.layoutSubtreeIfNeeded()
+        let zoomWidth = (app.zoomControl.superview?.frame.width ?? 0), formatWidth = app.dragFormatToggle.frame.width
+        let icons = pad + 2 * M.iconButton.width + spacing
+        let bottom = icons + (pad + zoomWidth + spacing + chrome.resizeButton.frame.width) + icons + (pad + formatWidth + 2 * spacing + 2 * M.iconButton.width)
+            + 4 * gap + app.dragOriginalControl.fittingSize.width + 12 + 120
+        // The measured width (before the floor) is the wider of the Frame-mode top bar and that bottom bar; a metric or a group that changes moves it.
+        try expect(abs(chrome.measuredWindowWidth() - (ceil(max(top, bottom)) + 24)) < 1, "The measured width \(chrome.measuredWindowWidth()) is the wider of the Frame-mode top bar (\(ceil(top))) and the bottom bar (\(ceil(bottom))) plus both margins")
         try expect(required == max(ModernEditorChrome.minimumWindowWidth, chrome.measuredWindowWidth()), "The required width is the measured one, floored at 980")
         try expect(required >= ModernEditorChrome.minimumWindowWidth, "Never below the 980 floor (\(required))")
         try expect(app.window.minSize.width == required && app.window.minSize.height == MainWindowFrame.minimumHeight && MainWindowFrame.minimumHeight == 640,
@@ -381,6 +389,45 @@ extension AppSafetyTests {
         try expect(cancelled == .some(nil), "Cancel hands back nil")
         // Window zoom state unaffected by prompts: still one window, still not terminating.
         try expect(!app.terminationStarted, "Prompts never start a shutdown")
+    }
+
+    static func windowPromptsExplainWrongEntries() throws {
+        let fixture = try Fixture(), app = fixture.app
+        AppSafetyAlert.holdAnswers = true
+        defer { AppSafetyAlert.holdAnswers = false; AppSafetyAlert.pending = [] }
+        app.timedSnap()
+        guard let sheet = AppSafetyAlert.pending.last, let field = sheet.alert.accessoryView as? NSTextField else { throw Failure(description: "Timed Snapshot raised no sheet with a field") }
+        let requests = AppSafetyCaptureCoordinator.screenRequests.count
+        for wrong in ["abc", "", "-1", "121", "NaN"] {
+            field.stringValue = wrong
+            sheet.alert.buttonViews[0].performClick(nil)
+            try expect(sheet.alert.response == nil && sheet.alert.errorLabel?.stringValue == "Error: Enter a number of seconds from 0 to 120." && AppSafetyCaptureCoordinator.screenRequests.count == requests,
+                       "'\(wrong)': the sheet stays open and says why, and no capture starts (\(sheet.alert.errorLabel?.stringValue ?? "no line"))")
+        }
+        field.stringValue = "0"
+        sheet.alert.buttonViews[0].performClick(nil)
+        try expect(sheet.alert.response == .alertFirstButtonReturn && AppSafetyCaptureCoordinator.screenRequests.last?.delay == 0, "0 is a valid delay and starts the capture")
+        AppSafetyAlert.pending = []
+        app.webSnap()
+        guard let link = AppSafetyAlert.pending.last, let address = link.alert.accessoryView as? NSTextField else { throw Failure(description: "Snap from Link raised no sheet with a field") }
+        address.stringValue = "ftp://example.com/a.png"
+        link.alert.buttonViews[0].performClick(nil)
+        try expect(link.alert.response == nil && link.alert.errorLabel?.stringValue.contains("http://") == true, "A web address that is not http or https is explained (\(link.alert.errorLabel?.stringValue ?? "no line"))")
+        link.alert.buttonViews[1].performClick(nil)
+        try expect(link.alert.response == .alertSecondButtonReturn, "Cancel always closes it")
+    }
+
+    static func windowSaveHistoryBlankSaysSo() throws {
+        let fixture = try Fixture(), app = fixture.app
+        _ = try app.archiveStore()
+        app.canvas.newBlank(size: CGSize(width: 400, height: 300))
+        let before = try app.archiveStore().entries.count
+        app.saveHistory()
+        try expect(try app.archiveStore().entries.count == before && app.status.stringValue == AppDelegate.nothingToSaveNotice, "A blank canvas saves nothing and says so (\(app.status.stringValue))")
+        var shape = SketchElement(kind: .rectangle); shape.rect = CGRect(x: 10, y: 10, width: 50, height: 50)
+        app.canvas.document.elements.append(shape)
+        app.saveHistory()
+        try expect(try app.archiveStore().entries.count == before + 1 && app.status.stringValue == "Saved to History", "With something drawn it saves and says so (\(app.status.stringValue))")
     }
 }
 #endif

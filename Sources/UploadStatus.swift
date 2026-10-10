@@ -75,10 +75,20 @@ enum UploadState: Equatable {
                 keepName -= 2
             }
         }
+        // Narrower still: a shorter lead and only the end of the file name, where the part that tells one upload from the next sits
+        // ("Copied · …6611.png"). The sentence in full comes last, cut at its tail by the status line.
+        if !name.isEmpty {
+            var keepTail = min(name.count, minimumTailStart)
+            while keepTail >= minimumNameCharacters {
+                let step = shortBase + " · " + (keepTail < name.count ? "…" : "") + String(name.suffix(keepTail))
+                if step.count < (variants.last?.count ?? .max) { variants.append(step) }
+                keepTail -= 2
+            }
+        }
         variants.append(variants[0])
         return variants
     }
-    static let minimumAddressCharacters = 14, minimumNameCharacters = 8
+    static let minimumAddressCharacters = 14, minimumNameCharacters = 6, minimumTailStart = 14, shortBase = "Copied"
 
     /// The link without its scheme, which says nothing the host does not.
     static func displayAddress(of url: URL) -> String {

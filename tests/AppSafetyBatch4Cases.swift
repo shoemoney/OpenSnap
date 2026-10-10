@@ -7,9 +7,10 @@ extension AppSafetyTests {
     static var batch4Cases: [(String, () throws -> Void)] {
         [
             ("A fitted screenshot is stored, titled, archived and resized in whole pixels, never a fraction of the fit scale (F-J3-006)", b4WholePixelSizes),
+            ("The Resize sheet opens on the size the title shows, with or without Original size, and what is typed maps back to the output (R1-003)", b4ResizeMatchesTitle),
             ("A freshly opened History entry shows its own size in the title and status at once, not the previous document's (F-J4-006)", b4SizeTextOnOpen),
             ("Capture Shortcuts… opens Settings on the Capture tab; no second shortcut sheet exists (F-J2-020)", b4CaptureShortcutsSingleSurface),
-            ("Resize wears the official Font Awesome Free resize glyph, not a ruler, and its menu symbol follows (F-J3-011)", b4ResizeGlyph),
+            ("Resize… is a 20 pt text button that fits at 980 and 1440, and its menu symbol is its own (F-J3-011, R1-006)", b4ResizeGlyph),
             ("The zoom and Original size controls say what they measure in their tooltips and spoken help (F-J3-005)", b4ZoomAndOriginalLabels),
             ("The normal status line gives up format and bytes first, then the tool, and always keeps the state whole (F-J3-007)", b4StatusPriority),
             ("Delete from Web and Move to Trash put Cancel first: it is the default button and holds the initial focus (F-J4-005)", b4DestructiveSheetsFocusCancel)
@@ -40,10 +41,43 @@ extension AppSafetyTests {
         let snapshot = try app.historySnapshot()
         try expect(whole(snapshot.size) && snapshot.size == output, "The History entry records the whole output size (\(snapshot.size))")
         let session = try app.makeResizeSession().b4Unwrap("the resize session")
-        try expect(session.state.widthText == String(Int(output.width)) && session.state.heightText == String(Int(output.height)),
-                   "The Resize sheet opens on the whole output size (\(session.state.widthText) × \(session.state.heightText))")
+        try expect(session.state.widthText == String(Int(shown.width)) && session.state.heightText == String(Int(shown.height)),
+                   "The Resize sheet opens on the size the title shows (\(session.state.widthText) × \(session.state.heightText), title \(label))")
         session.cancel()
         _ = store
+    }
+
+    /// R1-003: the sheet's fields and the title agree whether or not "Original size" applies, and a size typed in the title's pixels lands in the output.
+    private static func b4ResizeMatchesTitle() throws {
+        let fixture = try Fixture(), app = fixture.app
+        let source = CGSize(width: 2400, height: 1600)
+        app.canvas.newBlank(size: source)
+        app.canvas.setBackground(try image(size: source))
+        app.documentGeneration = UUID(); app.canvas.editingUndoManager.removeAllActions()
+        app.adoptRasterViewport()
+        let output = app.canvas.outputSize
+        try expect(app.isLargeShot && output.width < source.width, "The fixture is a large shot shown smaller than it is (\(output))")
+        for ticked in [true, false] {
+            app.dragOriginalControl.state = ticked ? .on : .off
+            app.updateDragPreview()
+            let title = ticked ? source : output
+            try expect(app.dragAtOriginalSize == ticked && app.titlePixelSize == title && app.dragSizeLabel.stringValue.hasPrefix("\(Int(title.width)) × \(Int(title.height)) · "),
+                       "Ticked \(ticked): the title reads \(title) (\(app.dragSizeLabel.stringValue))")
+            let session = try app.makeResizeSession().b4Unwrap("the resize session")
+            try expect(session.state.displayWidthText == String(Int(title.width)) && session.state.displayHeightText == String(Int(title.height)),
+                       "Ticked \(ticked): the sheet opens on the title's \(Int(title.width)) × \(Int(title.height)) (\(session.state.displayWidthText) × \(session.state.displayHeightText))")
+            session.state.edit(.width, text: String(Int(title.width) / 2))
+            try expect(try session.preview(force: true), "Ticked \(ticked): half the title width previews")
+            let half = app.canvas.outputSize
+            try expect(abs(half.width - output.width / 2) <= 1 && abs(half.height - output.height / 2) <= 1,
+                       "Ticked \(ticked): half of the title's pixels is half the output (\(half), output \(output))")
+            session.cancel()
+            try expect(app.canvas.outputSize == output, "Ticked \(ticked): Cancel restores the output (\(app.canvas.outputSize))")
+            let again = try app.makeResizeSession().b4Unwrap("a second resize session")
+            try expect(try again.state.submission().size == title, "Ticked \(ticked): Apply without a change submits exactly the title's size (\(try again.state.submission().size))")
+            try expect(SketchDocument.wholePixels(CGSize(width: 1516.5, height: 1011.4)) == CGSize(width: 1517, height: 1011), "wholePixels is the half-up rule the Resize sheet shares")
+            again.cancel()
+        }
     }
 
     private static func b4Snapshot(size: CGSize, title: String) throws -> HistoryStore.Snapshot {
@@ -64,8 +98,13 @@ extension AppSafetyTests {
         try expect(app.canvas.outputSize == CGSize(width: 900, height: 600), "The entry is open (\(app.canvas.outputSize))")
         try expect(app.dragSizeLabel.stringValue.hasPrefix("900 × 600 · PNG") && app.window.subtitle.hasPrefix("900 × 600 · PNG"),
                    "Title and size label are the new document's before the timer measures bytes: \(app.dragSizeLabel.stringValue) / \(app.window.subtitle)")
-        try expect(app.status.stringValue.contains("900 × 600") || app.status.stringValue.contains("Saved"), "The status line never shows the old size (\(app.status.stringValue))")
-        try expect(!app.status.stringValue.contains("400 × 300"), "The status line has dropped 400 × 300 (\(app.status.stringValue))")
+        // The title bar carries the size, so the footer does not repeat it; in full screen the title bar is gone and the footer carries it.
+        try expect(!app.status.stringValue.contains("×") && app.status.stringValue.hasSuffix("Saved"), "With the title bar up the footer is the tool and the state only (\(app.status.stringValue))")
+        let window = try (app.window as? AppSafetyWindow).b4Unwrap("isolated window")
+        window.simulatesFullScreen = true
+        defer { window.simulatesFullScreen = false }
+        app.refreshStatusText()
+        try expect(app.status.stringValue.contains("900 × 600") && !app.status.stringValue.contains("400 × 300"), "In full screen the footer shows the new size and never the old one (\(app.status.stringValue))")
     }
 
     private static func b4CaptureShortcutsSingleSurface() throws {
@@ -80,17 +119,28 @@ extension AppSafetyTests {
         settings.select(0); app.shortcutSettings()
         try expect(settings.selectedIndex == SettingsWindowController.captureTabIndex, "Used again from another tab it returns to Capture")
         app.closePreferences()
-        let original = ProcessInfo.processInfo.environment["APP_SAFETY_EVIDENCE"]! + "/original-sources/"
-        let source = try String(contentsOfFile: original + "GlobalHotkeys.swift", encoding: .utf8)
-        try expect(!source.contains("GlobalHotkeySettingsPanel") && !source.contains("func showSettings") && !source.contains("Save applies your changes"),
-                   "The duplicate sheet and its Save/Cancel form are gone from the sources")
+        // One surface that applies as it is edited: the tab has Clear All and no Save, Cancel, Disable All or Reset Defaults.
+        func titles(_ view: NSView) -> [String] { ((view as? NSButton).map { [$0.title] } ?? []) + view.subviews.flatMap(titles) }
+        let captureTab = titles(settings.capture.view)
+        try expect(captureTab.contains("Clear All") && Set(captureTab).isDisjoint(with: ["Save", "Cancel", "Disable All", "Reset Defaults"]),
+                   "The Capture tab applies edits as they are made, so it has no Save or Cancel (\(captureTab))")
+        // R1-022: with a sheet up the Settings commands are off in the menu instead of enabled and silent, and calling them changes nothing.
+        let window = try (app.window as? AppSafetyWindow).b4Unwrap("isolated window")
+        let commands = [#selector(AppDelegate.shortcutSettings), #selector(AppDelegate.sharingSettings), #selector(AppDelegate.showPreferences)]
+        let menuItems = try NSApp.mainMenu.b4Unwrap("main").items.compactMap(\.submenu).flatMap(\.items)
+        try expect(commands.allSatisfy { command in menuItems.first { $0.action == command }.map { app.validateMenuItem($0) } == true }, "With nothing else asking a question, Settings, Sharing Settings… and Capture Shortcuts… are enabled")
+        window.simulatedSheet = AppSafetyWindow(contentRect: .zero, styleMask: [], backing: .buffered, defer: true)
+        defer { window.simulatedSheet = nil }
+        try expect(commands.allSatisfy { command in menuItems.first { $0.action == command }.map { app.validateMenuItem($0) } == false }, "With a sheet on the editor they are all disabled")
+        settings.select(0); app.shortcutSettings()
+        try expect(settings.selectedIndex == 0, "…and choosing one anyway changes nothing")
     }
 
     private static func b4DestructiveSheetsFocusCancel() throws {
         let fixture = try Fixture(), app = fixture.app, store = try isolatedHistory(app)
         let url = URL(string: "https://cdn.example.com/pics/a.png")!
         let bound = try store.archive(try historyDrawing("Bound"), name: "Bound", action: .shared, destination: url.absoluteString, remoteURL: url,
-                                      remoteBinding: ["version": "1", "destinationSHA256": String(repeating: "a", count: 64), "publicURL": url.absoluteString])
+                                      remoteBinding: try b3cRealBinding(app, url: url))
         AppSafetyAlert.holdAnswers = true
         defer { AppSafetyAlert.holdAnswers = false }
         app.deleteHistoryRemote([bound]); app.removeHistory([bound], deleteFiles: true)
@@ -105,15 +155,8 @@ extension AppSafetyTests {
         b4Answer(.alertFirstButtonReturn); b4Answer(.alertFirstButtonReturn)
         try expect(store.entry(bound)?.remoteURL != nil && store.entries.count == 1, "Cancel on both removes nothing")
     }
-    /// Whether a menu row draws an icon: an `image`, or (in the Toolbox pull-down, which does not draw item images) a text attachment in its title.
-    static func b4RowHasIcon(_ item: NSMenuItem) -> Bool {
-        if item.image != nil { return true }
-        var found = false
-        item.attributedTitle?.enumerateAttribute(.attachment, in: NSRange(location: 0, length: item.attributedTitle?.length ?? 0)) { value, _, _ in
-            if let attachment = value as? NSTextAttachment, attachment.image != nil { found = true }
-        }
-        return found
-    }
+    /// Whether a menu row draws an icon: it carries an image (every menu now draws item images, the Toolbox included).
+    static func b4RowHasIcon(_ item: NSMenuItem) -> Bool { item.image != nil }
 
     private static func b4Chrome(_ app: AppDelegate) throws -> ModernEditorChrome {
         guard let chrome = app.modernChrome as? ModernEditorChrome else { throw Failure(description: "AppDelegate did not build ModernEditorChrome") }
@@ -123,12 +166,21 @@ extension AppSafetyTests {
     private static func b4ResizeGlyph() throws {
         let fixture = try Fixture(), app = fixture.app
         let chrome = try b4Chrome(app)
-        try expect(chrome.resizeButton.icon == .resizeDiagonal, "Resize… draws the resize glyph (\(String(describing: chrome.resizeButton.icon)))")
-        try expect(chrome.resizeButton.icon != chrome.toolButtons["crop"]?.icon, "and it is not the Crop tool's glyph")
-        try expect(chrome.resizeButton.iconSource == .fontAwesomeFree("up-right-and-down-left-from-center") || { if case .fontAwesome = chrome.resizeButton.iconSource { return true } else { return false } }(),
-                   "It is the Font Awesome Free vector (or the Pro glyph in a dev build), not an SF Symbol (\(chrome.resizeButton.iconSource))")
-        try expect(MenuSymbols.map[#selector(AppDelegate.resize)] == "arrow.up.right.and.arrow.down.left", "The Image › Resize… menu symbol is the matching resize arrows, not a ruler")
-        try expect(FAIcon.resizeDiagonal.sfSymbolFallback == "arrow.up.right.and.arrow.down.left" && FAIcon.allCases.allSatisfy { $0.rawValue != "ruler-combined" }, "The SF fallback matches and the ruler is gone from the icon set")
+        let content = try (app.window.contentView).b4Unwrap("content view")
+        // R1-006: the diagonal-arrows glyph read as "expand" or "full screen", so the command wears its name.
+        try expect(chrome.resizeButton.visibleTitle == "Resize…" && chrome.resizeButton.icon == nil && chrome.resizeButton.accessibilityLabel() == "Resize…",
+                   "Resize… is a text button with no glyph (\(chrome.resizeButton.visibleTitle), icon \(String(describing: chrome.resizeButton.icon)))")
+        try expect((chrome.resizeButton.font?.pointSize ?? 0) >= 20, "and its text is 20 pt (\(chrome.resizeButton.font?.pointSize ?? 0))")
+        for width in [ModernEditorChrome.minimumWindowWidth, 1440] as [CGFloat] {
+            let frame = app.window.frameRect(forContentRect: NSRect(x: 0, y: 0, width: width, height: content.bounds.height))
+            app.window.setFrame(NSRect(origin: app.window.frame.origin, size: frame.size), display: false)
+            content.layoutSubtreeIfNeeded(); app.windowDidResize(Notification(name: NSWindow.didResizeNotification, object: app.window)); content.layoutSubtreeIfNeeded()
+            let box = chrome.resizeButton.convert(chrome.resizeButton.bounds, to: content), title = (chrome.resizeButton.visibleTitle as NSString).size(withAttributes: [.font: chrome.resizeButton.font as Any])
+            try expect(content.bounds.contains(box) && box.width >= title.width + 16 && box.height >= DesignTokens.Size.hitMin,
+                       "\(Int(width)): the label fits its button with room, unclipped, and is a full-size target (\(box.size), text \(title))")
+        }
+        try expect(MenuSymbols.map[#selector(AppDelegate.resize)] == "square.resize" && FAIcon.allCases.allSatisfy { $0.rawValue != "ruler-combined" && $0.rawValue != "up-right-and-down-left-from-center" },
+                   "The Image › Resize… menu symbol is its own, and neither the ruler nor the ambiguous arrows remain in the icon set")
     }
 
     private static func b4ZoomAndOriginalLabels() throws {
@@ -147,6 +199,7 @@ extension AppSafetyTests {
     private static func b4StatusPriority() throws {
         let fixture = try Fixture(), app = fixture.app
         app.canvas.newBlank(size: NSSize(width: 800, height: 600)); app.setTool(.arrow); app.dirty = true
+        app.footerShowsPictureFactsOverride = true   // full screen: no title bar, so the footer carries the size
         app.updateDragPreview()
         let variants = app.status.variants
         try expect(variants.count == 5 && variants[0].components(separatedBy: " · ").count == 5, "The full line has tool, state, size, format and bytes (\(variants))")
@@ -156,6 +209,11 @@ extension AppSafetyTests {
         try expect(variants.dropFirst().allSatisfy { !$0.contains("PNG") && !$0.contains("KB") && !$0.contains("MB") && !$0.contains("bytes") }, "No shortened step carries the format or the bytes")
         try expect(variants.allSatisfy { $0.contains("Unsaved changes") }, "Every step keeps the state whole")
         app.dirty = false; app.updateStatus()
+        app.footerShowsPictureFactsOverride = nil
+        app.updateStatus()
+        try expect(app.status.variants == ["Arrow · Saved", "Saved"], "With the title bar up the footer is just tool and state (\(app.status.variants))")
+        app.footerShowsPictureFactsOverride = true
+        app.updateStatus()
         try expect(app.status.variants.last == "Saved" && app.status.variants.dropFirst().allSatisfy { $0.contains("Saved") }, "A saved drawing is the same")
     }
 

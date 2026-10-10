@@ -8,6 +8,8 @@ struct UploadPayload {
     let snapshot: HistoryStore.Snapshot
     let generation: UUID
     let binding: [String: String]?
+    /// The pixel size of `data`, recorded in History as the published size.
+    let pixelSize: CGSize
 }
 
 extension AppDelegate {

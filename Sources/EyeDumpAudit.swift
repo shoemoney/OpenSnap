@@ -109,6 +109,31 @@ final class AuditRun {
         return (cg, "cacheDisplay (CGWindowList image was blank)")
     }
 
+    /// This process's own on-screen menu windows (window layer 101 and up), imaged by window number like every other capture and laid over
+    /// `image` at their screen position. AppKit keeps open menus out of `NSApp.windows`, so this is the only way an open menu reaches a PNG.
+    func compositeMenus(onto image: CGImage, union: CGRect, scale: CGFloat) -> (image: CGImage, count: Int)? {
+        guard let primary = NSScreen.screens.first, scale > 0 else { return nil }
+        let infos = (CGWindowListCopyWindowInfo([.optionOnScreenOnly], kCGNullWindowID) as? [[String: Any]]) ?? []
+        var parts: [(frame: CGRect, image: CGImage)] = []
+        for info in infos where (info[kCGWindowOwnerPID as String] as? Int32) == getpid() && ((info[kCGWindowLayer as String] as? Int) ?? 0) >= 100 {
+            guard let number = info[kCGWindowNumber as String] as? CGWindowID, let bounds = info[kCGWindowBounds as String] as? [String: CGFloat],
+                  let picture = Self.windowImage(number, [.boundsIgnoreFraming, .bestResolution]), picture.width > 1, !Self.isBlank(picture) else { continue }
+            let topLeft = CGRect(x: bounds["X"] ?? 0, y: bounds["Y"] ?? 0, width: bounds["Width"] ?? 0, height: bounds["Height"] ?? 0)
+            // CGWindowList is top-left from the primary display; AppKit frames are bottom-left.
+            parts.append((CGRect(x: topLeft.minX, y: primary.frame.height - topLeft.maxY, width: topLeft.width, height: topLeft.height), picture))
+        }
+        guard !parts.isEmpty else { return nil }
+        let bigger = parts.map(\.frame).reduce(union) { $0.union($1) }
+        guard let context = CGContext(data: nil, width: Int((bigger.width * scale).rounded()), height: Int((bigger.height * scale).rounded()), bitsPerComponent: 8, bytesPerRow: 0,
+                                      space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        context.draw(image, in: CGRect(x: (union.minX - bigger.minX) * scale, y: (union.minY - bigger.minY) * scale, width: CGFloat(image.width), height: CGFloat(image.height)))
+        for part in parts {
+            context.draw(part.image, in: CGRect(x: (part.frame.minX - bigger.minX) * scale, y: (part.frame.minY - bigger.minY) * scale,
+                                                width: part.frame.width * scale, height: part.frame.height * scale))
+        }
+        return context.makeImage().map { ($0, parts.count) }
+    }
+
     func stackedImage(_ windows: [NSWindow]) -> CGImage? {
         let options: CGWindowImageOption = [.boundsIgnoreFraming, .bestResolution]
         var parts: [(frame: CGRect, image: CGImage)] = []
@@ -168,7 +193,7 @@ final class AuditRun {
     /// `crop` is in points, top-left origin, relative to the first window's frame.
     @discardableResult
     func shoot(_ id: String, _ slug: String, surface: String, state: String, windows: [NSWindow]? = nil, crop: CGRect? = nil,
-               refs: [String], settle: TimeInterval = 0.45, extra: [String: Any] = [:]) -> String? {
+               refs: [String], settle: TimeInterval = 0.45, extra: [String: Any] = [:], includeMenus: Bool = false) -> String? {
         let targets = windows ?? [window]
         if targets.contains(where: { $0.windowNumber <= 0 }) { gap(id, surface + " / " + state, "the window has no window-server window number (not on screen), so it cannot be imaged"); return nil }
         pump(settle)
@@ -179,6 +204,10 @@ final class AuditRun {
         }
         let union = targets.map(\.frame).reduce(CGRect.null) { $0.union($1) }
         let scale = union.width > 0 ? CGFloat(image.width) / union.width : 1
+        var menuCount = 0
+        if includeMenus, let merged = compositeMenus(onto: image, union: union, scale: scale) {
+            image = merged.image; menuCount = merged.count; method += " + \(merged.count) open menu window(s) of this process"
+        }
         var pointSize = CGSize(width: CGFloat(image.width) / scale, height: CGFloat(image.height) / scale)
         if let crop {
             let pixel = CGRect(x: crop.minX * scale, y: crop.minY * scale, width: crop.width * scale, height: crop.height * scale)
@@ -211,6 +240,7 @@ final class AuditRun {
             "sourceSha": sourceSha, "iconMode": iconMode, "displayOptions": displayOptionsJSON, "windowSize": [Double(window.frame.width.rounded()), Double(window.frame.height.rounded())],
             "windowAlpha": Double(targets.first?.alphaValue ?? 1), "appActive": NSApp.isActive, "opaqueFraction": opaqueFraction(image)
         ]
+        if includeMenus { meta["menuWindowsComposited"] = menuCount }
         for (key, item) in extra { meta[key] = item }
         write(meta, to: "meta/\(stem).json")
         return stem

@@ -21,6 +21,9 @@ final class AppSafetyWindow: NSWindow {
     var simulatedKey = true
     /// Reports the full-screen style bit without a Space transition, so a test can ask what the app does in full screen.
     var simulatesFullScreen = false
+    /// How many times the window was really asked to enter or leave full screen.
+    var fullScreenToggles = 0
+    override func toggleFullScreen(_ sender: Any?) { fullScreenToggles += 1 }
     override var styleMask: NSWindow.StyleMask {
         get { simulatesFullScreen ? super.styleMask.union(.fullScreen) : super.styleMask }
         set { super.styleMask = newValue }
@@ -2070,8 +2073,8 @@ enum AppSafetyTests {
         try expect(settings.drawing.precisionButtons.first { $0.state == .on }?.tag == 0 && settings.drawing.arrowButtons.first { $0.state == .on }?.tag == 2,
                    "A menu choice refreshes the open Settings window")
         try expect(settings.capture.hotkeyForm.isDescendant(of: settings.capture.view) && panel.attachedSheet == nil, "Shortcuts are edited inside the Capture tab, not in a sheet")
-        settings.select(3); settings.upload.manageButton.performClick(nil)
-        try expect(panel.attachedSheet != nil, "Manage Destinations opens the Destinations sheet on the Settings window")
+        settings.select(3); (settings.upload.emptyAddButton.isHidden ? settings.upload.addButton : settings.upload.emptyAddButton).performClick(nil)
+        try expect(panel.attachedSheet != nil && panel.attachedSheet?.title == "Add Destination", "Add… opens the destination editor as a sheet on the Settings window")
         app.closePreferences()
         try expect(panel.attachedSheet != nil, "Closing Settings leaves its sheet to finish first")
         app.publishing.cancelSettings()
@@ -3762,7 +3765,7 @@ enum AppSafetyTests {
                     #selector(AppDelegate.screenSnap), #selector(AppDelegate.fullscreenSnap), #selector(AppDelegate.frameSnap), #selector(AppDelegate.resnap),
                     #selector(AppDelegate.rotateCW), #selector(AppDelegate.flipH), #selector(AppDelegate.trimSnap), #selector(AppDelegate.wipeSnap),
                     #selector(AppDelegate.toggleBezelFill(_:)), #selector(AppDelegate.toggleBezelShadow(_:)), #selector(AppDelegate.chooseFont)]
-                let commands = choices.items.dropFirst().filter { !$0.isSeparatorItem }
+                let commands = choices.items.filter { !$0.isSeparatorItem }
                 try expect(commands.compactMap(\.action) == expected, "The Toolbox holds exactly the drawing-session commands, in group order: \(commands.map(\.title))")
                 try expect(commands.count <= 20 && choices.items.allSatisfy { $0.submenu == nil }, "The Toolbox is a short menu with no submenus (\(commands.count) rows)")
                 let plumbing: [Selector] = [#selector(AppDelegate.about), #selector(AppDelegate.showPreferences), #selector(AppDelegate.quit), #selector(AppDelegate.newFile),

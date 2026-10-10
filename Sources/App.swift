@@ -361,6 +361,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     /// double-click can never stack two sheets on one window (F-J2-006).
     var openHistoryQuestions: Set<String> = []
     /// A message in the status slot that outranks the normal status until it expires or the state it described changes (F-J1-010).
+    var footerShowsPictureFactsOverride: Bool?
     var statusNotice: String?
     var statusNoticeTimer: Timer?
     /// How long a notice stays: long enough to read, short enough that it never describes a state that has moved on.
@@ -526,11 +527,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     func windowDidEnterFullScreen(_ notification: Notification) {
         guard (notification.object as? NSWindow) === window else { return }
         fitDrawingForFullScreen()
+        refreshStatusText()
         DispatchQueue.main.async { [weak self] in self?.refitForFullScreenResize() }
     }
     func windowDidExitFullScreen(_ notification: Notification) {
         guard (notification.object as? NSWindow) === window else { return }
-        restoreZoomAfterFullScreen(); clearStatusNotice()
+        restoreZoomAfterFullScreen(); clearStatusNotice(); refreshStatusText()
     }
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         if sender === preferencesWindow { closePreferences(); return false }
@@ -806,35 +808,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         [#selector(rotateCW), #selector(flipH), #selector(trimSnap), #selector(wipeSnap)],
         [#selector(toggleBezelFill(_:)), #selector(toggleBezelShadow(_:)), #selector(chooseFont)]
     ]
-    /// A pull-down's rows are drawn without their `image` (the Toolbox showed no icons although every row carried one), so each row's
-    /// symbol is set into its title as a text attachment, in a fixed-width box so every title starts at the same x. The row keeps its
-    /// plain `title` for accessibility; the text colour is left to the menu, so the icon follows highlight and appearance.
-    static func drawIconsInline(in menu: NSMenu) {
-        let font = MenuTypography.font, side = font.pointSize, box = NSSize(width: side * 1.3, height: side)
-        for item in menu.items where !item.isSeparatorItem {
-            guard let symbol = item.image else { continue }
-            let canvas = NSImage(size: box, flipped: false) { rect in
-                let fit = min(rect.width / symbol.size.width, rect.height / symbol.size.height)
-                let size = NSSize(width: symbol.size.width * fit, height: symbol.size.height * fit)
-                symbol.draw(in: NSRect(x: (rect.width - size.width) / 2, y: (rect.height - size.height) / 2, width: size.width, height: size.height))
-                return true
-            }
-            canvas.isTemplate = true
-            let attachment = NSTextAttachment()
-            attachment.image = canvas
-            attachment.bounds = NSRect(x: 0, y: (font.capHeight - side) / 2, width: box.width, height: box.height)
-            let row = NSMutableAttributedString(attachment: attachment)
-            row.append(NSAttributedString(string: "  " + item.title))
-            row.addAttribute(.font, value: font, range: NSRange(location: 0, length: row.length))
-            let title = item.title
-            item.attributedTitle = row; item.title = title; item.image = nil
-        }
-    }
+    /// The Toolbox pops up the rows copied from the menu bar, icons and all (see `ToolboxPopUpButton` for why it is not a pull-down).
     func bezelToolbox() -> NSPopUpButton {
-        let control = ToolboxPopUpButton(frame: .zero, pullsDown: true)
+        let control = ToolboxPopUpButton()
         control.font = DesignTokens.Typography.font(.body)
         let choices = NSMenu(title: "Toolbox")
-        choices.addItem(withTitle: "Toolbox", action: nil, keyEquivalent: "")
         for (index, group) in Self.toolboxGroups.enumerated() {
             if index > 0 { choices.addItem(.separator()) }
             for action in group {
@@ -842,8 +820,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             }
         }
         MenuTypography.apply(to: choices)
-        Self.drawIconsInline(in: choices)
-        control.menu = choices; control.setAccessibilityLabel("Toolbox menu")
+        control.install(choices); control.setAccessibilityLabel("Toolbox menu")
         AppToolTip.setText("Drawing, edit and capture commands; everything else is in the menu bar", for: control)
         return control
     }
@@ -992,21 +969,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         UserDefaults.standard.set(sender.tag, forKey: OriginalArrowGeometry.preferenceKey)
         settingsController?.synchronize(generalPreferences.state)
     }
+    /// Full Screen acts on the editor, so it needs the editor on screen, free of sheets, and the window the keys are going to: with History or
+    /// Settings key, or the editor hidden, the shortcut must not reach into a window the user is not looking at (R1-020).
+    var editorCanToggleFullScreen: Bool {
+        guard !terminationStarted, let window, window.isVisible, window.attachedSheet == nil else { return false }
+        guard let key = keyWindowProvider() else { return true }
+        return key === window
+    }
     @objc func toggleFullScreen(_ sender: Any?) {
-        guard !terminationStarted else { return }
+        guard editorCanToggleFullScreen else { return }
         window.toggleFullScreen(sender)
     }
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         if menuItem.action == #selector(toggleFullScreen(_:)) {
             menuItem.title = isFullScreen ? "Exit Full Screen" : "Enter Full Screen"
             // Frame mode takes the window out of the full-screen collection behaviour, so there is no way in while it is up.
-            return !terminationStarted && (isFullScreen || !frameMode)
+            return editorCanToggleFullScreen && (isFullScreen || !frameMode)
         }
         if Self.settingsOwnsKeyEquivalent(of: menuItem, event: NSApp.currentEvent, keyWindow: keyWindowProvider(), settingsWindow: preferencesWindow) { return false }
         if menuItem.action == #selector(addShadow) { return !terminationStarted && canvas.document.backgroundPNG != nil }
         if menuItem.action == #selector(statusShowHide) { menuItem.title = statusShowHideTitle; return !terminationStarted }
         if menuItem.action == #selector(cancelSnapshot) { return !terminationStarted && capture.isCapturing }
-        if menuItem.action == #selector(showPreferences) { return !terminationStarted && !frameCaptureInProgress && window?.attachedSheet == nil }
+        if [#selector(showPreferences), #selector(shortcutSettings), #selector(sharingSettings), #selector(openDestinationSettings)].contains(where: { $0 == menuItem.action }) { return canOpenSettings }
         if menuItem.action == #selector(changeArrowHead(_:)) {
             menuItem.state = ((canvas.arrowHeadPreference == 1) == (menuItem.tag == 1)) ? .on : .off
             return !terminationStarted && !frameCaptureInProgress
@@ -1290,11 +1274,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     /// The one status line: tool, saved state and the export size and bytes the drag preview last measured.
     /// A narrow window shows the longest of these that fits whole (bytes go first, then the tool, never the state);
     /// the tooltip and the spoken value always carry the full text. Frame mode keeps its own hint.
+    /// Whether the footer carries the picture's size, format and bytes: only where the title bar, which says them, is not on screen.
+    /// A test replaces it to exercise the long status in a window that is not full screen.
+    var footerShowsPictureFacts: Bool { footerShowsPictureFactsOverride ?? isFullScreen }
     func refreshStatusText() {
         guard !frameMode else { return }
         syncDragSizeText()
         let variants: [String]
-        if let notice = statusNotice { variants = [notice] }
+        // A running transfer owns the slot (its spinner is beside it); a notice posted meanwhile waits for it to finish.
+        if uploadState.isUploading { variants = uploadState.statusVariants }
+        else if let notice = statusNotice { variants = [notice] }
         else if !uploadState.statusVariants.isEmpty { variants = uploadState.statusVariants }
         else if let notice = UploadNotice.text { variants = [notice] }
         else if canvas.tool == .crop && canvas.hasPendingCrop {
@@ -1303,7 +1292,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         } else {
             let tool = canvas.tool.rawValue.capitalized, state = dirty ? "Unsaved changes" : "Saved"
             let detail = dragSizeLabel.stringValue
-            if detail.isEmpty { variants = ["\(tool) · \(state)", state] }
+            // The title bar already says "W × H · PNG · bytes" (a window subtitle), so the footer does not say it twice: it carries the tool and
+            // the state, and the picture's facts only where the title bar is gone, in full screen.
+            if detail.isEmpty || !footerShowsPictureFacts { variants = ["\(tool) · \(state)", state] }
             else {
                 // What goes first when the slot narrows: the format and bytes, then the tool, then the document's size; the tool or the size
                 // outlasts the format and the bytes, and the saved state is never the one dropped.
@@ -1335,10 +1326,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         }
         dragPreviewTimer = timer; RunLoop.main.add(timer, forMode: .common)
     }
+    /// The whole-pixel size an export, drag or upload has: the picture's own size when "Original size" applies to a snap, else the size it is shown at.
+    func exportPixelSize(originalSize: Bool) -> CGSize {
+        SketchDocument.wholePixels(originalSize && canvas.document.backgroundPNG != nil ? canvas.canvasSize : canvas.outputSize)
+    }
+    /// The size the title shows, the Resize sheet opens at, and drag, export and upload produce.
+    var titlePixelSize: CGSize { exportPixelSize(originalSize: dragAtOriginalSize) }
     /// "W × H · PNG": the size and format the next export of the live document has, in whole pixels. Bytes are measured later.
     func dragSizeHead() -> String {
-        let original = dragAtOriginalSize
-        let size = SketchDocument.wholePixels(original && canvas.document.backgroundPNG != nil ? canvas.canvasSize : canvas.outputSize)
+        let size = titlePixelSize
         return "\(Int(size.width)) × \(Int(size.height)) · " + (dragFormat == "jpeg" ? "JPG" : "PNG")
     }
     /// A document that was just opened or resized must not wear the previous one's size while the bytes are measured: the text
@@ -1516,11 +1512,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     }
     @discardableResult
     func archive(_ snapshot: HistoryStore.Snapshot, name: String, action: HistoryStore.Action,
-                 destination: String? = nil, remoteURL: URL? = nil, remoteBinding: [String: String]? = nil, generation: UUID) -> Bool {
+                 destination: String? = nil, remoteURL: URL? = nil, remoteBinding: [String: String]? = nil, publishedSize: CGSize? = nil, generation: UUID) -> Bool {
         guard !snapshot.isEmpty else { return false }
         do {
             let store = try archiveStore()
-            let id = try store.archive(snapshot, name: name, action: action, destination: destination, remoteURL: remoteURL, remoteBinding: remoteBinding)
+            let id = try store.archive(snapshot, name: name, action: action, destination: destination, remoteURL: remoteURL, remoteBinding: remoteBinding, publishedSize: publishedSize)
             if documentGeneration == generation {
                 followHistory(); currentArchiveID = id
                 // An asynchronous export may have completed after more edits.
@@ -1540,16 +1536,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     }
     @objc func saveHistory() {
         do {
-            if archive(try historySnapshot(), name: safeName(), action: .archived, generation: documentGeneration) { postStatusNotice("Saved to History") }
+            let snapshot = try historySnapshot()
+            // A blank canvas has nothing to keep; say so rather than do nothing (F-J5-003).
+            guard !snapshot.isEmpty else { postStatusNotice(Self.nothingToSaveNotice); return }
+            if archive(snapshot, name: safeName(), action: .archived, generation: documentGeneration) { postStatusNotice("Saved to History") }
         } catch { self.error(error) }
     }
     func refreshHistory() {
         guard let browser = historyBrowser, let store = historyStore else { return }
-        browser.update(items: store.entries.map { entry in
-            HistoryBrowser.Item(id: entry.id, name: entry.name, date: entry.date, size: entry.size,
+        let entries = store.entries
+        let blocks = historyRemoteDeletion.deletionBlocks(for: entries.compactMap { entry in
+            guard let url = entry.remoteURL, let binding = entry.remoteBinding else { return nil }
+            return (entry.id, url, binding)
+        })
+        browser.update(items: entries.map { entry in
+            var item = HistoryBrowser.Item(id: entry.id, name: entry.name, date: entry.date, size: entry.size,
                 action: entry.action.title, text: entry.text, destination: entry.destination,
                 link: entry.remoteURL, previewURL: store.previewURL(entry), missing: store.missing(entry.id),
-                canDeleteFromWeb: entry.remoteBinding != nil, publishedSize: entry.publishedSize)
+                canDeleteFromWeb: entry.remoteBinding != nil && blocks[entry.id] == nil, publishedSize: entry.publishedSize)
+            item.deleteBlockedReason = blocks[entry.id]
+            return item
         })
     }
     @objc func showHistory() {
@@ -1680,11 +1686,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     }
     func deleteHistoryRemote(_ ids: [UUID]) {
         guard !terminationStarted, !ids.isEmpty else { return }
-        guard ids.count == 1, let id = ids.first, let entry = historyStore?.entry(id), let url = entry.remoteURL, let binding = entry.remoteBinding else {
+        let blockedReason: String? = {
+            guard ids.count == 1, let id = ids.first, let entry = historyStore?.entry(id), let url = entry.remoteURL, let binding = entry.remoteBinding else { return nil }
+            return historyRemoteDeletion.deletionBlocks(for: [(id, url, binding)])[id]
+        }()
+        guard blockedReason == nil, ids.count == 1, let id = ids.first, let entry = historyStore?.entry(id), let url = entry.remoteURL, let binding = entry.remoteBinding else {
             // The toolbar button is off for these, and says why in its tooltip; an attempt anyway (menu, accessibility action) is answered with
             // the same reason as a sheet on History, never ignored.
             guard openHistoryQuestions.insert("web-refused").inserted else { return }
-            let reason = ids.count == 1 ? Self.deleteFromWebRefusal(for: historyStore?.entry(ids[0])) : "Delete from Web removes one post at a time. Select a single entry."
+            let reason = ids.count == 1 ? Self.deleteFromWebRefusal(for: historyStore?.entry(ids[0]), blockedReason: blockedReason) : "Delete from Web removes one post at a time. Select a single entry."
             presentFromHistory(AppAlert(title: "Can\u{2019}t delete this from the web", message: reason)) { [weak self] _ in
                 self?.openHistoryQuestions.remove("web-refused")
             }
@@ -1717,8 +1727,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         "Deleted from \(host ?? "the server"). Cached copies of the link can persist for a while."
     }
     /// Why an entry cannot be deleted from the web: it never went to one, or it went before the app recorded where.
-    static func deleteFromWebRefusal(for entry: HistoryStore.Entry?) -> String {
+    static func deleteFromWebRefusal(for entry: HistoryStore.Entry?, blockedReason: String? = nil) -> String {
         if entry?.remoteURL == nil { return "This drawing was never uploaded, so there is nothing on the web to delete." }
+        if let blockedReason { return "This upload cannot be removed from here: " + blockedReason }
         return "This upload was made before OpenSnap recorded which destination it went to, so it cannot be removed from here. Delete it with the destination\u{2019}s own tools."
     }
     @objc func showPhotos() {
@@ -1766,7 +1777,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             panel.allowedContentTypes = [UTType(filenameExtension: options.format) ?? .data]
             let stem = (panel.nameFieldStringValue as NSString).deletingPathExtension
             panel.nameFieldStringValue = (stem.isEmpty ? self.safeName() : stem) + "." + options.format
-            let size = SketchDocument.wholePixels(options.originalSize && self.canvas.document.backgroundPNG != nil ? self.canvas.canvasSize : self.canvas.outputSize)
+            let size = self.exportPixelSize(originalSize: options.originalSize)
             let data = try? self.exportPanelData(options)
             options.updateByteCount(data?.count, size: size)
         }
@@ -1843,7 +1854,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         if let menu = webpostButton?.menu { rebuildUploadMenu(menu) }
     }
     @objc func openDestinationSettings() {
-        if let sharingSettingsPresenter { sharingSettingsPresenter() } else { publishing.showSettings(relativeTo: window) }
+        if let sharingSettingsPresenter { sharingSettingsPresenter() } else { openPreferences(tab: SettingsWindowController.uploadTabIndex) }
     }
     @objc func shareFromMenu() { showSharePicker(relativeTo: webpostButton) }
     func showSharePicker(relativeTo anchor: NSView?) {
@@ -1872,17 +1883,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         if !terminationStarted { self.error(error) }
     }
     @objc func showPreferences() { openPreferences(tab: nil) }
+    /// Settings (and every command that opens it on a tab) is available when nothing else is asking the user a question: no sheet on the
+    /// editor or on Settings, no modal panel, no capture in flight. The menu items follow it, so none is enabled and then does nothing.
+    var canOpenSettings: Bool {
+        !terminationStarted && !frameCaptureInProgress && window?.attachedSheet == nil && preferencesWindow?.attachedSheet == nil && NSApp.modalWindow == nil
+    }
     func openPreferences(tab: Int?) {
-        guard !terminationStarted, !frameCaptureInProgress, window?.attachedSheet == nil,
-              preferencesWindow?.attachedSheet == nil, NSApp.modalWindow == nil else { return }
+        guard canOpenSettings else { return }
         if settingsController == nil {
             let settings = SettingsWindowController(
                 state: { [unowned self] in self.generalPreferences.state }, hotkeys: hotkeys, defaults: .standard,
                 destinations: { [unowned self] in self.publishing.destinations() },
-                manageDestinations: { [weak self] window in
-                    guard let self, !self.terminationStarted else { return }
-                    self.publishing.showSettings(relativeTo: window)
-                },
+                destinationActions: SettingsDestinationActions(
+                    edit: { [weak self] destination, window in
+                        guard let self, !self.terminationStarted else { return }
+                        self.publishing.showEditor(editing: destination, relativeTo: window)
+                    },
+                    makeDefault: { [weak self] id in
+                        try self?.publishing.setDefaultDestination(id)
+                        if let menu = self?.webpostButton?.menu { self?.rebuildUploadMenu(menu) }
+                    },
+                    remove: { [weak self] id in
+                        try self?.publishing.removeDestination(id)
+                        if let menu = self?.webpostButton?.menu { self?.rebuildUploadMenu(menu) }
+                    },
+                    removalPrompt: { [unowned self] destination in
+                        self.publishing.destinations().removalPrompt(for: destination, legacyCredentialID: self.publishing.store.legacyCredentialID())
+                    }),
                 frameAutosaveName: SettingsWindowController.autosaveName)
             settings.onChange = { [weak self] in self?.applyGeneralPreferences($0) }
             settings.onClose = { [weak self] in self?.closePreferences() }
@@ -1903,7 +1930,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     }
     func closePreferences() {
         guard let panel = preferencesWindow, panel.attachedSheet == nil else { return }
-        panel.orderOut(nil)
+        panel.orderOut(nil); settingsController?.windowHidden()
         if !terminationStarted, window.isVisible { window.makeKeyAndOrderFront(nil) }
     }
     @objc func closeCurrentWindow() {
@@ -1916,27 +1943,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     }
     /// Capture shortcuts have one surface, Settings › Capture, which applies edits as they are made; this item opens it there.
     @objc func shortcutSettings() { openPreferences(tab: SettingsWindowController.captureTabIndex) }
-    @objc func sharingSettings() { publishing.showSettings(relativeTo: window) }
+    /// Destinations have one surface, Settings › Upload; this item opens it there.
+    @objc func sharingSettings() { openPreferences(tab: SettingsWindowController.uploadTabIndex) }
+    static let nothingToSaveNotice = "Nothing to save to History yet: the canvas is blank."
+    static let noDestinationNotice = "Upload needs a destination. Add one in Settings, Upload."
     /// Uploads use the footer toggle's format.
     var uploadEncoding: (format: String, quality: Double, fileExtension: String) {
         return (dragFormat, dragQuality, dragFormat == "jpeg" ? "jpg" : "png")
     }
+    /// The picture an upload sends is the one drag and export send: at its own pixel size when "Original size" applies, else as shown.
     func uploadPayload() -> (Data, String)? {
         let encoding = uploadEncoding
-        guard let data = canvas.imageData(format: encoding.format, jpegQuality: encoding.quality) else { return nil }
+        guard let data = canvas.imageData(format: encoding.format, originalSize: dragAtOriginalSize, jpegQuality: encoding.quality) else { return nil }
         return (data, encoding.fileExtension)
     }
+    /// The whole-pixel size `uploadPayload()` produces, so History records what actually went to the web.
+    var uploadPixelSize: CGSize { titlePixelSize }
     @objc func publishImage() {
         guard !terminationStarted else { return }
-        if publishing.isBusy { postStatusNotice("An upload is already running…"); return }
+        if publishing.isBusy { _ = Announcer.announce("An upload is already running"); return }
         guard publishing.isConfigured else {
+            // Upload needs somewhere to send the picture: say so on the editor, and land on Settings › Upload, where the list is empty
+            // and Add… is inside it (F-J5-004).
+            postStatusNotice(Self.noDestinationNotice)
             openDestinationSettings(); return
         }
         guard let (data, fileExtension) = uploadPayload(), let snapshot = try? historySnapshot() else { return }
         let name = safeName()
         let fileName = name+"-"+UUID().uuidString.lowercased()+"."+fileExtension
         let binding = plannedBindingCapture(fileName)
-        beginUpload(UploadPayload(data: data, fileName: fileName, name: name, snapshot: snapshot, generation: documentGeneration, binding: binding))
+        beginUpload(UploadPayload(data: data, fileName: fileName, name: name, snapshot: snapshot, generation: documentGeneration, binding: binding, pixelSize: uploadPixelSize))
     }
     /// Starts one transfer of `payload`. A failed one is kept so Retry can send exactly the same thing again.
     func beginUpload(_ payload: UploadPayload) {
@@ -1952,7 +1988,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
                 self.receivePublishing(result)
                 if case .success(let url) = result {
                     let retainedBinding = Self.retainedBinding(planned: payload.binding, published: self.publishedBindingCapture(url))
-                    self.archive(payload.snapshot, name: payload.name, action: .shared, destination: url.absoluteString, remoteURL: url, remoteBinding: retainedBinding, generation: payload.generation)
+                    self.archive(payload.snapshot, name: payload.name, action: .shared, destination: url.absoluteString, remoteURL: url, remoteBinding: retainedBinding, publishedSize: payload.pixelSize, generation: payload.generation)
                 }
             }
         }
@@ -2198,14 +2234,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     }
     @objc func timedSnap() {
         let option = NSApp.currentEvent?.modifierFlags.contains(.option) == true
-        prompt("Timed Snapshot", text: "Delay in seconds", value: "6") { [weak self] answer in
-            if let answer, let d = Double(answer), d >= 0, d <= 120 { self?.startCapture("crosshair", delay: d, manualOption: option) }
+        prompt("Timed Snapshot", text: "Delay in seconds", value: "6", validate: Self.timedSnapDelayProblem) { [weak self] answer in
+            if let answer, let d = Self.timedSnapDelay(answer) { self?.startCapture("crosshair", delay: d, manualOption: option) }
         }
+    }
+    /// The delay the Timed Snapshot sheet accepts: a number of seconds from 0 to 120.
+    static func timedSnapDelay(_ text: String) -> Double? {
+        guard let value = Double(text.trimmingCharacters(in: .whitespacesAndNewlines)), value.isFinite, value >= 0, value <= 120 else { return nil }
+        return value
+    }
+    /// Why the sheet stays open instead of closing without a word (F-J5-001).
+    static func timedSnapDelayProblem(_ text: String) -> String? {
+        timedSnapDelay(text) == nil ? "Enter a number of seconds from 0 to 120." : nil
+    }
+    static func webSnapAddress(_ text: String) -> URL? {
+        guard let url = URL(string: text.trimmingCharacters(in: .whitespacesAndNewlines)), ["https", "http"].contains(url.scheme?.lowercased() ?? ""), url.host?.isEmpty == false else { return nil }
+        return url
     }
     @objc func webSnap() {
         guard !terminationStarted, !frameCaptureInProgress else { return }
-        prompt("Snap from Link", text: "Web address", value: "https://") { [weak self] answer in
-            guard let self, !self.terminationStarted, let answer, let url = URL(string: answer), ["https","http"].contains(url.scheme?.lowercased() ?? "") else { return }
+        prompt("Snap from Link", text: "Web address", value: "https://", validate: { Self.webSnapAddress($0) == nil ? "Enter a web address that starts with http:// or https://." : nil }) { [weak self] answer in
+            guard let self, !self.terminationStarted, let answer, let url = Self.webSnapAddress(answer) else { return }
             let generation = self.documentGeneration
             self.capture.captureURL(url) { [weak self] result in
                 guard let self, self.documentGeneration == generation else { return }
@@ -2225,12 +2274,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         if !trimmed.isEmpty { nameField.stringValue = trimmed }
     }
     /// A one-line question in an app-owned sheet. `completion` gets the text on OK and nil on Cancel.
-    func prompt(_ title: String, text: String, value: String, completion: @escaping (String?) -> Void) {
+    func prompt(_ title: String, text: String, value: String, validate: ((String) -> String?)? = nil, completion: @escaping (String?) -> Void) {
         let field = NSTextField(string: value)
         field.font = DesignTokens.Typography.font(.body)
         field.frame = NSRect(x: 0, y: 0, width: AppAlert.width - 2 * DesignTokens.Space.s5, height: DesignTokens.Size.field)
         field.setAccessibilityLabel(text)
         let alert = AppAlert(title: title, message: text, buttons: [.init(title: "OK"), .init(title: "Cancel", role: .cancel)], accessoryView: field)
+        // OK (the first button) is checked before the sheet closes; Cancel and Escape never are.
+        if let validate { alert.validator = { $0 == 0 ? validate(field.stringValue) : nil } }
         present(alert) { result in completion(result == .alertFirstButtonReturn ? field.stringValue : nil) }
     }
     @objc func chooseFont() {

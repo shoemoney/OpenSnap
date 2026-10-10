@@ -18,9 +18,9 @@ extension AuditRun {
                             app.activeResizeSession?.cancel()
                          })
         }
-        // 2. The Toolbox pull-down: the short drawing-session list with its symbols.
+        // 2. The Toolbox menu: the short drawing-session list with its symbols.
         if let toolbox = firstView(of: NSPopUpButton.self, label: "Toolbox menu") {
-            captureTrackedMenu("S42", "toolbox-menu-open", surface: "menus", state: "Toolbox pull-down open: 18 drawing-session rows, no app or file plumbing (F-J1-009)",
+            captureTrackedMenu("S42", "toolbox-menu-open", surface: "menus", state: "Toolbox menu open (selection-style pop-up, icons drawn): 18 drawing-session rows, no app or file plumbing (F-J1-009)",
                                refs: ["App.swift|func bezelToolbox()"], dismiss: { toolbox.menu?.cancelTracking() }, trigger: { toolbox.performClick(nil) })
         } else { gap("S42", "Toolbox menu open", "toolbox popup not found") }
         pump(0.4)

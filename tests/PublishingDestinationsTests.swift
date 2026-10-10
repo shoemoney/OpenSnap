@@ -34,7 +34,6 @@ enum PublishingDestinationsTests {
         try migration()
         try storeOperations()
         try MainActor.assumeIsolated { try destinationsSheet() }
-        try MainActor.assumeIsolated { try removalSheet() }
         try MainActor.assumeIsolated { try formCopyAndLabels() }
         try MainActor.assumeIsolated { try resultBandAndSheetWidth() }
         try connectionTests()
@@ -307,18 +306,18 @@ enum PublishingDestinationsTests {
         try expect(try Data(contentsOf: directory4.appendingPathComponent("destination.json.pre-destinations.bak")) == Data("older backup".utf8)
                    && (try FileManager.default.contentsOfDirectory(atPath: directory4.path)).filter { $0.hasSuffix(".bak") }.count == 2, "a second backup gets its own name")
 
-        // Removal prompt wording (the view builds it; the alert only displays it).
+        // Removal prompt wording (the list builds it; the alert in Settings only displays it).
         var keyed = PublishingDestination(name: "Work DAV", settings: dav)
         let other = PublishingDestination(name: "Backup", settings: awsCDN())
         keyed.settings.credentialID = "00000000-0000-0000-0000-0000000000CC"
         let two = PublishingDestinationList(defaultID: keyed.id, destinations: [keyed, other])
-        let promptDefault = PublishingDestinationsView.removalPrompt(for: keyed, in: two)
+        let promptDefault = two.removalPrompt(for: keyed)
         try expect(promptDefault.title == "Remove “Work DAV”?" && promptDefault.detail.contains("Keychain") && promptDefault.detail.contains("“Backup” becomes the default"), "removing the default names the new default and the secret")
-        let promptOther = PublishingDestinationsView.removalPrompt(for: other, in: two)
+        let promptOther = two.removalPrompt(for: other)
         try expect(!promptOther.detail.contains("becomes the default") && !promptOther.detail.contains("Keychain"), "a non-default, secret-free destination gets no default or Keychain wording")
-        let promptLast = PublishingDestinationsView.removalPrompt(for: keyed, in: PublishingDestinationList(defaultID: keyed.id, destinations: [keyed]))
+        let promptLast = PublishingDestinationList(defaultID: keyed.id, destinations: [keyed]).removalPrompt(for: keyed)
         try expect(promptLast.detail.contains("only destination"), "removing the last destination says so")
-        let promptLegacy = PublishingDestinationsView.removalPrompt(for: keyed, in: two, legacyCredentialID: keyed.settings.credentialID)
+        let promptLegacy = two.removalPrompt(for: keyed, legacyCredentialID: keyed.settings.credentialID)
         try expect(!promptLegacy.detail.contains("Keychain"), "a secret the legacy file still uses is not claimed to be removed")
 
         let empty = try PublishingDestinationStore(directory: try temporaryDirectory(), secrets: PublishingMemorySecrets()).load()
@@ -352,13 +351,29 @@ enum PublishingDestinationsTests {
         try expect(secrets.items[storedID] == nil && secrets.items.count == 2 && secrets.items.values.contains("pw2"), "editing rotates the secret and drops the old item")
         try expect(try store.load().destinations.count == 2 && (try store.load().destinations[0].settings.endpoint) == "https://dav2.example.com", "editing replaces in place")
 
+        // R1-010: a save that leaves the secret alone keeps the Keychain item (so older History posts still find their destination);
+        // a new secret or a new protocol makes a new item and drops the old one.
+        let rotatedID = try unwrap(store.load().destinations.first { $0.id == first.id }?.settings.credentialID)
+        try expect(rotatedID != storedID, "the changed password got its own Keychain item")
+        var renamed = edited; renamed.name = "Work DAV (renamed)"; renamed.settings.remoteFolder = "other-folder"
+        try store.save(renamed, password: "pw2")
+        let afterRename = try unwrap(store.load().destinations.first { $0.id == first.id })
+        try expect(afterRename.settings.credentialID == rotatedID && afterRename.name == "Work DAV (renamed)" && secrets.items.count == 2 && secrets.items[rotatedID] == "pw2",
+                   "renaming and moving the folder with the same password keeps the credential id and the Keychain item")
+        var otherProtocol = renamed; otherProtocol.settings.transport = .ftp; otherProtocol.settings.endpoint = "ftp://ftp.example.com/up"
+        try store.save(otherProtocol, password: "pw2")
+        let afterProtocol = try unwrap(store.load().destinations.first { $0.id == first.id })
+        try expect(afterProtocol.settings.credentialID != rotatedID && secrets.items[rotatedID] == nil && secrets.items.count == 2 && secrets.items[afterProtocol.settings.credentialID] == "pw2",
+                   "a different protocol is a new credential: new item, old one dropped")
+        edited = otherProtocol
+
         var profile = awsCDN(); profile.s3?.credentialsProfile = "default"
         let third = PublishingDestination(name: "Profile", settings: profile)
         try store.save(third, password: "")
         try expect(secrets.items.count == 2, "an AWS-profile destination stores no secret")
 
         try store.remove(second.id)
-        try expect(try store.load().destinations.map(\.name) == ["Work DAV", "Profile"] && (try store.load().defaultID) == (try store.load().destinations[0].id), "removing the default promotes the first remaining")
+        try expect(try store.load().destinations.map(\.name) == ["Work DAV (renamed)", "Profile"] && (try store.load().defaultID) == (try store.load().destinations[0].id), "removing the default promotes the first remaining")
         try expect(secrets.items.count == 1, "removing deletes its secret")
         try store.remove(first.id); try store.remove(third.id)
         try expect(try store.load().destinations.isEmpty && secrets.items.isEmpty && (try store.load().defaultID) == nil, "removing everything leaves an empty list")
@@ -374,7 +389,7 @@ enum PublishingDestinationsTests {
         _ = NSApplication.shared
         NSApp.setActivationPolicy(.prohibited)
         let publisher = try coordinator(destinations: fixtureDestinations())
-        let (panel, view) = try publisher.buildSettings(visibleFrame: NSRect(x: 0, y: 0, width: 1280, height: 800))
+        let (panel, view) = publisher.buildEditor(editing: nil, visibleFrame: NSRect(x: 0, y: 0, width: 1280, height: 800))
         defer { panel.orderOut(nil) }
         typealias View = PublishingDestinationsView
         let copies = Dictionary(uniqueKeysWithValues: PublishingProtocol.allCases.map { ($0, View.formCopy(for: $0)) })
@@ -393,7 +408,7 @@ enum PublishingDestinationsTests {
         try expect(copies[.webDAV]?.usernamePlaceholder.contains("anonymous") == true, "WebDAV may be anonymous, and its placeholder says so")
 
         // SFTP: one place for the host. The Endpoint row is gone for a new destination and present only to show an older saved URL.
-        view.addTapped()
+        view.showForm(for: nil)
         view.protocolPopup.selectItem(withTitle: PublishingProtocol.sftp.title); view.formChanged(); panel.contentView?.layoutSubtreeIfNeeded()
         try expect(view.endpointField.isHiddenOrHasHiddenAncestor && !view.aliasField.isHiddenOrHasHiddenAncestor, "a new SFTP destination asks for the SSH host, not an endpoint as well")
         view.endpointField.stringValue = "https://stale.example.com"; view.nameField.stringValue = "S"; view.aliasField.stringValue = "myserver"; view.remoteRootField.stringValue = "/srv/up"
@@ -402,12 +417,12 @@ enum PublishingDestinationsTests {
         var legacy = PublishingSettings(); legacy.transport = .sftp; legacy.endpoint = "sftp://old.example.com/uploads"
         publisher.store = PublishingDestinationStore(directory: try temporaryDirectory(), secrets: PublishingMemorySecrets())
         try publisher.store.save(PublishingDestination(name: "Old SFTP", settings: legacy), password: "")
-        view.reload(try publisher.store.load()); view.select(id: try publisher.store.load().destinations[0].id); view.editTapped()
+        view.showForm(for: try publisher.store.load().destinations[0])
         try expect(!view.endpointField.isHiddenOrHasHiddenAncestor && view.endpointField.stringValue == "sftp://old.example.com/uploads", "an SFTP destination saved with an sftp:// endpoint still shows it")
         view.cancelFormTapped()
 
         // Every protocol and credential source: the form shows its own copy, and every filled field still has its caption as its name.
-        view.addTapped()
+        view.showForm(for: nil)
         for transport in PublishingProtocol.allCases {
             for source in 0...1 {
                 view.protocolPopup.selectItem(withTitle: transport.title); view.sourcePopup.selectItem(at: source); view.formChanged()
@@ -453,11 +468,11 @@ enum PublishingDestinationsTests {
                    "the sheet is as wide as its parent, between \(View.sheetMinWidth) and 720")
         let publisher = try coordinator(destinations: fixtureDestinations())
         let screen = NSRect(x: 0, y: 0, width: 1440, height: 900)
-        let (narrow, narrowView) = try publisher.buildSettings(visibleFrame: screen, hostWidth: 640)
+        let (narrow, narrowView) = publisher.buildEditor(editing: nil, visibleFrame: screen, hostWidth: 640)
         defer { narrow.orderOut(nil) }
         narrow.contentView?.layoutSubtreeIfNeeded()
         try expect(narrow.contentRect(forFrameRect: narrow.frame).width == 640 && narrowView.width == 640, "under the 640 pt Settings window the sheet is 640 wide, not 720")
-        narrowView.addTapped(); narrow.contentView?.layoutSubtreeIfNeeded()
+        narrowView.showForm(for: nil); narrow.contentView?.layoutSubtreeIfNeeded()
         for transport in PublishingProtocol.allCases {
             narrowView.protocolPopup.selectItem(withTitle: transport.title); narrowView.formChanged(); narrow.contentView?.layoutSubtreeIfNeeded()
             for caption in narrowView.visibleFormCaptions {
@@ -471,9 +486,9 @@ enum PublishingDestinationsTests {
 
         // The result band is as tall as its text: one line at idle, up to three for an error. The form above shrinks and scrolls by the
         // difference, the band never runs over the buttons or the form, and the idle form keeps the room an empty band would waste.
-        let (panel, view) = try publisher.buildSettings(visibleFrame: screen, hostWidth: 900)
+        let (panel, view) = publisher.buildEditor(editing: nil, visibleFrame: screen, hostWidth: 900)
         defer { panel.orderOut(nil) }
-        view.addTapped(); view.protocolPopup.selectItem(withTitle: PublishingProtocol.s3.title); view.formChanged()
+        view.showForm(for: nil); view.protocolPopup.selectItem(withTitle: PublishingProtocol.s3.title); view.formChanged()
         panel.contentView?.layoutSubtreeIfNeeded()
         let lineHeight = ceil(NSLayoutManager().defaultLineHeight(for: DesignTokens.Typography.font(.body)))
         func box(_ row: NSView) -> NSRect { row.convert(row.bounds, to: view) }
@@ -496,7 +511,7 @@ enum PublishingDestinationsTests {
         let successFrame = box(view.formResult)
         try expect(successFrame.minY >= buttonsTop() - 0.5 && successFrame.height < errorFrame.height, "a success is shorter than the error and still clear of the buttons: \(successFrame)")
         // A result for a form is gone with the form: the band returns to its one idle line and the form its room.
-        view.cancelFormTapped(); view.addTapped(); view.protocolPopup.selectItem(withTitle: PublishingProtocol.s3.title); view.formChanged()
+        view.showForm(for: nil); view.protocolPopup.selectItem(withTitle: PublishingProtocol.s3.title); view.formChanged()
         panel.contentView?.layoutSubtreeIfNeeded()
         try expect(abs(view.scrollView.frame.height - scrollHeight) < 0.5 && box(view.formResult).height < 1.6 * lineHeight, "a fresh form is back to the idle band (\(view.scrollView.frame.height) vs \(scrollHeight))")
     }
@@ -557,8 +572,8 @@ enum PublishingDestinationsTests {
         // The requests are questions: no upload-file, no PUT, no body, a folder URL.
         let dav = try plan(settings(.webDAV, endpoint: "https://dav.example.com/files"))
         let davConfig = text(try Test.curlConfig(plan: dav, username: "me", password: "pw"))
-        try expect(davConfig.contains("request = \"OPTIONS\"") && davConfig.contains("url = \"https://dav.example.com/files/shots/\"") && !davConfig.contains("upload-file") && !davConfig.contains("PUT"),
-                   "the WebDAV test is an OPTIONS on the folder: \(davConfig)")
+        try expect(davConfig.contains("request = \"PROPFIND\"") && davConfig.contains("header = \"Depth: 0\"") && !davConfig.contains("OPTIONS") && davConfig.contains("url = \"https://dav.example.com/files/shots/\"") && !davConfig.contains("upload-file") && !davConfig.contains("PUT"),
+                   "the WebDAV test is a PROPFIND (Depth 0) on the folder, which a server with a login answers only to the login: \(davConfig)")
         let ftp = try plan(settings(.ftp, endpoint: "ftp://ftp.example.com/up"))
         let ftpConfig = text(try Test.curlConfig(plan: ftp, username: "me", password: "pw"))
         try expect(ftpConfig.contains("list-only") && ftpConfig.contains("url = \"ftp://ftp.example.com/up/shots/\"") && !ftpConfig.contains("upload-file") && !ftpConfig.contains("ssl-reqd"), "the FTP test lists the folder: \(ftpConfig)")
@@ -573,7 +588,10 @@ enum PublishingDestinationsTests {
 
         // What the answers mean.
         func web(_ code: String, exit: Int32 = 0, stderr: String = "") -> PublishingS3Plan.CheckResult { Test.webDAVOutcome(stdout: code + "\n", exitCode: exit, stderr: stderr, username: "me", password: "hunter2") }
-        try expect(web("200").ok && web("207").ok && web("301").ok && web("405").ok && web("501").ok, "any answer that does not refuse the login or the folder is a connection")
+        try expect(web("200").ok && web("207").ok && web("405").ok && web("501").ok, "an answer that does not refuse the login or the folder is a connection")
+        try expect(web("200").message.contains("accepted the login") && web("405").message.contains("login could not be checked"), "a 2xx says the login was accepted; a PUT-only endpoint says it could not check it")
+        try expect(!web("301").ok && !web("302").ok && !web("308").ok && web("301").message.contains("redirected") && web("301").message.contains("does not follow redirects"), "a redirect is a failure with its reason, not a pass")
+        try expect(Test.webDAVOutcome(stdout: "401", exitCode: 0, stderr: "", username: "", password: "").message.contains("asks for a user name and password"), "an anonymous test that meets a login says to enter one")
         try expect(!web("401").ok && web("401").message.contains("user name or password"), "401 is a login problem")
         try expect(!web("403").ok && !web("404").ok && web("404").message.contains("Create it first") && !web("500").ok, "403, 404 and 500 are failures with a reason")
         try expect(!Test.webDAVOutcome(stdout: "", exitCode: 0, stderr: "", username: "", password: "").ok, "no status line is not a success")
@@ -597,10 +615,13 @@ enum PublishingDestinationsTests {
                    && ftpResult.message.contains("user name or password"), "FTP Test runs curl on stdin config and reports the refused login")
         Test.processRunner = original
 
-        // The real curl against a loopback server: OPTIONS, with and without the right login. Nothing leaves the machine.
+        // The real curl against a loopback server: PROPFIND, with and without the right login, against a server that answers OPTIONS to anyone.
+        // Nothing leaves the machine.
         let server = try LoopbackHTTP { line, auth in
-            guard line.hasPrefix("OPTIONS ") else { return 400 }
+            if line.hasPrefix("OPTIONS ") { return 200 }
+            guard line.hasPrefix("PROPFIND ") else { return 400 }
             if line.contains("/missing/") { return 404 }
+            if line.contains("/moved/") { return 301 }
             return auth?.contains(Data("me:pw".utf8).base64EncodedString()) == true ? 200 : 401
         }
         defer { server.stop() }
@@ -622,8 +643,10 @@ enum PublishingDestinationsTests {
         try expect(!bad.ok && bad.message.contains("HTTP 401") && !bad.message.contains("wrong"), "a wrong password is a 401: \(bad.message)")
         let missing = try live("missing", user: "me", password: "pw")
         try expect(!missing.ok && missing.message.contains("HTTP 404"), "a missing folder is a 404: \(missing.message)")
+        let moved = try live("moved", user: "me", password: "pw")
+        try expect(!moved.ok && moved.message.contains("HTTP 301") && moved.message.contains("redirected"), "a redirect is reported as such, not as a connection: \(moved.message)")
         let asked = server.requests
-        try expect(asked.count == 3 && asked.allSatisfy { $0.line.hasPrefix("OPTIONS /dav/") && $0.length == 0 }, "the stub saw three OPTIONS and no body: \(asked.map(\.line))")
+        try expect(asked.count == 4 && asked.allSatisfy { $0.line.hasPrefix("PROPFIND /dav/") && $0.length == 0 }, "the stub saw four PROPFIND and no body, and no OPTIONS: \(asked.map(\.line))")
         try expect(asked.allSatisfy { !$0.line.hasPrefix("PUT ") && !$0.line.hasPrefix("POST ") && !$0.line.hasPrefix("DELETE ") && !$0.line.hasPrefix("MKCOL ") }, "no request wrote anything")
     }
 
@@ -652,63 +675,8 @@ enum PublishingDestinationsTests {
         return [PublishingDestination(name: "Example S3", settings: s3), PublishingDestination(name: "Example WebDAV", settings: dav)]
     }
 
-    /// Audit fix 1 (item 5): removing a destination asks through an app-owned `AppAlert` (a sheet, text at the app's size), not a system
-    /// NSAlert. Title names the destination, Remove is destructive and the default, Cancel answers Escape, nothing is removed until the
-    /// answer, and closing the destinations sheet answers an open question as Cancel first (the shutdown barrier).
-    @MainActor static func removalSheet() throws {
-        _ = NSApplication.shared
-        NSApp.setActivationPolicy(.prohibited)
-        let destinations = fixtureDestinations()
-        let publisher = try coordinator(destinations: destinations)
-        let (panel, view) = try publisher.buildSettings(visibleFrame: NSRect(x: 0, y: 0, width: 1280, height: 800))
-        defer { panel.orderOut(nil) }
-        var shown: [(alert: AppAlert, host: NSWindow?)] = []
-        AppAlert.presenter = { alert, host, completion in
-            shown.append((alert, host))
-            // The presenter owns the answer; the test gives it by pressing a button, as the sheet would.
-            _ = completion
-        }
-        defer { AppAlert.presenter = nil }
-        let target = destinations[0]
-        try expect(view.confirmRemoval == nil, "the view asks through its own AppAlert unless a test replaces the seam")
-        view.select(id: target.id); view.removeTapped()
-        try expect(shown.count == 1 && view.pendingRemoval === shown[0].alert, "Remove opens exactly one app-owned alert")
-        let alert = shown[0].alert
-        try expect(alert.title == "Remove “\(target.name)”?" && alert.message == PublishingDestinationsView.removalPrompt(for: target, in: view.list).detail,
-                   "the title names the destination and the message is the removal prompt (\(alert.title))")
-        try expect(alert.buttons == [.init(title: "Cancel", role: .cancel), .init(title: "Remove", role: .destructive)], "buttons are Cancel first and a destructive Remove second")
-        // F-J2-019: a stray Return must never delete a destination. Cancel is the default; Remove is not focused and is drawn in the warning colour.
-        try expect(alert.buttonViews[0].keyEquivalent == "\r" && alert.panel.defaultButtonCell === alert.buttonViews[0].cell && alert.panel.initialFirstResponder === alert.buttonViews[0],
-                   "Return and the first focus belong to Cancel")
-        try expect(alert.buttonViews[1].keyEquivalent.isEmpty && alert.buttonViews[1].hasDestructiveAction && alert.buttonViews[1].contentTintColor == DesignTokens.Palette.feedbackError,
-                   "Remove has no key equivalent, is marked destructive and takes the warning colour")
-        try expect(alert.unansweredResponse == .alertFirstButtonReturn, "an alert ended without an answer is Cancel")
-        try expect((alert.titleLabel.font?.pointSize ?? 0) >= 18 && (alert.messageLabel.font?.pointSize ?? 0) >= 18 && alert.buttonViews.allSatisfy { ($0.font?.pointSize ?? 0) >= 18 },
-                   "the text is the app's size, not the system alert's")
-        try expect(shown[0].host === panel, "the question hangs from the destinations sheet")
-        try expect(view.list.destinations.count == 2 && (try publisher.store.load().destinations.count) == 2, "nothing is removed before the answer")
-        view.removeTapped()
-        try expect(shown.count == 1, "a second Remove while the question is open does not stack another")
-        alert.dismiss(withButton: 0)
-        try expect(view.pendingRemoval == nil && view.list.destinations.count == 2 && (try publisher.store.load().destinations.count) == 2, "Cancel removes nothing and frees the view")
-        // Escape is Cancel.
-        view.removeTapped(); shown.last?.alert.cancel()
-        try expect(shown.count == 2 && view.list.destinations.count == 2, "Escape answers Cancel")
-        // Closing the destinations sheet answers an open question as Cancel before the sheet goes.
-        view.removeTapped()
-        try expect(shown.count == 3 && view.pendingRemoval === shown[2].alert, "the question is open again")
-        publisher.cancelSettings()
-        try expect(view.pendingRemoval == nil && shown[2].alert.response == .alertFirstButtonReturn && (try publisher.store.load().destinations.count) == 2,
-                   "closing the sheet answers the open question as Cancel and removes nothing")
-        // Remove removes.
-        let (panel2, view2) = try publisher.buildSettings(visibleFrame: NSRect(x: 0, y: 0, width: 1280, height: 800))
-        defer { panel2.orderOut(nil) }
-        view2.select(id: target.id); view2.removeTapped()
-        try expect(shown.count == 4, "a fresh sheet asks again")
-        shown[3].alert.dismiss(withButton: 1)
-        try expect(view2.list.destinations.map(\.id) == [destinations[1].id] && (try publisher.store.load().destinations.map(\.id)) == [destinations[1].id], "Remove removes the destination from the sheet and from storage")
-    }
-
+    /// The editor sheet: sized from the screen and its parent, hugging its form, scrolling when the screen is short, with Return saving and
+    /// Escape cancelling. (The list, Remove and Make Default live in Settings, Upload; SettingsWindowTests covers them.)
     @MainActor static func destinationsSheet() throws {
         _ = NSApplication.shared
         NSApp.setActivationPolicy(.prohibited)
@@ -724,33 +692,17 @@ enum PublishingDestinationsTests {
 
         let destinations = fixtureDestinations()
         let publisher = try coordinator(destinations: destinations)
-        let (panel, view) = try publisher.buildSettings(visibleFrame: fake)
+        let (panel, view) = publisher.buildEditor(editing: nil, visibleFrame: fake)
         defer { panel.orderOut(nil) }
         panel.contentView?.layoutSubtreeIfNeeded()
         try expect(view.scrollView.hasVerticalScroller && !view.scrollView.hasHorizontalScroller && view.scrollView.documentView != nil, "the form lives in a vertical NSScrollView")
-
-        // The list page hugs its content: table, buttons and footer, with no blank slab under them (two rows here, shown as the four-row minimum).
+        try expect(panel.title == "Add Destination" && publisher.buildEditor(editing: destinations[0]).0.title == "Edit Destination", "the sheet is titled for what it does")
         func contentHeight(_ p: NSPanel) -> CGFloat { p.contentRect(forFrameRect: p.frame).height }
-        func listSlack(_ p: NSPanel, _ v: PublishingDestinationsView) throws -> (slack: CGFloat, height: CGFloat) {
-            p.contentView?.layoutSubtreeIfNeeded()
-            let title = try unwrap(descendants(v).compactMap { $0 as? NSTextField }.first { $0.stringValue.hasPrefix("Upload destinations") })
-            let add = try unwrap(descendants(v).compactMap { $0 as? NSButton }.first { $0.title == "Add…" })
-            let table = try unwrap(v.table.enclosingScrollView)
-            // Title, table and buttons plus the two gaps between them, the page margins, separator, footer gap, footer and its bottom margin.
-            let needed = title.frame.height + table.frame.height + add.frame.height + 2 * DesignTokens.Space.s4
-                + 2 * DesignTokens.Space.s5 + 1 + DesignTokens.Space.s3 + v.doneButton.frame.height + DesignTokens.Space.s4
-            return (contentHeight(p) - needed, contentHeight(p))
-        }
-        let hugged = try listSlack(panel, view)
-        try expect(hugged.slack <= 40 && hugged.slack >= -1, "the list page has \(hugged.slack) pt of slack (sheet \(hugged.height)); it should hug table, buttons and footer")
-        try expect(hugged.height < 600, "the list sheet is \(hugged.height) tall; it must not stretch to the form's 680")
-        let listRowHeight = DesignTokens.Size.row + view.table.intercellSpacing.height
-        try expect((view.table.enclosingScrollView?.frame.height ?? 0) >= 4 * listRowHeight, "the table shows fewer than four rows")
-        let listPanelWidth = panel.contentRect(forFrameRect: panel.frame).width
-        try expect(listPanelWidth == 720 && panel.frame.height <= fake.height, "the sheet is 720 wide: \(listPanelWidth)")
-        // Paging to the form sizes the sheet to that protocol's form (top edge fixed); Cancel hugs the list again (F-J3-003).
+        let panelWidth = panel.contentRect(forFrameRect: panel.frame).width
+        try expect(panelWidth == 720 && panel.frame.height <= fake.height, "the sheet is 720 wide: \(panelWidth)")
+        // The sheet is sized to the protocol's form (top edge fixed).
         let topEdge = panel.frame.maxY
-        view.addTapped(); panel.contentView?.layoutSubtreeIfNeeded()
+        view.showForm(for: nil); panel.contentView?.layoutSubtreeIfNeeded()
         let webDAVHeight = contentHeight(panel)
         try expect(webDAVHeight < 680 && abs(webDAVHeight - view.preferredHeight) <= 0.5 && panel.frame.maxY == topEdge,
                    "the new-destination form hugs its rows instead of the 680 maximum: \(webDAVHeight), top \(panel.frame.maxY) vs \(topEdge)")
@@ -775,7 +727,7 @@ enum PublishingDestinationsTests {
         }
         try expect(heights[.s3]! > heights[.webDAV]! && heights[.sftp]! != heights[.s3]!, "the sheet height follows the protocol: \(heights)")
         view.protocolPopup.selectItem(at: 0); view.formChanged()
-        // A Test error grows the result band, the sheet follows it, and Cancel leaves no trace of it on the list.
+        // A Test error grows the result band, the sheet follows it, and Cancel leaves no trace of it.
         let beforeError = contentHeight(panel)
         view.showTestResult(ok: false, message: String(repeating: "The server answered with an error that needs a long explanation. ", count: 4))
         panel.contentView?.layoutSubtreeIfNeeded()
@@ -783,27 +735,11 @@ enum PublishingDestinationsTests {
         view.cancelFormTapped()
         panel.contentView?.layoutSubtreeIfNeeded()
         try expect(view.formResult.isHidden && !descendants(view).contains { ($0 as? NSTextField)?.stringValue.hasPrefix("Error:") == true && !$0.isHiddenOrHasHiddenAncestor },
-                   "Cancel clears the form's error: nothing on the list says Error (F-J4-001)")
-        view.addTapped(); view.showStatus("Enter the access key ID and secret"); view.cancelFormTapped(); panel.contentView?.layoutSubtreeIfNeeded()
-        try expect(!descendants(view).contains { ($0 as? NSTextField)?.stringValue.hasPrefix("Error:") == true && !$0.isHiddenOrHasHiddenAncestor },
-                   "a validation error raised on the form does not reappear on the list")
-        view.cancelFormTapped()
-        let back = try listSlack(panel, view)
-        try expect(abs(back.height - hugged.height) <= 0.5 && panel.frame.maxY == topEdge, "Cancel did not return to the hugged list height: \(back.height) vs \(hugged.height)")
-        // A long list stops growing at eight rows and scrolls.
-        let many = try coordinator(destinations: (0..<12).map { PublishingDestination(name: "Destination \($0)", settings: destinations[1].settings) })
-        let (manyPanel, manyView) = try many.buildSettings(visibleFrame: fake)
-        defer { manyPanel.orderOut(nil) }
-        manyPanel.contentView?.layoutSubtreeIfNeeded()
-        let manyHeight = try unwrap(manyView.table.enclosingScrollView).frame.height
-        try expect(abs(manyHeight - (CGFloat(PublishingDestinationsView.maxListRows) * listRowHeight + 4)) <= 0.5 && contentHeight(manyPanel) <= 680,
-                   "twelve destinations show \(manyHeight) pt of table in a \(contentHeight(manyPanel)) sheet; the cap is eight rows")
+                   "Cancel clears the form's error (F-J4-001)")
 
         // A short screen: the S3 form is taller than the sheet, so it scrolls, and Save/Cancel stay on screen.
-        let (shortPanel, shortView) = try publisher.buildSettings(visibleFrame: short)
+        let (shortPanel, shortView) = publisher.buildEditor(editing: destinations[0], visibleFrame: short)
         defer { shortPanel.orderOut(nil) }
-        shortPanel.contentView?.layoutSubtreeIfNeeded()
-        shortView.select(id: destinations[0].id); shortView.editTapped()
         shortPanel.contentView?.layoutSubtreeIfNeeded()
         let document = try unwrap(shortView.scrollView.documentView), clip = shortView.scrollView.contentView.bounds
         try expect(shortPanel.contentRect(forFrameRect: shortPanel.frame).height <= short.height, "the short-screen sheet fits the visible frame")
@@ -816,7 +752,7 @@ enum PublishingDestinationsTests {
         }
 
         // Section headers group the rows.
-        view.addTapped(); panel.contentView?.layoutSubtreeIfNeeded()
+        view.showForm(for: nil); panel.contentView?.layoutSubtreeIfNeeded()
         try expect(view.sectionHeaders.map(\.stringValue) == ["Connection", "Credentials"], "section headers: \(view.sectionHeaders.map(\.stringValue))")
         try expect(view.sectionHeaders.allSatisfy { $0.font?.pointSize == 22 && !$0.isHiddenOrHasHiddenAncestor }, "section headers use the headline style")
         let doc = try unwrap(view.scrollView.documentView)
@@ -828,7 +764,7 @@ enum PublishingDestinationsTests {
         for control in descendants(view).compactMap({ $0 as? NSControl }) where !control.isHiddenOrHasHiddenAncestor {
             try expect((control.font?.pointSize ?? 20) >= 18, "\(type(of: control)) is below 18 pt")
         }
-        try expect([view.saveButton, view.cancelButton, view.doneButton, view.testButton].allSatisfy { $0.font?.pointSize == 20 }, "dialog buttons are body size (20 pt)")
+        try expect([view.saveButton, view.cancelButton, view.testButton].allSatisfy { $0.font?.pointSize == 20 }, "dialog buttons are body size (20 pt)")
 
         // Placeholders are neutral.
         let fields = descendants(view).compactMap { $0 as? NSTextField }.compactMap(\.placeholderString)
@@ -837,7 +773,7 @@ enum PublishingDestinationsTests {
                    && view.endpointField.placeholderString == "https://example.com/uploads" && view.folderField.placeholderString?.hasPrefix("screenshots") == true,
                    "neutral SSH alias, SFTP root, endpoint and folder placeholders")
 
-        // The product word is Upload: no user-visible string on either page says Webpost.
+        // The product word is Upload: no user-visible string on the form says Webpost.
         func visibleStrings(_ root: NSView) -> [String] {
             var strings: [String] = []
             for item in descendants(root) {
@@ -848,23 +784,16 @@ enum PublishingDestinationsTests {
             }
             return strings
         }
-        func noWebpost(_ page: String) throws {
-            let offenders = visibleStrings(view).filter { $0.lowercased().contains("webpost") }
-            try expect(offenders.isEmpty, "\(page) page still says Webpost: \(offenders)")
-        }
-        view.cancelFormTapped()
-        try noWebpost("list")
-        try expect(visibleStrings(view).contains { $0.contains("Upload click") }, "the list intro names the Upload click")
         for transport in PublishingProtocol.allCases {
-            view.addTapped(); view.protocolPopup.selectItem(withTitle: transport.title); view.formChanged()
-            try noWebpost("\(transport.title) form")
-            view.cancelFormTapped()
+            view.showForm(for: nil); view.protocolPopup.selectItem(withTitle: transport.title); view.formChanged()
+            let offenders = visibleStrings(view).filter { $0.lowercased().contains("webpost") }
+            try expect(offenders.isEmpty, "\(transport.title) form still says Webpost: \(offenders)")
         }
         let lastOne = PublishingDestinationList(defaultID: destinations[0].id, destinations: [destinations[0]])
-        try expect(!PublishingDestinationsView.removalPrompt(for: destinations[0], in: lastOne).detail.lowercased().contains("webpost"), "the remove prompt still says Webpost")
+        try expect(!lastOne.removalPrompt(for: destinations[0]).detail.lowercased().contains("webpost"), "the remove prompt still says Webpost")
 
         // No form label wraps or truncates at 720 wide, for any protocol and credential source, and the Protocol popup shows every title whole.
-        view.addTapped()
+        view.showForm(for: nil)
         for transport in PublishingProtocol.allCases {
             for source in 0...1 {
                 view.protocolPopup.selectItem(withTitle: transport.title); view.sourcePopup.selectItem(at: source); view.formChanged()
@@ -891,27 +820,20 @@ enum PublishingDestinationsTests {
                        "the Protocol item “\(item.title)” (\(width) pt) truncates in a \(view.protocolPopup.frame.width) pt popup that wants \(view.protocolPopup.intrinsicContentSize.width)")
             try expect(item.toolTip?.isEmpty == false && item.title.count <= 16, "“\(item.title)” is a short title with the provider detail in its tooltip")
         }
-        view.cancelFormTapped()
 
-        view.addTapped(); panel.contentView?.layoutSubtreeIfNeeded()
-        // Return saves, Escape cancels (form page).
-        var saved: [String] = []
+        view.showForm(for: nil); panel.contentView?.layoutSubtreeIfNeeded()
+        // Return saves, Escape cancels.
+        var saved: [String] = [], cancelled = 0
         view.onSave = { destination, _ in saved.append(destination.name) }
+        view.onCancel = { cancelled += 1 }
         view.nameField.stringValue = "Keys"; view.endpointField.stringValue = "https://dav.example.com/up"
         try expect(view.saveButton.keyEquivalent == "\r" && view.cancelButton.keyEquivalent == "\u{1b}", "Save is the Return button and Cancel the Escape button")
         panel.contentView?.layoutSubtreeIfNeeded()
         try expect(panel.contentView?.performKeyEquivalent(with: keyEvent("\r", keyCode: 36, window: panel)) == true && saved == ["Keys"], "Return did not save (saved \(saved))")
-        try expect(panel.contentView?.performKeyEquivalent(with: keyEvent("\u{1b}", keyCode: 53, window: panel)) == true && view.editing == nil && view.cancelButton.isHiddenOrHasHiddenAncestor,
-                   "Escape did not cancel the form back to the list")
-        // List page: Return and Escape both finish.
-        var done = 0
-        view.onDone = { done += 1 }
-        try expect(!view.doneButton.isHiddenOrHasHiddenAncestor && view.doneButton.keyEquivalent == "\r", "Done is the list sheet's Return button")
-        try expect(panel.contentView?.performKeyEquivalent(with: keyEvent("\r", keyCode: 36, window: panel)) == true && done == 1, "Return did not finish the list sheet")
-        try expect(panel.contentView?.performKeyEquivalent(with: keyEvent("\u{1b}", keyCode: 53, window: panel)) == true && done == 2, "Escape did not finish the list sheet")
+        try expect(panel.contentView?.performKeyEquivalent(with: keyEvent("\u{1b}", keyCode: 53, window: panel)) == true && cancelled == 1, "Escape did not cancel the editor")
 
         // Test result: glyph and words together.
-        view.addTapped()
+        view.showForm(for: nil)
         view.showTestResult(ok: true, message: "OK: credentials and bucket verified. Nothing was uploaded.")
         var row = view.formResult
         try expect(!row.isHiddenOrHasHiddenAncestor && row.kind == .success && row.text.stringValue == "Connected" && row.glyph.image != nil && !row.glyph.isHidden, "success shows a glyph and the word Connected")
@@ -931,56 +853,39 @@ enum PublishingDestinationsTests {
         view.sourcePopup.selectItem(at: 0); view.formChanged(); view.profileField.stringValue = ""
         view.saveTapped()
         try expect(view.formResult.text.stringValue.hasPrefix("Error: ") && view.formResult.glyph.image != nil, "a validation error also gets the prefix and glyph: \(view.formResult.text.stringValue)")
-        view.cancelFormTapped()
 
-        // Default pill instead of the "(Default)" suffix.
-        view.reload(try publisher.store.load())
-        let defaultRow = try unwrap(view.table.view(atColumn: 0, row: 0, makeIfNecessary: true) as? DestinationRowView)
-        let otherRow = try unwrap(view.table.view(atColumn: 0, row: 1, makeIfNecessary: true) as? DestinationRowView)
-        let pill = try unwrap(defaultRow.pill)
-        try expect(pill.label.stringValue == "Default" && pill.glyph.image != nil, "the Default pill has the word and a check glyph")
-        try expect(otherRow.pill == nil, "a non-default destination has no pill")
-        try expect(!defaultRow.nameField.stringValue.contains("(Default)") && defaultRow.nameField.stringValue == "Example S3" && defaultRow.transportField.stringValue == "S3", "the name no longer carries a (Default) suffix")
-        try publisher.setDefaultDestination(destinations[1].id); view.reload(try publisher.store.load())
-        let moved = try unwrap(view.table.view(atColumn: 0, row: 1, makeIfNecessary: true) as? DestinationRowView)
-        try expect(moved.pill != nil && (view.table.view(atColumn: 0, row: 0, makeIfNecessary: true) as? DestinationRowView)?.pill == nil, "the pill follows the default")
+        // Editing a saved destination opens its own values, and saving it keeps the Keychain item while the secret is unchanged.
+        let edited = try unwrap(try publisher.store.load().destinations.first { $0.name == "Example WebDAV" })
+        let (editPanel, editView) = publisher.buildEditor(editing: edited)
+        defer { editPanel.orderOut(nil) }
+        try expect(editView.editing?.id == edited.id && editView.nameField.stringValue == "Example WebDAV" && editView.endpointField.stringValue == edited.settings.endpoint, "Edit opens the saved values")
 
-        // Message sheets are at least 560 wide.
-        let parent = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 600), styleMask: [.titled], backing: .buffered, defer: false)
-        parent.isReleasedWhenClosed = false
-        let messenger = PublishingCoordinator()
-        messenger.presentMessage("The sharing settings could not be opened because the destination list is unreadable.", relativeTo: parent)
-        let message = try unwrap(parent.attachedSheet)
-        try expect(message.frame.width >= 560 && PublishingCoordinator.messageSheetMinimumWidth == 560, "message sheet is \(message.frame.width) wide, below 560")
-        try expect(message.contentMinSize.width >= 560, "message sheet minimum width is below 560")
-        messenger.cancelSettings(); spin(1) { parent.attachedSheet == nil }
-
-        // The shutdown barrier still runs with the Destinations sheet open.
+        // The shutdown barrier still runs with the editor open.
         let shutdownParent = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 600), styleMask: [.titled], backing: .buffered, defer: false)
         shutdownParent.isReleasedWhenClosed = false
         let closing = try coordinator(destinations: destinations)
-        closing.showSettings(relativeTo: shutdownParent)
-        try expect(shutdownParent.attachedSheet != nil, "the Destinations sheet did not open")
+        closing.showEditor(editing: nil, relativeTo: shutdownParent)
+        try expect(shutdownParent.attachedSheet != nil, "the editor sheet did not open")
         var acknowledged = false
         closing.shutdown { acknowledged = true }
         spin(5) { acknowledged && shutdownParent.attachedSheet == nil }
         try expect(acknowledged, "shutdown never acknowledged with the sheet open")
-        try expect(shutdownParent.attachedSheet == nil, "shutdown left the Destinations sheet attached")
-        closing.showSettings(relativeTo: shutdownParent)
+        try expect(shutdownParent.attachedSheet == nil, "shutdown left the editor sheet attached")
+        closing.showEditor(editing: nil, relativeTo: shutdownParent)
         try expect(shutdownParent.attachedSheet == nil, "a sheet opened after shutdown")
 
-        // A settings sheet begun on a window directly (no completion handler, as the screenshot harness does) must not hold Quit forever.
+        // An editor sheet begun on a window directly (no completion handler, as the screenshot harness does) must not hold Quit forever.
         let bareParent = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 600), styleMask: [.titled], backing: .buffered, defer: false)
         bareParent.isReleasedWhenClosed = false
         let bare = try coordinator(destinations: destinations)
-        let (barePanel, _) = try bare.buildSettings()
+        let (barePanel, _) = bare.buildEditor(editing: nil)
         bareParent.beginSheet(barePanel)
         try expect(bareParent.attachedSheet === barePanel, "the bare sheet did not open")
         bare.cancelSettings()
         var bareAcknowledged = false
         bare.shutdown { bareAcknowledged = true }
         spin(5) { bareAcknowledged }
-        try expect(bareAcknowledged, "shutdown never acknowledged after a settings sheet ended without its completion handler")
+        try expect(bareAcknowledged, "shutdown never acknowledged after an editor sheet ended without its completion handler")
         try expect(bareParent.attachedSheet == nil, "the bare sheet stayed attached")
     }
 

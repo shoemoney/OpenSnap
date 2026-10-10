@@ -283,20 +283,20 @@ private enum AccessibilityAuditTests {
         history.window!.contentView?.layoutSubtreeIfNeeded()
         record("History (populated)", Audit.audit(history.window!, surface: "History (populated)"))
 
-        // Destinations: list page, then the form for every protocol (the Protocol popup swaps rows).
+        // Destination editor: the form for every protocol (the Protocol popup swaps rows).
         var dav = PublishingSettings(); dav.endpoint = "https://dav.example.invalid/shots"; dav.username = "user"
         var s3 = PublishingSettings(); s3.transport = .s3; s3.endpoint = "https://s3.example.invalid"; s3.s3 = S3Options()
         let first = PublishingDestination(name: "Work", settings: dav), second = PublishingDestination(name: "Backup", settings: s3)
-        let destinations = PublishingDestinationsView(list: PublishingDestinationList(defaultID: first.id, destinations: [first, second]))
+        _ = second
+        let destinations = PublishingDestinationsView(editing: first)
         destinations.frame = NSRect(x: 0, y: 0, width: PublishingDestinationsView.sheetWidth, height: 600)
         let destinationsWindow = NSWindow(contentRect: destinations.frame, styleMask: [.titled], backing: .buffered, defer: true)
         destinationsWindow.isReleasedWhenClosed = false; destinationsWindow.contentView = destinations
         destinations.layoutSubtreeIfNeeded()
-        record("Destinations (list)", Audit.audit(destinations, surface: "Destinations (list)"))
-        destinations.select(id: first.id)
+        record("Destinations (edit form)", Audit.audit(destinations, surface: "Destinations (edit form)"))
         destinations.showStatus("Could not reach the server")
-        record("Destinations (list, error)", Audit.audit(destinations, surface: "Destinations (list, error)"))
-        destinations.addTapped()
+        record("Destinations (edit form, error)", Audit.audit(destinations, surface: "Destinations (edit form, error)"))
+        destinations.showForm(for: nil)
         for (index, transport) in PublishingProtocol.allCases.enumerated() {
             destinations.protocolPopup.selectItem(at: index)
             _ = destinations.protocolPopup.target?.perform(destinations.protocolPopup.action, with: destinations.protocolPopup)
@@ -350,7 +350,7 @@ private enum AccessibilityAuditTests {
         defer { TestDefaults.dispose(settingsDefaults, name: settingsSuite) }
         let settings = SettingsWindowController(state: { GeneralPreferencesState(drawingPrecision: .medium, arrowHead: 2, includeApp: true, statusMenu: 0, showToolTips: true) },
                                                 hotkeys: GlobalHotkeyManager(defaults: settingsDefaults, backend: InertHotkeyBackend()), defaults: settingsDefaults,
-                                                destinations: { PublishingDestinationList(defaultID: first.id, destinations: [first, second]) }, manageDestinations: { _ in })
+                                                destinations: { PublishingDestinationList(defaultID: first.id, destinations: [first, second]) })
         for (index, item) in settings.tabItems.enumerated() {
             settings.select(index)
             settings.window.contentView?.layoutSubtreeIfNeeded()
@@ -363,13 +363,13 @@ private enum AccessibilityAuditTests {
         let accessory = ExportAccessory(format: "jpeg", originalSize: false, jpegQuality: 0.7)
         accessory.view.layoutSubtreeIfNeeded()
         record("Export accessory", Audit.audit(accessory.view, surface: "Export accessory"))
-        // T9 (OSN-054): five formats, and the JPG quality is a statement ("JPG quality 75 %"), not a locked slider.
+        // T9 (OSN-054): five formats, and the JPG quality is a statement ("JPG quality 75%"), not a locked slider.
         accessory.fixedJPEGQuality = 0.75
         func everyView(_ view: NSView) -> [NSView] { [view] + view.subviews.flatMap(everyView) }
         let accessoryViews = everyView(accessory.view)
         expect(accessoryViews.compactMap { $0 as? NSPopUpButton }.first?.itemTitles == ["PNG", "JPG", "PDF", "TIFF", "SVG"], "Export accessory: the format popup lists PNG, JPG, PDF, TIFF, SVG")
         expect(accessoryViews.compactMap { $0 as? NSSlider }.isEmpty, "Export accessory: there is no quality slider")
-        expect(accessoryViews.compactMap { $0 as? NSTextField }.contains { $0.stringValue == "JPG quality 75 %" }, "Export accessory: the quality row reads JPG quality 75 %")
+        expect(accessoryViews.compactMap { $0 as? NSTextField }.contains { $0.stringValue == "JPG quality 75%" }, "Export accessory: the quality row reads JPG quality 75%")
         let field = NSTextField(string: "6"); field.frame = NSRect(x: 0, y: 0, width: 400, height: 40); field.setAccessibilityLabel("Number of copies")
         let alerts: [(String, AppAlert)] = [
             ("one button", AppAlert(title: "Saved", message: "The drawing was saved.")),
@@ -481,9 +481,16 @@ private enum AccessibilityAuditTests {
                    "Resize: Apply is the plain preview button and OK is the default")
             width.stringValue = "400"
             resize.controlTextDidChange(Notification(name: NSControl.textDidChangeNotification, object: width))
-            expect(resize.control(preset, textView: NSTextView(), doCommandBy: command) == false && applied.isEmpty && panel.sheetParent === parent,
-                   "Resize: \(name) in the preset name field is left to that field")
-            expect(resize.control(width, textView: NSTextView(), doCommandBy: command), "Resize: \(name) in the width field is handled")
+            // The key goes where it goes for a person: into the field editor, which asks the field's own delegate. Calling the delegate method
+            // directly would pass even if the field were never wired to it.
+            expect(width.delegate === resize && preset.delegate === resize, "Resize: the size fields and the preset name field report their keys to the panel")
+            if applies {
+                expect(panel.makeFirstResponder(preset), "Resize: the preset name field takes the keyboard")
+                (preset.currentEditor() as? NSTextView)?.doCommand(by: command)
+                expect(applied.isEmpty && panel.sheetParent === parent, "Resize: \(name) in the preset name field is left to that field")
+            }
+            expect(panel.makeFirstResponder(width), "Resize: the width field takes the keyboard")
+            (width.currentEditor() as? NSTextView)?.doCommand(by: command)
             expect(applied.count == (applies ? 1 : 0) && (!applies || applied[0].width == 400), "Resize: \(name) in the width field \(applies ? "applies the typed size once (OK)" : "applies nothing (Cancel)") (\(applied))")
             expect(panel.sheetParent == nil, "Resize: \(name) in the width field closes the sheet")
         }
@@ -522,25 +529,19 @@ private enum AccessibilityAuditTests {
             photos.shutdown()
         }
 
-        // Destinations: Return is Done on the list and Save on the form; Escape is Done on the list and Cancel on the form.
-        for page in ["list", "form"] {
-            for (name, code) in [("Return", Key.returnKey), ("Escape", Key.escape)] {
-                var list = PublishingSettings(); list.endpoint = "https://dav.example.invalid/shots"
-                let view = PublishingDestinationsView(list: PublishingDestinationList(defaultID: nil, destinations: [PublishingDestination(name: "Work", settings: list)]))
-                view.frame = NSRect(x: 0, y: 0, width: PublishingDestinationsView.sheetWidth, height: 600)
-                let window = NSWindow(contentRect: view.frame, styleMask: [.titled], backing: .buffered, defer: true)
-                window.isReleasedWhenClosed = false; window.contentView = view
-                var done = 0, saved: [PublishingDestination] = []
-                view.onDone = { done += 1 }; view.onSave = { destination, _ in saved.append(destination) }
-                if page == "form" { view.addTapped(); view.nameField.stringValue = "Fresh"; view.endpointField.stringValue = "https://dav.example.invalid/more" }
-                expect(window.defaultButtonCell === (page == "list" ? view.doneButton : view.saveButton).cell, "Destinations (\(page)): the default button follows the page")
-                expect(window.performKeyEquivalent(with: key(code, in: window)), "Destinations (\(page)): \(name) is handled")
-                switch (page, name) {
-                case ("list", _): expect(done == 1 && saved.isEmpty, "Destinations (list): \(name) is Done")
-                case ("form", "Return"): expect(saved.count == 1 && saved[0].name == "Fresh" && done == 0, "Destinations (form): Return is Save")
-                default: expect(saved.isEmpty && done == 0 && view.editing == nil && view.scrollView.documentView != nil, "Destinations (form): Escape is Cancel and returns to the list")
-                }
-            }
+        // Destination editor: Return is Save and Escape is Cancel.
+        for (name, code) in [("Return", Key.returnKey), ("Escape", Key.escape)] {
+            let view = PublishingDestinationsView(editing: nil)
+            view.frame = NSRect(x: 0, y: 0, width: PublishingDestinationsView.sheetWidth, height: 600)
+            let window = NSWindow(contentRect: view.frame, styleMask: [.titled], backing: .buffered, defer: true)
+            window.isReleasedWhenClosed = false; window.contentView = view
+            var cancelled = 0, saved: [PublishingDestination] = []
+            view.onCancel = { cancelled += 1 }; view.onSave = { destination, _ in saved.append(destination) }
+            view.nameField.stringValue = "Fresh"; view.endpointField.stringValue = "https://dav.example.invalid/more"
+            expect(window.defaultButtonCell === view.saveButton.cell, "Destinations: Save is the default button")
+            expect(window.performKeyEquivalent(with: key(code, in: window)), "Destinations: \(name) is handled")
+            if name == "Return" { expect(saved.count == 1 && saved[0].name == "Fresh" && cancelled == 0, "Destinations: Return is Save") }
+            else { expect(saved.isEmpty && cancelled == 1, "Destinations: Escape is Cancel") }
         }
 
         // Alerts: Return answers the first button, Escape answers Cancel (the full matrix is in app-alert-tests).
@@ -557,7 +558,7 @@ private enum AccessibilityAuditTests {
         let settingsDefaults = TestDefaults(name: settingsSuite); defer { TestDefaults.dispose(settingsDefaults, name: settingsSuite) }
         let settings = SettingsWindowController(state: { GeneralPreferencesState(drawingPrecision: .medium, arrowHead: 2, includeApp: true, statusMenu: 0, showToolTips: true) },
                                                 hotkeys: GlobalHotkeyManager(defaults: settingsDefaults, backend: InertHotkeyBackend()), defaults: settingsDefaults,
-                                                destinations: { PublishingDestinationList(defaultID: nil, destinations: []) }, manageDestinations: { _ in })
+                                                destinations: { PublishingDestinationList(defaultID: nil, destinations: []) })
         var closes = 0
         settings.onClose = { closes += 1 }
         settings.window.cancelOperation(nil)
@@ -571,7 +572,7 @@ private enum AccessibilityAuditTests {
         let defaults = TestDefaults(name: settingsSuite); defer { TestDefaults.dispose(defaults, name: settingsSuite) }
         let settings = SettingsWindowController(state: { GeneralPreferencesState(drawingPrecision: .medium, arrowHead: 2, includeApp: true, statusMenu: 0, showToolTips: true) },
                                                 hotkeys: GlobalHotkeyManager(defaults: defaults, backend: InertHotkeyBackend()), defaults: defaults,
-                                                destinations: { PublishingDestinationList(defaultID: nil, destinations: []) }, manageDestinations: { _ in })
+                                                destinations: { PublishingDestinationList(defaultID: nil, destinations: []) })
         settings.select(0)
         settings.window.contentView?.layoutSubtreeIfNeeded()
         let strip = settings.strip
@@ -600,19 +601,17 @@ private enum AccessibilityAuditTests {
         // Destinations: buttons say what they do, the Default pill is a labelled static text, status rows are static text.
         var dav = PublishingSettings(); dav.endpoint = "https://dav.example.invalid/shots"
         let work = PublishingDestination(name: "Work", settings: dav)
-        let view = PublishingDestinationsView(list: PublishingDestinationList(defaultID: work.id, destinations: [work]))
+        let view = PublishingDestinationsView(editing: work)
         view.frame = NSRect(x: 0, y: 0, width: PublishingDestinationsView.sheetWidth, height: 600)
         let window = NSWindow(contentRect: view.frame, styleMask: [.titled], backing: .buffered, defer: true)
         window.isReleasedWhenClosed = false; window.contentView = view
         view.layoutSubtreeIfNeeded()
-        expect([view.doneButton, view.cancelButton, view.saveButton, view.testButton].allSatisfy { !Audit.label(of: $0).isEmpty }, "Destinations: the footer buttons are labelled")
-        expect(Audit.label(of: view.doneButton) == "Done" && Audit.label(of: view.saveButton) == "Save" && Audit.label(of: view.cancelButton) == "Cancel", "Destinations: Done, Save and Cancel are named by their titles")
-        let rowCell = view.tableView(view.table, viewFor: nil, row: 0) as? DestinationRowView
-        expect(rowCell?.accessibilityLabel() == "Work, WebDAV, Default", "Destinations: a row reads name, protocol and Default together: \(String(describing: rowCell?.accessibilityLabel()))")
-        expect(rowCell?.pill?.accessibilityLabel() == "Default destination" && rowCell?.pill?.accessibilityRole() == .staticText, "Destinations: the Default pill is a labelled static text")
-        view.showStatus("The server refused it")
-        expect(view.listStatus.text.stringValue == "Error: The server refused it" && view.formResult.isHidden, "Destinations: an error on the list is prefixed Error: and shown on the list, not on the form behind it")
-        view.addTapped()
+        expect([view.cancelButton, view.saveButton, view.testButton].allSatisfy { !Audit.label(of: $0).isEmpty }, "Destinations: the footer buttons are labelled")
+        expect(Audit.label(of: view.saveButton) == "Save" && Audit.label(of: view.cancelButton) == "Cancel" && Audit.label(of: view.testButton) == "Test", "Destinations: Save, Cancel and Test are named by their titles")
+        let pill = DefaultPillView()
+        expect(pill.accessibilityLabel() == "Default destination" && pill.accessibilityRole() == .staticText, "Destinations: the Default pill is a labelled static text")
+        let row = SettingsDestinationRow(name: "Work", transport: "WebDAV", isDefault: true)
+        expect(row.accessibilityLabel() == "Work, WebDAV, Default" && row.accessibilityRole() == .row, "Settings: a destination row reads name, protocol and Default together: \(String(describing: row.accessibilityLabel()))")
         view.showStatus("The server refused it")
         expect(view.formResult.text.stringValue == "Error: The server refused it", "Destinations: an error is prefixed Error:")
         expect(view.formResult.accessibilityRole() == .staticText && view.formResult.accessibilityLabel()?.hasPrefix("Error:") == true, "Destinations: the status row is a static text that reads the error")
@@ -667,7 +666,7 @@ private enum AccessibilityAuditTests {
         let settingsDefaults = TestDefaults(name: settingsSuite); defer { TestDefaults.dispose(settingsDefaults, name: settingsSuite) }
         let settings = SettingsWindowController(state: { GeneralPreferencesState(drawingPrecision: .medium, arrowHead: 2, includeApp: true, statusMenu: 0, showToolTips: true) },
                                                 hotkeys: GlobalHotkeyManager(defaults: settingsDefaults, backend: InertHotkeyBackend()), defaults: settingsDefaults,
-                                                destinations: { PublishingDestinationList(defaultID: nil, destinations: []) }, manageDestinations: { _ in })
+                                                destinations: { PublishingDestinationList(defaultID: nil, destinations: []) })
         settings.select(1)
         let strip = settings.strip
         expect(strip.accessibilityRole() == .tabGroup && strip.accessibilityLabel() == "Settings sections", "Settings: the strip is a tab group labelled Settings sections")

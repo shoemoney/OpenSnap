@@ -26,6 +26,8 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         var missing: Bool
         /// False when the entry has a link but no recorded publication destination, so the app cannot take it down; the icon then says why.
         var canDeleteFromWeb = true
+        /// Set when the entry has a destination record that no longer matches the default destination: Delete from Web is off and says this.
+        var deleteBlockedReason: String?
         /// The size of the image that went to the web; Details reports it for a shared entry, whose editable copy may have been resized since.
         var publishedSize: CGSize?
     }
@@ -42,9 +44,16 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
     enum Action: Int, CaseIterable {
         case open, copy, copyLink, openLink, remove, deleteFiles, deleteRemote
         var title: String { ["Open", "Copy", "Copy Link", "Open Link", "Hide from History", "Move to Trash", "Delete from Web"][rawValue] }
-        /// The toolbar-style action row is icon-only; the title is the tooltip, the accessibility label and the context-menu text.
-        var icon: FAIcon { [FAIcon.openExternal, .copy, .link, .globe, .eyeSlash, .trash, .linkSlash][rawValue] }
+        /// The toolbar-style row shows icon and short label while the window is wide enough; the full title is always the tooltip,
+        /// the accessibility label and the context-menu text. Hide takes a folder-minus (an entry leaves the list, the files stay),
+        /// not the editor's eye-slash, which means "hide the window" there.
+        var icon: FAIcon { [FAIcon.openExternal, .copy, .link, .globe, .folderMinus, .trash, .linkSlash][rawValue] }
+        var shortTitle: String { ["Open", "Copy", "Copy Link", "Open Link", "Hide", "Trash", "Delete from Web"][rawValue] }
+        /// The three that take something away keep their label at every width.
+        var removesSomething: Bool { self == .remove || self == .deleteFiles || self == .deleteRemote }
     }
+    /// How much of the action row's text is shown: every label, only the three destructive ones, or icons alone (never chosen at the minimum width).
+    enum ActionLabels: Int { case all, destructiveOnly, none }
     struct Section { var day: Date; var title: String; var items: [Item] }
     /// Persisted keys. `jpeg` is the stored name for JPG, and `opensnap` is the editable document.
     nonisolated static let dragFormats = ["png", "jpeg", "pdf", "tiff", "svg", "opensnap"]
@@ -126,6 +135,7 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
     /// What the details column shows with nothing selected: how many snaps the grid holds, by kind, so the column is never blank.
     private let detailsSummaryTitle = NSTextField(labelWithString:""), detailsSummary = NSTextField(wrappingLabelWithString:"")
     private var buttons: [Action: NSButton] = [:]
+    private(set) var actionLabels: ActionLabels = .all
     private var contextItems: [Action: NSMenuItem] = [:]
     /// The grid's scroll view. Horizontal scrolling is off: the grid reflows instead.
     private(set) var gridScrollView: NSScrollView?
@@ -139,7 +149,7 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         button.heightAnchor.constraint(greaterThanOrEqualToConstant:DesignTokens.Size.control).isActive = true
         return button
     }()
-    let filterRow = NSStackView(), actionRow = NSStackView()
+    let filterRow = NSStackView(), actionRow = NSStackView(), footerRow = NSStackView()
     let detailsPanel = NSStackView()
     private(set) var detailsPlacement: DetailsPlacement = .beside
     private var besideConstraints: [NSLayoutConstraint] = [], belowConstraints: [NSLayoutConstraint] = [], fullWidthConstraints: [NSLayoutConstraint] = []
@@ -229,6 +239,7 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         if selected.count > 1 { return "Delete from Web is unavailable: it removes one post at a time. Select a single entry." }
         guard let item = selected.first else { return Action.deleteRemote.title }
         if item.link == nil { return "Delete from Web is unavailable: this was never uploaded." }
+        if let reason = item.deleteBlockedReason { return "Delete from Web is unavailable: " + reason }
         return item.canDeleteFromWeb ? Action.deleteRemote.title
             : "Delete from Web is unavailable: this was published before the app recorded where it went, so it can only be removed on the server."
     }
@@ -364,7 +375,7 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
             let button = NSButton(title:"",target:self,action:#selector(actionInvoked(_:)))
             button.tag = action.rawValue; button.bezelStyle = .rounded; Typography.apply(.body,to:button)
             if let symbol = ChromeIcons.resolve(action.icon,pointSize:Typography.iconInline).image {
-                button.image = symbol; button.imagePosition = .imageOnly
+                button.image = symbol; button.imagePosition = .imageLeading; button.imageHugsTitle = true
             } else { button.title = action.title }
             button.toolTip = action.title; button.setAccessibilityLabel(action.title)
             button.widthAnchor.constraint(greaterThanOrEqualToConstant:DesignTokens.Size.tool.width).isActive = true
@@ -376,9 +387,12 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         formatPopup.selectItem(at:Self.dragFormats.firstIndex(of:dragFormat) ?? 0)
         formatPopup.target = self; formatPopup.action = #selector(formatChanged); formatPopup.setAccessibilityLabel("History drag export format")
         let flexible = NSView(); flexible.setContentHuggingPriority(.init(1),for:.horizontal)
-        configure(actionRow,actions+[flexible,formatLabel,formatPopup]); actionRow.spacing = Space.s2
-        actionRow.setCustomSpacing(Space.s5,after:actions.last!)
+        configure(actionRow,actions+[flexible]); actionRow.spacing = Space.s2
         root.addArrangedSubview(actionRow)
+        // "Drag as" sits at the end of the footer line, not in the action row: with it the row held no labels at 1000 wide, and
+        // the three commands that take something away must keep theirs at the 880 minimum.
+        let spring = NSView(); spring.setContentHuggingPriority(.init(1),for:.horizontal)
+        configure(footerRow,[status,spring,formatLabel,formatPopup])
 
         // Body: the grid, with the details panel beside it (or under it when narrow).
         let body = NSView(); body.translatesAutoresizingMaskIntoConstraints = false; root.addArrangedSubview(body)
@@ -427,10 +441,38 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
 
         Typography.apply(.body,to:warning); warning.textColor = Palette.feedbackError; warning.maximumNumberOfLines = 0
         root.addArrangedSubview(warning)
-        Typography.apply(.caption,to:status); status.textColor = Palette.Text.secondary; root.addArrangedSubview(status)
+        Typography.apply(.caption,to:status); status.textColor = Palette.Text.secondary; root.addArrangedSubview(footerRow)
         for child in root.arrangedSubviews { child.widthAnchor.constraint(equalTo:root.widthAnchor).isActive = true }
         content.layoutSubtreeIfNeeded()
         layoutDetails(forContentWidth:content.bounds.width)
+        updateActionLabels(forContentWidth:content.bounds.width)
+    }
+    /// Shows as many labels as the row holds: all seven, else the three destructive ones, else icons. Measured from
+    /// the live buttons at the live font, so a wider system font or a longer label moves the threshold by itself.
+    func updateActionLabels(forContentWidth width: CGFloat) {
+        let gap = actionRow.spacing, available = width - 2 * Space.s4
+        var chosen = ActionLabels.none
+        for mode in [ActionLabels.all,.destructiveOnly] {
+            let total = Action.allCases.reduce(CGFloat(0)) { $0 + labelledWidth(of:$1,mode:mode) } + gap * CGFloat(Action.allCases.count - 1)
+            if total <= available { chosen = mode; break }
+        }
+        applyActionLabels(chosen)
+    }
+    private func labelledWidth(of action: Action,mode: ActionLabels) -> CGFloat {
+        guard let button = buttons[action] else { return 0 }
+        let shows = mode == .all || (mode == .destructiveOnly && action.removesSomething)
+        let probe = NSButton(title:shows ? action.shortTitle : "",target:nil,action:nil)
+        probe.bezelStyle = .rounded; Typography.apply(.body,to:probe); probe.image = button.image; probe.imagePosition = shows ? .imageLeading : .imageOnly
+        return max(probe.fittingSize.width,DesignTokens.Size.tool.width)
+    }
+    private func applyActionLabels(_ mode: ActionLabels) {
+        actionLabels = mode
+        for action in Action.allCases {
+            guard let button = buttons[action], button.image != nil else { continue }
+            let shows = mode == .all || (mode == .destructiveOnly && action.removesSomething)
+            button.title = shows ? action.shortTitle : ""
+            button.imagePosition = shows ? .imageLeading : .imageOnly
+        }
     }
     static let detailsWidth: CGFloat = 248, detailsBelowHeight: CGFloat = 176, dayHeaderHeight: CGFloat = 44
 
@@ -510,7 +552,7 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         window?.contentView?.layoutSubtreeIfNeeded()
     }
     func windowDidResize(_ notification: Notification) {
-        if let width = window?.contentView?.bounds.width { layoutDetails(forContentWidth:width) }
+        if let width = window?.contentView?.bounds.width { layoutDetails(forContentWidth:width); updateActionLabels(forContentWidth:width) }
     }
     override func cancelOperation(_ sender: Any?) { window?.performClose(sender) }
     /// Opening the window puts the keyboard on the grid unless a field already has it.
@@ -522,7 +564,7 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
     private func updateEmptyState() {
         let nothingSaved = items.isEmpty
         emptyState.isHidden = !visibleItems.isEmpty
-        emptyTitle.stringValue = nothingSaved ? "No history yet." : "No history items match these filters."
+        emptyTitle.stringValue = nothingSaved ? "No history yet" : "No history items match these filters"
         emptyHint.stringValue = nothingSaved ? Self.emptyHint(shortcut:saveShortcut()) : ""
         emptyHint.isHidden = !nothingSaved
         clearFiltersButton.isHidden = nothingSaved || !filtersAreActive

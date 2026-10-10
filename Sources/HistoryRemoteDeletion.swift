@@ -40,15 +40,38 @@ struct HistoryRemoteDeletionPlan {
     let fileName: String
     let settings: PublishingSettings
 
+    /// What decides where an uploaded object lives: protocol, endpoint, folder, public address, SSH host and root, S3 region and bucket.
+    /// The account (username, Keychain item, AWS profile) and the ACL flag are left out, so re-saving a destination with a new name,
+    /// a new password or a new key never takes older posts away from Delete from Web; moving the bucket or the server does.
+    private struct Location: Encodable {
+        let transport: PublishingProtocol
+        let endpoint, remoteFolder, publicBaseURL, sshAlias, sftpRemoteRoot: String
+        let sftpPort: Int?
+        let s3Region, s3Bucket: String?
+        init(_ settings: PublishingSettings) {
+            transport = settings.transport; endpoint = settings.endpoint; remoteFolder = settings.remoteFolder
+            publicBaseURL = settings.publicBaseURL; sshAlias = settings.sshAlias; sftpRemoteRoot = settings.sftpRemoteRoot
+            sftpPort = settings.sftpPort; s3Region = settings.s3?.region; s3Bucket = settings.s3?.bucket
+        }
+    }
     static func fingerprint(_ settings: PublishingSettings) throws -> String {
         let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
+        return historyDeletionDigest(try encoder.encode(Location(settings)))
+    }
+    /// Bindings recorded before the location-only digest hash the whole settings record, Keychain id included. They keep working for as long
+    /// as that record is untouched, which is all they ever did.
+    static func legacyFingerprint(_ settings: PublishingSettings) throws -> String {
+        let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
         return historyDeletionDigest(try encoder.encode(settings))
+    }
+    static func fingerprintMatches(_ digest: String, settings: PublishingSettings) -> Bool {
+        digest == (try? fingerprint(settings)) || digest == (try? legacyFingerprint(settings))
     }
 
     init(url: URL, binding: HistoryRemoteDestinationBinding, settings: PublishingSettings,
          capabilities: PublishingCapabilities?, sftpAvailable: Bool) throws {
         guard binding.version == 1, binding.publicURL == url.absoluteString,
-              binding.destinationFingerprint == (try Self.fingerprint(settings)) else {
+              Self.fingerprintMatches(binding.destinationFingerprint, settings: settings) else {
             throw PublishingFailure("The publishing destination changed or this history item has no valid destination binding. Remote deletion was refused.")
         }
         guard settings.transport == .sftp || settings.transport == .webDAV || settings.transport == .s3 else {
@@ -397,6 +420,27 @@ public final class HistoryRemoteDeletionCoordinator: NSObject {
         return binding
     }
 
+    /// Why Delete from Web cannot work for these entries right now, by id (an entry that can be deleted is absent). One read of the destination
+    /// list serves them all, and nothing else is touched: no process, network, Keychain or SSH config. The reasons say what to do about it.
+    func deletionBlocks(for entries: [(id: UUID, url: URL, binding: [String: String])]) -> [UUID: String] {
+        guard !entries.isEmpty else { return [:] }
+        let settings = try? adapter.loadSettings()
+        var blocked: [UUID: String] = [:]
+        for entry in entries {
+            guard let binding = try? HistoryRemoteDestinationBinding(dictionary: entry.binding) else {
+                blocked[entry.id] = "its record of where it went is unreadable, so it can only be removed on the server."; continue
+            }
+            guard let settings else { blocked[entry.id] = "no default destination is set up. Add one in Settings, Upload."; continue }
+            guard HistoryRemoteDeletionPlan.fingerprintMatches(binding.destinationFingerprint, settings: settings) else {
+                blocked[entry.id] = "the default destination is no longer the server, bucket or folder it was published to. Make that destination the default again to delete it."; continue
+            }
+            do {
+                _ = try HistoryRemoteDeletionPlan(url: entry.url, binding: binding, settings: settings, capabilities: Self.mappingCapabilities, sftpAvailable: PublishingTransfer.sftpAvailable)
+            } catch { blocked[entry.id] = "the default destination no longer maps this link to a file it can remove." }
+        }
+        return blocked
+    }
+
     /// Synchronous, bounded local config reads only: no process, network, Keychain or key reads.
     /// Capture the intended URL before publication when possible and compare with capture after
     /// success; a URL alone cannot establish which destination was used during an earlier upload.
@@ -442,7 +486,7 @@ public final class HistoryRemoteDeletionCoordinator: NSObject {
         work.start(work: { context in
             let binding = try HistoryRemoteDestinationBinding(dictionary: binding)
             let settings = try self.adapter.loadSettings()
-            guard binding.destinationFingerprint == (try HistoryRemoteDeletionPlan.fingerprint(settings)) else {
+            guard HistoryRemoteDeletionPlan.fingerprintMatches(binding.destinationFingerprint, settings: settings) else {
                 throw PublishingFailure("The publishing destination changed. Remote deletion was refused.")
             }
             let capabilities = settings.transport == .sftp ? nil : try self.adapter.capabilities(cancellation: context)

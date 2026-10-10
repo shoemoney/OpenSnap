@@ -226,8 +226,8 @@ final class ExportAccessory: NSObject {
         return content
     }
 
-    /// "JPG quality 75 %": the quality a JPG is written at, whole percent.
-    static func qualityText(_ quality: Double) -> String { "JPG quality \(Int((quality * 100).rounded())) %" }
+    /// "JPG quality 75%": the quality a JPG is written at, whole percent.
+    static func qualityText(_ quality: Double) -> String { "JPG quality \(Int((quality * 100).rounded()))%" }
 
     private func label(_ text: String, style: DesignTokens.Typography.Style = .body) -> NSTextField {
         let label = NSTextField(wrappingLabelWithString: text)

@@ -1,23 +1,16 @@
 import AppKit
 
-// The Destination Settings sheet content: a list of saved destinations (Add / Edit / Remove /
-// Make Default) and a form for one destination. It owns no storage; the coordinator supplies
-// callbacks, so every action is testable without a window or a network.
-final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableViewDelegate {
+// The destination editor: the sheet that adds or edits one destination (Settings, Upload opens it). The list of destinations, the default
+// and removal live in Settings, Upload; this view owns no storage. The coordinator supplies callbacks, so every action is testable without a
+// window or a network.
+final class PublishingDestinationsView: NSView {
     private typealias Typography = DesignTokens.Typography
     private typealias Space = DesignTokens.Space
 
-    var onMakeDefault: ((String) -> Void)?
-    var onRemove: ((String) -> Void)?
+    var onCancel: (() -> Void)?
     var onSave: ((PublishingDestination, String) -> Void)?
     var onTest: ((PublishingDestination, String) -> Void)?
-    var onDone: (() -> Void)?
-    var passwordFor: (PublishingDestination) -> String = { _ in "" }
-    /// Asks before a destination is removed and reports the answer once (true: remove). Tests replace it; the default is an app-owned
-    /// alert (`AppAlert`) as a sheet on this sheet, so its text is the app's size and the question never blocks the run loop.
-    var confirmRemoval: ((_ title: String, _ detail: String, _ answer: @escaping (Bool) -> Void) -> Void)?
-    /// The removal question that is on screen now, so closing the destinations sheet can answer it first.
-    private(set) var pendingRemoval: AppAlert?
+    var passwordFor: (PublishingDestination) -> String
 
     /// The sheet is 720 wide and at most 760 tall; on a short screen it shrinks and the form scrolls instead of clipping. Under a narrower
     /// window (Settings is 640) it is as wide as that window, never narrower than `sheetMinWidth`, so it never overhangs its parent.
@@ -35,32 +28,23 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         return NSSize(width: sheetWidth, height: min(height, visibleFrame.height))
     }
 
-    private(set) var list: PublishingDestinationList
     private(set) var editing: PublishingDestination?
 
-    /// The tallest the sheet may be (set from the screen). The form page always asks for all of it and scrolls;
-    /// the list page asks only for what its content needs.
+    /// The tallest the sheet may be (set from the screen). The form always asks for what it needs and scrolls when that is more.
     var maxSheetHeight: CGFloat = PublishingDestinationsView.sheetMaxHeight
-    /// Called when the page the sheet should hug changes, so the coordinator can resize the panel.
+    /// Called when the height the sheet should hug changes (a protocol with more rows, a longer result), so the coordinator can resize the panel.
     var onPreferredHeightChange: ((CGFloat) -> Void)?
-    /// The content height the visible page wants: either page hugs its content (the form of the selected protocol, with the result band
-    /// it shows now, or the table, buttons and footer), never taller than the screen allows. A form that does not fit scrolls.
-    var preferredHeight: CGFloat { min(maxSheetHeight, listPage.isHidden ? formPageHeight : listPageHeight) }
+    /// The content height the form wants: its rows of the selected protocol, the result band it shows now, and the margins, never taller than
+    /// the screen allows. A form that does not fit scrolls.
+    var preferredHeight: CGFloat { min(maxSheetHeight, formPageHeight) }
     /// The visible form's rows, the separator, the footer with its result band, and the margins around them.
     var formPageHeight: CGFloat {
         Space.s5 + formPage.fittingSize.height + Space.s5 + 1 + Space.s3 + formFooter.fittingSize.height + Space.s4
     }
-    /// Page content, the separator, the footer, and the margins around them.
-    var listPageHeight: CGFloat {
-        Space.s5 + listPage.fittingSize.height + Space.s5 + 1 + Space.s3 + listFooter.fittingSize.height + Space.s4
-    }
     private func notifyPreferredHeight() { onPreferredHeightChange?(preferredHeight) }
-    private var tableHeight: NSLayoutConstraint?
 
-    let table = NSTableView()
     let scrollView = NSScrollView()
-    private let listPage = NSStackView(), formPage = NSStackView()
-    let listStatus: DestinationStatusRow
+    private let formPage = NSStackView()
     /// The inline Test / Save result: a glyph and text together, never colour alone. It sits above the buttons and is as tall as its text.
     let formResult: DestinationStatusRow
 
@@ -92,9 +76,6 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
     }
 
     // Footer buttons: pinned below the scroll view so Return and Escape always have a visible target.
-    private(set) lazy var doneButton: NSButton = {
-        let button = Self.button("Done", self, #selector(doneTapped)); button.keyEquivalent = "\r"; return button
-    }()
     private(set) lazy var cancelButton: NSButton = {
         let button = Self.button("Cancel", self, #selector(cancelFormTapped)); button.keyEquivalent = "\u{1b}"; return button
     }()
@@ -102,17 +83,17 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         let button = Self.button("Save", self, #selector(saveTapped)); button.keyEquivalent = "\r"; return button
     }()
     private(set) lazy var testButton: NSButton = Self.button("Test", self, #selector(testTapped))
-    private let listFooter = NSStackView(), formFooter = NSStackView()
+    private let formFooter = NSStackView()
 
-    init(list: PublishingDestinationList, width: CGFloat = PublishingDestinationsView.sheetWidth) {
-        self.list = list; self.width = width
-        listStatus = DestinationStatusRow(width: width - 2 * Space.s5); formResult = DestinationStatusRow(width: width - 2 * Space.s5, maxLines: 3)
+    init(editing destination: PublishingDestination?, width: CGFloat = PublishingDestinationsView.sheetWidth,
+         passwordFor: @escaping (PublishingDestination) -> String = { _ in "" }) {
+        self.width = width; self.passwordFor = passwordFor
+        formResult = DestinationStatusRow(width: width - 2 * Space.s5, maxLines: 3)
         super.init(frame: .zero)
-        buildList(); buildForm(); buildFooters()
+        buildForm(); buildFooters()
 
-        let pages = NSStackView(views: [listPage, formPage]); pages.orientation = .vertical; pages.alignment = .leading
         let document = DestinationFlippedView()
-        pages.translatesAutoresizingMaskIntoConstraints = false; document.addSubview(pages)
+        formPage.translatesAutoresizingMaskIntoConstraints = false; document.addSubview(formPage)
         document.translatesAutoresizingMaskIntoConstraints = false
         scrollView.documentView = document
         scrollView.hasVerticalScroller = true; scrollView.hasHorizontalScroller = false; scrollView.autohidesScrollers = true
@@ -120,47 +101,35 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         scrollView.translatesAutoresizingMaskIntoConstraints = false; addSubview(scrollView)
 
         let separator = NSBox(); separator.boxType = .separator; separator.translatesAutoresizingMaskIntoConstraints = false; addSubview(separator)
-        for footer in [listFooter, formFooter] { footer.translatesAutoresizingMaskIntoConstraints = false; addSubview(footer) }
+        formFooter.translatesAutoresizingMaskIntoConstraints = false; addSubview(formFooter)
         let clip = scrollView.contentView
         NSLayoutConstraint.activate([
             document.leadingAnchor.constraint(equalTo: clip.leadingAnchor), document.trailingAnchor.constraint(equalTo: clip.trailingAnchor),
             document.topAnchor.constraint(equalTo: clip.topAnchor),
-            pages.leadingAnchor.constraint(equalTo: document.leadingAnchor, constant: Space.s5),
-            pages.trailingAnchor.constraint(equalTo: document.trailingAnchor, constant: -Space.s5),
-            pages.topAnchor.constraint(equalTo: document.topAnchor, constant: Space.s5),
-            pages.bottomAnchor.constraint(equalTo: document.bottomAnchor, constant: -Space.s5),
+            formPage.leadingAnchor.constraint(equalTo: document.leadingAnchor, constant: Space.s5),
+            formPage.trailingAnchor.constraint(equalTo: document.trailingAnchor, constant: -Space.s5),
+            formPage.topAnchor.constraint(equalTo: document.topAnchor, constant: Space.s5),
+            formPage.bottomAnchor.constraint(equalTo: document.bottomAnchor, constant: -Space.s5),
             scrollView.leadingAnchor.constraint(equalTo: leadingAnchor), scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
             scrollView.topAnchor.constraint(equalTo: topAnchor),
             separator.leadingAnchor.constraint(equalTo: leadingAnchor), separator.trailingAnchor.constraint(equalTo: trailingAnchor),
             separator.topAnchor.constraint(equalTo: scrollView.bottomAnchor),
-            bottomAnchor.constraint(equalTo: listFooter.bottomAnchor, constant: Space.s4),
             bottomAnchor.constraint(equalTo: formFooter.bottomAnchor, constant: Space.s4),
+            formFooter.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Space.s5),
+            formFooter.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Space.s5),
+            formFooter.topAnchor.constraint(equalTo: separator.bottomAnchor, constant: Space.s3),
         ])
-        for footer in [listFooter, formFooter] {
-            NSLayoutConstraint.activate([footer.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Space.s5),
-                                         footer.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Space.s5),
-                                         footer.topAnchor.constraint(equalTo: separator.bottomAnchor, constant: Space.s3)])
-        }
-        showList()
+        showForm(for: destination)
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
 
     override func viewDidMoveToWindow() { super.viewDidMoveToWindow(); updateDefaultButton() }
 
-    /// Return is Done on the list and Save on the form; Escape is Done on the list (the button owns Return, so this owns Escape) and Cancel on the form.
-    override func performKeyEquivalent(with event: NSEvent) -> Bool {
-        if super.performKeyEquivalent(with: event) { return true }
-        guard event.keyCode == 53, event.modifierFlags.intersection(.deviceIndependentFlagsMask).isEmpty, !listPage.isHidden else { return false }
-        doneTapped(); return true
-    }
-    private func updateDefaultButton() {
-        window?.defaultButtonCell = (listPage.isHidden ? saveButton : doneButton).cell as? NSButtonCell
-    }
+    /// Return saves and Escape cancels; both buttons are always on screen, so the keys always have a visible target.
+    private func updateDefaultButton() { window?.defaultButtonCell = saveButton.cell as? NSButtonCell }
 
     private func buildFooters() {
-        for footer in [listFooter, formFooter] { footer.orientation = .horizontal; footer.alignment = .centerY; footer.spacing = Space.s4; footer.distribution = .fill }
-        let spacer = NSView(); spacer.setContentHuggingPriority(.init(1), for: .horizontal)
-        listFooter.setViews([spacer, doneButton], in: .trailing)
+        formFooter.orientation = .horizontal; formFooter.alignment = .centerY; formFooter.spacing = Space.s4; formFooter.distribution = .fill
         let flexible = NSView(); flexible.setContentHuggingPriority(.init(1), for: .horizontal)
         let buttons = NSStackView(views: [testButton, flexible, cancelButton, saveButton]); buttons.spacing = Space.s4
         // The result band is as tall as what it says: one line for the idle hint, up to three for a Test error. The footer grows by the
@@ -173,145 +142,14 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         column.widthAnchor.constraint(equalTo: formFooter.widthAnchor).isActive = true
     }
 
-    // MARK: List page
-
-    private func buildList() {
-        listPage.orientation = .vertical; listPage.alignment = .leading; listPage.spacing = Space.s4
-        let title = label("Upload destinations. The one marked Default receives an Upload click; right-click Upload to switch.")
-        title.preferredMaxLayoutWidth = contentWidth
-        let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("destination"))
-        column.resizingMask = .autoresizingMask; column.minWidth = 200; column.width = contentWidth - 24
-        table.addTableColumn(column); table.headerView = nil; table.rowHeight = DesignTokens.Size.row
-        table.columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle
-        table.dataSource = self; table.delegate = self; table.allowsEmptySelection = true
-        table.setAccessibilityLabel("Destinations")
-        let scroll = NSScrollView(); scroll.documentView = table; scroll.hasVerticalScroller = true
-        scroll.borderType = .bezelBorder
-        scroll.translatesAutoresizingMaskIntoConstraints = false
-        let tableHeight = scroll.heightAnchor.constraint(equalToConstant: 0); tableHeight.isActive = true
-        self.tableHeight = tableHeight; fitTable()
-        scroll.widthAnchor.constraint(equalToConstant: contentWidth).isActive = true
-        let add = Self.button("Add…", self, #selector(addTapped))
-        let edit = Self.button("Edit…", self, #selector(editTapped))
-        let remove = Self.button("Remove", self, #selector(removeTapped))
-        let makeDefault = Self.button("Make Default", self, #selector(makeDefaultTapped))
-        let actions = NSStackView(views: [add, edit, remove, makeDefault]); actions.spacing = Space.s4
-        listStatus.translatesAutoresizingMaskIntoConstraints = false
-        listPage.setViews([title, scroll, actions, listStatus], in: .leading)
-        listStatus.widthAnchor.constraint(equalToConstant: contentWidth).isActive = true
-        listButtons = (edit, remove, makeDefault)
-    }
-    private var listButtons: (edit: NSButton, remove: NSButton, makeDefault: NSButton)?
-    /// The table shows every row it has, between four and eight, and scrolls past that.
-    private func fitTable() {
-        let rows = min(Self.maxListRows, max(Self.minListRows, list.destinations.count))
-        tableHeight?.constant = CGFloat(rows) * (DesignTokens.Size.row + table.intercellSpacing.height) + 4
-    }
-
-    func numberOfRows(in tableView: NSTableView) -> Int { list.destinations.count }
-    func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-        guard list.destinations.indices.contains(row) else { return nil }
-        let destination = list.destinations[row]
-        return DestinationRowView(name: destination.name, transport: destination.settings.transport.shortTitle,
-                                  isDefault: destination.id == list.defaultDestination?.id)
-    }
-    func tableViewSelectionDidChange(_ notification: Notification) { updateListButtons() }
-
-    var selectedDestination: PublishingDestination? {
-        let row = table.selectedRow
-        return list.destinations.indices.contains(row) ? list.destinations[row] : nil
-    }
-    func select(id: String) {
-        if let index = list.destinations.firstIndex(where: { $0.id == id }) { table.selectRowIndexes([index], byExtendingSelection: false) }
-        updateListButtons()
-    }
-    private func updateListButtons() {
-        let selected = selectedDestination
-        listButtons?.edit.isEnabled = selected != nil
-        listButtons?.remove.isEnabled = selected != nil
-        listButtons?.makeDefault.isEnabled = selected != nil && selected?.id != list.defaultDestination?.id
-    }
-
-    /// Replaces the list (after a save, remove or default change) and returns to the list page.
-    func reload(_ list: PublishingDestinationList, status text: String = "", selecting id: String? = nil) {
-        self.list = list
-        fitTable()
-        table.reloadData()
-        if let id { select(id: id) }
-        showList()
-        listStatus.show(text.isEmpty ? .idle : .info, text)
-        notifyPreferredHeight()
-    }
-    /// A failure from storage or a worker. The row says "Error:" and carries a glyph, so it never relies on colour.
+    /// A failure from storage or a worker: the form's result band says "Error:" and carries a glyph, so it never relies on colour.
     func showStatus(_ text: String) {
-        let message = text.hasPrefix("Error:") ? text : "Error: " + text
-        // The message belongs to the page it was raised on, so a form error never survives Cancel onto the list.
-        if listPage.isHidden { showResult(.failure, message) } else { listStatus.show(.failure, message) }
-        notifyPreferredHeight()
+        showResult(.failure, text.hasPrefix("Error:") ? text : "Error: " + text)
     }
     /// The S3 Test result: "Connected" with the server's detail, or "Error: <message>".
     func showTestResult(ok: Bool, message: String) {
         if ok { showResult(.success, "Connected", detail: message) }
         else { showResult(.failure, message.hasPrefix("Error:") ? message : "Error: " + message) }
-    }
-
-    /// Set by the coordinator: the credential an older build's destination.json still points at.
-    var legacyCredentialID: String?
-
-    @objc func addTapped() { showForm(for: nil) }
-    @objc func editTapped() { if let selected = selectedDestination { showForm(for: selected) } }
-    @objc func removeTapped() {
-        guard let selected = selectedDestination else { return }
-        let prompt = Self.removalPrompt(for: selected, in: list, legacyCredentialID: legacyCredentialID)
-        let id = selected.id
-        let removeIfConfirmed: (Bool) -> Void = { [weak self] confirmed in
-            guard confirmed, let self, self.list.destinations.contains(where: { $0.id == id }) else { return }
-            self.onRemove?(id)
-        }
-        if let confirmRemoval { confirmRemoval(prompt.title, prompt.detail, removeIfConfirmed) }
-        else { askToRemove(prompt.title, prompt.detail, removeIfConfirmed) }
-    }
-
-    /// Answers a removal question that is still open as Cancel. The coordinator calls it before it ends this sheet (Done, or a shutdown),
-    /// because a sheet cannot be dismissed from under a sheet of its own.
-    func dismissRemovalQuestion() { pendingRemoval?.cancel() }
-
-    /// Names the destination, says its saved secret goes with it, and says who becomes the default.
-    static func removalPrompt(for destination: PublishingDestination, in list: PublishingDestinationList,
-                              legacyCredentialID: String? = nil) -> (title: String, detail: String) {
-        // The Keychain item an older build's destination.json still uses is kept for downgrades.
-        let keepsSecret = legacyCredentialID != nil && legacyCredentialID == destination.settings.credentialID
-        var detail = destination.settings.storesSecretInKeychain && !keepsSecret
-            ? "Its saved password or secret key is removed from the Keychain too. This cannot be undone."
-            : "Any saved settings for it are removed. This cannot be undone."
-        if destination.id == list.defaultDestination?.id {
-            if let next = list.destinations.first(where: { $0.id != destination.id }) {
-                detail += " It is the default, so “\(next.name)” becomes the default."
-            } else {
-                detail += " It is the only destination, so Upload will need a new one before it can upload."
-            }
-        }
-        return ("Remove “\(destination.name)”?", detail)
-    }
-
-    /// "Remove “name”?" as a sheet on the destinations sheet. Cancel is the default (Return and Escape both leave it), and Remove is the
-    /// destructive second button, so a stray Return never deletes a destination.
-    private func askToRemove(_ title: String, _ detail: String, _ answer: @escaping (Bool) -> Void) {
-        guard pendingRemoval == nil else { return }
-        let alert = AppAlert(title: title, message: detail, buttons: [.init(title: "Cancel", role: .cancel), .init(title: "Remove", role: .destructive)])
-        pendingRemoval = alert
-        alert.present(on: window) { [weak self] response in
-            self?.pendingRemoval = nil
-            answer(response == .alertSecondButtonReturn)
-        }
-    }
-    @objc func makeDefaultTapped() { if let selected = selectedDestination { onMakeDefault?(selected.id) } }
-    @objc func doneTapped() { onDone?() }
-
-    private func showList() {
-        formPage.isHidden = true; listPage.isHidden = false
-        formFooter.isHidden = true; listFooter.isHidden = false
-        editing = nil; updateListButtons(); updateDefaultButton(); scrollToTop(); notifyPreferredHeight()
     }
     private func scrollToTop() {
         scrollView.contentView.scroll(to: .zero); scrollView.reflectScrolledClipView(scrollView.contentView)
@@ -365,7 +203,7 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
             copy.endpointPlaceholder = "https://example.com/uploads"; copy.folderPlaceholder = "screenshots (under the endpoint)"
             copy.usernamePlaceholder = "Blank for anonymous access"
             copy.help = "WebDAV, or any server that accepts an HTTP PUT. The endpoint starts with http:// or https://. Folders must exist. Public base URL maps to the remote folder; only the file name is appended."
-            copy.testNote = "Test asks the server about the folder and checks the login. It never uploads."
+            copy.testNote = "Test asks the server about the folder and, when a login is set, checks it. It never uploads."
         case .ftp:
             copy.endpointPlaceholder = "ftp://ftp.example.com/uploads"; copy.folderPlaceholder = "screenshots (under the endpoint)"
             copy.usernamePlaceholder = "Blank for anonymous access"
@@ -431,7 +269,6 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         formHelp.maximumNumberOfLines = 0; formHelp.preferredMaxLayoutWidth = contentWidth
         formPage.addArrangedSubview(formHelp)
         formPage.setCustomSpacing(Space.s4, after: rows["password"]!.stack)
-        formPage.isHidden = true
     }
 
     private var keychainSource: Bool { sourcePopup.indexOfSelectedItem == 1 }
@@ -467,7 +304,7 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         for (index, transport) in PublishingProtocol.allCases.enumerated() { protocolPopup.item(at: index)?.isEnabled = !unavailable.contains(transport) }
     }
 
-    private func showForm(for destination: PublishingDestination?) {
+    func showForm(for destination: PublishingDestination?) {
         editing = destination
         let settings = destination?.settings ?? PublishingSettings()
         nameField.stringValue = destination?.name ?? ""
@@ -483,9 +320,7 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         aclCheckbox.state = options.publicReadACL ? .on : .off
         passwordField.stringValue = destination.map { settings.storesSecretInKeychain ? passwordFor($0) : "" } ?? ""
         showsLegacySFTPEndpoint = settings.transport == .sftp && !settings.endpoint.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        formResult.show(.idle, ""); listStatus.show(.idle, "")
-        listPage.isHidden = true; formPage.isHidden = false
-        listFooter.isHidden = true; formFooter.isHidden = false
+        formResult.show(.idle, "")
         refreshForm(); updateDefaultButton(); scrollToTop(); notifyPreferredHeight()
     }
 
@@ -536,7 +371,7 @@ final class PublishingDestinationsView: NSView, NSTableViewDataSource, NSTableVi
         do { let draft = try makeDraft(); showResult(.working, "Testing…"); onTest?(draft.destination, draft.password) }
         catch { showStatus(error.localizedDescription) }
     }
-    @objc func cancelFormTapped() { formResult.show(.idle, ""); showList() }
+    @objc func cancelFormTapped() { formResult.show(.idle, ""); onCancel?() }
 }
 
 extension PublishingProtocol {
@@ -646,40 +481,5 @@ final class DefaultPillView: NSView {
     private func refreshColors() {
         let color = emphasized ? NSColor.alternateSelectedControlTextColor : Palette.Text.primary
         label.textColor = color; glyph.contentTintColor = color
-    }
-}
-
-/// A destination row: name, transport, and a Default pill for the destination Upload uses.
-final class DestinationRowView: NSTableCellView {
-    let nameField: NSTextField, transportField: NSTextField
-    private(set) var pill: DefaultPillView?
-    private typealias Palette = DesignTokens.Palette
-
-    init(name: String, transport: String, isDefault: Bool) {
-        nameField = NSTextField(labelWithString: name); transportField = NSTextField(labelWithString: transport)
-        super.init(frame: .zero)
-        nameField.font = DesignTokens.Typography.font(.body); nameField.lineBreakMode = .byTruncatingTail
-        transportField.font = DesignTokens.Typography.font(.caption)
-        nameField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        let flexible = NSView(); flexible.setContentHuggingPriority(.init(1), for: .horizontal)
-        var views: [NSView] = [nameField, transportField, flexible]
-        if isDefault { let pill = DefaultPillView(); self.pill = pill; views.append(pill) }
-        let stack = NSStackView(views: views); stack.orientation = .horizontal; stack.alignment = .centerY; stack.spacing = DesignTokens.Space.s3
-        stack.distribution = .fill; stack.translatesAutoresizingMaskIntoConstraints = false; addSubview(stack)
-        NSLayoutConstraint.activate([stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: DesignTokens.Space.s2),
-                                     stack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -DesignTokens.Space.s2),
-                                     stack.centerYAnchor.constraint(equalTo: centerYAnchor)])
-        textField = nameField
-        setAccessibilityLabel([name, transport, isDefault ? "Default" : nil].compactMap { $0 }.joined(separator: ", "))
-        refreshColors()
-    }
-    required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
-
-    override var backgroundStyle: NSView.BackgroundStyle { didSet { refreshColors() } }
-    private func refreshColors() {
-        let emphasized = backgroundStyle == .emphasized
-        nameField.textColor = emphasized ? .alternateSelectedControlTextColor : Palette.Text.primary
-        transportField.textColor = emphasized ? .alternateSelectedControlTextColor : Palette.Text.secondary
-        pill?.emphasized = emphasized
     }
 }

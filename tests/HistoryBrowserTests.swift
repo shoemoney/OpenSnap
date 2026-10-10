@@ -509,7 +509,7 @@ struct HistoryBrowserTests {
                 try browser { browser,_ in
                     laidOut(browser,width:1000,height:720)
                     let scroll = try grid(browser).enclosingScrollView.unwrap("grid scroll view"), content = browser.window!.contentView!
-                    try expect(!browser.emptyState.isHidden && browser.emptyTitle.stringValue == "No history yet.","Empty History shows no empty state")
+                    try expect(!browser.emptyState.isHidden && browser.emptyTitle.stringValue == "No history yet","Empty History shows no empty state")
                     let box = browser.emptyState.convert(browser.emptyState.bounds,to:content), well = scroll.convert(scroll.bounds,to:content)
                     try expect(abs(box.midX - well.midX) < 1.5 && abs(box.midY - well.midY) < 1.5,"Empty state is off-centre: \(box) in \(well)")
                     // This test process has no main menu, so no shortcut is invented.
@@ -560,7 +560,7 @@ struct HistoryBrowserTests {
                     try expect(Set(HistoryBrowser.Action.allCases.map(\.icon)).count == 7,"Each action has its own icon")
                     for (button,action) in zip(row,HistoryBrowser.Action.allCases) {
                         try expect(button.toolTip == action.title && button.accessibilityLabel() == action.title,"\(action) has no tooltip and accessibility name")
-                        try expect(button.image != nil && button.imagePosition == .imageOnly,"\(action) has no glyph")
+                        try expect(button.image != nil && (button.imagePosition == .imageOnly || button.imagePosition == .imageLeading),"\(action) has no glyph")
                         let source = ChromeIcons.resolve(action.icon,pointSize:DesignTokens.Typography.iconInline).source
                         if case .sfSymbol = source { throw Failure("\(action) draws an SF Symbol instead of the chrome icon family: \(source)") }
                         try expect(button.image?.isTemplate == true,"\(action) glyph is a template image, so it follows the label colour")
@@ -568,12 +568,50 @@ struct HistoryBrowserTests {
                     }
                     // The old layout stacked the same seven in two text-button rows under the details.
                     let textButtons = descendants(browser.window!.contentView!).compactMap { $0 as? NSButton }.filter { !($0 is NSPopUpButton) && $0 !== browser.clearFiltersButton && !$0.title.isEmpty && $0.bezelStyle == .rounded }
-                    try expect(textButtons.isEmpty,"Text buttons are back under the grid: \(textButtons.map(\.title))")
+                    try expect(textButtons.allSatisfy { $0.image != nil },"Only the action row carries labels, and each beside its icon: \(textButtons.map(\.title))")
                     let menu = try grid(browser).menu.unwrap("context menu")
                     try expect(menu.items.map(\.title) == HistoryBrowser.Action.allCases.map(\.title),"Context menu items: \(menu.items.map(\.title))")
                     let a = item("A",action:"Shared",link:true); browser.update(items:[a]); browser.select(ids:[a.id])
                     browser.onOpen = { _ in }; browser.onCopy = { _ in }
                     try expect(row[0].isEnabled && row[1].isEnabled && !row[2].isEnabled,"Row buttons keep their validation")
+                }
+            }),
+            ("The action row shows icon and label while the window holds them, keeps the three that take something away labelled at the 880 minimum, and never clips (R1-012)", {
+                try browser { browser,_ in
+                    let content = try browser.window?.contentView.unwrap("content view") ?? NSView()
+                    func show(width: CGFloat) throws -> [HistoryBrowser.Action: NSButton] {
+                        let frame = browser.window!.frameRect(forContentRect: NSRect(x:0,y:0,width:width,height:720))
+                        browser.window!.setFrame(NSRect(origin:browser.window!.frame.origin,size:frame.size),display:false)
+                        content.layoutSubtreeIfNeeded(); browser.windowDidResize(Notification(name:NSWindow.didResizeNotification,object:browser.window)); content.layoutSubtreeIfNeeded()
+                        let row = browser.actionRow.arrangedSubviews.compactMap { $0 as? NSButton }.filter { !($0 is NSPopUpButton) }
+                        return Dictionary(uniqueKeysWithValues: zip(HistoryBrowser.Action.allCases,row))
+                    }
+                    let destructive: [HistoryBrowser.Action] = [.remove,.deleteFiles,.deleteRemote]
+                    var labels: [CGFloat: HistoryBrowser.ActionLabels] = [:]
+                    for width in [HistoryBrowser.minimumSize.width,1000,1400] as [CGFloat] {
+                        let buttons = try show(width:width)
+                        labels[width] = browser.actionLabels
+                        let rowBox = browser.actionRow.convert(browser.actionRow.bounds,to:content), formatBox = try descendants(content).compactMap { $0 as? NSPopUpButton }.first { $0.accessibilityLabel() == "History drag export format" }.unwrap("format popup")
+                        for (action,button) in buttons {
+                            let shown = !button.title.isEmpty
+                            try expect(shown == (browser.actionLabels == .all || (browser.actionLabels == .destructiveOnly && destructive.contains(action))), "\(Int(width)): \(action) label follows the mode \(browser.actionLabels)")
+                            if shown { try expect(button.title == action.shortTitle && button.imagePosition == .imageLeading && (button.font?.pointSize ?? 0) >= 20, "\(Int(width)): \(action) shows its short title beside its icon at 20 pt") }
+                            else { try expect(button.imagePosition == .imageOnly && button.image != nil && button.toolTip == action.title, "\(Int(width)): \(action) is an icon with its full name as tooltip") }
+                            let box = button.convert(button.bounds,to:content)
+                            try expect(box.minX >= rowBox.minX - 0.5 && box.maxX <= rowBox.maxX + 0.5 && box.maxX <= content.bounds.maxX,
+                                       "\(Int(width)): \(action) sits inside the row, unclipped (\(box) in \(rowBox))")
+                            try expect(box.width >= DesignTokens.Size.tool.width - 0.5 && box.height >= DesignTokens.Size.control - 0.5, "\(Int(width)): \(action) is a full-size target (\(box.size))")
+                        }
+                        try expect(destructive.allSatisfy { !buttons[$0]!.title.isEmpty }, "\(Int(width)): Hide, Trash and Delete from Web keep their labels")
+                        let formatInFooter = formatBox.convert(formatBox.bounds,to:content)
+                        try expect(browser.footerRow.arrangedSubviews.contains(formatBox) && content.bounds.contains(formatInFooter) && formatInFooter.maxX <= content.bounds.maxX - DesignTokens.Space.s4 + 0.5,
+                                   "\(Int(width)): the drag format sits at the end of the footer line, whole (\(formatInFooter))")
+                    }
+                    try expect(labels[HistoryBrowser.minimumSize.width] == .destructiveOnly, "at the 880 minimum only the three destructive ones carry labels (\(String(describing: labels[880])))")
+                    try expect(labels[1000] == .all, "the default 1000 pt window labels every action (\(String(describing: labels[1000])))")
+                    try expect(labels[1400] == .all, "a wide window labels every action (\(String(describing: labels[1400])))")
+                    try expect(HistoryBrowser.Action.remove.icon == .folderMinus && HistoryBrowser.Action.remove.icon != .eyeSlash && HistoryBrowser.Action.remove.shortTitle == "Hide",
+                               "Hide from History is a folder-minus, not the editor's eye-slash (which means hide the window there)")
                 }
             }),
             ("The footer pluralises and stays on screen in every state", {
