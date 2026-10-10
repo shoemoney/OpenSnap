@@ -12,6 +12,9 @@ once ran its EXIT cleanup against the real defaults domain). Proved, each with a
  (e) cleanup runs BEFORE the real-store compare (an evil `defaults` that damages a real store during cleanup must make stop fail);
  (f) a tampered real store makes stop exit non-zero; SIGKILL follows an ignored SIGTERM;
  (g) --aws never echoes credential content (sentinel in a fake credentials file never appears in any output or file);
+ (i) the panel-service watchdog: only the exact openAndSavePanelService executable is ever a kill target, only above the RSS threshold
+     (override honoured), kills are timestamped in the log, start/stop write and remove the pid file and stop keeps its cleanup order;
+     `ps` and `kill` are replaced by fakes (E2E_WATCHDOG_PS / E2E_WATCHDOG_KILL) so no test signals a real process.
  (h) the E2E inventory (tools/e2e-inventory.py): docs/design/e2e/inventory.json and the coverage matrix match the sources, every FAIcon case and
      menu symbol is listed, every pre-filled proof names a real test, and scratch copies with a drift or a bad proof make --check fail.
 Run: python3 -I tools/test-e2e-session-guard.py
@@ -113,6 +116,8 @@ def env_problem(env):
         return "TMPDIR is not the scratch tmp"
     if env.get("E2E_DEFAULTS") not in (SAFE["defaults"], SAFE["evil"]):
         return "E2E_DEFAULTS is not a fake recorder"
+    if env.get("E2E_WATCHDOG_PS") != SAFE["fake_ps"] or env.get("E2E_WATCHDOG_KILL") != SAFE["fake_kill"]:
+        return "the watchdog ps/kill are not the fakes"
     return None
 
 
@@ -120,7 +125,7 @@ def run(script, args, extra_env=None, defaults=None, timeout=120):
     """The only way this file executes a copy of e2e-session.sh: scratch HOME and TMPDIR, fake defaults, recorded."""
     env = dict(os.environ, **(extra_env or {}))
     env.update(HOME=SAFE["home"], TMPDIR=SAFE["tmp"], E2E_DEFAULTS=defaults or SAFE["defaults"], E2E_STOP_TIMEOUT=env.get("E2E_STOP_TIMEOUT", "2"),
-               E2E_LAUNCH_WAIT="0.4")
+               E2E_LAUNCH_WAIT="0.4", E2E_WATCHDOG_PS=SAFE["fake_ps"], E2E_WATCHDOG_KILL=SAFE["fake_kill"], E2E_WATCHDOG_INTERVAL="0.1")
     env.pop("E2E_STATE_DIR", None)
     problem = env_problem(env)
     assert problem is None, problem
@@ -160,6 +165,10 @@ def reap():
     """Test hygiene only: kill any fake app still running and wipe scratch tmp (never touches anything outside the scratch dir)."""
     for path in sessions():
         pid = read_session(path).get("pid", "")
+        if pid.isdigit() and alive(pid):
+            os.kill(int(pid), signal.SIGKILL)
+    for path in state_dir().glob("*.watchdog.pid"):
+        pid = path.read_text().strip()
         if pid.isdigit() and alive(pid):
             os.kill(int(pid), signal.SIGKILL)
     shutil.rmtree(SAFE["tmp"], ignore_errors=True)
@@ -250,7 +259,7 @@ def drop_harness(text, bad_id, base):
     victim.write_bytes(b"<plist>real</plist>")
     harness = Path(base) / "drop-harness.sh"
     harness.write_text(f'REAL_ID={REAL_ID}\nDEFAULTS="$E2E_DEFAULTS"\n{functions}\ndrop_defaults "{bad_id}"\n')
-    env = dict(os.environ, HOME=SAFE["home"], TMPDIR=SAFE["tmp"], E2E_DEFAULTS=SAFE["defaults"])
+    env = dict(os.environ, HOME=SAFE["home"], TMPDIR=SAFE["tmp"], E2E_DEFAULTS=SAFE["defaults"], E2E_WATCHDOG_PS=SAFE["fake_ps"], E2E_WATCHDOG_KILL=SAFE["fake_kill"])
     assert env_problem(env) is None
     Path(SAFE["log"]).write_text("")
     subprocess.run(["sh", str(harness)], capture_output=True, text=True, env=env, timeout=30)
@@ -307,7 +316,7 @@ def test_static():
           "static: the only launch line runs the temp copy ($TMP/...)")
     check(re.search(r"nohup env -i PATH=\S+ HOME=\"\$TMP/home\" CFFIXED_USER_HOME=\"\$TMP/home\" TMPDIR=\"\$TMP/tmp\"", code) is not None
           and 'OPENSNAP_APP_SUPPORT="$TMP/support"' in code, "static: launched under env -i with throwaway HOME, CFFIXED_USER_HOME, TMPDIR and OPENSNAP_APP_SUPPORT")
-    for kind in ("top", "drop", "rm", "dir", "pid", "order"):
+    for kind in ("top", "drop", "rm", "dir", "pid", "order", "watchdog"):
         check(f"# protection:{kind}" in text, f"static: protection:{kind} is tagged (so its mutant can be built)")
     check(text.index("# protection:top") < text.index("trap cleanup EXIT"), "static: the id is validated before the failure trap is installed")
     stop_body = text[text.index("cmd_stop() {"):]
@@ -603,6 +612,160 @@ def test_inventory(base):
         check(inventory_check(tree).returncode != 0, f"inventory (can fail): {label} makes --check fail")
 
 
+PANEL = "com.apple.appkit.xpc.openAndSavePanelService"
+PANEL_PATH = f"/System/Library/Frameworks/AppKit.framework/Versions/C/XPCServices/{PANEL}.xpc/Contents/MacOS/{PANEL}"
+THRESHOLD_KB = 2097152
+
+
+def ps_listing(rows):
+    return "".join(f"{pid:>6} {rss:>9} {comm}\n" for pid, rss, comm in rows)
+
+
+def set_fake_ps(rows):
+    Path(SAFE["fake_ps"]).write_text("#!/bin/sh\ncat <<'EOF'\n" + ps_listing(rows) + "EOF\n")
+    Path(SAFE["fake_ps"]).chmod(0o755)
+
+
+def killed_pids():
+    path = Path(SAFE["kill_log"])
+    return sorted(int(line.split()[-1]) for line in path.read_text().splitlines() if line.startswith("-9 ")) if path.exists() else []
+
+
+def watch(script, rows, session_id, extra_env=None, ticks="1"):
+    """Run the `watchdog` subcommand (bounded by ticks) over a fake process table; returns (killed pids, log lines)."""
+    reap()
+    forge_session(SAFE["base"], session_id, name=f"{session_id}.session")
+    set_fake_ps(rows)
+    Path(SAFE["kill_log"]).write_text("")
+    result = run(script, ["watchdog", session_id], dict({"E2E_WATCHDOG_TICKS": ticks}, **(extra_env or {})))
+    log = state_dir() / f"{session_id}.watchdog.log"
+    return result, killed_pids(), (log.read_text().splitlines() if log.exists() else [])
+
+
+def test_watchdog(base, app):
+    text = SCRIPT.read_text()
+    ident = f"{REAL_ID}.e2e-42001"
+    over, under = THRESHOLD_KB + 1, THRESHOLD_KB
+    rows = [(900, over, PANEL_PATH),                                           # the target: exact name, above threshold
+            (901, 4096, PANEL_PATH),                                           # exact name, tiny
+            (902, under, PANEL_PATH),                                          # exact name, exactly AT the threshold: not above it
+            (903, over * 8, "/Applications/Some App.app/Contents/MacOS/Some App"),                     # huge but a different process
+            (904, over * 8, f"/tmp/{PANEL}-helper"),                          # prefix of the name
+            (905, over * 8, f"/Users/me/not-{PANEL}"),                        # suffix match only
+            (906, over * 8, f"/tmp/{PANEL}.sh"),                              # name plus an extension
+            (907, over * 8, "/System/Library/CoreServices/launchservicesd"),
+            (908, over * 8, "/usr/bin/vim"),
+            (909, over * 8, f"/tmp/dir with {PANEL} in it/runner"),           # name only in a parent directory
+            (910, over + 5, f"/tmp/Odd Path/{PANEL}")]                         # exact basename under a path with a space
+    result, killed, log = watch(SCRIPT, rows, ident)
+    check(result.returncode == 0, f"watchdog: the bounded loop exits 0 ({result.all_output.strip()[-160:]})")
+    check(killed == [900, 910], f"watchdog: only the exact panel service above the threshold is SIGKILLed (killed {killed})")
+    check(len(log) == 2 and all(re.match(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d[+-]\d{4} killed pid (900|910) rss \d+KB \(threshold 2097152KB\) " + PANEL + r"$", l) for l in log),
+          f"watchdog: each kill is logged with a timestamp, pid, rss and the threshold ({log[:1]})")
+    check(Path(SAFE["kill_log"]).read_text().splitlines() == ["-9 900", "-9 910"],
+          "watchdog: every kill is a -9 on exactly the logged pids")
+
+    result, killed, log = watch(SCRIPT, [(900, under, PANEL_PATH), (901, 10, PANEL_PATH)], ident)
+    check(not killed and not log, "watchdog: a panel service at or below the threshold is left alone and nothing is logged")
+    result, killed, log = watch(SCRIPT, rows, ident, {"E2E_PANEL_WATCHDOG_KB": "1000"})
+    check(killed == [900, 901, 902, 910], f"watchdog: E2E_PANEL_WATCHDOG_KB lowers the threshold (killed {killed})")
+    result, killed, log = watch(SCRIPT, rows, ident, {"E2E_PANEL_WATCHDOG_KB": "999999999999"})
+    check(not killed, "watchdog: E2E_PANEL_WATCHDOG_KB raises the threshold")
+    result, killed, log = watch(SCRIPT, rows, ident, {"E2E_PANEL_WATCHDOG_KB": "lots"})
+    check(killed == [900, 910], "watchdog: a non-numeric override falls back to the 2 GB default")
+    result, killed, log = watch(SCRIPT, [(1, over, PANEL_PATH), (0, over, PANEL_PATH), (911, over, PANEL_PATH)], ident)
+    check(killed == [911], f"watchdog: pid 0 and 1 are never signalled (killed {killed})")
+
+    # The loop ends when the session file is gone.
+    reap()
+    set_fake_ps([(900, over, PANEL_PATH)])
+    Path(SAFE["kill_log"]).write_text("")
+    result = run(SCRIPT, ["watchdog", ident], {"E2E_WATCHDOG_TICKS": "50"})
+    check(result.returncode == 0 and not killed_pids() and not (state_dir() / f"{ident}.watchdog.log").exists(), "watchdog: with no session file the loop does not run, even unbounded")
+    result = run(SCRIPT, ["watchdog", REAL_ID], {"E2E_WATCHDOG_TICKS": "1"})
+    check(result.returncode == 2 and "refusing" in result.stderr, "watchdog: a real/odd session id is refused")
+
+    # Can fail: matching on a substring of the command instead of the exact name kills the decoys too.
+    mutant = script_copy(base, "mut-watch-match", text.replace('parts[n] == name', 'index($0, "openAndSavePanelService") > 0'))
+    check(mutant.read_text() != text, "watchdog (can fail): the match mutation applied")
+    result, killed, log = watch(mutant, rows, ident)
+    check(killed != [900, 910] and {904, 905, 906, 909} <= set(killed), f"watchdog (can fail): a loose name match also kills the decoys (killed {killed})")
+    mutant = script_copy(base, "mut-watch-threshold", text.replace("rss + 0 > max + 0", "rss + 0 >= 0"))
+    result, killed, log = watch(mutant, rows, ident)
+    check({901, 902} <= set(killed), f"watchdog (can fail): ignoring the threshold kills small panel services (killed {killed})")
+    mutant = script_copy(base, "mut-watch-pid1", text.replace("pid + 0 > 1 && ", ""))
+    result, killed, log = watch(mutant, [(1, over, PANEL_PATH)], ident)
+    check(killed == [1], f"watchdog (can fail): without the pid guard pid 1 is a kill target (killed {killed})")
+    reap()
+
+    # Lifecycle through start/status/stop (a fake app, the fake ps lists nothing over the threshold).
+    set_fake_ps([])
+    result = start(app)
+    session = read_session(sessions()[0])
+    session_id = session["id"]
+    pidfile = state_dir() / f"{session_id}.watchdog.pid"
+    wpid = pidfile.read_text().strip() if pidfile.exists() else ""
+    check(result.returncode == 0 and wpid.isdigit() and alive(wpid), f"watchdog lifecycle: start writes {pidfile.name} and the watchdog is running (pid {wpid})")
+    check("panel watchdog" in result.stdout and "2097152KB" in result.stdout, "watchdog lifecycle: start reports the watchdog and its threshold")
+    command = subprocess.run(["ps", "-o", "command=", "-p", wpid], capture_output=True, text=True).stdout
+    check(command.strip().endswith(f"watchdog {session_id}"), f"watchdog lifecycle: the process is this script's watchdog for this session ({command.strip()[-60:]})")
+    status = run(SCRIPT, ["status"])
+    check(f"panel watchdog pid {wpid} running, threshold 2097152KB, kills 0" in status.stdout, "watchdog lifecycle: status reports the watchdog, threshold and kill count")
+    # A kill shows up in the log, in status and in stop's output.
+    set_fake_ps([(920, over, PANEL_PATH)])
+    deadline = time.time() + 5
+    log_path = state_dir() / f"{session_id}.watchdog.log"
+    while time.time() < deadline and not (log_path.exists() and log_path.read_text()):
+        time.sleep(0.1)
+    set_fake_ps([])
+    check(log_path.exists() and " killed pid 920 " in log_path.read_text(), "watchdog lifecycle: the running watchdog killed the over-threshold panel service and logged it")
+    status = run(SCRIPT, ["status"])
+    check(re.search(r"kills [1-9]", status.stdout) is not None, "watchdog lifecycle: status counts the kills")
+    result = stop()
+    time.sleep(0.4)
+    check(result.returncode == 0 and "RESULT stores unchanged" in result.stdout and " killed pid 920 " in result.stdout, "watchdog lifecycle: stop prints the kills and still ends with unchanged stores")
+    check(not alive(wpid) and not pidfile.exists() and not log_path.exists(), "watchdog lifecycle: stop ends the watchdog and removes the pid file and log")
+    check(not alive(session["pid"]) and not Path(session["dir"]).exists() and result.stdout.index("watchdog         stopped") < result.stdout.index("real stores      after:"),
+          "watchdog lifecycle: the app and dir are gone and the watchdog is stopped before the final store compare")
+
+    # Order: the app SIGTERM, defaults drop and dir removal precede the compare exactly as before (evil defaults damage is still caught).
+    reap()
+    start(app, defaults=SAFE["evil"])
+    result = stop(defaults=SAFE["evil"])
+    check(result.returncode != 0 and "RESULT STORES CHANGED" in result.stdout, "watchdog lifecycle: damage done during cleanup is still caught after the watchdog was added")
+
+    # stop never signals a pid-file entry that is not this session's watchdog.
+    reap()
+    start(app)
+    session = read_session(sessions()[0])
+    pidfile = state_dir() / f"{session['id']}.watchdog.pid"
+    real_wpid = pidfile.read_text().strip()
+    os.kill(int(real_wpid), signal.SIGKILL)
+    decoy = subprocess.Popen(["sleep", "300"])
+    try:
+        pidfile.write_text(f"{decoy.pid}\n")
+        stop()
+        time.sleep(0.3)
+        check(decoy.poll() is None, "watchdog lifecycle: a pid-file pid that is not this session's watchdog is never signalled")
+    finally:
+        decoy.kill(); decoy.wait()
+    reap()
+    mutant = script_copy(base, "mut-watch-stop", text.replace('*" watchdog $id") kill', '*) kill'))
+    start(app, script=mutant)
+    session = read_session(sessions()[0])
+    pidfile = state_dir() / f"{session['id']}.watchdog.pid"
+    os.kill(int(pidfile.read_text().strip()), signal.SIGKILL)
+    decoy = subprocess.Popen(["sleep", "300"])
+    try:
+        pidfile.write_text(f"{decoy.pid}\n")
+        stop(script=mutant)
+        time.sleep(0.3)
+        check(decoy.poll() is not None, "watchdog lifecycle (can fail): with the identity check removed stop signals the decoy")
+    finally:
+        decoy.kill(); decoy.wait()
+    reap()
+
+
 def test_runs_were_safe():
     check(len(RUNS) > 0 and all(env_problem(env) is None for env in RUNS),
           f"every one of the {len(RUNS)} script runs used the scratch HOME and TMPDIR and a fake defaults recorder")
@@ -610,8 +773,12 @@ def test_runs_were_safe():
           and env_problem({"HOME": SAFE["home"], "TMPDIR": SAFE["tmp"]}) is not None
           and env_problem({"HOME": SAFE["home"], "TMPDIR": SAFE["tmp"], "E2E_DEFAULTS": "/usr/bin/defaults"}) is not None
           and env_problem({"HOME": SAFE["home"], "TMPDIR": os.environ.get("TMPDIR", "/tmp"), "E2E_DEFAULTS": SAFE["defaults"]}) is not None
-          and env_problem({"HOME": SAFE["home"], "TMPDIR": SAFE["tmp"], "E2E_DEFAULTS": SAFE["defaults"]}) is None,
+          and env_problem({"HOME": SAFE["home"], "TMPDIR": SAFE["tmp"], "E2E_DEFAULTS": SAFE["defaults"], "E2E_WATCHDOG_PS": SAFE["fake_ps"], "E2E_WATCHDOG_KILL": SAFE["fake_kill"]}) is None,
           "the env checker rejects a real HOME, a real TMPDIR, a missing recorder and the real /usr/bin/defaults")
+    check(env_problem({"HOME": SAFE["home"], "TMPDIR": SAFE["tmp"], "E2E_DEFAULTS": SAFE["defaults"]}) is not None
+          and env_problem({"HOME": SAFE["home"], "TMPDIR": SAFE["tmp"], "E2E_DEFAULTS": SAFE["defaults"], "E2E_WATCHDOG_PS": "/bin/ps", "E2E_WATCHDOG_KILL": SAFE["fake_kill"]}) is not None
+          and env_problem({"HOME": SAFE["home"], "TMPDIR": SAFE["tmp"], "E2E_DEFAULTS": SAFE["defaults"], "E2E_WATCHDOG_PS": SAFE["fake_ps"], "E2E_WATCHDOG_KILL": "kill"}) is not None,
+          "the env checker rejects a run without the fake ps and kill (so a test can never signal a real process)")
 
 
 with tempfile.TemporaryDirectory(prefix="e2e-guard-test.") as scratch:
@@ -619,7 +786,13 @@ with tempfile.TemporaryDirectory(prefix="e2e-guard-test.") as scratch:
     scratch_home = make_home(scratch)
     good, evil, log = make_recorders(scratch)
     (Path(scratch) / "tmp").mkdir()
-    SAFE.update(home=str(scratch_home), tmp=str(Path(scratch) / "tmp"), defaults=str(good), evil=str(evil), log=str(log))
+    fake_ps, fake_kill, kill_log = Path(scratch) / "fake-ps.sh", Path(scratch) / "fake-kill.sh", Path(scratch) / "fake-kill.log"
+    fake_ps.write_text("#!/bin/sh\n")
+    fake_kill.write_text(f"#!/bin/sh\nprintf '%s\\n' \"$*\" >> '{kill_log}'\n")
+    for path in (fake_ps, fake_kill):
+        path.chmod(0o755)
+    SAFE.update(home=str(scratch_home), tmp=str(Path(scratch) / "tmp"), defaults=str(good), evil=str(evil), log=str(log),
+                fake_ps=str(fake_ps), fake_kill=str(fake_kill), kill_log=str(kill_log), base=scratch)
     app = fake_app(scratch)
     try:
         test_static()
@@ -628,6 +801,7 @@ with tempfile.TemporaryDirectory(prefix="e2e-guard-test.") as scratch:
         test_kill_fallback(scratch)
         test_protections(scratch, app)
         test_aws(scratch, app)
+        test_watchdog(scratch, app)
         test_inventory(scratch)
         test_runs_were_safe()
     finally:
