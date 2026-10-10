@@ -789,7 +789,12 @@ struct HistoryBrowserTests {
                     browser.update(items:[taken]); browser.select(ids:[taken.id]); laidOut(browser,width:1000,height:640)
                     let afterDelete = descendants(browser.window!.contentView!).compactMap { $0 as? NSTextField }.first { $0.accessibilityLabel() == "Size" }
                     try expect(afterDelete?.stringValue == "800 × 600 (published)","After Delete from Web the Size is unchanged: \(afterDelete?.stringValue ?? "none")")
+                    // R3-009: …and Details says the post is gone instead of leaving a dead address that reads as live.
+                    let destinationAfter = descendants(browser.window!.contentView!).compactMap { $0 as? NSTextField }.first { $0.accessibilityLabel() == "Destination" }
+                    try expect(destinationAfter?.stringValue == "https://cdn.example.invalid/a.png (deleted)","After Delete from Web the Destination says (deleted): \(destinationAfter?.stringValue ?? "none")")
                     browser.update(items:[shared]); browser.select(ids:[shared.id])
+                    let destinationLive = descendants(browser.window!.contentView!).compactMap { $0 as? NSTextField }.first { $0.accessibilityLabel() == "Destination" }
+                    try expect(destinationLive?.stringValue == "https://cdn.example.invalid/a.png","A live post's Destination has no (deleted): \(destinationLive?.stringValue ?? "none")")
                     guard let date else { throw Failure("Missing Date field") }
                     try expect(date.stringValue.hasSuffix("PM"),"The time of day with its AM/PM is in the text: \(date.stringValue)")
                     date.superview?.layoutSubtreeIfNeeded()

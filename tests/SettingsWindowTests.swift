@@ -12,10 +12,15 @@ import AppKit
 @MainActor
 private final class FakeHotkeyBackend: GlobalHotkeyBackend {
     var bindings: [UInt32: GlobalHotkeyBinding] = [:]
+    /// Another app has taken the key: registering fails while this is set.
+    var failRegister = false
     var registeredIDs: Set<UInt32> { Set(bindings.keys) }
     func installHandler(onEvent: @escaping @MainActor @Sendable (UInt32) -> Void) throws {}
     func systemReservedBindings() throws -> Set<GlobalHotkeyBinding> { [] }
-    func register(_ binding: GlobalHotkeyBinding, id: UInt32) throws { bindings[id] = binding }
+    func register(_ binding: GlobalHotkeyBinding, id: UInt32) throws {
+        if failRegister { throw NSError(domain: "FakeHotkeyBackend", code: 1, userInfo: [NSLocalizedDescriptionKey: "That key is already taken by another app."]) }
+        bindings[id] = binding
+    }
     func unregister(id: UInt32) throws { bindings.removeValue(forKey: id) }
     func shutdown() throws { bindings = [:] }
 }
@@ -98,6 +103,7 @@ private enum SettingsWindowTests {
         upload()
         uploadWithPublishing()
         shortcutPause()
+        shortcutPauseFailureAndNotification()
         liveDifferentiateOutline()
         liveDifferentiateRow()
         words()
@@ -989,6 +995,43 @@ private enum SettingsWindowTests {
         controller.window.orderOut(nil)
     }
 
+    /// R3-008: the real application notification drives the pause, and a failure to put the shortcuts back reaches the note.
+    private static func shortcutPauseFailureAndNotification() {
+        let (controller, _, manager, backend, _, _) = makeController()
+        try? manager.install(globalScreen: {}, globalWindow: {}, globalFullscreen: {}, globalFrame: {}, globalUpload: {}, globalShow: {})
+        var custom = GlobalHotkeySettings(); custom.screen = .init(keyCode: UInt32(GlobalHotkeyKeys.choices.first { $0.name == "K" }!.code), modifiers: .command)
+        try? manager.apply(custom)
+        let form = { controller.capture.hotkeyForm! }
+        func note() -> String { form().statusField.stringValue }
+        controller.show(tab: SettingsWindowController.captureTabIndex)
+        controller.activityChanged(key: true, appActive: true)
+        expect(manager.editing && note() == GlobalHotkeyForm.pausedStatus, "key and active on Capture: paused (\(note()))")
+        // The observer wiring itself: the notification AppKit posts, not the controller's own entry point.
+        NotificationCenter.default.post(name: NSApplication.didResignActiveNotification, object: NSApplication.shared)
+        spin(2) { !manager.editing }
+        expect(!manager.editing && backend.bindings[GlobalHotkeyAction.screen.carbonID] != nil && note() == GlobalHotkeyForm.idleLiveStatus,
+               "the real did-resign-active notification puts the shortcuts back and the note follows (\(note()))")
+        NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: NSApplication.shared)
+        controller.activityChanged(key: true)
+        spin(2) { manager.editing }
+        expect(manager.editing, "did-become-active with the window key pauses again")
+        // Putting them back fails: the note says so, to the eye and to VoiceOver, instead of promising they are saved and live.
+        backend.failRegister = true
+        NotificationCenter.default.post(name: NSApplication.didResignActiveNotification, object: NSApplication.shared)
+        spin(2) { !manager.editing }
+        expect(!manager.editing && manager.lastError != nil, "the manager could not re-register (\(String(describing: manager.lastError)))")
+        expect(note().hasPrefix("Error: ") && note().contains("already taken") && (form().statusField.accessibilityValue() as? String) == note(),
+               "the note and its accessibility value carry the manager's error when the pause lifts (\(note()))")
+        expect(form().statusField.textColor == DesignTokens.Palette.feedbackError, "…in the error colour")
+        // Once the key is free the next pause and release restores the plain note.
+        backend.failRegister = false
+        controller.activityChanged(key: true, appActive: true)
+        controller.activityChanged(key: false)
+        expect(!manager.editing && manager.lastError == nil && note() == GlobalHotkeyForm.idleLiveStatus, "a later successful release clears the error from the note (\(note()))")
+        controller.windowHidden()
+        controller.window.orderOut(nil)
+    }
+
     /// R1-018: the current tab's outline follows Differentiate Without Color while the window is up, not only when the tab is next selected.
     private static func liveDifferentiateOutline() {
         let (controller, _, _, _, _, _) = makeController()
@@ -1044,23 +1087,24 @@ private enum SettingsWindowTests {
             let plain = drawn(name)
             let plainRatio = DesignTokens.Palette.contrastRatio(plain.edge, plain.inside)
             // Light only: the accent edge is 1.95:1 there (the finding), while dark already reads at 6:1 or better.
-            expect(plain.border == 1 && (name == .darkAqua || plainRatio < 3) && selected.selectionMark.isHidden, "\(name.rawValue): by default the selected row is a 1 pt accent edge (\(plainRatio):1 against its fill) and no check")
+            expect(plain.border == 1 && (name == .darkAqua || plainRatio < 3) && selected.selectionMark.isHidden, "\(name.rawValue): by default the selected row is a 1 pt accent edge (\(plainRatio):1 against its fill) and no bar")
         }
         DisplayOptions.override = DisplayOptions(differentiateWithoutColor: true)
         NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
-        expect(!selected.selectionMark.isHidden && selected.selectionMark.alphaValue == 1 && selected.selectionMark.image != nil, "turning the option on shows the check on the selected row at once")
+        expect(!selected.selectionMark.isHidden && selected.selectionMark.alphaValue == 1 && selected.selectionMark.intrinsicContentSize == SettingsSelectionBar.size, "turning the option on shows the bar on the selected row at once")
         expect(!other.selectionMark.isHidden && other.selectionMark.alphaValue == 0, "an unselected row keeps the slot, empty, so the names stay aligned")
+        expect(selected.selectionMark.subviews.isEmpty && !(selected.selectionMark is NSImageView), "the selection mark is a bar, never a check glyph like the Default pill's")
         for name in [NSAppearance.Name.aqua, .darkAqua] {
             let marked = drawn(name)
             let ratio = DesignTokens.Palette.contrastRatio(marked.edge, marked.inside)
             expect(marked.border == 2 && ratio >= 3, "\(name.rawValue): under Differentiate Without Color the selected row's edge is 2 pt and \(ratio):1 against the row (needs 3:1)")
         }
         tab.rows[0].onClick?(1)
-        expect(other.selectionMark.alphaValue == 1 && selected.selectionMark.alphaValue == 0, "the check follows the selection")
+        expect(other.selectionMark.alphaValue == 1 && selected.selectionMark.alphaValue == 0, "the bar follows the selection")
         tab.rows[1].onClick?(1)
         DisplayOptions.override = DisplayOptions.none
         NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
-        expect(selected.selectionMark.isHidden && other.selectionMark.isHidden, "turning the option off takes the check and its slot away again")
+        expect(selected.selectionMark.isHidden && other.selectionMark.isHidden, "turning the option off takes the bar and its slot away again")
         selected.appearance = NSAppearance(named: .aqua)
         NSAppearance(named: .aqua)!.performAsCurrentDrawingAppearance { selected.updateLayer() }
         expect(selected.layer?.borderWidth == 1, "and the edge returns to 1 pt")

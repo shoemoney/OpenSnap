@@ -12,11 +12,30 @@ extension AppDelegate {
         return SketchDocument.wholePixels(fitted)
     }
 
+    /// The zoom at which `size` just fits in the window (it may be above 1), nil when there is no screen to fit to.
+    func zoomFitting(_ size: CGSize) -> CGFloat? {
+        guard let capacity = maximumNormalCanvas, size.width > 0, size.height > 0 else { return nil }
+        return min(capacity.width / size.width, capacity.height / size.height)
+    }
+
+    /// After a size change on a snap whose picture is the output (a Resize, a Limit, a corner drag, an Undo): a picture bigger than the window
+    /// is fitted by display zoom, not by a smaller output, so the title and every output stay the picture's own pixels (R3-001). A zoom the
+    /// user chose stays unless it no longer fits; the zoom this method chose follows the size back up to 100%.
+    func refitPictureZoom() {
+        guard !isActualSize, !frameMode, canvas.document.backgroundPNG != nil, let fit = zoomFitting(canvas.outputSize) else { return }
+        var zoom = canvas.zoom
+        if let automatic = pictureFitZoom, abs(zoom - automatic) < 0.0005 { zoom = min(1, fit) }
+        else if zoom > fit { zoom = fit }
+        let automatic: CGFloat? = zoom < 1 && abs(zoom - fit) < 0.0005 ? zoom : nil
+        if abs(zoom - canvas.zoom) >= 0.0005 { setCanvasDisplayZoom(zoom, label: automatic == nil ? "Output" : "Fit") }
+        pictureFitZoom = automatic
+    }
+
     func makeResizeSession() -> ResizePanelSession? {
         guard !terminationStarted, !isActualSize, !frameMode, windowGesture == nil,
               window.attachedSheet == nil, activeResizeSession == nil else { return nil }
         let generation = documentGeneration
-        var baseline: (output: CGSize, source: CGSize, frame: CGRect, zoom: CGFloat, dirty: Bool)?
+        var baseline: (output: CGSize, source: CGSize, frame: CGRect, zoom: CGFloat, fit: CGFloat?, dirty: Bool)?
         // The fields open at the size the title shows; the geometry maps what is typed back into output pixels. Apply moves the base:
         // the title shows the new size and the next edit is measured from it.
         var displayed = titlePixelSize
@@ -38,7 +57,9 @@ extension AppDelegate {
             if baseline == nil {
                 // A request that leaves the picture as it is (Apply or OK straight after an Apply) starts no edit.
                 let unchanged: Bool
-                if let plan = preview.picture { unchanged = plan.scaleTo == nil && plan.crop == nil && self.shownOutput(forPicture: plan.size) == current.output }
+                if let plan = preview.picture {
+                    unchanged = plan.scaleTo == nil && plan.crop == nil && (self.shownOutput(forPicture: plan.size) == current.output || plan.size == current.output)
+                }
                 else { unchanged = preview.rect == nil && preview.output == current.output }
                 if unchanged { return }
                 self.canvas.commitPendingTextEditing()
@@ -46,7 +67,7 @@ extension AppDelegate {
                 // the transient preview begins. Timer saves leave it intact.
                 self.saveRecovery()
                 let first = (output: self.canvas.outputSize, source: self.canvas.canvasSize,
-                             frame: self.window.frame, zoom: self.canvas.zoom, dirty: self.dirty)
+                             frame: self.window.frame, zoom: self.canvas.zoom, fit: self.pictureFitZoom, dirty: self.dirty)
                 guard self.canvas.beginViewportEdit(name: "Resize") else {
                     throw NSError(domain: "OpenSnap", code: 5, userInfo: [NSLocalizedDescriptionKey: "Finish the current edit before resizing."])
                 }
@@ -54,12 +75,16 @@ extension AppDelegate {
             }
             let accepted: Bool
             if let plan = preview.picture {
-                accepted = self.canvas.previewViewportPicture(scaleTo: plan.scaleTo, crop: plan.crop, output: self.shownOutput(forPicture: plan.size))
+                // R3-001: once the picture is rewritten it IS the output (no shown size apart from it): a picture bigger than the window is fitted
+                // by display zoom, so the title and every output carry the typed size and the Original size box has nothing to offer.
+                let rewritten = plan.scaleTo != nil || plan.crop != nil
+                accepted = self.canvas.previewViewportPicture(scaleTo: plan.scaleTo, crop: plan.crop, output: rewritten ? plan.size : self.shownOutput(forPicture: plan.size))
             } else if let rect = preview.rect { accepted = self.canvas.previewViewportCrop(to: rect, outputSize: preview.output) }
             else { accepted = self.canvas.previewViewportResize(to: preview.output) }
             guard accepted else {
                 throw NSError(domain: "OpenSnap", code: 5, userInfo: [NSLocalizedDescriptionKey: "This size exceeds the supported source dimensions. Choose smaller dimensions or restore the image to normal size first."])
             }
+            self.refitPictureZoom()
             self.sizeNormalWindowToCanvas(centered: false)
             self.updateStatus()
         }, onFinish: { [weak self] cancelled in
@@ -69,7 +94,10 @@ extension AppDelegate {
             guard let baseline else { return }
             self.canvas.endViewportEdit(cancelled: cancelled)
             if cancelled {
-                self.canvas.setZoom(baseline.zoom)
+                if abs(self.canvas.zoom - baseline.zoom) >= 0.0005 {
+                    self.setCanvasDisplayZoom(baseline.zoom, label: baseline.fit == nil ? "Output" : "Fit")
+                }
+                self.pictureFitZoom = baseline.fit
                 self.setWindowFrame(baseline.frame)
                 self.dirty = baseline.dirty
                 self.window.isDocumentEdited = baseline.dirty
@@ -94,6 +122,7 @@ extension AppDelegate {
     }
 
     var maximumNormalCanvas: CGSize? {
+        if let maximumNormalCanvasOverride { return maximumNormalCanvasOverride }
         guard let window, let screen = window.screen ?? NSScreen.main,
               let scroll = canvas.enclosingScrollView else { return nil }
         let viewport = scroll.frame.size
@@ -248,6 +277,7 @@ extension AppDelegate {
         guard !isActualSize, let capacity = maximumNormalCanvas,
               let fitted = WindowSizingPolicy.fittedOutput(source: canvas.fullResolutionOutputSize, available: capacity),
               canvas.setPresentationOutputSize(SketchDocument.wholePixels(fitted)) else { fitCanvasToWindow(); return }
+        pictureFitZoom = nil
         setCanvasDisplayZoom(1, label: "Output")
         sizeNormalWindowToCanvas()
         canvas.enclosingScrollView?.contentView.scroll(to: .zero)
@@ -271,7 +301,10 @@ extension AppDelegate {
     }
 
     func finishHistoryResize(previousOutput: CGSize) {
-        guard !isActualSize, !frameMode, previousOutput != canvas.outputSize else { return }
+        guard !isActualSize, !frameMode else { return }
+        let zoom = canvas.zoom
+        refitPictureZoom()
+        guard previousOutput != canvas.outputSize || abs(zoom - canvas.zoom) >= 0.0005 else { return }
         sizeNormalWindowToCanvas(centered: false)
         updateStatus()
     }
@@ -331,6 +364,17 @@ extension AppDelegate {
     func endWindowGesture(cancelled: Bool = false) {
         guard let gesture = windowGesture else { return }
         windowGesture = nil
+        var cancelled = cancelled
+        // R3-002: a corner drag on a snap is a Resize of the picture, one Undo step like the Resize sheet: the dragged size becomes the
+        // picture's own pixels, so the title and every output follow whichever way the Original size box is set.
+        if !cancelled, gesture.generation == documentGeneration, case .corner = gesture.handle,
+           canvas.document.backgroundPNG != nil, canvas.outputSize != gesture.outputSize {
+            let dragged = SketchDocument.wholePixels(canvas.outputSize), zoom = canvas.zoom
+            if canvas.previewViewportPicture(scaleTo: dragged, crop: nil, output: dragged) {
+                refitPictureZoom()
+                if abs(zoom - canvas.zoom) >= 0.0005 { sizeNormalWindowToCanvas(centered: false) }
+            } else { cancelled = true }
+        }
         canvas.endViewportEdit(cancelled: cancelled || gesture.generation != documentGeneration)
         if cancelled && gesture.generation == documentGeneration { setWindowFrame(gesture.windowFrame) }
         window?.makeFirstResponder(canvas); updateStatus()

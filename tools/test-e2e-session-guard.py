@@ -686,7 +686,7 @@ def ledger_mutant(base, name, pick, edit):
 
 
 def test_gap_reason_ledger(base, folder):
-    vocabulary = ("permission", "hardware", "OS-owned", "harness", "unsafe", "AX presence only", "AX value only", "text readout only", "retired")
+    vocabulary = ("permission", "hardware", "OS-owned", "harness", "unsafe", "AX presence only", "AX value only", "text readout only")
     text = (folder / "coverage-matrix.md").read_text()
     check(next(l for l in text.splitlines() if l.startswith("| ID |")).endswith("| reachability note | gap reason |"), "ledger: the matrix ends with the static reachability note and the audited gap reason as separate columns")
     rows = [[c.strip() for c in LEDGER_SPLIT.split(line.strip().strip("|"))] for line in text.splitlines() if line.startswith("| E2E-")]
@@ -721,6 +721,7 @@ def test_gap_reason_ledger(base, folder):
     unv = lambda r: r[10] == "unverified"
     verdicts["an unverified row with no gap reason"] = ledger_mutant(base, "ledger-blank", unv, lambda r: r.__setitem__(13, ""))
     verdicts["an unverified row whose reason is outside the vocabulary"] = ledger_mutant(base, "ledger-vocab", unv, lambda r: r.__setitem__(13, "printer"))
+    verdicts["an unverified row whose reason is `retired` (a class, not a gap reason)"] = ledger_mutant(base, "ledger-retired-reason", unv, lambda r: r.__setitem__(13, "retired"))
     verdicts["an unverified row with two reasons"] = ledger_mutant(base, "ledger-two", unv, lambda r: r.__setitem__(13, r[13] + ", harness"))
     verdicts["an E2E row that carries a gap reason"] = ledger_mutant(base, "ledger-e2e", lambda r: r[10] == "E2E", lambda r: r.__setitem__(13, "unsafe"))
     verdicts["a rendered row that carries a gap reason"] = ledger_mutant(base, "ledger-rendered", lambda r: r[10] == "rendered", lambda r: r.__setitem__(13, "harness"))
@@ -733,6 +734,9 @@ def test_gap_reason_ledger(base, folder):
     for label, (tree, ident) in verdicts.items():
         result = inventory_check(tree)
         check(result.returncode != 0 and ident in (result.stdout + result.stderr), f"ledger (can fail): {label} makes --check fail and names {ident}")
+    retired_tree, _ = verdicts["an unverified row whose reason is `retired` (a class, not a gap reason)"]
+    retired_result = inventory_check(retired_tree)
+    check("use class retired" in (retired_result.stdout + retired_result.stderr), "ledger (can fail): a `retired` gap reason is refused with a message that says to use class retired")
     # Moving only the static note (the reason still agrees with observed) must NOT fail: the two columns are allowed to differ.
     tree, _ = ledger_mutant(base, "ledger-static-ok", lambda r: unv(r) and r[13] == "AX presence only", lambda r: r.__setitem__(12, "gap: printer"))
     result = inventory_check(tree)

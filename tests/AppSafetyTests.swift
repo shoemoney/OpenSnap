@@ -172,6 +172,9 @@ final class AppSafetyHotkeyManager: GlobalHotkeyEditing {
         screen = globalScreen; fullscreen = globalFullscreen; frame = globalFrame; upload = globalUpload; show = globalShow
     }
     func unregister() throws { Self.unregistrations += 1 }
+    /// Whether the Settings window is holding the shortcuts paused (the real manager's `editing`).
+    private(set) var editing = false
+    func setEditing(_ value: Bool) { editing = value }
 }
 
 // Unexpected file dialogs fail the test instead of blocking or showing UI.
@@ -179,6 +182,8 @@ final class AppSafetyFilePanel {
     struct Answer {
         let response: NSApplication.ModalResponse
         var url: URL? = nil
+        /// Runs while the panel is "open", with the panel, so a test can look at and click the accessory like a person would.
+        var whileOpen: (@MainActor (AppSafetyFilePanel) -> Void)? = nil
     }
     nonisolated(unsafe) static var answers: [Answer] = []
     var title = ""
@@ -200,6 +205,7 @@ final class AppSafetyFilePanel {
         if !Self.answers.isEmpty {
             let answer = Self.answers.removeFirst()
             url = answer.url
+            if let whileOpen = answer.whileOpen { MainActor.assumeIsolated { whileOpen(self) } }
             return answer.response
         }
         AppSafetyAlert.unexpected.append("Unexpected file dialog")
@@ -546,8 +552,14 @@ enum AppSafetyTests {
         preferences.simulatesVisibility = true; preferences.shown = true
         app.receiveCapture(.failure(AppSafetyCaptureCoordinator.cancellation))
         try expect(preferences.isVisible, "Cancelled capture retains Preferences")
+        // R3-008: Settings in front on Capture has the global shortcuts paused; ordering it out for a capture must put them back.
+        let settings = try app.settingsController.b6Unwrap("the Settings controller")
+        settings.show(tab: SettingsWindowController.captureTabIndex)
+        settings.activityChanged(key: true, appActive: true)
+        try expect(app.hotkeys.editing, "Settings key and active on Capture pauses the shortcuts")
         app.receiveCapture(.success(try image()))
         try expect(!preferences.isVisible, "Accepted Snap dismisses Preferences before showing the replacement drawing")
+        try expect(!app.hotkeys.editing, "…and the shortcuts it paused are live again, not left paused behind a hidden window (R3-008)")
     }
     static func originalMetadataRecovery() throws {
         let brushMetadata = DrawingDefaults(values: ["brushColor": "0.2 0.4 0.6 1", "brushSize": "6"])
@@ -1953,10 +1965,10 @@ enum AppSafetyTests {
                    "Sheet Delete removes field text while preserving the editing document")
     }
     static func exportSizingLifecycle() throws {
-        let keys = ["ExportFormat", "ExportOriginalSize", "ExportQuality"]
+        let keys = ["ExportFormat", "ExportQuality"]
         let defaults = UserDefaults.standard, previous = keys.map { UserDefaults.standard.object(forKey: $0) }
         defer { for (key, value) in zip(keys, previous) { if let value { defaults.set(value, forKey: key) } else { defaults.removeObject(forKey: key) } } }
-        defaults.set("png", forKey: "ExportFormat"); defaults.set(false, forKey: "ExportOriginalSize"); defaults.set(0.7, forKey: "ExportQuality")
+        defaults.set("png", forKey: "ExportFormat"); defaults.set(0.7, forKey: "ExportQuality")
         let fixture = try Fixture(), app = fixture.app, store = try isolatedHistory(app)
         app.canvas.setBackground(try image(size: CGSize(width: 300, height: 180)))
         _ = app.canvas.resizeImage(to: CGSize(width: 150, height: 90))
@@ -1980,6 +1992,8 @@ enum AppSafetyTests {
                    native.document.elements == nativeFull.document.elements && native.document.backgroundPNG == nativeFull.document.backgroundPNG,
                    "Native original-size export changes only the exported copy's output dimensions")
         let target = fixture.file("Output").deletingPathExtension().appendingPathExtension("png")
+        // The panel opens on the footer's Original size choice (R3-003); this case writes the shown size.
+        app.dragOriginalControl.state = .off
         AppSafetyFilePanel.answers.append(.init(response: .OK, url: target)); app.exportFile()
         try expect(try Data(contentsOf: target) == normal && app.canvas.snapshotDocumentData() == before && text.superview === app.canvas &&
                    app.currentURL == destination && app.canvas.editingUndoManager.undoActionName == undo,
@@ -3033,9 +3047,10 @@ enum AppSafetyTests {
         if app.window.frame.size != resizedFrame.size {
             windowFailures.append("Menu Redo: expected size \(resizedFrame.size), got \(app.window.frame.size)")
         }
-        try expect(app.canvas.document.backgroundPNG == source.backgroundPNG && app.canvas.document.elements == source.elements &&
-                   app.canvas.canvasSize == CGSize(width: 3000, height: 2000),
-                   "App Redo retains the original 3000x2000 pixels and editable geometry")
+        // R3-002: the dragged size is the picture's own size now; the 3000x2000 pixels and editable geometry live in the Undo step.
+        try expect(app.canvas.canvasSize == CGSize(width: 1270, height: 847) && app.canvas.document.renderSize == nil && app.canvas.document.elements.count == source.elements.count &&
+                   app.canvas.document.elements.allSatisfy { $0.transform != source.elements.first?.transform },
+                   "App Redo restores the 1270x847 picture with its annotations still editable, scaled with it")
         try expectVisible("Redo keeps the smaller output completely visible with crop border available")
         app.undo()
         try expect(try app.canvas.snapshotDocumentData() == before &&
@@ -3078,7 +3093,9 @@ enum AppSafetyTests {
         let preview = try app.canvas.snapshotDocumentData()
         try expect(preview != before && app.save(), "Save must accept the current viewport preview")
         let saved = try OpenSnapFile.read(app.currentURL!)
-        try expect(app.windowGesture == nil && saved.canvasData == preview && !app.dirty,
+        // The drag commits as a Resize of the picture (R3-002), so the file holds the committed picture, not the transient preview.
+        let committed = try app.canvas.snapshotDocumentData()
+        try expect(app.windowGesture == nil && saved.canvasData == committed && committed != before && !app.dirty,
                    "Save closes/commits border transaction before serializing the exact live state")
         app.endWindowGesture(cancelled: true)
         try expect(try app.canvas.snapshotDocumentData() == saved.canvasData && !app.dirty && !app.window.isDocumentEdited,
@@ -3864,7 +3881,7 @@ enum AppSafetyTests {
         ]
         // Development aid: APP_SAFETY_FILTER=<text> runs only the cases whose title contains it. Unset, every case runs.
         let filter = ProcessInfo.processInfo.environment["APP_SAFETY_FILTER"]
-        let tests = (sharedCases + Self.modernCases + Self.webpostCases + Self.retiredFormatCases + Self.menuCases + Self.windowChromeCases + Self.uploadCases + Self.accessibilityCases + Self.auditCases + Self.batch3cCases + Self.batch4Cases + Self.batch6Cases + Self.s3EndToEndCases).filter { filter.map($0.0.contains) ?? true }
+        let tests = (sharedCases + Self.modernCases + Self.webpostCases + Self.retiredFormatCases + Self.menuCases + Self.windowChromeCases + Self.uploadCases + Self.accessibilityCases + Self.auditCases + Self.batch3cCases + Self.batch4Cases + Self.batch6Cases + Self.batch10Cases + Self.s3EndToEndCases).filter { filter.map($0.0.contains) ?? true }
         var results: [[String: Any]] = [], failures = 0
         for (name, test) in tests {
             AppSafetyAlert.reset(); AppSafetyAlert.install(); AppSafetyEvents.current = nil

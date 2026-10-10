@@ -1,0 +1,1375 @@
+{
+ "sourceSha": "9faf5c0",
+ "bundleId": "com.shoemoney.opensnap.eyedump-5589",
+ "iconMode": "sf",
+ "faMode": "FA unavailable: no FontAwesome7Pro subset fonts are bundled in this build, so every capture uses SF Symbols (nothing was faked)",
+ "captureCount": 44,
+ "unavailable": [],
+ "gaps": [],
+ "captures": [
+  {
+   "id": "S46",
+   "slug": "capture-note-reregister-error",
+   "surface": "Settings: Capture",
+   "state": "Capture tab after the window stopped being the one in use while another claim holds the key: the note carries the manager's error instead of saying shortcuts are saved and live (R3-008)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1314,
+    1202
+   ],
+   "pointSize": [
+    657,
+    601
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-capture-note-reregister-error-dark@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    1098
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "capture-note-reregister-error",
+   "surface": "Settings: Capture",
+   "state": "Capture tab after the window stopped being the one in use while another claim holds the key: the note carries the manager's error instead of saying shortcuts are saved and live (R3-008)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1314,
+    1202
+   ],
+   "pointSize": [
+    657,
+    601
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-capture-note-reregister-error-dark-dwc@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    1098
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "capture-note-reregister-error",
+   "surface": "Settings: Capture",
+   "state": "Capture tab after the window stopped being the one in use while another claim holds the key: the note carries the manager's error instead of saying shortcuts are saved and live (R3-008)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1314,
+    1202
+   ],
+   "pointSize": [
+    657,
+    601
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-capture-note-reregister-error-light@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    1098
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "capture-note-reregister-error",
+   "surface": "Settings: Capture",
+   "state": "Capture tab after the window stopped being the one in use while another claim holds the key: the note carries the manager's error instead of saying shortcuts are saved and live (R3-008)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1314,
+    1202
+   ],
+   "pointSize": [
+    657,
+    601
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-capture-note-reregister-error-light-dwc@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    1098
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "corner-drag-ticked",
+   "surface": "Editor title and footer",
+   "state": "Original size ticked, the canvas border's bottom-right corner dragged 150 pt narrower: the title reads 618 × 435 · PNG · 85 KB (was 5120 × 3600 · PNG · 1.5 MB), the picture is {618, 435} and the Undo step is Resize Image (R3-002)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-corner-drag-ticked-dark@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S46-corner-drag-ticked-dark@9faf5c0.json",
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "corner-drag-ticked",
+   "surface": "Editor title and footer",
+   "state": "Original size ticked, the canvas border's bottom-right corner dragged 150 pt narrower: the title reads 618 × 435 · PNG · 85 KB (was 5120 × 3600 · PNG · 1.5 MB), the picture is {618, 435} and the Undo step is Resize Image (R3-002)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-corner-drag-ticked-dark-dwc@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S46-corner-drag-ticked-dark-dwc@9faf5c0.json",
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "corner-drag-ticked",
+   "surface": "Editor title and footer",
+   "state": "Original size ticked, the canvas border's bottom-right corner dragged 150 pt narrower: the title reads 618 × 435 · PNG · 85 KB (was 5120 × 3600 · PNG · 1.5 MB), the picture is {618, 435} and the Undo step is Resize Image (R3-002)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-corner-drag-ticked-light@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S46-corner-drag-ticked-light@9faf5c0.json",
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "corner-drag-ticked",
+   "surface": "Editor title and footer",
+   "state": "Original size ticked, the canvas border's bottom-right corner dragged 150 pt narrower: the title reads 618 × 435 · PNG · 85 KB (was 5120 × 3600 · PNG · 1.5 MB), the picture is {618, 435} and the Undo step is Resize Image (R3-002)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-corner-drag-ticked-light-dwc@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S46-corner-drag-ticked-light-dwc@9faf5c0.json",
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "corner-drag-unticked",
+   "surface": "Editor title and footer",
+   "state": "Original size unticked, the canvas border's bottom-right corner dragged 150 pt narrower: the title reads 618 × 435 · PNG · 85 KB (was 768 × 540 · PNG · 118 KB), the picture is {618, 435} and the Undo step is Resize Image (R3-002)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-corner-drag-unticked-dark@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S46-corner-drag-unticked-dark@9faf5c0.json",
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "corner-drag-unticked",
+   "surface": "Editor title and footer",
+   "state": "Original size unticked, the canvas border's bottom-right corner dragged 150 pt narrower: the title reads 618 × 435 · PNG · 85 KB (was 768 × 540 · PNG · 118 KB), the picture is {618, 435} and the Undo step is Resize Image (R3-002)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-corner-drag-unticked-dark-dwc@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S46-corner-drag-unticked-dark-dwc@9faf5c0.json",
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "corner-drag-unticked",
+   "surface": "Editor title and footer",
+   "state": "Original size unticked, the canvas border's bottom-right corner dragged 150 pt narrower: the title reads 618 × 435 · PNG · 85 KB (was 768 × 540 · PNG · 118 KB), the picture is {618, 435} and the Undo step is Resize Image (R3-002)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-corner-drag-unticked-light@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S46-corner-drag-unticked-light@9faf5c0.json",
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "corner-drag-unticked",
+   "surface": "Editor title and footer",
+   "state": "Original size unticked, the canvas border's bottom-right corner dragged 150 pt narrower: the title reads 618 × 435 · PNG · 85 KB (was 768 × 540 · PNG · 118 KB), the picture is {618, 435} and the Undo step is Resize Image (R3-002)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-corner-drag-unticked-light-dwc@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S46-corner-drag-unticked-light-dwc@9faf5c0.json",
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "export-accessory-footer-ticked",
+   "surface": "export save panel",
+   "state": "the footer's Original size box ticked: the Export accessory opens with Export at original size ticked too (R3-003)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    646,
+    708
+   ],
+   "pointSize": [
+    323,
+    354
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-export-accessory-footer-ticked-dark@9faf5c0.png",
+   "storedPixelSize": [
+    646,
+    708
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "export-accessory-footer-ticked",
+   "surface": "export save panel",
+   "state": "the footer's Original size box ticked: the Export accessory opens with Export at original size ticked too (R3-003)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    646,
+    708
+   ],
+   "pointSize": [
+    323,
+    354
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-export-accessory-footer-ticked-dark-dwc@9faf5c0.png",
+   "storedPixelSize": [
+    646,
+    708
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "export-accessory-footer-ticked",
+   "surface": "export save panel",
+   "state": "the footer's Original size box ticked: the Export accessory opens with Export at original size ticked too (R3-003)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    646,
+    708
+   ],
+   "pointSize": [
+    323,
+    354
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-export-accessory-footer-ticked-light@9faf5c0.png",
+   "storedPixelSize": [
+    646,
+    708
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "export-accessory-footer-ticked",
+   "surface": "export save panel",
+   "state": "the footer's Original size box ticked: the Export accessory opens with Export at original size ticked too (R3-003)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    646,
+    708
+   ],
+   "pointSize": [
+    323,
+    354
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-export-accessory-footer-ticked-light-dwc@9faf5c0.png",
+   "storedPixelSize": [
+    646,
+    708
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "export-accessory-footer-unticked",
+   "surface": "export save panel",
+   "state": "the footer's Original size box unticked: the Export accessory opens with Export at original size unticked too (R3-003)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    646,
+    708
+   ],
+   "pointSize": [
+    323,
+    354
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-export-accessory-footer-unticked-dark@9faf5c0.png",
+   "storedPixelSize": [
+    646,
+    708
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "export-accessory-footer-unticked",
+   "surface": "export save panel",
+   "state": "the footer's Original size box unticked: the Export accessory opens with Export at original size unticked too (R3-003)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    646,
+    708
+   ],
+   "pointSize": [
+    323,
+    354
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-export-accessory-footer-unticked-dark-dwc@9faf5c0.png",
+   "storedPixelSize": [
+    646,
+    708
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "export-accessory-footer-unticked",
+   "surface": "export save panel",
+   "state": "the footer's Original size box unticked: the Export accessory opens with Export at original size unticked too (R3-003)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    646,
+    708
+   ],
+   "pointSize": [
+    323,
+    354
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-export-accessory-footer-unticked-light@9faf5c0.png",
+   "storedPixelSize": [
+    646,
+    708
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "export-accessory-footer-unticked",
+   "surface": "export save panel",
+   "state": "the footer's Original size box unticked: the Export accessory opens with Export at original size unticked too (R3-003)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    646,
+    708
+   ],
+   "pointSize": [
+    323,
+    354
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-export-accessory-footer-unticked-light-dwc@9faf5c0.png",
+   "storedPixelSize": [
+    646,
+    708
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "history-details-deleted",
+   "surface": "History",
+   "state": "a shared entry after Delete from Web: Details keeps the address and the 1200 × 844 (published) size and marks the address (deleted) (R3-009)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    708
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-history-details-deleted-dark@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "history-details-deleted",
+   "surface": "History",
+   "state": "a shared entry after Delete from Web: Details keeps the address and the 1200 × 844 (published) size and marks the address (deleted) (R3-009)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    708
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-history-details-deleted-dark-dwc@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "history-details-deleted",
+   "surface": "History",
+   "state": "a shared entry after Delete from Web: Details keeps the address and the 1200 × 844 (published) size and marks the address (deleted) (R3-009)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    708
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-history-details-deleted-light@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "history-details-deleted",
+   "surface": "History",
+   "state": "a shared entry after Delete from Web: Details keeps the address and the 1200 × 844 (published) size and marks the address (deleted) (R3-009)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    708
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-history-details-deleted-light-dwc@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "resize-oversized-ticked",
+   "surface": "Editor title and footer",
+   "state": "Original size ticked on a 2560 × 1800 snap, Resize to 1600 wide (above the 920 × 540 pt of room this display gives it): the title reads 1600 × 1125 · PNG · 343 KB (was 5120 × 3600 · PNG · 1.5 MB), the picture is {1600, 1125} and the box has nothing to offer (R3-001)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    708
+   ],
+   "pixelSize": [
+    1960,
+    1416
+   ],
+   "pointSize": [
+    980,
+    708
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-resize-oversized-ticked-dark@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    867
+   ],
+   "downscaled": true,
+   "layout": "layout/S46-resize-oversized-ticked-dark@9faf5c0.json",
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "resize-oversized-ticked",
+   "surface": "Editor title and footer",
+   "state": "Original size ticked on a 2560 × 1800 snap, Resize to 1600 wide (above the 920 × 540 pt of room this display gives it): the title reads 1600 × 1125 · PNG · 343 KB (was 5120 × 3600 · PNG · 1.5 MB), the picture is {1600, 1125} and the box has nothing to offer (R3-001)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    708
+   ],
+   "pixelSize": [
+    1960,
+    1416
+   ],
+   "pointSize": [
+    980,
+    708
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-resize-oversized-ticked-dark-dwc@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    867
+   ],
+   "downscaled": true,
+   "layout": "layout/S46-resize-oversized-ticked-dark-dwc@9faf5c0.json",
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "resize-oversized-ticked",
+   "surface": "Editor title and footer",
+   "state": "Original size ticked on a 2560 × 1800 snap, Resize to 1600 wide (above the 920 × 540 pt of room this display gives it): the title reads 1600 × 1125 · PNG · 343 KB (was 5120 × 3600 · PNG · 1.5 MB), the picture is {1600, 1125} and the box has nothing to offer (R3-001)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    708
+   ],
+   "pixelSize": [
+    1960,
+    1416
+   ],
+   "pointSize": [
+    980,
+    708
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-resize-oversized-ticked-light@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    867
+   ],
+   "downscaled": true,
+   "layout": "layout/S46-resize-oversized-ticked-light@9faf5c0.json",
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "resize-oversized-ticked",
+   "surface": "Editor title and footer",
+   "state": "Original size ticked on a 2560 × 1800 snap, Resize to 1600 wide (above the 920 × 540 pt of room this display gives it): the title reads 1600 × 1125 · PNG · 343 KB (was 5120 × 3600 · PNG · 1.5 MB), the picture is {1600, 1125} and the box has nothing to offer (R3-001)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    708
+   ],
+   "pixelSize": [
+    1960,
+    1416
+   ],
+   "pointSize": [
+    980,
+    708
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-resize-oversized-ticked-light-dwc@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    867
+   ],
+   "downscaled": true,
+   "layout": "layout/S46-resize-oversized-ticked-light-dwc@9faf5c0.json",
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "resize-oversized-ticked-footer",
+   "surface": "Editor title and footer",
+   "state": "the footer of the same editor: size and format 1600 × 1125 · PNG · 343 KB, no Original size box (R3-001)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    708
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S46-resize-oversized-ticked-footer-dark@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S46-resize-oversized-ticked-footer-dark@9faf5c0.json",
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "resize-oversized-ticked-footer",
+   "surface": "Editor title and footer",
+   "state": "the footer of the same editor: size and format 1600 × 1125 · PNG · 343 KB, no Original size box (R3-001)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    708
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S46-resize-oversized-ticked-footer-dark-dwc@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S46-resize-oversized-ticked-footer-dark-dwc@9faf5c0.json",
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "resize-oversized-ticked-footer",
+   "surface": "Editor title and footer",
+   "state": "the footer of the same editor: size and format 1600 × 1125 · PNG · 343 KB, no Original size box (R3-001)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    708
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S46-resize-oversized-ticked-footer-light@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S46-resize-oversized-ticked-footer-light@9faf5c0.json",
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "resize-oversized-ticked-footer",
+   "surface": "Editor title and footer",
+   "state": "the footer of the same editor: size and format 1600 × 1125 · PNG · 343 KB, no Original size box (R3-001)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    708
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S46-resize-oversized-ticked-footer-light-dwc@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S46-resize-oversized-ticked-footer-light-dwc@9faf5c0.json",
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "resize-oversized-unticked",
+   "surface": "Editor title and footer",
+   "state": "Original size unticked on a 2560 × 1800 snap, Resize to 1600 wide (above the 920 × 540 pt of room this display gives it): the title reads 1600 × 1125 · PNG · 343 KB (was 768 × 540 · PNG · 118 KB), the picture is {1600, 1125} and the box has nothing to offer (R3-001)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    708
+   ],
+   "pixelSize": [
+    1960,
+    1416
+   ],
+   "pointSize": [
+    980,
+    708
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-resize-oversized-unticked-dark@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    867
+   ],
+   "downscaled": true,
+   "layout": "layout/S46-resize-oversized-unticked-dark@9faf5c0.json",
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "resize-oversized-unticked",
+   "surface": "Editor title and footer",
+   "state": "Original size unticked on a 2560 × 1800 snap, Resize to 1600 wide (above the 920 × 540 pt of room this display gives it): the title reads 1600 × 1125 · PNG · 343 KB (was 768 × 540 · PNG · 118 KB), the picture is {1600, 1125} and the box has nothing to offer (R3-001)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    708
+   ],
+   "pixelSize": [
+    1960,
+    1416
+   ],
+   "pointSize": [
+    980,
+    708
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-resize-oversized-unticked-dark-dwc@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    867
+   ],
+   "downscaled": true,
+   "layout": "layout/S46-resize-oversized-unticked-dark-dwc@9faf5c0.json",
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "resize-oversized-unticked",
+   "surface": "Editor title and footer",
+   "state": "Original size unticked on a 2560 × 1800 snap, Resize to 1600 wide (above the 920 × 540 pt of room this display gives it): the title reads 1600 × 1125 · PNG · 343 KB (was 768 × 540 · PNG · 118 KB), the picture is {1600, 1125} and the box has nothing to offer (R3-001)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    708
+   ],
+   "pixelSize": [
+    1960,
+    1416
+   ],
+   "pointSize": [
+    980,
+    708
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-resize-oversized-unticked-light@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    867
+   ],
+   "downscaled": true,
+   "layout": "layout/S46-resize-oversized-unticked-light@9faf5c0.json",
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "resize-oversized-unticked",
+   "surface": "Editor title and footer",
+   "state": "Original size unticked on a 2560 × 1800 snap, Resize to 1600 wide (above the 920 × 540 pt of room this display gives it): the title reads 1600 × 1125 · PNG · 343 KB (was 768 × 540 · PNG · 118 KB), the picture is {1600, 1125} and the box has nothing to offer (R3-001)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    708
+   ],
+   "pixelSize": [
+    1960,
+    1416
+   ],
+   "pointSize": [
+    980,
+    708
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-resize-oversized-unticked-light-dwc@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    867
+   ],
+   "downscaled": true,
+   "layout": "layout/S46-resize-oversized-unticked-light-dwc@9faf5c0.json",
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "resize-oversized-unticked-footer",
+   "surface": "Editor title and footer",
+   "state": "the footer of the same editor: size and format 1600 × 1125 · PNG · 343 KB, no Original size box (R3-001)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    708
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S46-resize-oversized-unticked-footer-dark@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S46-resize-oversized-unticked-footer-dark@9faf5c0.json",
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "resize-oversized-unticked-footer",
+   "surface": "Editor title and footer",
+   "state": "the footer of the same editor: size and format 1600 × 1125 · PNG · 343 KB, no Original size box (R3-001)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    708
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S46-resize-oversized-unticked-footer-dark-dwc@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S46-resize-oversized-unticked-footer-dark-dwc@9faf5c0.json",
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "resize-oversized-unticked-footer",
+   "surface": "Editor title and footer",
+   "state": "the footer of the same editor: size and format 1600 × 1125 · PNG · 343 KB, no Original size box (R3-001)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    708
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S46-resize-oversized-unticked-footer-light@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S46-resize-oversized-unticked-footer-light@9faf5c0.json",
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "resize-oversized-unticked-footer",
+   "surface": "Editor title and footer",
+   "state": "the footer of the same editor: size and format 1600 × 1125 · PNG · 343 KB, no Original size box (R3-001)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    708
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S46-resize-oversized-unticked-footer-light-dwc@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S46-resize-oversized-unticked-footer-light-dwc@9faf5c0.json",
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "upload-selected-not-default",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, Example SFTP selected while the Default pill sits on another row; with Differentiate Without Color the selected row has a 2 pt edge and a leading bar, and the pill keeps its check (R3-007)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1280,
+    880
+   ],
+   "pointSize": [
+    640,
+    440
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-upload-selected-not-default-dark@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    825
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "upload-selected-not-default",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, Example SFTP selected while the Default pill sits on another row; with Differentiate Without Color the selected row has a 2 pt edge and a leading bar, and the pill keeps its check (R3-007)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1280,
+    880
+   ],
+   "pointSize": [
+    640,
+    440
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-upload-selected-not-default-dark-dwc@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    825
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "upload-selected-not-default",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, Example SFTP selected while the Default pill sits on another row; with Differentiate Without Color the selected row has a 2 pt edge and a leading bar, and the pill keeps its check (R3-007)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1280,
+    880
+   ],
+   "pointSize": [
+    640,
+    440
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-upload-selected-not-default-light@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    825
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S46",
+   "slug": "upload-selected-not-default",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, Example SFTP selected while the Default pill sits on another row; with Differentiate Without Color the selected row has a 2 pt edge and a leading bar, and the pill keeps its check (R3-007)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1280,
+    880
+   ],
+   "pointSize": [
+    640,
+    440
+   ],
+   "scale": 2,
+   "sourceSha": "9faf5c0",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S46-upload-selected-not-default-light-dwc@9faf5c0.png",
+   "storedPixelSize": [
+    1200,
+    825
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  }
+ ]
+}

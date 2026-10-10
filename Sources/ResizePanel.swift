@@ -154,8 +154,13 @@ enum ResizePanelGeometry {
             return ResizePicturePlan(scaleTo: displayed == source ? nil : displayed, crop: crop, size: typed)
         }
         let factor = min(typed.width / displayed.width, typed.height / displayed.height)
-        let scaled = try ResizePanelValidation.validate(CGSize(width: ResizePanelValidation.wholePixel(displayed.width * factor),
+        var scaled = try ResizePanelValidation.validate(CGSize(width: ResizePanelValidation.wholePixel(displayed.width * factor),
                                                                height: ResizePanelValidation.wholePixel(displayed.height * factor)))
+        // A proportional size typed on a shown size that was itself rounded to whole pixels (996 × 700 for a 2560 × 1800 snap) comes back
+        // a pixel short on the other side; the picture is then exactly what was typed, so the title reads the number that was entered (R3-001).
+        if request.constrainProportions,
+           abs(displayed.height * typed.width / displayed.width - typed.height) <= 1,
+           abs(displayed.width * typed.height / displayed.height - typed.width) <= 1 { scaled = typed }
         let scaleTo = scaled == source ? nil : scaled
         if request.constrainProportions { return ResizePicturePlan(scaleTo: scaleTo, crop: nil, size: scaled) }
         return ResizePicturePlan(scaleTo: scaleTo,

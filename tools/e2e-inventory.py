@@ -44,7 +44,7 @@ GAPS = {
 RETIRED_GAPS = ("replaced", "removed")   # a row whose surface no longer exists: evidence class `retired`, whatever its historic evidence was
 # Why an `unverified` row has no E2E evidence, as recorded by the auditor (matrix column `gap reason`). Unlike GAPS, which predicts
 # reachability from the source, this is an audit finding and is only ever set on rows whose evidence class is `unverified`.
-GAP_REASONS = ("permission", "hardware", "OS-owned", "harness", "unsafe", "AX presence only", "AX value only", "text readout only", "retired")
+GAP_REASONS = ("permission", "hardware", "OS-owned", "harness", "unsafe", "AX presence only", "AX value only", "text readout only")
 EXERCISE = ("e2e", "e2e-partial", "gap")   # e2e-partial: the app-owned part is real-click, the named gap is the rest
 TYPES = ("menu item", "toolbar button", "control", "icon", "preference", "popover", "sheet", "window", "alert", "shortcut", "state", "gesture")
 AREAS = {
@@ -274,7 +274,7 @@ def build_toolbox(parsed):
     titles = {sel: name for _, name, sel, _ in parsed if sel}
     titles.update({"toggleVisible": "Hide OpenSnap"})
     symbols = dict(parse_menu_symbols())
-    add("TOOLBOX", "Toolbar › Toolbox", "Toolbox", "toolbar button", "Top bar › Toolbox (icon and chevron)", "Menu opens (a selection-style pop-up, because a pull-down draws no row icons): five groups of drawing-session commands (keep, edit, capture, adjust the picture, pen settings); no app or file plumbing",
+    add("TOOLBOX", "Toolbar › Toolbox", "Toolbox", "toolbar button", "Top bar › Toolbox (icon and chevron)", "Menu opens (a menu button; rows open below it, each with its icon): five groups of drawing-session commands (keep, edit, capture, adjust the picture, pen settings); no app or file plumbing",
         icon="toolbox", rendered=["S04", "S12"])
     for index, group in enumerate(parse_toolbox_groups(), start=1):
         for selector in group:
@@ -839,6 +839,9 @@ def ledger_problems(rows):
     for cells in rows:
         ident, observed, klass, reason = cells[0], cells[7], cells[10], cells[13]
         if klass == "unverified":
+            if reason == "retired":
+                problems.append(f"{ident}: `retired` is an evidence class, not a gap reason: use class retired for a removed surface, or one of {' | '.join(GAP_REASONS)}")
+                continue
             if reason not in GAP_REASONS:
                 problems.append(f"{ident}: unverified row needs exactly one gap reason from {' | '.join(GAP_REASONS)} (found {reason!r})")
                 continue

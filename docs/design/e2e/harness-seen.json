@@ -131,7 +131,7 @@
    "id": "S23",
    "slug": "toolbox-menu-open",
    "surface": "menus",
-   "state": "Toolbox menu open (a selection-style pop-up, so its rows draw their icons)"
+   "state": "Toolbox menu open (a menu button; rows open below it, each with its icon)"
   },
   "S24": {
    "id": "S24",

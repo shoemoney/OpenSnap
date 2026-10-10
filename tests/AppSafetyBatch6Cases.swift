@@ -23,24 +23,24 @@ extension AppSafetyTests {
 
     // MARK: Fixtures
 
-    private static func b6Large(_ app: AppDelegate, size: CGSize = CGSize(width: 2400, height: 1600)) throws {
+    static func b6Large(_ app: AppDelegate, size: CGSize = CGSize(width: 2400, height: 1600)) throws {
         app.canvas.newBlank(size: size)
         app.canvas.setBackground(try image(size: size))
         app.documentGeneration = UUID(); app.canvas.editingUndoManager.removeAllActions()
         app.adoptRasterViewport()
         try expect(app.canvas.outputSize.width < size.width, "The fixture is a large shot shown smaller than it is (\(app.canvas.outputSize))")
     }
-    private static func b6Pixels(_ data: Data?) throws -> CGSize {
+    static func b6Pixels(_ data: Data?) throws -> CGSize {
         let bitmap = try NSBitmapImageRep(data: try data.b6Unwrap("image data")).b6Unwrap("a decodable image")
         return CGSize(width: bitmap.pixelsWide, height: bitmap.pixelsHigh)
     }
-    private static func b6Pasteboard(_ app: AppDelegate) -> NSPasteboard {
+    static func b6Pasteboard(_ app: AppDelegate) -> NSPasteboard {
         let board = NSPasteboard(name: NSPasteboard.Name("opensnap-b6-" + UUID().uuidString))
         app.imagePasteboard = board
         return board
     }
     /// Every way a picture leaves the editor, as pixels.
-    private static func b6Outputs(_ app: AppDelegate, _ board: NSPasteboard) throws -> [String: CGSize] {
+    static func b6Outputs(_ app: AppDelegate, _ board: NSPasteboard) throws -> [String: CGSize] {
         app.imagePasteboard = board
         app.copyImage()
         let view = try app.dragExportView.b6Unwrap("the drag view")
@@ -55,14 +55,14 @@ extension AppSafetyTests {
             "history": app.uploadPixelSize
         ]
     }
-    private static func b6AllAgree(_ app: AppDelegate, _ board: NSPasteboard, _ expected: CGSize?, _ what: String) throws {
+    static func b6AllAgree(_ app: AppDelegate, _ board: NSPasteboard, _ expected: CGSize?, _ what: String) throws {
         let outputs: [String: CGSize]
         do { outputs = try b6Outputs(app, board) } catch { throw Failure(description: "\(what): \(error) [size \(app.canvas.document.size), render \(String(describing: app.canvas.document.renderSize)), valid \(String(describing: try? app.canvas.document.validated().size))]") }
         let title = try outputs["title"].b6Unwrap("title")
         try expect(outputs.values.allSatisfy { $0 == title }, "\(what): title, export, drag, upload, copy and History all say the same size (\(outputs))")
         if let expected { try expect(title == expected, "\(what): and it is \(expected) (\(title))") }
     }
-    private static func b6Window(_ app: AppDelegate, width: CGFloat) {
+    static func b6Window(_ app: AppDelegate, width: CGFloat) {
         let content = app.window.contentView!
         let frame = app.window.frameRect(forContentRect: NSRect(x: 0, y: 0, width: width, height: content.bounds.height))
         app.window.setFrame(NSRect(origin: app.window.frame.origin, size: frame.size), display: false)
