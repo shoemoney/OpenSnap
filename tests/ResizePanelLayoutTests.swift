@@ -122,8 +122,8 @@ private enum ResizePanelLayoutTests {
         return nil
     }
     private static func descendants(_ view: NSView) -> [NSView] { view.subviews.flatMap { [$0] + descendants($0) } }
-    private static func key(_ code: UInt16, _ text: String = "") throws -> NSEvent {
-        guard let event = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0, windowNumber: 0, context: nil,
+    private static func key(_ code: UInt16, _ text: String = "", window: NSWindow? = nil) throws -> NSEvent {
+        guard let event = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0, windowNumber: window?.windowNumber ?? 0, context: nil,
                                            characters: text, charactersIgnoringModifiers: text, isARepeat: false, keyCode: code) else { throw Failure(description: "key event") }
         return event
     }
@@ -141,10 +141,13 @@ private enum ResizePanelLayoutTests {
             resize = ResizePanel(session: ResizePanelSession(size: size, onApply: { box.values.append(($0, $1, $2)) }), presets: ResizePresetStore(defaults: defaults))
             appliedBox = box
             resize.show(attachedTo: parent)
+            panel = private_(resize, "panel", as: NSPanel.self)!
         }
         let appliedBox: AppliedBox
-        var panel: NSPanel { private_(resize, "panel", as: NSPanel.self)! }
+        /// The sheet, held from the start: the panel forgets it when the sheet ends.
+        let panel: NSPanel
         var content: NSView { panel.contentView! }
+        var isFinished: Bool { (private_(resize, "session", as: ResizePanelSession.self))?.isFinished ?? false }
         func state() -> ResizePanelState { ResizePanelLayoutTests.resize_state(resize) }
         func close() {
             if let sheet = parent.attachedSheet { parent.endSheet(sheet) }
@@ -255,8 +258,12 @@ private enum ResizePanelLayoutTests {
             try expect(choices.rows.first?.isChosen == true && choices.rows.filter(\.isChosen).count == 1 && choices.rows.allSatisfy { $0.kind == .option }, "…with the current preset the one chosen option")
             try expect(choices.host.plates.count == 1 && choices.host.container.identifier?.rawValue.hasPrefix("GlassChoicePanel") == true, "…on one plate in one glass container")
             face.performClick(nil)
-            try expect(choices.host.isShown, "(a second press while open is the panel's to close)")
-            choices.host.close()
+            try expect(!choices.host.isShown, "A second press on the face while its panel is shown closes it instead of reopening")
+            // A real pointer press on the face while open: the host swallows it (so the face cannot reopen the panel) and closes.
+            face.performClick(nil)
+            let centre = face.convert(NSPoint(x: face.bounds.midX, y: face.bounds.midY), to: nil)
+            try expect(choices.host.isShown && choices.host.handleMouseDown(in: face.window, at: centre) && !choices.host.isShown,
+                       "A pointer press on the opener while open is consumed and only closes")
             // Choose a built-in through the panel.
             guard let preset = ResizePreset.builtins.first(where: { $0.name == "Ad: Leaderboard" }) else { throw Failure(description: "builtin") }
             rig.resize.showPresetChoices(keyboard: false)
@@ -275,9 +282,8 @@ private enum ResizePanelLayoutTests {
             try expect(!choices.host.isShown && face.title == "Ad: Banner (Full)", "Down, Return chooses the row after the chosen one: \(face.title)")
             // Add a custom preset: it is editable, Save and Remove come on, and removing returns to Custom size.
             guard let addButton = descendants(rig.content).compactMap({ $0 as? GlassChoiceButton }).first(where: { $0.title == "Add Preset" }) else { throw Failure(description: "add") }
-            name.stringValue = "My Size"
             addButton.performClick(nil)
-            try expect(face.title == "My Size" && save.isEnabled && remove.isEnabled && name.isEnabled, "A new custom preset is selected and editable: Save and Remove on (\(face.title))")
+            try expect(face.title == "Ad: Banner (Full) Copy" && save.isEnabled && remove.isEnabled && name.isEnabled, "Adding from a built-in makes an editable copy: Save and Remove on (\(face.title))")
             remove.performClick(nil)
             try expect(face.title == "Custom size" && !save.isEnabled && !remove.isEnabled, "Remove returns to Custom size with Save and Remove off")
             // VoiceOver press opens it too.
@@ -305,18 +311,50 @@ private enum ResizePanelLayoutTests {
             try expect(!manage.isChosen && !manage.isAccessibilityExpanded() && rig.content.frame.height == before, "A second click folds it back to the same height")
         }
 
-        // Buttons: one trailing plate, OK the only tinted control, Return = OK, Escape = Cancel.
-        for (name, code, text, applies) in [("Return", UInt16(36), "\r", true), ("Escape", UInt16(53), "\u{1b}", false)] {
+        // Buttons: one trailing plate, OK the only tinted control, Return and keypad Enter = OK, Escape = Cancel, with a glass face focused.
+        for (name, code, text, applies) in [("Return", UInt16(36), "\r", true), ("Enter", UInt16(76), "\u{3}", true), ("Escape", UInt16(53), "\u{1b}", false)] {
             let rig = Rig(); defer { rig.close() }
             let buttons = descendants(rig.content).compactMap { $0 as? GlassChoiceButton }
-            guard let cancel = buttons.first(where: { $0.title == "Cancel" }), let apply = buttons.first(where: { $0.title == "Apply" }), let ok = buttons.first(where: { $0.title == "OK" }) else { throw Failure(description: "buttons") }
+            guard let cancel = buttons.first(where: { $0.title == "Cancel" }), let apply = buttons.first(where: { $0.title == "Apply" }), let ok = buttons.first(where: { $0.title == "OK" }),
+                  let face: GlassChoiceButton = private_(rig.resize, "presetFace"), let choices: MenuChoicePanel = private_(rig.resize, "presetChoices") else { throw Failure(description: "buttons") }
             try expect(plate(of: cancel) === plate(of: apply) && plate(of: apply) === plate(of: ok), "Cancel, Apply and OK share one glass plate")
             try expect(ok.isPrimary && !cancel.isPrimary && !apply.isPrimary && buttons.filter(\.isPrimary).count == 1, "OK is the only primary (tinted) control")
             try expect(rig.panel.defaultButtonCell === ok.cell && cancel.keyEquivalent == "\u{1b}", "OK is the default button; Escape is Cancel")
-            let event = try key(code, text)
-            let handled = rig.panel.performKeyEquivalent(with: event)
-            try expect(handled && rig.appliedBox.values.count == (applies ? 1 : 0), "\(name) \(applies ? "applies once (OK)" : "applies nothing (Cancel)")")
-            if applies { try expect(rig.appliedBox.values[0].0 == CGSize(width: 1517, height: 1011), "…with the sheet's size") }
+            choices.host.presenter = { _, _ in }
+            try expect(rig.panel.makeFirstResponder(face) && rig.panel.firstResponder === face, "The keyboard is on the Preset face")
+            let event = try key(code, text, window: rig.panel)
+            if applies {
+                // AppKit parks a Return key equivalent while a sheet is not on screen, so the sheet's own routing cannot be driven here: what is
+                // proved is that the focused face does not take the key for itself (no panel opens, nothing is chosen) and that the window's
+                // default button, which is what Return fires, is OK and applies.
+                face.keyDown(with: event)
+                try expect(!choices.host.isShown && rig.appliedBox.values.isEmpty, "\(name) on a focused face does not open the panel or act by itself")
+                guard let cell = rig.panel.defaultButtonCell, cell.isEnabled else { throw Failure(description: "default cell") }
+                cell.performClick(nil)
+                try expect(rig.appliedBox.values.count == 1 && rig.appliedBox.values[0].0 == CGSize(width: 1517, height: 1011) && rig.panel.sheetParent == nil,
+                           "\(name) runs the default button: OK applies once with the sheet's size and ends the sheet")
+            } else {
+                rig.panel.sendEvent(event)
+                try expect(rig.appliedBox.values.isEmpty && rig.panel.sheetParent == nil, "\(name) with a glass face focused is Cancel: applies nothing and ends the sheet")
+            }
+        }
+
+        // Escape with the preset panel open closes only the panel; a second Escape is Cancel. Space and Down open a focused face.
+        do {
+            let rig = Rig(); defer { rig.close() }
+            guard let face: GlassChoiceButton = private_(rig.resize, "presetFace"), let choices: MenuChoicePanel = private_(rig.resize, "presetChoices") else { throw Failure(description: "face") }
+            choices.host.presenter = { _, _ in }
+            _ = rig.panel.makeFirstResponder(face)
+            rig.panel.sendEvent(try key(49, " ", window: rig.panel))
+            try expect(choices.host.isShown, "Space on the focused face opens the preset panel")
+            choices.host.window.sendEvent(try key(53, "\u{1b}", window: choices.host.window))
+            try expect(!choices.host.isShown && rig.panel.sheetParent === rig.parent && rig.appliedBox.values.isEmpty && !rig.isFinished,
+                       "Escape with the panel open closes the panel; the sheet stays up and Cancel does not run")
+            rig.panel.sendEvent(try key(125, "", window: rig.panel))
+            try expect(choices.host.isShown && choices.focusedRow?.isChosen == true, "Down on the focused face opens the panel on the chosen row")
+            choices.host.close()
+            rig.panel.sendEvent(try key(53, "\u{1b}", window: rig.panel))
+            try expect(rig.panel.sheetParent == nil && rig.appliedBox.values.isEmpty, "A second Escape (panel closed) runs Cancel and ends the sheet")
         }
 
         // Fonts, glass nesting and the key-view loop.
