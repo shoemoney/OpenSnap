@@ -99,17 +99,17 @@ Each item carries the kind of proof behind it. The kinds are never merged:
 - `[x] unit/source`: a named test in a suite (`tools/test.py`).
 - `[x] guarded render`: an eye-dump capture that passed the checker (`tools/check-eye-dump.py`).
 - `[x] routing (offscreen)`: synthesized window events through `sendEvent` on non-active or offscreen windows. No real HID input.
-- `[ ] pending root native pass`: live parent/child key-window focus, live Return in a sheet, real pointer hover and click. This record does not claim them.
+- `[x] root native AX/routing`: external window-root accessibility actions and targeted keys in the running isolated app prove parent/child focus and sheet Return/Escape. Physical pointer hover/click and VoiceOver speech remain manual.
 
 - [x] unit/source: Toolbox, Zoom, Upload, History format and Resize preset open app-owned glass panels (`MenuChoicePanel` / `GlassPanelHost`). On those paths no `NSMenu.popUp` or `popUpContextMenu` runs. `OriginalActionButton` keeps its native presenter only as the class default; Upload installs a glass presenter. The remaining `popUp` calls in `Sources/EyeDumpAudit*` are harness triggers.
 - [x] unit/source: one `NSGlassEffectContainerView` per panel and one plate per menu group, with no glass view inside another (`GlassChoicesTests`).
 - [x] unit/source: selected state is accent fill, border, bodyStrong and glyph; disabled rows dim and skip focus.
-- [x] unit/source: the Differentiate Without Color indicator on chosen choices and the current Settings tab (`StateStylesTests`, `SettingsWindowTests` `liveDifferentiateOutline` / `liveDifferentiateRow`). [ ] pending root native pass: the live system setting; no DWC capture is recorded here.
+- [x] unit/source: the Differentiate Without Color indicator on chosen choices and the current Settings tab (`StateStylesTests`, `SettingsWindowTests` `liveDifferentiateOutline` / `liveDifferentiateRow`). [x] guarded render: combined injected accessibility variants. [ ] manual: the live system setting.
 - [x] routing (offscreen): synthesized NSEvents through the window drive Return, Space, Down, arrows and Escape on offscreen sheets and panels; red proofs are recorded for Return and for real-flag arrows.
-- [ ] pending root native pass: live Return in a real sheet, Escape closing the panel before the sheet's Cancel in a live session, and focus returning to the opener in a live session.
+- [x] root native AX/routing: Return validates default Save in the destination sheet; the first child-window Escape closes its panel and the second cancels the sheet. Keyboard-opened Capture key choices restore opener focus. Evidence retains its actual reviewed SHA.
 - [x] routing (offscreen): a synthesized mouseDown/up through `sendEvent` chooses on an ordered, invisible, non-key panel.
 - [x] unit/source: hover over Color does not close another open panel.
-- [ ] pending root native pass: real pointer hover fill, click, click outside, and a second click on the opener not reopening.
+- [ ] manual: physical pointer hover fill, click, click outside, and a second click on the opener not reopening.
 - [x] unit/source: Toolbox validation (`AppSafetyMenuCases`); placement, long-list scrolling and the small-screen height cap (`GlassChoicesTests` scrolling and placement tests).
 - [x] unit/source: Zoom percentage choice, computed Fit row (`Fit, 83%`), Actual Size toggle and its refusal path (`AppSafetyModernCases`, `GlassChoicesTests`).
 - [x] unit/source: Upload destinations rebuilt on each open, default checked, busy and empty states, choosing persists the default (`webpostChoicesPanel`); a rebuild closes the old panel (`webpostPanelRebuildClosesOld`).
@@ -122,10 +122,10 @@ Each item carries the kind of proof behind it. The kinds are never merged:
 - [x] routing (offscreen): real-flag arrows reach the modifier toggles and the Settings tab strip; Escape and Command-W work with Caps Lock on.
 - [x] unit/source: Resize mode, limit, anchor, preset behaviour and validation errors (`ResizePanelTests`, `ResizePanelLayoutTests`).
 - [x] routing (offscreen): Return reaches the Resize OK default button through `sendEvent`; Return on a focused group does not swallow it.
-- [ ] pending root native pass: Escape = Cancel on a live Resize sheet, and live Return = OK.
+- [x] root native AX/routing: live Resize Escape cancels and Return invokes OK even with an unchosen mode focused; repeated arrows retain selected-mode focus.
 - [x] unit/source: text is 20 pt normal with an 18 pt floor; truncation is measured for button titles, shortcuts and glass pop-up faces. Glyphs are Font Awesome or existing semantic glyphs, with no emoji (`IconCoverageTests`, and the glass-row icon test `menuIconTests` in `GlassChoicesTests`).
-- [x] guarded render: the glass surfaces S50–S60, light and dark, with the checker's required rest, hover, keyboard-focus, chosen, disabled (where one exists) and dismissed captures per panel. Each dismissed capture records the panel gone and focus back on the opener. The checker also enforces no nested glass, text ≥ 18 pt, no truncation of measured labels and faces, and panels inside a parent they fit (`88a95e3`, `ccccfe0`, `db2d574`). Hover is driven by `setHovered`, focus by `makeFirstResponder`, Escape by a synthesized key event: app-driven states, not real pointer or keyboard input. Results are in FINAL GATES.
-- [x] unit/source: `python3 tools/test.py` green with no source drift and the real-store guard on `fa3ddf7` (FINAL GATES below); red proofs are listed in the Record.
+- [x] guarded render: the glass surfaces S50–S60, light and dark, with the checker's required rest, hover, keyboard-focus, chosen, disabled (where one exists) and dismissed captures per panel. Each dismissed capture records the panel gone and focus back on the opener. The checker also enforces no nested glass, text ≥ 18 pt, no truncation of measured labels and faces, and panels inside a parent they fit (`88a95e3`, `ccccfe0`, `db2d574`). Hover is driven by `setHovered`, focus by `makeFirstResponder`, Escape by a synthesized key event: app-driven states, not real pointer or keyboard input. Current results are in the root verification report; the old orchestrator gate table is superseded.
+- [x] unit/source: `python3 tools/test.py` green with no source drift and the real-store guard on `21b8d68e10543b097cb6a902103e9c56eeb76be5` (current root acceptance below); red proofs are listed in the Record.
 - [x] unit/source and routing (offscreen): one adversarial Opus review round at `996f7fa`; 6 confirmed and 2 plausible findings, all fixed. Each finding's proof class is in the Record.
 
 ## GUI slot protocol (workers)
@@ -140,17 +140,17 @@ until mkdir /tmp/opensnap-glass-gui.lock 2>/dev/null; do sleep 20; done; echo "<
 [ "$(cat /tmp/opensnap-glass-gui.lock/owner 2>/dev/null)" = "<worker>-$$" ] && rm -rf /tmp/opensnap-glass-gui.lock
 ```
 
-Never remove a lock you did not create. Worker runs made before v2 may have overlapped and are not evidence; only the orchestrator's
-serialized integration and candidate runs are. Never `build/OpenSnap.app` in place; never the real stores.
+Never remove a lock you did not create. Worker runs made before v2 may have overlapped and are not acceptance evidence. Current gates use owner-checked
+serial integration and candidate runs, including root's internally serialized native suites. Never `build/OpenSnap.app` in place; never the real stores.
 
 ## Record
 
-### Tested source
+### Superseded orchestrator source
 
 - Tested source: `fa3ddf7` (tree `7db217a`), the merge of P `ad2cf6c` into `impl/glass-pickers-20261010`, base `57ec799`.
-- Only the orchestrator's serialized integration and candidate runs are evidence. Worker-level AppKit runs before GUI slot protocol v2 may have overlapped and are not evidence.
+- This table records the earlier orchestrator integration runs. Current acceptance uses the root final runs below. Worker-level AppKit runs before GUI slot protocol v2 may have overlapped and are not evidence.
 
-### Final gates
+### Superseded orchestrator gates
 
 <!-- FINAL GATES: filled by orchestrator -->
 
@@ -214,7 +214,7 @@ Rows in `docs/design/e2e/inventory.json`, by evidence class.
 | --- | --- | --- | --- | --- | --- | --- |
 | Baseline `57ec799` | 597 | 312 | 45 | 27 | 93 | 120 |
 | Pre-reset | 616 | 312 | 45 | 27 | 112 | 120 |
-| Current | 616 | 234 | 32 | 27 | 112 | 211 |
+| Current | 626 | 234 | 32 | 27 | 122 | 211 |
 
 - Current `unverified` 211 = 120 earlier unverified + 91 converted rows (78 from E2E, 13 from rendered). The 3 rows that were already unverified (E2E-BAR-034, -035, -041) sit inside the 120.
 - 94 rows carry `UI changed`, each with its byte-exact `history`.
@@ -227,14 +227,24 @@ The suites and captures run with the harness's `--icons sf` mode, which strips F
 
 ### Known limits
 
-- No real HID input, no VoiceOver speech and no live key-window handoff are verified by the orchestrator. The root's guarded native pass covers parent/child focus and Return; this record does not claim it.
+- No physical HID input or VoiceOver speech is verified. Root independently verified live parent/child focus and sheet Return/Escape via external AX actions and targeted window/responder events. See the root report for method and limits.
 - Liquid Glass cannot be rendered offscreen. Contrast unit checks measure label ink against the window and canvas colours, with the plate treated as clear. The screenshot harness covers the material.
 - Truncation is measured for `GlassChoiceButton` titles and shortcuts, `GlassPopUpButton` faces (`faceTextMetrics` uses plain string sizing) and titled command buttons. Not measured: `SegmentedToggle` segments, the Size readout and header, swatch glyphs and the Custom chip, anchor cells, plain labels, captions, status, Resize fields, Size preset stroke glyphs, the Toolbox face, menu header labels, tooltips and VoiceOver text.
-- No `--display` options or extra sizes were captured.
+- The earlier orchestrator pass captured no `--display` options. Root additionally captured combined injected Reduce Transparency, Increase Contrast, Differentiate Without Color and Reduce Motion for S53/S56/S60 in light/dark. These are injected app settings, not live system toggles.
 - The F-J7-006 margin is 5 pt at current font metrics.
 - The destination sheet overhangs a 640 pt Settings window by 17 pt when S3 scrolls. This is pre-existing and identical at `57ec799`.
 - Hover does not move keyboard focus inside a panel. Native menus do.
 - Each modifier toggle row is one Tab stop. ⌘⌥⌃⇧ are reached with the arrows.
 - `tools/test-app-safety.sh` still carries a no-op text replacement for the removed `colorPopover: NSPopover?`.
-- Worker-level AppKit runs before lock v2 may have overlapped. Only the orchestrator's serialized integration runs are evidence.
+- Worker-level AppKit runs before lock v2 may have overlapped. Acceptance uses the root's owner-checked serial integration runs; the earlier orchestrator gates are superseded.
 - Ownership: P's round 6 (icons) changed two narrow hunks owned by A: `tests/AppSafetyMenuCases.swift` (the Toolbox row asserts Font Awesome rendering; the title, shortcut, validation and action assertions are kept) and `tests/AppSafetyModernCases.swift` (the Zoom Actual Size row's Font Awesome proof). The root reviewed and accepted both.
+
+## Current root acceptance — 2026-10-11
+
+Tested source `21b8d68e10543b097cb6a902103e9c56eeb76be5`, tree `047c1a0ce65c3806633926740afea20c8eaffc4d`. The full root suite, fresh captures and independent native proof are documented in [root verification](e2e/glass-pickers-root-verification.md). The earlier `fa3ddf7` / `3fa5a95` candidate failed external accessibility and is superseded.
+
+Root took over the unfinished narrow correction after the Claude provider cap stopped the fleet. Explicit semantic choice elements remain; raw defensive panel/plate forwarders were removed because they exposed AXUnknown wrappers. The raw window-root walker now checks returned roles and parent chains before flattening. Color and Size preset activation finishes its external AX reply before dispatching; Color retains initiating Shift modifiers. History summaries expose static-text roles. Red proofs and final external results are packaged in the root evidence.
+
+`tools/test.py` now serializes native suite execution internally while keeping compilation parallel. Earlier fleet runs were serial relative to other fleet commands, but internal suite execution overlapped. Root final validation uses both the internal lock and owner-checked fleet GUI lock. Two pre-final runs failed stale asynchronous assertions and the isolated-event seam; neither is reported as final acceptance. The final harness supplies one isolated event to both app and swatch handlers, preserving the stronger Shift-over-later-event regression.
+
+The native proof was captured at `03d267b`; Sources, tests, Resources and Info.plist subtree hashes are identical at the final tested source. The only delta is the harness event seam in `tools/test-app-safety.sh`. Native evidence is retained at its actual SHA rather than relabelled. All external actions returned success, parent chains agreed, and no AXUnknown wrappers remained. No inventory rows were promoted: all 94 UI-changed histories remain immutable.
