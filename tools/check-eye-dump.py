@@ -20,7 +20,7 @@ Hard checks (a failure exits 1):
   rail       where the layout JSON has a `rail` field it is "absent", railChecks report nothing retired or stray, and the
              viewport's trailing margin is 12 +/- 0.5 measured from its recorded rect against the window width, not just the
              harness's own boolean
-  glass      the glass-choice surfaces (S50-S58, tools/eye-dump-audit.sh --groups glass): every surface the run asked for (its
+  glass      the glass-choice surfaces (S50-S60, tools/eye-dump-audit.sh --groups glass): every surface the run asked for (its
              requested-surfaces.jsonl, else every glass surface seen) must have every required capture for each appearance and icon mode
              (GLASS_SURFACES), and each capture's `glassPanel` record must show: one glass container per panel, nested glass 0, the minimum
              text size >= 18 pt, and the variant's own proof -- hover names a hovered row, focus a focused row, chosen a chosen row,
@@ -554,10 +554,12 @@ GLASS_SURFACES = {
             "destination-source-rest", "destination-source-hover", "destination-source-focus", "destination-source-dismissed",
             "destination-acl-off", "destination-acl-on", "destination-width-640", "destination-width-560"],
     "S59": ["footer-original-on", "footer-original-off", "footer-original-hidden"],
+    "S60": ["capture-enable-on", "capture-enable-off", "capture-modifiers-chosen", "capture-modifiers-disabled", "capture-clear-all",
+            "capture-key-rest", "capture-key-focus", "capture-key-chosen", "capture-key-scroll", "capture-key-dismissed"],
 }
-GLASS_VARIANTS = ("rest", "hover", "focus", "chosen", "disabled", "dismissed", "busy", "pressed", "hidden")
+GLASS_VARIANTS = ("rest", "hover", "focus", "chosen", "disabled", "dismissed", "busy", "pressed", "hidden", "scroll")
 # The variant a capture's slug promises; the record must say the same and carry that variant's own proof.
-SLUG_VARIANTS = {"width-640": "rest", "width-560": "rest", "acl-off": "rest", "acl-on": "chosen", "original-off": "rest", "original-on": "chosen", "original-hidden": "hidden", "actual-size": "chosen", "custom": "chosen", "empty": "disabled", "busy": "busy", "pressed": "pressed"}
+SLUG_VARIANTS = {"enable-on": "chosen", "enable-off": "rest", "clear-all": "rest", "key-scroll": "scroll", "width-640": "rest", "width-560": "rest", "acl-off": "rest", "acl-on": "chosen", "original-off": "rest", "original-on": "chosen", "original-hidden": "hidden", "actual-size": "chosen", "custom": "chosen", "empty": "disabled", "busy": "busy", "pressed": "pressed"}
 
 
 def promised_variant(slug):
@@ -690,6 +692,36 @@ def check_glass_record(label, record):
             problems.append(f"glass: {label} does not have the Keychain key source chosen (source {glass.get('sourceTitle')!r})")
         if len(faces) < 2 or not any(str(face).startswith("S3") for face in faces):
             problems.append(f"glass: {label} must show and measure the S3-compatible protocol face and the key source face (faces {faces})")
+    if slug.endswith(("-enable-on", "-enable-off")):
+        # Settings > Capture: the Enable global capture shortcuts toggle on and off.
+        problems += toggle_problems(label, glass, rows, "enable global capture shortcuts", slug.endswith("-enable-on"))
+    if slug.endswith("-modifiers-chosen"):
+        chosen = glass.get("chosenIndexes") or []
+        if len(rows) < 4 or not 1 <= len(chosen) < len(rows):
+            problems.append(f"glass: {label} must show the modifier toggles with some, not none or all, chosen (rows {len(rows)}, chosen {chosen})")
+    if slug.endswith("-modifiers-disabled"):
+        if len(glass.get("disabledRows") or []) < 4:
+            problems.append(f"glass: {label} must show all four modifier toggles disabled (disabled rows {glass.get('disabledRows')})")
+    if slug.endswith("-clear-all") and not any("clear all" in str(title).lower() for title in rows):
+        problems.append(f"glass: {label} shows no Clear All action among its rows")
+    if slug.startswith("capture-key-") and variant != "dismissed":
+        # The key panel's height cap: how many rows it has, how many are in view, and whether the host scrolls.
+        total, visible = glass.get("totalRows"), glass.get("visibleRows")
+        if not isinstance(total, int) or not isinstance(visible, int) or glass.get("hostScrolls") not in (True, False):
+            problems.append(f"glass: {label} does not state its visible and total row counts and whether the host scrolls")
+    if variant == "scroll":
+        total, visible = glass.get("totalRowsAtScroll"), glass.get("visibleRowsAtScroll")
+        if not isinstance(total, int) or not isinstance(visible, int) or total <= visible:
+            problems.append(f"glass: {label} is a scroll capture but every row is in view, so nothing scrolled (total {total!r}, visible {visible!r})")
+        if glass.get("hostScrollsAtScroll") is not True:
+            problems.append(f"glass: {label} is a scroll capture but the host does not scroll")
+        if glass.get("scrolledToEnd") is not True:
+            problems.append(f"glass: {label} did not scroll to the last key")
+    if slug == "capture-key-dismissed" and glass.get("firstResponderIsOpener") is not True:
+        problems.append(f"glass: {label} the first responder after Escape is {glass.get('firstResponderIdentifier')!r}, not the key face")
+    if slug.endswith("zoom-actual-size"):
+        if glass.get("actualSizeOn") is not True or glass.get("faceShowsPercentage") is not True:
+            problems.append(f"glass: {label} must show Actual Size on with the face still a percentage (on {glass.get('actualSizeOn')!r}, face {glass.get('faceTitleNow')!r})")
     if variant == "hidden":
         if glass.get("originalSizeVisible") is not False:
             problems.append(f"glass: {label} is the reflow capture but the Original size toggle is still visible")
@@ -948,7 +980,7 @@ def self_test():
             got = subprocess.run([sys.executable, script, str(folder), "--jobs", "1"], capture_output=True).returncode
             print(f"  self-test {label}: exit {got} (expected {expected})")
             failed |= got != expected
-        # glass choices (S50-S59): a run missing a required capture, or showing nested glass, small text or a panel that did not dismiss, fails
+        # glass choices (S50-S60): a run missing a required capture, or showing nested glass, small text or a panel that did not dismiss, fails
         def glass_record(surface, slug, appearance="light"):
             variant = promised_variant(slug)
             panel = {"kind": "panel", "variant": variant, "rowTitles": ["Alpha", "Beta", "Gamma"], "glassContainerCount": 1, "plateCount": 2,
@@ -967,6 +999,22 @@ def self_test():
                 panel["trackPressed"] = True
             if slug.endswith(("-acl-off", "-acl-on")):
                 panel.update(rowTitles=["Make uploads public-read"], protocol="S3", chosenIndexes=[0] if slug.endswith("-acl-on") else [])
+            if slug.endswith(("-enable-on", "-enable-off")):
+                panel.update(rowTitles=["Enable global capture shortcuts"], chosenIndexes=[0] if slug.endswith("-on") else [])
+            if slug.endswith("-modifiers-chosen"):
+                panel.update(rowTitles=["\u2318", "\u2325", "\u2303", "\u21e7"], chosenIndexes=[1, 2])
+            if slug.endswith("-modifiers-disabled"):
+                panel.update(rowTitles=["\u2318", "\u2325", "\u2303", "\u21e7"], disabledRows=[0, 1, 2, 3], disabledTookFocus=False)
+            if slug.endswith("-clear-all"):
+                panel.update(rowTitles=["Clear All"])
+            if slug.startswith("capture-key-") and variant != "dismissed":
+                panel.update(totalRows=40, visibleRows=12, hostScrolls=True)
+            if variant == "scroll":
+                panel.update(totalRowsAtScroll=40, visibleRowsAtScroll=12, hostScrollsAtScroll=True, scrolledToEnd=True)
+            if slug == "capture-key-dismissed":
+                panel.update(firstResponderIsOpener=True, firstResponderIdentifier="GlobalHotkeyKey.screen")
+            if slug.endswith("zoom-actual-size"):
+                panel.update(actualSizeOn=True, faceShowsPercentage=True, faceTitleNow="100%")
             if slug.endswith(("-width-640", "-width-560")):
                 panel.update(protocol="S3", sheetWidth=560 if slug.endswith("-560") else 640, sourceTitle="Access key stored in Keychain", faceTitles=["S3-compatible", "Keychain"])
             if slug.endswith(("-original-off", "-original-on")):
@@ -1060,6 +1108,22 @@ def self_test():
             ("Original size reflow capture with no upload active", tweak("S59", "footer-original-hidden", uploadActive=False), {"surfaces": ("S59",)}, 1),
             ("Original size reflow capture in a wide window", tweak("S59", "footer-original-hidden", windowWidth=1280), {"surfaces": ("S59",)}, 1),
             ("sound footer Original size surface", lambda r, g: None, {"surfaces": ("S59",)}, 0),
+            ("Enable toggle on capture with the toggle off", tweak("S60", "capture-enable-on", chosenIndexes=[]), {"surfaces": ("S60",)}, 1),
+            ("Enable toggle off capture with the toggle on", tweak("S60", "capture-enable-off", chosenIndexes=[0]), {"surfaces": ("S60",)}, 1),
+            ("modifier plate with none chosen", tweak("S60", "capture-modifiers-chosen", chosenIndexes=[]), {"surfaces": ("S60",)}, 1),
+            ("modifier plate with all chosen", tweak("S60", "capture-modifiers-chosen", chosenIndexes=[0, 1, 2, 3]), {"surfaces": ("S60",)}, 1),
+            ("modifiers disabled capture with one still enabled", tweak("S60", "capture-modifiers-disabled", disabledRows=[0, 1, 2]), {"surfaces": ("S60",)}, 1),
+            ("Clear All plate without Clear All", tweak("S60", "capture-clear-all", rowTitles=["Remove"]), {"surfaces": ("S60",)}, 1),
+            ("key panel without row counts", drop_field("S60", "capture-key-rest", "totalRows"), {"surfaces": ("S60",)}, 1),
+            ("key panel without host scroll flag", drop_field("S60", "capture-key-focus", "hostScrolls"), {"surfaces": ("S60",)}, 1),
+            ("scroll capture where every row is in view", tweak("S60", "capture-key-scroll", visibleRowsAtScroll=40), {"surfaces": ("S60",)}, 1),
+            ("scroll capture where the host does not scroll", tweak("S60", "capture-key-scroll", hostScrollsAtScroll=False), {"surfaces": ("S60",)}, 1),
+            ("scroll capture that never reached the last key", tweak("S60", "capture-key-scroll", scrolledToEnd=False), {"surfaces": ("S60",)}, 1),
+            ("focus not back on the key face", tweak("S60", "capture-key-dismissed", firstResponderIsOpener=False), {"surfaces": ("S60",)}, 1),
+            ("sound Capture tab surface", lambda r, g: None, {"surfaces": ("S60",)}, 0),
+            ("Actual Size capture with the face not a percentage", tweak("S51", "zoom-actual-size", faceShowsPercentage=False), {"surfaces": ("S51",)}, 1),
+            ("Actual Size capture with Actual Size off", tweak("S51", "zoom-actual-size", actualSizeOn=False), {"surfaces": ("S51",)}, 1),
+            ("sound Zoom surface", lambda r, g: None, {"surfaces": ("S51",)}, 0),
             ("sound destination surface", lambda r, g: None, {"surfaces": ("S58",)}, 0),
             ("pressed capture, track not pressed", tweak("S54", "size-pressed", trackPressed=False), {"surfaces": ("S54",)}, 1),
             ("glass record missing", lambda r, g: r[("light", "S50", "toolbox-rest")].pop("glassPanel"), {}, 1),

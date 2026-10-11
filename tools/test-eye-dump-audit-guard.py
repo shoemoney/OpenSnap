@@ -8,7 +8,7 @@
  (d) the defaults cleanup cannot touch a real domain: a script copy forced onto a real/odd id exits non-zero and records no
      delete, drop_throwaway_defaults refuses a bad id, and a normal run only deletes eyedump throwaway ids. Every script run
      here uses the scratch HOME and a fake `defaults` recorder; mutated copies with the protections stripped must go red.
- (f) the glass-choice captures (S50-S59): the Swift table of required captures equals the checker's GLASS_SURFACES, the harness never uses CGEvent,
+ (f) the glass-choice captures (S50-S60): the Swift table of required captures equals the checker's GLASS_SURFACES, the harness never uses CGEvent,
      NSApp.sendEvent, AppleScript or screencapture (Escape goes to the panel's own sendEvent), `--groups glass` launches S50-S59 and logs what
      was requested for the checker, and the manifest keeps each capture's glassPanel record; mutated copies of each must go red.
  (e) --display (injected display options): an unknown name is refused before anything launches, a valid set reaches only the
@@ -591,7 +591,7 @@ def test_input_fence_summary(base, home):
 
 
 GLASS_SOURCE = root / "Sources" / "EyeDumpAuditGlass.swift"
-GLASS_IDS = ["S50", "S51", "S52", "S53", "S54", "S55", "S56", "S57", "S58", "S59"]
+GLASS_IDS = ["S50", "S51", "S52", "S53", "S54", "S55", "S56", "S57", "S58", "S59", "S60"]
 
 
 def checker_module():

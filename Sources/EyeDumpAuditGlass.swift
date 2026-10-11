@@ -26,6 +26,7 @@ extension AuditRun {
         "S57": ["resize-groups-rest", "resize-groups-hover", "resize-groups-focus", "resize-anchor-rest", "resize-anchor-hover", "resize-anchor-focus", "resize-preset-rest", "resize-preset-hover", "resize-preset-focus", "resize-preset-chosen", "resize-preset-dismissed"],
         "S58": ["destination-protocol-rest", "destination-protocol-hover", "destination-protocol-focus", "destination-protocol-dismissed", "destination-source-rest", "destination-source-hover", "destination-source-focus", "destination-source-dismissed", "destination-acl-off", "destination-acl-on", "destination-width-640", "destination-width-560"],
         "S59": ["footer-original-on", "footer-original-off", "footer-original-hidden"],
+        "S60": ["capture-enable-on", "capture-enable-off", "capture-modifiers-chosen", "capture-modifiers-disabled", "capture-clear-all", "capture-key-rest", "capture-key-focus", "capture-key-chosen", "capture-key-scroll", "capture-key-dismissed"],
     ]
 
     func verifyGlassCaptures(_ id: String) {
@@ -254,6 +255,12 @@ extension AuditRun {
         record["faceTitles"] = faces.compactMap { $0["title"] as? String }
         record["truncatedRows"] = (labels + faces).filter { ($0["fits"] as? Bool) != true }.compactMap { $0["title"] as? String }
         record["unmeasuredText"] = AuditRun.unmeasuredText
+        if kind == "panel", variant != "dismissed" {
+            // Height cap: how many rows the panel has, how many are wholly in view, and whether the host scrolls them.
+            record["totalRows"] = rows.count
+            record["visibleRows"] = rows.filter { $0.visibleRect.height >= $0.bounds.height - 1 }.count
+            record["hostScrolls"] = GlassPanelHost.current?.window === host ? (GlassPanelHost.current?.scrolls ?? false) : false
+        }
         if let hovered = index(where: { isHovered($0) }) { record["hoveredRow"] = hovered }
         if let focused = index(where: { host.firstResponder === $0 }) { record["focusedRow"] = focused }
         if let smallest = smallestText(in: rowsRoot ?? content) { record["minFontSize"] = smallest.size; record["minFontSource"] = smallest.source }
@@ -347,6 +354,8 @@ extension AuditRun {
             let record = glassRecord(kind: "panel", identifier: script.identifier, variant: "dismissed", host: owner, rowsRoot: NSView(), extraFaceRoots: [script.opener], extra: [
                 "panelGone": gone, "focusReturned": returned, "openerHadFocus": opened.openerHadFocus, "dismissedBy": route,
                 "hostRegistryClear": GlassPanelHost.current == nil, "openerClass": String(describing: type(of: script.opener)),
+                "firstResponderIsOpener": owner.firstResponder === script.opener,
+                "firstResponderIdentifier": (owner.firstResponder as? NSView).flatMap { $0.identifier?.rawValue ?? ($0 as? GlassPopUpButton)?.panelIdentifier } ?? String(describing: owner.firstResponder.map { type(of: $0) }),
                 "glassContainerCount": 0, "plateCount": 0, "nestedGlassCount": 0])
             shoot(id, slug, surface: surface, state: state, windows: script.context ?? [window], refs: script.refs, settle: 0.2, extra: ["glassPanel": record])
         }
@@ -375,16 +384,25 @@ extension AuditRun {
             shootGlassPanel(script.id, script.base + "-focus", surface: script.surface, state: "\(restState); keyboard focus on row \(first) (\(visibleTitle(rows[first])))", panel: panel,
                             opener: script.opener, refs: script.refs, variant: "focus", identifier: script.identifier, extra: ["focusAccepted": took], context: script.context)
         }
-        if let off = rows.indices.first(where: { !rows[$0].isEnabled }) {
-            setHovered(rows[off], true)
-            let offer = offerFocus(in: panel, to: rows[off])
-            let walked = keyboardWalk(panel, rows: rows)
-            let disabled = Set(rows.indices.filter { !rows[$0].isEnabled })
-            shootGlassPanel(script.id, script.base + "-disabled", surface: script.surface, state: "\(restState); disabled row \(off) (\(visibleTitle(rows[off]))) hovered and offered focus; the arrow keys walked past it",
-                            panel: panel, opener: script.opener, refs: script.refs, variant: "disabled", identifier: script.identifier,
-                            extra: offer.facts.merging(["disabledTookFocus": offer.took || !disabled.isDisjoint(with: walked), "keyboardWalk": walked]) { $1 }, context: script.context)
-            setHovered(rows[off], false)
-        }
+        glassDisabledState(script, opened, restState: restState)
+    }
+
+    /// The disabled capture of an open panel: a disabled row hovered and offered the keyboard (its own `acceptsFirstResponder` is the judge, and an
+    /// arrow-key walk through the panel must never land on it). Returns false when no row is disabled.
+    @discardableResult
+    func glassDisabledState(_ script: GlassPanelScript, _ opened: OpenedGlassPanel, restState: String, extra: [String: Any] = [:]) -> Bool {
+        let panel = opened.panel
+        let rows = glassRows(in: panel.contentView ?? NSView())
+        guard let off = rows.indices.first(where: { !rows[$0].isEnabled }) else { return false }
+        setHovered(rows[off], true)
+        let offer = offerFocus(in: panel, to: rows[off])
+        let walked = keyboardWalk(panel, rows: rows)
+        let disabled = Set(rows.indices.filter { !rows[$0].isEnabled })
+        shootGlassPanel(script.id, script.base + "-disabled", surface: script.surface, state: "\(restState); disabled row \(off) (\(visibleTitle(rows[off]))) hovered and offered focus; the arrow keys walked past it",
+                        panel: panel, opener: script.opener, refs: script.refs, variant: "disabled", identifier: script.identifier,
+                        extra: offer.facts.merging(["disabledTookFocus": offer.took || !disabled.isDisjoint(with: walked), "keyboardWalk": walked]) { $1 }.merging(extra) { $1 }, context: script.context)
+        setHovered(rows[off], false)
+        return true
     }
 
     // MARK: S50 Toolbox
@@ -396,12 +414,25 @@ extension AuditRun {
         guard let toolbox = firstView(of: ToolboxPopUpButton.self) else { gap("S50", "Toolbox panel", "the Toolbox button was not found"); return }
         let script = GlassPanelScript(id: "S50", surface: "Toolbox panel", identifier: "Toolbox", base: "toolbox", opener: toolbox,
                                       refs: ["ModernEditorChrome.swift|final class ToolboxPopUpButton", "App.swift|func bezelToolbox()"], open: { toolbox.openMenu() }, nativeMenu: toolbox.menu)
-        // Rest, hover, focus and disabled: nothing selected, so the commands that need a selection are disabled.
+        // Rest, hover and focus: nothing selected.
         canvas.selection = []
         app.setTool(.arrow)
         guard let opened = openGlassPanel(script) else { return }
         glassPanelStates(script, opened, restState: "Toolbox panel open on a drawing with nothing selected")
+        let tookDisabled = FileManager.default.fileExists(atPath: dir.appendingPathComponent("meta/\(stemFor("S50", "toolbox-disabled")).json").path)
         dismissGlassPanel("S50", "toolbox-dismissed", surface: script.surface, state: "Toolbox panel dismissed with Escape: gone, focus back on the Toolbox button", script: script, opened: opened)
+        // Disabled: a row that needs a selection would do, but no Toolbox row depends on one in this build. The validation that does exist refuses the
+        // Fill, Shadow and Text Style rows while a frame capture is in progress; the app flag is set (nothing is captured) and cleared again.
+        if !tookDisabled {
+            app.frameCaptureInProgress = true
+            pump(0.2)
+            if let refused = openGlassPanel(script) {
+                glassDisabledState(script, refused, restState: "Toolbox panel while a frame capture is in progress (validation refuses the style rows)", extra: ["disabledReason": "frameCaptureInProgress"])
+                dismissGlassPanel("S50", "toolbox-dismissed-refused", surface: script.surface, state: "", script: script, opened: refused, capture: false)
+            }
+            app.frameCaptureInProgress = false
+            pump(0.2)
+        }
         // Chosen: a filled shape selected and the Rectangle tool current, so the toggle rows read on.
         if let filled = named["rectangle-filled"] { canvas.selection = [filled.id] }
         app.setTool(.rectangle)
@@ -425,14 +456,19 @@ extension AuditRun {
         pump(0.3)
         guard let opened = openGlassPanel(script) else { return }
         glassPanelStates(script, opened, restState: "Zoom panel open with a computed Fit row chosen")
-        shootGlassPanel("S51", "zoom-chosen", surface: script.surface, state: "Zoom panel: the computed Fit row is the chosen row", panel: opened.panel, opener: zoom, refs: script.refs, variant: "chosen", identifier: "Zoom")
+        shootGlassPanel("S51", "zoom-chosen", surface: script.surface, state: "Zoom panel: the computed Fit row is the chosen row", panel: opened.panel, opener: zoom, refs: script.refs, variant: "chosen", identifier: zoom.panelIdentifier)
         dismissGlassPanel("S51", "zoom-dismissed", surface: script.surface, state: "Zoom panel dismissed with Escape: gone, focus back on the zoom button", script: script, opened: opened)
-        // Actual Size on: the toggle row carries its on state (a fill, a border and a glyph, not colour alone).
+        // Actual Size on needs a shot too large for the window (the command refuses otherwise): the toggle row is chosen and the face still shows a percentage.
+        guard loadLargeShot(name: "Glass Zoom large") != nil else { gap("S51", "Zoom panel / actual size", "no synthetic size made isLargeShot true"); return }
         app.toggleActualSize()
-        pump(0.5)
+        pump(0.6)
+        guard app.isActualSize else { gap("S51", "Zoom panel / actual size", "Actual Size refused on a large shot (canToggleActualSize was false)"); return }
         if let again = openGlassPanel(script) {
-            shootGlassPanel("S51", "zoom-actual-size", surface: script.surface, state: "Zoom panel while Actual Size is on: the Actual Size toggle row is chosen", panel: again.panel,
-                            opener: zoom, refs: script.refs, variant: "chosen", identifier: "Zoom", extra: ["actualSizeOn": app.isActualSize])
+            let face = zoom.faceTitle
+            let percent = face.range(of: #"^\d+%$"#, options: .regularExpression) != nil
+            shootGlassPanel("S51", "zoom-actual-size", surface: script.surface, state: "Zoom panel while Actual Size is on: the Actual Size toggle row is chosen and the face shows \(face)", panel: again.panel,
+                            opener: zoom, refs: script.refs, variant: "chosen", identifier: zoom.panelIdentifier,
+                            extra: ["actualSizeOn": app.isActualSize, "faceTitleNow": face, "faceShowsPercentage": percent])
             dismissGlassPanel("S51", "zoom-dismissed-2", surface: script.surface, state: "", script: script, opened: again, capture: false)
         }
         app.leaveActualSize()
@@ -833,5 +869,96 @@ extension AuditRun {
                             variant: "chosen", identifier: panelID, context: script.context)
             dismissGlassPanel("S55", base + "-dismissed", surface: script.surface, state: "\(label) choices dismissed with Escape: gone, focus back on the face", script: script, opened: opened)
         }
+    }
+
+    // MARK: S60 Settings Capture tab
+
+    /// One group capture of a plate in a window: the glassPanel record for the rows on `root`, nothing else moved.
+    func shootGlassGroup(_ id: String, _ slug: String, surface: String, state: String, host: NSWindow, root: NSView, variant: String, refs: [String], identifier: String,
+                         windows: [NSWindow]? = nil, extra: [String: Any] = [:]) {
+        let record = glassRecord(kind: "group", identifier: identifier, variant: variant, host: host, rowsRoot: root, extra: extra)
+        shoot(id, slug, surface: surface, state: state, windows: windows ?? [host], refs: refs, settle: 0.3, extra: ["glassPanel": record])
+    }
+
+    /// The Capture tab at its normal size and the key-choice panel opened from a shortcut row's key face. The Settings window is built here against
+    /// an inert shortcut backend (as S17 does), so no key is ever claimed on the desktop whatever the captures choose.
+    func s60() {
+        defer { verifyGlassCaptures("S60") }
+        let refs = ["GlobalHotkeys.swift|final class GlobalHotkeyForm", "SettingsWindow.swift|final class CaptureSettingsTab", "GlassChoices.swift|class GlassPopUpButton"]
+        var stored = GeneralPreferencesState(drawingPrecision: .medium, arrowHead: 2, includeApp: true, statusMenu: 0)
+        let controller = SettingsWindowController(state: { stored }, hotkeys: GlobalHotkeyManager(defaults: .standard, backend: AuditInertHotkeyBackend()), defaults: .standard,
+                                                  destinations: { PublishingDestinationList() })
+        controller.onChange = { stored = $0 }
+        let screen = (window.screen ?? NSScreen.main)?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
+        controller.select(SettingsWindowController.captureTabIndex)
+        controller.visibleFrame = { screen }
+        controller.fit(animated: false)
+        controller.window.setFrameTopLeftPoint(NSPoint(x: screen.minX + 40, y: screen.maxY - 24))
+        controller.show()
+        pump(0.8)
+        defer { controller.window.orderOut(nil); window.makeKeyAndOrderFront(nil) }
+        guard let form = controller.capture.hotkeyForm else { gap("S60", "Settings Capture", "the shortcut form was not built"); return }
+        let host = controller.window
+        host.contentView?.layoutSubtreeIfNeeded()
+        let surface = "Settings Capture tab"
+        // Enable toggle, on then off (the manager is inert; nothing registers).
+        let enabledOn = form.enabledCheckbox.isChosen
+        shootGlassGroup("S60", "capture-enable-on", surface: surface, state: "Capture tab: Enable global capture shortcuts on", host: host, root: form.enabledPlate, variant: "chosen", refs: refs,
+                        identifier: "GlobalHotkeyEnabled", extra: ["enabledChosen": enabledOn])
+        form.enabledCheckbox.performClick(nil)
+        pump(0.3)
+        shootGlassGroup("S60", "capture-enable-off", surface: surface, state: "Capture tab: Enable global capture shortcuts off", host: host, root: form.enabledPlate, variant: "rest", refs: refs,
+                        identifier: "GlobalHotkeyEnabled", extra: ["enabledChosen": form.enabledCheckbox.isChosen])
+        form.enabledCheckbox.performClick(nil)
+        pump(0.3)
+        // Modifiers with no key set: the toggles are disabled and refuse the keyboard (acceptsFirstResponder is the judge).
+        let screenRow = form.rowPlate(for: .screen)
+        let toggles = form.modifierToggles(for: .screen)
+        let offered = toggles.first.map { offerFocus(in: host, to: $0) }
+        let anyAccepts = toggles.contains { $0.acceptsFirstResponder }
+        shootGlassGroup("S60", "capture-modifiers-disabled", surface: surface, state: "Capture tab: no key set for Screen region, so its four modifier toggles are disabled", host: host, root: screenRow,
+                        variant: "disabled", refs: refs, identifier: "GlobalHotkeyRow.screen", extra: (offered?.facts ?? [:]).merging(["disabledTookFocus": anyAccepts]) { $1 })
+        // A key chosen (K) and Option and Control on: the modifier toggles that are on are chosen.
+        let key = form.keyPopup(for: .screen)
+        key.selectItem(withTitle: "K"); _ = key.target?.perform(key.action, with: key)
+        pump(0.3)
+        toggles[1].performClick(nil); toggles[2].performClick(nil)
+        pump(0.3)
+        shootGlassGroup("S60", "capture-modifiers-chosen", surface: surface, state: "Capture tab: K with Option and Control chosen on the Screen region row", host: host, root: screenRow,
+                        variant: "chosen", refs: refs, identifier: "GlobalHotkeyRow.screen", extra: ["keyTitle": key.titleOfSelectedItem ?? ""])
+        shootGlassGroup("S60", "capture-clear-all", surface: surface, state: "Capture tab: the Clear All action plate", host: host, root: form.clearPlate, variant: "rest", refs: refs,
+                        identifier: "GlobalHotkeyClear")
+        // The key-choice panel from the row's key face.
+        let script = GlassPanelScript(id: "S60", surface: surface, identifier: key.panelIdentifier, base: "capture-key", opener: key, refs: refs,
+                                      open: { key.openChoices(keyboard: false) }, nativeMenu: key.menu, host: host, context: [host])
+        guard let opened = openGlassPanel(script) else { return }
+        glassPanelStates(script, opened, restState: "Capture tab: the key choices open for Screen region, K chosen")
+        shootGlassPanel("S60", "capture-key-chosen", surface: surface, state: "Capture tab: the key panel with K chosen", panel: opened.panel, opener: key, refs: refs, variant: "chosen",
+                        identifier: key.panelIdentifier, context: script.context)
+        dismissGlassPanel("S60", "capture-key-dismissed", surface: surface, state: "Key choices dismissed with Escape: gone, focus back on the key face", script: script, opened: opened)
+        // Long list inside the height cap: scrolled to its last row. A screen tall enough to show every key is capped to 640 pt so the cap is exercised.
+        func openForScroll(capped: Bool) -> OpenedGlassPanel? {
+            key.choicePanel.host.visibleFrameOverride = capped ? NSRect(x: screen.minX, y: screen.minY, width: screen.width, height: 640) : nil
+            return openGlassPanel(script)
+        }
+        guard var scrolling = openForScroll(capped: false) else { return }
+        var capOverride = false
+        if GlassPanelHost.current?.scrolls != true {
+            dismissGlassPanel("S60", "capture-key-dismissed-uncapped", surface: surface, state: "", script: script, opened: scrolling, capture: false)
+            capOverride = true
+            guard let again = openForScroll(capped: true) else { return }
+            scrolling = again
+        }
+        let rows = glassRows(in: scrolling.panel.contentView ?? NSView())
+        if let last = rows.last { GlassPanelHost.current?.reveal(last) }
+        pump(0.4)
+        let visible = rows.filter { $0.visibleRect.height >= $0.bounds.height - 1 }.count
+        shootGlassPanel("S60", "capture-key-scroll", surface: surface, state: "Capture tab: the long key list scrolled to its last row inside the height cap", panel: scrolling.panel, opener: key, refs: refs,
+                        variant: "scroll", identifier: key.panelIdentifier, extra: ["scrolledToEnd": rows.last.map { $0.visibleRect.height >= $0.bounds.height - 1 } ?? false,
+                                                                                  "capOverride": capOverride, "visibleRowsAtScroll": visible, "totalRowsAtScroll": rows.count,
+                                                                                  "hostScrollsAtScroll": GlassPanelHost.current?.scrolls ?? false], context: script.context)
+        dismissGlassPanel("S60", "capture-key-dismissed-2", surface: surface, state: "", script: script, opened: scrolling, capture: false)
+        key.choicePanel.host.visibleFrameOverride = nil
+        key.selectItem(at: 0); _ = key.target?.perform(key.action, with: key)
     }
 }

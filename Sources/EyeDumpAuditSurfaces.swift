@@ -391,6 +391,7 @@ extension AuditRun {
             step("S57", "glass: Resize sheet choices") { s57() }
             step("S58", "glass: destination sheet choices") { s58() }
             step("S59", "glass: footer Original size toggle") { s59() }
+            step("S60", "glass: Settings Capture tab choices and key panel") { s60() }
             step("S13", "capture picker") { s13() }
             step("S14", "countdown") { s14() }
             step("S15", "capture flash") { s15() }
@@ -1250,11 +1251,11 @@ extension AuditRun {
         key.selectItem(withTitle: "K"); _ = key.target?.perform(key.action, with: key)
         capture(2, "capture-error", "Capture tab with a refused shortcut (a key with no Command or Control)")
         // A chosen shortcut: the selected modifier segments are drawn in the accent (Option and Control here).
-        let modifiers = form.modifierControl(for: .screen)
+        let modifiers = form.modifierToggles(for: .screen)
         controller.select(2)
         key.selectItem(withTitle: "K"); _ = key.target?.perform(key.action, with: key)
-        modifiers.setSelected(true, forSegment: 1); modifiers.setSelected(true, forSegment: 2); _ = modifiers.target?.perform(modifiers.action, with: modifiers)
-        capture(2, "capture-modifiers", "Capture tab with Option-Control-K chosen for Screen region: the selected modifier segments are in the accent")
+        modifiers[1].performClick(nil); modifiers[2].performClick(nil)
+        capture(2, "capture-modifiers", "Capture tab with Option-Control-K chosen for Screen region: the chosen modifier toggles are in the accent")
         key.selectItem(at: 0); _ = key.target?.perform(key.action, with: key)
         destinations = PublishingDestinationList()
         controller.refresh()
