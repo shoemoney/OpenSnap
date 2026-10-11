@@ -1,4 +1,6 @@
 > Current follow-up: History glass controls and full-screen restoration fixes are integrated locally at `b6b6b2e`. See [root verification](e2e/followup-root-verification.md) and [implementation report](followup-implementation.md). The earlier candidate and milestone states below remain historical; manual/hardware and release acceptance are still open.
+>
+> **Glass choices:** the Toolbox, Zoom and Upload menus, the Color and Size panels, the footer Original size control, the History filters, Resize, Settings and the destination sheet's choices are app-owned glass choices (plan: [glass-pickers implementation](glass-pickers-implementation.md)). Items below that name the former native menu, pop-up, popover, checkbox, radio or segmented control for those controls are historical, except where they were edited to the current control.
 
 # OpenSnap todo checklist (visual audit, 2026-10-09, final)
 
@@ -227,7 +229,7 @@ Status at `284f028`, `fa4715f`, `33743c5` and `3b453b3`: 29 done, 2 verified, 1 
 - Canvas viewport at 980 grows from 884 to 956 pt (T15 section e).
 - Frame hole equals the scroll view frame.
 - Minimum content height is 608 pt in T15 (492 pt viewport, unchanged). The 680 pt window minimum in T8 is an open item under OSN-043.
-- Actual Size is in the Zoom popup menu with its shortcut and AX label. No Actual Size button is added to the bottom bar.
+- Actual Size is a toggle row in the Zoom choices panel, with its shortcut and AX label. No Actual Size button is added to the bottom bar.
 
 **Visual validation checklist**
 
@@ -244,6 +246,8 @@ Status at `284f028`, `fa4715f`, `33743c5` and `3b453b3`: 29 done, 2 verified, 1 
 - Footer order test extended with Actual Size (GlassChromeTests :746-747).
 
 ## OSN-011 · Stroke width: horizontal pill and popover replace the vertical rail slider
+
+> Superseded in part: the Size popover is now an app-owned glass panel (glass-pickers plan, M3). The popover steps below record the 658a16f build.
 
 `OSN-011 · P1 · M1 · Status: done`
 
@@ -295,10 +299,10 @@ Status at `284f028`, `fa4715f`, `33743c5` and `3b453b3`: 29 done, 2 verified, 1 
 **Visual validation checklist**
 
 - Before: S03-rail-light@dc1eb26 (vertical slider) and S06-size-mid-light (b9319c4; the vertical slider with no value read-out).
-- T15 section j item 5 at 980 and 1280, light and dark: the popover opens below the pill, on a solid surface, with a Size label, a 20-pt read-out, five ticks and five presets. The selected preset is marked without colour alone. Escape closes it.
-- Zoom popup menu (OSN-010 scope): Actual Size is listed with its menu-bar shortcut. Native menu, so this is a manual check (menu windows are a gap, S23).
+- T15 section j item 5 at 980 and 1280, light and dark: the Size panel opens below the pill as a glass panel, with a Size label, a 20-pt read-out, five ticks and five presets. The selected preset is marked without colour alone. Escape closes it.
+- Zoom choices (OSN-010 scope): Actual Size is listed with its menu-bar shortcut. The choices are an app-owned glass panel (glass-pickers plan), not a native menu.
 - Item 7: a size drag on selected text changes its font size, and one undo reverts it.
-- Item 11 (non-visual, log it): Space opens the popover and the arrow keys step the value.
+- Item 11 (non-visual, log it): Space opens the Size panel and the arrow keys step the value.
 
 **Regression tests**
 
@@ -371,8 +375,8 @@ Status at `284f028`, `fa4715f`, `33743c5` and `3b453b3`: 29 done, 2 verified, 1 
 
 **Implementation substeps**
 
-1. Run the harness (OSN-001) with the T15 matrix: light and dark x 980 (min height), 1024 x 740, 1280 x 800, 1440 x 900, full screen (1728 x 1117); empty and populated; Frame mode; selection and text editing; the Size popover open; PNG and JPG states.
-2. Record each capture's sourceSha. Measure the title-bar height and the popover translucency (R05, R06).
+1. Run the harness (OSN-001) with the T15 matrix: light and dark x 980 (min height), 1024 x 740, 1280 x 800, 1440 x 900, full screen (1728 x 1117); empty and populated; Frame mode; selection and text editing; the Size panel open; PNG and JPG states.
+2. Record each capture's sourceSha. Measure the title-bar height (R05). The popover translucency check (R06) is superseded.
 3. The independent reviewer checks the set against T15 section j and the D1 to D10 targets in visual-audit section 3.
 
 **File owners** (`Sources/App.swift` is Lane A)
@@ -1399,7 +1403,7 @@ Status at `284f028`, `fa4715f`, `33743c5` and `3b453b3`: 29 done, 2 verified, 1 
 1. NSTabViewController with tabStyle .toolbar. Tabs: General, Drawing, Capture, Upload. Title equals the selected tab. No Done button; changes apply live. Size 640 wide, height per tab. isRestorable frame. Escape closes (cancelOperation calls closePreferences).
 2. General: Dock, Menu bar, Both presence; 'Show OpenSnap window in fullscreen and crosshair snaps'; tool-tip overlays; keyboard-tip overlay.
 3. Drawing: precision, arrow head. Capture: shortcuts inline (the Hotkeys form), flash preference. Upload: destinations list.
-4. Row labels right-aligned, 20 pt bodyStrong. Control column body. 16 pt rhythm (Space.s4). One aligned form grid (checkboxes align with the radio label column, VF-18).
+4. Row labels right-aligned, 20 pt bodyStrong. Control column body. 16 pt rhythm (Space.s4). One aligned form grid (check toggles align with the radio label column, VF-18).
 5. Remove the Appearance and Play sounds rows and the Relaunch button (done in OSN-022; verify).
 
 **File owners** (`Sources/App.swift` is Lane A)
@@ -1506,7 +1510,7 @@ Status at `284f028`, `fa4715f`, `33743c5` and `3b453b3`: 29 done, 2 verified, 1 
 **Implementation substeps**
 
 1. Default 1000 x 720, minimum 880 x 600. Adaptive flow-layout grid (item 210 x 234). The details panel collapses below the grid when the width is under 760 pt.
-2. Filter row (segmented category, search, date popup) in the window toolbar under option A; otherwise in the content area.
+2. Filter row (category choice group, search, date pop-up face) in the window toolbar under option A; otherwise in the content area.
 3. Selection cue: accent border and check badge (T6).
 4. Empty state: centred text, 'No history yet. Press ⌘S…' per T11. Interpretation: section f lists Save to History with no shortcut ('—'), so confirm the ⌘S text before use.
 5. Move the seven disabled actions to the toolbar or a context menu. Drag formats: PNG, JPG, PDF, TIFF, SVG, and .opensnap.
@@ -1563,7 +1567,7 @@ Status at `284f028`, `fa4715f`, `33743c5` and `3b453b3`: 29 done, 2 verified, 1 
 3. On success: 'Link copied' for 4 s, an announcement, and an Open or Copy affordance.
 4. On failure: inline 'Error: <message>' with Retry and Details. This replaces NSAlert(error:) at App.swift:1795-1812, except destination-not-configured, which still opens Settings.
 5. Keep the shutdown barrier working: the inline error path must not break finishShutdownDecision (App.swift:403-417).
-6. The upload row hides the Original-size checkbox while uploading and lets the name truncate. Do not widen the bar (T9 risks).
+6. The upload row hides the Original-size toggle while uploading and lets the name truncate. Do not widen the bar (T9 risks).
 7. Post the announcement on start, success and error (NSAccessibility.post, announcementRequested).
 
 **File owners** (`Sources/App.swift` is Lane A)
@@ -1810,7 +1814,7 @@ Status at `284f028`, `fa4715f`, `33743c5` and `3b453b3`: 29 done, 2 verified, 1 
 
 **Implementation substeps**
 
-1. window.autorecalculatesKeyViewLoop = true; initialFirstResponder = canvas. Explicit loop: top bar left to right, canvas, bottom bar left to right. Set nextKeyView only for the Size and Color popovers (T15 section f).
+1. window.autorecalculatesKeyViewLoop = true; initialFirstResponder = canvas. Explicit loop: top bar left to right, canvas, bottom bar left to right. Set nextKeyView only for the Size and Color panels (T15 section f).
 2. Each custom view exposes focusRingType and a mask. CommandButton and GlassChromeButton honour Full Keyboard Access (canBecomeKeyView).
 3. Tab from the canvas keeps tool switching ('tab = Pen' in OriginalHintMessages). Document Control-F5 and FKA, and add a menu command 'Focus Toolbar' (R11).
 4. Drag well: acceptsFirstResponder; Space and Return perform Export (T6 and T7).
@@ -1819,7 +1823,7 @@ Status at `284f028`, `fa4715f`, `33743c5` and `3b453b3`: 29 done, 2 verified, 1 
 **File owners** (`Sources/App.swift` is Lane A)
 
 - Sources/App.swift (Lane A: DragExportView press; initialFirstResponder; Focus Toolbar menu command) **[Lane A]**
-- Sources/ModernEditorChrome.swift (key-view loop; nextKeyView for the Size and Color popovers)
+- Sources/ModernEditorChrome.swift (key-view loop; nextKeyView for the Size and Color panels)
 - Sources/GlassChrome.swift (canBecomeKeyView honours Full Keyboard Access)
 - Sources/GeneralPreferencesForm.swift (Escape), Sources/PublishingDestinationsView.swift (Return and Escape), Sources/HistoryBrowser.swift (Return opens, Escape closes), Sources/ResizePanel.swift, Sources/PhotoBrowser.swift, Sources/GlobalHotkeys.swift
 - tests/AccessibilityAuditTests.swift (new; key-loop and Escape and Return tests)
@@ -1924,7 +1928,7 @@ Status at `284f028`, `fa4715f`, `33743c5` and `3b453b3`: 29 done, 2 verified, 1 
 **Implementation substeps**
 
 1. Tool labels: 'Select tool', 'Brush tool' and so on. Upload: 'Upload image'. Drag well: 'Drag image to another app', role button, accessibilityPerformPress opens the Export panel. Toolbox: 'Toolbox menu'. PNG and JPG: segments under the group 'Image format'. Status item: 'Show or hide OpenSnap' (OSN-023).
-2. Relocated controls (T15 sections d and f): Size pill role slider, label 'Drawing size', value as a whole number, increment and decrement by one preset, custom action 'Show size options'. The popover track is a second slider with the same value. Preset buttons 'Size N'.
+2. Relocated controls (T15 sections d and f): Size pill role slider, label 'Drawing size', value as a whole number, increment and decrement by one preset, custom action 'Show size options'. The Size panel's track is a second slider with the same value. Preset buttons 'Size N'.
 3. AppDelegate.announce(_:): NSAccessibility.post(element: window, notification: .announcementRequested, userInfo: [.announcement: text, .priority: .medium]). Events: upload start, success and error; capture success; Frame enter and leave; Undo and Redo results. Rate-limit to state changes (R10).
 4. Status label: setAccessibilityRole(.staticText). Errors prefixed 'Error:'.
 5. Manual VoiceOver pass, recorded with the date and the build SHA (visual-audit M6 exit).
@@ -1934,7 +1938,7 @@ Status at `284f028`, `fa4715f`, `33743c5` and `3b453b3`: 29 done, 2 verified, 1 
 - Sources/ModernEditorChrome.swift (labels :92-112, :276-290)
 - Sources/App+ModernChrome.swift
 - Sources/App.swift (Lane A: announce(_:); drag well and Upload labels) **[Lane A]**
-- Sources/BezelDrawingControls.swift (Size pill and popover track accessibility)
+- Sources/BezelDrawingControls.swift (Size pill and panel track accessibility)
 - tests/AccessibilityAuditTests.swift (new), tests/AppSafetyModernCases.swift (modernControlStrings, modernIconOnlyCommands)
 
 **Prerequisites**
@@ -1980,7 +1984,7 @@ Status at `284f028`, `fa4715f`, `33743c5` and `3b453b3`: 29 done, 2 verified, 1 
 
 **Implementation substeps**
 
-1. G4 walker (ViewTreeAudit): build the main window (default, minimum, Frame), Prefs (each tab), History, Photos, Resize (three modes), Hotkeys, Destinations (list and each protocol), the Export accessory, the Fonts accessory, the Overview panel and the colour popover. Collect fonts from text fields, buttons, popups, segmented controls, text views, table cells, menu items (recursively) and Typography-registered custom text. Assert at least 18 pt for readable text, and at least 20 pt for controls unless caption.
+1. G4 walker (ViewTreeAudit): build the main window (default, minimum, Frame), Prefs (each tab), History, Photos, Resize (three modes), Hotkeys, Destinations (list and each protocol), the Export accessory, the Fonts accessory, the Overview panel and the colour panel. Collect fonts from text fields, buttons, popups, segmented controls, text views, table cells, menu items (recursively) and Typography-registered custom text. Assert at least 18 pt for readable text, and at least 20 pt for controls unless caption.
 2. G5: GlassDepthTests (depth, count budget, frame intersection, Reduce Transparency plates).
 3. G3 dynamic: OpenSnap --dump-strings DIR walks every window, menu, status item, tooltip, AX label, placeholder and alert, and writes JSON. tools/check-user-strings.py asserts no match for /skitch|openskitch/i.
 4. G6: no emoji or decorative glyphs. Static scan of every string literal (including \u escapes) plus the dynamic dump.
@@ -2046,7 +2050,7 @@ Status at `284f028`, `fa4715f`, `33743c5` and `3b453b3`: 29 done, 2 verified, 1 
 **Implementation substeps**
 
 1. Run the harness (OSN-001) over the full gallery: light and dark x 980, 1024, 1280, 1440 and full screen x states x FA and SF icon modes.
-2. Include Frame mode, the popover open, populated and empty, selection, text editing, PNG and JPG states, and injected DisplayOptions (OSN-061).
+2. Include Frame mode, the Size panel open, populated and empty, selection, text editing, PNG and JPG states, and injected DisplayOptions (OSN-061).
 3. Record sourceSha on every manifest entry. Record any gap in gaps.md (non-Retina, multi-display and live desktop stay gaps).
 4. The independent reviewer checks every capture against T15 section j and D1 to D10 (visual-audit section 3). Record the sign-off.
 
@@ -2074,7 +2078,7 @@ Status at `284f028`, `fa4715f`, `33743c5` and `3b453b3`: 29 done, 2 verified, 1 
 **Visual validation checklist**
 
 - Before: S01-editor-empty-light@dc1eb26, S02-populated-light@dc1eb26, S11-width-980-light@dc1eb26, S11-width-1440-dark@dc1eb26, S11-size-fullscreen-dark@dc1eb26, S12-frame-w980-light@dc1eb26 and PROTO-w980-normal-light@dc1eb26 (rail-less mock, not product).
-- Full matrix: light and dark x 980 (minimum height), 1024 x 740, 1280 x 800, 1440 and full screen x empty, populated, selection, text editing, Frame, popover open, PNG and JPG; in FA and SF icon modes.
+- Full matrix: light and dark x 980 (minimum height), 1024 x 740, 1280 x 800, 1440 and full screen x empty, populated, selection, text editing, Frame, Size panel open, PNG and JPG; in FA and SF icon modes.
 - Each capture is checked against D1 to D10 (visual-audit section 3). The independent visual sign-off is recorded.
 
 **Regression tests**
