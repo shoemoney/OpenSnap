@@ -1,0 +1,644 @@
+{
+  "appearance" : "light",
+  "displayOptions" : {
+    "active" : [
+
+    ],
+    "differentiateWithoutColor" : false,
+    "increaseContrast" : false,
+    "injected" : false,
+    "reduceMotion" : false,
+    "reduceTransparency" : false
+  },
+  "iconMode" : "sf",
+  "id" : "S07",
+  "sourceSha" : "daa2977",
+  "windows" : [
+    {
+      "initialFirstResponder" : "CanvasView",
+      "keyViewLoop" : [
+        {
+          "class" : "CanvasView",
+          "frame" : [
+            12,
+            88,
+            4800,
+            3000
+          ],
+          "label" : "Drawing canvas"
+        }
+      ],
+      "title" : "Large capture",
+      "tree" : {
+        "children" : [
+          {
+            "children" : [
+              {
+                "children" : [
+                  {
+                    "class" : "NSAccessibilityScrollerPart",
+                    "enabled" : false,
+                    "frame" : [
+                      212,
+                      165,
+                      545,
+                      11
+                    ],
+                    "role" : "AXValueIndicator",
+                    "value" : "0"
+                  },
+                  {
+                    "class" : "NSAccessibilityScrollerPart",
+                    "enabled" : false,
+                    "frame" : [
+                      209,
+                      179,
+                      0,
+                      0
+                    ],
+                    "role" : "AXButton",
+                    "subrole" : "AXIncrementArrow"
+                  },
+                  {
+                    "class" : "NSAccessibilityScrollerPart",
+                    "enabled" : false,
+                    "frame" : [
+                      209,
+                      179,
+                      0,
+                      0
+                    ],
+                    "role" : "AXButton",
+                    "subrole" : "AXDecrementArrow"
+                  },
+                  {
+                    "class" : "NSAccessibilityScrollerPart",
+                    "enabled" : false,
+                    "frame" : [
+                      757.5,
+                      165,
+                      1069.5,
+                      11
+                    ],
+                    "role" : "AXButton",
+                    "subrole" : "AXIncrementPage"
+                  },
+                  {
+                    "class" : "NSAccessibilityScrollerPart",
+                    "enabled" : false,
+                    "frame" : [
+                      212,
+                      165,
+                      0,
+                      11
+                    ],
+                    "role" : "AXButton",
+                    "subrole" : "AXDecrementPage"
+                  }
+                ],
+                "class" : "NSScroller",
+                "frame" : [
+                  208,
+                  161,
+                  1623,
+                  19
+                ],
+                "role" : "AXScrollBar",
+                "value" : "0"
+              },
+              {
+                "children" : [
+                  {
+                    "class" : "NSAccessibilityScrollerPart",
+                    "enabled" : false,
+                    "frame" : [
+                      1833,
+                      849.5,
+                      11,
+                      340.5
+                    ],
+                    "role" : "AXValueIndicator",
+                    "value" : "0"
+                  },
+                  {
+                    "class" : "NSAccessibilityScrollerPart",
+                    "enabled" : false,
+                    "frame" : [
+                      1830,
+                      1193,
+                      0,
+                      0
+                    ],
+                    "role" : "AXButton",
+                    "subrole" : "AXIncrementArrow"
+                  },
+                  {
+                    "class" : "NSAccessibilityScrollerPart",
+                    "enabled" : false,
+                    "frame" : [
+                      1830,
+                      1193,
+                      0,
+                      0
+                    ],
+                    "role" : "AXButton",
+                    "subrole" : "AXDecrementArrow"
+                  },
+                  {
+                    "class" : "NSAccessibilityScrollerPart",
+                    "enabled" : false,
+                    "frame" : [
+                      1833,
+                      182,
+                      11,
+                      667
+                    ],
+                    "role" : "AXButton",
+                    "subrole" : "AXIncrementPage"
+                  },
+                  {
+                    "class" : "NSAccessibilityScrollerPart",
+                    "enabled" : false,
+                    "frame" : [
+                      1833,
+                      1190,
+                      11,
+                      0
+                    ],
+                    "role" : "AXButton",
+                    "subrole" : "AXDecrementPage"
+                  }
+                ],
+                "class" : "NSScroller",
+                "frame" : [
+                  1829,
+                  178,
+                  19,
+                  1016
+                ],
+                "role" : "AXScrollBar",
+                "value" : "0"
+              }
+            ],
+            "class" : "NSScrollView",
+            "enabled" : false,
+            "frame" : [
+              209,
+              162,
+              1638,
+              1031
+            ],
+            "role" : "AXScrollArea"
+          },
+          {
+            "class" : "NSButtonCell",
+            "frame" : [
+              311,
+              1204,
+              50,
+              38
+            ],
+            "help" : "Hide (⌘M)",
+            "role" : "AXButton"
+          },
+          {
+            "class" : "NSPopUpButtonCell",
+            "frame" : [
+              369,
+              1208,
+              46,
+              30
+            ],
+            "help" : "Drawing, edit and capture commands; everything else is in the menu bar",
+            "role" : "AXPopUpButton"
+          },
+          {
+            "class" : "NSButtonCell",
+            "frame" : [
+              423,
+              1204,
+              50,
+              38
+            ],
+            "help" : "Photos",
+            "role" : "AXButton"
+          },
+          {
+            "class" : "NSButtonCell",
+            "frame" : [
+              491,
+              1204,
+              58,
+              38
+            ],
+            "help" : "Snap: drag an area or click a window; right-click or Control-click for Fullscreen",
+            "role" : "AXButton"
+          },
+          {
+            "class" : "NSButtonCell",
+            "frame" : [
+              842,
+              1204,
+              46,
+              38
+            ],
+            "help" : "Select tool",
+            "role" : "AXButton"
+          },
+          {
+            "class" : "NSButtonCell",
+            "frame" : [
+              888,
+              1204,
+              46,
+              38
+            ],
+            "help" : "Brush tool",
+            "role" : "AXButton"
+          },
+          {
+            "class" : "NSButtonCell",
+            "frame" : [
+              934,
+              1204,
+              46,
+              38
+            ],
+            "help" : "Line tool",
+            "role" : "AXButton"
+          },
+          {
+            "class" : "NSButtonCell",
+            "frame" : [
+              980,
+              1204,
+              46,
+              38
+            ],
+            "help" : "Ellipse tool",
+            "role" : "AXButton"
+          },
+          {
+            "class" : "NSButtonCell",
+            "frame" : [
+              1026,
+              1204,
+              46,
+              38
+            ],
+            "help" : "Rectangle tool",
+            "role" : "AXButton"
+          },
+          {
+            "class" : "NSButtonCell",
+            "frame" : [
+              1072,
+              1204,
+              46,
+              38
+            ],
+            "help" : "Fill tool",
+            "role" : "AXButton"
+          },
+          {
+            "class" : "NSButtonCell",
+            "frame" : [
+              1118,
+              1204,
+              46,
+              38
+            ],
+            "help" : "Eraser tool",
+            "role" : "AXButton"
+          },
+          {
+            "class" : "NSButtonCell",
+            "frame" : [
+              1164,
+              1204,
+              46,
+              38
+            ],
+            "help" : "Text tool",
+            "role" : "AXButton"
+          },
+          {
+            "class" : "NSButtonCell",
+            "frame" : [
+              1210,
+              1204,
+              46,
+              38
+            ],
+            "help" : "Arrow tool (selected); Option reverses direction, Shift constrains the angle",
+            "role" : "AXButton"
+          },
+          {
+            "class" : "NSButtonCell",
+            "frame" : [
+              1256,
+              1204,
+              46,
+              38
+            ],
+            "help" : "Crop tool",
+            "role" : "AXButton"
+          },
+          {
+            "class" : "BezelHoverButton",
+            "frame" : [
+              1595,
+              1204,
+              50,
+              38
+            ],
+            "help" : "Color: hover for original preset colors; hold Shift to change the canvas background",
+            "label" : "Drawing colors",
+            "role" : "AXButton",
+            "value" : "Red 1, green 0, blue 0, alpha 1"
+          },
+          {
+            "class" : "BezelSizeSlider",
+            "frame" : [
+              1645,
+              1204,
+              50,
+              38
+            ],
+            "help" : "Size 7",
+            "label" : "Drawing size",
+            "role" : "AXSlider",
+            "value" : "7"
+          },
+          {
+            "class" : "NSButtonCell",
+            "frame" : [
+              1695,
+              1204,
+              50,
+              38
+            ],
+            "help" : "Font",
+            "role" : "AXButton"
+          },
+          {
+            "class" : "NSButtonCell",
+            "frame" : [
+              311,
+              113,
+              50,
+              38
+            ],
+            "help" : "Undo (⌘Z)",
+            "role" : "AXButton"
+          },
+          {
+            "class" : "NSButtonCell",
+            "frame" : [
+              361,
+              113,
+              50,
+              38
+            ],
+            "help" : "Remove annotations",
+            "role" : "AXButton"
+          },
+          {
+            "class" : "ZoomPopUpButton",
+            "enabled" : false,
+            "frame" : [
+              429,
+              113,
+              89,
+              38
+            ],
+            "help" : "Actual, 100%. Zoom is how large the drawing is shown. Actual Size shows one image pixel per screen pixel.",
+            "label" : "Canvas zoom",
+            "role" : "AXPopUpButton",
+            "value" : "Actual, 100%"
+          },
+          {
+            "class" : "NSButtonCell",
+            "enabled" : false,
+            "frame" : [
+              518,
+              113,
+              90,
+              38
+            ],
+            "help" : "Resize or crop the picture",
+            "role" : "AXButton"
+          },
+          {
+            "class" : "NSTextFieldCell",
+            "frame" : [
+              622,
+              120.5,
+              211,
+              23
+            ],
+            "role" : "AXStaticText",
+            "value" : "Arrow · Unsaved changes"
+          },
+          {
+            "class" : "NSButtonCell",
+            "frame" : [
+              1391,
+              113,
+              50,
+              38
+            ],
+            "help" : "Save to History",
+            "role" : "AXButton"
+          },
+          {
+            "class" : "NSButtonCell",
+            "frame" : [
+              1441,
+              113,
+              50,
+              38
+            ],
+            "help" : "History",
+            "role" : "AXButton"
+          },
+          {
+            "children" : [
+              {
+                "class" : "SegmentedToggleElement",
+                "frame" : [
+                  1509,
+                  113,
+                  66,
+                  36
+                ],
+                "label" : "PNG",
+                "role" : "AXRadioButton",
+                "value" : "1"
+              },
+              {
+                "class" : "SegmentedToggleElement",
+                "frame" : [
+                  1577,
+                  113,
+                  66,
+                  36
+                ],
+                "label" : "JPG",
+                "role" : "AXRadioButton",
+                "value" : "0"
+              }
+            ],
+            "class" : "SegmentedToggle",
+            "frame" : [
+              1509,
+              113,
+              136,
+              38
+            ],
+            "label" : "Image format",
+            "role" : "AXRadioGroup",
+            "value" : "PNG"
+          },
+          {
+            "class" : "DragExportView",
+            "enabled" : false,
+            "frame" : [
+              1646,
+              114,
+              48,
+              36
+            ],
+            "help" : "Drag the drawing into Finder or another app",
+            "label" : "Drag image to another app",
+            "role" : "AXButton"
+          },
+          {
+            "class" : "NSButtonCell",
+            "frame" : [
+              1695,
+              113,
+              50,
+              38
+            ],
+            "help" : "Upload image and copy link · Right-click for destinations",
+            "label" : "Upload image",
+            "role" : "AXButton"
+          },
+          {
+            "class" : "_NSThemeCloseWidgetCell",
+            "frame" : [
+              205,
+              1257,
+              16,
+              16
+            ],
+            "role" : "AXButton",
+            "subrole" : "AXCloseButton"
+          },
+          {
+            "children" : [
+              {
+                "children" : [
+                  {
+                    "class" : "NSAccessibilityRemoteUIElement"
+                  }
+                ],
+                "class" : "NSThemeWidgetZoomMenuRemoteView",
+                "enabled" : false,
+                "frame" : [
+                  252,
+                  1258,
+                  14,
+                  14
+                ],
+                "role" : "AXGroup"
+              }
+            ],
+            "class" : "_NSThemeZoomWidgetCell",
+            "frame" : [
+              251,
+              1257,
+              16,
+              16
+            ],
+            "help" : "this button also has an action to zoom the window",
+            "role" : "AXButton",
+            "subrole" : "AXFullScreenButton"
+          },
+          {
+            "class" : "_NSThemeWidgetCell",
+            "frame" : [
+              228,
+              1257,
+              16,
+              16
+            ],
+            "role" : "AXButton",
+            "subrole" : "AXMinimizeButton"
+          },
+          {
+            "class" : "NSAccessibilityReparentingCellProxy"
+          }
+        ],
+        "class" : "NSWindow",
+        "enabled" : false,
+        "frame" : [
+          197,
+          102,
+          1662,
+          1179
+        ],
+        "label" : "Large capture – 4800 × 3000 · PNG · 1.4 MB",
+        "role" : "AXWindow",
+        "subrole" : "AXStandardWindow",
+        "title" : "Large capture – 4800 × 3000 · PNG · 1.4 MB"
+      }
+    },
+    {
+      "initialFirstResponder" : "CanvasNavigator",
+      "keyViewLoop" : [
+        {
+          "class" : "CanvasNavigator",
+          "frame" : [
+            0,
+            0,
+            180,
+            162
+          ],
+          "label" : "Overview"
+        }
+      ],
+      "title" : "",
+      "tree" : {
+        "children" : [
+          {
+            "class" : "CanvasNavigator",
+            "enabled" : false,
+            "frame" : [
+              22,
+              132,
+              180,
+              162
+            ],
+            "help" : "Shows the whole canvas and visible region. Click or drag to center the viewport. Use pan actions or arrow keys to move the visible region.",
+            "label" : "Overview",
+            "role" : "AXGroup",
+            "value" : "Visible region: x 0, y 0, width 1621, height 1014. Canvas: 4800 by 3000."
+          }
+        ],
+        "class" : "ActualNavigatorPanel",
+        "enabled" : false,
+        "frame" : [
+          22,
+          132,
+          180,
+          162
+        ],
+        "label" : "Actual Size overview",
+        "role" : "AXWindow",
+        "subrole" : "AXSystemDialog"
+      }
+    }
+  ]
+}

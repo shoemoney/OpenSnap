@@ -1,0 +1,53 @@
+{
+  "appActive" : true,
+  "appearance" : "dark",
+  "displayOptions" : {
+    "active" : [
+
+    ],
+    "differentiateWithoutColor" : false,
+    "increaseContrast" : false,
+    "injected" : false,
+    "reduceMotion" : false,
+    "reduceTransparency" : false
+  },
+  "file" : "S07-zoom-50-dark.png",
+  "iconMode" : "sf",
+  "id" : "S07",
+  "method" : "CGWindowListCreateImage(bestResolution)",
+  "opaqueFraction" : 0.99913194444444442,
+  "pixelSize" : [
+    3324,
+    2358
+  ],
+  "pointSize" : [
+    1662,
+    1179
+  ],
+  "scale" : 2,
+  "slug" : "zoom-50",
+  "sourceRefs" : [
+    "App.swift|@objc func changeZoom"
+  ],
+  "sourceSha" : "daa2977",
+  "state" : "zoom 50%",
+  "surface" : "canvas viewport",
+  "windowAlpha" : 1,
+  "windows" : [
+    {
+      "class" : "NSWindow",
+      "frame" : [
+        197,
+        102,
+        1662,
+        1179
+      ],
+      "isKey" : true,
+      "title" : "Large capture"
+    }
+  ],
+  "windowSize" : [
+    1662,
+    1179
+  ]
+}

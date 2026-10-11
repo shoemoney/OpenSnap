@@ -1,0 +1,34 @@
+{
+  "desktop": {
+    "width": 728,
+    "contentHeight": 2135,
+    "capturedHeight": 2135,
+    "consoleMessages": [
+      {
+        "level": "log",
+        "text": "GALLERY_QA {\"failures\":[],\"minFont\":18,\"width\":728,\"scrollWidth\":728,\"brokenImages\":0}"
+      }
+    ],
+    "screenshot": {
+      "mimeType": "image/png",
+      "width": 728,
+      "height": 2135
+    }
+  },
+  "phone": {
+    "width": 360,
+    "contentHeight": 3014,
+    "capturedHeight": 3014,
+    "consoleMessages": [
+      {
+        "level": "log",
+        "text": "GALLERY_QA {\"failures\":[],\"minFont\":18,\"width\":360,\"scrollWidth\":360,\"brokenImages\":0}"
+      }
+    ],
+    "screenshot": {
+      "mimeType": "image/png",
+      "width": 360,
+      "height": 3014
+    }
+  }
+}

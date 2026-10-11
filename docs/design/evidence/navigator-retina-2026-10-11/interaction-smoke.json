@@ -1,0 +1,20 @@
+{
+  "source": "daa2977ca60ded1c5dff8586689ca44573ad4284",
+  "session": "com.shoemoney.opensnap.e2e-34162",
+  "method": "cua_repl native app, coordinate clicks and accessibility actions; physical HID and hover not established",
+  "observations": [
+    "Toolbox coordinate opener presented 18 choices",
+    "Color Blue AX pick applied RGB 0.098,0.467,1 and closed panel",
+    "Size Show size options opened a non-key panel; screenshot established presence while key-window AX stayed unchanged",
+    "First coordinate preset click changed Size7 to9 and closed panel",
+    "Outside coordinate click dismissed Size",
+    "Coordinate Size face click opened; repeated same face click closed without reopening"
+  ],
+  "excluded": [
+    "Toolbox repeat-opener attempt used union-image coordinates and activated Save to History; blank notice; no opener-dismissal proof",
+    "Undo disabled after one invocation but pen remained9; no pen-state Undo claim"
+  ],
+  "cleanup": "Isolated app stopped after SIGTERM1s, watchdog kills0, throwaway defaults removed, watched122files and2defaults unchanged",
+  "storeDigest": "dbde037ac2085108",
+  "ledgerPromotions": 0
+}

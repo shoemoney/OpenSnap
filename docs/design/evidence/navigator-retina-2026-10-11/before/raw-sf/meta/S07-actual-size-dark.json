@@ -1,0 +1,65 @@
+{
+  "appActive" : true,
+  "appearance" : "dark",
+  "displayOptions" : {
+    "active" : [
+
+    ],
+    "differentiateWithoutColor" : false,
+    "increaseContrast" : false,
+    "injected" : false,
+    "reduceMotion" : false,
+    "reduceTransparency" : false
+  },
+  "file" : "S07-actual-size-dark.png",
+  "iconMode" : "sf",
+  "id" : "S07",
+  "method" : "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+  "opaqueFraction" : 0.91015625,
+  "pixelSize" : [
+    3674,
+    2358
+  ],
+  "pointSize" : [
+    1837,
+    1179
+  ],
+  "scale" : 2,
+  "slug" : "actual-size",
+  "sourceRefs" : [
+    "AppViewport.swift|@objc func toggleActualSize",
+    "AppViewport.swift|func showActualNavigator"
+  ],
+  "sourceSha" : "daa2977",
+  "state" : "Actual Size on: navigator overview panel beside the window",
+  "surface" : "canvas viewport",
+  "windowAlpha" : 1,
+  "windows" : [
+    {
+      "class" : "NSWindow",
+      "frame" : [
+        197,
+        102,
+        1662,
+        1179
+      ],
+      "isKey" : true,
+      "title" : "Large capture"
+    },
+    {
+      "class" : "ActualNavigatorPanel",
+      "frame" : [
+        22,
+        132,
+        180,
+        162
+      ],
+      "isKey" : false,
+      "title" : ""
+    }
+  ],
+  "windowSize" : [
+    1662,
+    1179
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "source": "c21c3f2ebe0703cad3c3039e9b71a68b137d5712",
+  "candidateApp": "/Users/shoemoney/Projects/OpenSkitch/.todo-worktrees/navigator-retina/build/OpenSnap.app",
+  "localApp": "/Users/shoemoney/Projects/OpenSkitch/build/OpenSnap.app",
+  "buildInputsMatched": 79,
+  "binarySha256": "e83834b22594f9ecfd644bb4c284b196386b6258329e58d844ddd9a2c9837c89",
+  "method": "copied exact tested candidate bundle, no installation or launch"
+}

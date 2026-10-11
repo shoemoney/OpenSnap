@@ -1,0 +1,23 @@
+{
+  "byKind" : {
+    "buttons" : 0,
+    "keyboard" : 0,
+    "pointer" : 0,
+    "scrollAndGestures" : 0
+  },
+  "fencedEventKinds" : [
+    "keyboard",
+    "mouse buttons and drags",
+    "mouse moves",
+    "mouse enter and exit",
+    "cursor updates",
+    "scroll",
+    "gestures"
+  ],
+  "flaggedKinds" : [
+    "keyboard",
+    "buttons",
+    "scrollAndGestures"
+  ],
+  "swallowedEvents" : 0
+}

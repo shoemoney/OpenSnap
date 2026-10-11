@@ -1,0 +1,812 @@
+{
+  "appearance" : "dark",
+  "bottomBar" : {
+    "formatSegments" : 0,
+    "groups" : {
+      "GlassFooterRow" : {
+        "class" : "GlassSurfaceView",
+        "controls" : [
+          {
+            "class" : "SegmentedToggle",
+            "fitting" : [
+              134,
+              36
+            ],
+            "frame" : [
+              1313,
+              1131,
+              134,
+              36
+            ],
+            "hidden" : false,
+            "label" : "Image format"
+          },
+          {
+            "class" : "ChromeFillCell",
+            "fitting" : [
+              48,
+              36
+            ],
+            "frame" : [
+              1449,
+              1131,
+              48,
+              36
+            ],
+            "hidden" : false,
+            "label" : ""
+          },
+          {
+            "class" : "CommandButton",
+            "fitting" : [
+              48,
+              36
+            ],
+            "frame" : [
+              1499,
+              1131,
+              48,
+              36
+            ],
+            "hidden" : false,
+            "label" : "Upload image"
+          }
+        ],
+        "fitting" : [
+          242,
+          44
+        ],
+        "frame" : [
+          1309,
+          1127,
+          242,
+          44
+        ],
+        "hidden" : false,
+        "spacing" : 2
+      },
+      "GlassSaveGroup" : {
+        "class" : "GlassSurfaceView",
+        "controls" : [
+          {
+            "class" : "CommandButton",
+            "fitting" : [
+              48,
+              36
+            ],
+            "frame" : [
+              1195,
+              1131,
+              48,
+              36
+            ],
+            "hidden" : false,
+            "label" : "Save"
+          },
+          {
+            "class" : "CommandButton",
+            "fitting" : [
+              48,
+              36
+            ],
+            "frame" : [
+              1245,
+              1131,
+              48,
+              36
+            ],
+            "hidden" : false,
+            "label" : "History"
+          }
+        ],
+        "fitting" : [
+          106,
+          44
+        ],
+        "frame" : [
+          1191,
+          1127,
+          106,
+          44
+        ],
+        "hidden" : false,
+        "spacing" : 2
+      },
+      "GlassUndoWipeGroup" : {
+        "class" : "GlassSurfaceView",
+        "controls" : [
+          {
+            "class" : "CommandButton",
+            "fitting" : [
+              48,
+              36
+            ],
+            "frame" : [
+              115,
+              1131,
+              48,
+              36
+            ],
+            "hidden" : false,
+            "label" : "Undo"
+          },
+          {
+            "class" : "CommandButton",
+            "fitting" : [
+              48,
+              36
+            ],
+            "frame" : [
+              165,
+              1131,
+              48,
+              36
+            ],
+            "hidden" : false,
+            "label" : "Remove annotations"
+          }
+        ],
+        "fitting" : [
+          106,
+          44
+        ],
+        "frame" : [
+          111,
+          1127,
+          106,
+          44
+        ],
+        "hidden" : false,
+        "spacing" : 2
+      },
+      "GlassViewGroup" : {
+        "class" : "GlassSurfaceView",
+        "controls" : [
+          {
+            "class" : "ChromeFillCell",
+            "fitting" : [
+              87,
+              36
+            ],
+            "frame" : [
+              233,
+              1131,
+              87,
+              36
+            ],
+            "hidden" : false,
+            "label" : ""
+          },
+          {
+            "class" : "CommandButton",
+            "fitting" : [
+              88,
+              36
+            ],
+            "frame" : [
+              322,
+              1131,
+              88,
+              36
+            ],
+            "hidden" : false,
+            "label" : "Resize…"
+          },
+          {
+            "class" : "GlassChoiceButton",
+            "fitting" : [
+              158,
+              36
+            ],
+            "frame" : [
+              412,
+              1131,
+              158,
+              36
+            ],
+            "hidden" : false,
+            "label" : "Export at original size"
+          }
+        ],
+        "fitting" : [
+          345,
+          44
+        ],
+        "frame" : [
+          229,
+          1127,
+          345,
+          44
+        ],
+        "hidden" : false,
+        "spacing" : 2
+      }
+    },
+    "originalSizeCheckbox" : {
+      "class" : "GlassChoiceButton",
+      "fitting" : [
+        158,
+        36
+      ],
+      "frame" : [
+        412,
+        1131,
+        158,
+        36
+      ],
+      "hidden" : false
+    },
+    "row" : {
+      "class" : "NSView",
+      "fitting" : [
+        1056,
+        0
+      ],
+      "frame" : [
+        111,
+        1127,
+        1440,
+        44
+      ],
+      "hidden" : false
+    },
+    "slack" : {
+      "freeHorizontal" : 432,
+      "gaps" : {
+        "GlassSaveGroup->GlassFooterRow" : 12,
+        "GlassUndoWipeGroup->GlassViewGroup" : 12,
+        "GlassViewGroup->OpenSnapStatusRow" : 12,
+        "OpenSnapStatusRow->GlassSaveGroup" : 396
+      },
+      "leftInset" : 0,
+      "minGap" : 12,
+      "overlaps" : [
+
+      ],
+      "rightInset" : 0,
+      "rowWidth" : 1440,
+      "sumOfGroupWidths" : 1008
+    },
+    "status" : {
+      "class" : "StatusTextField",
+      "fitting" : [
+        213,
+        21
+      ],
+      "frame" : [
+        584,
+        1138.5,
+        213,
+        21
+      ],
+      "hidden" : false
+    },
+    "statusRow" : {
+      "class" : "NSStackView",
+      "fitting" : [
+        209,
+        21
+      ],
+      "frame" : [
+        586,
+        1138.5,
+        209,
+        21
+      ],
+      "hidden" : false
+    },
+    "statusTruncated" : false,
+    "statusWidths" : {
+      "checkboxShownNow" : true,
+      "statusFullText" : "Arrow · Unsaved changes",
+      "statusNeedsAt18pt" : 209,
+      "statusString" : "Arrow · Unsaved changes",
+      "withCheckbox" : {
+        "checkbox" : 158,
+        "statusLabel" : 213,
+        "statusRow" : 209
+      },
+      "withoutCheckbox" : {
+        "checkbox" : 0,
+        "statusLabel" : 213,
+        "statusRow" : 209
+      }
+    },
+    "zoomPopup" : {
+      "class" : "ZoomPopUpButton",
+      "fitting" : [
+        75,
+        36
+      ],
+      "frame" : [
+        233,
+        1131,
+        87,
+        36
+      ],
+      "hidden" : false
+    },
+    "zoomTitle" : "50%"
+  },
+  "contentWidth" : 1662,
+  "displayOptions" : {
+    "active" : [
+
+    ],
+    "differentiateWithoutColor" : false,
+    "increaseContrast" : false,
+    "injected" : false,
+    "reduceMotion" : false,
+    "reduceTransparency" : false
+  },
+  "dragSizeLabelModel" : "4800 × 3000 · PNG",
+  "frameMode" : false,
+  "iconMode" : "sf",
+  "id" : "S07",
+  "rail" : "absent",
+  "railChecks" : {
+    "retiredGroupsFound" : [
+
+    ],
+    "trailingMarginIs12" : true,
+    "trailingStrayViews" : [
+
+    ]
+  },
+  "sourceSha" : "c21c3f2",
+  "status" : "Arrow · Unsaved changes",
+  "stem" : "S07-zoom-50-dark",
+  "topBar" : {
+    "cancelHidden" : true,
+    "groups" : {
+      "GlassAnnotationGroup" : {
+        "class" : "GlassSurfaceView",
+        "controls" : [
+          {
+            "class" : "ChromeFillCell",
+            "fitting" : [
+              48,
+              36
+            ],
+            "frame" : [
+              1399,
+              40,
+              48,
+              36
+            ],
+            "hidden" : false,
+            "label" : ""
+          },
+          {
+            "class" : "ChromeFillCell",
+            "fitting" : [
+              48,
+              36
+            ],
+            "frame" : [
+              1449,
+              40,
+              48,
+              36
+            ],
+            "hidden" : false,
+            "label" : ""
+          },
+          {
+            "class" : "CommandButton",
+            "fitting" : [
+              48,
+              36
+            ],
+            "frame" : [
+              1499,
+              40,
+              48,
+              36
+            ],
+            "hidden" : false,
+            "label" : "Font"
+          }
+        ],
+        "fitting" : [
+          156,
+          44
+        ],
+        "frame" : [
+          1395,
+          36,
+          156,
+          44
+        ],
+        "hidden" : false,
+        "spacing" : 2
+      },
+      "GlassCaptureGroup" : {
+        "class" : "GlassSurfaceView",
+        "controls" : [
+          {
+            "class" : "CommandButton",
+            "fitting" : [
+              56,
+              36
+            ],
+            "frame" : [
+              295,
+              40,
+              56,
+              36
+            ],
+            "hidden" : false,
+            "label" : "Snap"
+          },
+          {
+            "class" : "CommandButton",
+            "fitting" : [
+              48,
+              36
+            ],
+            "frame" : [
+              291,
+              36,
+              48,
+              36
+            ],
+            "hidden" : true,
+            "label" : "Cancel"
+          }
+        ],
+        "fitting" : [
+          64,
+          44
+        ],
+        "frame" : [
+          291,
+          36,
+          64,
+          44
+        ],
+        "hidden" : false,
+        "spacing" : 2
+      },
+      "GlassHeaderLeading" : {
+        "class" : "GlassSurfaceView",
+        "controls" : [
+          {
+            "class" : "CommandButton",
+            "fitting" : [
+              48,
+              36
+            ],
+            "frame" : [
+              115,
+              40,
+              48,
+              36
+            ],
+            "hidden" : false,
+            "label" : "Hide"
+          },
+          {
+            "class" : "ChromeFillCell",
+            "fitting" : [
+              60,
+              36
+            ],
+            "frame" : [
+              165,
+              40,
+              60,
+              36
+            ],
+            "hidden" : false,
+            "label" : ""
+          },
+          {
+            "class" : "CommandButton",
+            "fitting" : [
+              48,
+              36
+            ],
+            "frame" : [
+              227,
+              40,
+              48,
+              36
+            ],
+            "hidden" : false,
+            "label" : "Photos"
+          }
+        ],
+        "fitting" : [
+          168,
+          44
+        ],
+        "frame" : [
+          111,
+          36,
+          168,
+          44
+        ],
+        "hidden" : false,
+        "spacing" : 2
+      },
+      "GlassToolBar" : {
+        "class" : "GlassSurfaceView",
+        "controls" : [
+          {
+            "class" : "CommandButton",
+            "fitting" : [
+              44,
+              36
+            ],
+            "frame" : [
+              646,
+              40,
+              44,
+              36
+            ],
+            "hidden" : false,
+            "label" : "Select tool"
+          },
+          {
+            "class" : "CommandButton",
+            "fitting" : [
+              44,
+              36
+            ],
+            "frame" : [
+              692,
+              40,
+              44,
+              36
+            ],
+            "hidden" : false,
+            "label" : "Brush tool"
+          },
+          {
+            "class" : "CommandButton",
+            "fitting" : [
+              44,
+              36
+            ],
+            "frame" : [
+              738,
+              40,
+              44,
+              36
+            ],
+            "hidden" : false,
+            "label" : "Line tool"
+          },
+          {
+            "class" : "CommandButton",
+            "fitting" : [
+              44,
+              36
+            ],
+            "frame" : [
+              784,
+              40,
+              44,
+              36
+            ],
+            "hidden" : false,
+            "label" : "Ellipse tool"
+          },
+          {
+            "class" : "CommandButton",
+            "fitting" : [
+              44,
+              36
+            ],
+            "frame" : [
+              830,
+              40,
+              44,
+              36
+            ],
+            "hidden" : false,
+            "label" : "Rectangle tool"
+          },
+          {
+            "class" : "CommandButton",
+            "fitting" : [
+              44,
+              36
+            ],
+            "frame" : [
+              876,
+              40,
+              44,
+              36
+            ],
+            "hidden" : false,
+            "label" : "Fill tool"
+          },
+          {
+            "class" : "CommandButton",
+            "fitting" : [
+              44,
+              36
+            ],
+            "frame" : [
+              922,
+              40,
+              44,
+              36
+            ],
+            "hidden" : false,
+            "label" : "Eraser tool"
+          },
+          {
+            "class" : "CommandButton",
+            "fitting" : [
+              44,
+              36
+            ],
+            "frame" : [
+              968,
+              40,
+              44,
+              36
+            ],
+            "hidden" : false,
+            "label" : "Text tool"
+          },
+          {
+            "class" : "CommandButton",
+            "fitting" : [
+              44,
+              36
+            ],
+            "frame" : [
+              1014,
+              40,
+              44,
+              36
+            ],
+            "hidden" : false,
+            "label" : "Arrow tool"
+          },
+          {
+            "class" : "CommandButton",
+            "fitting" : [
+              44,
+              36
+            ],
+            "frame" : [
+              1060,
+              40,
+              44,
+              36
+            ],
+            "hidden" : false,
+            "label" : "Crop tool"
+          }
+        ],
+        "fitting" : [
+          466,
+          44
+        ],
+        "frame" : [
+          642,
+          36,
+          466,
+          44
+        ],
+        "hidden" : false,
+        "spacing" : 2
+      }
+    },
+    "row" : {
+      "class" : "NSView",
+      "fitting" : [
+        890,
+        0
+      ],
+      "frame" : [
+        111,
+        36,
+        1440,
+        44
+      ],
+      "hidden" : false
+    },
+    "slack" : {
+      "freeHorizontal" : 586,
+      "gaps" : {
+        "GlassCaptureGroup->GlassToolBar" : 287,
+        "GlassHeaderLeading->GlassCaptureGroup" : 12,
+        "GlassToolBar->GlassAnnotationGroup" : 287
+      },
+      "leftInset" : 0,
+      "minGap" : 12,
+      "overlaps" : [
+
+      ],
+      "rightInset" : 0,
+      "rowWidth" : 1440,
+      "sumOfGroupWidths" : 854
+    },
+    "snapTitle" : "Snap",
+    "toolsCentreOffsetFromRow" : 44
+  },
+  "viewport" : {
+    "canvas" : {
+      "canvasSize" : [
+        4800,
+        3000
+      ],
+      "centredHorizontally" : true,
+      "centredVertically" : true,
+      "fillsHeight" : false,
+      "fillsWidth" : false,
+      "frameInWindow" : [
+        426.5,
+        350.75,
+        809,
+        505.5
+      ],
+      "gapBottom" : 262.75,
+      "gapLeft" : 414.5,
+      "gapRight" : 414.5,
+      "gapTop" : 262.75,
+      "smallerThanViewportX" : true,
+      "smallerThanViewportY" : true,
+      "zoom" : 0.5
+    },
+    "canvasViewBounds" : [
+      0,
+      0,
+      809,
+      505.5
+    ],
+    "canvasViewFrame" : [
+      0,
+      0,
+      809,
+      505.5
+    ],
+    "canvasVisibleRectRaw" : [
+      -414.5,
+      -262.75,
+      1638,
+      1031
+    ],
+    "clipBounds" : [
+      -414.5,
+      -262.75,
+      1638,
+      1031
+    ],
+    "clipRect" : [
+      12,
+      88,
+      1638,
+      1031
+    ],
+    "contentSize" : [
+      1638,
+      1031
+    ],
+    "gapAboveBottomBar" : 8,
+    "gapBelowTopBar" : 8,
+    "leadingMargin" : 12,
+    "rect" : [
+      12,
+      88,
+      1638,
+      1031
+    ],
+    "scrollerGutter" : [
+      0,
+      0
+    ],
+    "scrollerStyle" : "legacy",
+    "trailingMargin" : 12
+  },
+  "windowSize" : [
+    1662,
+    1179
+  ]
+}

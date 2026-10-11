@@ -1,0 +1,50 @@
+{
+  "before": {
+    "source": "daa2977ca60ded1c5dff8586689ca44573ad4284",
+    "pngs": 12,
+    "checkerFailures": 0,
+    "advisories": 0,
+    "contrastSkipped": 2
+  },
+  "after": {
+    "source": "c21c3f2ebe0703cad3c3039e9b71a68b137d5712",
+    "tree": "2255f0412d67cefb1cc894f5cbd2f1f80f711a16",
+    "pngs": 12,
+    "checkerFailures": 0,
+    "advisories": 0,
+    "contrastSkipped": 2
+  },
+  "tests": {
+    "navigatorChecks": 230,
+    "appSafetyPassed": 275,
+    "appSafetyTotal": 275,
+    "nativeIdleTermination": "passed",
+    "sourceManifestMatched": 97,
+    "redProof": "old160px renderer fails: wanted312x234, actual160x120; new APIs retained for compilation",
+    "excludedProof": "restoring entire old AppViewport failed compilation because new test APIs were absent; not counted as red proof"
+  },
+  "build": {
+    "arch": "arm64",
+    "passed": true,
+    "copiedTestedCandidateIntoRootBuild": true,
+    "inputHashesMatched": 79
+  },
+  "review": {
+    "openedBefore": [
+      "S07-actual-size-light.png"
+    ],
+    "openedAfter": [
+      "S07-actual-size-light.png",
+      "S07-actual-size-dark.png"
+    ],
+    "scope": "wide Actual Size overview, source images unchanged; tall resolution checked in bitmap app tests, not separate portrait capture"
+  },
+  "limits": [
+    "live display migration",
+    "physical HID hover",
+    "VoiceOver speech",
+    "live OS display settings"
+  ],
+  "storeDigest": "dbde037ac2085108",
+  "ledgerPromotions": 0
+}

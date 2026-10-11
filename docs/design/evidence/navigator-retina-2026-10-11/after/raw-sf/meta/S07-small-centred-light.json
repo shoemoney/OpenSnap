@@ -1,0 +1,53 @@
+{
+  "appActive" : true,
+  "appearance" : "light",
+  "displayOptions" : {
+    "active" : [
+
+    ],
+    "differentiateWithoutColor" : false,
+    "increaseContrast" : false,
+    "injected" : false,
+    "reduceMotion" : false,
+    "reduceTransparency" : false
+  },
+  "file" : "S07-small-centred-light.png",
+  "iconMode" : "sf",
+  "id" : "S07",
+  "method" : "CGWindowListCreateImage(bestResolution)",
+  "opaqueFraction" : 0.99826388888888884,
+  "pixelSize" : [
+    1960,
+    1296
+  ],
+  "pointSize" : [
+    980,
+    648
+  ],
+  "scale" : 2,
+  "slug" : "small-centred",
+  "sourceRefs" : [
+    "ModernEditorChrome.swift|final class CenteringClipView"
+  ],
+  "sourceSha" : "c21c3f2",
+  "state" : "360x240 image centred in a large viewport (shot first, before any Actual Size state) (CenteringClipView)",
+  "surface" : "canvas viewport",
+  "windowAlpha" : 1,
+  "windows" : [
+    {
+      "class" : "NSWindow",
+      "frame" : [
+        538,
+        367,
+        980,
+        648
+      ],
+      "isKey" : true,
+      "title" : "Small image"
+    }
+  ],
+  "windowSize" : [
+    980,
+    648
+  ]
+}

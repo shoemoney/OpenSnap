@@ -1,0 +1,391 @@
+App safety evidence: /tmp/opensnap-retina-red-evidence
+/tmp/opensnap-retina-red-evidence/sources/App.swift:242:13: warning: '@preconcurrency' on conformance to 'NSMenuDelegate' has no effect
+ 240 | 
+ 241 | @MainActor
+ 242 | final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItemValidation, NSFontChanging, @preconcurrency NSSharingServicePickerDelegate, NSSharingServiceDelegate, @preconcurrency NSMenuDelegate {
+     |             `- warning: '@preconcurrency' on conformance to 'NSMenuDelegate' has no effect
+ 243 |     var window: NSWindow!
+ 244 |     let canvas = CanvasView(frame: NSRect(x: 0, y: 0, width: 1000, height: 700))
+/tmp/opensnap-retina-red-evidence/sources/AppSafetyAccessibilityCases.swift:73:23: warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+ 71 |         }
+ 72 |         try expect(chrome.shareButton.accessibilityLabel() == "Upload image" && AppToolTip.text(for: chrome.shareButton)?.hasPrefix("Upload image") == true, "Upload is 'Upload image', label and tooltip")
+ 73 |         let toolbox = try everyView(try (app.window.contentView).unwrapped("content")).compactMap { $0 as? NSPopUpButton }.first { $0.accessibilityLabel() == "Toolbox" }
+    |                       `- warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+ 74 |         try expect(toolbox != nil, "The Toolbox is named 'Toolbox menu'")
+ 75 |         try expect(app.status.accessibilityRole() == .staticText, "The editor status line is static text (\(String(describing: app.status.accessibilityRole())))")
+
+[#UnnecessaryEffectMarker]: <https://docs.swift.org/compiler/documentation/diagnostics/unnecessary-effect-marker>
+/tmp/opensnap-retina-red-evidence/sources/AppSafetyBatch11Cases.swift:25:69: warning: main actor-isolated static property 'b11Snap' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+ 21 | 
+ 22 |     private static let b11Capacity = CGSize(width: 1000, height: 700)
+ 23 |     private static let b11Snap = CGSize(width: 2560, height: 1800)
+    |                        `- note: static property declared here
+ 24 | 
+ 25 |     private static func b11Large(_ app: AppDelegate, size: CGSize = b11Snap, capacity: CGSize = b11Capacity, ticked: Bool) throws {
+    |                                                                     `- warning: main actor-isolated static property 'b11Snap' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+ 26 |         app.maximumNormalCanvasOverride = capacity
+ 27 |         try b6Large(app, size: size)
+
+/tmp/opensnap-retina-red-evidence/sources/AppSafetyBatch11Cases.swift:25:97: warning: main actor-isolated static property 'b11Capacity' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+ 20 |     }
+ 21 | 
+ 22 |     private static let b11Capacity = CGSize(width: 1000, height: 700)
+    |                        `- note: static property declared here
+ 23 |     private static let b11Snap = CGSize(width: 2560, height: 1800)
+ 24 | 
+ 25 |     private static func b11Large(_ app: AppDelegate, size: CGSize = b11Snap, capacity: CGSize = b11Capacity, ticked: Bool) throws {
+    |                                                                                                 `- warning: main actor-isolated static property 'b11Capacity' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+ 26 |         app.maximumNormalCanvasOverride = capacity
+ 27 |         try b6Large(app, size: size)
+/tmp/opensnap-retina-red-evidence/sources/AppSafetyBatch6Cases.swift:305:22: warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+303 |         // Edit the default destination's folder: the entry is stale at once, while still selected, with the reason.
+304 |         let destinations = try app.publishing.store.load()
+305 |         var edited = try destinations.destinations[0]
+    |                      `- warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+306 |         let original = edited.settings.remoteFolder
+307 |         edited.settings.remoteFolder = "pics-elsewhere"
+
+[#UnnecessaryEffectMarker]: <https://docs.swift.org/compiler/documentation/diagnostics/unnecessary-effect-marker>
+/tmp/opensnap-retina-red-evidence/sources/AppSafetyFollowupCases.swift:32:122: warning: main actor-isolated static property 'fuCapacity' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+ 22 |     }
+ 23 | 
+ 24 |     private static let fuCapacity = CGSize(width: 1000, height: 700)
+    |                        `- note: static property declared here
+ 25 | 
+ 26 |     private static func fuWindow(_ app: AppDelegate) throws -> AppSafetyWindow {
+    :
+ 30 | 
+ 31 |     /// A snap bigger than the window's room, shown fitted, at 100% zoom in a window sized to hold it.
+ 32 |     private static func fuLarge(_ app: AppDelegate, size: CGSize = CGSize(width: 2560, height: 1800), capacity: CGSize = fuCapacity) throws {
+    |                                                                                                                          `- warning: main actor-isolated static property 'fuCapacity' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+ 33 |         app.maximumNormalCanvasOverride = capacity
+ 34 |         try b6Large(app, size: size)
+
+/tmp/opensnap-retina-red-evidence/sources/AppSafetyFollowupCases.swift:358:48: warning: conditional downcast from 'String?' to 'String' does nothing
+356 |         try expect(editor.isAccessibilityElement() && editor.accessibilityRole() == .textArea, "The editor is a text area element (\(String(describing: editor.accessibilityRole())))")
+357 |         try expect(editor.accessibilityLabel() == "Annotation text", "…labelled for what it is (\(String(describing: editor.accessibilityLabel())))")
+358 |         try expect(editor.accessibilityValue() as? String == "Quarterly", "…whose value is the text (\(String(describing: editor.accessibilityValue())))")
+    |                                                `- warning: conditional downcast from 'String?' to 'String' does nothing
+359 |         try expect(editor.accessibilityAttributeNames().contains(.selectedTextRange), "…exposing the selection attribute")
+360 |         try expect(editor.accessibilityIsAttributeSettable(.selectedTextRange)
+
+/tmp/opensnap-retina-red-evidence/sources/AppSafetyFollowupCases.swift:359:27: warning: 'accessibilityAttributeNames()' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+357 |         try expect(editor.accessibilityLabel() == "Annotation text", "…labelled for what it is (\(String(describing: editor.accessibilityLabel())))")
+358 |         try expect(editor.accessibilityValue() as? String == "Quarterly", "…whose value is the text (\(String(describing: editor.accessibilityValue())))")
+359 |         try expect(editor.accessibilityAttributeNames().contains(.selectedTextRange), "…exposing the selection attribute")
+    |                           `- warning: 'accessibilityAttributeNames()' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+360 |         try expect(editor.accessibilityIsAttributeSettable(.selectedTextRange)
+361 |                    && editor.isAccessibilitySelectorAllowed(#selector(NSAccessibilityProtocol.setAccessibilitySelectedTextRange(_:))),
+
+/tmp/opensnap-retina-red-evidence/sources/AppSafetyFollowupCases.swift:360:27: warning: 'accessibilityIsAttributeSettable' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+358 |         try expect(editor.accessibilityValue() as? String == "Quarterly", "…whose value is the text (\(String(describing: editor.accessibilityValue())))")
+359 |         try expect(editor.accessibilityAttributeNames().contains(.selectedTextRange), "…exposing the selection attribute")
+360 |         try expect(editor.accessibilityIsAttributeSettable(.selectedTextRange)
+    |                           `- warning: 'accessibilityIsAttributeSettable' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+361 |                    && editor.isAccessibilitySelectorAllowed(#selector(NSAccessibilityProtocol.setAccessibilitySelectedTextRange(_:))),
+362 |                    "…as settable")
+
+[#DeprecatedDeclaration]: <https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration>
+/tmp/opensnap-retina-red-evidence/sources/AppSafetyMenuCases.swift:79:100: warning: capture of 'menu' with non-Sendable type 'NSMenu?' in a '@Sendable' closure [#SendableClosureCaptures]
+ 77 |         /// A route that wrongly fell back to the native menu would track until someone answers; this lets the run end instead of hanging.
+ 78 |         func guardAgainstHang(_ menu: NSMenu?) {
+ 79 |             let timer = Timer(timeInterval: 0.5, repeats: false) { _ in MainActor.assumeIsolated { menu?.cancelTracking() } }
+    |                                                                                                    `- warning: capture of 'menu' with non-Sendable type 'NSMenu?' in a '@Sendable' closure [#SendableClosureCaptures]
+ 80 |             for mode in [RunLoop.Mode.common, .eventTracking] { RunLoop.main.add(timer, forMode: mode) }
+ 81 |             timers.append(timer)
+
+Swift.Optional:1:21: note: generic enum 'Optional' does not conform to the 'Sendable' protocol
+1 | @frozen public enum Optional<Wrapped> : ~Copyable, ~Escapable where Wrapped : ~Copyable, Wrapped : ~Escapable {
+  |                     `- note: generic enum 'Optional' does not conform to the 'Sendable' protocol
+2 |     case none
+3 |     case some(Wrapped)
+
+/tmp/opensnap-retina-red-evidence/sources/AppSafetyMenuCases.swift:366:34: warning: 'accessibilityActionNames()' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+364 |             try expect(button.menu(for: pointer(.rightMouseDown, on: button)) == nil && button.menu(for: pointer(.leftMouseDown, on: button, flags: .control)) == nil && button.menu != nil,
+365 |                        "\(name): AppKit finds no contextual menu for a right-click or Control-click")
+366 |             let actions = button.accessibilityActionNames()
+    |                                  `- warning: 'accessibilityActionNames()' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+367 |             try expect(actions.contains(.press) || actions.contains(.showMenu), "\(name) exposes \(actions.map(\.rawValue)) to assistive tools")
+368 |             var routes: [(String, Bool, () -> Void)] = [
+
+/tmp/opensnap-retina-red-evidence/sources/AppSafetyMenuCases.swift:381:166: warning: 'accessibilityPerformAction' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+379 |                 routes.append((key, true, { button.keyDown(with: panelKey(code, in: app.window)) }))
+380 |             }
+381 |             for action in actions where ![NSAccessibility.Action.press, .showMenu].contains(action) { routes.append(("action " + action.rawValue, true, { _ = button.accessibilityPerformAction(action) })) }
+    |                                                                                                                                                                      `- warning: 'accessibilityPerformAction' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+382 |             for (route, keyboard, run) in routes {
+383 |                 button.choicePanel.host.close()
+
+/tmp/opensnap-retina-red-evidence/sources/AppSafetyMenuCases.swift:398:36: warning: 'accessibilityActionNames()' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+396 |         probe.guardAgainstHang(upload.menu)
+397 |         try expect(upload.menu(for: pointer(.rightMouseDown, on: upload)) == nil && upload.showMenuOnLeftClick == false, "Upload: no contextual menu for AppKit, and a left click is the upload")
+398 |         let uploadActions = upload.accessibilityActionNames()
+    |                                    `- warning: 'accessibilityActionNames()' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+399 |         try expect(uploadActions.contains(.showMenu), "Upload exposes Show Menu (\(uploadActions.map(\.rawValue)))")
+400 |         let uploadRoutes: [(String, Bool, () -> Void)] = [
+
+[#DeprecatedDeclaration]: <https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration>
+[#SendableClosureCaptures]: <https://docs.swift.org/compiler/documentation/diagnostics/sendable-closure-captures>
+/tmp/opensnap-retina-red-evidence/sources/AppSafetyModernCases.swift:913:105: warning: conditional downcast from 'String?' to 'String' does nothing
+ 911 |                 let index = expected.firstIndex(of: shown) ?? 0
+ 912 |                 try expect(expected[..<index].allSatisfy { need($0) > room + 0.5 }, "\(label): every longer variant really is too wide for \(room) pt")
+ 913 |                 try expect(AppToolTip.text(for: app.status) == full && (app.status.accessibilityValue() as? String) == full, "\(label): the tooltip and spoken value are the full text: tip=\(AppToolTip.text(for: app.status) ?? "nil") ax=\(String(describing: app.status.accessibilityValue())) spoken=\(app.status.spokenValue ?? "nil") shown=\(shown) full=\(full)")
+     |                                                                                                         `- warning: conditional downcast from 'String?' to 'String' does nothing
+ 914 |                 try expect(!shown.contains("…"), "\(label): no ellipsis was typed into the text")
+ 915 |                 if index > 0 { sawShortened = true } else { sawWhole = true }
+
+/tmp/opensnap-retina-red-evidence/sources/AppSafetyModernCases.swift:990:23: warning: immutable value 'chrome' was never used; consider replacing with '_' or removing it [#NoUsage]
+ 988 | 
+ 989 |     private static func modernToolSelection() throws {
+ 990 |         let (fixture, chrome) = try modernFixture()
+     |                       `- warning: immutable value 'chrome' was never used; consider replacing with '_' or removing it [#NoUsage]
+ 991 |         let app = fixture.app
+ 992 |         func verify(_ selected: SketchTool, _ label: String) throws {
+
+/tmp/opensnap-retina-red-evidence/sources/AppSafetyModernCases.swift:1616:135: warning: conditional downcast from 'String?' to 'String' does nothing
+1614 |         let text = app.status.stringValue
+1615 |         try expect(text.hasPrefix("Arrow · ") && text.contains("×") && text.components(separatedBy: " · ").count == 5 && text.contains(" · PNG · ") && text.hasSuffix("KB"), "The status reads tool, state, export size and format in one line: \(text)")
+1616 |         try expect(app.dragSizeLabel.superview == nil && AppToolTip.text(for: app.status) == text && (app.status.accessibilityValue() as? String) == text, "The full text is the tooltip and the spoken value; no separate size label exists on screen")
+     |                                                                                                                                       `- warning: conditional downcast from 'String?' to 'String' does nothing
+1617 |         try expect(app.status.lineBreakMode == .byTruncatingTail, "A narrow status truncates its tail")
+1618 |         try expect(app.dragPreviewTimer == nil, "Writing the size into the status does not re-arm the one-second drag-preview timer")
+
+/tmp/opensnap-retina-red-evidence/sources/AppSafetyModernCases.swift:1741:23: warning: immutable value 'chrome' was never used; consider replacing with '_' or removing it [#NoUsage]
+1739 | 
+1740 |     private static func modernZoomFace() throws {
+1741 |         let (fixture, chrome) = try modernFixture()
+     |                       `- warning: immutable value 'chrome' was never used; consider replacing with '_' or removing it [#NoUsage]
+1742 |         let app = fixture.app, zoom = app.zoomControl
+1743 |         app.setCanvasDisplayZoom(0.83, label: "Fit")
+
+/tmp/opensnap-retina-red-evidence/sources/AppSafetyModernCases.swift:1812:94: warning: conditional downcast from 'String?' to 'String' does nothing
+1810 |             try expect(view.accessibilityHelp() == AppToolTip.text(for: view), "\(view.accessibilityLabel() ?? "") has accessibilityHelp equal to its former tooltip")
+1811 |         }
+1812 |         try expect(app.status.accessibilityHelp() == nil && (app.status.accessibilityValue() as? String) == AppToolTip.text(for: app.status),
+     |                                                                                              `- warning: conditional downcast from 'String?' to 'String' does nothing
+1813 |                    "The status line speaks its full text as its value, so it is not repeated as help")
+1814 |         for view in [app.snapButton!, chrome.undoButton, app.widthControl] as [NSView] {
+
+[#NoUsage]: <https://docs.swift.org/compiler/documentation/diagnostics/no-usage>
+/tmp/opensnap-retina-red-evidence/sources/AppSafetyRetiredFormatCases.swift:9:44: warning: conformance of 'RetiredDrag' to protocol 'NSDraggingInfo' crosses into main actor-isolated code and can cause data races; this is an error in the Swift 6 language mode [#ConformanceIsolation]
+  7 | 
+  8 | @MainActor
+  9 | private final class RetiredDrag: NSObject, NSDraggingInfo {
+    |                                            |- warning: conformance of 'RetiredDrag' to protocol 'NSDraggingInfo' crosses into main actor-isolated code and can cause data races; this is an error in the Swift 6 language mode [#ConformanceIsolation]
+    |                                            |- note: isolate this conformance to the main actor with '@MainActor'
+    |                                            `- note: turn data races into runtime errors with '@preconcurrency'
+ 10 |     var draggingDestinationWindow: NSWindow?
+ 11 |     var draggingSourceOperationMask: NSDragOperation = .copy
+ 12 |     var draggingLocation: NSPoint = .zero
+ 13 |     var draggedImageLocation: NSPoint = .zero
+ 14 |     var draggedImage: NSImage? { nil }
+    |         |- note: main actor-isolated property 'draggedImage' cannot satisfy nonisolated requirement
+    |         `- note: mark property 'draggedImage' 'nonisolated'
+ 15 |     let draggingPasteboard: NSPasteboard
+ 16 |     var draggingSource: Any? { nil }
+    :
+ 22 |     init(board: NSPasteboard) { draggingPasteboard = board; super.init() }
+ 23 |     func slideDraggedImage(to screenPoint: NSPoint) { }
+ 24 |     override func namesOfPromisedFilesDropped(atDestination dropDestination: URL) -> [String]? { nil }
+    |                   |- note: main actor-isolated instance method 'namesOfPromisedFilesDropped(atDestination:)' cannot satisfy nonisolated requirement
+    |                   `- note: mark instance method 'namesOfPromisedFilesDropped(atDestination:)' 'nonisolated'
+ 25 |     func resetSpringLoading() { }
+ 26 |     func enumerateDraggingItems(options enumOpts: NSDraggingItemEnumerationOptions, for view: NSView?,
+
+[#ConformanceIsolation]: <https://docs.swift.org/compiler/documentation/diagnostics/conformance-isolation>
+/tmp/opensnap-retina-red-evidence/sources/AppSafetyS3EndToEndCases.swift:126:107: warning: main actor-isolated property 'subviews' can not be referenced from a nonisolated context
+124 |             browser.select(ids: [entry.id])
+125 |             // The actions sit on glass plates inside the row, so find them through the plates.
+126 |             func buttons(in view: NSView) -> [NSButton] { ((view as? NSButton).map { [$0] } ?? []) + view.subviews.flatMap(buttons(in:)) }
+    |                                                                                                           `- warning: main actor-isolated property 'subviews' can not be referenced from a nonisolated context
+127 |             let button = try buttons(in: browser.actionRow)
+128 |                 .first { $0.accessibilityLabel() == HistoryBrowser.Action.deleteRemote.title }.s3Unwrap("Delete from Web button")
+
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/AppKit.framework/Headers/NSView.h:88:46: note: property declared here
+ 86 | @property (nullable, readonly, unsafe_unretained) NSWindow *window;
+ 87 | @property (nullable, readonly, unsafe_unretained) NSView *superview;
+ 88 | @property (copy) NSArray<__kindof NSView *> *subviews;
+    |                                              `- note: property declared here
+ 89 | - (BOOL)isDescendantOf:(NSView *)view;
+ 90 | - (nullable NSView *)ancestorSharedWithView:(NSView *)view;
+/tmp/opensnap-retina-red-evidence/sources/AppSafetyTests.swift:3181:84: error: value of type 'AppDelegate' has no member 'navigatorBackingScale'
+3179 |                   let rep = app.navigator.image?.representations.compactMap({ $0 as? NSBitmapImageRep }).first,
+3180 |                   let wanted = NavigatorGeometry.renderPixelSize(source: app.navigator.imageSourceSize, thumbnail: slot.size,
+3181 |                                                                  backingScale: app.navigatorBackingScale) else {
+     |                                                                                    `- error: value of type 'AppDelegate' has no member 'navigatorBackingScale'
+3182 |                 throw Failure(description: "\(shape) overview has a slot and a bitmap")
+3183 |             }
+
+/tmp/opensnap-retina-red-evidence/sources/AppSafetyTests.swift:3187:84: error: value of type 'AppDelegate' has no member 'navigatorBackingScale'
+3185 |                        app.navigator.imagePixelSize == wanted,
+3186 |                        "\(shape) overview renders \(wanted) pixels for the \(slot.size) slot, not \(rep.pixelsWide)x\(rep.pixelsHigh)")
+3187 |             let filled = min(app.navigator.imageSourceSize.width, slot.width * app.navigatorBackingScale)
+     |                                                                                    `- error: value of type 'AppDelegate' has no member 'navigatorBackingScale'
+3188 |             try expect(CGFloat(rep.pixelsWide) >= filled.rounded(.down) - 1,
+3189 |                        "\(shape) overview has a pixel per backing pixel of its slot: \(rep.pixelsWide) wide for \(filled)")
+
+/tmp/opensnap-retina-red-evidence/sources/AppSafetyTests.swift:3783:143: warning: main actor-isolated property 'windowNumber' can not be referenced from a nonisolated context
+3781 |                 defer { AppSafetyEvents.current = nil }
+3782 |                 func key(_ code: UInt16) throws -> NSEvent {
+3783 |                     guard let event = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0, windowNumber: window.windowNumber, context: nil,
+     |                                                                                                                                               `- warning: main actor-isolated property 'windowNumber' can not be referenced from a nonisolated context
+3784 |                                                        characters: " ", charactersIgnoringModifiers: " ", isARepeat: false, keyCode: code) else { throw Failure(description: "Key event") }
+3785 |                     return event
+
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/AppKit.framework/Headers/NSWindow.h:339:32: note: property declared here
+ 337 | @property (nullable, strong) __kindof NSView *contentView;
+ 338 | @property (nullable, weak) id<NSWindowDelegate> delegate;
+ 339 | @property (readonly) NSInteger windowNumber;
+     |                                `- note: property declared here
+ 340 | 
+ 341 | /// @note The styleMask can only be set on macOS 10.6 and later. Valid \c styleMask settings have the same restrictions as the \c styleMask passed to `-initWithContentRect:styleMask:backing:defer:`.  Some \c styleMask changes will cause the view hierarchy to be rebuilt, since there is a different subclass for the top level view of a borderless window than for the top level view of a titled window.
+
+/tmp/opensnap-retina-red-evidence/sources/AppSafetyTests.swift:3788:152: warning: main actor-isolated property 'windowNumber' can not be referenced from a nonisolated context
+3786 |                 }
+3787 |                 func click(_ flags: NSEvent.ModifierFlags) throws -> NSEvent {
+3788 |                     guard let event = NSEvent.mouseEvent(with: .leftMouseUp, location: .zero, modifierFlags: flags, timestamp: 0, windowNumber: window.windowNumber,
+     |                                                                                                                                                        `- warning: main actor-isolated property 'windowNumber' can not be referenced from a nonisolated context
+3789 |                                                          context: nil, eventNumber: 1, clickCount: 1, pressure: 1) else { throw Failure(description: "Mouse event") }
+3790 |                     return event
+
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/AppKit.framework/Headers/NSWindow.h:339:32: note: property declared here
+ 337 | @property (nullable, strong) __kindof NSView *contentView;
+ 338 | @property (nullable, weak) id<NSWindowDelegate> delegate;
+ 339 | @property (readonly) NSInteger windowNumber;
+     |                                `- note: property declared here
+ 340 | 
+ 341 | /// @note The styleMask can only be set on macOS 10.6 and later. Valid \c styleMask settings have the same restrictions as the \c styleMask passed to `-initWithContentRect:styleMask:backing:defer:`.  Some \c styleMask changes will cause the view hierarchy to be rebuilt, since there is a different subclass for the top level view of a borderless window than for the top level view of a titled window.
+
+/tmp/opensnap-retina-red-evidence/sources/AppSafetyTests.swift:3971:68: warning: main actor-isolated property 'superview' can not be referenced from a nonisolated autoclosure
+3969 |                     guard view !== app.canvas else { return }
+3970 |                     // AppKit hosts a borderless popup's title in a private text field that reports its own 13 pt default while drawing at the button's font.
+3971 |                     let privateTitle = view is NSTextField && view.superview is NSButton
+     |                                                                    `- warning: main actor-isolated property 'superview' can not be referenced from a nonisolated autoclosure
+3972 |                     if let control = view as? NSControl, !privateTitle, control is NSButton || control is NSTextField || control is BezelSizeSlider { controls.append(control) }
+3973 |                     for child in view.subviews { collect(child) }
+
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/AppKit.framework/Headers/NSView.h:87:59: note: property declared here
+ 85 | 
+ 86 | @property (nullable, readonly, unsafe_unretained) NSWindow *window;
+ 87 | @property (nullable, readonly, unsafe_unretained) NSView *superview;
+    |                                                           `- note: property declared here
+ 88 | @property (copy) NSArray<__kindof NSView *> *subviews;
+ 89 | - (BOOL)isDescendantOf:(NSView *)view;
+
+/tmp/opensnap-retina-red-evidence/sources/AppSafetyTests.swift:3973:39: warning: main actor-isolated property 'subviews' can not be referenced from a nonisolated context
+3971 |                     let privateTitle = view is NSTextField && view.superview is NSButton
+3972 |                     if let control = view as? NSControl, !privateTitle, control is NSButton || control is NSTextField || control is BezelSizeSlider { controls.append(control) }
+3973 |                     for child in view.subviews { collect(child) }
+     |                                       `- warning: main actor-isolated property 'subviews' can not be referenced from a nonisolated context
+3974 |                 }
+3975 |                 collect(content)
+
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/AppKit.framework/Headers/NSView.h:88:46: note: property declared here
+ 86 | @property (nullable, readonly, unsafe_unretained) NSWindow *window;
+ 87 | @property (nullable, readonly, unsafe_unretained) NSView *superview;
+ 88 | @property (copy) NSArray<__kindof NSView *> *subviews;
+    |                                              `- note: property declared here
+ 89 | - (BOOL)isDescendantOf:(NSView *)view;
+ 90 | - (nullable NSView *)ancestorSharedWithView:(NSView *)view;
+
+/tmp/opensnap-retina-red-evidence/sources/AppSafetyTests.swift:4031:110: warning: call to main actor-isolated instance method 'validateMenuItem' in a synchronous nonisolated context [#ActorIsolatedCall]
+4029 |                 func menuReads(_ stage: WipeStage) -> Bool {
+4030 |                     editMenu.update()
+4031 |                     return wipeItem.title == stage.menuTitle && wipeItem.isEnabled == stage.isEnabled && app.validateMenuItem(wipeItem) == stage.isEnabled
+     |                                                                                                              `- warning: call to main actor-isolated instance method 'validateMenuItem' in a synchronous nonisolated context [#ActorIsolatedCall]
+4032 |                 }
+4033 |                 func reads(_ stage: WipeStage) -> Bool {
+
+/tmp/opensnap-retina-red-evidence/sources/App.swift:1029:10: note: calls to instance method 'validateMenuItem' from outside of its actor context are implicitly asynchronous
+1027 |         window.toggleFullScreen(sender)
+1028 |     }
+1029 |     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+     |          |- note: calls to instance method 'validateMenuItem' from outside of its actor context are implicitly asynchronous
+     |          `- note: main actor isolation inferred from conformance to protocol 'NSMenuItemValidation'
+1030 |         if menuItem.action == #selector(toggleFullScreen(_:)) {
+1031 |             menuItem.title = isFullScreen ? "Exit Full Screen" : "Enter Full Screen"
+
+/tmp/opensnap-retina-red-evidence/sources/AppSafetyTests.swift:4034:28: warning: main actor-isolated property 'title' can not be referenced from a nonisolated context
+4032 |                 }
+4033 |                 func reads(_ stage: WipeStage) -> Bool {
+4034 |                     button.title == stage.actionName && button.isEnabled == stage.isEnabled && button.isAccessibilityEnabled() == stage.isEnabled && button.accessibilityLabel() == stage.actionName
+     |                            `- warning: main actor-isolated property 'title' can not be referenced from a nonisolated context
+4035 |                         && MainActor.assumeIsolated({ AppToolTip.text(for: button) }) == stage.toolTip && button.accessibilityHelp() == stage.toolTip && menuReads(stage)
+4036 |                 }
+
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/AppKit.framework/Headers/NSButton.h:76:28: note: property declared here
+ 74 | 
+ 75 | /*! The title displayed on the button when it’s in an off state, or an empty string if the button does not display a title. By default, a button's title is "Button". */
+ 76 | @property (copy) NSString *title;
+    |                            `- note: property declared here
+ 77 | 
+ 78 | /*! The button's title, expressed as an attributed string. */
+
+/tmp/opensnap-retina-red-evidence/sources/AppSafetyTests.swift:4034:64: warning: main actor-isolated property 'isEnabled' can not be referenced from a nonisolated autoclosure
+4032 |                 }
+4033 |                 func reads(_ stage: WipeStage) -> Bool {
+4034 |                     button.title == stage.actionName && button.isEnabled == stage.isEnabled && button.isAccessibilityEnabled() == stage.isEnabled && button.accessibilityLabel() == stage.actionName
+     |                                                                `- warning: main actor-isolated property 'isEnabled' can not be referenced from a nonisolated autoclosure
+4035 |                         && MainActor.assumeIsolated({ AppToolTip.text(for: button) }) == stage.toolTip && button.accessibilityHelp() == stage.toolTip && menuReads(stage)
+4036 |                 }
+
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/AppKit.framework/Headers/NSControl.h:29:35: note: property declared here
+ 27 | @property BOOL ignoresMultiClick;
+ 28 | @property (getter=isContinuous) BOOL continuous;
+ 29 | @property (getter=isEnabled) BOOL enabled;
+    |                                   `- note: property declared here
+ 30 | @property BOOL refusesFirstResponder;
+ 31 | @property (getter=isHighlighted) BOOL highlighted API_AVAILABLE(macos(10.10));
+
+/tmp/opensnap-retina-red-evidence/sources/AppSafetyTests.swift:4034:103: warning: call to main actor-isolated instance method 'isAccessibilityEnabled()' in a synchronous nonisolated context [#ActorIsolatedCall]
+4032 |                 }
+4033 |                 func reads(_ stage: WipeStage) -> Bool {
+4034 |                     button.title == stage.actionName && button.isEnabled == stage.isEnabled && button.isAccessibilityEnabled() == stage.isEnabled && button.accessibilityLabel() == stage.actionName
+     |                                                                                                       `- warning: call to main actor-isolated instance method 'isAccessibilityEnabled()' in a synchronous nonisolated context [#ActorIsolatedCall]
+4035 |                         && MainActor.assumeIsolated({ AppToolTip.text(for: button) }) == stage.toolTip && button.accessibilityHelp() == stage.toolTip && menuReads(stage)
+4036 |                 }
+
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/AppKit.framework/Headers/NSAccessibilityProtocols.h:382:50: note: calls to instance method 'isAccessibilityEnabled()' from outside of its actor context are implicitly asynchronous
+380 | // Returns YES if the element responds to user events
+381 | // Invokes when clients request NSAccessibilityEnabledAttribute
+382 | @property (getter = isAccessibilityEnabled) BOOL accessibilityEnabled API_AVAILABLE(macos(10.10));
+    |                                                  |- note: calls to instance method 'isAccessibilityEnabled()' from outside of its actor context are implicitly asynchronous
+    |                                                  `- note: main actor isolation inferred from inheritance from class 'NSResponder'
+383 | 
+384 | // Array of UIElements that represent children of the current UIElement
+
+/tmp/opensnap-retina-red-evidence/sources/AppSafetyTests.swift:4034:157: warning: call to main actor-isolated instance method 'accessibilityLabel()' in a synchronous nonisolated context [#ActorIsolatedCall]
+4032 |                 }
+4033 |                 func reads(_ stage: WipeStage) -> Bool {
+4034 |                     button.title == stage.actionName && button.isEnabled == stage.isEnabled && button.isAccessibilityEnabled() == stage.isEnabled && button.accessibilityLabel() == stage.actionName
+     |                                                                                                                                                             `- warning: call to main actor-isolated instance method 'accessibilityLabel()' in a synchronous nonisolated context [#ActorIsolatedCall]
+4035 |                         && MainActor.assumeIsolated({ AppToolTip.text(for: button) }) == stage.toolTip && button.accessibilityHelp() == stage.toolTip && menuReads(stage)
+4036 |                 }
+
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/AppKit.framework/Headers/NSAccessibilityProtocols.h:38:1: note: calls to instance method 'accessibilityLabel()' from outside of its actor context are implicitly asynchronous
+ 36 | @protocol NSAccessibilityButton <NSAccessibilityElement>
+ 37 | @required
+ 38 | - (nullable NSString *)accessibilityLabel;
+    | |- note: calls to instance method 'accessibilityLabel()' from outside of its actor context are implicitly asynchronous
+    | `- note: main actor isolation inferred from inheritance from class 'NSControl'
+ 39 | - (BOOL)accessibilityPerformPress;
+ 40 | @end
+
+/tmp/opensnap-retina-red-evidence/sources/AppSafetyTests.swift:4035:114: warning: call to main actor-isolated instance method 'accessibilityHelp()' in a synchronous nonisolated context [#ActorIsolatedCall]
+4033 |                 func reads(_ stage: WipeStage) -> Bool {
+4034 |                     button.title == stage.actionName && button.isEnabled == stage.isEnabled && button.isAccessibilityEnabled() == stage.isEnabled && button.accessibilityLabel() == stage.actionName
+4035 |                         && MainActor.assumeIsolated({ AppToolTip.text(for: button) }) == stage.toolTip && button.accessibilityHelp() == stage.toolTip && menuReads(stage)
+     |                                                                                                                  `- warning: call to main actor-isolated instance method 'accessibilityHelp()' in a synchronous nonisolated context [#ActorIsolatedCall]
+4036 |                 }
+4037 |                 try expect(["Clear Image", "Remove Annotations", "Clear Image"] == [WipeStage.clear.menuTitle, WipeStage.wipe.menuTitle, WipeStage.blank.menuTitle]
+
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/AppKit.framework/Headers/NSAccessibilityProtocols.h:366:38: note: calls to instance method 'accessibilityHelp()' from outside of its actor context are implicitly asynchronous
+364 | // Instance description (e.g. a tool tip)
+365 | // Invokes when clients request NSAccessibilityHelpAttribute
+366 | @property (nullable, copy) NSString *accessibilityHelp API_AVAILABLE(macos(10.10));
+    |                                      |- note: calls to instance method 'accessibilityHelp()' from outside of its actor context are implicitly asynchronous
+    |                                      `- note: main actor isolation inferred from inheritance from class 'NSResponder'
+367 | 
+368 | // Filename of the underlying asset
+
+[#ActorIsolatedCall]: <https://docs.swift.org/compiler/documentation/diagnostics/actor-isolated-call>

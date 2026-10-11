@@ -1,0 +1,3 @@
+App safety evidence: /tmp/opensnap-retina-red-behavior-evidence
+FAIL Actual button/menu gating and hidden navigator clamped viewport callback: Wide overview renders (312.0, 234.0) pixels for the (156.0, 117.0) slot, not 160x120
+0/1 app safety tests passed

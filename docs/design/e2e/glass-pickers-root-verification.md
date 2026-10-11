@@ -2,6 +2,8 @@
 
 Status: implemented and accepted locally after root corrections. Tested source `21b8d68e10543b097cb6a902103e9c56eeb76be5`, tree `047c1a0ce65c3806633926740afea20c8eaffc4d`. Final local integration and cold rebuild are recorded below. Physical pointer hover, VoiceOver speech, live OS display settings and hardware/provider behavior remain qualified manual limits.
 
+Later local refinement, 2026-10-11: the Actual Size overview now renders to its drawable area and backing scale at source `c21c3f2`, with a 1024px bound and no source upscaling. Navigator checks, all 275 app-safety cases, a behavioral red proof, and fresh S07 light/dark captures passed. [Polish record and comparison](../navigator-retina-polish.md) retain the distinct source identity and limits. The glass acceptance evidence below remains attributed to its original tested source; this refinement does not claim a repeat of the 52-suite gate or promote ledger rows.
+
 ## Current acceptance
 
 The requested glass choices are implemented: Toolbox/Zoom/Upload panels, Color/Size panels, Settings tabs/radios/toggles and shortcut choices, Resize groups/presets/actions, History category/date/export picks and grouped commands, destination Protocol/Source/ACL/actions, and editor Original size. The final reviewed screenshots show complete labels, clear chosen/focus states and horizontal containment inside a parent when the panel fits. Normal labels are 20pt with an 18pt app-drawn floor; OS title-bar typography remains OS-owned.

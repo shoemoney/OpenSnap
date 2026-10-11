@@ -1,0 +1,446 @@
+{
+  "sourceSha": "c21c3f2",
+  "bundleId": "com.shoemoney.opensnap.eyedump-16236",
+  "injectedDisplayOptions": [],
+  "captureCount": 12,
+  "captures": [
+    {
+      "id": "S07",
+      "slug": "actual-size",
+      "surface": "canvas viewport",
+      "state": "Actual Size on: navigator overview panel beside the window",
+      "appearance": "dark",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1662,
+        1179
+      ],
+      "pixelSize": [
+        3674,
+        2358
+      ],
+      "pointSize": [
+        1837,
+        1179
+      ],
+      "scale": 2,
+      "sourceSha": "c21c3f2",
+      "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+      "sourceRefs": [
+        "AppViewport.swift|@objc func toggleActualSize",
+        "AppViewport.swift|func showActualNavigator"
+      ],
+      "file": "raw-sf/S07-actual-size-dark.png"
+    },
+    {
+      "id": "S07",
+      "slug": "actual-size",
+      "surface": "canvas viewport",
+      "state": "Actual Size on: navigator overview panel beside the window",
+      "appearance": "light",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1662,
+        1179
+      ],
+      "pixelSize": [
+        3674,
+        2358
+      ],
+      "pointSize": [
+        1837,
+        1179
+      ],
+      "scale": 2,
+      "sourceSha": "c21c3f2",
+      "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+      "sourceRefs": [
+        "AppViewport.swift|@objc func toggleActualSize",
+        "AppViewport.swift|func showActualNavigator"
+      ],
+      "file": "raw-sf/S07-actual-size-light.png"
+    },
+    {
+      "id": "S07",
+      "slug": "large-fit",
+      "surface": "canvas viewport",
+      "state": "2400x1500 image fitted into the window",
+      "appearance": "dark",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1662,
+        1179
+      ],
+      "pixelSize": [
+        3324,
+        2358
+      ],
+      "pointSize": [
+        1662,
+        1179
+      ],
+      "scale": 2,
+      "sourceSha": "c21c3f2",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "AppViewport.swift|func adoptRasterViewport"
+      ],
+      "file": "raw-sf/S07-large-fit-dark.png"
+    },
+    {
+      "id": "S07",
+      "slug": "large-fit",
+      "surface": "canvas viewport",
+      "state": "2400x1500 image fitted into the window",
+      "appearance": "light",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1662,
+        1179
+      ],
+      "pixelSize": [
+        3324,
+        2358
+      ],
+      "pointSize": [
+        1662,
+        1179
+      ],
+      "scale": 2,
+      "sourceSha": "c21c3f2",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "AppViewport.swift|func adoptRasterViewport"
+      ],
+      "file": "raw-sf/S07-large-fit-light.png"
+    },
+    {
+      "id": "S07",
+      "slug": "small-centred",
+      "surface": "canvas viewport",
+      "state": "360x240 image centred in a large viewport (shot first, before any Actual Size state) (CenteringClipView)",
+      "appearance": "dark",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        980,
+        648
+      ],
+      "pixelSize": [
+        1960,
+        1296
+      ],
+      "pointSize": [
+        980,
+        648
+      ],
+      "scale": 2,
+      "sourceSha": "c21c3f2",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "ModernEditorChrome.swift|final class CenteringClipView"
+      ],
+      "file": "raw-sf/S07-small-centred-dark.png"
+    },
+    {
+      "id": "S07",
+      "slug": "small-centred",
+      "surface": "canvas viewport",
+      "state": "360x240 image centred in a large viewport (shot first, before any Actual Size state) (CenteringClipView)",
+      "appearance": "light",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        980,
+        648
+      ],
+      "pixelSize": [
+        1960,
+        1296
+      ],
+      "pointSize": [
+        980,
+        648
+      ],
+      "scale": 2,
+      "sourceSha": "c21c3f2",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "ModernEditorChrome.swift|final class CenteringClipView"
+      ],
+      "file": "raw-sf/S07-small-centred-light.png"
+    },
+    {
+      "id": "S07",
+      "slug": "zoom-200",
+      "surface": "canvas viewport",
+      "state": "zoom 200%",
+      "appearance": "dark",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1662,
+        1179
+      ],
+      "pixelSize": [
+        3324,
+        2358
+      ],
+      "pointSize": [
+        1662,
+        1179
+      ],
+      "scale": 2,
+      "sourceSha": "c21c3f2",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "App.swift|@objc func changeZoom"
+      ],
+      "file": "raw-sf/S07-zoom-200-dark.png"
+    },
+    {
+      "id": "S07",
+      "slug": "zoom-200",
+      "surface": "canvas viewport",
+      "state": "zoom 200%",
+      "appearance": "light",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1662,
+        1179
+      ],
+      "pixelSize": [
+        3324,
+        2358
+      ],
+      "pointSize": [
+        1662,
+        1179
+      ],
+      "scale": 2,
+      "sourceSha": "c21c3f2",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "App.swift|@objc func changeZoom"
+      ],
+      "file": "raw-sf/S07-zoom-200-light.png"
+    },
+    {
+      "id": "S07",
+      "slug": "zoom-25",
+      "surface": "canvas viewport",
+      "state": "zoom 25%",
+      "appearance": "dark",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1662,
+        1179
+      ],
+      "pixelSize": [
+        3324,
+        2358
+      ],
+      "pointSize": [
+        1662,
+        1179
+      ],
+      "scale": 2,
+      "sourceSha": "c21c3f2",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "App.swift|@objc func changeZoom"
+      ],
+      "file": "raw-sf/S07-zoom-25-dark.png"
+    },
+    {
+      "id": "S07",
+      "slug": "zoom-25",
+      "surface": "canvas viewport",
+      "state": "zoom 25%",
+      "appearance": "light",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1662,
+        1179
+      ],
+      "pixelSize": [
+        3324,
+        2358
+      ],
+      "pointSize": [
+        1662,
+        1179
+      ],
+      "scale": 2,
+      "sourceSha": "c21c3f2",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "App.swift|@objc func changeZoom"
+      ],
+      "file": "raw-sf/S07-zoom-25-light.png"
+    },
+    {
+      "id": "S07",
+      "slug": "zoom-50",
+      "surface": "canvas viewport",
+      "state": "zoom 50%",
+      "appearance": "dark",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1662,
+        1179
+      ],
+      "pixelSize": [
+        3324,
+        2358
+      ],
+      "pointSize": [
+        1662,
+        1179
+      ],
+      "scale": 2,
+      "sourceSha": "c21c3f2",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "App.swift|@objc func changeZoom"
+      ],
+      "file": "raw-sf/S07-zoom-50-dark.png"
+    },
+    {
+      "id": "S07",
+      "slug": "zoom-50",
+      "surface": "canvas viewport",
+      "state": "zoom 50%",
+      "appearance": "light",
+      "iconMode": "sf",
+      "displayOptions": {
+        "active": [],
+        "differentiateWithoutColor": false,
+        "increaseContrast": false,
+        "injected": false,
+        "reduceMotion": false,
+        "reduceTransparency": false
+      },
+      "windowSize": [
+        1662,
+        1179
+      ],
+      "pixelSize": [
+        3324,
+        2358
+      ],
+      "pointSize": [
+        1662,
+        1179
+      ],
+      "scale": 2,
+      "sourceSha": "c21c3f2",
+      "method": "CGWindowListCreateImage(bestResolution)",
+      "sourceRefs": [
+        "App.swift|@objc func changeZoom"
+      ],
+      "file": "raw-sf/S07-zoom-50-light.png"
+    }
+  ],
+  "requested": [
+    {
+      "mode": "sf",
+      "appearance": "light",
+      "group": "custom",
+      "surfaces": "S07"
+    },
+    {
+      "mode": "sf",
+      "appearance": "dark",
+      "group": "custom",
+      "surfaces": "S07"
+    }
+  ],
+  "unavailable": [],
+  "gaps": []
+}
