@@ -92,6 +92,16 @@ extension AuditRun {
         }
     }
 
+    /// Offers keyboard focus to `row` and reports what happened: whether AppKit accepted it, whether the row really is the first responder
+    /// afterwards, and who held the keyboard before (a disabled row that already holds it was handed focus by the panel itself).
+    func offerFocus(in host: NSWindow, to row: NSButton) -> (took: Bool, facts: [String: Any]) {
+        let before = host.firstResponder
+        let accepted = host.makeFirstResponder(row)
+        let took = accepted && host.firstResponder === row
+        return (took, ["makeFirstResponderReturned": accepted, "rowWasAlreadyFirstResponder": before === row, "rowIsEnabled": row.isEnabled,
+                       "rowAcceptsFirstResponder": row.acceptsFirstResponder, "firstResponderBefore": before.map { String(describing: type(of: $0)) } ?? "none"])
+    }
+
     /// Hover as the app sees it: each kind of row has its own `setHovered(_:)` test seam; nothing here moves a real pointer.
     func setHovered(_ row: NSButton, _ hovered: Bool) {
         switch row {
@@ -281,10 +291,10 @@ extension AuditRun {
         }
         if let off = rows.indices.first(where: { !rows[$0].isEnabled }) {
             setHovered(rows[off], true)
-            let took = panel.makeFirstResponder(rows[off])
-            let tookFocus = took && panel.firstResponder === rows[off]
+            let offer = offerFocus(in: panel, to: rows[off])
             shootGlassPanel(script.id, script.base + "-disabled", surface: script.surface, state: "\(restState); disabled row \(off) (\(visibleTitle(rows[off]))) hovered and offered focus",
-                            panel: panel, opener: script.opener, refs: script.refs, variant: "disabled", identifier: script.identifier, extra: ["disabledTookFocus": tookFocus], context: script.context)
+                            panel: panel, opener: script.opener, refs: script.refs, variant: "disabled", identifier: script.identifier,
+                            extra: offer.facts.merging(["disabledTookFocus": offer.took]) { $1 }, context: script.context)
             setHovered(rows[off], false)
         }
     }
@@ -355,9 +365,10 @@ extension AuditRun {
             let rows = glassRows(in: opened.panel.contentView ?? NSView())
             let off = rows.firstIndex { !$0.isEnabled }
             if let off { setHovered(rows[off], true) }
-            let took = off.map { opened.panel.makeFirstResponder(rows[$0]) && opened.panel.firstResponder === rows[$0] } ?? false
+            let offer = off.map { offerFocus(in: opened.panel, to: rows[$0]) }
             shootGlassPanel("S52", "upload-empty", surface: script.surface, state: "Upload panel with no destination saved: the disabled No destination configured row, Destination Settings… and Share with macOS…",
-                            panel: opened.panel, opener: share, refs: refs, variant: "disabled", identifier: "Upload", extra: ["disabledTookFocus": took])
+                            panel: opened.panel, opener: share, refs: refs, variant: "disabled", identifier: "Upload",
+                            extra: (offer?.facts ?? [:]).merging(["disabledTookFocus": offer?.took ?? false]) { $1 })
             dismissGlassPanel("S52", "upload-dismissed-empty", surface: script.surface, state: "", script: script, opened: opened, capture: false)
         }
         // Three fake destinations, Example S3 the default (checked): rest, hover, focus, then a different default for the chosen capture.
@@ -487,9 +498,9 @@ extension AuditRun {
         }
         if let slug = disabledSlug, let off = rows.indices.first(where: { !rows[$0].isEnabled }) {
             setHovered(rows[off], true)
-            let took = host.makeFirstResponder(rows[off]) && host.firstResponder === rows[off]
+            let offer = offerFocus(in: host, to: rows[off])
             shoot(id, slug, surface: surface, state: "\(restState); disabled row \(off) (\(visibleTitle(rows[off]))) hovered and offered focus", windows: shots, refs: refs, settle: 0.25,
-                  extra: ["glassPanel": record("disabled", ["disabledTookFocus": took])])
+                  extra: ["glassPanel": record("disabled", offer.facts.merging(["disabledTookFocus": offer.took]) { $1 })])
             setHovered(rows[off], false)
         }
         host.makeFirstResponder(nil)
