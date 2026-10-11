@@ -70,6 +70,19 @@ final class AppSafetyPopover: NSObject {
     func performClose(_ sender: Any?) { isShown = false }
 }
 
+/// A panel that really is ordered front, so a press on it goes through the window as it does on screen (the first press on a window that is
+/// not key included), yet is invisible (alpha 0), deaf to the real pointer and parked far off every screen. Closing the host orders it out.
+@MainActor
+func appSafetyOrderedPanelSetup(_ host: GlassPanelHost) {
+    host.visibleFrameOverride = NSRect(x: -4000, y: -4000, width: 8000, height: 8000)
+    host.presenter = { window, _ in
+        window.alphaValue = 0
+        window.ignoresMouseEvents = true
+        window.setFrameOrigin(NSPoint(x: -30000, y: -30000))
+        window.orderFront(nil)
+    }
+}
+
 /// A glass panel kept off the screen: it is placed, shown and closed with all its real behaviour (placement, dismissal, focus restore, the
 /// close callbacks) but ordered nowhere, on a screen big enough to sit below its anchor. The Size and Drawing colors panels use it.
 @MainActor
@@ -3787,6 +3800,90 @@ enum AppSafetyTests {
                 custom.performClick(nil)
                 try expect(app.colorPanel == nil && system.shown && app.customColorPanelOpen,
                            "Custom color… closes the panel and opens the system Colors panel wired to the editor")
+            }),
+            ("The first press on a Size or Color panel that is not key acts at once: a track drag opens one undo group, a preset sets its size, a hover-opened swatch applies its colour", {
+                let fixture = try Fixture(), app = fixture.app
+                guard let window = app.window as? AppSafetyWindow else { throw Failure(description: "Isolated window") }
+                window.simulatesVisibility = true; window.shown = true
+                app.widthControl.panelSetup = appSafetyOrderedPanelSetup
+                app.colorPanelSetup = appSafetyOrderedPanelSetup
+                defer { app.widthControl.dismissPopover(); app.closeDrawingColors() }
+                let slider = app.widthControl, undo = app.canvas.editingUndoManager
+                var text = SketchElement(kind: .text); text.text = "First click"; text.fontName = "Courier"; text.fontSize = 26; text.outlined = false; text.shadowed = false
+                @MainActor func fresh() {
+                    app.canvas.document.elements = [text]; app.canvas.selection = [text.id]
+                    app.canvas.strokeWidth = 6.75; app.syncDrawingControls()
+                    undo.removeAllActions()
+                }
+                @MainActor func events(at view: NSView, x: CGFloat? = nil, in host: GlassPanelHost) throws -> (down: NSEvent, up: NSEvent) {
+                    host.window.contentView?.layoutSubtreeIfNeeded()
+                    let point = view.convert(NSPoint(x: x ?? view.bounds.midX, y: view.bounds.midY), to: nil)
+                    func make(_ type: NSEvent.EventType, _ number: Int) throws -> NSEvent {
+                        guard let event = NSEvent.mouseEvent(with: type, location: point, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: host.window.windowNumber,
+                                                             context: nil, eventNumber: number, clickCount: 1, pressure: 1) else { throw Failure(description: "Mouse event") }
+                        return event
+                    }
+                    return (try make(.leftMouseDown, 1), try make(.leftMouseUp, 2))
+                }
+                // Size, the track: the first press starts the drag and opens one undo group; the release closes it.
+                fresh()
+                slider.showPopover()
+                guard let sizeHost = slider.panel, let content = slider.popoverContent, sizeHost.isShown else { throw Failure(description: "The Size panel did not open") }
+                try expect(!sizeHost.window.isKeyWindow && sizeHost.window.isVisible, "The Size panel is up and is not the key window")
+                let (trackDown, trackUp) = try events(at: content.trackView, x: content.trackView.x(forFraction: 1), in: sizeHost)
+                sizeHost.window.sendEvent(trackDown)
+                try expect(app.sizeUndoGrouping && undo.groupingLevel == 1 && slider.isPopoverShown,
+                           "The first press on the track starts the drag and its undo group (level \(undo.groupingLevel))")
+                sizeHost.window.sendEvent(trackUp)
+                try expect(!app.sizeUndoGrouping && undo.groupingLevel == 0 && app.canvas.document.elements[0].fontSize != 26, "...the release closes the group and the size changed")
+                app.undo()
+                try expect(app.canvas.document.elements == [text] && !undo.canUndo, "...and one Undo restores it")
+                slider.dismissPopover()
+                // Size, a preset: the first press chooses it, closes the panel and is one undo step.
+                fresh()
+                slider.showPopover()
+                guard let presetHost = slider.panel, let presets = slider.popoverContent?.presetButtons, presetHost.isShown else { throw Failure(description: "The Size panel did not reopen") }
+                try expect(!presetHost.window.isKeyWindow, "The reopened Size panel is not key")
+                let (presetDown, presetUp) = try events(at: presets[4], in: presetHost)
+                NSApp.postEvent(presetUp, atStart: false)
+                presetHost.window.sendEvent(presetDown)
+                try expect(app.canvas.strokeWidth == 12 && !slider.isPopoverShown && !app.sizeUndoGrouping && undo.groupingLevel == 0,
+                           "The first press on a preset sets Size 12 and closes the panel (width \(app.canvas.strokeWidth))")
+                app.undo()
+                try expect(app.canvas.document.elements == [text] && !undo.canUndo, "...in one undo step")
+                // Color, a hover-opened swatch: the palette is not key, and the first press applies the colour and closes it.
+                fresh()
+                app.drawingColorHover(true, palette: false)
+                guard let colorHost = app.colorPanel, colorHost.isShown, app.colorOpenedByHover else { throw Failure(description: "The palette did not hover-open") }
+                try expect(!colorHost.window.isKeyWindow && !colorHost.requestedKey, "The hover-opened palette is not the key window")
+                let blue = OriginalDrawingControls.presets[2]
+                guard let swatch = app.presetColorButtons.first(where: { $0.tag == blue.tag }) else { throw Failure(description: "No Blue swatch") }
+                let (swatchDown, swatchUp) = try events(at: swatch, in: colorHost)
+                NSApp.postEvent(swatchUp, atStart: false)
+                colorHost.window.sendEvent(swatchDown)
+                try expect(SketchColor(app.canvas.strokeColor) == SketchColor(blue.color) && app.colorPanel == nil,
+                           "The first press on a hover-opened swatch applies Blue and closes the palette")
+            }),
+            ("Hovering the Color control never closes another panel the user has open", {
+                let fixture = try Fixture(), app = fixture.app
+                guard let window = app.window as? AppSafetyWindow else { throw Failure(description: "Isolated window") }
+                window.simulatesVisibility = true; window.shown = true
+                let slider = app.widthControl
+                defer { slider.dismissPopover(); app.closeDrawingColors() }
+                slider.showPopover()
+                try expect(slider.isPopoverShown && GlassPanelHost.current === slider.panel, "The Size panel is the panel in use")
+                app.drawingColorHover(true, palette: false)
+                try expect(app.colorPanel == nil && slider.isPopoverShown, "Passing the pointer over Color leaves the open Size panel alone and opens nothing")
+                app.drawingColorHover(false, palette: false)
+                // With nothing else open, hovering opens the palette as before.
+                slider.dismissPopover()
+                app.drawingColorHover(true, palette: false)
+                try expect(app.colorPanel?.isShown == true && app.colorOpenedByHover, "...and with no other panel open it hover-opens")
+                // Choosing Color on purpose still takes over from another panel.
+                app.closeDrawingColors()
+                slider.showPopover()
+                app.showDrawingColors(app.paletteButton)
+                try expect(app.colorPanel?.isShown == true && !slider.isPopoverShown, "A click on Color replaces the open Size panel")
             }),
             ("Drawing defaults round trip exact calibrated custom RGBA and restore native controls", {
                 let fixture = try Fixture(), app = fixture.app

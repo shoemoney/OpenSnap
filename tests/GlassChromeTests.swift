@@ -564,6 +564,7 @@ private enum GlassChromeTests {
         expect(panel.presetButtons.map { $0.accessibilityLabel() ?? "" } == ["Size 2", "Size 4", "Size 7", "Size 9", "Size 12"], "Presets are spoken Size 2/4/7/9/12")
         expect(panel.presetButtons.map(\.isSelectedPreset) == [false, false, true, false, false], "Only the current preset is selected")
         let panelWindow = host.window
+        expect(track.acceptsFirstMouse(for: nil) && panel.presetButtons.allSatisfy { $0.acceptsFirstMouse(for: nil) }, "The track and the presets act on the press that makes the panel key")
         func pointer(_ type: NSEvent.EventType, fraction: CGFloat, flags: NSEvent.ModifierFlags = [], clicks: Int = 1) -> NSEvent {
             let location = track.convert(NSPoint(x: track.x(forFraction: fraction), y: 18), to: nil)
             return NSEvent.mouseEvent(with: type, location: location, modifierFlags: flags, timestamp: 0, windowNumber: panelWindow.windowNumber,
@@ -911,6 +912,7 @@ private enum GlassChromeTests {
 
         // MARK: the colour swatch
         let swatch = BezelColorButton(frame: NSRect(x: 100, y: 100, width: 42, height: 32))
+        expect(swatch.acceptsFirstMouse(for: nil), "A swatch acts on the press that makes its panel key")
         swatch.title = ""; swatch.isBordered = false; swatch.setButtonType(.toggle)
         swatch.drawingColor = NSColor(deviceRed: 1, green: 0, blue: 0, alpha: 1) // token-exempt: a test swatch colour
         content.addSubview(swatch)
