@@ -104,8 +104,11 @@ final class ZoomPopUpButton: GlassPopUpButton {
         preferredEdge = ChoiceEdge.above
         // The footer is crowded (the status line takes what the plates leave), so the face is tight: the percentage, its chevron, and no more.
         facePadding = DesignTokens.Space.s1
-        chevronColumn = 27
+        chevronColumn = 25
         kind = { $0.tag == ZoomPopUpButton.actualSizeTag ? .toggle : .option }
+        // The face is the percentage alone, so the computed row (Fit, Frame, Normal, Actual) says its mode in the panel, using the words the
+        // item already carries on its tooltip; otherwise it and the fixed row of the same percentage would read alike. The menu is unchanged.
+        rowTitle = { $0.tag == ZoomPopUpButton.computedZoomTag ? ($0.toolTip ?? $0.title) : $0.title }
     }
 
     override func accessibilityValue() -> Any? { selectedItem?.toolTip ?? titleOfSelectedItem }
@@ -262,6 +265,12 @@ final class ModernEditorChrome: NSView {
         return ceil(max(top, fitFooterGroups(withOriginalSize: true, atMinimumWidth: true) + Self.minimumStatusWidth)) + 2 * DesignTokens.Layout.margin
     }
     private func fit(_ id: String) -> CGFloat { surfaceList.first { $0.identifier?.rawValue == id }?.fittingSize.width ?? 0 }
+    /// The Original size toggle's side padding and the gap between its checkbox mark and its title. The mark's box has a few points of
+    /// room of its own around the glyph, so these read as roomier than they are. With the 87 pt zoom they leave the 980 pt floor 5 pt more
+    /// than an upload error at its narrowest ("Failed" and both commands, with the status at its 60 pt minimum) needs beside the toggle (F-J7-006).
+    static let originalSizePadding: CGFloat = 6
+    static let originalSizeGap: CGFloat = DesignTokens.Space.s1
+
     /// What the Original size toggle adds to the View plate while it shows: its own width and the spacing before it. The toggle sits on that
     /// plate, so it takes its room from the status slot (the plate grows, the slot shrinks) instead of from inside it.
     var originalSizeWidth: CGFloat { controls.dragOriginalControl.fittingSize.width + GlassChrome.Metrics.groupSpacing }
@@ -615,6 +624,9 @@ final class ModernEditorChrome: NSView {
         // for a small shot, in Frame and at Actual Size; the plate's stack drops a hidden view, so the plate shrinks and the slot grows back.
         let originalSize = controls.dragOriginalControl
         if let toggle = originalSize as? ChromeFillable { fillList.append(toggle) }
+        // The footer is crowded (an upload error keeps this toggle beside it on the 980 pt floor), so the toggle's content sits closer to its
+        // edge and its mark closer to its title than a menu row's does; the type stays 20 pt.
+        if let toggle = originalSize as? GlassChoiceButton { toggle.horizontalPadding = Self.originalSizePadding; toggle.contentGap = Self.originalSizeGap }
         let viewGroup = plate([zoomCell, fixed(resizeButton, NSSize(width: resizeWidth, height: Metrics.commandHeight)), originalSize], "GlassViewGroup")
 
         let saveGroup = plate([fixed(saveButton), fixed(historyButton)], "GlassSaveGroup")
