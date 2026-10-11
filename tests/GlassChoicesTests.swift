@@ -2851,13 +2851,15 @@ private enum GlassChoicesTests {
             }
             let type = ViewTreeAudit.audit(view, surface: name)
             expect(type.violations.isEmpty && type.smallest != nil, "The type-floor audit is clean for the \(name): \(type.description)")
-            let access = AccessibilityAudit.audit(view, surface: name)
+            let access = AccessibilityAudit.audit(view, surface: "Glass choices: " + name)
             expect(access.violations.isEmpty && access.controls > 0, "The accessibility audit is clean for the \(name): \(access.description)")
         }
         panel.host.close()
 
         // The walker judges an inline group itself: a group that lost its name is flagged, a named one is not, and the buttons inside are
         // still judged on their own.
+        AccessibilityAudit.recording = false  // the broken groups below are seeds, not surfaces: no script, no findings dump
+        defer { AccessibilityAudit.recording = true }
         let nameless = GlassChoiceGroup(titles: ["Resize", "Crop"], accessibilityLabel: "", identifier: "nameless", accessibility: plain)
         let named = GlassChoiceGroup(titles: ["Resize", "Crop"], accessibilityLabel: "Size operation", identifier: "named", accessibility: plain)
         let namelessReport = AccessibilityAudit.audit(nameless, surface: "nameless group")

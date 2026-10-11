@@ -23,10 +23,21 @@ enum AXTree {
         let value: Any?
         let enabled: Bool
         let depth: Int
+        /// What an assistive client also reads (WP1a): the hint, the subrole, the identifier, the frame in screen coordinates, whether it is
+        /// selected, the names of its custom actions and how many children the element itself lists.
+        let help: String?
+        let subrole: NSAccessibility.Subrole?
+        let identifier: String
+        let frame: CGRect
+        let selected: Bool
+        let customActions: [String]
+        let childCount: Int
         /// Index (in `Tree.nodes`) of the element this one was reached from; nil for a child of the window.
         let reachedFrom: Int?
 
         var object: AnyObject { element as AnyObject }
+        /// The view a click on this element lands on: the element itself, or the control a cell belongs to.
+        var hostView: NSView? { (element as? NSView) ?? (element as? NSCell)?.controlView }
         var number: Int? { (value as? NSNumber)?.intValue }
         var text: String? { value as? String }
     }
@@ -47,6 +58,56 @@ enum AXTree {
             var problems = rawProblems
             for node in nodes {
                 if node.role == nil || node.role == .unknown { problems.append("a node of unknown role: \"\(node.label ?? "")\" (\(type(of: node.object)))") }
+            }
+            return problems
+        }
+
+        /// `role "label"` for every element from the window down to `index`, joined with ">".
+        func path(of index: Int) -> String {
+            var parts: [String] = [], current: Int? = index
+            while let step = current {
+                parts.insert("\(nodes[step].role?.rawValue ?? "?") \"\(nodes[step].label ?? "")\"", at: 0)
+                current = nodes[step].reachedFrom
+            }
+            return parts.joined(separator: ">")
+        }
+
+        struct OrderProblem {
+            /// Index of the parent whose children disagree; nil for the children of the window (or of the audited view).
+            let parent: Int?
+            let path: String
+            let label: String
+            let message: String
+        }
+
+        /// Within one AX parent, the order `accessibilityChildren()` lists its children in against the order the eye reads them: rows from the top,
+        /// each row left to right. A parent opts out with an identifier that starts with "order-free" (the canvas, a free-form board), and so do
+        /// the elements below it. Elements without a frame (zero-sized) are left out, they cannot be read in any order, and so are the window's
+        /// own title-bar buttons, which AppKit lists wherever it likes.
+        func readingOrderProblems() -> [OrderProblem] {
+            let furniture: Set<NSAccessibility.Subrole> = [.closeButton, .minimizeButton, .zoomButton, .fullScreenButton, .toolbarButton]
+            var groups: [Int?: [Int]] = [:]
+            for (index, node) in nodes.enumerated() where node.frame.width > 0 && node.frame.height > 0 && !(node.subrole.map { furniture.contains($0) } ?? false) {
+                groups[node.reachedFrom, default: []].append(index)
+            }
+            func orderFree(_ parent: Int?) -> Bool {
+                var current = parent
+                while let step = current {
+                    if nodes[step].identifier.hasPrefix("order-free") { return true }
+                    current = nodes[step].reachedFrom
+                }
+                return false
+            }
+            var problems: [OrderProblem] = []
+            for (parent, members) in groups.sorted(by: { ($0.key ?? -1) < ($1.key ?? -1) }) where members.count > 1 && !orderFree(parent) {
+                let eye = AXTree.eyeOrder(members.map { nodes[$0].frame })
+                let expected = eye.map { members[$0] }
+                if expected != members {
+                    let first = zip(members, expected).first { $0 != $1 }!
+                    let owner = parent.map { path(of: $0) } ?? "the window"
+                    problems.append(OrderProblem(parent: parent, path: owner, label: parent.flatMap { nodes[$0].label } ?? "",
+                        message: "\(owner) lists \(describe(nodes[first.0])) where the eye reads \(describe(nodes[first.1]))"))
+                }
             }
             return problems
         }
@@ -111,7 +172,28 @@ enum AXTree {
     }
 
     /// The tree below `window`, as the accessibility server publishes it.
-    static func walk(_ window: NSWindow, limit: Int = 4000) -> Tree {
+    static func walk(_ window: NSWindow, limit: Int = 4000) -> Tree { walk(roots: window.accessibilityChildren(), in: window, limit: limit) }
+
+    /// The tree below one view (an ignored plain view is replaced by what it contains, as the server does). A view that is not in a window is
+    /// walked against a throwaway one: its roles, names and values are real, its frames are not.
+    static func walk(_ view: NSView, limit: Int = 4000) -> Tree {
+        let window = view.window ?? NSWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 300), styleMask: [.titled], backing: .buffered, defer: true)
+        window.isReleasedWhenClosed = false
+        return walk(roots: [view], in: window, limit: limit)
+    }
+
+    /// Rows from the top, each row left to right: the indices of `frames` in the order the eye reads them. Frames are in screen coordinates
+    /// (y up). Two frames share a row when the lower one's top edge is above the middle of the row's first frame.
+    nonisolated static func eyeOrder(_ frames: [CGRect]) -> [Int] {
+        let byTop = frames.indices.sorted { frames[$0].maxY != frames[$1].maxY ? frames[$0].maxY > frames[$1].maxY : frames[$0].minX < frames[$1].minX }
+        var rows: [[Int]] = []
+        for index in byTop {
+            if let anchor = rows.last?.first, frames[index].maxY > frames[anchor].midY { rows[rows.count - 1].append(index) } else { rows.append([index]) }
+        }
+        return rows.flatMap { $0.sorted { frames[$0].minX < frames[$1].minX } }
+    }
+
+    private static func walk(roots: [Any]?, in window: NSWindow, limit: Int) -> Tree {
         var tree = Tree(window: window)
         var seen = Set<ObjectIdentifier>([ObjectIdentifier(window)])
         func visit(_ raw: [Any]?, from parent: Int?, depth: Int) {
@@ -127,11 +209,15 @@ enum AXTree {
                 let index = tree.nodes.count
                 tree.nodes.append(Node(element: child, role: child.accessibilityRole(), label: Self.name(of: child), title: Self.title(of: child), axDescription: Self.description(of: child),
                                        value: child.accessibilityValue(),
-                                       enabled: child.isAccessibilityEnabled(), depth: depth, reachedFrom: parent))
+                                       enabled: child.isAccessibilityEnabled(), depth: depth,
+                                       help: child.accessibilityHelp().flatMap { $0.isEmpty ? nil : $0 }, subrole: child.accessibilitySubrole(),
+                                       identifier: child.accessibilityIdentifier() ?? "", frame: child.accessibilityFrame(), selected: child.isAccessibilitySelected(),
+                                       customActions: (child.accessibilityCustomActions() ?? []).map(\.name), childCount: child.accessibilityChildren()?.count ?? 0,
+                                       reachedFrom: parent))
                 visit(child.accessibilityChildren(), from: index, depth: depth + 1)
             }
         }
-        visit(window.accessibilityChildren(), from: nil, depth: 0)
+        visit(roots, from: nil, depth: 0)
         return tree
     }
 

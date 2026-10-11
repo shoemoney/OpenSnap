@@ -56,7 +56,7 @@ if (root / 'tests/TestDefaults.swift').exists():
     paths.append(root / 'tests/TestDefaults.swift')
 if (root / 'tests/AppSafetyWindowChromeCases.swift').exists():
     paths.append(root / 'tests/AppSafetyWindowChromeCases.swift')
-for extra in ('AppSafetyUploadCases.swift', 'AppSafetyAccessibilityCases.swift', 'AppSafetyAuditCases.swift', 'AppSafetyBatch3cCases.swift', 'AppSafetyBatch4Cases.swift', 'AppSafetyBatch6Cases.swift', 'AppSafetyBatch10Cases.swift', 'AppSafetyBatch11Cases.swift', 'AppSafetyFollowupCases.swift', 'AppSafetyS3EndToEndCases.swift', 'AppSafetyUserStringCases.swift', 'AppSafetyLayoutFitCases.swift', 'UserStringWalk.swift', 'AccessibilityAudit.swift', 'ContrastProbe.swift'):
+for extra in ('AppSafetyUploadCases.swift', 'AppSafetyAccessibilityCases.swift', 'AppSafetyAuditCases.swift', 'AppSafetyBatch3cCases.swift', 'AppSafetyBatch4Cases.swift', 'AppSafetyBatch6Cases.swift', 'AppSafetyBatch10Cases.swift', 'AppSafetyBatch11Cases.swift', 'AppSafetyFollowupCases.swift', 'AppSafetyS3EndToEndCases.swift', 'AppSafetyUserStringCases.swift', 'AppSafetyLayoutFitCases.swift', 'UserStringWalk.swift', 'AccessibilityAudit.swift', 'AccessibilityTreeWalk.swift', 'SpokenScript.swift', 'ContrastProbe.swift'):
     if (root / 'tests' / extra).exists():
         paths.append(root / 'tests' / extra)
 inputs = [(p.name, app_source if p.name == 'App.swift' else p) for p in paths]
@@ -154,7 +154,7 @@ fi
 mkdir -p "$EVIDENCE/home"
 set +e
 env -u OPENSNAP_FIXTURE OPENSNAP_APP_SUPPORT="$EVIDENCE/support" CFFIXED_USER_HOME="$EVIDENCE/home" \
-    OPENSNAP_EVIDENCE_DIR="$EVIDENCE/layout" APP_SAFETY_EVIDENCE="$EVIDENCE" APP_SAFETY_ARCH="$ARCH" \
+    OPENSNAP_EVIDENCE_DIR="$EVIDENCE/layout" APP_SAFETY_EVIDENCE="$EVIDENCE" APP_SAFETY_ARCH="$ARCH" OPENSNAP_SUITE_NAME=app-safety \
     /usr/bin/arch "-$ARCH" "$EVIDENCE/$BIN" >"$EVIDENCE/run.log" 2>&1
 RESULT=$?
 set -e

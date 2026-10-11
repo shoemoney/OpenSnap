@@ -8,7 +8,7 @@
 //   Sources/SVGPath.swift Sources/StrokeFitting.swift Sources/GeneralPreferencesState.swift Sources/TextStyleForm.swift Sources/ExportAccessory.swift \
 //   Sources/SettingsWindow.swift Sources/GlobalHotkeys.swift Sources/AppToolTip.swift Sources/DisplayOptions.swift Sources/OriginalCaptureFlash.swift \
 //   Sources/PhotoBrowser.swift Sources/AppAlert.swift Sources/FontAwesomeIcons.swift Sources/ChromeIcons.swift Sources/FontAwesomeFree.swift \
-//   tests/TestDefaults.swift tests/AccessibilityAudit.swift tests/AccessibilityAuditTests.swift -o /tmp/opensnap-accessibility-audit-tests
+//   tests/TestDefaults.swift tests/AccessibilityTreeWalk.swift tests/SpokenScript.swift tests/UserStringWalk.swift tests/AccessibilityAudit.swift tests/AccessibilityAuditTests.swift -o /tmp/opensnap-accessibility-audit-tests
 #if ACCESSIBILITY_AUDIT_TESTS
 import AppKit
 import ImageIO
@@ -31,6 +31,22 @@ private final class RolelessControl: NSControl {
     override var acceptsFirstResponder: Bool { true }
 }
 
+/// A control that is fully described and focusable but has chosen not to be an accessibility element: VoiceOver cannot land on it.
+@MainActor
+private final class MuteControl: NSControl {
+    override var acceptsFirstResponder: Bool { true }
+    override func isAccessibilityElement() -> Bool { false }
+}
+
+/// A slider-shaped control that names itself and takes focus but never says where it stands.
+@MainActor
+private final class ValuelessSlider: NSControl {
+    override var acceptsFirstResponder: Bool { true }
+    override func isAccessibilityElement() -> Bool { true }
+    override func accessibilityRole() -> NSAccessibility.Role? { .slider }
+    override func accessibilityValue() -> Any? { nil }
+}
+
 @main
 @MainActor
 private enum AccessibilityAuditTests {
@@ -44,11 +60,16 @@ private enum AccessibilityAuditTests {
     static func main() {
         _ = NSApplication.shared
         NSApp.setActivationPolicy(.prohibited)
+        Audit.recording = false  // seeded trees are not surfaces: no script, no findings dump
         seededViolations()
+        trackedKinds()
         cleanTreeIsClean()
         menus()
+        spokenScriptRendering()
         UserStrings.reset()  // the seeded violations above name the retired product on purpose
+        Audit.recording = true
         realSurfaces()
+        Audit.recording = false
         sheetKeyboard()
         customViewFocus()
         labelsAndStatus()
@@ -117,7 +138,13 @@ private enum AccessibilityAuditTests {
         // Two controls on screen with one label: both are named; the allow-list (with a reason) silences exactly that label.
         let pair = host(button("One", label: "Same"), button("Two", label: "same"))
         expect(kinds(found(pair)) == [.duplicateLabel, .duplicateLabel], "duplicate labels are compared without case")
-        expect(found(pair, allowing: ["Same": "the toolbar and its overflow menu are one command"]).violations.isEmpty, "an allow-listed duplicate passes")
+        // The allow-list silences the window-wide check only; two of them under one AX parent are still found.
+        expect(kinds(found(pair, allowing: ["Same": "the toolbar and its overflow menu are one command"])) == [.duplicateInGroup, .duplicateInGroup], "an allow-listed duplicate under one parent is a duplicateInGroup, not a duplicateLabel")
+        func group(_ name: String, _ child: NSView) -> NSView {
+            let group = NSStackView(views: [child]); group.setAccessibilityElement(true); group.setAccessibilityRole(.group); group.setAccessibilityLabel(name); return group
+        }
+        let apart = host(group("First", button("One", label: "Same")), group("Second", button("Two", label: "same")))
+        expect(found(apart, allowing: ["Same": "the toolbar and its overflow menu are one command"]).violations.isEmpty, "an allow-listed duplicate under two parents passes")
         expect(kinds(found(pair, allowing: ["Other": "unrelated"])) == [.duplicateLabel, .duplicateLabel], "an allow-list entry for another label does not help")
         // A control and a static caption that read the same are not a duplicate: only controls compete.
         expect(found(host(button("Name"), NSTextField(labelWithString: "Name"))).violations.isEmpty, "a caption is not a control")
@@ -198,7 +225,101 @@ private enum AccessibilityAuditTests {
         window.contentView = host(button("Fine"))
         let accessory = NSTitlebarAccessoryViewController(); accessory.view = host(iconButton()); window.addTitlebarAccessoryViewController(accessory)
         let windowReport = Audit.audit(window, surface: "window")
-        expect(kinds(windowReport) == [.missingLabel] && windowReport.violations[0].path.contains("titlebarAccessory"), "a titlebar accessory is walked: \(windowReport.description)")
+        let unlabelled = windowReport.violations.filter { $0.kind == .missingLabel }
+        expect(unlabelled.count == 1 && unlabelled[0].path.contains("titlebarAccessory"), "a titlebar accessory is walked: \(windowReport.description)")
+    }
+
+    // MARK: A2. The tracked kinds (OSN-062 WP1a): each can fail, each is exactly one kind
+
+    /// A host that is in a window (never ordered on screen) and laid out, so frames, the key loop and element-ness are real.
+    private static func hosted(_ view: NSView, size: NSSize = NSSize(width: 400, height: 300)) -> NSView {
+        let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.titled], backing: .buffered, defer: true)
+        window.isReleasedWhenClosed = false
+        retained.append(window)
+        view.frame = NSRect(origin: .zero, size: size)
+        window.contentView = view
+        view.layoutSubtreeIfNeeded()
+        return view
+    }
+    private static var retained: [NSWindow] = []
+
+    /// A plain container with its children placed by hand, first child at the top, one row each: the order they were added is the order the eye reads.
+    private static func column(_ views: [NSView]) -> NSView {
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        for (index, view) in views.enumerated() {
+            view.frame = NSRect(x: 20, y: 260 - CGFloat(index) * 40, width: 160, height: 28)
+            container.addSubview(view)
+        }
+        return container
+    }
+
+    private static func trackedKinds() {
+        // genericLabel: a role word, a symbol, a file, a kebab or camel-case identifier, the class name.
+        for label in ["button", "Image", "camera.viewfinder", "shot.png", "cloud-arrow-up", "cloudArrowUp", "cloud_arrow_up"] {
+            expect(kinds(found(host(iconButton(label: label)))) == [.genericLabel], "\(label): a label that names the kind of thing or a symbol is a genericLabel")
+        }
+        expect(kinds(found(host(iconButton(label: "NSButton")))) == [.genericLabel] || kinds(found(host(iconButton(label: "NSButtonCell")))) == [.genericLabel], "the class name as a label is a genericLabel")
+        for label in ["Save", "Take a screenshot", "Re-Snap", "Version 1.2.3", "Settings\u{2026}", "Open in Photos."] {
+            expect(found(host(iconButton(label: label))).violations.isEmpty, "\(label): a real name is not generic")
+        }
+        let genericImage = found(host(NSImageView(image: described("camera.viewfinder"))))
+        expect(kinds(genericImage) == [.genericLabel], "an image described by a symbol name is a genericLabel: \(genericImage.description)")
+        let genericMenuItem = NSMenu(title: "Root"); genericMenuItem.addItem(withTitle: "camera.viewfinder", action: nil, keyEquivalent: "")
+        expect(kinds(Audit.audit(genericMenuItem, surface: "menu")) == [.genericLabel], "a menu item titled by a symbol name is a genericLabel")
+
+        // missingValue: a slider-shaped control that never says where it stands; the real slider, checkbox and pop-up do.
+        let valueless = found(host(ValuelessSlider().with { $0.setAccessibilityLabel("Volume") }))
+        expect(kinds(valueless) == [.missingValue], "a slider with no value is a missingValue: \(valueless.description)")
+        let popup = NSPopUpButton(frame: .zero, pullsDown: false); popup.addItems(withTitles: ["A", "B"]); popup.setAccessibilityLabel("Choice")
+        expect(found(host(NSSlider().with { $0.setAccessibilityLabel("Size") }, NSButton(checkboxWithTitle: "Remember", target: nil, action: nil), popup)).violations.isEmpty, "a slider, a checkbox and a pop-up report their values")
+
+        // readingOrderMismatch: the first child sits below the second.
+        let inOrder = column([button("Top"), button("Middle"), button("Bottom")])
+        expect(found(hosted(inOrder)).violations.isEmpty, "three buttons listed top to bottom read top to bottom")
+        let swapped = column([button("Top"), button("Middle"), button("Bottom")])
+        let (upper, lower) = (swapped.subviews[0], swapped.subviews[2])
+        let upperOrigin = upper.frame.origin
+        upper.setFrameOrigin(lower.frame.origin); lower.setFrameOrigin(upperOrigin)
+        let mismatch = found(hosted(swapped))
+        expect(kinds(mismatch) == [.readingOrderMismatch], "swapping the places of two children is a readingOrderMismatch: \(mismatch.description)")
+        let freeForm = column([button("Top"), button("Middle"), button("Bottom")])
+        freeForm.subviews[0].setFrameOrigin(freeForm.subviews[2].frame.origin); freeForm.subviews[2].setFrameOrigin(NSPoint(x: 20, y: 260))
+        freeForm.setAccessibilityElement(true); freeForm.setAccessibilityRole(.group); freeForm.setAccessibilityLabel("Board"); freeForm.setAccessibilityIdentifier("order-free.board")
+        expect(found(hosted(freeForm)).violations.isEmpty, "a parent whose identifier starts with order-free opts out")
+        // Side by side reads left to right, and a taller neighbour does not break the row.
+        let row = column([button("Left"), button("Right")])
+        row.subviews[0].frame = NSRect(x: 20, y: 200, width: 100, height: 28); row.subviews[1].frame = NSRect(x: 140, y: 190, width: 100, height: 48)
+        expect(found(hosted(row)).violations.isEmpty, "two buttons in one row read left to right")
+        row.subviews[0].frame = NSRect(x: 140, y: 200, width: 100, height: 28); row.subviews[1].frame = NSRect(x: 20, y: 200, width: 100, height: 28)
+        expect(kinds(found(hosted(row))) == [.readingOrderMismatch], "...and the reverse is a mismatch")
+
+        // keyLoopDisagreesWithAXOrder: A, B, C in a column; the key loop goes A, C, B.
+        let loopHost = column([button("A"), button("B"), button("C")])
+        let loopWindow = NSWindow(contentRect: loopHost.frame, styleMask: [.titled], backing: .buffered, defer: true)
+        loopWindow.isReleasedWhenClosed = false; loopWindow.contentView = loopHost; loopHost.layoutSubtreeIfNeeded()
+        retained.append(loopWindow)
+        let (a, b, c) = (loopHost.subviews[0], loopHost.subviews[1], loopHost.subviews[2])
+        loopWindow.initialFirstResponder = a
+        a.nextKeyView = c; c.nextKeyView = b; b.nextKeyView = a
+        let loop = Audit.audit(loopWindow, surface: "seed")
+        expect(loop.violations.map(\.kind) == [.keyLoopDisagreesWithAXOrder], "a key loop that goes A, C, B against the order A, B, C is found: \(loop.description)")
+        a.nextKeyView = b; b.nextKeyView = c; c.nextKeyView = a
+        expect(Audit.audit(loopWindow, surface: "seed").violations.isEmpty, "...and the loop A, B, C is clean")
+        loopWindow.initialFirstResponder = b; a.nextKeyView = b; b.nextKeyView = c; c.nextKeyView = a
+        expect(Audit.audit(loopWindow, surface: "seed").violations.isEmpty, "...wherever the loop starts")
+
+        // ignoredButFocusable: focusable and enabled, but not an element and holding none.
+        let mute = hosted(host(MuteControl().with { $0.setAccessibilityLabel("Mute"); $0.setAccessibilityRole(.button) }))
+        let ignored = found(mute)
+        expect(kinds(ignored) == [.ignoredButFocusable], "a focusable control that is not an accessibility element is found: \(ignored.description)")
+        expect(found(hosted(host(MuteControl().with { $0.setAccessibilityLabel("Mute"); $0.setAccessibilityRole(.button); $0.isEnabled = false }))).violations.isEmpty, "a disabled one is not")
+        expect(found(hosted(host(MuteControl().with { $0.setAccessibilityLabel("Mute"); $0.setAccessibilityRole(.button); $0.isHidden = true }))).violations.isEmpty, "a hidden one is not")
+        let holder = MuteControl(); holder.setAccessibilityLabel("Holder"); holder.setAccessibilityRole(.group); holder.addSubview(button("Inside"))
+        expect(found(hosted(host(holder))).violations.isEmpty, "a focusable container that holds an element is not (VoiceOver can land on what is inside)")
+
+        // The baseline: a covered finding moves to `baselined`, a stale or different one does not.
+        let covered = Audit.Finding(kind: .genericLabel, surface: "s", path: "p", label: "l", hidden: false)
+        expect(covered.kind.isTracked && !Audit.Kind.missingLabel.isTracked, "only the six new kinds are baselinable")
     }
 
     // MARK: B. Nothing false
@@ -213,6 +334,79 @@ private enum AccessibilityAuditTests {
         expect(report.controls == 6 && report.labelled == 6, "the walker judged the six interactive elements (the static caption is content) and found a label on each (\(report.controls)/\(report.labelled))")
     }
 
+    // MARK: B2. The spoken script, and the synthetic good window the new kinds must leave clean
+
+    /// One of everything the rendering table names, placed by hand from the top, in a window that is never ordered.
+    private static func syntheticWindow() -> (NSWindow, NSView) {
+        let popup = NSPopUpButton(frame: .zero, pullsDown: false); popup.addItems(withTitles: ["PNG", "JPG"]); popup.selectItem(at: 1); popup.setAccessibilityLabel("Format")
+        let slider = NSSlider(value: 40, minValue: 0, maxValue: 100, target: nil, action: nil); slider.setAccessibilityLabel("Size")
+        let remember = NSButton(checkboxWithTitle: "Remember", target: nil, action: nil); remember.state = .on
+        let save = button("Save"); let share = iconButton(label: "Share").with { $0.setAccessibilityHelp("Sends the image to your default destination") }
+        let name = NSTextField(string: "Shot 1"); name.isEditable = true; name.setAccessibilityLabel("Name")
+        let empty = NSTextField(string: ""); empty.isEditable = true; empty.setAccessibilityLabel("Caption")
+        let secret = NSSecureTextField(string: "hunter2"); secret.setAccessibilityLabel("Password")
+        let logo = NSImageView(image: described("Logo"))
+        let off = button("Delete").with { $0.isEnabled = false }
+        let container = column([NSTextField(labelWithString: "Title"), save, share, popup, slider, remember, name, empty, secret, logo, off])
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 300), styleMask: [.titled], backing: .buffered, defer: true)
+        window.isReleasedWhenClosed = false; window.title = "Export"
+        window.contentView = container; container.layoutSubtreeIfNeeded()
+        retained.append(window)
+        return (window, container)
+    }
+
+    private static func spokenScriptRendering() {
+        let (window, container) = syntheticWindow()
+        let clean = Audit.audit(window, surface: "synthetic")
+        expect(clean.violations.isEmpty && clean.baselined.isEmpty, "the synthetic good window is clean of every kind, new ones included: \(clean.description)")
+
+        let tree = AXTree.walk(window)
+        let lines = SpokenScript.lines(for: tree).filter { !$0.contains("\u{2026}") }
+        let expected = [
+            "[0] Title",
+            "[0] Save, button",
+            "[0] Share, button",
+            "[0]   hint: Sends the image to your default destination",
+            "[0] JPG, Format, pop up button",
+            "[0] Size, 40, slider",
+            "[0] Remember, checked, checkbox",
+            "[0] Name, Shot 1, edit text",
+            "[0] Caption, empty, edit text",
+            "[0] Password, secure edit text",
+            "[0] Logo, image",
+            "[0] Delete, button, dimmed",
+        ]
+        expect(lines == expected, "the script reads as the rendering table says:\n" + lines.joined(separator: "\n") + "\n--- expected\n" + expected.joined(separator: "\n"))
+        expect(!lines.joined().contains("hunter2"), "a secure field's value is never printed")
+        let document = SpokenScript.render(tree, surface: "Export window", suite: "t")
+        expect(document.hasPrefix("# Export window\n") && document.contains("[0] Export, window") && document.contains("- Nodes: \(tree.nodes.count)"), "the document carries its surface, window line and node count")
+        expect(SpokenScript.slug("Settings: General (tab view)") == "settings-general-tab-view" && SpokenScript.slug("  ") == "surface", "slugs are lower-case hyphenated words")
+
+        let menu = NSMenu(title: "File")
+        menu.addItem(withTitle: "Save", action: nil, keyEquivalent: "s")
+        menu.addItem(.separator())
+        let sub = NSMenuItem(title: "Export", action: nil, keyEquivalent: ""); sub.submenu = NSMenu(title: "Export")
+        sub.submenu?.addItem(withTitle: "PNG", action: nil, keyEquivalent: "")
+        menu.addItem(sub)
+        expect(SpokenScript.lines(for: menu) == ["[0] Save, Command S", "[0] Export, submenu", "[1]   PNG"], "a menu reads title, shortcut, nesting: \(SpokenScript.lines(for: menu))")
+
+        // Mutations of the good window, each caught as exactly its own kind (and reverted: the window is clean again afterwards).
+        let kept = container.subviews[1].frame.origin, other = container.subviews[2].frame.origin
+        container.subviews[1].setFrameOrigin(other); container.subviews[2].setFrameOrigin(kept)
+        let swapped = Audit.audit(window, surface: "synthetic")
+        expect(swapped.violations.map(\.kind) == [.readingOrderMismatch], "swapping two subviews of the good window is a readingOrderMismatch: \(swapped.description)")
+        container.subviews[1].setFrameOrigin(kept); container.subviews[2].setFrameOrigin(other)
+        let share = container.subviews[2]
+        share.setAccessibilityLabel("camera.viewfinder")
+        expect(Audit.audit(window, surface: "synthetic").violations.map(\.kind) == [.genericLabel], "a symbol name as a label is a genericLabel")
+        share.setAccessibilityLabel("Share")
+        let muteHost = MuteControl(); muteHost.setAccessibilityLabel("Mute"); muteHost.setAccessibilityRole(.button); muteHost.frame = NSRect(x: 200, y: 260, width: 60, height: 28)
+        container.addSubview(muteHost)
+        expect(Audit.audit(window, surface: "synthetic").violations.map(\.kind).contains(.ignoredButFocusable), "a control that stopped being an accessibility element is an ignoredButFocusable")
+        muteHost.removeFromSuperview()
+        expect(Audit.audit(window, surface: "synthetic").violations.isEmpty, "...and the good window is clean again once the mutations are reverted")
+    }
+
     // MARK: C. Menus
 
     private static func menus() {
@@ -222,7 +416,8 @@ private enum AccessibilityAuditTests {
         expect(Audit.audit(menu(["Copy", "Paste"]) { $0.insertItem(.separator(), at: 1) }, surface: "menu").violations.isEmpty, "a plain menu with a separator is clean")
         expect(kinds(Audit.audit(menu(["Copy", ""]), surface: "menu")) == [.missingLabel], "a menu item with no title is found")
         expect(kinds(Audit.audit(menu(["Copy", "copy"]), surface: "menu")) == [.duplicateLabel, .duplicateLabel], "two items with one title in one menu are found")
-        expect(Audit.audit(menu(["Copy", "copy"]), surface: "menu", allowedDuplicates: ["Copy": "Edit and context menu share it"]).violations.isEmpty, "an allow-listed menu duplicate passes")
+        expect(kinds(Audit.audit(menu(["Copy", "copy"]), surface: "menu", allowedDuplicates: ["Copy": "Edit and context menu share it"])) == [.duplicateInGroup, .duplicateInGroup],
+               "an allow-listed menu duplicate is no longer a duplicateLabel but is still two items of one menu")
         expect(kinds(Audit.audit(menu(["Open in " + Audit.retiredName]), surface: "menu")) == [.retiredName], "a retired name in a menu title is found")
         let nested = menu(["Outer"]) { root in
             let sub = NSMenu(title: "Sub"); sub.addItem(withTitle: "", action: nil, keyEquivalent: "")
@@ -400,16 +595,17 @@ private enum AccessibilityAuditTests {
         print("  \(reports.count) surfaces, \(controls) elements judged, \(labelled) labelled")
         expect(problems.isEmpty, "accessibility violations on real surfaces:\n" + problems.joined(separator: "\n"))
 
+        Audit.recording = false  // from here the surfaces are deliberately worsened: no script, no findings dump
         // The walker must fail when a real surface is made worse: strip one label from each of three, expect exactly that.
         let kept = destinations.nameField.accessibilityLabel()
         destinations.nameField.setAccessibilityLabel(nil)
-        let strippedDestinations = Audit.audit(destinations, surface: "Destinations (seeded)").violations
+        let strippedDestinations = Audit.audit(destinations, surface: "Destinations (seeded)").violations.filter { !$0.kind.isTracked }
         expect(strippedDestinations.count == 1 && strippedDestinations[0].kind == .missingLabel, "Destinations: a stripped Name label is caught on the real form: \(strippedDestinations)")
         destinations.nameField.setAccessibilityLabel(kept)
         if let widthField: NSTextField = private_(resize, "widthField"), let modeControl: GlassChoiceGroup = private_(resize, "modeControl") {
             let label = widthField.accessibilityLabel()
             widthField.setAccessibilityLabel(nil)
-            let strippedResize = Audit.audit(resizePanel!, surface: "Resize (seeded)").violations
+            let strippedResize = Audit.audit(resizePanel!, surface: "Resize (seeded)").violations.filter { !$0.kind.isTracked }
             expect(strippedResize.count == 1 && strippedResize[0].kind == .missingLabel, "Resize: a stripped Width label is caught on the real panel: \(strippedResize)")
             widthField.setAccessibilityLabel(label)
             // The glass mode group is a custom radio group: the walker does not hold it, so its name and role are asserted here.

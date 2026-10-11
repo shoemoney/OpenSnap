@@ -16,6 +16,22 @@
 //                       an editable text input that cannot become a key view
 //   undescribedImage    an NSImageView that holds an image has no description and is not marked decorative
 //
+// Added by OSN-062 WP1a, judged on the tree an external client sees (AXTree, tests/AccessibilityTreeWalk.swift) and rendered as a spoken
+// script by tests/SpokenScript.swift. List both files with this one.
+//   genericLabel        a label that names the kind of thing instead of the thing: a role word ("button", "image"), a symbol, file or
+//                       identifier ("camera.viewfinder", "shot.png", "cloud-arrow-up"), or the class name
+//   missingValue        a slider, checkbox, radio button, pop-up, combo box, stepper or progress indicator that reports no value
+//                       (an indeterminate spinner opts out with an identifier that starts with "indeterminate")
+//   readingOrderMismatch  within one AX parent the children are listed in a different order than the eye reads them (rows from the
+//                       top, left to right); a parent opts out with an identifier that starts with "order-free". Hosted surfaces only
+//   keyLoopDisagreesWithAXOrder  the key-view loop visits focusable elements in an order that is not the accessibility order
+//                       (any rotation of it is fine). Windows only
+//   ignoredButFocusable a focusable, enabled, visible view that is not an accessibility element and holds none: VoiceOver cannot land on it
+//   duplicateInGroup    the same label twice under one AX parent, even where the window-wide allow-list permits it
+// Those six are the "tracked" kinds: findings that existed on today's surfaces when they were introduced are listed, each with its reason,
+// in tools/accessibility-baseline.tsv, so the gate fails on a NEW finding and on a stale entry (tools/check-spoken-scripts.py) while the
+// pending fixes are burned down. Findings the baseline covers are reported in `Report.baselined`, never in `Report.violations`.
+//
 // Judgement calls, on purpose
 //   * Hidden views are walked and must be labelled (a form page that is hidden now is one click from visible) but are left out of
 //     the uniqueness check, because VoiceOver never sees two pages at once.
@@ -34,6 +50,15 @@ import AppKit
 enum AccessibilityAudit {
     enum Kind: String {
         case missingLabel, missingRole, unlabelledSegment, duplicateLabel, retiredName, notKeyboardReachable, undescribedImage
+        case genericLabel, missingValue, readingOrderMismatch, keyLoopDisagreesWithAXOrder, ignoredButFocusable, duplicateInGroup
+
+        /// The kinds introduced by OSN-062 WP1a, the only ones the baseline file can cover.
+        var isTracked: Bool {
+            switch self {
+            case .genericLabel, .missingValue, .readingOrderMismatch, .keyLoopDisagreesWithAXOrder, .ignoredButFocusable, .duplicateInGroup: return true
+            default: return false
+            }
+        }
     }
 
     struct Finding: CustomStringConvertible {
@@ -42,18 +67,24 @@ enum AccessibilityAudit {
         var path: String
         var label: String
         var hidden: Bool
-        var description: String { "\(surface): \(path) \(kind.rawValue) \"\(label.prefix(40))\"\(hidden ? " (hidden)" : "")" }
+        /// Why, for the kinds that need more than a path to read (reading order, key loop).
+        var detail = ""
+        var description: String { "\(surface): \(path) \(kind.rawValue) \"\(label.prefix(40))\"\(hidden ? " (hidden)" : "")\(detail.isEmpty ? "" : " [\(detail)]")" }
     }
 
     struct Report {
         var violations: [Finding] = []
+        /// Tracked findings the baseline file covers ("pending WP3"); they do not fail the audit, and a stale baseline line fails the gate.
+        var baselined: [Finding] = []
         /// Controls (and images, menu items) the walker judged, so a test can show it really looked.
         var controls = 0
         /// How many of those carried a non-empty label.
         var labelled = 0
         var description: String { violations.map(\.description).joined(separator: "\n") }
-        mutating func merge(_ other: Report) { violations += other.violations; controls += other.controls; labelled += other.labelled }
+        mutating func merge(_ other: Report) { violations += other.violations; baselined += other.baselined; controls += other.controls; labelled += other.labelled }
         func count(of kind: Kind) -> Int { violations.filter { $0.kind == kind }.count }
+        /// Every finding of a tracked kind, covered by the baseline or not.
+        var trackedFindings: [Finding] { (violations + baselined).filter { $0.kind.isTracked } }
     }
 
     /// The retired product name, assembled so this file itself does not name it (the string gate scans tests/ too).
@@ -64,6 +95,9 @@ enum AccessibilityAudit {
 
     // MARK: Entry points
 
+    /// False while a test audits a deliberately broken tree: nothing is then written to the spoken-script folder or the findings dump.
+    static var recording = true
+
     static func audit(_ window: NSWindow, surface: String, allowedDuplicates: [String: String] = [:]) -> Report {
         UserStrings.observe(window, surface: surface)
         var run = Run(surface: surface, allowed: allowedDuplicates.merging(deliberateDuplicates) { first, _ in first })
@@ -72,6 +106,9 @@ enum AccessibilityAudit {
             run.walk(accessory.view, path: "titlebarAccessory[\(index)]", hidden: false, repeating: false)
         }
         var report = run.finish()
+        let tree = AXTree.walk(window)
+        report.violations += trackedFindings(in: tree, surface: surface, allowed: run.allowed, hosted: true, window: window)
+        report = conclude(report, surface: surface, script: SpokenScript.render(tree, surface: surface, suite: suiteName))
         if let sheet = window.attachedSheet { report.merge(audit(sheet, surface: surface + " (sheet)", allowedDuplicates: allowedDuplicates)) }
         return report
     }
@@ -80,14 +117,168 @@ enum AccessibilityAudit {
         UserStrings.observe(view, surface: surface)
         var run = Run(surface: surface, allowed: allowedDuplicates.merging(deliberateDuplicates) { first, _ in first })
         run.walk(view, path: "view", hidden: view.isHidden, repeating: false)
-        return run.finish()
+        var report = run.finish()
+        let tree = AXTree.walk(view)
+        report.violations += trackedFindings(in: tree, surface: surface, allowed: run.allowed, hosted: view.window != nil, window: nil)
+        return conclude(report, surface: surface, script: SpokenScript.render(tree, surface: surface, suite: suiteName, windowLine: false))
     }
 
     static func audit(_ menu: NSMenu, surface: String, allowedDuplicates: [String: String] = [:]) -> Report {
         UserStrings.observe(menu, surface: surface)
         var run = Run(surface: surface, allowed: allowedDuplicates.merging(deliberateDuplicates) { first, _ in first })
         run.walkMenu(menu, path: "menu")
-        return run.finish()
+        return conclude(run.finish(), surface: surface, script: SpokenScript.render(menu, surface: surface, suite: suiteName))
+    }
+
+    // MARK: Tracked kinds: baseline, observation and the spoken script
+
+    static var suiteName: String { ProcessInfo.processInfo.environment["OPENSNAP_SUITE_NAME"] ?? ProcessInfo.processInfo.processName }
+
+    /// The baseline, as the count of allowed findings per `surface | kind | path | label`. The file is tools/accessibility-baseline.tsv (tab
+    /// separated: surface, kind, path, label, reason), found from the working directory unless OPENSNAP_A11Y_BASELINE names another.
+    static let baseline: [String: Int] = {
+        let path = ProcessInfo.processInfo.environment["OPENSNAP_A11Y_BASELINE"] ?? "tools/accessibility-baseline.tsv"
+        guard let text = try? String(contentsOfFile: path, encoding: .utf8) else { return [:] }
+        var counts: [String: Int] = [:]
+        for line in text.split(separator: "\n", omittingEmptySubsequences: true) where !line.hasPrefix("#") {
+            let fields = line.split(separator: "\t", maxSplits: 4, omittingEmptySubsequences: false).map(String.init)
+            guard fields.count == 5 else { continue }
+            counts[key(surface: fields[0], kind: fields[1], path: fields[2], label: fields[3]), default: 0] += 1
+        }
+        return counts
+    }()
+
+    /// OPENSNAP_A11Y_DISCOVER=1 treats every tracked finding as covered, so a full run can list them all for `check-spoken-scripts.py
+    /// --write-baseline`. tools/test.py removes it from the environment: the gate never runs in this mode.
+    private static let discovering = ProcessInfo.processInfo.environment["OPENSNAP_A11Y_DISCOVER"] == "1"
+
+    static func key(surface: String, kind: String, path: String, label: String) -> String { [surface, kind, path, label].joined(separator: "\u{1}") }
+
+    /// Every surface audited with recording on, in this process: what the findings dump holds.
+    private static var observed: [(surface: String, findings: [Finding])] = []
+
+    /// Sorts the tracked findings into new and baselined, then records the surface (its findings and its script) when recording is on.
+    private static func conclude(_ report: Report, surface: String, script: String) -> Report {
+        var report = report
+        var remaining = baseline
+        var fresh: [Finding] = []
+        for finding in report.violations {
+            guard finding.kind.isTracked else { fresh.append(finding); continue }
+            let k = key(surface: finding.surface, kind: finding.kind.rawValue, path: finding.path, label: finding.label)
+            if discovering { report.baselined.append(finding) }
+            else if let left = remaining[k], left > 0 { remaining[k] = left - 1; report.baselined.append(finding) }
+            else { fresh.append(finding) }
+        }
+        report.violations = fresh
+        if recording, let directory = SpokenScript.directory {
+            SpokenScript.write(script, surface: surface)
+            observed.removeAll { $0.surface == surface }
+            observed.append((surface, report.trackedFindings))
+            let surfaces = observed.map { entry -> [String: Any] in
+                ["surface": entry.surface, "slug": SpokenScript.slug(entry.surface),
+                 "findings": entry.findings.map { ["kind": $0.kind.rawValue, "path": $0.path, "label": $0.label] }]
+            }
+            let folder = directory.appendingPathComponent("_findings", isDirectory: true)
+            try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            if let data = try? JSONSerialization.data(withJSONObject: ["suite": suiteName, "surfaces": surfaces], options: [.prettyPrinted, .sortedKeys]) {
+                try? data.write(to: folder.appendingPathComponent(suiteName + ".json"))
+            }
+        }
+        return report
+    }
+
+    // MARK: The tree an external client sees
+
+    private static let judgedRoles: Set<NSAccessibility.Role> = [.button, .menuButton, .checkBox, .radioButton, .radioGroup, .popUpButton, .comboBox, .slider,
+                                                                  .textField, .textArea, .image, .group, .tabGroup, .incrementor, .link]
+    private static let valuedRoles: Set<NSAccessibility.Role> = [.slider, .checkBox, .radioButton, .popUpButton, .comboBox, .incrementor, .progressIndicator]
+    private static let windowFurniture: Set<NSAccessibility.Subrole> = [.closeButton, .minimizeButton, .zoomButton, .fullScreenButton, .toolbarButton]
+    private static let repeatingRoles: Set<NSAccessibility.Role> = [.table, .outline, .list, .row, .cell, .column, .browser]
+    private static let controlRoles: Set<NSAccessibility.Role> = [.button, .menuButton, .checkBox, .radioButton, .popUpButton, .comboBox, .slider, .textField, .textArea, .incrementor, .link]
+
+    /// A label that names the kind of thing, or a symbol, file or identifier, instead of the thing.
+    static func isGeneric(_ label: String, className: String = "") -> Bool {
+        let text = label.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return false }
+        let lower = text.lowercased()
+        if ["button", "image", "view", "control", "item", "group", "icon", "untitled"].contains(lower) { return true }
+        if !className.isEmpty, lower == className.lowercased() { return true }
+        let patterns = [#"^[A-Za-z][A-Za-z0-9_-]*(\.[A-Za-z0-9_-]+)+$"#,       // camera.viewfinder, shot.png
+                        #"^[a-z][a-z0-9]*(-[a-z0-9]+)+$"#,                       // cloud-arrow-up
+                        #"^[a-z][a-z0-9]*(_[a-z0-9]+)+$"#,                       // cloud_arrow_up
+                        #"^[a-z]+([A-Z][a-z0-9]*)+$"#]                           // cloudArrowUp
+        return patterns.contains { text.range(of: $0, options: .regularExpression) != nil }
+    }
+
+    private static func trackedFindings(in tree: AXTree.Tree, surface: String, allowed: [String: String], hosted: Bool, window: NSWindow?) -> [Finding] {
+        var found: [Finding] = []
+        func add(_ kind: Kind, _ index: Int, _ label: String, detail: String = "") {
+            found.append(Finding(kind: kind, surface: surface, path: tree.path(of: index), label: label, hidden: false, detail: detail))
+        }
+        for (index, node) in tree.nodes.enumerated() {
+            guard let role = node.role else { continue }
+            let label = node.label ?? ""
+            if let subrole = node.subrole, windowFurniture.contains(subrole) { continue }
+            if judgedRoles.contains(role), isGeneric(label, className: String(describing: type(of: node.object))) { add(.genericLabel, index, label) }
+            if valuedRoles.contains(role), node.value == nil, !(role == .progressIndicator && node.identifier.hasPrefix("indeterminate")) { add(.missingValue, index, label) }
+        }
+        // The same label twice under one AX parent. The window-wide pass (duplicateLabel) already names the ones the allow-list does not
+        // cover; this one is for the allowed ones, which are only allowed to share a window, not a group.
+        var groups: [Int?: [String: [Int]]] = [:]
+        for (index, node) in tree.nodes.enumerated() {
+            guard let role = node.role, controlRoles.contains(role), let label = node.label, !label.isEmpty, !isRepeating(index, in: tree) else { continue }
+            groups[node.reachedFrom, default: [:]][label.lowercased(), default: []].append(index)
+        }
+        for (_, labels) in groups.sorted(by: { ($0.key ?? -1) < ($1.key ?? -1) }) {
+            for (label, indices) in labels.sorted(by: { $0.key < $1.key }) where indices.count > 1 && allowed.keys.contains(where: { $0.lowercased() == label }) {
+                for index in indices { add(.duplicateInGroup, index, tree.nodes[index].label ?? label) }
+            }
+        }
+        if hosted {
+            for problem in tree.readingOrderProblems() {
+                found.append(Finding(kind: .readingOrderMismatch, surface: surface, path: problem.path, label: problem.label, hidden: false, detail: problem.message))
+            }
+        }
+        if let window, let problem = keyLoopProblem(in: tree, window: window) {
+            found.append(Finding(kind: .keyLoopDisagreesWithAXOrder, surface: surface, path: "window", label: window.title, hidden: false, detail: problem))
+        }
+        return found
+    }
+
+    private static func isRepeating(_ index: Int, in tree: AXTree.Tree) -> Bool {
+        var current = tree.nodes[index].reachedFrom
+        while let step = current {
+            if let role = tree.nodes[step].role, repeatingRoles.contains(role) { return true }
+            current = tree.nodes[step].reachedFrom
+        }
+        return false
+    }
+
+    /// The key-view loop the app built by hand: the `nextKeyView` chain from the initial first responder (else the content view). Not
+    /// `nextValidKeyView`, which follows the machine's Full Keyboard Access setting. A window with no explicit chain gets the loop AppKit
+    /// derives from geometry, which is the eye's order by construction and is judged by readingOrderMismatch instead.
+    private static func keyLoop(of window: NSWindow) -> [NSView] {
+        var views: [NSView] = [], seen = Set<ObjectIdentifier>()
+        var view: NSView? = window.initialFirstResponder ?? window.contentView
+        while let current = view, views.count < 800, seen.insert(ObjectIdentifier(current)).inserted { views.append(current); view = current.nextKeyView }
+        return views
+    }
+
+    /// Nil when the focusable elements are visited in accessibility order (starting anywhere: the loop is a circle), else the first pair that is not.
+    private static func keyLoopProblem(in tree: AXTree.Tree, window: NSWindow) -> String? {
+        var visits: [(index: Int, view: NSView)] = []
+        for view in keyLoop(of: window) where view.acceptsFirstResponder && (view as? NSControl)?.refusesFirstResponder != true {
+            if let index = tree.nodes.firstIndex(where: { $0.hostView === view }) { visits.append((index, view)) }
+        }
+        guard visits.count > 2 else { return nil }
+        var descents: [(from: Int, to: Int)] = []
+        for position in visits.indices {
+            let next = visits[(position + 1) % visits.count]
+            if next.index < visits[position].index { descents.append((visits[position].index, next.index)) }
+        }
+        guard descents.count > 1, let second = descents.last else { return nil }
+        func name(_ index: Int) -> String { "\(tree.nodes[index].role?.rawValue ?? "?") \"\(tree.nodes[index].label ?? "")\"" }
+        return "the key loop goes from \(name(second.from)) to \(name(second.to)), against the accessibility order (\(descents.count) turns back)"
     }
 
     // MARK: What the accessibility layer says about a view
@@ -190,6 +381,13 @@ enum AccessibilityAudit {
             return false
         }
 
+        /// A standard control is published as its cell, so the cell's element-ness counts for the control.
+        private static func isElement(_ view: NSView) -> Bool {
+            view.isAccessibilityElement() || (view as? NSControl)?.cell?.isAccessibilityElement() == true
+        }
+
+        private static func hasElement(below view: NSView) -> Bool { view.subviews.contains { isElement($0) || hasElement(below: $0) } }
+
         mutating func walk(_ view: NSView, path parent: String, hidden inheritedHidden: Bool, repeating inheritedRepeating: Bool) {
             guard seen.insert(ObjectIdentifier(view)).inserted else { return }
             let path = parent + ">" + name(view)
@@ -206,6 +404,11 @@ enum AccessibilityAudit {
             }
             else if Self.isChoiceContainer(view) {
                 judgeCustomFocusable(view, path: path, hidden: hidden, repeating: repeating)
+            }
+
+            if !hidden, view.window != nil, view.acceptsFirstResponder, (view as? NSControl)?.isEnabled ?? true,
+               !(view is NSScrollView), !(view is NSClipView), !(view is NSTextView), !Self.isElement(view), !Self.hasElement(below: view) {
+                flag(.ignoredButFocusable, path, AccessibilityAudit.label(of: view), hidden: false)
             }
 
             switch view {
@@ -306,14 +509,16 @@ enum AccessibilityAudit {
                 let text = AccessibilityAudit.text(item.title) ?? AccessibilityAudit.text(item.accessibilityLabel()) ?? ""
                 if text.isEmpty { flag(.missingLabel, path, "", hidden: item.isHidden) } else { report.labelled += 1 }
                 checkRetired([item.title, item.accessibilityLabel(), item.toolTip], path: path, hidden: item.isHidden)
+                if !item.isHidden, AccessibilityAudit.isGeneric(text, className: "NSMenuItem") { flag(.genericLabel, path, text, hidden: false) }
                 if !item.isHidden, !text.isEmpty { titles.append((text, path)) }
                 if let submenu = item.submenu { walkMenu(submenu, path: path + ">submenu") }
             }
             // Two items in one menu level with the same title are indistinguishable by ear.
             var byTitle: [String: [String]] = [:]
             for entry in titles { byTitle[entry.label.lowercased(), default: []].append(entry.path) }
-            for (title, paths) in byTitle.sorted(by: { $0.key < $1.key }) where paths.count > 1 && allowed.keys.contains(where: { $0.lowercased() == title }) == false {
-                for path in paths { flag(.duplicateLabel, path, title, hidden: false) }
+            for (title, paths) in byTitle.sorted(by: { $0.key < $1.key }) where paths.count > 1 {
+                let permitted = allowed.keys.contains(where: { $0.lowercased() == title })
+                for path in paths { flag(permitted ? .duplicateInGroup : .duplicateLabel, path, title, hidden: false) }
             }
         }
     }

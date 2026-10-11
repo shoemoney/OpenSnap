@@ -3,7 +3,7 @@
 from concurrent.futures import ThreadPoolExecutor
 from threading import Lock
 from pathlib import Path
-import argparse, hashlib, json, os, platform, re, subprocess, sys, tempfile
+import argparse, hashlib, json, os, platform, re, shutil, subprocess, sys, tempfile
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--arch", choices=["arm64", "x86_64"], default=platform.machine())
@@ -85,6 +85,8 @@ subprocess.run([sys.executable, str(root / "tools" / "check-glyphs.py"), "--self
 subprocess.run([sys.executable, str(root / "tools" / "check-eye-dump.py"), "--self-test"], cwd=root, check=True)
 for evidence in sorted((root / "docs/design/evidence/impl-2026-10-09").glob("m*")):
     subprocess.run([sys.executable, str(root / "tools" / "check-eye-dump.py"), str(evidence)], cwd=root, check=True)
+# OSN-062 WP1a: the spoken-script and tracked-finding gate proves it can fail (missing/empty script, NEW finding, STALE baseline line, ...).
+subprocess.run([sys.executable, str(root / "tools" / "check-spoken-scripts.py"), "--self-test"], cwd=root, check=True)
 # G11: the skip-budget gate's own self-test; the log check runs at the end, over the captured suite output.
 subprocess.run([sys.executable, str(root / "tools" / "check-skip-budget.py"), "--self-test"], cwd=root, check=True)
 # OSN-072: the migration on a synthetic old store (58 documents, 2 destinations); never the owner's data.
@@ -106,6 +108,12 @@ for path, data in contents.items():
 # G3 (dynamic): suites that walk real windows and menus leave the strings they saw here.
 USER_STRINGS = snapshot / "user-strings"
 os.environ["OPENSNAP_USER_STRINGS_DIR"] = str(USER_STRINGS)
+# OSN-062 WP1a: suites that run the accessibility walker leave a spoken script per surface and their tracked findings here (build/spoken).
+SPOKEN = build / "spoken"
+shutil.rmtree(SPOKEN, ignore_errors=True)
+os.environ["OPENSNAP_SPOKEN_SCRIPT_DIR"] = str(SPOKEN)
+os.environ.pop("OPENSNAP_A11Y_DISCOVER", None)  # discovery mode baselines everything; the gate never runs in it
+os.environ["OPENSNAP_BUILD_SHA"] = subprocess.run(["/usr/bin/git", "rev-parse", "--short", "HEAD"], cwd=root, capture_output=True, text=True).stdout.strip() or "unknown"
 manifest = {str(path.relative_to(root)): hashlib.sha256(data).hexdigest() for path, data in contents.items()}
 (snapshot / "source-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
 
@@ -209,7 +217,7 @@ suites = [
                                    "AboutWindow.swift", "HistoryBrowser.swift", "ResizePresets.swift", "ResizePanel.swift", *ICONS, "StrokeFitting.swift",
                                    "GeneralPreferencesState.swift", "TextStyleForm.swift", "ExportAccessory.swift", "TestDefaults.swift", "AccessibilityAudit.swift",
                                    "SettingsWindow.swift", "GlobalHotkeys.swift", "AppToolTip.swift", "DisplayOptions.swift", "OriginalCaptureFlash.swift",
-                                   "PhotoBrowser.swift", "AppAlert.swift", "UserStringWalk.swift",
+                                   "PhotoBrowser.swift", "AppAlert.swift", "UserStringWalk.swift", "AccessibilityTreeWalk.swift", "SpokenScript.swift",
                                    "DisplayOptions+ChromeAccessibility.swift", "OriginalActionButton.swift", "StateStyles.swift", "GlassChrome.swift"]),
      "AccessibilityAuditTests.swift", "ACCESSIBILITY_AUDIT_TESTS", ()),
     # OSN-062: the VoiceOver announcement helper with an injected poster.
@@ -226,7 +234,7 @@ modern_suites = [
     ("menu-symbols-tests", [*ICONS, "MenuSymbols.swift"], "MenuSymbolsTests.swift", "MENU_SYMBOLS_TESTS", ()),
     ("icon-coverage-tests", [*ICONS], "IconCoverageTests.swift", "ICON_COVERAGE_TESTS", ()),
     # The shared glass choice primitives: button, group, panel host and the NSMenu adapter, on never-ordered windows.
-    ("glass-choices-tests", with_choices(["ContrastProbe.swift", "ViewTreeAudit.swift", "AccessibilityAudit.swift", "UserStringWalk.swift", "MenuSymbols.swift", "AccessibilityTreeWalk.swift"]), "GlassChoicesTests.swift", "GLASS_CHOICES_TESTS", ()),
+    ("glass-choices-tests", with_choices(["ContrastProbe.swift", "ViewTreeAudit.swift", "AccessibilityAudit.swift", "UserStringWalk.swift", "MenuSymbols.swift", "AccessibilityTreeWalk.swift", "SpokenScript.swift"]), "GlassChoicesTests.swift", "GLASS_CHOICES_TESTS", ()),
     ("glass-chrome-tests", with_choices(["DisplayOptions.swift", "DisplayOptions+ChromeAccessibility.swift", "OriginalActionButton.swift", *ICONS, "BezelDrawingControls.swift", "DocumentModel.swift", "StateStyles.swift", "GlassChrome.swift", "UploadStatus.swift", "ModernEditorChrome.swift", "AppToolTip.swift", "ContrastProbe.swift", "AccessibilityTreeWalk.swift"]), "GlassChromeTests.swift", "GLASS_CHROME_TESTS", ()),
 ]
 with ThreadPoolExecutor(max_workers=len(suites) + len(modern_suites)) as executor:
@@ -256,6 +264,9 @@ subprocess.run([str(root / "tools" / "test-app-safety.sh"), "--arch", options.ar
 # G3 (dynamic): every string the walked windows, menus, alerts and tooltips showed, none naming the retired product; both walkers must have written a dump.
 subprocess.run([sys.executable, str(root / "tools" / "check-user-strings.py"), "--dynamic", str(USER_STRINGS), "--require", "app-safety",
                 "--require", "accessibility-audit-tests", "--min", "300"], cwd=root, check=True)
+# OSN-062 WP1a: a script for every audited surface, INDEX.md and FINDINGS.md written, the tracked findings equal to tools/accessibility-baseline.tsv.
+subprocess.run([sys.executable, str(root / "tools" / "check-spoken-scripts.py"), "--require", "accessibility-audit-tests", "--require", "glass-choices-tests",
+                "--require", "app-safety"], cwd=root, check=True)
 check_real_store(real_store_before)
 if current_inputs() != inputs or not all(path.read_bytes() == data for path, data in contents.items()):
     raise SystemExit("Sources changed during verification; rerun before treating this result as current.")
