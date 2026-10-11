@@ -19,6 +19,9 @@ least as good as the native control it replaces.
 | 1 Editor | Top/bottom bar commands, tools, Snap | glass plates + `CommandButton` | unchanged; consistency pass only |
 | 1 History | Action groups | glass plates + `CommandButton` | unchanged; consistency pass only |
 | 1 History | "Drag as" format pop-up | native `NSPopUpButton` menu | glass pop-up face, choices in a `MenuChoicePanel` |
+| 1 History | Date filter pop-up (`datePopup`) | native `NSPopUpButton` menu | glass pop-up face, choices in a `MenuChoicePanel` |
+| 1 History | Category (All / Shared / Exported / Saved, `categoryControl`) | native segmented control | `GlassChoiceGroup` on one plate |
+| 1 History | Search field, thumbnail grid, details | content / form | **kept native** (readable content) |
 | 1 History | Grid right-click menu | native contextual menu | **kept native** (contextual menu, not a picker) |
 | 2 Toolbox | 18 commands in 5 groups (copied main-menu items) | native `NSMenu` rows | `MenuChoicePanel`: 5 group plates, rows with icon, title, shortcut, toggle state |
 | 2 Zoom | 25–200 %, computed Fit/Frame row (tag 999), Actual Size (tag 998) | native pop-up menu | `MenuChoicePanel` from the pop-up's own menu, options + Actual Size toggle |
@@ -30,6 +33,9 @@ least as good as the native control it replaces.
 | 4 Settings | hover hints, keyboard tips, include app, capture flash | native checkboxes | `GlassChoiceButton` toggles (checkbox role, square / filled square-check glyph) |
 | 4 Settings | Add…, Edit…, Remove, Make Default, empty-state Add… | native push buttons | titled `CommandButton`s on one action plate |
 | 4 Settings | destination list, shortcut recorders | content list / form fields | **kept solid / native** (readable content) |
+| 4 Settings › Destination sheet | Protocol (`protocolPopup`), key source (`sourcePopup`) | native pop-ups | `GlassChoiceGroup` when the set is small and fixed, else glass pop-up face + `MenuChoicePanel` |
+| 4 Settings › Destination sheet | Test / Save / Cancel and other sheet buttons | native push buttons | titled `CommandButton`s on one action plate; default/cancel keys kept |
+| 4 Settings › Destination sheet | host, user, password, path, URL fields, status text | form fields / status | **kept native** |
 | 4 Resize | Resize / Crop / Limit | `NSSegmentedControl` | `GlassChoiceGroup` |
 | 4 Resize | Lock proportions | native checkbox | `GlassChoiceButton` toggle |
 | 4 Resize | Limit by | native pop-up | `GlassChoiceGroup` |
@@ -71,7 +77,8 @@ least as good as the native control it replaces.
 | M2 Toolbox / Zoom / Upload | A — `gp-menus` / `impl/gp-menus` | `Sources/ModernEditorChrome.swift`, `Sources/App+ModernChrome.swift`, `Sources/App.swift` Toolbox hunk (`bezelToolbox`) and Upload hunk (`configureWebpostButton` … `setDefaultDestination`), `Sources/App+Upload.swift`, their tests in `tests/GlassChromeTests.swift`, `tests/AppSafetyModernCases.swift`, `tests/AppSafetyWebpostCases.swift`, `tests/AppSafetyMenuCases.swift` |
 | M3 Color / Size | B — `gp-color-size` / `impl/gp-color-size` | `Sources/BezelDrawingControls.swift`, `Sources/App.swift` Color hunk (`syncDrawingControls` … `releaseCustomColorPanel`, the `colorPopover` declaration), `Sources/App+Keyboard.swift`, Color/Size tests (`tests/AppSafetyTests.swift` Color/Size cases, `tests/GlassChromeTests.swift` Size cases only) |
 | M4 Settings | C — `gp-settings` / `impl/gp-settings` | `Sources/SettingsWindow.swift`, `tests/SettingsWindowTests.swift`, Settings cases in `tests/ViewTreeAuditTests.swift`, `tests/AccessibilityAuditTests.swift`, `tests/AppSafetyWindowChromeCases.swift` |
-| M5 Resize + History format | D — `gp-resize` / `impl/gp-resize` | `Sources/ResizePanel.swift`, `Sources/HistoryBrowser.swift` (format pop-up only), `tests/ResizePanelTests.swift`, `tests/ResizePanelLayoutTests.swift`, `tests/HistoryBrowserTests.swift`, Resize/History cases in the audit suites |
+| M5 Resize + History choices | D — `gp-resize` / `impl/gp-resize` | `Sources/ResizePanel.swift`, `Sources/HistoryBrowser.swift` (date filter, category and Drag as choices only), `tests/ResizePanelTests.swift`, `tests/ResizePanelLayoutTests.swift`, `tests/HistoryBrowserTests.swift`, Resize/History cases in the audit suites |
+| M5b Destination sheet | F — `gp-destinations` / `impl/gp-destinations` | `Sources/PublishingDestinationsView.swift`, `tests/PublishingDestinationsTests.swift`, destination-sheet cases in the audit suites |
 | M6 audit harness captures | E — `gp-harness` / `impl/gp-harness` | `Sources/EyeDumpAudit*.swift`, `tools/eye-dump-audit*.{sh,py}`, `tools/check-eye-dump.py`, `tools/test-eye-dump-audit-guard.py`, `tools/e2e-inventory.py` |
 | M7 integration, full suite, Opus review, fixes | orchestrator | merges into the integration branch |
 | M8 docs reconciliation | Haiku docs worker | this file, `README.md` / `HANDOFF.md` / `docs/design/technical-spec.md` mentions of native menus and popovers |
@@ -89,6 +96,8 @@ Shared-file rule: two workers touching the same file stay in their named hunks. 
 - [ ] Zoom: percentage choice, computed Fit row, Actual Size toggle state and its refusal path unchanged.
 - [ ] Upload: destinations rebuilt on each open, default checked, busy Cancel Upload, empty state disabled, settings/share entries.
 - [ ] Color: hover-open does not take key, click pins, preset and custom choice, Shift background path; Size: undo grouping per gesture, presets close, dismissal mid-drag ends the gesture.
+- [ ] History: date filter, category and Drag as are glass choices; search and grid stay native.
+- [ ] Destination sheet: protocol and key-source picks and its buttons are glass; fields and status stay native; validation and Keychain paths unchanged.
 - [ ] Settings: radios and toggles unambiguous, tabs keyboardable, window sizing unchanged; Resize: mode/limit/anchor/preset behaviour, validation errors, Return = OK, Escape = Cancel.
 - [ ] Text ≥ 18 pt (20 pt normal); only Font Awesome / existing semantic glyphs; no emoji or decorative arrows.
 - [ ] Harness: direct captures of every new panel (rest, hover, keyboard focus, chosen, disabled, dismissed + focus restored), light and dark.
