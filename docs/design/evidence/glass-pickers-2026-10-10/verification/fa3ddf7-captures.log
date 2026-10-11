@@ -1,0 +1,33 @@
+candidate fa3ddf7 start Sun Oct 11 02:27:21 CDT 2026
+sourceSha        fa3ddf7
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+guard home       /Users/shoemoney
+bundle id        com.shoemoney.opensnap.eyedump-93359 (real id com.shoemoney.opensnap is never launched)
+app copy         /private/var/folders/_5/kk_5dshn1zx_mn3ftl5dl7g40000gp/T/eye-dump-audit.5wbt8k/OpenSnap.app (copied from /Users/shoemoney/Projects/OpenSkitch/.todo-worktrees/glass-pickers-integration/build/OpenSnap.app; the source bundle is never executed)
+display options  none (simulated inside the throwaway copy only; no system setting is written)
+isolation        env -i; HOME and CFFIXED_USER_HOME, TMPDIR, OPENSNAP_APP_SUPPORT, OPENSNAP_EVIDENCE_DIR all under /private/var/folders/_5/kk_5dshn1zx_mn3ftl5dl7g40000gp/T/eye-dump-audit.5wbt8k; OPENSNAP_FIXTURE unset
+destinations     none exist in the throwaway support folder; with OPENSNAP_APP_SUPPORT set the app keeps secrets in memory (no Keychain item is read or written) and the S19/S21 flows stub the uploader
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+== glass (light, icons sf): S50,S51,S52,S53,S54,S55,S56,S57,S58,S59,S60
+== glass (dark, icons sf): S50,S51,S52,S53,S54,S55,S56,S57,S58,S59,S60
+input fence      keyboard 0, buttons 0, pointer 0 real input events swallowed across 2 runs; clean: no real input
+cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-93359) dropped BEFORE the final compare; the compare below would show any damage cleanup did
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+glass exit=0 Sun Oct 11 02:30:41 CDT 2026
+sourceSha        fa3ddf7
+real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+guard home       /Users/shoemoney
+bundle id        com.shoemoney.opensnap.eyedump-97478 (real id com.shoemoney.opensnap is never launched)
+app copy         /private/var/folders/_5/kk_5dshn1zx_mn3ftl5dl7g40000gp/T/eye-dump-audit.EjQ8Ln/OpenSnap.app (copied from /Users/shoemoney/Projects/OpenSkitch/.todo-worktrees/glass-pickers-integration/build/OpenSnap.app; the source bundle is never executed)
+display options  none (simulated inside the throwaway copy only; no system setting is written)
+isolation        env -i; HOME and CFFIXED_USER_HOME, TMPDIR, OPENSNAP_APP_SUPPORT, OPENSNAP_EVIDENCE_DIR all under /private/var/folders/_5/kk_5dshn1zx_mn3ftl5dl7g40000gp/T/eye-dump-audit.EjQ8Ln; OPENSNAP_FIXTURE unset
+destinations     none exist in the throwaway support folder; with OPENSNAP_APP_SUPPORT set the app keeps secrets in memory (no Keychain item is read or written) and the S19/S21 flows stub the uploader
+sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
+== custom (light, icons sf): S06,S08,S09,S17,S19,S20,S23,S30,S31
+== custom (dark, icons sf): S06,S08,S09,S17,S19,S20,S23,S30,S31
+input fence      keyboard 0, buttons 0, pointer 69 real input events swallowed across 2 runs; clean: pointer events only (a parked cursor during menu tracking or the Save panel)
+cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-97478) dropped BEFORE the final compare; the compare below would show any damage cleanup did
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+baseline exit=0 Sun Oct 11 02:33:37 CDT 2026

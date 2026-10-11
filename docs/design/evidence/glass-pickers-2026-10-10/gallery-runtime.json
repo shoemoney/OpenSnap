@@ -1,0 +1,49 @@
+{
+  "sourceSha": "21b8d68e10543b097cb6a902103e9c56eeb76be5",
+  "desktop": [
+    {
+      "width": 728,
+      "contentHeight": 2749,
+      "capturedHeight": 2749,
+      "consoleMessages": [
+        {
+          "level": "log",
+          "text": "{\"readableFontMinimum\":18,\"undersized\":0,\"horizontalOverflow\":false,\"shots\":70}"
+        },
+        {
+          "level": "log",
+          "text": "{\"galleryRuntimeFailures\":[],\"captures\":70}"
+        }
+      ],
+      "screenshot": {
+        "mimeType": "image/png",
+        "width": 728,
+        "height": 2749
+      }
+    }
+  ],
+  "phone": [
+    {
+      "width": 360,
+      "contentHeight": 3462,
+      "capturedHeight": 3462,
+      "consoleMessages": [
+        {
+          "level": "log",
+          "text": "{\"readableFontMinimum\":18,\"undersized\":0,\"horizontalOverflow\":false,\"shots\":70}"
+        },
+        {
+          "level": "log",
+          "text": "{\"galleryRuntimeFailures\":[],\"captures\":70}"
+        }
+      ],
+      "screenshot": {
+        "mimeType": "image/png",
+        "width": 360,
+        "height": 3462
+      }
+    }
+  ],
+  "method": "T3 headless html_preview with gallery runtime assertions; 728/light and 360/dark. App captures are separate native evidence.",
+  "result": "PASS: no runtime failures; readable text minimum 18 CSS px; zero horizontal overflow; 70 explicitly sourced views."
+}

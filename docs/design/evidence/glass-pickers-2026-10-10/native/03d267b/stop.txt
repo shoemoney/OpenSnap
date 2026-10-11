@@ -1,0 +1,7 @@
+stopping         com.shoemoney.opensnap.e2e-20576 (pid 20596)
+app pid 20596 exited after SIGTERM (1s)
+watchdog         stopped; panel-service kills this session: 0
+cleanup          app stopped, throwaway defaults (com.shoemoney.opensnap.e2e-20576) dropped, temp dir removed BEFORE the final compare; the compare below would show any damage cleanup did
+real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
+RESULT stores unchanged
+RESULT stores unchanged, session removed

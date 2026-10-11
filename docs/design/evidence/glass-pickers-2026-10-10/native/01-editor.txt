@@ -1,0 +1,65 @@
+AX snapshot_id=FC5BB8CD-A9CA-425D-822C-A1C220BB188C. Pass this ID with index-based actions; it is separate from the screenshot_id and diff revision.
+# OpenSnap App State
+
+- app: OpenSnap
+- bundle_id: com.shoemoney.opensnap.e2e-31344
+- pid: 31362
+- window_title: Untitled
+- element_count: 59
+- is_electron: false
+- truncated: true [closed_menu]
+- captured_bounds: x=468 y=136 w=1120 h=812 (screen points)
+- screenshot: 2048×1485 px
+- coords: bbox `@x,y w×h` and click/scroll/drag x,y are screenshot pixels (origin = top-left of the screenshot)
+
+```text
+- [0] AXApplication "OpenSnap"
+  - [1] AXWindow "Untitled – 800 × 600 · PNG · 10 KB" @0,0 2048×1485 actions=[AXRaise]
+    - [2] AXScrollArea @22,161 2004×1214 actions=[AXScrollLeftByPage, AXScrollRightByPage, AXScrollUpByPage, AXScrollDownByPage] (focused)
+    - [3] AXButton (Hide) @27,71 91×69 actions=[AXPress] help="Hide (⌘M)"
+    - [4] AXMenuButton (Toolbox) @133,79 84×55 actions=[AXPress] help="Drawing, edit and capture commands; everything else is in the menu bar"
+    - [5] AXButton (Photos) @232,71 91×69 actions=[AXPress] help="Photos"
+    - [6] AXButton (Snap) @357,71 106×69 actions=[AXPress] help="Snap: drag an area or click a window; right-click or Control-click for Fullscreen"
+    - [7] AXButton (Select tool) @684,71 84×69 actions=[AXPress] help="Select tool"
+    - [8] AXButton (Brush tool) @768,71 84×69 actions=[AXPress] help="Brush tool"
+    - [9] AXButton (Line tool) @852,71 84×69 actions=[AXPress] help="Line tool"
+    - [10] AXButton (Ellipse tool) @936,71 84×69 actions=[AXPress] help="Ellipse tool"
+    - [11] AXButton (Rectangle tool) @1020,71 84×69 actions=[AXPress] help="Rectangle tool"
+    - [12] AXButton (Fill tool) @1104,71 84×69 actions=[AXPress] help="Fill tool"
+    - [13] AXButton (Eraser tool) @1189,71 84×69 actions=[AXPress] help="Eraser tool"
+    - [14] AXButton (Text tool) @1273,71 84×69 actions=[AXPress] help="Text tool"
+    - [15] AXButton (Arrow tool) @1357,71 84×69 actions=[AXPress] help="Arrow tool (selected); Option reverses direction, Shift constrains the angle"
+    - [16] AXButton (Crop tool) @1441,71 84×69 actions=[AXPress] help="Crop tool"
+    - [17] AXButton (Drawing colors) @1746,71 91×69 actions=[AXPress] help="Color: hover for original preset colors; hold Shift to change the canvas background"
+    - [18] AXSlider (Drawing size) Value: 7 @1838,71 91×69 actions=[AXIncrement, AXDecrement, AXPress, Show size options] help="Size 7"
+    - [19] AXButton (Font) @1929,71 91×69 actions=[AXPress] help="Font"
+    - [20] AXButton (Undo) actions=[AXPress] help="Undo (⌘Z)" (disabled)
+    - [21] AXButton (Clear image) actions=[AXPress] help="Nothing to clear" (disabled)
+    - [22] AXPopUpButton (Canvas zoom) Value: 100% @243,1395 163×69 actions=[AXPress] help="Zoom is how large the drawing is shown. Actual Size shows one image pixel per screen pixel."
+    - [23] AXButton (Resize…) @406,1395 165×69 actions=[AXPress] help="Resize or crop the picture"
+    - [24] AXStaticText = "Arrow · Saved"
+    - [25] AXButton (Save) @1373,1395 91×69 actions=[AXPress] help="Save to History"
+    - [26] AXButton (History) @1465,1395 91×69 actions=[AXPress] help="History"
+    - [27] AXRadioGroup (Image format) help="Format for drag, export and upload"
+      - [28] AXRadioButton (PNG) Value: 1 @1589,1399 121×66 actions=[AXPress]
+      - [29] AXRadioButton (JPG) Value: 0 @1713,1399 121×66 actions=[AXPress]
+    - [30] AXButton (Drag image to another app) @1840,1397 88×66 actions=[AXPress] help="Drag the drawing into Finder or another app"
+    - [31] AXButton (Upload image) @1929,1395 91×69 actions=[AXPress] help="Upload image and copy link · Right-click for destinations"
+    - [32] AXButton @15,15 29×29 actions=[AXPress]
+    - [33] AXButton @99,15 29×29 actions=[AXPress, AXZoomWindow] help="this button also has an action to zoom the window"
+    - [35] AXButton @57,15 29×29 actions=[AXPress]
+    - [36] AXStaticText = "Untitled – 800 × 600 · PNG · 10 KB"
+  - [37] AXMenuBar actions=[AXCancel]
+    - [38] AXMenuBarItem (Apple) @-837,-249 62×71 actions=[AXCancel, AXPress, AXPick]
+    - [40] AXMenuBarItem (OpenSnap) @-777,-249 161×71 actions=[AXCancel, AXPress, AXPick]
+    - [42] AXMenuBarItem (File) @-618,-249 77×71 actions=[AXCancel, AXPress, AXPick]
+    - [44] AXMenuBarItem (Edit) @-543,-249 80×71 actions=[AXCancel, AXPress, AXPick]
+    - [46] AXMenuBarItem (Image) @-464,-249 106×71 actions=[AXCancel, AXPress, AXPick]
+    - [48] AXMenuBarItem (Drawing) @-360,-249 130×71 actions=[AXCancel, AXPress, AXPick]
+    - [50] AXMenuBarItem (Text) @-232,-249 84×71 actions=[AXCancel, AXPress, AXPick]
+    - [52] AXMenuBarItem (Capture) @-150,-249 128×71 actions=[AXCancel, AXPress, AXPick]
+    - [54] AXMenuBarItem (Window) @-24,-249 126×71 actions=[AXCancel, AXPress, AXPick]
+  - [56] AXMenuBar
+    - [57] AXMenuBarItem (Show or hide OpenSnap) @1969,-235 62×44 actions=[AXPress] help="OpenSnap"
+```
+Screenshot: window_id=79681, screenshot_id=7189b69f-0afb-4aa4-82c3-bb406fe7149b; 2048×1485 pixels. Use these IDs with coordinates in this image's pixels, origin (0,0) at its top-left.

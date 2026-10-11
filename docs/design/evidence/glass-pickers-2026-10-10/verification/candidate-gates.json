@@ -1,0 +1,14 @@
+{
+  "testedCommit": "2bdd28e7cecc4a18df3bd62e768a1c16f44da63f",
+  "testedTree": "572a26794724bf73f900412f83f53ebae950943a",
+  "fullSuite": "PASS",
+  "architecture": "arm64",
+  "appSafetyPassed": 275,
+  "sourceDrift": false,
+  "watchedStoresChanged": false,
+  "bundledFontBranchesSkipped": 2,
+  "renderReview": "pending",
+  "nativeInteractionReview": "pending",
+  "candidateStatus": "superseded developer evidence",
+  "supersededReason": "Visual review found Upload/Size panels overhang the parent window; placement and checker fixes pending."
+}

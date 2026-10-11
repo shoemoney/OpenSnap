@@ -1,0 +1,52 @@
+AX trusted=true windows=2
+AXWindow Drawing colors value= enabled= children=1 focused=Optional(1) parentOK=true
+  AXGroup Drawing colors value= enabled= children=12 focused=Optional(0) parentOK=true
+    AXStaticText  value=Drawing colors enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXRadioButton Red value=1 enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXRadioButton Yellow value=0 enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXRadioButton Blue value=0 enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXRadioButton Pink value=0 enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXRadioButton Translucent gray value=0 enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXRadioButton Orange value=0 enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXRadioButton Green value=0 enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXRadioButton White value=0 enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXRadioButton Black value=0 enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXRadioButton Highlighter value=0 enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXRadioButton Custom color… value=0 enabled=1 children=0 focused=Optional(0) parentOK=true
+AXWindow Untitled – 800 × 600 · PNG · 10 KB value= enabled= children=32 focused=Optional(0) parentOK=true
+  AXScrollArea  value= enabled= children=0 focused=Optional(0) parentOK=true
+  AXButton Hide value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXMenuButton Toolbox value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Photos value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Snap value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Select tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Brush tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Line tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Ellipse tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Rectangle tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Fill tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Eraser tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Text tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Arrow tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Crop tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Drawing colors value=Red 1, green 0, blue 0, alpha 1 enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXSlider Drawing size value=7 enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Font value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Undo value= enabled=0 children=0 focused=Optional(0) parentOK=true
+  AXButton Clear image value= enabled=0 children=0 focused=Optional(0) parentOK=true
+  AXPopUpButton Canvas zoom value=100% enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Resize… value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXStaticText  value=Arrow · Saved enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Save value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton History value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXRadioGroup Image format value=PNG enabled=1 children=2 focused=Optional(0) parentOK=true
+    AXRadioButton PNG value=1 enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXRadioButton JPG value=0 enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Drag image to another app value= enabled= children=0 focused=Optional(0) parentOK=true
+  AXButton Upload image value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton  value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton  value= enabled=1 children=1 focused=Optional(0) parentOK=true
+    AXGroup  value= enabled= children=1 focused=Optional(0) parentOK=true
+      AXGroup  value= enabled= children=0 focused=Optional(0) parentOK=true
+  AXButton  value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXStaticText  value=Untitled – 800 × 600 · PNG · 10 KB enabled=1 children=0 focused=Optional(0) parentOK=true

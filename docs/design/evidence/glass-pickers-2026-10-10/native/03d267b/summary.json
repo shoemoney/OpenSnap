@@ -1,0 +1,43 @@
+{
+  "sourceSha": "03d267b933566114dad26e765f7fc306b553e2f4",
+  "sourceTree": "e3e8d943ef748ae53411988c8a0d9371c467cf83",
+  "status": "pass",
+  "counts": {
+    "Toolbox rows": 18,
+    "Color preset radios": 10,
+    "Capture key radios": 69,
+    "Destination protocol radios": 5,
+    "Destination source radios": 2
+  },
+  "checks": {
+    "Color chosen value": true,
+    "Size choice applied": true,
+    "Zoom choice applied": true,
+    "Rejected draft retained": true,
+    "Modifier arrows work": true,
+    "Keyboard opener regains focus": true,
+    "First Escape closes panel only": true,
+    "Sheet Return validates Save": true,
+    "Sheet second Escape cancels": true,
+    "History date chosen": true,
+    "History export chosen": true,
+    "Resize arrows retain selection focus": true,
+    "Resize Escape and Return close sheet": true,
+    "Return from nonchosen focus leaves choice unchanged": true,
+    "Toolbar focus restored": true,
+    "Toolbar Tab continues": true
+  },
+  "allActionResultsSuccess": true,
+  "allParentChainsAgree": true,
+  "noUnknownWrappers": true,
+  "windowDumpCount": 53,
+  "method": "External window-root AXUIElement traversal and actions; window-scoped routed keys. Known Window > Focus Toolbar activated separately through only that app-owned menu branch. No physical HID or VoiceOver speech.",
+  "limits": [
+    "Physical pointer/hover and VoiceOver speech remain manual",
+    "Injected display settings are not live system-setting toggles",
+    "Routed Option-Command-T did not execute the menu command; the known-command activator did"
+  ],
+  "session": "com.shoemoney.opensnap.e2e-20576",
+  "storesDigest": "dbde037ac2085108",
+  "watchdogKills": 0
+}

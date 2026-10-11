@@ -1,0 +1,116 @@
+AX trusted=true windows=3
+AXWindow Source value= enabled= children=1 focused=Optional(0) parentOK=true
+  AXGroup Source value= enabled= children=2 focused=Optional(0) parentOK=true
+    AXRadioButton AWS credentials profile value=1 enabled=1 children=0 focused=Optional(1) parentOK=true
+    AXRadioButton Access key stored in Keychain value=0 enabled=1 children=0 focused=Optional(0) parentOK=true
+AXWindow Upload value= enabled= children=7 focused=Optional(0) parentOK=true
+  AXTabGroup Settings sections value=<AXUIElement 0x104eafe10> {pid=20596} enabled= children=4 focused=Optional(0) parentOK=true
+    AXRadioButton General value=0 enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXRadioButton Drawing value=0 enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXRadioButton Capture value=0 enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXRadioButton Upload value=1 enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXScrollArea  value= enabled= children=4 focused=Optional(0) parentOK=true
+    AXStaticText  value=Destinations enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXScrollArea  value= enabled= children=4 focused=Optional(0) parentOK=true
+      AXRow WebDAV · demo, WebDAV, Default value= enabled= children=3 focused=Optional(0) parentOK=true
+        AXStaticText  value=WebDAV · demo enabled=1 children=0 focused=Optional(0) parentOK=true
+        AXStaticText  value=WebDAV enabled=1 children=0 focused=Optional(0) parentOK=true
+        AXStaticText Default destination value= enabled= children=2 focused=Optional(0) parentOK=true
+          AXImage  value= enabled=1 children=0 focused=Optional(0) parentOK=true
+          AXStaticText  value=Default enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXRow SFTP · e2e-host, SFTP value= enabled= children=2 focused=Optional(0) parentOK=true
+        AXStaticText  value=SFTP · e2e-host enabled=1 children=0 focused=Optional(0) parentOK=true
+        AXStaticText  value=SFTP enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXRow FTPS · demo, FTPS value= enabled= children=2 focused=Optional(0) parentOK=true
+        AXStaticText  value=FTPS · demo enabled=1 children=0 focused=Optional(0) parentOK=true
+        AXStaticText  value=FTPS enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXRow S3 · example-bucket, S3-compatible value= enabled= children=2 focused=Optional(0) parentOK=true
+        AXStaticText  value=S3 · example-bucket enabled=1 children=0 focused=Optional(0) parentOK=true
+        AXStaticText  value=S3-compatible enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXGroup Destination actions value= enabled= children=4 focused=Optional(0) parentOK=true
+      AXButton Add… value= enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXButton Edit… value= enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXButton Remove value= enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXButton Make Default value= enabled=0 children=0 focused=Optional(0) parentOK=true
+    AXStaticText  value=Uploads go to the default destination. Right-click Upload to switch. enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton  value= enabled=0 children=0 focused=Optional(0) parentOK=true
+  AXButton  value= enabled=0 children=1 focused=Optional(0) parentOK=true
+    AXGroup  value= enabled= children=1 focused=Optional(0) parentOK=true
+      AXGroup  value= enabled= children=0 focused=Optional(0) parentOK=true
+  AXButton  value= enabled=0 children=0 focused=Optional(0) parentOK=true
+  AXStaticText  value=Upload enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXSheet  value= enabled= children=4 focused=Optional(0) parentOK=true
+    AXScrollArea  value= enabled= children=24 focused=Optional(0) parentOK=true
+      AXStaticText Connection value=Connection enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXStaticText  value=Name enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXTextField Name value= enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXStaticText  value=Protocol enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXPopUpButton Protocol value=S3-compatible enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXStaticText  value=Endpoint enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXTextField Endpoint value= enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXStaticText  value=Region enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXTextField Region value=us-east-1 enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXStaticText  value=Bucket enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXTextField Bucket value= enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXStaticText  value=Key prefix enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXTextField Key prefix value= enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXStaticText  value=Public base URL enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXTextField Public base URL value= enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXStaticText  value= enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXCheckBox Make uploads public-read value=0 enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXStaticText Credentials value=Credentials enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXStaticText  value=Source enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXPopUpButton Source value=AWS credentials profile enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXStaticText  value=AWS profile enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXTextField AWS profile value= enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXStaticText  value=Path-style S3 over system curl, for AWS, Cloudflare R2, Backblaze B2, DigitalOcean Spaces, Wasabi and MinIO. Public base URL maps to the key prefix; the uploaded file is downloaded from it to verify the exact bytes. Leave public-read off when the bucket disables ACLs. enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXScrollBar  value=0 enabled=1 children=5 focused=Optional(0) parentOK=true
+        AXValueIndicator  value=0 enabled= children=0 focused=nil parentOK=true
+        AXButton  value= enabled= children=0 focused=nil parentOK=true
+        AXButton  value= enabled= children=0 focused=nil parentOK=true
+        AXButton  value= enabled= children=0 focused=nil parentOK=true
+        AXButton  value= enabled= children=0 focused=nil parentOK=true
+    AXStaticText Test lists the bucket with these credentials. It never uploads. value= enabled= children=1 focused=Optional(0) parentOK=true
+      AXStaticText  value=Test lists the bucket with these credentials. It never uploads. enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXGroup Test connection value= enabled= children=1 focused=Optional(0) parentOK=true
+      AXButton Test value= enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXGroup Cancel or save value= enabled= children=2 focused=Optional(0) parentOK=true
+      AXButton Cancel value= enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXButton Save value= enabled=1 children=0 focused=Optional(0) parentOK=true
+AXWindow Untitled – 800 × 600 · PNG · 10 KB value= enabled= children=32 focused=Optional(0) parentOK=true
+  AXScrollArea  value= enabled= children=0 focused=Optional(0) parentOK=true
+  AXButton Hide value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXMenuButton Toolbox value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Photos value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Snap value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Select tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Brush tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Line tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Ellipse tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Rectangle tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Fill tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Eraser tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Text tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Arrow tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Crop tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Drawing colors value=Red 0.098, green 0.467, blue 1, alpha 1 enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXSlider Drawing size value=12 enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Font value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Undo value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Clear image value= enabled=0 children=0 focused=Optional(0) parentOK=true
+  AXPopUpButton Canvas zoom value=75% enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Resize… value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXStaticText  value=Arrow · Saved enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Save value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton History value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXRadioGroup Image format value=PNG enabled=1 children=2 focused=Optional(0) parentOK=true
+    AXRadioButton PNG value=1 enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXRadioButton JPG value=0 enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Drag image to another app value= enabled= children=0 focused=Optional(0) parentOK=true
+  AXButton Upload image value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton  value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton  value= enabled=1 children=1 focused=Optional(0) parentOK=true
+    AXGroup  value= enabled= children=1 focused=Optional(0) parentOK=true
+      AXGroup  value= enabled= children=0 focused=Optional(0) parentOK=true
+  AXButton  value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXStaticText  value=Untitled – 800 × 600 · PNG · 10 KB enabled=1 children=0 focused=Optional(0) parentOK=true

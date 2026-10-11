@@ -1,0 +1,98 @@
+AX snapshot_id=71523302-1004-49F0-8209-4C8714EEBA97. Pass this ID with index-based actions; it is separate from the screenshot_id and diff revision.
+# OpenSnap App State
+
+- app: OpenSnap
+- bundle_id: com.shoemoney.opensnap.e2e-31344
+- pid: 31362
+- window_title: Capture
+- element_count: 91
+- is_electron: false
+- truncated: true [closed_menu]
+- window_bounds: x=0 y=579 w=640 h=657 (screen points)
+- screenshot: none — no image attached
+- coords: bbox `@x,y w×h` are WINDOW-LOCAL POINTS (origin = window top-left, 1:1 points — NOT screenshot pixels; they run LARGER than screenshot pixels by ~window_w/screenshot_w). Do NOT feed these to click/scroll/drag x,y — those still resolve as screenshot pixels against the most recent image observation's anchor (error if none). Use index-based actions, or re-observe with a screenshot (mode:"full"/"image") to get pixel coordinates
+- windows: 2 (tree scoped to primary; others via window_id)
+  - [primary] window_id=79703 AXStandardWindow "Capture" @0,579 640×657
+  - [other] window_id=79681 AXStandardWindow "Untitled – 800 × 600 · PNG · 10 KB" @468,136 1120×812
+
+```text
+- [0] AXApplication "OpenSnap"
+  - [1] AXWindow "Capture" @0,0 640×657 actions=[AXRaise]
+    - [2] AXTabGroup (Settings sections) (focused)
+      - [3] AXRadioButton (General) Value: 0 @68,43 126×38 actions=[AXPress]
+      - [4] AXRadioButton (Drawing) Value: 0 @194,43 130×38 actions=[AXPress]
+      - [5] AXRadioButton (Capture) Value: 1 @324,43 128×38 actions=[AXPress]
+      - [6] AXRadioButton (Upload) Value: 0 @452,43 120×38 actions=[AXPress]
+    - [7] AXScrollArea @0,93 657×564 actions=[AXScrollLeftByPage, AXScrollRightByPage, AXScrollUpByPage, AXScrollDownByPage]
+      - [8] AXStaticText = "Flash:"
+      - [9] AXGroup (Flash)
+      - [10] AXStaticText = "Shortcuts:"
+      - [11] AXGroup (Shortcuts)
+      - [12] AXStaticText = "Screen region:"
+      - [13] AXGroup (Screen region shortcut)
+        - [14] AXPopUpButton (Screen region key) Value: K @222,228 176×38 actions=[AXPress]
+        - [15] AXGroup (Screen region modifiers)
+          - [16] AXCheckBox (Screen region Command) Value: 0 @398,228 49×38 actions=[AXPress] help="Modifier keys: ⌘ Command, ⌥ Option, ⌃ Control, ⇧ Shift"
+          - [17] AXCheckBox (Screen region Option) Value: 0 @447,228 50×38 actions=[AXPress] help="Modifier keys: ⌘ Command, ⌥ Option, ⌃ Control, ⇧ Shift"
+          - [18] AXCheckBox (Screen region Control) Value: 0 @497,228 48×38 actions=[AXPress] help="Modifier keys: ⌘ Command, ⌥ Option, ⌃ Control, ⇧ Shift"
+          - [19] AXCheckBox (Screen region Shift) Value: 0 @545,228 50×38 actions=[AXPress] help="Modifier keys: ⌘ Command, ⌥ Option, ⌃ Control, ⇧ Shift"
+      - [20] AXStaticText = "Window:"
+      - [21] AXGroup (Window shortcut)
+        - [22] AXPopUpButton (Window key) Value: None @222,276 176×38 actions=[AXPress]
+        - [23] AXGroup (Window modifiers)
+          - [24] AXCheckBox (Window Command) Value: 0 actions=[AXPress] help="Modifier keys: ⌘ Command, ⌥ Option, ⌃ Control, ⇧ Shift" (disabled)
+          - [25] AXCheckBox (Window Option) Value: 0 actions=[AXPress] help="Modifier keys: ⌘ Command, ⌥ Option, ⌃ Control, ⇧ Shift" (disabled)
+          - [26] AXCheckBox (Window Control) Value: 0 actions=[AXPress] help="Modifier keys: ⌘ Command, ⌥ Option, ⌃ Control, ⇧ Shift" (disabled)
+          - [27] AXCheckBox (Window Shift) Value: 0 actions=[AXPress] help="Modifier keys: ⌘ Command, ⌥ Option, ⌃ Control, ⇧ Shift" (disabled)
+      - [28] AXStaticText = "Full screen:"
+      - [29] AXGroup (Full screen shortcut)
+        - [30] AXPopUpButton (Full screen key) Value: None @222,324 176×38 actions=[AXPress]
+        - [31] AXGroup (Full screen modifiers)
+          - [32] AXCheckBox (Full screen Command) Value: 0 actions=[AXPress] help="Modifier keys: ⌘ Command, ⌥ Option, ⌃ Control, ⇧ Shift" (disabled)
+          - [33] AXCheckBox (Full screen Option) Value: 0 actions=[AXPress] help="Modifier keys: ⌘ Command, ⌥ Option, ⌃ Control, ⇧ Shift" (disabled)
+          - [34] AXCheckBox (Full screen Control) Value: 0 actions=[AXPress] help="Modifier keys: ⌘ Command, ⌥ Option, ⌃ Control, ⇧ Shift" (disabled)
+          - [35] AXCheckBox (Full screen Shift) Value: 0 actions=[AXPress] help="Modifier keys: ⌘ Command, ⌥ Option, ⌃ Control, ⇧ Shift" (disabled)
+      - [36] AXStaticText = "Frame:"
+      - [37] AXGroup (Frame shortcut)
+        - [38] AXPopUpButton (Frame key) Value: None @222,372 176×38 actions=[AXPress]
+        - [39] AXGroup (Frame modifiers)
+          - [40] AXCheckBox (Frame Command) Value: 0 actions=[AXPress] help="Modifier keys: ⌘ Command, ⌥ Option, ⌃ Control, ⇧ Shift" (disabled)
+          - [41] AXCheckBox (Frame Option) Value: 0 actions=[AXPress] help="Modifier keys: ⌘ Command, ⌥ Option, ⌃ Control, ⇧ Shift" (disabled)
+          - [42] AXCheckBox (Frame Control) Value: 0 actions=[AXPress] help="Modifier keys: ⌘ Command, ⌥ Option, ⌃ Control, ⇧ Shift" (disabled)
+          - [43] AXCheckBox (Frame Shift) Value: 0 actions=[AXPress] help="Modifier keys: ⌘ Command, ⌥ Option, ⌃ Control, ⇧ Shift" (disabled)
+      - [44] AXStaticText = "Upload:"
+      - [45] AXGroup (Upload shortcut)
+        - [46] AXPopUpButton (Upload key) Value: None @222,420 176×38 actions=[AXPress]
+        - [47] AXGroup (Upload modifiers)
+          - [48] AXCheckBox (Upload Command) Value: 0 actions=[AXPress] help="Modifier keys: ⌘ Command, ⌥ Option, ⌃ Control, ⇧ Shift" (disabled)
+          - [49] AXCheckBox (Upload Option) Value: 0 actions=[AXPress] help="Modifier keys: ⌘ Command, ⌥ Option, ⌃ Control, ⇧ Shift" (disabled)
+          - [50] AXCheckBox (Upload Control) Value: 0 actions=[AXPress] help="Modifier keys: ⌘ Command, ⌥ Option, ⌃ Control, ⇧ Shift" (disabled)
+          - [51] AXCheckBox (Upload Shift) Value: 0 actions=[AXPress] help="Modifier keys: ⌘ Command, ⌥ Option, ⌃ Control, ⇧ Shift" (disabled)
+      - [52] AXStaticText = "Show OpenSnap:"
+      - [53] AXGroup (Show OpenSnap shortcut)
+        - [54] AXPopUpButton (Show OpenSnap key) Value: None @222,468 176×38 actions=[AXPress]
+        - [55] AXGroup (Show OpenSnap modifiers)
+          - [56] AXCheckBox (Show OpenSnap Command) Value: 0 actions=[AXPress] help="Modifier keys: ⌘ Command, ⌥ Option, ⌃ Control, ⇧ Shift" (disabled)
+          - [57] AXCheckBox (Show OpenSnap Option) Value: 0 actions=[AXPress] help="Modifier keys: ⌘ Command, ⌥ Option, ⌃ Control, ⇧ Shift" (disabled)
+          - [58] AXCheckBox (Show OpenSnap Control) Value: 0 actions=[AXPress] help="Modifier keys: ⌘ Command, ⌥ Option, ⌃ Control, ⇧ Shift" (disabled)
+          - [59] AXCheckBox (Show OpenSnap Shift) Value: 0 actions=[AXPress] help="Modifier keys: ⌘ Command, ⌥ Option, ⌃ Control, ⇧ Shift" (disabled)
+      - [60] AXStaticText = "Error: Choose Command or Control for Screen region; plain typing keys cannot be global shortcuts."
+      - [61] AXGroup (Clear shortcuts)
+        - [62] AXButton (Clear All) @222,592 107×38 actions=[AXPress]
+    - [63] AXButton @8,8 16×16 actions=[AXPress]
+    - [64] AXButton actions=[AXPress] (disabled)
+    - [67] AXButton actions=[AXPress] (disabled)
+    - [68] AXStaticText = "Capture"
+  - [69] AXMenuBar actions=[AXCancel]
+    - [70] AXMenuBarItem (Apple) @10,-579 34×39 actions=[AXCancel, AXPress, AXPick]
+    - [72] AXMenuBarItem (OpenSnap) @43,-579 88×39 actions=[AXCancel, AXPress, AXPick]
+    - [74] AXMenuBarItem (File) @130,-579 42×39 actions=[AXCancel, AXPress, AXPick]
+    - [76] AXMenuBarItem (Edit) @171,-579 44×39 actions=[AXCancel, AXPress, AXPick]
+    - [78] AXMenuBarItem (Image) @214,-579 58×39 actions=[AXCancel, AXPress, AXPick]
+    - [80] AXMenuBarItem (Drawing) @271,-579 71×39 actions=[AXCancel, AXPress, AXPick]
+    - [82] AXMenuBarItem (Text) @341,-579 46×39 actions=[AXCancel, AXPress, AXPick]
+    - [84] AXMenuBarItem (Capture) @386,-579 70×39 actions=[AXCancel, AXPress, AXPick]
+    - [86] AXMenuBarItem (Window) @455,-579 69×39 actions=[AXCancel, AXPress, AXPick]
+  - [88] AXMenuBar
+    - [89] AXMenuBarItem (Show or hide OpenSnap) @1545,-572 34×24 actions=[AXPress] help="OpenSnap"
+```

@@ -1,0 +1,108 @@
+AX trusted=true windows=2
+AXWindow Capture value= enabled= children=6 focused=Optional(0) parentOK=true
+  AXTabGroup Settings sections value=<AXUIElement 0x105233e60> {pid=20596} enabled= children=4 focused=Optional(0) parentOK=true
+    AXRadioButton General value=0 enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXRadioButton Drawing value=0 enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXRadioButton Capture value=1 enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXRadioButton Upload value=0 enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXScrollArea  value= enabled= children=18 focused=Optional(0) parentOK=true
+    AXStaticText  value=Flash: enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXGroup Flash value= enabled= children=1 focused=Optional(0) parentOK=true
+      AXCheckBox Show capture flash value=1 enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXStaticText  value=Shortcuts: enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXGroup Shortcuts value= enabled= children=1 focused=Optional(0) parentOK=true
+      AXCheckBox Enable global capture shortcuts value=0 enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXStaticText  value=Screen region: enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXGroup Screen region shortcut value= enabled= children=2 focused=Optional(0) parentOK=true
+      AXPopUpButton Screen region key value=K enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXGroup Screen region modifiers value= enabled= children=4 focused=Optional(0) parentOK=true
+        AXCheckBox Screen region Command value=0 enabled=1 children=0 focused=Optional(1) parentOK=true
+        AXCheckBox Screen region Option value=0 enabled=1 children=0 focused=Optional(0) parentOK=true
+        AXCheckBox Screen region Control value=0 enabled=1 children=0 focused=Optional(0) parentOK=true
+        AXCheckBox Screen region Shift value=0 enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXStaticText  value=Window: enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXGroup Window shortcut value= enabled= children=2 focused=Optional(0) parentOK=true
+      AXPopUpButton Window key value=None enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXGroup Window modifiers value= enabled= children=4 focused=Optional(0) parentOK=true
+        AXCheckBox Window Command value=0 enabled=0 children=0 focused=Optional(0) parentOK=true
+        AXCheckBox Window Option value=0 enabled=0 children=0 focused=Optional(0) parentOK=true
+        AXCheckBox Window Control value=0 enabled=0 children=0 focused=Optional(0) parentOK=true
+        AXCheckBox Window Shift value=0 enabled=0 children=0 focused=Optional(0) parentOK=true
+    AXStaticText  value=Full screen: enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXGroup Full screen shortcut value= enabled= children=2 focused=Optional(0) parentOK=true
+      AXPopUpButton Full screen key value=None enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXGroup Full screen modifiers value= enabled= children=4 focused=Optional(0) parentOK=true
+        AXCheckBox Full screen Command value=0 enabled=0 children=0 focused=Optional(0) parentOK=true
+        AXCheckBox Full screen Option value=0 enabled=0 children=0 focused=Optional(0) parentOK=true
+        AXCheckBox Full screen Control value=0 enabled=0 children=0 focused=Optional(0) parentOK=true
+        AXCheckBox Full screen Shift value=0 enabled=0 children=0 focused=Optional(0) parentOK=true
+    AXStaticText  value=Frame: enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXGroup Frame shortcut value= enabled= children=2 focused=Optional(0) parentOK=true
+      AXPopUpButton Frame key value=None enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXGroup Frame modifiers value= enabled= children=4 focused=Optional(0) parentOK=true
+        AXCheckBox Frame Command value=0 enabled=0 children=0 focused=Optional(0) parentOK=true
+        AXCheckBox Frame Option value=0 enabled=0 children=0 focused=Optional(0) parentOK=true
+        AXCheckBox Frame Control value=0 enabled=0 children=0 focused=Optional(0) parentOK=true
+        AXCheckBox Frame Shift value=0 enabled=0 children=0 focused=Optional(0) parentOK=true
+    AXStaticText  value=Upload: enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXGroup Upload shortcut value= enabled= children=2 focused=Optional(0) parentOK=true
+      AXPopUpButton Upload key value=None enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXGroup Upload modifiers value= enabled= children=4 focused=Optional(0) parentOK=true
+        AXCheckBox Upload Command value=0 enabled=0 children=0 focused=Optional(0) parentOK=true
+        AXCheckBox Upload Option value=0 enabled=0 children=0 focused=Optional(0) parentOK=true
+        AXCheckBox Upload Control value=0 enabled=0 children=0 focused=Optional(0) parentOK=true
+        AXCheckBox Upload Shift value=0 enabled=0 children=0 focused=Optional(0) parentOK=true
+    AXStaticText  value=Show OpenSnap: enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXGroup Show OpenSnap shortcut value= enabled= children=2 focused=Optional(0) parentOK=true
+      AXPopUpButton Show OpenSnap key value=None enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXGroup Show OpenSnap modifiers value= enabled= children=4 focused=Optional(0) parentOK=true
+        AXCheckBox Show OpenSnap Command value=0 enabled=0 children=0 focused=Optional(0) parentOK=true
+        AXCheckBox Show OpenSnap Option value=0 enabled=0 children=0 focused=Optional(0) parentOK=true
+        AXCheckBox Show OpenSnap Control value=0 enabled=0 children=0 focused=Optional(0) parentOK=true
+        AXCheckBox Show OpenSnap Shift value=0 enabled=0 children=0 focused=Optional(0) parentOK=true
+    AXStaticText  value=Error: Choose Command or Control for Screen region; plain typing keys cannot be global shortcuts. enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXGroup Clear shortcuts value= enabled= children=1 focused=Optional(0) parentOK=true
+      AXButton Clear All value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton  value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton  value= enabled=0 children=1 focused=Optional(0) parentOK=true
+    AXGroup  value= enabled= children=1 focused=Optional(0) parentOK=true
+      AXGroup  value= enabled= children=0 focused=Optional(0) parentOK=true
+  AXButton  value= enabled=0 children=0 focused=Optional(0) parentOK=true
+  AXStaticText  value=Capture enabled=1 children=0 focused=Optional(0) parentOK=true
+AXWindow Untitled – 800 × 600 · PNG · 10 KB value= enabled= children=32 focused=Optional(0) parentOK=true
+  AXScrollArea  value= enabled= children=0 focused=Optional(0) parentOK=true
+  AXButton Hide value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXMenuButton Toolbox value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Photos value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Snap value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Select tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Brush tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Line tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Ellipse tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Rectangle tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Fill tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Eraser tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Text tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Arrow tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Crop tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Drawing colors value=Red 0.098, green 0.467, blue 1, alpha 1 enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXSlider Drawing size value=12 enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Font value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Undo value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Clear image value= enabled=0 children=0 focused=Optional(0) parentOK=true
+  AXPopUpButton Canvas zoom value=75% enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Resize… value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXStaticText  value=Arrow · Saved enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Save value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton History value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXRadioGroup Image format value=PNG enabled=1 children=2 focused=Optional(0) parentOK=true
+    AXRadioButton PNG value=1 enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXRadioButton JPG value=0 enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Drag image to another app value= enabled= children=0 focused=Optional(0) parentOK=true
+  AXButton Upload image value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton  value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton  value= enabled=1 children=1 focused=Optional(0) parentOK=true
+    AXGroup  value= enabled= children=1 focused=Optional(0) parentOK=true
+      AXGroup  value= enabled= children=0 focused=Optional(0) parentOK=true
+  AXButton  value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXStaticText  value=Untitled – 800 × 600 · PNG · 10 KB enabled=1 children=0 focused=Optional(0) parentOK=true

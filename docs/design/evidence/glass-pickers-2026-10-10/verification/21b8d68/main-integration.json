@@ -1,0 +1,13 @@
+{
+  "testedSha": "21b8d68e10543b097cb6a902103e9c56eeb76be5",
+  "integrationHead": "436b9eb5070f59a579cdc629d6dee08ebfdd129d",
+  "integrationTree": "ec2b9fed597c3d25e44758525e792d26948528e2",
+  "testedSubtreesUnchanged": true,
+  "builtSourcesMatch": true,
+  "mainColdBuild": "pass",
+  "architectures": [
+    "arm64"
+  ],
+  "minimum_macos": "26.0",
+  "binary_sha256": "15cd57c63e9a8282270c1c7ac07c68e028a68b78a481d5abd7e8f6f11db149f8"
+}

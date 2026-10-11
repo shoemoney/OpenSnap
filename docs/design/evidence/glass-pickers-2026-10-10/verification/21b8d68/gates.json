@@ -1,0 +1,49 @@
+{
+  "sourceSha": "21b8d68e10543b097cb6a902103e9c56eeb76be5",
+  "sourceTree": "047c1a0ce65c3806633926740afea20c8eaffc4d",
+  "stages": [
+    {
+      "name": "fullsuite",
+      "exit": 0,
+      "log": "/tmp/gp-root-final-fullsuite.log",
+      "seconds": 455.64
+    },
+    {
+      "name": "eye-glass",
+      "exit": 0,
+      "log": "/tmp/gp-root-final-eye-glass.log",
+      "seconds": 199.16
+    },
+    {
+      "name": "glass-check",
+      "exit": 0,
+      "log": "/tmp/gp-root-final-glass-check.log",
+      "seconds": 32.32
+    },
+    {
+      "name": "eye-core",
+      "exit": 0,
+      "log": "/tmp/gp-root-final-eye-core.log",
+      "seconds": 175.92
+    },
+    {
+      "name": "core-check",
+      "exit": 0,
+      "log": "/tmp/gp-root-final-core-check.log",
+      "seconds": 16.5
+    },
+    {
+      "name": "eye-accessibility",
+      "exit": 0,
+      "log": "/tmp/gp-root-final-eye-accessibility.log",
+      "seconds": 52.52
+    },
+    {
+      "name": "accessibility-check",
+      "exit": 0,
+      "log": "/tmp/gp-root-final-accessibility-check.log",
+      "seconds": 5.53
+    }
+  ],
+  "complete": true
+}

@@ -1,0 +1,15 @@
+raw child forwarders exit=-5
+main/GlassChromeTests.swift:140: Precondition failed: Size panel: no AXUnknown wrapper, role-less node (2): ["AXGroup \"Size\" lists NSTextField \"\" with no role", "AXGroup \"Size\" lists NSTextField \"Size value\" with no role"]
+
+legacy Color opener press exit=-5
+main/GlassChromeTests.swift:140: Precondition failed: The Color opener reports a successful press and opens its panel once
+
+RESTORED GREEN exit=0
+  footer @980 uploading: the status gets 249 of the 337 pt slot
+  footer @980 success: the status gets 221 of the 337 pt slot
+  footer @980 failure: the status gets 61 of the 177 pt slot
+  width budget @980: top 890.0/940.0 Frame of 956.0 (slack 66.0/16.0); bottom 899.0 of 956.0 (slack 57.0); zoom 87.0, format 66.0, checkbox 158.0, status 181.0
+  footer @1024 uploading: the status gets 293 of the 381 pt slot
+  footer @1024 success: the status gets 265 of the 381 pt slot
+  footer @1024 failure: the status gets 105 of the 221 pt slot
+GlassChromeTests: 8108 checks passed (offscreen; no desktop input); SKIPPED (FA not bundled): glyph branch

@@ -1,0 +1,32 @@
+{
+  "testedSource": "fa3ddf7537ce58c06e263d874b0abbda0320a76d",
+  "tree": "7db217abf8fd3c89f78ececaa7307ad8e71ca9fe",
+  "fullSuite": "PASS: all suites on arm64, no source drift, app-safety 275/275, native idle termination, real stores unchanged",
+  "glassChecker": {
+    "png": 206,
+    "layoutJson": 16,
+    "hardFailures": 0,
+    "contrastAdvisories": 0,
+    "contrastSamplesSkipped": 6
+  },
+  "coreChecker": {
+    "png": 180,
+    "layoutJson": 34,
+    "hardFailures": 0,
+    "contrastAdvisories": 0,
+    "contrastSamplesSkipped": 14
+  },
+  "glassRealInput": {
+    "keyboard": 0,
+    "buttons": 0,
+    "pointer": 0
+  },
+  "coreRealInputSwallowed": {
+    "keyboard": 0,
+    "buttons": 0,
+    "pointer": 69
+  },
+  "storeDigest": "dbde037ac2085108",
+  "iconMode": "Pro stripped; embedded official FA Free vectors resolve before SF fallback",
+  "rootAcceptance": "SUPERSEDED: external AX client sees empty panel/group choices; shared fix pending"
+}

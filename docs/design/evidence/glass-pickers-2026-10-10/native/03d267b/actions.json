@@ -1,0 +1,212 @@
+[
+  {
+    "mode": "press",
+    "label": "Drawing colors",
+    "exit": 0,
+    "output": "AX trusted=true windows=2\nAX press Drawing colors error=0\n"
+  },
+  {
+    "mode": "press",
+    "label": "Blue",
+    "exit": 0,
+    "output": "AX trusted=true windows=2\nAX press Blue error=0\n"
+  },
+  {
+    "mode": "press",
+    "label": "Drawing colors",
+    "exit": 0,
+    "output": "AX trusted=true windows=1\nAX press Drawing colors error=0\n"
+  },
+  {
+    "mode": "press",
+    "label": "Drawing size",
+    "exit": 0,
+    "output": "AX trusted=true windows=2\nAX press Drawing size error=0\n"
+  },
+  {
+    "mode": "press",
+    "label": "Size 12",
+    "exit": 0,
+    "output": "AX trusted=true windows=2\nAX press Size 12 error=0\n"
+  },
+  {
+    "mode": "show",
+    "label": "Toolbox",
+    "exit": 0,
+    "output": "AX trusted=true windows=1\nAX show Toolbox error=0\n"
+  },
+  {
+    "mode": "press",
+    "label": "Drawing colors",
+    "exit": 0,
+    "output": "AX trusted=true windows=2\nAX press Drawing colors error=0\n"
+  },
+  {
+    "mode": "show",
+    "label": "Canvas zoom",
+    "exit": 0,
+    "output": "AX trusted=true windows=2\nAX show Canvas zoom error=0\n"
+  },
+  {
+    "mode": "press",
+    "label": "75%",
+    "exit": 0,
+    "output": "AX trusted=true windows=2\nAX press 75% error=0\n"
+  },
+  {
+    "mode": "show",
+    "label": "Upload image",
+    "exit": 0,
+    "output": "AX trusted=true windows=1\nAX show Upload image error=0\n"
+  },
+  {
+    "mode": "press",
+    "label": "Destination Settings\u2026",
+    "exit": 0,
+    "output": "AX trusted=true windows=2\nAX press Destination Settings\u2026 error=0\n"
+  },
+  {
+    "mode": "press",
+    "label": "General",
+    "exit": 0,
+    "output": "AX trusted=true windows=2\nAX press General error=0\n"
+  },
+  {
+    "mode": "press",
+    "label": "Capture",
+    "exit": 0,
+    "output": "AX trusted=true windows=2\nAX press Capture error=0\n"
+  },
+  {
+    "mode": "press",
+    "label": "Enable global capture shortcuts",
+    "exit": 0,
+    "output": "AX trusted=true windows=2\nAX press Enable global capture shortcuts error=0\n"
+  },
+  {
+    "mode": "show",
+    "label": "Screen region key",
+    "exit": 0,
+    "output": "AX trusted=true windows=2\nAX show Screen region key error=0\n"
+  },
+  {
+    "mode": "show",
+    "label": "Screen region key",
+    "exit": 0,
+    "output": "AX trusted=true windows=2\nAX show Screen region key error=0\n"
+  },
+  {
+    "mode": "focus",
+    "label": "Screen region Command",
+    "exit": 0,
+    "output": "AX trusted=true windows=2\nAX focus Screen region Command error=0\n"
+  },
+  {
+    "mode": "press",
+    "label": "Clear All",
+    "exit": 0,
+    "output": "AX trusted=true windows=2\nAX press Clear All error=0\n"
+  },
+  {
+    "mode": "press",
+    "label": "Upload",
+    "exit": 0,
+    "output": "AX trusted=true windows=2\nAX press Upload error=0\n"
+  },
+  {
+    "mode": "press",
+    "label": "Add\u2026",
+    "exit": 0,
+    "output": "AX trusted=true windows=2\nAX press Add\u2026 error=0\n"
+  },
+  {
+    "mode": "show",
+    "label": "Protocol",
+    "exit": 0,
+    "output": "AX trusted=true windows=2\nAX show Protocol error=0\n"
+  },
+  {
+    "mode": "press",
+    "label": "S3-compatible",
+    "exit": 0,
+    "output": "AX trusted=true windows=3\nAX press S3-compatible error=0\n"
+  },
+  {
+    "mode": "show",
+    "label": "Source",
+    "exit": 0,
+    "output": "AX trusted=true windows=2\nAX show Source error=0\n"
+  },
+  {
+    "mode": "press",
+    "label": "Capture",
+    "exit": 0,
+    "output": "AX trusted=true windows=2\nAX press Capture error=0\n"
+  },
+  {
+    "mode": "focus",
+    "label": "Screen region key",
+    "exit": 0,
+    "output": "AX trusted=true windows=2\nAX focus Screen region key error=0\n"
+  },
+  {
+    "mode": "press",
+    "label": "History",
+    "exit": 0,
+    "output": "AX trusted=true windows=1\nAX press History error=0\n"
+  },
+  {
+    "mode": "press",
+    "label": "Shared",
+    "exit": 0,
+    "output": "AX trusted=true windows=2\nAX press Shared error=0\n"
+  },
+  {
+    "mode": "show",
+    "label": "History date filter",
+    "exit": 0,
+    "output": "AX trusted=true windows=2\nAX show History date filter error=0\n"
+  },
+  {
+    "mode": "press",
+    "label": "Yesterday",
+    "exit": 0,
+    "output": "AX trusted=true windows=3\nAX press Yesterday error=0\n"
+  },
+  {
+    "mode": "show",
+    "label": "History drag export format",
+    "exit": 0,
+    "output": "AX trusted=true windows=2\nAX show History drag export format error=0\n"
+  },
+  {
+    "mode": "press",
+    "label": "JPG",
+    "exit": 0,
+    "output": "AX trusted=true windows=3\nAX press JPG error=0\n"
+  },
+  {
+    "mode": "press",
+    "label": "Resize\u2026",
+    "exit": 0,
+    "output": "AX trusted=true windows=1\nAX press Resize\u2026 error=0\n"
+  },
+  {
+    "mode": "focus",
+    "label": "Crop",
+    "exit": 0,
+    "output": "AX trusted=true windows=1\nAX focus Crop error=0\n"
+  },
+  {
+    "mode": "press",
+    "label": "Resize\u2026",
+    "exit": 0,
+    "output": "AX trusted=true windows=1\nAX press Resize\u2026 error=0\n"
+  },
+  {
+    "mode": "focus",
+    "label": "Crop",
+    "exit": 0,
+    "output": "AX trusted=true windows=1\nAX focus Crop error=0\n"
+  }
+]

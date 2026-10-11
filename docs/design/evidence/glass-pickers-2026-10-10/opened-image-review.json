@@ -1,0 +1,153 @@
+{
+  "sourceSha": "21b8d68e10543b097cb6a902103e9c56eeb76be5",
+  "sourceTree": "047c1a0ce65c3806633926740afea20c8eaffc4d",
+  "reviewer": "root",
+  "result": "No new visual objection in representative final captures. Complete labels and contained horizontal panel placement; chosen/focus states are distinguishable; injected accessibility variants keep readable opaque surfaces and noncolor selection indicators.",
+  "scope": "Representative image review for every S50–S60 area, core forms and combined accessibility variants; automated checker covers all 448 captures. No claim of manual inspection of every PNG, exhaustive contrast, physical input or VoiceOver speech.",
+  "opened": [
+    {
+      "run": "glass",
+      "file": "S50-toolbox-rest-only-light.png"
+    },
+    {
+      "run": "glass",
+      "file": "S51-zoom-rest-only-light.png"
+    },
+    {
+      "run": "glass",
+      "file": "S52-upload-rest-light.png"
+    },
+    {
+      "run": "glass",
+      "file": "S53-color-rest-only-light.png"
+    },
+    {
+      "run": "glass",
+      "file": "S54-size-rest-only-light.png"
+    },
+    {
+      "run": "glass",
+      "file": "S55-history-dragas-rest-light.png"
+    },
+    {
+      "run": "glass",
+      "file": "S56-settings-toggles-rest-light.png"
+    },
+    {
+      "run": "glass",
+      "file": "S57-resize-groups-rest-light.png"
+    },
+    {
+      "run": "glass",
+      "file": "S58-destination-width-560-light.png"
+    },
+    {
+      "run": "glass",
+      "file": "S59-footer-original-on-light.png"
+    },
+    {
+      "run": "glass",
+      "file": "S60-capture-modifiers-chosen-light.png"
+    },
+    {
+      "run": "glass",
+      "file": "S50-toolbox-rest-only-dark.png"
+    },
+    {
+      "run": "glass",
+      "file": "S51-zoom-rest-only-dark.png"
+    },
+    {
+      "run": "glass",
+      "file": "S52-upload-rest-dark.png"
+    },
+    {
+      "run": "glass",
+      "file": "S53-color-focus-dark.png"
+    },
+    {
+      "run": "glass",
+      "file": "S54-size-pressed-dark.png"
+    },
+    {
+      "run": "glass",
+      "file": "S55-history-date-focus-dark.png"
+    },
+    {
+      "run": "glass",
+      "file": "S56-settings-radios-rest-dark.png"
+    },
+    {
+      "run": "glass",
+      "file": "S57-resize-anchor-focus-dark.png"
+    },
+    {
+      "run": "glass",
+      "file": "S58-destination-source-rest-only-dark.png"
+    },
+    {
+      "run": "glass",
+      "file": "S58-destination-protocol-rest-only-dark.png"
+    },
+    {
+      "run": "glass",
+      "file": "S59-footer-original-on-dark.png"
+    },
+    {
+      "run": "glass",
+      "file": "S60-capture-key-scroll-dark.png"
+    },
+    {
+      "run": "core",
+      "file": "S17-settings-drawing-light.png"
+    },
+    {
+      "run": "core",
+      "file": "S19-destinations-form-sftp-light.png"
+    },
+    {
+      "run": "core",
+      "file": "S20-history-880x600-selected-light.png"
+    },
+    {
+      "run": "core",
+      "file": "S08-crop-mode-light.png"
+    },
+    {
+      "run": "core",
+      "file": "S17-settings-upload-dark.png"
+    },
+    {
+      "run": "core",
+      "file": "S19-destinations-form-sftp-dark.png"
+    },
+    {
+      "run": "core",
+      "file": "S20-history-880x600-selected-dark.png"
+    },
+    {
+      "run": "accessibility",
+      "file": "S53-color-focus-light-rt-ic-dwc-rm.png"
+    },
+    {
+      "run": "accessibility",
+      "file": "S56-settings-radios-rest-light-rt-ic-dwc-rm.png"
+    },
+    {
+      "run": "accessibility",
+      "file": "S60-capture-modifiers-chosen-light-rt-ic-dwc-rm.png"
+    },
+    {
+      "run": "accessibility",
+      "file": "S53-color-focus-dark-rt-ic-dwc-rm.png"
+    },
+    {
+      "run": "accessibility",
+      "file": "S56-settings-tabs-focus-dark-rt-ic-dwc-rm.png"
+    },
+    {
+      "run": "accessibility",
+      "file": "S60-capture-modifiers-chosen-dark-rt-ic-dwc-rm.png"
+    }
+  ]
+}

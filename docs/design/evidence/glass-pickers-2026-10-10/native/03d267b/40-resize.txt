@@ -1,0 +1,58 @@
+AX trusted=true windows=1
+AXWindow Untitled – 800 × 600 · PNG · 10 KB value= enabled= children=33 focused=Optional(0) parentOK=true
+  AXScrollArea  value= enabled= children=0 focused=Optional(0) parentOK=true
+  AXButton Hide value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXMenuButton Toolbox value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Photos value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Snap value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Select tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Brush tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Line tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Ellipse tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Rectangle tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Fill tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Eraser tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Text tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Arrow tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Crop tool value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Drawing colors value=Red 0.098, green 0.467, blue 1, alpha 1 enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXSlider Drawing size value=12 enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Font value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Undo value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Clear image value= enabled=0 children=0 focused=Optional(0) parentOK=true
+  AXPopUpButton Canvas zoom value=75% enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Resize… value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXStaticText  value=Arrow · Saved enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Save value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton History value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXRadioGroup Image format value=PNG enabled=1 children=2 focused=Optional(0) parentOK=true
+    AXRadioButton PNG value=1 enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXRadioButton JPG value=0 enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton Drag image to another app value= enabled= children=0 focused=Optional(0) parentOK=true
+  AXButton Upload image value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXButton  value= enabled=0 children=0 focused=Optional(0) parentOK=true
+  AXButton  value= enabled=1 children=1 focused=Optional(0) parentOK=true
+    AXGroup  value= enabled= children=1 focused=Optional(0) parentOK=true
+      AXGroup  value= enabled= children=0 focused=Optional(0) parentOK=true
+  AXButton  value= enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXStaticText  value=Untitled – 800 × 600 · PNG · 10 KB enabled=1 children=0 focused=Optional(0) parentOK=true
+  AXSheet  value= enabled= children=13 focused=Optional(0) parentOK=true
+    AXStaticText  value=Resize or Crop enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXRadioGroup Size operation value=Resize enabled=1 children=3 focused=Optional(0) parentOK=true
+      AXRadioButton Resize value=1 enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXRadioButton Crop value=0 enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXRadioButton Limit value=0 enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXStaticText  value=Fit the image to these dimensions. Unlock proportions to add space around it without stretching. enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXStaticText  value=Width enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXTextField Width in pixels value=800 enabled=1 children=0 focused=Optional(1) parentOK=true
+    AXStaticText  value=Height enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXTextField Height in pixels value=600 enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXStaticText  value=pixels enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXCheckBox Lock proportions value=1 enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXStaticText  value=Preset enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXPopUpButton Size preset value=Custom size enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXCheckBox Manage presets value=0 enabled=1 children=0 focused=Optional(0) parentOK=true
+    AXGroup Resize actions value= enabled= children=3 focused=Optional(0) parentOK=true
+      AXButton Cancel value= enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXButton Apply value= enabled=1 children=0 focused=Optional(0) parentOK=true
+      AXButton OK value= enabled=1 children=0 focused=Optional(0) parentOK=true

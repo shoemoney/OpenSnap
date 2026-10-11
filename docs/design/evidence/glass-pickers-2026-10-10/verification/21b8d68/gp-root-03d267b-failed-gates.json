@@ -1,0 +1,12 @@
+{
+  "sourceSha": "03d267b933566114dad26e765f7fc306b553e2f4",
+  "sourceTree": "e3e8d943ef748ae53411988c8a0d9371c467cf83",
+  "stages": [
+    {
+      "name": "fullsuite",
+      "exit": 1,
+      "log": "/tmp/gp-root-final-fullsuite.log",
+      "seconds": 447.1
+    }
+  ]
+}

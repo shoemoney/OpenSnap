@@ -1,0 +1,127 @@
+BezelDrawingControls.swift reverted exit=-5
+main/GlassChromeTests.swift:140: Precondition failed: Color panel: the swatches are radio choices and Custom is a button
+
+HistoryBrowser.swift reverted exit=1
+PASS Date and format popup choices remain enabled without a selection
+PASS Normal hidden NSWindow with accessible native multiselect grid
+PASS The History command groups reach an external client: each plate is a named group holding its commands, in order, with a coherent parent chain
+PASS Supplied reverse insertion order and local day groups are preserved
+PASS Original action filters use exact supplied core strings
+PASS Original search is one literal case insensitive OR over name link text
+PASS Recovered date predicates use strict hour 48hour and yesterday bounds
+PASS Selection survives identical metadata refresh without full reload
+PASS Moving recovered date windows expire unchanged timer entries
+PASS Midnight refresh changes day headings despite unchanged catalog
+PASS All callbacks receive selected UUIDs in visual order
+PASS Missing local files disable local actions but preserve links and Remove
+PASS Detail fields show supplied metadata and aggregate multiselection
+PASS Bounded local PNG preview renders in thumbnail and details then refreshes
+PASS Keyboard Open Copy Copy Link Remove use UUID callbacks
+PASS Return opens the selection, Escape closes the window, and the grid starts with the keyboard (OSN-060)
+PASS All readable UI fonts satisfy minimum and grid captions use twenty
+PASS History drag format has independent persistence and strict choices
+PASS File promise freezes export bytes name and format at drag start
+PASS Promise sanitizes filenames and reports export failure without promise
+PASS Duplicate UUID input stays unambiguous and removed items lose selection
+PASS Window opens 1000 x 720 with an 880 x 600 minimum
+PASS Tabs use plain names
+PASS Grid reflows at the 880 x 600 minimum with no horizontal scroller
+PASS Extra width becomes another column, never a tile wider than 280; the Drag as face stays within its cap; a never-shared snap has no Destination row (R2-015)
+PASS Tiles in a row are evenly spaced, with no large gap, at 880, 1000 and 1280
+PASS Details panel sits beside the grid and collapses below it under 760 wide
+PASS Selected tile shows an accent border and a check badge, not colour alone
+PASS A tile fills on hover with state.hover; a selected tile keeps its stronger fill and its badge
+PASS Empty state is centred and its hint follows the live Save to History shortcut
+PASS Save to History shortcut is read from the main menu, never invented
+PASS Drag formats are PNG JPG PDF TIFF SVG and the .opensnap document
+PASS The seven actions are a toolbar row and a context menu, each with a name for VoiceOver
+PASS The action row shows icon and label while the window holds them, keeps the three that take something away labelled at the 880 minimum, and never clips (R1-012)
+PASS The footer pluralises and stays on screen in every state
+PASS Copy and Copy Link confirm in the footer only when the pasteboard changed
+PASS Delete from Web is off, with its reason in the tooltip, for a published entry with no recorded destination
+FAIL The details column is a summary with nothing selected, and a link stays on one line with its full text in the tooltip: History summary text is reached as static text, not AXUnknown
+PASS Every control in History is body size or larger and the filter row fits at the minimum
+PASS With nothing to show the grid and its message use the whole width, and the details column returns with the first snap (F-J3-002)
+PASS A snap's size reads in whole pixels without separators; a stored fraction never shows (F-J3-006)
+PASS Details shows a two-digit-day date in full and a shared entry's published size, not the later resized one (F-J4-002, F-J4-004)
+PASS The seven actions are shared glass-chrome buttons on three grouped glass plates in one container, the removal group apart and labelled
+PASS Each action plate is an accessibility group with its name, so VoiceOver speaks "Open and copy, group", and its buttons stay reachable inside it (FR-4)
+PASS Glass is only the chrome: no glass inside glass, none over the grid, tiles or details
+PASS With nothing selected the selection-dependent actions are disabled, still legible, and do not move when a snap is selected
+PASS Tab reaches every enabled action in reading order, skips the disabled ones, and no action is the default button
+PASS Every action shows rest, hover, pressed, focus and disabled on its own plate fill
+PASS Clear filters is the single accent button of the no-match state and reads as a button
+PASS History text is body size or larger and keeps its contrast in light and dark, in every state
+PASS Category is a glass choice group: same titles, label and filter behaviour, radio roles, one tab stop, arrows move it
+PASS Date filter is a glass pop-up; choosing a row in its panel filters exactly as before
+PASS Drag as is a glass pop-up; choosing a row persists the format exactly as before
+PASS No route to a glass pop-up reaches the native dropdown: mouse, keys, performClick, AXPress, AXShowMenu, context menu, right and Control click
+HistoryBrowserTests: 53/54 passed
+
+RESTORED glass-chrome-tests exit=0
+  footer @980 uploading: the status gets 249 of the 337 pt slot
+  footer @980 success: the status gets 221 of the 337 pt slot
+  footer @980 failure: the status gets 61 of the 177 pt slot
+  width budget @980: top 890.0/940.0 Frame of 956.0 (slack 66.0/16.0); bottom 899.0 of 956.0 (slack 57.0); zoom 87.0, format 66.0, checkbox 158.0, status 181.0
+  footer @1024 uploading: the status gets 293 of the 381 pt slot
+  footer @1024 success: the status gets 265 of the 381 pt slot
+  footer @1024 failure: the status gets 105 of the 221 pt slot
+GlassChromeTests: 8114 checks passed (offscreen; no desktop input); SKIPPED (FA not bundled): glyph branch
+
+RESTORED history-browser-tests exit=0
+PASS Date and format popup choices remain enabled without a selection
+PASS Normal hidden NSWindow with accessible native multiselect grid
+PASS The History command groups reach an external client: each plate is a named group holding its commands, in order, with a coherent parent chain
+PASS Supplied reverse insertion order and local day groups are preserved
+PASS Original action filters use exact supplied core strings
+PASS Original search is one literal case insensitive OR over name link text
+PASS Recovered date predicates use strict hour 48hour and yesterday bounds
+PASS Selection survives identical metadata refresh without full reload
+PASS Moving recovered date windows expire unchanged timer entries
+PASS Midnight refresh changes day headings despite unchanged catalog
+PASS All callbacks receive selected UUIDs in visual order
+PASS Missing local files disable local actions but preserve links and Remove
+PASS Detail fields show supplied metadata and aggregate multiselection
+PASS Bounded local PNG preview renders in thumbnail and details then refreshes
+PASS Keyboard Open Copy Copy Link Remove use UUID callbacks
+PASS Return opens the selection, Escape closes the window, and the grid starts with the keyboard (OSN-060)
+PASS All readable UI fonts satisfy minimum and grid captions use twenty
+PASS History drag format has independent persistence and strict choices
+PASS File promise freezes export bytes name and format at drag start
+PASS Promise sanitizes filenames and reports export failure without promise
+PASS Duplicate UUID input stays unambiguous and removed items lose selection
+PASS Window opens 1000 x 720 with an 880 x 600 minimum
+PASS Tabs use plain names
+PASS Grid reflows at the 880 x 600 minimum with no horizontal scroller
+PASS Extra width becomes another column, never a tile wider than 280; the Drag as face stays within its cap; a never-shared snap has no Destination row (R2-015)
+PASS Tiles in a row are evenly spaced, with no large gap, at 880, 1000 and 1280
+PASS Details panel sits beside the grid and collapses below it under 760 wide
+PASS Selected tile shows an accent border and a check badge, not colour alone
+PASS A tile fills on hover with state.hover; a selected tile keeps its stronger fill and its badge
+PASS Empty state is centred and its hint follows the live Save to History shortcut
+PASS Save to History shortcut is read from the main menu, never invented
+PASS Drag formats are PNG JPG PDF TIFF SVG and the .opensnap document
+PASS The seven actions are a toolbar row and a context menu, each with a name for VoiceOver
+PASS The action row shows icon and label while the window holds them, keeps the three that take something away labelled at the 880 minimum, and never clips (R1-012)
+PASS The footer pluralises and stays on screen in every state
+PASS Copy and Copy Link confirm in the footer only when the pasteboard changed
+PASS Delete from Web is off, with its reason in the tooltip, for a published entry with no recorded destination
+PASS The details column is a summary with nothing selected, and a link stays on one line with its full text in the tooltip
+PASS Every control in History is body size or larger and the filter row fits at the minimum
+PASS With nothing to show the grid and its message use the whole width, and the details column returns with the first snap (F-J3-002)
+PASS A snap's size reads in whole pixels without separators; a stored fraction never shows (F-J3-006)
+PASS Details shows a two-digit-day date in full and a shared entry's published size, not the later resized one (F-J4-002, F-J4-004)
+PASS The seven actions are shared glass-chrome buttons on three grouped glass plates in one container, the removal group apart and labelled
+PASS Each action plate is an accessibility group with its name, so VoiceOver speaks "Open and copy, group", and its buttons stay reachable inside it (FR-4)
+PASS Glass is only the chrome: no glass inside glass, none over the grid, tiles or details
+PASS With nothing selected the selection-dependent actions are disabled, still legible, and do not move when a snap is selected
+PASS Tab reaches every enabled action in reading order, skips the disabled ones, and no action is the default button
+PASS Every action shows rest, hover, pressed, focus and disabled on its own plate fill
+PASS Clear filters is the single accent button of the no-match state and reads as a button
+PASS History text is body size or larger and keeps its contrast in light and dark, in every state
+PASS Category is a glass choice group: same titles, label and filter behaviour, radio roles, one tab stop, arrows move it
+PASS Date filter is a glass pop-up; choosing a row in its panel filters exactly as before
+PASS Drag as is a glass pop-up; choosing a row persists the format exactly as before
+PASS No route to a glass pop-up reaches the native dropdown: mouse, keys, performClick, AXPress, AXShowMenu, context menu, right and Control click
+HistoryBrowserTests: 54/54 passed
+
