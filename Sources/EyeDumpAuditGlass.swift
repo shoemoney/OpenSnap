@@ -277,8 +277,13 @@ extension AuditRun {
                 let visibleParent = screenVisible.map { parent.frame.intersection($0) } ?? parent.frame
                 if let screenVisible { record["screenVisibleFrame"] = rectJSON(screenVisible) }
                 record["parentVisibleFrame"] = rectJSON(visibleParent)
-                record["containment"] = host.frame.width <= visibleParent.width + 1 ? "parent" : "screenFallback"
-                record["containmentSource"] = "derived from the frames: panel width <= visible parent width"
+                record["containmentDerived"] = host.frame.width <= visibleParent.width + 1 ? "parent" : "screenFallback"
+                record["containmentDerivedFrom"] = "the frames: panel width <= visible parent width"
+            }
+            // What the product says: the live host's own placement (nil when this window is not the host's panel).
+            if let live = GlassPanelHost.current, live.window === host, let placement = live.placement {
+                record["containmentReported"] = placement.containment == .parent ? "parent" : "screenFallback"
+                record["placementEdge"] = String(describing: placement.edge)
             }
             if let opener = extraFaceRoots.first, let openerWindow = opener.window {
                 record["openerFrame"] = rectJSON(openerWindow.convertToScreen(opener.convert(opener.bounds, to: nil)))

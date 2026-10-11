@@ -608,46 +608,65 @@ PLACEMENT_TOLERANCE = 1.0
 def placement_problems(label, glass):
     """[problem] when a panel is not where it belongs. Frames are screen rectangles [x, y, width, height] with a bottom-left origin.
 
-    `containment` says whether the panel can fit in the on-screen part of the window it hangs from ("parent") or cannot and falls back to the
-    screen ("screenFallback"). A "parent" panel must lie horizontally inside that visible part (1 pt tolerance), and, when it opens below or above
-    its opener and is no taller than the parent's content, must not reach into the parent's title bar. A "screenFallback" panel is never failed for
-    overhanging the parent, but must lie wholly inside the screen's visible frame.
+    The product reports `containmentReported` ("parent": inside the on-screen part of the window it was opened from, "screenFallback": not), but it is
+    not trusted: this decides on its own whether the panel FITS its parent, from the frames. A panel opening above or below its opener fits when it is no
+    wider than the parent's visible part (`parentVisibleFrame`). When it fits it must lie horizontally inside that part (1 pt tolerance), must not reach
+    into the parent's title bar (if it is no taller than the parent's content), and must not have been reported as a screen fallback. When it does not fit
+    (wider than the visible parent, or the screen shows too little of the parent) it may not be reported as contained, is not failed for overhanging the
+    parent, and must lie wholly inside the screen's visible frame. A panel beside its opener (clear of it horizontally and level with it) is exempt from the parent rule and must
+    lie wholly on screen.
     """
     panel, parent, content, opener, visible_parent, screen = (glass.get(key) for key in (
         "panelFrame", "parentFrame", "parentContentFrame", "openerFrame", "parentVisibleFrame", "screenVisibleFrame"))
-    containment = glass.get("containment")
+    reported = glass.get("containmentReported")
 
     def good(frame):
         return isinstance(frame, list) and len(frame) == 4 and all(isinstance(v, (int, float)) for v in frame)
 
-    if not (good(panel) and good(parent)) or containment not in ("parent", "screenFallback"):
-        return [f"glass: {label} records no panel frame, parent window frame and containment, so its placement was not checked"]
+    if not (good(panel) and good(parent)) or reported not in ("parent", "screenFallback"):
+        return [f"glass: {label} records no panel frame, parent window frame and reported containment, so its placement was not checked"]
     problems = []
+    tol = PLACEMENT_TOLERANCE
     p_left, p_right = panel[0], panel[0] + panel[2]
     p_bottom, p_top = panel[1], panel[1] + panel[3]
-    tol = PLACEMENT_TOLERANCE
-    if containment == "screenFallback":
+
+    def on_screen():
         if not good(screen):
-            return [f"glass: {label} is a screen-fallback panel but records no screen visible frame"]
+            return [f"glass: {label} needs to lie on screen but records no screen visible frame"]
         s_left, s_right, s_bottom, s_top = screen[0], screen[0] + screen[2], screen[1], screen[1] + screen[3]
         if p_left < s_left - tol or p_right > s_right + tol or p_bottom < s_bottom - tol or p_top > s_top + tol:
-            problems.append(f"glass: {label} screen-fallback panel (x {p_left:g}..{p_right:g}, y {p_bottom:g}..{p_top:g}) is clipped by the screen's visible frame "
-                            f"(x {s_left:g}..{s_right:g}, y {s_bottom:g}..{s_top:g})")
-        return problems
+            return [f"glass: {label} panel (x {p_left:g}..{p_right:g}, y {p_bottom:g}..{p_top:g}) is clipped by the screen's visible frame "
+                    f"(x {s_left:g}..{s_right:g}, y {s_bottom:g}..{s_top:g})"]
+        return []
+
+    beside = False
+    if good(opener):
+        o_left, o_right, o_bottom, o_top = opener[0], opener[0] + opener[2], opener[1], opener[1] + opener[3]
+        # Beside: clear of the opener horizontally and level with it (a panel below or above an opener may be offset sideways, but is not level with it).
+        beside = (p_right <= o_left + 2 * tol or p_left >= o_right - 2 * tol) and p_bottom < o_top - tol and p_top > o_bottom + tol
+    if beside:
+        return on_screen()
     area = visible_parent if good(visible_parent) else parent
     a_left, a_right = area[0], area[0] + area[2]
+    fits = panel[2] <= area[2] + tol
+    if not fits:
+        if reported == "parent":
+            problems.append(f"glass: {label} is reported contained in its parent but is {panel[2]:g} pt wide, wider than the visible part of it ({area[2]:g} pt)")
+        return problems + on_screen()
+    if reported == "screenFallback":
+        problems.append(f"glass: {label} reported a screen fallback but the panel ({panel[2]:g} pt) fits the visible part of its parent window ({area[2]:g} pt)")
     if p_left < a_left - tol or p_right > a_right + tol:
         out = max(a_left - p_left, p_right - a_right)
         problems.append(f"glass: {label} panel (x {p_left:g}..{p_right:g}) hangs {out:g} pt outside the visible part of its parent window (x {a_left:g}..{a_right:g}) "
-                        "although it could be contained")
+                        "although it fits")
     if good(content) and good(opener):
         o_bottom, o_top = opener[1], opener[1] + opener[3]
         below = p_top <= o_bottom + 2 * tol
         above = p_bottom >= o_top - 2 * tol
         content_top, window_top = content[1] + content[3], parent[1] + parent[3]
-        fits = panel[3] <= content[3] + tol
+        tall_fits = panel[3] <= content[3] + tol
         horizontal = p_left < parent[0] + parent[2] and p_right > parent[0]
-        if (below or above) and fits and horizontal and window_top - content_top > tol:
+        if (below or above) and tall_fits and horizontal and window_top - content_top > tol:
             if p_top > content_top + tol and p_bottom < window_top:
                 problems.append(f"glass: {label} panel (y {p_bottom:g}..{p_top:g}) overlaps its parent's title bar (y {content_top:g}..{window_top:g})")
     return problems
@@ -1048,7 +1067,7 @@ def self_test():
                      "nestedGlassCount": 0, "minFontSize": 20.0, "faceTitles": [], "unmeasuredText": ["SegmentedToggle segments"],
                      # A contained panel under its opener: inside an 800 x 600 window whose title bar is the top 30 pt.
                      "panelFrame": [100, 100, 200, 300], "parentFrame": [0, 0, 800, 600], "parentContentFrame": [0, 0, 800, 570], "openerFrame": [90, 420, 60, 30],
-                     "parentVisibleFrame": [0, 0, 800, 600], "screenVisibleFrame": [0, 0, 1440, 900], "containment": "parent"}
+                     "parentVisibleFrame": [0, 0, 800, 600], "screenVisibleFrame": [0, 0, 1440, 900], "containmentReported": "parent", "containmentDerived": "parent"}
             if variant == "hover":
                 panel["hoveredRow"] = 1
             if variant == "focus":
@@ -1140,15 +1159,21 @@ def self_test():
             ("a panel contained in its parent", tweak("S50", "toolbox-rest", panelFrame=[560, 100, 240, 300]), {}, 0),
             ("a panel 1 pt past the parent edge (within tolerance)", tweak("S50", "toolbox-rest", panelFrame=[561, 100, 240, 300]), {}, 0),
             ("a panel 1.5 pt past the parent edge", tweak("S50", "toolbox-rest", panelFrame=[561.5, 100, 240, 300]), {}, 1),
-            ("a screen-fallback panel wider than its parent, fully on screen", tweak("S50", "toolbox-rest", panelFrame=[10, 100, 900, 300], containment="screenFallback"), {}, 0),
-            ("a screen-fallback panel overhanging its parent but on screen", tweak("S50", "toolbox-rest", panelFrame=[700, 100, 240, 300], containment="screenFallback"), {}, 0),
-            ("a screen-fallback panel clipped off the right of the screen", tweak("S50", "toolbox-rest", panelFrame=[1300, 100, 240, 300], containment="screenFallback"), {}, 1),
-            ("a screen-fallback panel clipped off the top of the screen", tweak("S50", "toolbox-rest", panelFrame=[100, 700, 240, 300], containment="screenFallback"), {}, 1),
-            ("a screen-fallback panel without the screen frame", tweak("S50", "toolbox-rest", containment="screenFallback", screenVisibleFrame=None, panelFrame=[10, 100, 900, 300]), {}, 1),
+            ("a genuinely oversized panel falls back and is fully on screen", tweak("S50", "toolbox-rest", panelFrame=[10, 100, 900, 300], containmentReported="screenFallback", containmentDerived="screenFallback"), {}, 0),
+            ("a false fallback: it fits its parent, reports screenFallback and overhangs", tweak("S50", "toolbox-rest", panelFrame=[700, 100, 240, 300], containmentReported="screenFallback"), {}, 1),
+            ("a false fallback: it fits and sits inside its parent yet reports screenFallback", tweak("S50", "toolbox-rest", panelFrame=[100, 100, 240, 300], containmentReported="screenFallback"), {}, 1),
+            ("an oversized fallback panel clipped off the right of the screen", tweak("S50", "toolbox-rest", panelFrame=[700, 100, 900, 300], containmentReported="screenFallback"), {}, 1),
+            ("an oversized fallback panel clipped off the top of the screen", tweak("S50", "toolbox-rest", panelFrame=[10, 700, 900, 300], containmentReported="screenFallback"), {}, 1),
+            ("an oversized panel reported as contained", tweak("S50", "toolbox-rest", panelFrame=[10, 100, 900, 300]), {}, 1),
+            ("a fallback panel without the screen frame", tweak("S50", "toolbox-rest", containmentReported="screenFallback", screenVisibleFrame=None, panelFrame=[10, 100, 900, 300]), {}, 1),
+            ("a panel beside its opener, hanging off the parent but on screen", tweak("S50", "toolbox-rest", panelFrame=[790, 400, 240, 300], openerFrame=[700, 420, 60, 30], containmentReported="screenFallback"), {}, 0),
+            ("a panel beside its opener, clipped off the screen", tweak("S50", "toolbox-rest", panelFrame=[1300, 400, 240, 300], openerFrame=[1210, 420, 60, 30], containmentReported="screenFallback"), {}, 1),
+            ("a genuine fallback: the screen shows too little of the parent", tweak("S50", "toolbox-rest", parentFrame=[-600, 0, 800, 600], parentVisibleFrame=[0, 0, 200, 600], panelFrame=[0, 100, 240, 300], containmentReported="screenFallback"), {}, 0),
+            ("the same narrow visible parent reported as contained", tweak("S50", "toolbox-rest", parentFrame=[-600, 0, 800, 600], parentVisibleFrame=[0, 0, 200, 600], panelFrame=[0, 100, 240, 300]), {}, 1),
             ("a containable panel in the visible part of a partly off-screen parent", tweak("S50", "toolbox-rest", parentFrame=[-300, 0, 800, 600], parentVisibleFrame=[0, 0, 500, 600], panelFrame=[260, 100, 240, 300]), {}, 0),
             ("a containable panel in the off-screen part of its parent", tweak("S50", "toolbox-rest", parentFrame=[-300, 0, 800, 600], parentVisibleFrame=[0, 0, 500, 600], panelFrame=[400, 100, 240, 300]), {}, 1),
-            ("containment not recorded", drop_field("S50", "toolbox-rest", "containment"), {}, 1),
-            ("containment of an unknown kind", tweak("S50", "toolbox-rest", containment="somewhere"), {}, 1),
+            ("reported containment not recorded", drop_field("S50", "toolbox-rest", "containmentReported"), {}, 1),
+            ("containment of an unknown kind", tweak("S50", "toolbox-rest", containmentReported="somewhere"), {}, 1),
             ("a panel above its opener reaching the title bar", tweak("S50", "toolbox-rest", panelFrame=[100, 340, 200, 260], openerFrame=[90, 300, 60, 30]), {}, 1),
             ("a panel above its opener staying below the title bar", tweak("S50", "toolbox-rest", panelFrame=[100, 340, 200, 200], openerFrame=[90, 300, 60, 30]), {}, 0),
             ("a panel taller than its parent is exempt from the title bar rule", tweak("S50", "toolbox-rest", panelFrame=[100, 0, 200, 620], openerFrame=[90, 300, 60, 30]), {}, 0),
