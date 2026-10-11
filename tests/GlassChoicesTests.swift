@@ -131,6 +131,7 @@ private enum GlassChoicesTests {
         DisplayOptions.override = .none
         defer { KeyboardNavigation.fullKeyboardAccess = savedKeyboard; DisplayOptions.override = nil }
 
+        labelSizingTests()
         placementTests()
         shortcutTests()
         surfaceAxisTests()
@@ -184,6 +185,17 @@ private enum GlassChoicesTests {
         var values = [UInt8](repeating: 0, count: pixels * pixels)
         for y in 0..<pixels { for x in 0..<pixels { values[y * pixels + x] = rep.bitmapData![y * rep.bytesPerRow + x * 4 + 3] } }
         return (pixels, values)
+    }
+
+    /// What a label needs for `text`: an independent text-field probe, so the code under test and its test do not share a measuring path.
+    private static func needed(_ text: String, _ style: DesignTokens.Typography.Style, wrap: CGFloat? = nil) -> NSSize {
+        let probe = NSTextField(labelWithString: text)
+        probe.font = DesignTokens.Typography.font(style)
+        probe.lineBreakMode = wrap == nil ? .byTruncatingTail : .byWordWrapping
+        probe.maximumNumberOfLines = wrap == nil ? 1 : 0
+        probe.preferredMaxLayoutWidth = wrap ?? 0
+        let size = probe.fittingSize
+        return NSSize(width: ceil(size.width), height: ceil(size.height))
     }
 
     private static func sameImage(_ a: NSImage?, _ b: NSImage?) -> Bool {
@@ -585,7 +597,7 @@ private enum GlassChoicesTests {
     private static func buttonLayoutTests() {
         let plainButton = makeButton("Sample", .command)
         let intrinsic = plainButton.intrinsicContentSize
-        let textWidth = ceil(("Sample" as NSString).size(withAttributes: [.font: DesignTokens.Typography.font(.bodyStrong)]).width)
+        let textWidth = needed("Sample", .bodyStrong).width
         expect(intrinsic.height == 36 && intrinsic.width == textWidth + 24, "A plain row is 36 pt tall with 12 pt padding either side (\(intrinsic))")
         let chosenWidth = { () -> CGFloat in plainButton.isChosen = true; defer { plainButton.isChosen = false }; return plainButton.intrinsicContentSize.width }()
         expect(chosenWidth == intrinsic.width, "Choosing a row never changes its width (the title is measured in the strong face)")
@@ -604,7 +616,7 @@ private enum GlassChoicesTests {
 
         let shortcut = makeButton("Sample", .command)
         shortcut.shortcutText = "⇧⌘K"
-        let shortcutWidth = ceil(("⇧⌘K" as NSString).size(withAttributes: [.font: DesignTokens.Typography.font(.body)]).width)
+        let shortcutWidth = needed("⇧⌘K", .body).width
         expect(shortcut.intrinsicContentSize.width == intrinsic.width + 16 + shortcutWidth, "A shortcut adds a 16 pt gap and its width")
 
         let checked = makeButton("Sample", .toggle, indicator: .check)
@@ -630,7 +642,7 @@ private enum GlassChoicesTests {
         let wrapped = makeButton("A title long enough that it must wrap onto several lines", .command)
         wrapped.wrapWidth = 140
         let height = wrapped.intrinsicContentSize.height
-        expect(height > 36 && wrapped.intrinsicContentSize.width <= 140 + 24, "A wrapping title grows the row above 36 pt within its width (\(wrapped.intrinsicContentSize))")
+        expect(height > 36 && wrapped.intrinsicContentSize.width <= 140 + 4 + 24, "A wrapping title grows the row above 36 pt within its width (\(wrapped.intrinsicContentSize))")
         expect(wrapped.titleLabel.maximumNumberOfLines == 0 && makeButton("x", .command).titleLabel.maximumNumberOfLines == 1, "Only a wrapping title may use several lines")
         wrapped.wrapWidth = nil
         expect(wrapped.intrinsicContentSize.height == 36, "Without a wrap width the row is one 36 pt line again")
@@ -1723,6 +1735,98 @@ private enum GlassChoicesTests {
         expect(ink(0.85, 1.0) > 20, "The chevron is drawn on the right of the face")
     }
 
+
+
+    // MARK: label sizing
+
+    /// A row's label is sized by a real text field in the strong face: its text never truncates (the cell needs about 4 pt more than the
+    /// string's own bounding box), a wrapped title gets the height of every line, and choosing a row never changes its width.
+    private static func labelSizingTests() {
+        let titles = ["Dock", "Browser", "Both", "Precise", "Loose", "Window title", "Resize", "Crop", "Limit", "B", "E", "St", "Do", "Preci", "Loo"]
+        for layout in [GlassChoiceButton.Layout.segment, .row] {
+            for title in titles {
+                for shortcut in [nil, "⇧⌘K"] {
+                    let button = makeButton(title, .option, indicator: GlassChoiceButton.Indicator.none, layout: layout)
+                    button.shortcutText = shortcut
+                    button.frame = NSRect(origin: .zero, size: button.intrinsicContentSize)
+                    var widths: [CGFloat] = []
+                    for chosen in [false, true] {
+                        button.isChosen = chosen
+                        widths.append(button.intrinsicContentSize.width)
+                        button.frame = NSRect(origin: .zero, size: button.intrinsicContentSize)
+                        button.layoutSubtreeIfNeeded()
+                        let label = button.titleLabel
+                        expect(label.fittingSize.width <= label.frame.width + 0.01,
+                               "\"\(title)\" (\(layout), chosen \(chosen)) is not truncated: the label needs \(label.fittingSize.width) of \(label.frame.width)")
+                        expect(label.fittingSize.height <= label.frame.height + 0.01, "\"\(title)\" is not clipped: needs \(label.fittingSize.height) of \(label.frame.height)")
+                        expect(label.frame.width >= needed(title, .bodyStrong).width, "\"\(title)\" has room for the strong face even while unchosen")
+                        if shortcut != nil {
+                            expect(button.shortcutLabel.fittingSize.width <= button.shortcutLabel.frame.width + 0.01, "The shortcut next to \"\(title)\" is not truncated")
+                            expect(button.shortcutLabel.frame.maxX <= button.bounds.width - 12 + 0.01 && button.shortcutLabel.frame.minX >= label.frame.maxX - 0.01,
+                                   "...and sits inside the row, after the title")
+                        }
+                        expect(label.frame.minX >= 0 && label.frame.maxX <= button.bounds.width + 0.01, "\"\(title)\" stays inside its row")
+                    }
+                    expect(widths[0] == widths[1], "\"\(title)\" (\(layout)) has the same width chosen and unchosen (\(widths))")
+                }
+            }
+        }
+
+        // Wrapped: the snap toggle's long title at a wide wrap width (and a narrow one) gets every line it needs.
+        let sentence = "Snap the pointer to the nearest edge of the canvas while drawing, and show a crosshair where the pointer snaps"
+        for width in [349.0, 220.0, 140.0] {
+            let button = makeButton(sentence, .toggle, indicator: .checkbox)
+            button.wrapWidth = width
+            let size = button.intrinsicContentSize
+            button.frame = NSRect(origin: .zero, size: size)
+            button.layoutSubtreeIfNeeded()
+            let label = button.titleLabel
+            label.preferredMaxLayoutWidth = label.frame.width
+            let lines = Int(round(label.frame.height / 24))
+            expect(lines >= 2 && label.fittingSize.height <= label.frame.height + 0.01, "A title wrapped at \(width) gets all its lines: \(lines) lines, needs \(label.fittingSize.height) of \(label.frame.height)")
+            expect(size.height >= label.frame.height + 2 * DesignTokens.Space.s2 - 0.01 && size.height > 36, "...and the row grows to hold them (\(size.height))")
+            expect(label.frame.minY >= 0 && label.frame.maxY <= button.bounds.height + 0.01, "...inside the row")
+            expect(needed(sentence, .bodyStrong, wrap: width).height <= label.frame.height + 0.01, "...as an independent measure agrees")
+            button.isChosen = true
+            expect(button.intrinsicContentSize == size, "Choosing a wrapped row changes neither its width nor its height")
+        }
+        let twoLines = makeButton("A title that needs exactly two lines at this width, no more than that really", .command)
+        twoLines.wrapWidth = 349
+        twoLines.frame = NSRect(origin: .zero, size: twoLines.intrinsicContentSize)
+        twoLines.layoutSubtreeIfNeeded()
+        expect(twoLines.titleLabel.frame.height == 48 && twoLines.frame.height == 48 + 16, "Two lines are 48 pt of label in a 64 pt row (\(twoLines.titleLabel.frame.height), \(twoLines.frame.height))")
+
+        // An inline group's segments fit their titles, in either state of the selection, and keep their widths when the choice moves.
+        let window = NonorderingWindow(contentRect: NSRect(x: 0, y: 0, width: 700, height: 300), styleMask: [.titled], backing: .buffered, defer: true)
+        window.contentView = NSView(frame: NSRect(x: 0, y: 0, width: 700, height: 300))
+        let show = GlassChoiceGroup(titles: ["Dock", "Browser", "Both"], accessibilityLabel: "Show in", identifier: "showIn", accessibility: plain)
+        let precision = GlassChoiceGroup(titles: ["Precise", "Normal", "Loose"], accessibilityLabel: "Precision", identifier: "precision", accessibility: plain)
+        let radios = GlassChoiceGroup(titles: ["Only when needed", "Always"], layout: .row, axis: .vertical, indicator: .radio, accessibilityLabel: "Presence", identifier: "presence", accessibility: plain)
+        for (index, group) in [show, precision, radios].enumerated() {
+            group.setFrameOrigin(.zero)
+            place(group, in: window)
+            window.contentView?.subviews.last.map { $0.setFrameOrigin(NSPoint(x: 20, y: 20 + 80 * CGFloat(index))) }
+            var before: [CGFloat] = []
+            for selected in 0..<group.buttons.count {
+                group.selectedIndex = selected
+                group.layoutSubtreeIfNeeded()
+                window.contentView?.layoutSubtreeIfNeeded()
+                let widths = group.buttons.map { $0.frame.width }
+                if selected == 0 { before = widths } else { expect(widths == before, "Moving the choice moves no segment (\(widths) vs \(before))") }
+                for button in group.buttons {
+                    expect(button.titleLabel.fittingSize.width <= button.titleLabel.frame.width + 0.01,
+                           "\"\(button.title)\" fits its segment (choice \(selected)): needs \(button.titleLabel.fittingSize.width) of \(button.titleLabel.frame.width)")
+                }
+            }
+        }
+
+        // Section headers and the pop-up face measure the same way.
+        let header = GlassChoiceLabel(title: "Destinations and sharing")
+        header.frame = NSRect(origin: .zero, size: header.intrinsicContentSize)
+        header.layoutSubtreeIfNeeded()
+        expect(header.label.fittingSize.width <= header.label.frame.width + 0.01, "A section header is not truncated at its own width")
+        expect(header.intrinsicContentSize.width >= needed("Destinations and sharing", .bodyStrong).width + 24, "...and its width counts the label's padding")
+    }
 
     // MARK: the shared audits
 
