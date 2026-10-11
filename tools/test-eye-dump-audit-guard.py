@@ -630,7 +630,6 @@ def test_glass_harness(base, home):
     check(swift_glass_table(drifted) != module.GLASS_SURFACES, "glass (can fail): a Swift table missing a slug no longer equals the checker's")
     check(all(re.search(rf'step\("{surface}"', (root / "Sources" / "EyeDumpAuditSurfaces.swift").read_text()) for surface in GLASS_IDS),
           "glass: execute() has a step for each glass surface")
-    check(not re.search(r'step\("S5[0-9]"', (root / "Sources" / "EyeDumpAuditSurfaces.swift").read_text().replace('step("S50"', "", 1)) is False, "glass: the step lines are present")
     for surface in GLASS_IDS:
         check(f'func s{surface[1:]}()' in "".join(path.read_text() for path in harness_sources()), f"glass: the harness implements {surface}")
     check(glass_source_problems(harness_sources()) == [], "glass: no harness source uses CGEvent, NSApp.sendEvent, AppleScript or a screen capture")
