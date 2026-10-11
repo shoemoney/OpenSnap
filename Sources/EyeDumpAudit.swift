@@ -27,9 +27,17 @@ extension AppDelegate {
         let requestedIcons = value("--audit-icons") == "fa" ? "fa" : "sf"
         let sizes = (value("--audit-sizes") ?? "").split(separator: ",").map { String($0).trimmingCharacters(in: .whitespaces).lowercased() }.filter { !$0.isEmpty }
         let run = AuditRun(app: self, dir: dir, appearance: appearance, wanted: wanted, requestedIcons: requestedIcons, sizes: sizes)
-        run.execute()
-        dirty = false
-        NSApp.terminate(nil)
+        // This is called from a main-queue block, and a run loop nested inside a main-queue block never drains the main queue: main-actor
+        // Tasks and DispatchQueue.main work (the Photos browser's folder read, for one) would starve for the whole audit. A run-loop timer
+        // is serviced by the loop itself, so the audit runs from one and every pump lets that work finish, as it does in the real app.
+        let start = Timer(timeInterval: 0, repeats: false) { [self] _ in
+            MainActor.assumeIsolated {
+                run.execute()
+                dirty = false
+                NSApp.terminate(nil)
+            }
+        }
+        RunLoop.main.add(start, forMode: .common)
     }
 }
 
@@ -46,6 +54,10 @@ final class AuditRun {
     var window: NSWindow { app.window }
     /// Swallows real keyboard and mouse input for the life of the run (`HarnessInputGuard`).
     var inputGuard: Any?
+    /// Set while a step has a modal panel up that it will capture itself, so the run's modal watchdog leaves that panel alone.
+    var modalHandlingSince: Date?
+    /// Window classes the last stacked capture had to draw from their view tree because the window server returned no pixels for them.
+    var stackFallbacks: [String] = []
 
     init(app: AppDelegate, dir: URL, appearance: String, wanted: Set<String>, requestedIcons: String = "sf", sizes: [String] = []) {
         self.app = app; self.dir = dir; self.appearance = appearance; self.wanted = wanted
@@ -79,12 +91,51 @@ final class AuditRun {
 
     // MARK: image capture
 
+    /// Window classes that float over the editor in their own window: imaged one by one and stacked, never in one joint capture.
+    static let overlayClassNames = ["Popover", "ToolTip", "GlassChoiceWindow", "AccessoryViewWindow"]
+
+    static func isOverlay(_ window: NSWindow) -> Bool { overlayClassNames.contains { String(describing: type(of: window)).contains($0) } }
+
+    /// For each overlay window after the first target: the fraction of its screen rectangle where the final image differs from the base
+    /// window imaged alone. Near zero means the overlay was asked for but never reached the pixels (the joint-capture drop, F-S-popover).
+    func overlayPaint(_ targets: [NSWindow], final image: CGImage, union: CGRect, scale: CGFloat) -> [[String: Any]] {
+        guard let base = targets.first, targets.count > 1, targets.dropFirst().contains(where: Self.isOverlay),
+              let baseImage = Self.windowImage(CGWindowID(base.windowNumber), [.boundsIgnoreFraming, .bestResolution]) else { return [] }
+        let width = image.width, height = image.height
+        func pixels(_ draw: (CGContext) -> Void) -> [UInt8]? {
+            guard let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                          bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue), let data = context.data else { return nil }
+            draw(context)
+            return Array(UnsafeBufferPointer(start: data.assumingMemoryBound(to: UInt8.self), count: width * height * 4))
+        }
+        guard let finalPixels = pixels({ $0.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height)) }),
+              let basePixels = pixels({ $0.draw(baseImage, in: CGRect(x: (base.frame.minX - union.minX) * scale, y: (base.frame.minY - union.minY) * scale,
+                                                                       width: CGFloat(baseImage.width), height: CGFloat(baseImage.height))) }) else { return [] }
+        return targets.dropFirst().filter(Self.isOverlay).map { overlay in
+            let rect = CGRect(x: (overlay.frame.minX - union.minX) * scale, y: (overlay.frame.minY - union.minY) * scale, width: overlay.frame.width * scale, height: overlay.frame.height * scale)
+                .intersection(CGRect(x: 0, y: 0, width: width, height: height)).integral
+            var differing = 0, total = 0
+            if !rect.isNull {
+                // The window-server rectangle is bottom-left; bitmap rows run top-down.
+                for y in (height - Int(rect.maxY))..<(height - Int(rect.minY)) {
+                    for x in Int(rect.minX)..<Int(rect.maxX) {
+                        let at = (y * width + x) * 4
+                        total += 1
+                        if abs(Int(finalPixels[at]) - Int(basePixels[at])) > 6 || abs(Int(finalPixels[at + 1]) - Int(basePixels[at + 1])) > 6 || abs(Int(finalPixels[at + 2]) - Int(basePixels[at + 2])) > 6 { differing += 1 }
+                    }
+                }
+            }
+            return ["class": String(describing: type(of: overlay)), "paintedFraction": total > 0 ? Double(differing) / Double(total) : 0]
+        }
+    }
+
     func grab(_ windows: [NSWindow]) -> (CGImage, String)? {
+        stackFallbacks = []
         let numbers = windows.map(\.windowNumber).filter { $0 > 0 }.map { CGWindowID($0) }
         let options: CGWindowImageOption = [.boundsIgnoreFraming, .bestResolution]
         // A popover or tooltip plate sits above its window in the window server's own order, but a joint capture draws the window over
         // it and loses the overlap. Image each window on its own and stack them in the order given.
-        let overlays = ["Popover", "ToolTip"]
+        let overlays = Self.overlayClassNames
         if windows.count > 1, windows.contains(where: { window in overlays.contains { String(describing: type(of: window)).contains($0) } }), let stacked = stackedImage(windows) {
             return (stacked, "CGWindowListCreateImage per window, stacked in order (\(windows.count) own windows; popover or tooltip above its window)")
         }
@@ -137,8 +188,17 @@ final class AuditRun {
     func stackedImage(_ windows: [NSWindow]) -> CGImage? {
         let options: CGWindowImageOption = [.boundsIgnoreFraming, .bestResolution]
         var parts: [(frame: CGRect, image: CGImage)] = []
+        stackFallbacks = []
         for target in windows {
-            guard target.windowNumber > 0, let image = Self.windowImage(CGWindowID(target.windowNumber), options), image.width > 1, image.height > 1 else { return nil }
+            var image = target.windowNumber > 0 ? Self.windowImage(CGWindowID(target.windowNumber), options) : nil
+            // A window whose pixels the window server will not hand over (a save panel's accessory window, hosted in a remote view) is drawn
+            // from its own view tree instead, and the capture says so.
+            if image == nil || image!.width <= 1 || image!.height <= 1 || Self.isBlank(image!), let view = target.contentView,
+               let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) {
+                view.cacheDisplay(in: view.bounds, to: rep)
+                if let drawn = rep.cgImage, !Self.isBlank(drawn) { image = drawn; stackFallbacks.append(String(describing: type(of: target))) }
+            }
+            guard let image, image.width > 1, image.height > 1 else { return nil }
             parts.append((target.frame, image))
         }
         let union = parts.map(\.frame).reduce(CGRect.null) { $0.union($1) }
@@ -148,7 +208,7 @@ final class AuditRun {
                                       space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
         for part in parts {
             context.draw(part.image, in: CGRect(x: (part.frame.minX - union.minX) * scale, y: (part.frame.minY - union.minY) * scale,
-                                                width: CGFloat(part.image.width), height: CGFloat(part.image.height)))
+                                                width: part.frame.width * scale, height: part.frame.height * scale))
         }
         return context.makeImage()
     }
@@ -176,6 +236,24 @@ final class AuditRun {
         let bytes = data.assumingMemoryBound(to: UInt8.self)
         for index in stride(from: 3, to: side * side * 4, by: 4) where bytes[index] > 4 { return false }
         return true
+    }
+
+    /// Fraction of sampled pixels that are neither transparent nor the image's own dominant background colour: how much is actually drawn.
+    func inkFraction(_ image: CGImage) -> Double {
+        let width = min(image.width, 600), height = min(image.height, 600)
+        guard width > 0, height > 0, let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
+                                                             space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue),
+              let data = context.data else { return 0 }
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        let bytes = data.assumingMemoryBound(to: UInt8.self)
+        var counts: [UInt32: Int] = [:]
+        for index in stride(from: 0, to: width * height * 4, by: 4) {
+            let key = UInt32(bytes[index] >> 3) << 16 | UInt32(bytes[index + 1] >> 3) << 8 | UInt32(bytes[index + 2] >> 3)
+            counts[key, default: 0] += bytes[index + 3] > 8 ? 1 : 0
+        }
+        let drawn = counts.values.reduce(0, +)
+        guard drawn > 0, let background = counts.values.max() else { return 0 }
+        return Double(drawn - background) / Double(width * height)
     }
 
     func opaqueFraction(_ image: CGImage) -> Double {
@@ -253,6 +331,12 @@ final class AuditRun {
             "windowAlpha": Double(targets.first?.alphaValue ?? 1), "appActive": NSApp.isActive, "opaqueFraction": opaqueFraction(image)
         ]
         if includeMenus { meta["menuWindowsComposited"] = menuCount }
+        if crop == nil {
+            let painted = overlayPaint(targets, final: image, union: union, scale: scale)
+            if !painted.isEmpty { meta["overlayPainted"] = painted }
+        }
+        meta["inkFraction"] = inkFraction(image)
+        if !stackFallbacks.isEmpty && targets.count > 1 { meta["windowsDrawnFromViewTree"] = stackFallbacks }
         for (key, item) in extra { meta[key] = item }
         write(meta, to: "meta/\(stem).json")
         return stem

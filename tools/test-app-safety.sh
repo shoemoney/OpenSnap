@@ -32,10 +32,14 @@ echo "App safety evidence: $EVIDENCE"
 # name per run is a throwaway defaults domain: concurrent runs cannot share keys.
 BIN="AppSafetyTests-$$-$(basename "$EVIDENCE" | tr -c 'A-Za-z0-9' '-')"
 cleanup_defaults() {
+    # Only this run's own unique domain; refuse to act when the name was never set.
+    case "${BIN:-}" in AppSafetyTests-[0-9]*) ;; *) return 0 ;; esac
     defaults delete "$BIN" >/dev/null 2>&1 || true
     rm -f "$HOME/Library/Preferences/$BIN.plist"
 }
 trap cleanup_defaults EXIT
+trap 'cleanup_defaults; exit 130' INT
+trap 'cleanup_defaults; exit 143' TERM HUP
 python3 - "$ROOT" "$APP_SOURCE" "$EVIDENCE" <<'PY'
 import hashlib, json, pathlib, re, sys
 root, app_source, evidence = map(pathlib.Path, sys.argv[1:])

@@ -108,7 +108,10 @@ extension AuditRun {
             MainActor.assumeIsolated {
                 fired = true
                 if let modal = NSApp.modalWindow {
-                    shoot(id, slug, surface: surface, state: state, windows: [modal], refs: refs, settle: 0)
+                    // A save panel's body is an out-of-process remote view that lays out after the window is on screen: wait until the
+                    // window image has real content, and record what the wait saw, rather than save the blank first frame.
+                    let wait = waitForPanelContent(modal)
+                    shoot(id, slug, surface: surface, state: state, windows: [modal] + panelAccessoryWindows(), refs: refs, settle: 0, extra: wait)
                 } else {
                     gap(id, surface + " / " + state, "no modal window was on screen when the capture fired")
                 }
@@ -116,10 +119,37 @@ extension AuditRun {
             }
         }
         RunLoop.main.add(timer, forMode: .common)
+        // The run's modal watchdog must not abort this modal before the step's own timer has captured it (its repeating phase is arbitrary):
+        // it stands down for up to 20 s, then treats the modal as stuck.
+        modalHandlingSince = Date()
         trigger()
+        modalHandlingSince = nil
         timer.invalidate()
         if !fired { gap(id, surface + " / " + state, "the modal call returned before any window could be captured (it did not block; the panel is out-of-process or was refused in this environment)") }
     }
+
+    /// Pumps and lays out until the panel's own image carries content (ink well beyond a title), up to `timeout` seconds.
+    /// The save panel's accessory view lives in its own window (NSAccessoryViewWindow) laid over the panel; the panel's own window image never
+    /// contains it. It is imaged separately and stacked above the panel.
+    func panelAccessoryWindows() -> [NSWindow] {
+        NSApp.windows.filter { $0.isVisible && String(describing: type(of: $0)).contains("AccessoryViewWindow") }
+    }
+
+    func waitForPanelContent(_ panel: NSWindow, timeout: TimeInterval = 8) -> [String: Any] {
+        let started = Date()
+        var ink = 0.0, polls = 0
+        while Date().timeIntervalSince(started) < timeout {
+            let windows = [panel] + panelAccessoryWindows()
+            windows.forEach { $0.contentView?.layoutSubtreeIfNeeded(); $0.displayIfNeeded() }
+            if let (image, _) = grab(windows) { ink = inkFraction(image); if ink >= AuditRun.panelInkFloor { break } }
+            pump(0.4); polls += 1
+        }
+        return ["panelContentWait": ["polls": polls, "seconds": Date().timeIntervalSince(started), "inkFraction": ink, "reachedContent": ink >= AuditRun.panelInkFloor,
+                                     "ownWindowClasses": NSApp.windows.filter(\.isVisible).map { String(describing: type(of: $0)) }]]
+    }
+
+    /// Below this a panel image is a title on an empty page; a populated save panel is well above it.
+    static let panelInkFloor = 0.02
 
     /// Raises an app-owned alert (a sheet, so `trigger` returns at once), captures the window with the sheet on it, then answers Cancel.
     func captureAlertSheet(_ id: String, _ slug: String, surface: String, state: String, refs: [String], trigger: () -> Void) {
@@ -323,13 +353,19 @@ extension AuditRun {
         var unexpected = 0
         let modalGuard = Timer(timeInterval: 2.5, repeats: true) { [self] _ in
             MainActor.assumeIsolated {
-                guard let modal = NSApp.modalWindow else { return }
+                guard let modal = NSApp.modalWindow, modalHandlingSince.map({ Date().timeIntervalSince($0) > 20 }) ?? true else { return }
                 unexpected += 1
                 var texts: [String] = []
                 func collect(_ view: NSView) { if let field = view as? NSTextField, !field.stringValue.isEmpty { texts.append(field.stringValue) }; view.subviews.forEach(collect) }
                 if let content = modal.contentView { collect(content) }
-                shoot("ZZ", "unexpected-modal-\(unexpected)", surface: "unexpected modal alert", state: "a modal appeared that no surface expected", windows: [modal],
-                      refs: ["App.swift|func error(_ error: Error)"], settle: 0, extra: ["texts": texts])
+                if modal is NSSavePanel {
+                    // The S10 export panel the step's own timer missed: a known system-panel limitation, not an unexpected alert.
+                    shoot("S10", "export-panel-late-\(unexpected)", surface: "export save panel", state: "NSSavePanel with ExportAccessory caught by the run's modal watchdog after the S10 step's own capture missed it (known S10 system-panel gap: the panel body is an out-of-process remote view)", windows: [modal] + panelAccessoryWindows(),
+                          refs: ["App.swift|@objc func exportFile()"], settle: 0, extra: waitForPanelContent(modal, timeout: 2).merging(["texts": texts, "knownGap": "S10"]) { $1 })
+                } else {
+                    shoot("ZZ", "unexpected-modal-\(unexpected)", surface: "unexpected modal alert", state: "a modal appeared that no surface expected", windows: [modal],
+                          refs: ["App.swift|func error(_ error: Error)"], settle: 0, extra: ["texts": texts])
+                }
                 NSApp.abortModal()
             }
         }
@@ -699,7 +735,7 @@ extension AuditRun {
 
     func s10() {
         loadSynthetic(size: CGSize(width: 1000, height: 700), name: "Export me")
-        captureModal("S10", "export-panel", surface: "export save panel", state: "NSSavePanel with ExportAccessory (aborted, nothing written)",
+        captureModal("S10", "export-panel", surface: "export save panel", state: "NSSavePanel with ExportAccessory (aborted, nothing written); the panel's own file browser is a system remote view that never reaches a window image, so the capture is the panel frame plus the app's accessory content",
                      refs: ["App.swift|@objc func exportFile()", "ExportAccessory.swift|final class ExportAccessory"], delay: 1.6) { app.exportFile() }
         // The save panel is an out-of-process view; also render the accessory alone as a fallback record.
         let accessory = ExportAccessory(format: "jpeg", originalSize: false, jpegQuality: 0.7)
@@ -1566,8 +1602,45 @@ extension AuditRun {
                           refs: ["App.swift|func receivePublishing", "App+Upload.swift|func showUploadErrorDetails"]) { app.publishImage(); pump(2.5); app.showUploadErrorDetails() }
     }
 
+    /// The Photos browser over synthetic fixture images in a folder under the harness's own throwaway TMPDIR. Only `loadFolder` is used (the
+    /// browser's own folder path); the Photos library picker and the user's Pictures folder are never opened.
     func s22() {
-        gap("S22", "Photo browser", "PhotoBrowserCoordinator reads the user's Photos library and Desktop (Photos TCC prompt, real private pictures); no synthetic content seam exists, so it was deliberately not opened")
+        let parent = FileManager.default.temporaryDirectory.appendingPathComponent("s22-\(ProcessInfo.processInfo.processIdentifier)", isDirectory: true)
+        let folder = parent.appendingPathComponent("Fixture photos", isDirectory: true)
+        try? FileManager.default.removeItem(at: parent)
+        guard (try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)) != nil else { gap("S22", "Photo browser", "the fixture folder could not be created"); return }
+        defer { try? FileManager.default.removeItem(at: parent) }
+        let sizes: [(String, CGSize)] = [("Beach sunrise", CGSize(width: 1600, height: 1000)), ("Team offsite", CGSize(width: 1200, height: 900)), ("Menu board", CGSize(width: 900, height: 1200)),
+                                         ("Trail map", CGSize(width: 1400, height: 800)), ("Receipt scan", CGSize(width: 800, height: 1100))]
+        for (name, size) in sizes {
+            let image = AuditRun.syntheticImage(size: size)
+            guard let tiff = image.tiffRepresentation, let png = NSBitmapImageRep(data: tiff)?.representation(using: .png, properties: [:]) else { continue }
+            try? png.write(to: folder.appendingPathComponent(name + ".png"))
+        }
+        loadSynthetic(size: CGSize(width: 1000, height: 700), name: "Photos")
+        app.photoBrowser.show(relativeTo: window) { _ in }
+        pump(0.6)
+        app.photoBrowser.loadFolder(folder)
+        // The folder is read off the main thread and the thumbnails decode lazily: wait until the grid has its rows and the status line says so.
+        var populated = false
+        for _ in 0..<40 {
+            pump(0.25)
+            if let sheet = window.attachedSheet, let table = firstView(of: NSTableView.self, in: sheet.contentView), table.numberOfRows == sizes.count { populated = true; break }
+        }
+        guard populated else { gap("S22", "Photo browser", "the fixture folder never populated the grid (\((try? FileManager.default.contentsOfDirectory(atPath: folder.path))?.count ?? -1) files written; sheet attached: \(window.attachedSheet != nil); rows: \(firstView(of: NSTableView.self, in: window.attachedSheet?.contentView)?.numberOfRows ?? -1); texts: \(visibleTexts(in: window.attachedSheet?.contentView))"); if let sheet = window.attachedSheet { window.endSheet(sheet, returnCode: .cancel) }; return }
+        pump(1.2)
+        captureSheet("S22", "photos-populated", surface: "Photos sheet", state: "Photos sheet over five synthetic fixture images in a throwaway folder (the real Photos library and Pictures folder are never read)",
+                     refs: ["PhotoBrowser.swift|func loadFolder", "PhotoBrowser.swift|private func buildContent"], wait: 0.5, dismiss: { [self] in
+                        if let sheet = window.attachedSheet { window.endSheet(sheet, returnCode: .cancel) }
+                     })
+    }
+
+    func visibleTexts(in root: NSView?) -> [String] {
+        guard let root else { return [] }
+        var found: [String] = []
+        if let field = root as? NSTextField, !field.isHidden, !field.stringValue.isEmpty { found.append(field.stringValue) }
+        for child in root.subviews where !child.isHidden { found += visibleTexts(in: child) }
+        return found
     }
 
     func s23() {
@@ -1618,15 +1691,49 @@ extension AuditRun {
         write(meta, to: "meta/\(stem).json")
     }
 
+    /// The status button's own template icon, drawn the way the menu bar draws it for one state and appearance. A detached NSStatusBarButton
+    /// has no menu bar behind it, so imaging the button itself gives the same bitmap in every state (S24 normal and highlighted, light and dark,
+    /// were byte-identical): this strip paints the stand-in menu-bar fill, the highlight pill and the icon tinted by the appearance's label colour.
+    final class StatusStripPreview: NSView {
+        let icon: NSImage
+        let highlighted: Bool
+        init(icon: NSImage, size: NSSize, highlighted: Bool, appearance: NSAppearance?) {
+            self.icon = icon; self.highlighted = highlighted
+            super.init(frame: NSRect(origin: .zero, size: size))
+            self.appearance = appearance
+        }
+        required init?(coder: NSCoder) { fatalError("Programmatic view") }
+        override func draw(_ dirtyRect: NSRect) {
+            NSColor.windowBackgroundColor.setFill(); bounds.fill()
+            let ink = highlighted ? NSColor.selectedMenuItemTextColor : NSColor.labelColor
+            if highlighted {
+                NSColor.selectedContentBackgroundColor.setFill()
+                NSBezierPath(roundedRect: bounds.insetBy(dx: 1, dy: 1), xRadius: 5, yRadius: 5).fill()
+            }
+            let side = min(bounds.height - 6, icon.size.height)
+            let target = NSRect(x: (bounds.width - side * icon.size.width / max(icon.size.height, 1)) / 2, y: (bounds.height - side) / 2, width: side * icon.size.width / max(icon.size.height, 1), height: side)
+            let tinted = NSImage(size: target.size, flipped: false) { rect in
+                self.icon.draw(in: rect)
+                ink.set(); rect.fill(using: .sourceAtop)
+                return true
+            }
+            tinted.draw(in: target)
+        }
+    }
+
     func s24() {
         guard let item = app.statusItem, let button = item.button else {
             gap("S24", "Status-bar item", "no NSStatusItem exists in this process (statusMenu preference or app policy)"); return
         }
-        button.highlight(false)
-        shootView("S24", "statusitem-normal", surface: "status-bar item", state: "menu-bar icon, normal (the button view only; the real bar is not captured)", view: button, refs: ["App.swift|func installMenuPresence()"], extra: ["toolTip": button.toolTip ?? "", "buttonSize": [Double(button.bounds.width), Double(button.bounds.height)]])
-        button.highlight(true)
-        shootView("S24", "statusitem-highlighted", surface: "status-bar item", state: "menu-bar icon, highlighted", view: button, refs: ["App.swift|button.alternateImage"])
-        button.highlight(false)
+        guard let icon = StatusIcon.image() else { gap("S24", "Status-bar item", "the status icon image could not be built"); return }
+        let size = NSSize(width: max(button.bounds.width, 30), height: max(button.bounds.height, 24))
+        for (slug, state, highlighted) in [("statusitem-normal", "menu-bar icon, normal", false), ("statusitem-highlighted", "menu-bar icon, highlighted (menu open)", true)] {
+            let preview = StatusStripPreview(icon: icon, size: size, highlighted: highlighted, appearance: NSApp.appearance)
+            shootView("S24", slug, surface: "status-bar item", state: state + " (the real template icon on a stand-in menu-bar strip painted for this state and appearance; the real bar is not captured)", view: preview,
+                      refs: ["App.swift|func installMenuPresence()", "StatusItemSupport.swift|enum StatusIcon"],
+                      extra: ["toolTip": button.toolTip ?? "", "buttonSize": [Double(button.bounds.width), Double(button.bounds.height)], "highlighted": highlighted, "renderedAppearance": appearance,
+                              "rendering": "synthetic strip (StatusStripPreview)"])
+        }
     }
 
     func s25() {
@@ -1721,19 +1828,24 @@ extension AuditRun {
         pump(0.4)
         app.helpBevel?.enabled = true
         let bands = OriginalHelpBevel.discoverBands(in: window)
+        // The hint names the tool it is about, so the tool really selected must be that one (the editor opens on Arrow).
+        app.setTool(.rectangle)
+        pump(0.2)
         let hint = "Rectangle tool: drag to draw a rectangle. Hold Shift for a square."
+        let wipeHint = app.wipeButton.flatMap { AppToolTip.text(for: $0) } ?? canvas.wipeStage.toolTip
         // The editor is at the top of the screen, so the plate goes inside the window: under the top bar for a top-bar control,
         // above the bottom bar for a bottom-bar control, and never over the title bar or the traffic lights.
-        for (slug, control, point) in [("help-bevel", "top-bar control (Rectangle tool)", NSPoint(x: bands.header.midX, y: bands.header.midY)),
-                                       ("help-bevel-bottom", "bottom-bar control (Wipe)", NSPoint(x: bands.footer.minX + 60, y: bands.footer.midY))] {
+        for (slug, control, point, message) in [("help-bevel", "top-bar control (Rectangle tool)", NSPoint(x: bands.header.midX, y: bands.header.midY), hint),
+                                                ("help-bevel-bottom", "bottom-bar control (Wipe)", NSPoint(x: bands.footer.minX + 60, y: bands.footer.midY), wipeHint)] {
             app.helpBevel?.pointer = { point }
-            app.helpBevel?.hover(owner: "audit-" + slug, message: hint)
+            app.helpBevel?.hover(owner: "audit-" + slug, message: message)
             pump(1.2)
             let known = Set([window.windowNumber])
             let helpers = NSApp.windows.filter { !known.contains($0.windowNumber) && $0.isVisible && String(describing: type(of: $0)).contains("Help") }
             shoot("S29", slug, surface: "help bevel (tool-tip overlay)", state: "OriginalHelpBevel HUD with a hover hint for a \(control) (feature is off by default); editor at the top of the screen, so the plate sits inside the window, clear of the title bar and both bars", windows: helpers + [window], refs: ["OriginalHelpBevel.swift|final class OriginalHelpBevelView", "OriginalHelpBevel.swift|private func insideFrame"],
                   extra: ["helpWindowFound": !helpers.isEmpty, "plateFrame": NSStringFromRect(helpers.first?.frame ?? .zero), "titleBar": NSStringFromRect(bands.titleBar),
-                          "header": NSStringFromRect(bands.header), "footer": NSStringFromRect(bands.footer)])
+                          "header": NSStringFromRect(bands.header), "footer": NSStringFromRect(bands.footer),
+                          "selectedTool": canvas.tool.rawValue, "hintText": message])
             app.helpBevel?.clear()
         }
         let known = Set([window.windowNumber])
@@ -1748,7 +1860,7 @@ extension AuditRun {
             pump(1.2)
             let hanging = NSApp.windows.filter { !known.contains($0.windowNumber) && $0.isVisible && String(describing: type(of: $0)).contains("Help") }
             shoot("S29", "help-bevel-hanging", surface: "help bevel (tool-tip overlay)", state: "the same hint with 140 pt free above the editor: the plate hangs from its top edge, behind it",
-                  windows: hanging + [window], refs: ["OriginalHelpBevel.swift|private func layout"], extra: ["helpWindowFound": !hanging.isEmpty])
+                  windows: hanging + [window], refs: ["OriginalHelpBevel.swift|private func layout"], extra: ["helpWindowFound": !hanging.isEmpty, "selectedTool": canvas.tool.rawValue, "hintText": hint])
             app.helpBevel?.clear()
         }
         app.helpBevel?.enabled = false
