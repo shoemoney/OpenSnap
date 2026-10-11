@@ -142,12 +142,14 @@ extension AppSafetyTests {
         let top = (pad + 2 * M.iconButton.width + M.toolboxButton.width + 2 * spacing) + (pad + M.primaryButton.width + spacing + M.iconButton.width)
             + (pad + tools * M.toolButton.width + (tools - 1) * spacing) + (pad + 3 * M.iconButton.width + 2 * spacing) + 3 * gap
         let required = chrome.requiredWindowWidth()
-        // The bottom bar at its worst: the Original size checkbox beside a status that keeps 120 pt, with Resize… wearing its name.
+        // The bottom bar at its worst: the Original size toggle on the View plate and a status that keeps 120 pt, with Resize… wearing its name.
         app.window.contentView?.layoutSubtreeIfNeeded()
-        let zoomWidth = (app.zoomControl.superview?.frame.width ?? 0), formatWidth = app.dragFormatToggle.frame.width
+        // The minimum window is narrower than 1100 pt, where the PNG | JPG toggle is the compact one, so that is the width it is measured at.
+        let compactFormat = SegmentedToggle(titles: app.dragFormatToggle.titles); compactFormat.isCompact = true
+        let zoomWidth = (app.zoomControl.superview?.frame.width ?? 0), formatWidth = ceil(compactFormat.intrinsicContentSize.width)
         let icons = pad + 2 * M.iconButton.width + spacing
-        let bottom = icons + (pad + zoomWidth + spacing + chrome.resizeButton.frame.width) + icons + (pad + formatWidth + 2 * spacing + 2 * M.iconButton.width)
-            + 4 * gap + app.dragOriginalControl.fittingSize.width + 12 + 120
+        let bottom = icons + (pad + zoomWidth + spacing + chrome.resizeButton.frame.width + spacing + app.dragOriginalControl.fittingSize.width) + icons + (pad + formatWidth + 2 * spacing + 2 * M.iconButton.width)
+            + 4 * gap + 120
         // The measured width (before the floor) is the wider of the Frame-mode top bar and that bottom bar; a metric or a group that changes moves it.
         try expect(abs(chrome.measuredWindowWidth() - (ceil(max(top, bottom)) + 24)) < 1, "The measured width \(chrome.measuredWindowWidth()) is the wider of the Frame-mode top bar (\(ceil(top))) and the bottom bar (\(ceil(bottom))) plus both margins")
         try expect(required == max(ModernEditorChrome.minimumWindowWidth, chrome.measuredWindowWidth()), "The required width is the measured one, floored at 980")

@@ -320,17 +320,17 @@ extension AppSafetyTests {
     private static func b3cPopoverDismissal() throws {
         let fixture = try Fixture(), app = fixture.app
         app.widthControl.showPopover()
-        try expect(app.widthControl.isPopoverShown, "The Size popover is open")
+        try expect(app.widthControl.isPopoverShown, "The Size panel is open")
         let content = try app.widthControl.popoverContent.b3cUnwrap("popover content")
         content.presetButtons[2].performClick(nil)
-        try expect(!app.widthControl.isPopoverShown, "Picking a size preset closes the popover, as picking a colour closes the colour popover")
+        try expect(!app.widthControl.isPopoverShown, "Picking a size preset closes the panel, as picking a colour closes the colour panel")
         try expect(abs(app.widthControl.doubleValue - content.presetButtons[2].presetSize) < 0.01, "…and the preset was applied")
         app.widthControl.showPopover()
         let track = try app.widthControl.popoverContent.b3cUnwrap("content").trackView
         _ = track
         try expect(app.widthControl.beginGesture(), "A drag on the track begins a gesture")
         app.widthControl.trackValue(fraction: 0.5, modifiers: [])
-        try expect(app.widthControl.isPopoverShown, "Dragging the track keeps the popover open")
+        try expect(app.widthControl.isPopoverShown, "Dragging the track keeps the panel open")
         app.widthControl.endTracking(); app.widthControl.dismissPopover()
     }
 }

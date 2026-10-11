@@ -166,7 +166,7 @@ suites = [
     ("publishing-tests", with_choices(["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift", "AppAlert.swift", *ICONS]), "PublishingTests.swift", None, ("--test",)),
     ("publishing-shutdown-tests", with_choices(["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift", "AppAlert.swift", *ICONS]), "PublishingShutdownTests.swift", None, ("--test",)),
     ("publishing-destinations-tests", with_choices(["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift", "AppAlert.swift", *ICONS]), "PublishingDestinationsTests.swift", None, ("--test",)),
-    ("hotkey-tests", ["GlobalHotkeys.swift", "AppToolTip.swift", "TestDefaults.swift"], "GlobalHotkeysTests.swift", "GLOBAL_HOTKEY_TESTS", ()),
+    ("hotkey-tests", with_choices(["GlobalHotkeys.swift", "AppToolTip.swift", "TestDefaults.swift"]), "GlobalHotkeysTests.swift", "GLOBAL_HOTKEY_TESTS", ()),
     ("settings-window-tests", with_choices(["SettingsWindow.swift", "GeneralPreferencesState.swift", "GlobalHotkeys.swift", "AppToolTip.swift", "DisplayOptions.swift", "OriginalCaptureFlash.swift",
                                "StrokeFitting.swift", "Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift", "AppAlert.swift", *ICONS,
                                "TestDefaults.swift", "ViewTreeAudit.swift", "ContrastProbe.swift"]), "SettingsWindowTests.swift", "SETTINGS_WINDOW_TESTS", ()),

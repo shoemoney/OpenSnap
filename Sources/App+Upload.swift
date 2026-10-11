@@ -12,7 +12,36 @@ struct UploadPayload {
     let pixelSize: CGSize
 }
 
+/// The Upload button's destination choices: one glass panel over the upload menu, kept between opens (it rebuilds its rows from the menu
+/// each time, so a destination added or made default elsewhere is there on the next open).
+@MainActor
+final class UploadChoices {
+    private(set) var panel: MenuChoicePanel?
+    /// Test seam: runs on a new panel before it is shown, so a test can give its host a presenter and keep the window off screen.
+    var panelSetup: ((MenuChoicePanel) -> Void)?
+    var isOpen: Bool { panel?.host.isShown == true }
+
+    func panel(for menu: NSMenu) -> MenuChoicePanel {
+        if let panel, panel.menu === menu { return panel }
+        // Destinations are options (the default is the chosen one); Cancel Upload, Destination Settings… and Share with macOS… are commands.
+        let made = MenuChoicePanel(menu: menu, identifier: "Upload", accessibilityLabel: "Upload destinations",
+                                   kind: { $0.action == #selector(AppDelegate.chooseUploadDestination(_:)) ? .option : .command })
+        panel = made
+        panelSetup?(made)
+        return made
+    }
+}
+
 extension AppDelegate {
+    /// Opens the destination choices above the Upload button (the footer has no room below). A nil event is a keyboard or accessibility
+    /// request, which puts the focus on the default destination; a mouse open takes the keyboard but focuses no row. A second request while
+    /// the panel is open only closes it.
+    func presentUploadChoices(_ menu: NSMenu, event: NSEvent?, from button: NSButton) {
+        guard !terminationStarted, button.window != nil else { return }
+        if uploadChoices.isOpen { uploadChoices.panel?.host.close(); return }
+        uploadChoices.panel(for: menu).present(relativeTo: button, preferredEdge: ChoiceEdge.above, keyboard: event == nil)
+    }
+
     /// Runs on every change of `uploadState`: the chrome shows the matching spinner and commands, the status line takes the new text,
     /// the checkbox yields its place during a transfer, the "Link copied" countdown starts, and VoiceOver is told.
     func uploadStateChanged(from previous: UploadState) {

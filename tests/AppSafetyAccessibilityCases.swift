@@ -93,11 +93,11 @@ extension AppSafetyTests {
         try expect(pill.accessibilityPerformDecrement() && pill.doubleValue < up, "Decrement steps one preset down (\(up) to \(pill.doubleValue))")
         let actions = pill.accessibilityCustomActions() ?? []
         try expect(actions.map(\.name) == ["Show size options"], "It has one custom action, Show size options (\(actions.map(\.name)))")
-        try expect(!pill.isPopoverShown, "The popover is closed before the action")
+        try expect(!pill.isPopoverShown, "The panel is closed before the action")
         let action = try actions.first.unwrapped("action")
-        try expect(action.handler?() == true && pill.isPopoverShown, "The action opens the popover")
-        let content = try pill.popoverContent.unwrapped("popover content")
-        try expect(content.trackView.accessibilityRole() == .slider && content.trackView.accessibilityLabel() == "Size", "The popover track is a second slider, named Size")
+        try expect(action.handler?() == true && pill.isPopoverShown, "The action opens the panel")
+        let content = try pill.popoverContent.unwrapped("panel content")
+        try expect(content.trackView.accessibilityRole() == .slider && content.trackView.accessibilityLabel() == "Size", "The panel track is a second slider, named Size")
         try expect((content.trackView.accessibilityValue() as? NSNumber)?.doubleValue == (pill.accessibilityValue() as? NSNumber)?.doubleValue, "and it reads the same value as the pill")
         try expect(content.presetButtons.map { $0.accessibilityLabel() ?? "" } == ["Size 2", "Size 4", "Size 7", "Size 9", "Size 12"], "The five presets are 'Size N' (\(content.presetButtons.map { $0.accessibilityLabel() ?? "" }))")
         pill.dismissPopover()
@@ -235,16 +235,16 @@ extension AppSafetyTests {
         }
         let sizeLoop = walk(from: content.trackView)
         try expect(sizeLoop.count == 6 && sizeLoop[0] === content.trackView && zip(sizeLoop.dropFirst(), content.presetButtons).allSatisfy { $0 === $1 }
-                   && sizeLoop.last?.nextKeyView === content.trackView, "Size popover: track, then the five presets in order, then round again (\(sizeLoop.count) stops)")
+                   && sizeLoop.last?.nextKeyView === content.trackView, "Size panel: track, then the five presets in order, then round again (\(sizeLoop.count) stops)")
         if let window = app.window as? AppSafetyWindow { window.simulatesVisibility = true; window.shown = true }
         app.presentDrawingColors(hover: false)
-        let palette = try app.colorPopover.unwrapped("Color popover").contentViewController.unwrapped("controller").view
+        let palette = try app.colorPanel.unwrapped("Color panel").container
         let swatches = app.presetColorButtons
-        try expect(!swatches.isEmpty, "The Color popover has its presets")
+        try expect(!swatches.isEmpty, "The Color panel has its presets")
         let colorLoop = walk(from: swatches[0])
         let custom = try everyView(palette).compactMap { $0 as? NSButton }.first { $0.tag == 110 }.unwrapped("Custom color…")
         try expect(colorLoop.count == swatches.count + 1 && zip(colorLoop, swatches).allSatisfy { $0 === $1 } && colorLoop.last === custom && custom.nextKeyView === swatches[0],
-                   "Color popover: the swatches in order, then Custom color…, then round again (\(colorLoop.count) stops for \(swatches.count) swatches)")
+                   "Color panel: the swatches in order, then Custom color…, then round again (\(colorLoop.count) stops for \(swatches.count) swatches)")
         app.closeDrawingColors()
     }
 

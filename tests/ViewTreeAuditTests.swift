@@ -304,6 +304,18 @@ private enum ViewTreeAuditTests {
         seeded?.font = font(14)
         expect(Audit.audit(settings.window, surface: "Settings (seeded)").violations.count == 1, "Settings: a 14 pt row label is caught on the real window")
         seeded?.font = seededFont
+        // The glass choices are walked too: the radio and check box labels are real text at 20 pt, and a 14 pt one is caught.
+        let generalReport = Audit.audit(settings.window, surface: "Settings: choices")
+        let choiceTexts = ["Dock", "Menu bar", "Both", "Show hover hints for tools", "Show keyboard tip overlay", "Show OpenSnap window in fullscreen and crosshair snaps"]
+        let found = generalReport.findings.filter { choiceTexts.contains($0.text) }
+        expect(Set(found.map(\.text)) == Set(choiceTexts) && found.allSatisfy { $0.pointSize == 20 }, "Settings: the walker found every General choice at 20 pt: \(found.map { "\($0.text) \($0.pointSize)" })")
+        let dock = settings.general.presenceGroup.buttons[0]
+        let dockFont = dock.titleLabel.font
+        dock.titleLabel.font = font(14)
+        let shrunkChoice = Audit.audit(settings.window, surface: "Settings (seeded choice)").violations
+        expect(shrunkChoice.count == 1 && shrunkChoice[0].pointSize == 14 && shrunkChoice[0].text == "Dock", "Settings: a 14 pt radio label is caught on the real window: \(shrunkChoice)")
+        dock.titleLabel.font = dockFont
+        expect(Audit.audit(settings.window, surface: "Settings (choice restored)").violations.isEmpty, "Settings: restoring the label clears it")
         // The same for a tab label on the strip: 13 pt, what AppKit's own toolbar labels were, is caught on the real window.
         let tabLabel = settings.strip.buttons[1]
         let tabTitle = tabLabel.attributedTitle
@@ -321,9 +333,11 @@ private enum ViewTreeAuditTests {
         about.versionLabel.font = font(12)
         let shrunkAbout = Audit.audit(about, surface: "About (seeded)").violations
         expect(shrunkAbout.count == 1 && shrunkAbout[0].pointSize == 12, "About: a 12 pt version label is caught on the real window: \(shrunkAbout)")
-        destinations.cancelButton.font = font(14)
+        // The glass Cancel draws its words in the label under the button (the button itself floors its own font), so that is the text to shrink.
+        destinations.cancelButton.titleLabel.font = font(14)
         let shrunkDestinations = Audit.audit(destinations, surface: "Destinations (seeded)").violations
-        expect(shrunkDestinations.count == 1 && shrunkDestinations[0].role == .control, "Destinations: a 14 pt Cancel button is caught on the real sheet: \(shrunkDestinations)")
+        expect(shrunkDestinations.count == 1 && shrunkDestinations[0].pointSize == 14 && shrunkDestinations[0].text == "Cancel",
+               "Destinations: a 14 pt Cancel label is caught on the real sheet: \(shrunkDestinations)")
 
         var total = 0
         for (surface, report) in reports {

@@ -17,6 +17,7 @@ least as good as the native control it replaces.
 | Area | Choice | Today | After |
 | --- | --- | --- | --- |
 | 1 Editor | Top/bottom bar commands, tools, Snap | glass plates + `CommandButton` | unchanged; consistency pass only |
+| 1 Editor | Footer "Original size" (`dragOriginalControl`) | native checkbox beside the status | `GlassChoiceButton` toggle on a footer plate; `DragOriginalSize`, large-shot visibility, status-slot reflow and width budgets unchanged; no glass behind the status text |
 | 1 History | Action groups | glass plates + `CommandButton` | unchanged; consistency pass only |
 | 1 History | "Drag as" format pop-up | native `NSPopUpButton` menu | glass pop-up face, choices in a `MenuChoicePanel` |
 | 1 History | Date filter pop-up (`datePopup`) | native `NSPopUpButton` menu | glass pop-up face, choices in a `MenuChoicePanel` |
@@ -32,8 +33,13 @@ least as good as the native control it replaces.
 | 4 Settings | Presence (3), Precision (3), Arrow head (2) radios | native radios | `GlassChoiceGroup` (radio role, circle / circle-check glyph) |
 | 4 Settings | hover hints, keyboard tips, include app, capture flash | native checkboxes | `GlassChoiceButton` toggles (checkbox role, square / filled square-check glyph) |
 | 4 Settings | Add…, Edit…, Remove, Make Default, empty-state Add… | native push buttons | titled `CommandButton`s on one action plate |
-| 4 Settings | destination list, shortcut recorders | content list / form fields | **kept solid / native** (readable content) |
+| 4 Settings › Capture | "Enable global capture shortcuts" | native checkbox | `GlassChoiceButton` toggle |
+| 4 Settings › Capture | per-shortcut key pop-up | native pop-up | `GlassPopUpButton` (long list: scrolls inside the height cap) |
+| 4 Settings › Capture | per-shortcut modifiers ⌃⌥⇧⌘ | native multi-select segmented control | four `GlassChoiceButton` toggles on one plate per row |
+| 4 Settings › Capture | Clear All | native push button | titled `CommandButton` on an action plate |
+| 4 Settings | destination list | content list | **kept solid** (readable content) |
 | 4 Settings › Destination sheet | Protocol (`protocolPopup`), key source (`sourcePopup`) | native pop-ups | `GlassChoiceGroup` when the set is small and fixed, else glass pop-up face + `MenuChoicePanel` |
+| 4 Settings › Destination sheet | "Make uploads public-read" (`aclCheckbox`) | native checkbox | `GlassChoiceButton` toggle on the related plate; default, visibility and save/test payload unchanged |
 | 4 Settings › Destination sheet | Test / Save / Cancel and other sheet buttons | native push buttons | titled `CommandButton`s on one action plate; default/cancel keys kept |
 | 4 Settings › Destination sheet | host, user, password, path, URL fields, status text | form fields / status | **kept native** |
 | 4 Resize | Resize / Crop / Limit | `NSSegmentedControl` | `GlassChoiceGroup` |
@@ -74,9 +80,9 @@ least as good as the native control it replaces.
 | Milestone | Owner (worktree / branch) | Files owned |
 | --- | --- | --- |
 | M1 shared primitives | P — `.todo-worktrees/gp-primitives` / `impl/gp-primitives` | `Sources/GlassChoices.swift` (new), `Sources/GlassChrome.swift`, `Sources/FontAwesomeIcons.swift`, `Sources/FontAwesomeFree.swift`, `Sources/ChromeIcons.swift`, `tests/GlassChoicesTests.swift` (new), `tools/test.py` suite lists, `tools/fetch-fontawesome.sh` glyph list, icon tests |
-| M2 Toolbox / Zoom / Upload | A — `gp-menus` / `impl/gp-menus` | `Sources/ModernEditorChrome.swift`, `Sources/App+ModernChrome.swift`, `Sources/App.swift` Toolbox hunk (`bezelToolbox`) and Upload hunk (`configureWebpostButton` … `setDefaultDestination`), `Sources/App+Upload.swift`, their tests in `tests/GlassChromeTests.swift`, `tests/AppSafetyModernCases.swift`, `tests/AppSafetyWebpostCases.swift`, `tests/AppSafetyMenuCases.swift` |
+| M2 Toolbox / Zoom / Upload | A — `gp-menus` / `impl/gp-menus` | `Sources/ModernEditorChrome.swift`, `Sources/App+ModernChrome.swift`, `Sources/App.swift` Toolbox hunk (`bezelToolbox`), the `dragOriginalControl` declaration and Upload hunk (`configureWebpostButton` … `setDefaultDestination`), `Sources/App+Upload.swift`, their tests in `tests/GlassChromeTests.swift`, `tests/AppSafetyModernCases.swift`, `tests/AppSafetyWebpostCases.swift`, `tests/AppSafetyMenuCases.swift` |
 | M3 Color / Size | B — `gp-color-size` / `impl/gp-color-size` | `Sources/BezelDrawingControls.swift`, `Sources/App.swift` Color hunk (`syncDrawingControls` … `releaseCustomColorPanel`, the `colorPopover` declaration), `Sources/App+Keyboard.swift`, Color/Size tests (`tests/AppSafetyTests.swift` Color/Size cases, `tests/GlassChromeTests.swift` Size cases only) |
-| M4 Settings | C — `gp-settings` / `impl/gp-settings` | `Sources/SettingsWindow.swift`, `tests/SettingsWindowTests.swift`, Settings cases in `tests/ViewTreeAuditTests.swift`, `tests/AccessibilityAuditTests.swift`, `tests/AppSafetyWindowChromeCases.swift` |
+| M4 Settings | C — `gp-settings` / `impl/gp-settings` | `Sources/SettingsWindow.swift`, the `GlobalHotkeyForm` part of `Sources/GlobalHotkeys.swift`, `tests/SettingsWindowTests.swift`, `tests/GlobalHotkeysTests.swift`, the `hotkey-tests` line of `tools/test.py`, Settings cases in `tests/ViewTreeAuditTests.swift`, `tests/AccessibilityAuditTests.swift`, `tests/AppSafetyWindowChromeCases.swift` |
 | M5 Resize + History choices | D — `gp-resize` / `impl/gp-resize` | `Sources/ResizePanel.swift`, `Sources/HistoryBrowser.swift` (date filter, category and Drag as choices only), `tests/ResizePanelTests.swift`, `tests/ResizePanelLayoutTests.swift`, `tests/HistoryBrowserTests.swift`, Resize/History cases in the audit suites |
 | M5b Destination sheet | F — `gp-destinations` / `impl/gp-destinations` | `Sources/PublishingDestinationsView.swift`, `tests/PublishingDestinationsTests.swift`, destination-sheet cases in the audit suites |
 | M6 audit harness captures | E — `gp-harness` / `impl/gp-harness` | `Sources/EyeDumpAudit*.swift`, `tools/eye-dump-audit*.{sh,py}`, `tools/check-eye-dump.py`, `tools/test-eye-dump-audit-guard.py`, `tools/e2e-inventory.py` |
@@ -90,15 +96,15 @@ Shared-file rule: two workers touching the same file stay in their named hunks. 
 - [ ] Toolbox, Zoom, Upload, History format and Resize preset open app-owned glass panels; no `NSMenu.popUp` / `popUpContextMenu` remains on those paths.
 - [ ] One `NSGlassEffectContainerView` per panel, one plate per menu group; no `NSGlassEffectView` inside another.
 - [ ] Selected/on state = accent fill + border + bodyStrong + glyph; Differentiate Without Color adds the indicator; disabled rows dim and skip focus.
-- [ ] Keyboard: open with Return/Space/Down; Up/Down/Tab/Home/End; Return/Space choose; Escape closes; focus returns to the opener.
+- [ ] Keyboard: in the editor bars (no default button) a focused opener opens with Return, Space or Down; inside a sheet or dialog with a default button (Resize, destination sheet) Return and keypad Enter stay with the default button (OK / Save) and Space or Down opens the focused choice face. In an open panel: Up/Down/Tab/Home/End move, Return/Space choose, Escape closes the panel FIRST (the sheet's Cancel only runs on a second Escape) and focus returns to the opener. Tests drive the real window event paths (synthesized NSEvents through the window), not only `openChoices()` / `activate()`.
 - [ ] Mouse: hover fills, click chooses, click outside or on the opener closes, a second click on the opener does not reopen.
 - [ ] Toolbox validation (enabled/disabled, Fill/Shadow/Font state), long-list scrolling and small-screen height cap.
 - [ ] Zoom: percentage choice, computed Fit row, Actual Size toggle state and its refusal path unchanged.
 - [ ] Upload: destinations rebuilt on each open, default checked, busy Cancel Upload, empty state disabled, settings/share entries.
 - [ ] Color: hover-open does not take key, click pins, preset and custom choice, Shift background path; Size: undo grouping per gesture, presets close, dismissal mid-drag ends the gesture.
 - [ ] History: date filter, category and Drag as are glass choices; search and grid stay native.
-- [ ] Destination sheet: protocol and key-source picks and its buttons are glass; fields and status stay native; validation and Keychain paths unchanged.
-- [ ] Settings: radios and toggles unambiguous, tabs keyboardable, window sizing unchanged; Resize: mode/limit/anchor/preset behaviour, validation errors, Return = OK, Escape = Cancel.
+- [ ] Destination sheet: protocol and key-source picks, the public-read toggle and its buttons are glass; fields and status stay native; validation and Keychain paths unchanged.
+- [ ] Settings: radios and toggles unambiguous, tabs keyboardable, one Tab stop per radio group and per shortcut-modifier row; the fit logic is unchanged but the windows are deliberately taller with 44 pt glass rows (General 301 → 371, Drawing 242 → 282, Capture 601 → 633, Upload 440 → 448 with three destinations, 277 → 285 empty) and every tab still fits the 1280 × 800 screen check; the destination sheet keeps SFTP, WebDAV and FTP/FTPS unscrolled at 1280 × 800 (S3 scrolled before and still does) and every face reads whole at 560, 640 and 900 pt; Resize: mode/limit/anchor/preset behaviour, validation errors, Return = OK, Escape = Cancel.
 - [ ] Text ≥ 18 pt (20 pt normal); only Font Awesome / existing semantic glyphs; no emoji or decorative arrows.
 - [ ] Harness: direct captures of every new panel (rest, hover, keyboard focus, chosen, disabled, dismissed + focus restored), light and dark.
 - [ ] `python3 tools/test.py` green with no source drift and the real-store guard; red proofs recorded for the key behaviour tests.
@@ -107,8 +113,17 @@ Shared-file rule: two workers touching the same file stay in their named hunks. 
 ## GUI slot protocol (workers)
 
 Compiling is free. Running any AppKit test binary, `tools/test.py`, `tools/test-app-safety.sh`, `tools/eye-dump-audit.sh` or
-`tools/e2e-session.sh` needs the single slot: `until mkdir /tmp/opensnap-glass-gui.lock 2>/dev/null; do sleep 20; done` before,
-`rmdir /tmp/opensnap-glass-gui.lock` after (also on failure). Never `build/OpenSnap.app` in place; never the real stores.
+`tools/e2e-session.sh` needs the single slot, taken and released in ONE shell command with an owner check (protocol v2, from 23:50 CDT;
+the first unowned `mkdir`/`rmdir` recipe let one worker remove another's lock):
+
+```sh
+until mkdir /tmp/opensnap-glass-gui.lock 2>/dev/null; do sleep 20; done; echo "<worker>-$$" > /tmp/opensnap-glass-gui.lock/owner
+# ... run ...
+[ "$(cat /tmp/opensnap-glass-gui.lock/owner 2>/dev/null)" = "<worker>-$$" ] && rm -rf /tmp/opensnap-glass-gui.lock
+```
+
+Never remove a lock you did not create. Worker runs made before v2 may have overlapped and are not evidence; only the orchestrator's
+serialized integration and candidate runs are. Never `build/OpenSnap.app` in place; never the real stores.
 
 ## Record
 

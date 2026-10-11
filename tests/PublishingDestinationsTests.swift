@@ -35,6 +35,10 @@ enum PublishingDestinationsTests {
         try storeOperations()
         try MainActor.assumeIsolated { try destinationsSheet() }
         try MainActor.assumeIsolated { try formCopyAndLabels() }
+        try MainActor.assumeIsolated { try glassChoiceSheet() }
+        try MainActor.assumeIsolated { try publicReadToggle() }
+        try MainActor.assumeIsolated { try glassFaceEvents() }
+        try MainActor.assumeIsolated { try glassFaceWidths() }
         try MainActor.assumeIsolated { try resultBandAndSheetWidth() }
         try connectionTests()
         print("Destination and S3 self-checks passed: \(checks). No uploads were executed.")
@@ -459,8 +463,8 @@ enum PublishingDestinationsTests {
                     let name = field.accessibilityLabel() ?? ""
                     try expect(captions.contains(name), "\(transport)/\(source): a filled field is named “\(name)”, not one of \(captions.sorted())")
                 }
-                for popup in [view.protocolPopup, view.sourcePopup] where !popup.isHiddenOrHasHiddenAncestor {
-                    try expect(captions.contains(popup.accessibilityLabel() ?? ""), "\(transport)/\(source): a pop-up has no caption as its name")
+                for face in [view.protocolPopup, view.sourcePopup] where !face.isHiddenOrHasHiddenAncestor {
+                    try expect(captions.contains(face.accessibilityLabel() ?? ""), "\(transport)/\(source): a glass face has no caption as its name")
                 }
                 for field in fields { field.stringValue = "" }
             }
@@ -739,6 +743,424 @@ enum PublishingDestinationsTests {
         return [PublishingDestination(name: "Example S3", settings: s3), PublishingDestination(name: "Example WebDAV", settings: dav)]
     }
 
+    // MARK: Glass choices on the destination sheet (Protocol, Source, the action buttons, public-read)
+
+    /// A sheet in a window that is never shown, with its glass panels' presentation replaced so nothing reaches the screen.
+    @MainActor static func glassSheet(editing: PublishingDestination? = nil, width: CGFloat = PublishingDestinationsView.sheetWidth) -> (NSWindow, PublishingDestinationsView) {
+        _ = NSApplication.shared
+        NSApp.setActivationPolicy(.prohibited)
+        let view = PublishingDestinationsView(editing: editing, width: width)
+        view.frame = NSRect(x: 0, y: 0, width: width, height: 760)
+        let window = NSWindow(contentRect: view.frame, styleMask: [.titled], backing: .buffered, defer: true)
+        window.isReleasedWhenClosed = false; window.contentView = view
+        for face in [view.protocolPopup, view.sourcePopup] {
+            let host = face.choicePanel.host
+            host.presenter = { _, _ in }
+            host.visibleFrameOverride = NSRect(x: 0, y: 0, width: 1440, height: 1000)
+            host.keyStateProbe = { false }
+        }
+        view.layoutSubtreeIfNeeded()
+        return (window, view)
+    }
+    @MainActor static func plate(of view: NSView) -> GlassSurfaceView? {
+        var current = view.superview
+        while let parent = current { if let plate = parent as? GlassSurfaceView { return plate }; current = parent.superview }
+        return nil
+    }
+    /// Chooses `title` the way a person does: open the face's panel, press that row.
+    @MainActor static func choose(_ title: String, from face: GlassPopUpButton, in view: PublishingDestinationsView) throws {
+        face.openChoices(keyboard: false)
+        let panel = face.choicePanel
+        try expect(panel.host.isShown, "the \(face.accessibilityLabel() ?? "") face opened its panel")
+        let row = try unwrap(panel.rows.first { $0.title == title })
+        panel.activate(row)
+        view.layoutSubtreeIfNeeded()
+    }
+    /// The rows each protocol and credential source must show, written out here rather than read from the form (the OSN-052 behaviour).
+    @MainActor static func expectedVisibility(_ transport: PublishingProtocol, keychain: Bool, legacyEndpoint: Bool = false) -> [String: Bool] {
+        let s3 = transport == .s3
+        return ["endpoint": transport != .sftp || legacyEndpoint, "region": s3, "bucket": s3, "alias": transport == .sftp, "root": transport == .sftp,
+                "port": transport == .sftp, "acl": s3, "source": s3, "profile": s3 && !keychain, "username": s3 ? keychain : true,
+                "password": s3 ? keychain : transport != .sftp, "folder": true, "public": true, "name": true]
+    }
+
+    @MainActor static func glassChoiceSheet() throws {
+        let (window, view) = glassSheet()
+        defer { window.orderOut(nil) }
+        let fields: [String: NSView] = ["endpoint": view.endpointField, "region": view.regionField, "bucket": view.bucketField, "alias": view.aliasField,
+            "root": view.remoteRootField, "port": view.portField, "acl": view.aclCheckbox, "source": view.sourcePopup, "profile": view.profileField,
+            "username": view.usernameField, "password": view.passwordField, "folder": view.folderField, "public": view.publicField, "name": view.nameField]
+
+        // Structure: the two pop-ups are glass pop-ups on plates (the only pop-ups there are); every other button is a glass choice button.
+        let tree = descendants(view)
+        let nativePopups = tree.compactMap { $0 as? NSPopUpButton }
+        try expect(nativePopups.count == 2 && nativePopups.allSatisfy { $0 is GlassPopUpButton }, "the sheet's only pop-ups are the two glass ones: \(nativePopups.map { type(of: $0) })")
+        let buttons = tree.compactMap { $0 as? NSButton }
+        try expect(!buttons.isEmpty && buttons.allSatisfy { $0 is GlassChoiceButton || $0 is GlassPopUpButton }, "every button on the sheet is a glass button: \(buttons.map { type(of: $0) })")
+        for (face, caption) in [(view.protocolPopup, "Protocol"), (view.sourcePopup, "Source")] {
+            try expect(face.accessibilityRole() == .popUpButton && face.panelLabel == caption, "\(caption) is a pop-up button")
+            try expect(face.accessibilityLabel() == caption, "\(caption) is named \(caption), got \(String(describing: face.accessibilityLabel()))")
+            try expect(plate(of: face) != nil && face.superview is ChromeFillCell, "\(caption) sits in a hover cell on a glass plate")
+            try expect(face.menu(for: mouseEvent(.rightMouseDown, at: .zero, window: window)) == nil, "\(caption) offers no contextual menu")
+        }
+        try expect(view.protocolPopup.accessibilityValue() as? String == "WebDAV" && view.protocolPopup.faceTitle == "WebDAV", "the Protocol pop-up reads the chosen protocol")
+        // No glass inside glass: no plate has another glass view under it, and the footer is the only container.
+        let plates = tree.compactMap { $0 as? GlassSurfaceView }
+        try expect(plates.count >= 5, "the sheet has its plates: \(plates.count)")
+        for plate in plates {
+            let inside = descendants(plate).filter { $0 !== plate && ($0 is NSGlassEffectView || $0 is NSGlassEffectContainerView) }
+            try expect(inside.isEmpty, "plate \(plate.identifier?.rawValue ?? "") holds another glass view: \(inside)")
+        }
+        try expect(tree.filter { $0 is NSGlassEffectContainerView }.count == 1, "one glass container on the sheet (the footer)")
+        // Text: every glass button's words are 20 pt (the chosen weight is semibold, still 20), nothing under the 18 pt floor.
+        for button in tree.compactMap({ $0 as? GlassChoiceButton }) {
+            try expect((button.titleLabel.font?.pointSize ?? 0) >= 20, "\(button.title) is \((button.titleLabel.font?.pointSize ?? 0)) pt")
+        }
+
+        // Protocol through the glass panel: the pop-up's items are the panel's rows, in order, with the chosen one marked.
+        view.nameField.stringValue = "Mine"; view.folderField.stringValue = "shots"; view.publicField.stringValue = "https://cdn.example.com/s"
+        view.protocolPopup.openChoices(keyboard: false)
+        let protocolPanel = view.protocolPopup.choicePanel
+        try expect(protocolPanel.host.isShown && protocolPanel.rows.map(\.title) == PublishingProtocol.allCases.map(\.title), "the Protocol panel lists every protocol: \(protocolPanel.rows.map(\.title))")
+        try expect(protocolPanel.rows.filter(\.isChosen).map(\.title) == ["WebDAV"], "the chosen protocol is marked in the panel")
+        try expect(protocolPanel.host.container.subviews.count == 1 || protocolPanel.host.plates.count >= 1, "the panel holds the rows on a plate")
+        protocolPanel.host.close()
+        for transport in PublishingProtocol.allCases {
+            for keychain in [false, true] where transport == .s3 || !keychain {
+                try choose(transport.title, from: view.protocolPopup, in: view)
+                if transport == .s3 { try choose(keychain ? "Access key stored in Keychain" : "AWS credentials profile", from: view.sourcePopup, in: view) }
+                try expect(view.selectedProtocol == transport && view.protocolPopup.titleOfSelectedItem == transport.title && view.protocolPopup.title == transport.title,
+                           "choosing \(transport.title) selects it in the model and on the face")
+                for (id, visible) in expectedVisibility(transport, keychain: keychain) {
+                    let control = try unwrap(fields[id])
+                    try expect(!control.isHiddenOrHasHiddenAncestor == visible, "\(transport.title)/keychain=\(keychain): \(id) should be \(visible ? "shown" : "hidden")")
+                }
+                try expect(view.formResult.kind == .hint && view.formResult.text.stringValue == PublishingDestinationsView.formCopy(for: transport).testNote,
+                           "\(transport.title): the Test note follows the protocol")
+            }
+        }
+        try expect(view.nameField.stringValue == "Mine" && view.folderField.stringValue == "shots" && view.publicField.stringValue == "https://cdn.example.com/s",
+                   "typed values survive every protocol change")
+        try expect(!protocolPanel.host.isShown, "choosing closes the panel")
+
+        // The key source: Keychain credentials need both parts; a profile discards typed keys.
+        try choose("S3-compatible", from: view.protocolPopup, in: view)
+        view.bucketField.stringValue = "pics"
+        try choose("Access key stored in Keychain", from: view.sourcePopup, in: view)
+        try expect(view.sourcePopup.title == "Access key stored in Keychain" && view.sourcePopup.indexOfSelectedItem == 1, "the Source face follows its choice")
+        view.usernameField.stringValue = "AKIAEXAMPLE"; view.passwordField.stringValue = ""
+        try rejects("a Keychain source with no secret") { _ = try view.makeDraft() }
+        view.passwordField.stringValue = "not-a-real-secret"
+        var draft = try view.makeDraft()
+        try expect(draft.destination.settings.username == "AKIAEXAMPLE" && draft.password == "not-a-real-secret" && draft.destination.settings.s3?.credentialsProfile == "",
+                   "the Keychain source carries the typed key id and secret and no profile")
+        try choose("AWS credentials profile", from: view.sourcePopup, in: view)
+        view.profileField.stringValue = "default"
+        draft = try view.makeDraft()
+        try expect(draft.destination.settings.username == "" && draft.password == "" && draft.destination.settings.s3?.credentialsProfile == "default",
+                   "the profile source discards typed keys and carries the profile")
+        view.profileField.stringValue = ""
+        try rejects("a profile source with no profile") { _ = try view.makeDraft() }
+
+        // A protocol the system tools cannot run is a disabled row that chooses nothing.
+        view.setUnavailable([.sftp])
+        try choose("WebDAV", from: view.protocolPopup, in: view)
+        view.protocolPopup.openChoices(keyboard: false)
+        let sftpRow = try unwrap(protocolPanel.rows.first { $0.title == "SFTP" })
+        try expect(!sftpRow.isEnabled, "an unavailable protocol is a disabled row")
+        protocolPanel.activate(sftpRow)
+        try expect(view.selectedProtocol == .webDAV && protocolPanel.host.isShown, "pressing a disabled row chooses nothing and leaves the panel open")
+        protocolPanel.host.close()
+        view.setUnavailable([])
+
+        // Keyboard: Down opens the panel on the chosen row, Down again moves, Return chooses, Escape closes without choosing.
+        window.makeFirstResponder(view.protocolPopup)
+        window.sendEvent(keyEvent("\u{F701}", keyCode: 125, window: window))
+        try expect(protocolPanel.host.isShown, "Down opens the Protocol panel")
+        try expect(protocolPanel.focusedRow?.title == "WebDAV", "a keyboard open focuses the chosen row, got \(String(describing: protocolPanel.focusedRow?.title))")
+        _ = protocolPanel.handleKey(keyEvent("\u{F701}", keyCode: 125, window: window))
+        try expect(protocolPanel.focusedRow?.title == "FTP", "Down moves to the next row")
+        try expect(protocolPanel.handleKey(keyEvent("\r", keyCode: 36, window: window)) && view.selectedProtocol == .ftp && !protocolPanel.host.isShown, "Return chooses the focused protocol and closes")
+        view.protocolPopup.openChoices(keyboard: true)
+        _ = protocolPanel.handleKey(keyEvent("\u{F701}", keyCode: 125, window: window))
+        protocolPanel.host.window.escapeHandler?()
+        try expect(!protocolPanel.host.isShown && view.selectedProtocol == .ftp, "Escape closes the panel and keeps the choice")
+        view.protocolPopup.performClick(nil)
+        try expect(protocolPanel.host.isShown, "pressing the face (Space or a click) opens the panel")
+        view.protocolPopup.openChoices(keyboard: false)
+        window.contentView = NSView()
+        try expect(!protocolPanel.host.isShown, "taking the sheet out of its window closes an open panel")
+        window.contentView = view
+        view.setUnavailable([])
+    }
+
+    /// A mouse event for the sheet's window at `point` (in window coordinates).
+    @MainActor static func mouseEvent(_ type: NSEvent.EventType, at point: NSPoint, window: NSWindow, modifiers: NSEvent.ModifierFlags = []) -> NSEvent {
+        NSEvent.mouseEvent(with: type, location: point, modifierFlags: modifiers, timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
+                           context: nil, eventNumber: 0, clickCount: 1, pressure: 1)!
+    }
+    /// A click on `view`: the point under the pointer must hit that very view (a click on its label or glyph is its own), then the button's
+    /// click path runs. (The window is never ordered on screen, so AppKit's mouse tracking loop does not run for it; the press-while-open
+    /// rule, which is where a second click on the opener is decided, is exercised separately through `pressWhileOpen`.)
+    @MainActor static func click(_ view: NSView, in window: NSWindow) throws {
+        let center = view.convert(NSPoint(x: view.bounds.midX, y: view.bounds.midY), to: nil)
+        let hit = window.contentView?.hitTest(window.contentView!.convert(center, from: nil))
+        try expect(hit === view, "a click at the middle of \((view as? NSButton)?.title ?? "the view") lands on it, got \(String(describing: hit))")
+        if let popup = view as? GlassPopUpButton { popup.mouseDown(with: mouseEvent(.leftMouseDown, at: center, window: window)) }
+        else { (view as? NSButton)?.performClick(nil) }
+    }
+    /// The press the application's local mouse monitor sees while a panel is up: true when the host swallows it (a press on the opener).
+    @MainActor static func pressWhileOpen(_ view: NSView, in window: NSWindow, host: GlassPanelHost) -> Bool {
+        host.handleMouseDown(in: window, at: view.convert(NSPoint(x: view.bounds.midX, y: view.bounds.midY), to: nil))
+    }
+
+    /// The Protocol and Source faces through the sheet's real event paths: every row an exclusive-set radio, Return = the default button,
+    /// Space / Down open, a second press on the opener closes, and no route reaches a native pop-up menu.
+    @MainActor static func glassFaceEvents() throws {
+        let (window, view) = glassSheet(editing: nil)
+        defer { window.orderOut(nil) }
+        var saved = 0, cancelled = 0
+        view.onSave = { _, _ in saved += 1 }; view.onCancel = { cancelled += 1 }
+        view.nameField.stringValue = "Events"; view.endpointField.stringValue = "https://dav.example.com/up"
+        try expect(window.defaultButtonCell === view.saveButton.cell, "Save is the window's default button")
+
+        // Every row of both models is a radio in an exclusive set: the chosen one reads 1, the others 0.
+        try choose("S3-compatible", from: view.protocolPopup, in: view)
+        for (face, chosenTitle) in [(view.protocolPopup, "S3-compatible"), (view.sourcePopup, "AWS credentials profile")] {
+            face.openChoices(keyboard: false)
+            let panel = face.choicePanel
+            try expect(!panel.rows.isEmpty && panel.rows.allSatisfy { $0.accessibilityRole() == .radioButton && $0.kind == .option },
+                       "\(face.accessibilityLabel() ?? ""): every row is a radio button: \(panel.rows.map { $0.accessibilityRole()?.rawValue ?? "" })")
+            for row in panel.rows {
+                try expect((row.accessibilityValue() as? NSNumber) == (row.title == chosenTitle ? 1 : 0), "\(face.accessibilityLabel() ?? "") row “\(row.title)” reads \(String(describing: row.accessibilityValue()))")
+            }
+            try expect(panel.rows.filter(\.isChosen).map(\.title) == [chosenTitle], "only “\(chosenTitle)” is chosen")
+            panel.host.close()
+        }
+        try choose("WebDAV", from: view.protocolPopup, in: view)
+        let panel = view.protocolPopup.choicePanel
+        window.makeFirstResponder(view.protocolPopup)
+
+        // Return on the face: the sheet's default button answers (Save), the panel does not open.
+        window.sendEvent(keyEvent("\r", keyCode: 36, window: window))
+        try expect(saved == 1 && !panel.host.isShown && cancelled == 0, "Return on the Protocol face saves (saved \(saved)) and does not open the panel")
+        // Escape with the panel closed cancels the sheet.
+        window.sendEvent(keyEvent("\u{1b}", keyCode: 53, window: window))
+        try expect(cancelled == 1 && !panel.host.isShown, "Escape on the face cancels the sheet")
+
+        // Keypad Enter is Return here, too.
+        window.makeFirstResponder(view.sourcePopup.isHiddenOrHasHiddenAncestor ? view.protocolPopup : view.sourcePopup)
+        window.sendEvent(keyEvent("\u{3}", keyCode: 76, window: window))
+        try expect(saved == 2 && !panel.host.isShown && cancelled == 1, "keypad Enter on a face saves (saved \(saved))")
+        saved = 1
+
+        // Space and Down open it, with the chosen row focused; they save nothing.
+        for (name, key, code) in [("Space", " ", UInt16(49)), ("Down", "\u{F701}", UInt16(125)), ("Up", "\u{F700}", UInt16(126))] {
+            window.makeFirstResponder(view.protocolPopup)
+            window.sendEvent(keyEvent(key, keyCode: code, window: window))
+            try expect(panel.host.isShown && panel.focusedRow?.title == "WebDAV" && saved == 1, "\(name) on the face opens the panel on the chosen row (focused \(String(describing: panel.focusedRow?.title)))")
+            panel.host.close()
+        }
+
+        // Escape with a panel open closes only the panel; the next Escape cancels the sheet. Return and Enter keep meaning Save.
+        cancelled = 0
+        window.makeFirstResponder(view.protocolPopup)
+        view.protocolPopup.openChoices(keyboard: true)
+        panel.host.window.sendEvent(keyEvent("\u{1b}", keyCode: 53, window: panel.host.window))
+        try expect(!panel.host.isShown && cancelled == 0 && saved == 1, "Escape in the open panel closes only the panel (cancelled \(cancelled))")
+        view.protocolPopup.openChoices(keyboard: false)
+        window.sendEvent(keyEvent("\u{1b}", keyCode: 53, window: window))
+        try expect(!panel.host.isShown && cancelled == 0, "an Escape that reaches the sheet while a panel is up still only closes the panel (cancelled \(cancelled))")
+        window.sendEvent(keyEvent("\u{1b}", keyCode: 53, window: window))
+        try expect(cancelled == 1 && !panel.host.isShown, "the second Escape cancels the sheet")
+        view.protocolPopup.openChoices(keyboard: true)
+        panel.host.window.sendEvent(keyEvent("\r", keyCode: 36, window: panel.host.window))
+        try expect(!panel.host.isShown && saved == 1 && view.selectedProtocol == .webDAV, "Return in the panel chooses its focused row and saves nothing")
+        window.makeFirstResponder(view.protocolPopup)
+        window.sendEvent(keyEvent("\r", keyCode: 36, window: window))
+        try expect(saved == 2 && !panel.host.isShown, "Return with a face focused and no panel up runs Save (saved \(saved))")
+        saved = 1
+
+        // A click opens it; a second click on the opener only closes it and does not reopen it.
+        try click(view.protocolPopup, in: window)
+        try expect(panel.host.isShown, "a click on the face opens the panel")
+        try expect(pressWhileOpen(view.protocolPopup, in: window, host: panel.host), "a second press on the opener is swallowed, so the face's own action cannot reopen the panel")
+        try expect(!panel.host.isShown, "a second press on the opener closes the panel")
+        spin(0.1)
+        try expect(!panel.host.isShown && saved == 1, "the second press did not reopen it")
+        try click(view.protocolPopup, in: window)
+        try expect(panel.host.isShown, "a click after that opens it again")
+        try expect(!pressWhileOpen(view.nameField, in: window, host: panel.host) && !panel.host.isShown, "a press elsewhere closes the panel and goes on to its target")
+        // A click on the other face closes the first and opens the second (only one panel at a time).
+        try choose("S3-compatible", from: view.protocolPopup, in: view)
+        try click(view.protocolPopup, in: window)
+        try expect(panel.host.isShown, "the Protocol panel is open")
+        try click(view.sourcePopup, in: window)
+        try expect(view.sourcePopup.choicePanel.host.isShown && !panel.host.isShown, "opening another face closes the first panel: only one is up at a time")
+        view.sourcePopup.choicePanel.host.close()
+
+        // No route leads to a native pop-up menu: every way of opening a pop-up ends in its glass panel, and none of them returns
+        // from AppKit's own pop-up tracking (it would block here). The contextual-menu hook offers no menu.
+        for popup in [view.protocolPopup, view.sourcePopup] {
+            let name = popup.accessibilityLabel() ?? ""
+            let panel = popup.choicePanel
+            let point = popup.convert(NSPoint(x: popup.bounds.midX, y: popup.bounds.midY), to: nil)
+            func opens(_ route: String, _ body: () -> Void) throws {
+                body()
+                try expect(panel.host.isShown, "\(name): \(route) opens the glass panel")
+                panel.host.close()
+            }
+            try expect(popup.menu(for: mouseEvent(.rightMouseDown, at: point, window: window)) == nil, "\(name): menu(for:) is nil")
+            try opens("a left click") { popup.mouseDown(with: mouseEvent(.leftMouseDown, at: point, window: window)) }
+            try opens("a right click") { popup.rightMouseDown(with: mouseEvent(.rightMouseDown, at: point, window: window)) }
+            try opens("a Control-click") { popup.mouseDown(with: mouseEvent(.leftMouseDown, at: point, window: window, modifiers: .control)) }
+            try opens("another mouse button") { popup.otherMouseDown(with: mouseEvent(.otherMouseDown, at: point, window: window)) }
+            try opens("performClick") { popup.performClick(nil) }
+            try opens("AXPress") { _ = popup.accessibilityPerformPress() }
+            try opens("AXShowMenu") { _ = popup.accessibilityPerformShowMenu() }
+            try opens("the context-menu key") { popup.showContextMenuForSelection(nil) }
+            for (key, code, label) in [(" ", UInt16(49), "Space"), ("\u{F701}", UInt16(125), "Down"), ("\u{F700}", UInt16(126), "Up")] {
+                window.makeFirstResponder(popup)
+                try opens(label) { window.sendEvent(keyEvent(key, keyCode: code, window: window)) }
+            }
+            try expect(popup.isAccessibilitySelectorAllowed(#selector(NSAccessibilityProtocol.accessibilityPerformShowMenu))
+                       && popup.isAccessibilitySelectorAllowed(#selector(NSAccessibilityProtocol.accessibilityPerformPress)), "\(name): AX exposes press and show-menu, both ending in the panel")
+            // Nothing else is an action here.
+            let others: [(String, Bool)] = [("increment", popup.accessibilityPerformIncrement()), ("decrement", popup.accessibilityPerformDecrement()),
+                ("confirm", popup.accessibilityPerformConfirm()), ("cancel", popup.accessibilityPerformCancel()), ("pick", popup.accessibilityPerformPick()),
+                ("raise", popup.accessibilityPerformRaise()), ("delete", popup.accessibilityPerformDelete())]
+            try expect(others.allSatisfy { !$0.1 } && !panel.host.isShown, "\(name): no other AX action does anything: \(others.filter(\.1).map(\.0))")
+            // A second activation while the panel is up closes it (the host's press handler swallows the click on the opener).
+            popup.openChoices(keyboard: false)
+            try expect(pressWhileOpen(popup, in: window, host: panel.host) && !panel.host.isShown, "\(name): a second click on the opener only closes the panel")
+            // Return and keypad Enter belong to the sheet's default button even with the pop-up focused.
+            window.makeFirstResponder(popup)
+            window.sendEvent(keyEvent("\r", keyCode: 36, window: window))
+            try expect(!panel.host.isShown, "\(name): Return does not open the panel")
+        }
+        try expect(view.protocolPopup.window === window && view.sourcePopup.window === window, "both pop-ups are in the sheet's window")
+    }
+
+    /// Every glass choice in the sheet reads whole at the narrowest supported sheet (560), at Settings' 640 and at the full 900-wide host:
+    /// for every protocol and key source, no label is cut, nothing needs more room than it has, and the full titles stay exposed.
+    @MainActor static func glassFaceWidths() throws {
+        let sourceFull = [PublishingDestinationsView.sourceTitles.profile, PublishingDestinationsView.sourceTitles.keychain]
+        try expect(PublishingDestinationsView.sheetMinWidth == 560, "the narrowest supported sheet is 560 wide")
+        for width in [CGFloat(560), 640, 900] {
+            let sheetWidth = PublishingDestinationsView.sheetWidth(forHostWidth: width)
+            let (window, view) = glassSheet(width: sheetWidth)
+            defer { window.orderOut(nil) }
+            for transport in PublishingProtocol.allCases {
+                for source in 0...1 {
+                    view.protocolPopup.selectItem(withTitle: transport.title); view.sourcePopup.selectItem(at: source); view.formChanged()
+                    view.layoutSubtreeIfNeeded()
+                    let tag = "\(Int(sheetWidth)) pt / \(transport.title) / \(sourceFull[source])"
+                    let tree = descendants(view).filter { !$0.isHiddenOrHasHiddenAncestor }
+                    let right = view.bounds.width - DesignTokens.Space.s5 + 0.5
+                    for popup in tree.compactMap({ $0 as? GlassPopUpButton }) {
+                        let natural = ceil((popup.faceTitle as NSString).size(withAttributes: [.font: DesignTokens.Typography.font(.body)]).width)
+                        let needed = natural + 2 * GlassChoiceButton.padding + GlassChoiceButton.gap + GlassChoiceButton.glyphSide
+                        try expect(needed <= popup.frame.width + 0.5, "\(tag): the “\(popup.faceTitle)” face needs \(needed) pt but is \(popup.frame.width) pt")
+                        try expect(popup.intrinsicContentSize.width <= popup.frame.width + 0.5, "\(tag): the \(popup.accessibilityLabel() ?? "") pop-up wants \(popup.intrinsicContentSize.width) pt, has \(popup.frame.width)")
+                        try expect(popup.convert(popup.bounds, to: view).maxX <= right, "\(tag): the \(popup.accessibilityLabel() ?? "") pop-up overhangs the form")
+                    }
+                    for button in tree.compactMap({ $0 as? GlassChoiceButton }) {
+                        let natural = ceil((button.title as NSString).size(withAttributes: [.font: DesignTokens.Typography.font(.bodyStrong)]).width)
+                        try expect(button.titleLabel.frame.width + 0.5 >= natural, "\(tag): “\(button.title)” is cut: \(natural) pt of text in a \(button.titleLabel.frame.width) pt label")
+                        try expect(button.fittingSize.width <= button.frame.width + 0.5, "\(tag): “\(button.title)” wants \(button.fittingSize.width) pt, has \(button.frame.width)")
+                        try expect(button.convert(button.bounds, to: view).maxX <= right + DesignTokens.Space.s1, "\(tag): “\(button.title)” overhangs the sheet")
+                    }
+                }
+            }
+            // The full titles are still what is exposed: items, accessibility value, panel rows and tooltip; only the face is short.
+            for (index, full) in sourceFull.enumerated() {
+                view.protocolPopup.selectItem(withTitle: PublishingProtocol.s3.title); view.sourcePopup.selectItem(at: index); view.formChanged()
+                let popup = view.sourcePopup
+                try expect(popup.itemTitles == sourceFull, "the menu items keep their full titles: \(popup.itemTitles)")
+                try expect(popup.accessibilityValue() as? String == full && popup.titleOfSelectedItem == full, "the accessibility value of the Source pop-up is the full “\(full)”, got \(String(describing: popup.accessibilityValue()))")
+                try expect(popup.accessibilityLabel() == "Source", "the Source pop-up is still named Source")
+                try expect(AppToolTip.text(for: popup) == full, "the Source tooltip is the full “\(full)”")
+                try expect(popup.faceTitle == PublishingDestinationsView.sourceFaceTitles[full] && popup.faceTitle.count < full.count, "the face shows a shorter title than “\(full)”: “\(popup.faceTitle)”")
+                popup.presentHandler = nil
+                let host = popup.choicePanel.host
+                host.presenter = { _, _ in }; host.visibleFrameOverride = NSRect(x: 0, y: 0, width: 1440, height: 1000); host.keyStateProbe = { false }
+                popup.openChoices(keyboard: false)
+                try expect(popup.choicePanel.rows.map(\.title) == sourceFull && popup.choicePanel.rows.filter(\.isChosen).map(\.title) == [full], "the panel rows keep the full titles and mark “\(full)”")
+                host.close()
+            }
+            // The chosen source is what the draft is made from, whatever the face says.
+            view.protocolPopup.selectItem(withTitle: PublishingProtocol.s3.title); view.formChanged()
+            view.bucketField.stringValue = "pics"; view.usernameField.stringValue = "AKIAEXAMPLE"; view.passwordField.stringValue = "not-a-real-secret"; view.profileField.stringValue = "default"
+            view.sourcePopup.selectItem(at: 1); view.formChanged()
+            var draft = try view.makeDraft()
+            try expect(draft.destination.settings.username == "AKIAEXAMPLE" && draft.password == "not-a-real-secret" && draft.destination.settings.s3?.credentialsProfile == "", "the Keychain face is the Keychain source")
+            view.sourcePopup.selectItem(at: 0); view.formChanged()
+            draft = try view.makeDraft()
+            try expect(draft.destination.settings.username == "" && draft.password == "" && draft.destination.settings.s3?.credentialsProfile == "default", "the AWS profile face is the profile source")
+        }
+    }
+
+    @MainActor static func publicReadToggle() throws {
+        var options = S3Options(); options.bucket = "pics"; options.credentialsProfile = "default"
+        func s3Destination(acl: Bool) -> PublishingDestination {
+            var settings = PublishingSettings(); settings.transport = .s3; var o = options; o.publicReadACL = acl; settings.s3 = o
+            return PublishingDestination(name: "Pics", settings: settings)
+        }
+        // Default: a new S3 destination is private (ACL off), the toggle is a labelled checkbox with value 0, and only S3 shows it.
+        let (window, view) = glassSheet()
+        defer { window.orderOut(nil) }
+        let toggle = view.aclCheckbox
+        try expect(toggle.kind == .toggle && toggle.indicator == .checkbox && toggle.accessibilityRole() == .checkBox, "public-read is a checkbox-style toggle")
+        try expect(toggle.title == "Make uploads public-read" && toggle.accessibilityLabel() == "Make uploads public-read", "public-read keeps its label")
+        try expect(toggle.state == .off && !toggle.isChosen && (toggle.accessibilityValue() as? NSNumber) == 0, "public-read starts off")
+        try expect(plate(of: toggle) != nil, "the toggle sits on a glass plate")
+        try expect(toggle.isHiddenOrHasHiddenAncestor, "public-read is hidden for WebDAV")
+        try choose("S3-compatible", from: view.protocolPopup, in: view)
+        try expect(!toggle.isHiddenOrHasHiddenAncestor, "public-read shows for S3")
+        for transport in PublishingProtocol.allCases where transport != .s3 {
+            try choose(transport.title, from: view.protocolPopup, in: view)
+            try expect(toggle.isHiddenOrHasHiddenAncestor, "public-read is hidden for \(transport.title)")
+        }
+        try choose("S3-compatible", from: view.protocolPopup, in: view)
+        view.bucketField.stringValue = "pics"
+        try choose("AWS credentials profile", from: view.sourcePopup, in: view)
+        view.profileField.stringValue = "default"
+
+        var saved: [PublishingDestination] = [], tested: [PublishingDestination] = []
+        view.onSave = { destination, _ in saved.append(destination) }
+        view.onTest = { destination, _ in tested.append(destination) }
+        try expect(try view.makeDraft().destination.settings.s3?.publicReadACL == false, "the default draft is private")
+
+        // One press flips it, and the value, the draft, Save and Test all carry the flag.
+        toggle.performClick(nil)
+        try expect(toggle.state == .on && toggle.isChosen && (toggle.accessibilityValue() as? NSNumber) == 1, "one press turns public-read on")
+        try expect(try view.makeDraft().destination.settings.s3?.publicReadACL == true, "the draft carries public-read")
+        view.saveButton.performClick(nil)
+        view.testButton.performClick(nil)
+        try expect(saved.count == 1 && saved[0].settings.s3?.publicReadACL == true, "Save writes public-read on")
+        try expect(tested.count == 1 && tested[0].settings.s3?.publicReadACL == true, "Test is asked with public-read on")
+        toggle.performClick(nil)
+        try expect(toggle.state == .off && (toggle.accessibilityValue() as? NSNumber) == 0, "a second press turns it off")
+        view.saveButton.performClick(nil)
+        view.testButton.performClick(nil)
+        try expect(saved.count == 2 && saved[1].settings.s3?.publicReadACL == false && tested.count == 2 && tested[1].settings.s3?.publicReadACL == false, "Save and Test carry public-read off")
+        // Only S3 destinations carry S3 options at all.
+        try choose("WebDAV", from: view.protocolPopup, in: view)
+        view.endpointField.stringValue = "https://dav.example.com/up"
+        try expect(try view.makeDraft().destination.settings.s3 == nil, "a WebDAV draft carries no S3 options, so no ACL flag")
+
+        // Editing a saved destination opens on its own flag; a blank form is back to off.
+        view.showForm(for: s3Destination(acl: true))
+        try expect(toggle.state == .on && (toggle.accessibilityValue() as? NSNumber) == 1 && !toggle.isHiddenOrHasHiddenAncestor, "editing a public-read destination opens with the toggle on")
+        saved.removeAll()
+        view.saveButton.performClick(nil)
+        try expect(saved.count == 1 && saved[0].settings.s3?.publicReadACL == true && saved[0].settings.s3?.bucket == "pics", "saving it unchanged keeps public-read on")
+        view.showForm(for: s3Destination(acl: false))
+        try expect(toggle.state == .off, "editing a private destination opens with the toggle off")
+        view.showForm(for: s3Destination(acl: true)); view.showForm(for: nil)
+        try expect(toggle.state == .off, "a blank form resets the toggle")
+    }
+
     /// The editor sheet: sized from the screen and its parent, hugging its form, scrolling when the screen is short, with Return saving and
     /// Escape cancelling. (The list, Remove and Make Default live in Settings, Upload; SettingsWindowTests covers them.)
     @MainActor static func destinationsSheet() throws {
@@ -790,6 +1212,13 @@ enum PublishingDestinationsTests {
             try expect(band < 120, "\(transport) leaves \(band) pt of blank band")
         }
         try expect(heights[.s3]! > heights[.webDAV]! && heights[.sftp]! != heights[.s3]!, "the sheet height follows the protocol: \(heights)")
+        // Compactness: with 44 pt glass rows the WebDAV, FTP, FTPS and SFTP forms still fit the 680 pt sheet of a 1280 x 800 screen without
+        // scrolling (their forms were 626, 605, 605 and 674 pt before the glass rows).
+        for transport in [PublishingProtocol.webDAV, .ftp, .ftps, .sftp] {
+            view.protocolPopup.selectItem(withTitle: transport.title); view.formChanged(); panel.contentView?.layoutSubtreeIfNeeded()
+            try expect(view.formPageHeight <= size.height && view.scrollView.documentView!.frame.height <= view.scrollView.contentView.bounds.height + 0.5,
+                       "\(transport.title) needs \(view.formPageHeight) pt but the sheet is \(size.height) pt, so it would scroll (document \(view.scrollView.documentView!.frame.height) in \(view.scrollView.contentView.bounds.height))")
+        }
         view.protocolPopup.selectItem(at: 0); view.formChanged()
         // A Test error grows the result band, the sheet follows it, and Cancel leaves no trace of it.
         let beforeError = contentHeight(panel)
@@ -877,12 +1306,17 @@ enum PublishingDestinationsTests {
         try expect(view.visibleFormCaptions.contains { $0.stringValue == "Endpoint" } && view.endpointField.placeholderString?.contains("Blank for AWS") == true,
                    "the S3 endpoint row is labelled Endpoint with the AWS hint as its placeholder")
         panel.contentView?.layoutSubtreeIfNeeded()
-        let popupFont = try unwrap(view.protocolPopup.font)
-        for item in view.protocolPopup.itemArray {
-            let width = (item.title as NSString).size(withAttributes: [.font: popupFont]).width
-            try expect(width + 30 <= view.protocolPopup.frame.width && view.protocolPopup.frame.width >= view.protocolPopup.intrinsicContentSize.width - 0.5,
-                       "the Protocol item “\(item.title)” (\(width) pt) truncates in a \(view.protocolPopup.frame.width) pt popup that wants \(view.protocolPopup.intrinsicContentSize.width)")
+        // The Protocol pop-up shows every title whole: it is as wide as its widest title plus the padding and chevron (never cut).
+        let faceFont = DesignTokens.Typography.font(.body)
+        for (index, item) in view.protocolPopup.itemArray.enumerated() {
+            view.protocolPopup.selectItem(at: index); view.formChanged(); panel.contentView?.layoutSubtreeIfNeeded()
+            let face = view.protocolPopup
+            let width = ceil((item.title as NSString).size(withAttributes: [.font: faceFont]).width)
+            try expect(face.faceTitle == item.title, "the pop-up shows the chosen protocol “\(item.title)”, got “\(face.faceTitle)”")
+            try expect(face.frame.width >= width + 2 * GlassChoiceButton.padding + GlassChoiceButton.gap + GlassChoiceButton.glyphSide - 0.5,
+                       "the Protocol item “\(item.title)” (\(width) pt) truncates on a \(face.frame.width) pt pop-up")
             try expect(item.toolTip?.isEmpty == false && item.title.count <= 16, "“\(item.title)” is a short title with the provider detail in its tooltip")
+            try expect(AppToolTip.text(for: face) == PublishingProtocol.allCases[index].detail, "the pop-up's tooltip is the provider detail of “\(item.title)”")
         }
 
         view.showForm(for: nil); panel.contentView?.layoutSubtreeIfNeeded()

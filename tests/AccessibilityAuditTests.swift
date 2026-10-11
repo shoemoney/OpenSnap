@@ -315,13 +315,12 @@ private enum AccessibilityAuditTests {
         resize.show(attachedTo: resizeParent)
         let resizePanel: NSPanel? = private_(resize, "panel")
         expect(resizePanel != nil, "the Resize or Crop panel was built")
-        if let resizePanel, let modeControl: NSSegmentedControl = private_(resize, "modeControl") {
+        if let resizePanel, let modeControl: GlassChoiceGroup = private_(resize, "modeControl") {
             for (index, name) in ["Resize", "Crop", "Limit"].enumerated() {
-                modeControl.selectedSegment = index
-                _ = modeControl.target?.perform(modeControl.action, with: modeControl)
+                modeControl.choose(index)
                 resizePanel.contentView?.layoutSubtreeIfNeeded()
                 record("Resize or Crop (\(name))", Audit.audit(resizePanel, surface: "Resize or Crop (\(name))"))
-                expect(modeControl.label(forSegment: index) == name, "the \(name) segment is labelled")
+                expect(modeControl.buttons[index].title == name && modeControl.buttons[index].accessibilityLabel() == name, "the \(name) segment is labelled")
             }
             expect(modeControl.accessibilityLabel() == "Size operation", "the mode control has a group label")
         } else { expect(false, "the mode control was found") }
@@ -398,12 +397,15 @@ private enum AccessibilityAuditTests {
         let strippedDestinations = Audit.audit(destinations, surface: "Destinations (seeded)").violations
         expect(strippedDestinations.count == 1 && strippedDestinations[0].kind == .missingLabel, "Destinations: a stripped Name label is caught on the real form: \(strippedDestinations)")
         destinations.nameField.setAccessibilityLabel(kept)
-        if let modeControl: NSSegmentedControl = private_(resize, "modeControl") {
-            let label = modeControl.accessibilityLabel()
-            modeControl.setAccessibilityLabel(nil)
+        if let widthField: NSTextField = private_(resize, "widthField"), let modeControl: GlassChoiceGroup = private_(resize, "modeControl") {
+            let label = widthField.accessibilityLabel()
+            widthField.setAccessibilityLabel(nil)
             let strippedResize = Audit.audit(resizePanel!, surface: "Resize (seeded)").violations
-            expect(strippedResize.count == 1 && strippedResize[0].kind == .missingLabel, "Resize: a stripped mode label is caught on the real panel: \(strippedResize)")
-            modeControl.setAccessibilityLabel(label)
+            expect(strippedResize.count == 1 && strippedResize[0].kind == .missingLabel, "Resize: a stripped Width label is caught on the real panel: \(strippedResize)")
+            widthField.setAccessibilityLabel(label)
+            // The glass mode group is a custom radio group: the walker does not hold it, so its name and role are asserted here.
+            expect(modeControl.accessibilityLabel() == "Size operation" && modeControl.accessibilityRole() == .radioGroup && modeControl.buttons.allSatisfy { $0.accessibilityRole() == .radioButton },
+                   "Resize: the mode group is a named radio group of radio buttons")
         }
         about.versionLabel.setAccessibilityLabel("Version 1.2.3 of " + Audit.retiredName)
         expect(kinds(Audit.audit(about, surface: "About (seeded)")).contains(.retiredName), "About: the retired name in a label is caught on the real window")
@@ -628,8 +630,8 @@ private enum AccessibilityAuditTests {
         let resize = ResizePanel(session: ResizePanelSession(size: CGSize(width: 800, height: 600), onApply: { _, _, _ in }), presets: ResizePresetStore(defaults: defaults))
         resize.show(attachedTo: parent)
         if let panel: NSPanel = private_(resize, "panel"), let widthField: NSTextField = private_(resize, "widthField"), let errorLabel: NSTextField = private_(resize, "errorLabel"),
-           let modeControl: NSSegmentedControl = private_(resize, "modeControl") {
-            expect((0..<modeControl.segmentCount).map { modeControl.label(forSegment: $0) } == ["Resize", "Crop", "Limit"], "Resize: the mode segments are labelled Resize, Crop and Limit")
+           let modeControl: GlassChoiceGroup = private_(resize, "modeControl") {
+            expect(modeControl.buttons.map(\.title) == ["Resize", "Crop", "Limit"], "Resize: the mode segments are labelled Resize, Crop and Limit")
             expect(errorLabel.accessibilityRole() == .staticText, "Resize: the validation line is a static text")
             widthField.stringValue = "abc"
             widthField.delegate?.controlTextDidChange?(Notification(name: NSControl.textDidChangeNotification, object: widthField))
@@ -659,7 +661,7 @@ private enum AccessibilityAuditTests {
         form.keyPopup(for: .screen).selectItem(at: 3)
         _ = form.keyPopup(for: .screen).target?.perform(form.keyPopup(for: .screen).action, with: form.keyPopup(for: .screen))
         expect(form.statusField.stringValue.hasPrefix("Error: "), "Shortcuts: a binding with no modifier is rejected with an Error: line: \(form.statusField.stringValue)")
-        expect((0..<4).allSatisfy { !(form.modifierControl(for: .screen).label(forSegment: $0) ?? "").isEmpty }, "Shortcuts: the four modifier segments are labelled")
+        expect(form.modifierToggles(for: .screen).allSatisfy { $0.accessibilityRole() == .checkBox && !Audit.label(of: $0).isEmpty }, "Shortcuts: the four modifier toggles are labelled check boxes")
 
         // Settings: the tab strip is a tab group of four radio buttons, one of them current.
         let settingsSuite = "OpenSnapAccessibilityAudit.labels.settings." + UUID().uuidString
@@ -673,6 +675,33 @@ private enum AccessibilityAuditTests {
         expect((strip.accessibilityTabs()?.count ?? 0) == 4, "Settings: four tabs are exposed")
         expect(strip.buttons.allSatisfy { $0.accessibilityRole() == .radioButton && !Audit.label(of: $0).isEmpty }, "Settings: every tab is a labelled radio button")
         expect(strip.buttons.map { ($0.accessibilityValue() as? Int) ?? -1 } == [0, 1, 0, 0], "Settings: exactly the current tab reports value 1")
+
+        // The choices: each radio set is a named radio group of radio buttons with one value; each check box says on or off.
+        settings.select(0)
+        settings.window.contentView?.layoutSubtreeIfNeeded()
+        let presence = settings.general.presenceGroup!
+        expect(presence.accessibilityRole() == .radioGroup && presence.accessibilityLabel() == "Show in" && (presence.accessibilityChildren() ?? []).count == 3,
+               "Settings: Show in is a radio group of three")
+        expect(presence.buttons.allSatisfy { $0.accessibilityRole() == .radioButton && !Audit.label(of: $0).isEmpty }, "Settings: every Show in choice is a labelled radio button")
+        expect(presence.buttons.map { ($0.accessibilityValue() as? Int) ?? -1 } == [0, 0, 1], "Settings: exactly the chosen radio (Both) reports value 1")
+        let boxes = [settings.general.snapCheckbox!, settings.general.hoverHintsCheckbox!, settings.general.keyboardTipsCheckbox!]
+        expect(boxes.allSatisfy { $0.accessibilityRole() == .checkBox && !Audit.label(of: $0).isEmpty }, "Settings: the three General options are labelled check boxes")
+        expect(boxes.map { ($0.accessibilityValue() as? Int) ?? -1 } == [1, 1, 0], "Settings: each check box reports its own value (snap and hover hints on, keyboard tips off)")
+        let walked = Audit.audit(settings.window, surface: "Settings: General (choices)")
+        expect(walked.violations.isEmpty && walked.controls >= 11, "Settings: the walker judged the choices and found nothing wrong:\n\(walked.description)")
+        // A radio that cannot take the keyboard, with no key-taking owner above it, is caught on the real window.
+        let victim = presence.buttons[2]
+        victim.refusesFirstResponder = true
+        let unreachable = Audit.audit(settings.window, surface: "Settings (seeded unreachable radio)").violations
+        expect(unreachable.contains { $0.kind == .notKeyboardReachable && $0.label == "Both" }, "Settings: a radio that refuses the keyboard is caught: \(unreachable)")
+        victim.refusesFirstResponder = false
+        // And a check box with its name taken away is caught as unlabelled.
+        let box = settings.general.hoverHintsCheckbox!
+        let name = box.accessibilityLabel()
+        box.setAccessibilityLabel(nil); box.makeIconOnly(name: "", derivesToolTip: false)
+        expect(Audit.audit(settings.window, surface: "Settings (seeded unlabelled box)").violations.contains { $0.kind == .missingLabel }, "Settings: a check box with no name is caught")
+        box.makeIconOnly(name: name ?? "", derivesToolTip: false); box.setAccessibilityLabel(name)
+        expect(Audit.audit(settings.window, surface: "Settings (restored)").violations.isEmpty, "Settings: restoring the name clears it")
     }
 }
 

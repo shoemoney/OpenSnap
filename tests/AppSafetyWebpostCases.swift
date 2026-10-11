@@ -41,7 +41,9 @@ extension AppSafetyTests {
             ("The right-click menu lists every destination; choosing one persists it and the next Webpost click uploads there", webpostMultipleDestinations),
             ("Destination settings: Add, Make Default and Remove round-trip through storage with an S3 profile destination", webpostDestinationSettingsRoundTrip),
             ("--eye-dump-audit needs the throwaway harness bundle id, an isolated home and support folder, and no fixture", webpostEyeDumpAuditGate),
-            ("The upload button is icon-only with the iCloud upload symbol and an explicit label", webpostModernIconOnly)
+            ("The upload button is icon-only with the iCloud upload symbol and an explicit label", webpostModernIconOnly),
+            ("The Upload button's choices open as a glass panel above it: destinations are options with the default chosen, rebuilt at every open; the empty and busy states; choosing persists the default", webpostChoicesPanel),
+            ("From the Upload panel Cancel Upload cancels, Destination Settings… opens settings, Share with macOS… anchors the system picker to the button, and Escape returns the focus", webpostChoicesActions)
         ]
     }
 
@@ -307,6 +309,90 @@ extension AppSafetyTests {
         try expect(AppDelegate.eyeDumpAuditDirectory(arguments: args, environment: ["OPENSNAP_APP_SUPPORT": support], bundleIdentifier: throwaway) == nil, "No isolated home: ignored")
         try expect(AppDelegate.eyeDumpAuditDirectory(arguments: args, environment: ["CFFIXED_USER_HOME": "/tmp/audit-home"], bundleIdentifier: throwaway) == nil, "No isolated support folder: ignored")
         try expect(AppDelegate.eyeDumpAuditDirectory(arguments: ["OpenSnap"], environment: isolated, bundleIdentifier: throwaway) == nil, "No flag: nil")
+    }
+
+    private static func openUploadChoices(_ app: AppDelegate) throws -> MenuChoicePanel {
+        let button = try webpostButton(app)
+        app.uploadChoices.panel?.host.close()
+        try expect(button.accessibilityPerformShowMenu(), "The accessibility Show Menu action is offered")
+        return try app.uploadChoices.panel.unwrap("the Upload panel")
+    }
+
+    private static func webpostChoicesPanel() throws {
+        let fixture = try Fixture(), app = fixture.app
+        let button = try webpostButton(app), probe = NativeMenuProbe()
+        defer { probe.stop() }
+        try configureDestinations(app, [try fakeDestination(), s3Destination()], names: ["Home SFTP", "AWS cdn"])
+        app.uploadChoices.panelSetup = offScreen
+        var panel = try openUploadChoices(app)
+        try expect(app.uploadChoices.isOpen && panel.host.plates.count == 2 && panel.rows.map(\.title) == ["Home SFTP", "AWS cdn", "Destination Settings…", "Share with macOS…"],
+                   "Destinations on one plate, settings and share on the next: \(panel.rows.map(\.title))")
+        try expect(panel.rows.map(\.kind) == [.option, .option, .command, .command] && panel.rows.filter(\.isChosen).map(\.title) == ["Home SFTP"],
+                   "Destinations are options, the default is the chosen one, the other two are commands: \(panel.rows.map(\.kind))")
+        try expect(panel.focusedRow === panel.rows[0], "A keyboard open puts the focus on the default destination")
+        let anchor = button.window!.convertToScreen(button.convert(button.bounds, to: nil))
+        try expect(panel.host.placement.map { $0.edge == .maxY && $0.frame.minY >= anchor.maxY } == true, "The panel opens above the Upload button, not over it")
+        try expect(!app.window.isVisible && probe.began == 0, "Nothing was ordered on screen and no native menu started")
+        // Choosing a destination closes the panel, persists the default, and the next open shows it.
+        panel.rows[1].performClick(nil)
+        try expect(!app.uploadChoices.isOpen && (try app.publishing.store.defaultDestination()?.name) == "AWS cdn", "Choosing AWS cdn closes the panel and persists it as the default")
+        panel = try openUploadChoices(app)
+        try expect(panel.rows.filter(\.isChosen).map(\.title) == ["AWS cdn"], "Reopened, AWS cdn is the chosen destination: \(panel.rows.filter(\.isChosen).map(\.title))")
+        // The destinations are read again at every open: one added behind the panel's back is there.
+        var third = try fakeDestination(); third.sshAlias = "third-host"
+        try app.publishing.store.save(PublishingDestination(name: "Third", settings: third), password: "")
+        panel = try openUploadChoices(app)
+        try expect(panel.rows.map(\.title) == ["Home SFTP", "AWS cdn", "Third", "Destination Settings…", "Share with macOS…"], "A destination added elsewhere appears on the next open: \(panel.rows.map(\.title))")
+        // A mouse open (right-click) takes the keyboard but focuses no row; a second request, or a click on the button, only closes.
+        app.uploadChoices.panel?.host.close()
+        let event = pointer(.rightMouseDown, on: button)
+        button.rightMouseDown(with: event)
+        try expect(app.uploadChoices.isOpen && panel.focusedRow == nil, "A right-click opens it with no row focused")
+        button.rightMouseUp(with: pointer(.rightMouseUp, on: button))
+        try expect(app.uploadChoices.isOpen, "Releasing the right button leaves it open")
+        try expect(panel.host.handleMouseDown(in: app.window, at: event.locationInWindow) && !app.uploadChoices.isOpen, "A click on the Upload button while open only closes it and is consumed")
+        // Empty: the dimmed row is the only destination.
+        try configureDestinations(app, [])
+        panel = try openUploadChoices(app)
+        try expect(panel.rows.map(\.title) == ["No destination configured", "Destination Settings…", "Share with macOS…"] && !panel.rows[0].isEnabled && panel.rows[0].kind == .command && panel.rows[1].isEnabled,
+                   "With no destination the first row is dimmed and the two commands stay: \(panel.rows.map(\.title))")
+        try expect(panel.focusedRow === panel.rows[1], "The dimmed row never takes the focus")
+        app.uploadChoices.panel?.host.close()
+        // Busy: Cancel Upload leads on its own plate.
+        try configureDestinations(app, [try fakeDestination()], names: ["Home SFTP"])
+        let upload = UploadProbe(); upload.blocks = true; install(upload, on: app)
+        button.performClick(nil)
+        try waitForMain("The transfer starts") { upload.count == 1 }
+        panel = try openUploadChoices(app)
+        try expect(panel.host.plates.count == 3 && panel.rows.first?.title == "Cancel Upload" && panel.rows.first?.kind == .command && panel.rows.first?.isEnabled == true,
+                   "While busy Cancel Upload leads on a plate of its own (\(panel.rows.map(\.title)))")
+        panel.rows[0].performClick(nil)
+        upload.gate.signal()
+        try waitForMain("The upload is cancelled") { !app.publishing.isBusy && app.status.stringValue == "Upload cancelled" }
+        panel = try openUploadChoices(app)
+        try expect(panel.rows.first?.title != "Cancel Upload", "Idle again, Cancel Upload is gone from the next open")
+        try expect(upload.copied.isEmpty && probe.began == 0, "Cancelling copied nothing and no native menu started")
+        UploadNotice.clear()   // the "Upload cancelled" notice would otherwise stay in the status line for the next test
+    }
+
+    private static func webpostChoicesActions() throws {
+        let fixture = try Fixture(), app = fixture.app
+        let button = try webpostButton(app)
+        app.uploadChoices.panelSetup = offScreen
+        var opened = 0, shared = 0
+        app.sharingSettingsPresenter = { opened += 1 }
+        app.sharePickerPresenter = { _, anchor in if anchor === button { shared += 1 } }
+        var panel = try openUploadChoices(app)
+        try (panel.rows.first { $0.title == "Destination Settings…" }).unwrap("settings row").performClick(nil)
+        try expect(opened == 1 && !app.uploadChoices.isOpen, "Destination Settings… closes the panel and opens settings")
+        panel = try openUploadChoices(app)
+        try (panel.rows.first { $0.title == "Share with macOS…" }).unwrap("share row").performClick(nil)
+        try expect(shared == 1 && !app.uploadChoices.isOpen, "Share with macOS… closes the panel and anchors the system picker to the Upload button")
+        // Escape returns the focus to the button that opened it.
+        app.window.makeFirstResponder(button)
+        panel = try openUploadChoices(app)
+        panel.host.window.sendEvent(panelKey(53, in: panel.host.window))
+        try expect(!app.uploadChoices.isOpen && app.window.firstResponder === button, "Escape closes the panel and the Upload button has the focus again")
     }
 
     static func webpostModernIconOnly() throws {

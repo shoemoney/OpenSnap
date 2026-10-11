@@ -28,6 +28,10 @@ final class PublishingDestinationsView: NSView {
         return NSSize(width: sheetWidth, height: min(height, visibleFrame.height))
     }
 
+    /// The glass plates carry a 4 pt inset of their own, so the form and footer give them less margin than a native control needs: that is
+    /// what keeps the SFTP form inside the 680 pt sheet of a 1280 x 800 screen with 44 pt rows.
+    private static let pageTop = Space.s4, footerTop = Space.s2, footerBottom = Space.s3
+
     private(set) var editing: PublishingDestination?
 
     /// The tallest the sheet may be (set from the screen). The form always asks for what it needs and scrolls when that is more.
@@ -39,7 +43,7 @@ final class PublishingDestinationsView: NSView {
     var preferredHeight: CGFloat { min(maxSheetHeight, formPageHeight) }
     /// The visible form's rows, the separator, the footer with its result band, and the margins around them.
     var formPageHeight: CGFloat {
-        Space.s5 + formPage.fittingSize.height + Space.s5 + 1 + Space.s3 + formFooter.fittingSize.height + Space.s4
+        Self.pageTop + formPage.fittingSize.height + Space.s5 + 1 + Self.footerTop + formFooter.fittingSize.height + Self.footerBottom
     }
     private func notifyPreferredHeight() { onPreferredHeightChange?(preferredHeight) }
 
@@ -53,9 +57,15 @@ final class PublishingDestinationsView: NSView {
     let passwordField = NSSecureTextField(), folderField = NSTextField(), publicField = NSTextField()
     let aliasField = NSTextField(), remoteRootField = NSTextField(), portField = NSTextField()
     let regionField = NSTextField(), bucketField = NSTextField(), profileField = NSTextField()
-    let protocolPopup = NSPopUpButton(frame: .zero, pullsDown: false)
-    let sourcePopup = NSPopUpButton(frame: .zero, pullsDown: false)
-    let aclCheckbox = NSButton(checkboxWithTitle: "Make uploads public-read", target: nil, action: nil)
+    /// The Protocol and Source choices: glass pop-ups. Each keeps `NSPopUpButton` as the model (items, selection, the action `formChanged`)
+    /// and opens every way, mouse, keys and VoiceOver included, as one glass panel; they sit on plates in a hover-fill cell.
+    let protocolPopup = DestinationChoicePopUp(frame: .zero, pullsDown: false)
+    let sourcePopup = DestinationChoicePopUp(frame: .zero, pullsDown: false)
+    /// The "Make uploads public-read" switch: a checkbox-style glass toggle; `state` is `.on` while chosen.
+    let aclCheckbox = GlassChoiceButton(title: "Make uploads public-read", kind: .toggle, indicator: .checkbox, layout: .row)
+    private var glassPlates: [GlassSurfaceView] = []
+    private var fillCells: [ChromeFillCell] = []
+    private var displayOptionsObservation: DisplayOptions.Observation?
     private(set) var sectionHeaders: [NSTextField] = []
     /// The caption of every visible form row, so tests can check each fits its column on one line.
     var visibleFormCaptions: [NSTextField] { rows.values.filter { !$0.stack.isHidden && !$0.label.stringValue.isEmpty }.map(\.label) }
@@ -63,11 +73,14 @@ final class PublishingDestinationsView: NSView {
     private struct Row { let label: NSTextField; let stack: NSStackView; let visible: (PublishingProtocol, Bool) -> Bool }
     private var rows: [String: Row] = [:]
 
-    private static func button(_ title: String, _ target: AnyObject, _ action: Selector) -> NSButton {
-        let button = NSButton(title: title, target: target, action: action)
-        Typography.apply(.body, to: button); button.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.control).isActive = true
+    /// A sheet command: a titled glass command button (20 pt, its own state fills) that sits on an action plate.
+    private static func button(_ title: String, _ target: AnyObject, _ action: Selector) -> GlassChoiceButton {
+        let button = GlassChoiceButton(title: title, kind: .command, layout: .segment)
+        button.target = target; button.action = action
+        button.minimumWidth = commandMinimumWidth
         return button
     }
+    private static let commandMinimumWidth: CGFloat = 96
     /// Status and pill glyphs share the chrome's icon family (ChromeIcons), so Destinations never mixes in a stray SF Symbol.
     static func icon(_ icon: FAIcon, pointSize: CGFloat = Typography.iconInline, description: String? = nil) -> NSImage? {
         let image = ChromeIcons.resolve(icon, family: .solid, pointSize: pointSize).image
@@ -76,13 +89,16 @@ final class PublishingDestinationsView: NSView {
     }
 
     // Footer buttons: pinned below the scroll view so Return and Escape always have a visible target.
-    private(set) lazy var cancelButton: NSButton = {
+    private(set) lazy var cancelButton: GlassChoiceButton = {
         let button = Self.button("Cancel", self, #selector(cancelFormTapped)); button.keyEquivalent = "\u{1b}"; return button
     }()
-    private(set) lazy var saveButton: NSButton = {
-        let button = Self.button("Save", self, #selector(saveTapped)); button.keyEquivalent = "\r"; return button
+    /// The default button, and the only primary (tinted) command on the sheet.
+    private(set) lazy var saveButton: GlassChoiceButton = {
+        let button = Self.button("Save", self, #selector(saveTapped)); button.keyEquivalent = "\r"; button.isPrimary = true; return button
     }()
-    private(set) lazy var testButton: NSButton = Self.button("Test", self, #selector(testTapped))
+    private(set) lazy var testButton: GlassChoiceButton = Self.button("Test", self, #selector(testTapped))
+    /// The two action plates of the footer: Test on its own, Cancel and Save together.
+    private(set) var testPlate: GlassSurfaceView?, actionPlate: GlassSurfaceView?
     private let formFooter = NSStackView()
 
     init(editing destination: PublishingDestination?, width: CGFloat = PublishingDestinationsView.sheetWidth,
@@ -108,16 +124,16 @@ final class PublishingDestinationsView: NSView {
             document.topAnchor.constraint(equalTo: clip.topAnchor),
             formPage.leadingAnchor.constraint(equalTo: document.leadingAnchor, constant: Space.s5),
             formPage.trailingAnchor.constraint(equalTo: document.trailingAnchor, constant: -Space.s5),
-            formPage.topAnchor.constraint(equalTo: document.topAnchor, constant: Space.s5),
+            formPage.topAnchor.constraint(equalTo: document.topAnchor, constant: Self.pageTop),
             formPage.bottomAnchor.constraint(equalTo: document.bottomAnchor, constant: -Space.s5),
             scrollView.leadingAnchor.constraint(equalTo: leadingAnchor), scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
             scrollView.topAnchor.constraint(equalTo: topAnchor),
             separator.leadingAnchor.constraint(equalTo: leadingAnchor), separator.trailingAnchor.constraint(equalTo: trailingAnchor),
             separator.topAnchor.constraint(equalTo: scrollView.bottomAnchor),
-            bottomAnchor.constraint(equalTo: formFooter.bottomAnchor, constant: Space.s4),
+            bottomAnchor.constraint(equalTo: formFooter.bottomAnchor, constant: Self.footerBottom),
             formFooter.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Space.s5),
             formFooter.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Space.s5),
-            formFooter.topAnchor.constraint(equalTo: separator.bottomAnchor, constant: Space.s3),
+            formFooter.topAnchor.constraint(equalTo: separator.bottomAnchor, constant: Self.footerTop),
         ])
         showForm(for: destination)
     }
@@ -130,8 +146,21 @@ final class PublishingDestinationsView: NSView {
 
     private func buildFooters() {
         formFooter.orientation = .horizontal; formFooter.alignment = .centerY; formFooter.spacing = Space.s4; formFooter.distribution = .fill
+        let options = ChromeAccessibility.live
+        for button in [testButton, cancelButton, saveButton, aclCheckbox] { button.accessibility = options }
+        let testPlate = glassPlate([testButton], identifier: "DestinationTestGroup", label: "Test connection")
+        let actionPlate = glassPlate([cancelButton, saveButton], identifier: "DestinationActionGroup", label: "Cancel or save")
+        self.testPlate = testPlate; self.actionPlate = actionPlate
         let flexible = NSView(); flexible.setContentHuggingPriority(.init(1), for: .horizontal)
-        let buttons = NSStackView(views: [testButton, flexible, cancelButton, saveButton]); buttons.spacing = Space.s4
+        // Both plates share one glass container, the way the editor and History bars do; the buttons on them draw their own state fills.
+        let row = NSStackView(views: [testPlate, flexible, actionPlate]); row.orientation = .horizontal; row.alignment = .centerY
+        row.spacing = GlassChrome.Metrics.groupGap; row.translatesAutoresizingMaskIntoConstraints = false
+        let bar = NSView(); bar.translatesAutoresizingMaskIntoConstraints = false; bar.addSubview(row)
+        NSLayoutConstraint.activate([row.leadingAnchor.constraint(equalTo: bar.leadingAnchor), row.trailingAnchor.constraint(equalTo: bar.trailingAnchor),
+                                     row.topAnchor.constraint(equalTo: bar.topAnchor), row.bottomAnchor.constraint(equalTo: bar.bottomAnchor)])
+        let buttons = GlassChrome.container(around: bar, identifier: "DestinationFooterBar")
+        buttons.heightAnchor.constraint(equalToConstant: GlassChrome.Metrics.headerHeight).isActive = true
+        displayOptionsObservation = DisplayOptions.observe { [weak self] _ in self?.applyDisplayOptions() }
         // The result band is as tall as what it says: one line for the idle hint, up to three for a Test error. The footer grows by the
         // difference and the form above it shrinks and scrolls, so a result never covers a field and an idle form keeps its room.
         formResult.translatesAutoresizingMaskIntoConstraints = false
@@ -140,6 +169,20 @@ final class PublishingDestinationsView: NSView {
         formResult.widthAnchor.constraint(equalTo: column.widthAnchor).isActive = true
         formFooter.addArrangedSubview(column)
         column.widthAnchor.constraint(equalTo: formFooter.widthAnchor).isActive = true
+    }
+
+    /// One glass plate for a related group of choices; it is announced as a group so VoiceOver does not walk straight through it.
+    private func glassPlate(_ views: [NSView], identifier: String, label: String? = nil) -> GlassSurfaceView {
+        let plate = GlassChrome.plate(views, identifier: identifier, accessibility: .live)
+        if let label { plate.setAccessibilityElement(true); plate.setAccessibilityLabel(label); plate.setAccessibilityRole(.group) }
+        glassPlates.append(plate)
+        return plate
+    }
+    private func applyDisplayOptions() {
+        let options = ChromeAccessibility.live
+        for plate in glassPlates { plate.accessibility = options }
+        for cell in fillCells { cell.accessibility = options }
+        for button in [testButton, cancelButton, saveButton, aclCheckbox] { button.accessibility = options }
     }
 
     /// A failure from storage or a worker: the form's result band says "Error:" and carries a glyph, so it never relies on colour.
@@ -159,7 +202,7 @@ final class PublishingDestinationsView: NSView {
 
     private let formHelp = NSTextField(wrappingLabelWithString: "")
 
-    private static let captionWidth: CGFloat = 190
+    private static let captionWidth: CGFloat = 180
 
     private func styled(_ field: NSTextField, _ placeholder: String) -> NSTextField {
         Typography.apply(.body, to: field); field.placeholderString = placeholder
@@ -176,12 +219,12 @@ final class PublishingDestinationsView: NSView {
         sectionHeaders.append(header)
         return header
     }
-    private func addRow(_ id: String, _ title: String, _ control: NSView, visible: @escaping (PublishingProtocol, Bool) -> Bool) {
+    private func addRow(_ id: String, _ title: String, _ control: NSView, stretches: Bool = true, visible: @escaping (PublishingProtocol, Bool) -> Bool) {
         let caption = label(title, style: .bodyStrong)
         let stack = NSStackView(views: [caption, control]); stack.orientation = .horizontal; stack.alignment = .centerY; stack.spacing = Space.s4
         caption.widthAnchor.constraint(equalToConstant: Self.captionWidth).isActive = true
         caption.preferredMaxLayoutWidth = Self.captionWidth
-        control.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        control.setContentHuggingPriority(stretches ? .defaultLow : .required, for: .horizontal)
         stack.widthAnchor.constraint(equalToConstant: contentWidth).isActive = true
         control.setAccessibilityLabel(title)
         rows[id] = Row(label: caption, stack: stack, visible: visible)
@@ -236,18 +279,19 @@ final class PublishingDestinationsView: NSView {
 
     private func buildForm() {
         formPage.orientation = .vertical; formPage.alignment = .leading; formPage.spacing = Space.s3
-        for popup in [protocolPopup, sourcePopup] { Typography.apply(.body, to: popup); popup.menu?.autoenablesItems = false }
+        for popup in [protocolPopup, sourcePopup] { popup.menu?.autoenablesItems = false }
         protocolPopup.addItems(withTitles: PublishingProtocol.allCases.map(\.title))
         for (index, transport) in PublishingProtocol.allCases.enumerated() { protocolPopup.item(at: index)?.toolTip = transport.detail }
         protocolPopup.target = self; protocolPopup.action = #selector(formChanged)
-        sourcePopup.addItems(withTitles: ["AWS credentials profile", "Access key stored in Keychain"])
+        sourcePopup.addItems(withTitles: [Self.sourceTitles.profile, Self.sourceTitles.keychain])
+        sourcePopup.faceTitles = Self.sourceFaceTitles
         sourcePopup.target = self; sourcePopup.action = #selector(formChanged)
-        Typography.apply(.body, to: aclCheckbox)
+        aclCheckbox.target = self; aclCheckbox.action = #selector(formChanged)
         Typography.apply(.body, to: passwordField)
         let all: (PublishingProtocol, Bool) -> Bool = { _, _ in true }
         formPage.addArrangedSubview(sectionHeader("Connection"))
         addRow("name", "Name", styled(nameField, "Shown in the Upload right-click menu"), visible: all)
-        addRow("protocol", "Protocol", protocolPopup, visible: all)
+        addRow("protocol", "Protocol", choicePlate(protocolPopup, caption: "Protocol", identifier: "DestinationProtocol"), visible: all)
         addRow("endpoint", "Endpoint URL", styled(endpointField, ""), visible: { [unowned self] p, _ in p != .sftp || self.showsLegacySFTPEndpoint })
         addRow("region", "Region", styled(regionField, "us-east-1, or auto for R2"), visible: { p, _ in p == .s3 })
         addRow("bucket", "Bucket", styled(bucketField, "my-bucket"), visible: { p, _ in p == .s3 })
@@ -256,10 +300,10 @@ final class PublishingDestinationsView: NSView {
         addRow("alias", "SSH host alias", styled(aliasField, "myserver or host.example.com"), visible: { p, _ in p == .sftp })
         addRow("root", "SFTP remote root", styled(remoteRootField, "/var/www/site/uploads"), visible: { p, _ in p == .sftp })
         addRow("port", "SFTP port", styled(portField, "Blank to use SSH configuration"), visible: { p, _ in p == .sftp })
-        addRow("acl", "", aclCheckbox, visible: { p, _ in p == .s3 })
+        addRow("acl", "", glassPlate([aclCheckbox], identifier: "DestinationPublicReadGroup"), stretches: false, visible: { p, _ in p == .s3 })
         if let last = rows["acl"]?.stack { formPage.setCustomSpacing(Space.s5, after: last) }
         formPage.addArrangedSubview(sectionHeader("Credentials"))
-        addRow("source", "Source", sourcePopup, visible: { p, _ in p == .s3 })
+        addRow("source", "Source", choicePlate(sourcePopup, caption: "Source", identifier: "DestinationSource"), visible: { p, _ in p == .s3 })
         addRow("profile", "AWS profile", styled(profileField, "default (~/.aws/credentials)"), visible: { p, keychain in p == .s3 && !keychain })
         addRow("username", "Username", styled(usernameField, ""),
                visible: { p, keychain in p == .s3 ? keychain : true })
@@ -269,6 +313,8 @@ final class PublishingDestinationsView: NSView {
         formHelp.maximumNumberOfLines = 0; formHelp.preferredMaxLayoutWidth = contentWidth
         formPage.addArrangedSubview(formHelp)
         formPage.setCustomSpacing(Space.s4, after: rows["password"]!.stack)
+        // The Protocol plate is 44 pt against the 36 pt fields around it; 8 pt each side keeps the rows' centres on the form's 48 pt pitch.
+        for id in ["name", "protocol"] { if let stack = rows[id]?.stack { formPage.setCustomSpacing(Space.s2, after: stack) } }
     }
 
     private var keychainSource: Bool { sourcePopup.indexOfSelectedItem == 1 }
@@ -290,6 +336,7 @@ final class PublishingDestinationsView: NSView {
         endpointField.placeholderString = copy.endpointPlaceholder; folderField.placeholderString = copy.folderPlaceholder
         usernameField.placeholderString = copy.usernamePlaceholder; passwordField.placeholderString = copy.passwordPlaceholder
         formHelp.stringValue = copy.help
+        syncProtocolHelp()
         if formResult.kind == .idle || formResult.kind == .hint { formResult.show(.hint, copy.testNote) }
         notifyPreferredHeight()
     }
@@ -297,6 +344,46 @@ final class PublishingDestinationsView: NSView {
     private func showResult(_ kind: DestinationStatusRow.Kind, _ message: String, detail: String = "") {
         formResult.show(kind, message, detail: detail)
         notifyPreferredHeight()
+    }
+
+    // MARK: Glass pop-ups
+
+    /// A pop-up on its own plate: the pop-up draws its face (title and chevron) and opens one glass panel; the cell behind it draws the hover
+    /// fill. It is as wide as its widest title, and never wider than the room the row leaves.
+    private func choicePlate(_ popup: GlassPopUpButton, caption: String, identifier: String) -> GlassSurfaceView {
+        popup.panelIdentifier = identifier + ".panel"; popup.panelLabel = caption
+        popup.identifier = NSUserInterfaceItemIdentifier(identifier + "Popup")
+        popup.setAccessibilityLabel(caption)
+        let room = contentWidth - Self.captionWidth - Space.s4
+        let width = min(ceil(popup.intrinsicContentSize.width), room)
+        let cell = ChromeFillCell(popup, size: NSSize(width: width, height: GlassChoiceButton.height))
+        cell.focusTarget = popup; cell.accessibility = .live
+        popup.minimumPanelWidth = max(240, width)
+        fillCells.append(cell)
+        return glassPlate([cell], identifier: identifier + "Group")
+    }
+
+    /// The two credential sources, in menu order, with the full title the menu, the accessibility value and the tooltip keep and the short one the face shows.
+    static let sourceTitles = (profile: "AWS credentials profile", keychain: "Access key stored in Keychain")
+    static let sourceFaceTitles = [sourceTitles.profile: "AWS profile", sourceTitles.keychain: "Keychain"]
+
+    /// The protocol pop-up says what the chosen protocol is; the source pop-up's tooltip is the full title its face shortens.
+    private func syncProtocolHelp() {
+        AppToolTip.setText(selectedProtocol.detail, for: protocolPopup)
+        AppToolTip.setText(sourcePopup.titleOfSelectedItem, for: sourcePopup)
+    }
+
+    /// Closes any choice panel that is up and says whether there was one. Escape with a panel open dismisses only the panel; the sheet stays.
+    @discardableResult
+    private func closeOpenChoicePanels() -> Bool {
+        let open = [protocolPopup, sourcePopup].map(\.choicePanel).filter { $0.host.isShown }
+        for panel in open { panel.host.close() }
+        return !open.isEmpty
+    }
+
+    override func viewWillMove(toWindow newWindow: NSWindow?) {
+        if newWindow == nil { for popup in [protocolPopup, sourcePopup] { popup.choicePanel.host.close(restoreFocus: false) } }
+        super.viewWillMove(toWindow: newWindow)
     }
 
     /// Disables protocols the system tools cannot run.
@@ -402,7 +489,10 @@ final class PublishingDestinationsView: NSView {
             if let token { NotificationCenter.default.removeObserver(token) }
         }
     }
-    @objc func cancelFormTapped() { formResult.show(.idle, ""); onCancel?() }
+    @objc func cancelFormTapped() {
+        if closeOpenChoicePanels() { return }
+        formResult.show(.idle, ""); onCancel?()
+    }
 }
 
 extension PublishingProtocol {
@@ -420,6 +510,21 @@ extension PublishingProtocol {
 private extension NSStackView {
     func setViews(_ views: [NSView], in gravity: NSStackView.Gravity) {
         views.forEach { addArrangedSubview($0) }
+    }
+}
+
+/// A glass pop-up whose face may show a shorter title than the item it stands for: the menu rows, the accessibility value and the tooltip
+/// keep the full text, and the face is only as wide as its (short) titles, so it never truncates in the narrowest sheet.
+final class DestinationChoicePopUp: GlassPopUpButton {
+    /// Full item title to the title the face shows; an item with no entry shows its own title.
+    var faceTitles: [String: String] = [:] { didSet { invalidateIntrinsicContentSize(); needsDisplay = true } }
+    override var faceTitle: String { let full = titleOfSelectedItem ?? ""; return faceTitles[full] ?? full }
+
+    override var intrinsicContentSize: NSSize {
+        let attributes: [NSAttributedString.Key: Any] = [.font: DesignTokens.Typography.font(.body)]
+        let titles = (menu?.items.map { faceTitles[$0.title] ?? $0.title } ?? []) + [faceTitle]
+        let widest = titles.map { ceil(($0 as NSString).size(withAttributes: attributes).width) }.max() ?? 0
+        return NSSize(width: 2 * GlassChoiceButton.padding + widest + GlassChoiceButton.gap + GlassChoiceButton.glyphSide, height: GlassChoiceButton.height)
     }
 }
 

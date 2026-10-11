@@ -19,9 +19,9 @@ extension AppSafetyTests {
             ("Modern Wipe presses follow the blank/clear/wipe stages with the dimmed glass and the action spoken (Clear image, Remove annotations, Nothing to clear)", modernWipeStages),
             ("writeLayoutEvidence reports the Modern style and finds the header and brand one level deeper", modernLayoutEvidence),
             ("Main menu items carry symbols in Modern only and keep validating", modernMenus),
-            ("Color popover follows the system appearance", modernPalettePopover),
-            ("Color popover paints its own opaque plate and its text reads at 4.5:1 in light, dark and both Increase Contrast arms (audit fix 2)", modernPalettePopoverContrast),
-            ("Color popover always shows the active colour: a checked preset, or the Custom color… row with the colour's chip, a check and the accent outline; rows align edge to edge", modernPaletteShowsActiveColor),
+            ("Color panel hangs below the Color control, off the system appearance, as one glass container of two plates", modernPalettePopover),
+            ("Color panel text is 20 pt, and under Reduce Transparency its plates are opaque and the text reads at 4.5:1 in light, dark and both Increase Contrast arms (audit fix 2)", modernPalettePopoverContrast),
+            ("Color panel always shows the active colour: a checked preset, or the Custom color… row chosen with the colour's chip, a check, the selected fill and border; the plates are even", modernPaletteShowsActiveColor),
             ("Modern centres a small canvas in the editor area at default and minimum size and leaves larger and wide documents panning unconstrained", modernCanvasCentred),
             ("A small canvas is centred when only the document or zoom changes, with no window resize", modernCanvasCentresWithoutWindowResize),
             ("Hide and Undo tooltips read their shortcuts from the real menu items", modernShortcutHintsFollowMenu),
@@ -35,7 +35,7 @@ extension AppSafetyTests {
             ("Modern puts capture, tools and annotation in the top bar, document and output in the bottom bar, and no rail", modernTopBarLayout),
             ("Modern has one footer row and no file-name field; the window title is the document name and Rename changes the export name", modernDocumentNameInTitle),
             ("Modern canvas border corner and edge mouse drags resize and crop with one Undo each, and Escape cancels", modernBorderGestures),
-            ("The Size pill opens its popover below and every gesture, preset, key and assistive step is exactly one undo step, even when the popover is dismissed mid-drag", modernSizePopoverUndo),
+            ("The Size pill opens its panel below and every gesture, preset, key and assistive step is exactly one undo step, even when the panel is dismissed mid-drag", modernSizePopoverUndo),
             ("Frame mode snaps exactly the viewport (or the centred canvas inside the hole), hides the scrollers and restores them", modernFrameCaptureRect),
             ("The status carries the export size once, truncates with the full text as tooltip, and the drag-preview timer is not re-armed by it", modernStatusMergesDragSize),
             ("The zoom face is the percentage alone while VoiceOver and the tooltip carry the mode word", modernZoomFace),
@@ -47,7 +47,9 @@ extension AppSafetyTests {
             ("OSN-044: the drag well is a keyboard-operable button: it takes focus, Space and Return open the Export panel, VoiceOver presses it, hover and press change its cursor and cell", modernDragWellKeyboard),
             ("OSN-044: the PNG | JPG toggle takes Left, Right and Space and a click through changeDragOptions and stores the same format as before", modernFormatToggleInput),
             ("OSN-044: the canvas border is a hairline at rest and shows its handles on hover or while the crop tool is chosen", modernBorderHandlesFollowTool),
-            ("OSN-044: Differentiate Without Color and Increase Contrast reach the real tool buttons, the toggle and the Snap button", modernStateOptionsReachControls)
+            ("OSN-044: Differentiate Without Color and Increase Contrast reach the real tool buttons, the toggle and the Snap button", modernStateOptionsReachControls),
+            ("The zoom opens a glass panel above the footer: percentages and the computed row are options, Actual Size is a toggle that keeps the percentage face and its refusal path", modernZoomPanel),
+            ("Original size is a glass checkbox toggle on the View plate: it persists DragOriginalSize, shows only for a large shot, and gives the status slot its room back", modernOriginalSizeToggle)
         ]
     }
 
@@ -1455,16 +1457,13 @@ extension AppSafetyTests {
 
     // MARK: T15 cases
 
-    /// The Size popover hosted in the app window, so real mouse events reach its track and presets.
-    private static func hostSizePopover(_ app: AppDelegate) throws -> (AppSafetySizePopover, SizePopoverContent, remove: () -> Void) {
+    /// The Size panel opened off the screen (the fixture gives its host a presenter that shows nothing), so mouse events can be handed to its track and presets.
+    private static func hostSizePopover(_ app: AppDelegate) throws -> (GlassPanelHost, SizePopoverContent, remove: () -> Void) {
         let slider = app.widthControl
         slider.showPopover()
-        guard let popover = slider.popover as? AppSafetySizePopover, let panel = slider.popoverContent else { throw Failure(description: "The Size popover did not open") }
-        let content = try (app.window.contentView).unwrap("content view")
-        panel.frame.origin = NSPoint(x: 40, y: 40)
-        content.addSubview(panel)
-        content.layoutSubtreeIfNeeded()
-        return (popover, panel, { panel.removeFromSuperview() })
+        guard let host = slider.panel, let panel = slider.popoverContent else { throw Failure(description: "The Size panel did not open") }
+        host.window.contentView?.layoutSubtreeIfNeeded()
+        return (host, panel, { slider.dismissPopover() })
     }
 
     private static func sizeKey(_ code: UInt16, in app: AppDelegate, flags: NSEvent.ModifierFlags = []) throws -> NSEvent {
@@ -1496,12 +1495,12 @@ extension AppSafetyTests {
             try expect(app.canvas.document.elements != before, "\(label): Redo reapplies the whole gesture")
         }
 
-        // The pill opens its popover below itself, in the top bar.
+        // The pill opens its panel below itself, in the top bar.
         fresh()
-        let (popover, panel, remove) = try hostSizePopover(app)
+        let (host, panel, remove) = try hostSizePopover(app)
         defer { slider.dismissPopover(); remove() }
-        try expect(popover.edge == .minY && popover.anchor === slider && slider.isDescendant(of: chrome.header) && popover.behavior == .transient,
-                   "The Size popover opens below the pill in the top bar and dismisses on an outside click")
+        try expect(host.placement?.edge == .minY && host.anchor === slider && slider.isDescendant(of: chrome.header) && !host.requestedKey,
+                   "The Size panel opens below the pill in the top bar and leaves the keyboard on the pill")
         func pointer(_ type: NSEvent.EventType, _ fraction: CGFloat, flags: NSEvent.ModifierFlags = []) throws -> NSEvent {
             let track = panel.trackView
             let location = track.convert(NSPoint(x: track.x(forFraction: fraction), y: 18), to: nil)
@@ -1520,8 +1519,8 @@ extension AppSafetyTests {
         try oneStep("An arrow key on the pill") { try slider.keyDown(with: sizeKey(124, in: app)) }
         try oneStep("An assistive increment") { _ = slider.accessibilityPerformIncrement() }
         try oneStep("A Shift arrow") { try slider.keyDown(with: sizeKey(124, in: app, flags: [.shift])) }
-        // Dismissing the popover in the middle of a drag closes the group; the late mouse-up cannot close it twice.
-        try oneStep("A popover dismissed mid-drag") {
+        // Dismissing the panel in the middle of a drag closes the group; the late mouse-up cannot close it twice.
+        try oneStep("A panel dismissed mid-drag") {
             try panel.trackView.mouseDown(with: pointer(.leftMouseDown, 1))
             try panel.trackView.mouseDragged(with: pointer(.leftMouseDragged, 0.75))
             try expect(undo.groupingLevel == 1, "The drag is open")
@@ -1529,13 +1528,13 @@ extension AppSafetyTests {
             try expect(undo.groupingLevel == 0 && !app.sizeUndoGrouping && !slider.isPopoverShown, "Dismissal closed the group")
             try panel.trackView.mouseUp(with: pointer(.leftMouseUp, 0.75))
         }
-        // The hide and terminate paths close the popover and any open group too.
+        // The hide and terminate paths close the panel and any open group too.
         window.simulatesVisibility = true; window.shown = true
         fresh()
         slider.showPopover()
         try expect(slider.beginGesture() && undo.groupingLevel == 1, "A gesture is open")
         app.vanish()
-        try expect(!slider.isPopoverShown && undo.groupingLevel == 0 && !app.sizeUndoGrouping, "Hiding the window dismisses the popover and ends the group")
+        try expect(!slider.isPopoverShown && undo.groupingLevel == 0 && !app.sizeUndoGrouping, "Hiding the window dismisses the panel and ends the group")
         window.shown = true
         fresh()
         slider.showPopover()
@@ -1543,10 +1542,10 @@ extension AppSafetyTests {
         app.canvas.strokeWidth = 12; app.syncDrawingControls()
         answer(.alertSecondButtonReturn)
         try expect(app.applicationShouldTerminate(NSApp) == .terminateCancel, "Cancel keeps the app running")
-        try expect(!slider.isPopoverShown && undo.groupingLevel == 0 && !app.sizeUndoGrouping, "Quit dismisses the popover and ends the group before it decides")
+        try expect(!slider.isPopoverShown && undo.groupingLevel == 0 && !app.sizeUndoGrouping, "Quit dismisses the panel and ends the group before it decides")
         // The pill toggles with Space and Escape and never opens while disabled.
         try expect(!slider.isPopoverShown, "Closed")
-        try slider.keyDown(with: sizeKey(49, in: app)); try expect(slider.isPopoverShown, "Space opens the popover")
+        try slider.keyDown(with: sizeKey(49, in: app)); try expect(slider.isPopoverShown, "Space opens the panel")
         try slider.keyDown(with: sizeKey(53, in: app)); try expect(!slider.isPopoverShown, "Escape closes it")
     }
 
@@ -1637,6 +1636,93 @@ extension AppSafetyTests {
         try expect(placed.maxX <= chrome.saveButton.convert(chrome.saveButton.bounds, to: nil).minX - 12 + 0.5, "The status keeps its 12 pt gap before Save")
     }
 
+    private static func modernZoomPanel() throws {
+        let (fixture, chrome) = try modernFixture()
+        let app = fixture.app, zoom = app.zoomControl
+        let probe = NativeMenuProbe()
+        defer { probe.stop() }
+        offScreen(zoom.choicePanel)
+        // A blank canvas has no Actual Size to offer: the row is there, dimmed, and choosing it changes nothing.
+        zoom.performClick(nil)
+        var panel = zoom.choicePanel
+        let actualRow = try (panel.rows.first { $0.title == "Actual Size" }).unwrap("the Actual Size row")
+        try expect(!actualRow.isEnabled && !app.canToggleActualSize && actualRow.kind == .toggle, "Without a snap picture the Actual Size row is a dimmed toggle")
+        actualRow.performClick(nil)
+        try expect(!app.isActualSize && zoom.titleOfSelectedItem == "100%", "Choosing a dimmed Actual Size does nothing and keeps the 100% face")
+        zoom.choicePanel.host.close()
+        try viewportFixture(app)
+        app.setCanvasDisplayZoom(0.83, label: "Fit")
+        zoom.performClick(nil)
+        panel = zoom.choicePanel
+        try expect(zoom.isOpen && panel.host.plates.count == 2 && panel.rows.count == 8, "Percentages and the computed row on one plate, Actual Size on its own (\(panel.host.plates.count) plates, \(panel.rows.count) rows)")
+        try expect(panel.rows.map(\.title) == ["83%", "25%", "50%", "75%", "100%", "150%", "200%", "Actual Size"], "Rows in menu order: \(panel.rows.map(\.title))")
+        try expect(panel.rows.dropLast().allSatisfy { $0.kind == .option } && panel.rows.last?.kind == .toggle, "Percent rows (and the computed Fit row) are options; Actual Size is a toggle")
+        try expect(panel.rows.filter(\.isChosen).map(\.title) == ["83%"], "The computed Fit row is the chosen one: \(panel.rows.filter(\.isChosen).map(\.title))")
+        try expect(panel.rows.last?.isEnabled == true && panel.rows.last?.shortcutText == MenuShortcut.text(for: try (zoom.menu?.items.last).unwrap("last item")), "With a snap picture Actual Size is enabled and shows the main-menu shortcut")
+        let footer = zoom.window!.convertToScreen(zoom.convert(zoom.bounds, to: nil))
+        try expect(panel.host.placement.map { $0.edge == .maxY && $0.frame.minY >= footer.maxY } == true, "The panel opens above the footer, not over it")
+        // A percentage reaches the canvas through changeZoom, and the pop-up shows it.
+        try (panel.rows.first { $0.title == "150%" }).unwrap("150% row").performClick(nil)
+        try expect(abs(app.canvas.zoom - 1.5) < 0.001 && zoom.titleOfSelectedItem == "150%" && !zoom.isOpen, "Choosing 150% zooms the canvas and the face reads 150% (zoom \(app.canvas.zoom))")
+        zoom.performClick(nil)
+        try expect(panel.rows.filter(\.isChosen).map(\.title) == ["150%"], "Reopened, 150% is the chosen row: \(panel.rows.filter(\.isChosen).map(\.title))")
+        // Actual Size: the main-menu command runs; the face stays a percentage and the zoom dims while it is up.
+        try (panel.rows.first { $0.title == "Actual Size" }).unwrap("Actual Size row").performClick(nil)
+        try waitForMain("The face is a percentage again") { zoom.titleOfSelectedItem?.hasSuffix("%") == true && zoom.selectedItem?.tag != ZoomPopUpButton.actualSizeTag }
+        defer { if app.isActualSize { app.leaveActualSize() } }
+        try expect(app.isActualSize && app.canvas.zoom == 1 && !zoom.isEnabled, "Actual Size is up and the zoom is dimmed (zoom \(app.canvas.zoom))")
+        zoom.performClick(nil)
+        try expect(!zoom.isOpen, "A dimmed zoom opens nothing")
+        // The screenshot harness can still show the state: the panel presents without the button's own gate, and Actual Size reads on.
+        zoom.choicePanel.present(relativeTo: zoom, preferredEdge: ChoiceEdge.above, keyboard: false)
+        try expect(zoom.isOpen && zoom.choicePanel.rows.last?.title == "Actual Size" && zoom.choicePanel.rows.last?.isChosen == true && zoom.choicePanel.rows.last?.isEnabled == true,
+                   "Presented directly, the panel shows Actual Size chosen while it is up")
+        zoom.choicePanel.host.close()
+        app.leaveActualSize()
+        zoom.performClick(nil)
+        try expect(zoom.isOpen && panel.rows.last?.isChosen == false, "Back out of Actual Size the toggle is off")
+        // Escape returns the focus to the zoom.
+        zoom.choicePanel.host.close()
+        app.window.makeFirstResponder(zoom)
+        zoom.keyDown(with: try keyDown(125, in: app))
+        try expect(zoom.isOpen && panel.focusedRow?.isChosen == true, "Down opens it on the chosen row")
+        panel.host.window.sendEvent(panelKey(53, in: panel.host.window))
+        try expect(!zoom.isOpen && app.window.firstResponder === zoom, "Escape closes it and the zoom has the focus again")
+        try expect(probe.began == 0 && zoom.target === app && zoom.action == #selector(AppDelegate.changeZoom(_:)), "No native menu started and the zoom keeps its action")
+        _ = chrome
+    }
+
+    private static func modernOriginalSizeToggle() throws {
+        let (fixture, chrome) = try modernFixture()
+        let app = fixture.app, toggle = app.dragOriginalControl
+        try expect(toggle.kind == .toggle && toggle.indicator == .checkbox && toggle.title == "Original size" && toggle.accessibilityLabel() == "Export at original size" && toggle.accessibilityRole() == .checkBox,
+                   "A checkbox toggle titled Original size and spoken as Export at original size")
+        try expect(AppToolTip.text(for: toggle)?.hasPrefix("Drag out, copy, export and upload the picture at its own pixel size") == true, "It keeps its tooltip")
+        try expect(chrome.surface(for: toggle)?.identifier?.rawValue == "GlassViewGroup" && toggle.target === app && toggle.action == #selector(AppDelegate.changeDragOptions(_:)), "It sits on the View plate and keeps its action")
+        // A small shot has nothing to offer: hidden, and the View plate is as narrow as it was without the box.
+        app.window.contentView?.layoutSubtreeIfNeeded()
+        try expect(!app.isLargeShot && toggle.isHidden, "A blank canvas hides the toggle")
+        func plateWidth() -> CGFloat { app.window.contentView?.layoutSubtreeIfNeeded(); return chrome.surface(for: toggle)?.frame.width ?? 0 }
+        let withoutBox = plateWidth()
+        // A large shot shows it; a click flips it once, stores the choice and changes what a drag, export or upload sends.
+        try viewportFixture(app)
+        app.dragOriginalControl.state = .off; app.changeDragOptions(nil); app.updateViewportChrome()
+        try expect(app.isLargeShot && !toggle.isHidden, "A large shot shows the toggle")
+        try expect(abs(plateWidth() - withoutBox - chrome.originalSizeWidth) < 0.5, "The View plate widens by exactly the toggle's width (\(plateWidth() - withoutBox) vs \(chrome.originalSizeWidth))")
+        toggle.performClick(nil)
+        try expect(toggle.state == .on && toggle.isChosen && UserDefaults.standard.bool(forKey: "DragOriginalSize") && app.dragAtOriginalSize, "A click turns it on once: stored, and drag, export and upload use the picture's own pixels")
+        try expect((toggle.accessibilityValue() as? NSNumber) == 1, "VoiceOver reads it on")
+        _ = toggle.accessibilityPerformPress()
+        try expect(toggle.state == .off && !UserDefaults.standard.bool(forKey: "DragOriginalSize") && !app.dragAtOriginalSize, "The accessibility press turns it back off and stores that")
+        toggle.state = .on; app.changeDragOptions(nil)
+        try expect(UserDefaults.standard.bool(forKey: "DragOriginalSize") && toggle.state == .on, "Setting the state and sending the action stores it (the path every other test and tool uses)")
+        // Actual Size and Frame take it away again.
+        app.toggleActualSize()
+        try expect(toggle.isHidden, "Actual Size hides the toggle")
+        app.leaveActualSize()
+        try expect(!toggle.isHidden, "and leaving it brings the toggle back")
+    }
+
     private static func modernZoomFace() throws {
         let (fixture, chrome) = try modernFixture()
         let app = fixture.app, zoom = app.zoomControl
@@ -1655,9 +1741,22 @@ extension AppSafetyTests {
         for item in zoom.itemArray where item.tag != ZoomPopUpButton.actualSizeTag && !item.isSeparatorItem {
             let title = item.title
             zoom.select(item)
-            try expect(zoom.fittingSize.width <= cell.frame.width - 8 + 0.5, "\(title) fits the zoom cell (\(zoom.fittingSize.width) in \(cell.frame.width))")
+            try expect(zoom.fittingSize.width <= cell.frame.width + 0.5, "\(title) fits the zoom cell (\(zoom.fittingSize.width) in \(cell.frame.width))")
         }
         try expect((AppToolTip.text(for: zoom) ?? "").hasSuffix("one image pixel per screen pixel."), "Zoom keeps a tooltip that says what the percentage measures")
+        // The cell is what the face needs: in the real footer, at the minimum window and at 1100, every face the zoom can show is drawn whole at 20 pt.
+        let computed = NSMenuItem(title: "200%", action: nil, keyEquivalent: ""); computed.tag = ZoomPopUpButton.computedZoomTag
+        for width in [ModernEditorChrome.minimumWindowWidth, 1100] as [CGFloat] {
+            try resizeWindow(app, contentWidth: width)
+            zoom.menu?.insertItem(computed, at: 0)
+            defer { zoom.menu?.removeItem(computed); zoom.selectItem(withTitle: "100%") }
+            for item in zoom.itemArray where item.tag != ZoomPopUpButton.actualSizeTag && !item.isSeparatorItem {
+                zoom.select(item)
+                app.window.contentView?.layoutSubtreeIfNeeded()
+                let metrics = zoom.faceTextMetrics
+                try expect(zoom.faceTextFits && metrics.font.pointSize == 20, "\(Int(width)): the zoom face \(item.title) is drawn whole at 20 pt: needs \(metrics.needed), the face draws it in \(metrics.available) (face \(zoom.frame.size))")
+            }
+        }
     }
 
     private static func modernBodyType() throws {
@@ -1791,16 +1890,16 @@ extension AppSafetyTests {
                 try write(content, "frame-\(size)-\(tag)")
                 app.cancelFrame()
             }
-            let (_, panel, remove) = try hostSizePopover(app)
-            panel.appearance = app.window.appearance
-            try write(panel, "size-popover-\(tag)")
+            let (host, _, remove) = try hostSizePopover(app)
+            host.window.appearance = app.window.appearance
+            try write(host.container, "size-popover-\(tag)")
             app.widthControl.dismissPopover(); remove()
         }
         app.window.appearance = nil
         _ = chrome
     }
 
-    /// Audit fix 1 (items 6 and 7): the popover marks the current colour whether or not it is a preset, and its rows share their edges.
+    /// Audit fix 1 (items 6 and 7): the panel marks the current colour whether or not it is a preset, and its plates are even.
     private static func modernPaletteShowsActiveColor() throws {
         let (fixture, _) = try modernFixture()
         let app = fixture.app
@@ -1808,85 +1907,103 @@ extension AppSafetyTests {
         window.simulatesVisibility = true; window.shown = true
         defer { app.closeDrawingColors() }
         let custom = NSColor(deviceRed: 0.18, green: 0.62, blue: 0.55, alpha: 1)
-        // A preset colour: its swatch carries the check, and the Custom color… row is the plain button.
+        // A preset colour: its swatch carries the check, and the Custom color… row is the plain row.
         let red = OriginalDrawingControls.presets[0]
         app.applyChosenColor(red.color, modifiers: [])
         app.presentDrawingColors(hover: false)
         let row = try (app.customColorButton).unwrap("Custom color… row")
         try expect(app.presetColorButtons.filter { $0.state == .on }.map { $0.accessibilityLabel() ?? "" } == [red.name], "A preset colour checks exactly its own swatch (\(app.presetColorButtons.filter { $0.state == .on }.count))")
-        try expect(!row.isCurrentChoice && row.image == nil && row.accessibilityValue() as? String != "Selected", "...and the Custom color… row is the plain button")
-        // A colour that is no preset: no swatch is checked, and the Custom color… row carries the colour, a check and the accent outline.
+        try expect(!row.isChosen && !row.isCurrentChoice && row.leadingIconImage == nil && (row.accessibilityValue() as? NSNumber)?.intValue == 0, "...and the Custom color… row is the plain row")
+        try expect(row.plate.style.fill == nil && row.plate.style.borderWidth == 0 && row.titleLabel.font?.pointSize == 20 && row.titleLabel.font != DesignTokens.Typography.font(.bodyStrong),
+                   "...drawn with no fill, no border and the regular face")
+        // A colour that is no preset: no swatch is checked, and the Custom color… row is chosen and carries the colour, a check and the selected look.
         app.applyChosenColor(custom, modifiers: [])
         try expect(app.presetColorButtons.allSatisfy { $0.state == .off }, "A custom colour checks no preset swatch")
-        try expect(row.isCurrentChoice && row.image != nil && row.imagePosition == .imageLeading && SketchColor(row.currentColor ?? .clear) == SketchColor(custom),
-                   "The Custom color… row is current and carries the active colour")
-        try expect(row.accessibilityValue() as? String == "Selected" && row.title == "Custom color…", "VoiceOver hears the row as Selected, still named Custom color…")
-        // The chip really is that colour with a check on it, and the row draws the accent outline.
+        try expect(row.isChosen && row.isCurrentChoice && row.leadingIconImage != nil && row.kind == .option && row.title == "Custom color…",
+                   "The Custom color… row is the chosen option, carries the active colour and keeps its name")
+        try expect((row.accessibilityValue() as? NSNumber)?.intValue == 1 && row.isAccessibilitySelected() && row.accessibilityRole() == .radioButton,
+                   "VoiceOver hears the row as selected, still named Custom color…")
+        try expect(row.plate.style.fill != nil && row.plate.style.borderWidth == 1 && row.titleLabel.font == DesignTokens.Typography.font(.bodyStrong),
+                   "The chosen row has the selected fill, a 1 pt border and the semibold face: more than colour")
+        // The chip really is that colour with a check on it.
         let chip = BezelCustomColorButton.chip(for: custom)
-        let rep = try (NSBitmapImageRep(data: try (chip.tiffRepresentation).unwrap("chip bitmap"))).unwrap("chip rep")
-        func pixel(_ x: Double, _ y: Double) -> NSColor? { rep.colorAt(x: Int(x * Double(rep.pixelsWide)), y: Int(y * Double(rep.pixelsHigh)))?.usingColorSpace(.deviceRGB) }
-        let corner = try pixel(0.2, 0.3).unwrap("chip pixel")
-        try expect(abs(corner.redComponent - 0.18) < 0.06 && abs(corner.greenComponent - 0.62) < 0.06, "The chip is filled with the custom colour (\(corner))")
-        let centre = try pixel(0.5, 0.5).unwrap("chip centre")
-        try expect(abs(centre.redComponent - corner.redComponent) > 0.2 || abs(centre.greenComponent - corner.greenComponent) > 0.2 || abs(centre.blueComponent - corner.blueComponent) > 0.2,
-                   "...with a check glyph drawn over its middle (\(centre))")
-        let probe = BezelCustomColorButton(title: "Custom color…", target: nil, action: nil)
-        probe.font = DesignTokens.Typography.font(.body)
-        probe.frame = NSRect(x: 0, y: 0, width: 216, height: 30)
-        probe.currentColor = custom
-        let ring = try (probe.bitmapImageRepForCachingDisplay(in: probe.bounds)).unwrap("row bitmap")
-        probe.cacheDisplay(in: probe.bounds, to: ring)
-        let accent = StateStyles.swatch(.selected, highContrast: false, appearance: probe.effectiveAppearance).outline.usingColorSpace(.deviceRGB)
-        let edge = try (ring.colorAt(x: ring.pixelsWide / 2, y: 1)).unwrap("row edge").usingColorSpace(.deviceRGB).unwrap("row edge colour")
-        try expect(accent != nil && abs(edge.redComponent - (accent?.redComponent ?? 9)) < 0.08 && abs(edge.greenComponent - (accent?.greenComponent ?? 9)) < 0.08 && abs(edge.blueComponent - (accent?.blueComponent ?? 9)) < 0.08,
-                   "The Custom color… row is outlined in the accent while its colour is current (\(edge))")
+        func pixels(_ image: NSImage) throws -> NSBitmapImageRep { try (NSBitmapImageRep(data: try (image.tiffRepresentation).unwrap("chip bitmap"))).unwrap("chip rep") }
+        for (label, image) in [("chip", chip), ("row", try row.leadingIconImage.unwrap("row image"))] {
+            let rep = try pixels(image)
+            func pixel(_ x: Double, _ y: Double) -> NSColor? { rep.colorAt(x: Int(x * Double(rep.pixelsWide)), y: Int(y * Double(rep.pixelsHigh)))?.usingColorSpace(.deviceRGB) }
+            let corner = try pixel(0.2, 0.3).unwrap("\(label) pixel")
+            try expect(abs(corner.redComponent - 0.18) < 0.06 && abs(corner.greenComponent - 0.62) < 0.06, "The \(label) is filled with the custom colour (\(corner))")
+            let centre = try pixel(0.5, 0.5).unwrap("\(label) centre")
+            try expect(abs(centre.redComponent - corner.redComponent) > 0.2 || abs(centre.greenComponent - corner.greenComponent) > 0.2 || abs(centre.blueComponent - corner.blueComponent) > 0.2,
+                       "...with a check glyph drawn over its middle (\(centre))")
+        }
         // Back to a preset: the mark moves home.
         app.applyChosenColor(OriginalDrawingControls.presets[2].color, modifiers: [])
-        try expect(!row.isCurrentChoice && row.image == nil && app.presetColorButtons.filter { $0.state == .on }.count == 1, "Choosing a preset again clears the Custom color… mark")
-        // Geometry (item 7): the title and every row start and end on the same edges; the margins are even.
-        guard let content = app.colorPopover?.contentViewController?.view else { throw Failure(description: "No popover content") }
-        func drawn(_ view: NSView, inset: CGFloat) -> (min: CGFloat, max: CGFloat) { (view.frame.minX + inset, view.frame.maxX - inset) }
-        let first = drawn(app.presetColorButtons[0], inset: 3), last = drawn(app.presetColorButtons[4], inset: 3), second = drawn(app.presetColorButtons[9], inset: 3)
-        let customEdges = drawn(row, inset: 0)
-        try expect(abs(first.min - customEdges.min) < 0.5 && abs(last.max - customEdges.max) < 0.5 && abs(second.max - customEdges.max) < 0.5,
-                   "Swatches and the Custom color… row share their left and right edges (swatches \(first.min)...\(last.max), row \(customEdges.min)...\(customEdges.max))")
-        try expect(abs(first.min - (content.frame.width - last.max)) < 0.5, "The left and right margins are equal (\(first.min) and \(content.frame.width - last.max))")
-        let bottomMargin = row.frame.minY, topMargin = content.frame.height - (content.subviews.compactMap { $0 as? NSTextField }.first?.frame.maxY ?? 0)
-        try expect(abs(bottomMargin - topMargin) < 0.5 && bottomMargin >= 12, "The top and bottom margins are equal and at least 12 pt (bottom \(bottomMargin), top \(topMargin))")
+        try expect(!row.isChosen && row.leadingIconImage == nil && app.presetColorButtons.filter { $0.state == .on }.count == 1, "Choosing a preset again clears the Custom color… mark")
+        // Geometry (item 7): two plates of one width, the swatches centred in the first, the Custom row filling the second.
+        guard let host = app.colorPanel else { throw Failure(description: "No colour panel") }
+        host.window.contentView?.layoutSubtreeIfNeeded()
+        let plates = host.plates
+        try expect(plates.count == 2 && plates[0].frame.width == plates[1].frame.width && plates[0].frame.width == ColorPaletteContent.rowWidth + 8, "Two plates of one width (\(plates.map { $0.frame.width }))")
+        let grid = plates[0].convert(app.presetColorButtons[0].bounds.insetBy(dx: 3, dy: 3), from: app.presetColorButtons[0])
+        let lastColumn = plates[0].convert(app.presetColorButtons[4].bounds.insetBy(dx: 3, dy: 3), from: app.presetColorButtons[4])
+        try expect(abs(grid.minX - (plates[0].bounds.width - lastColumn.maxX)) < 0.5, "The drawn swatches have equal left and right margins (\(grid.minX) and \(plates[0].bounds.width - lastColumn.maxX))")
+        let title = plates[0].convert(app.presetColorButtons[0].bounds, from: app.presetColorButtons[0]).minX
+        try expect(title >= 4 + ColorPaletteContent.horizontalPadding - 0.5, "The swatch grid starts inside the plate's padding (\(title))")
+        let rowFrame = plates[1].convert(row.bounds, from: row)
+        try expect(abs(rowFrame.minX - 4) < 0.5 && abs(plates[1].bounds.width - rowFrame.maxX - 4) < 0.5 && rowFrame.height == 36, "The Custom color… row fills its plate to the 4 pt inset and is 36 pt tall (\(rowFrame))")
         let rows = Set(app.presetColorButtons.map { $0.frame.minY })
-        try expect(rows.count == 2 && abs((rows.max() ?? 0) - (rows.min() ?? 0) - 34) < 0.5 && abs((rows.min() ?? 0) - (row.frame.maxY + 2)) < 0.5, "The two swatch rows and the Custom color… row are evenly stacked")
+        try expect(rows.count == 2 && abs((rows.max() ?? 0) - (rows.min() ?? 0) - 34) < 0.5, "The two swatch rows are evenly stacked (\(rows.sorted()))")
     }
 
-    /// Audit fix 2: in light the popover came out a dark system material under near-black text ("Drawing colors" and "Custom color…" failed).
-    /// The content now draws a solid plate of its own; its pixels are measured per appearance, not inferred from token values.
+    /// Audit fix 2: the glass panel has no pixel of its own to measure, so what is held is the text size, and the opaque fallback plates under
+    /// Reduce Transparency, whose pixels are measured per appearance.
     private static func modernPalettePopoverContrast() throws {
         let (fixture, _) = try modernFixture()
         let app = fixture.app
         guard let window = app.window as? AppSafetyWindow else { throw Failure(description: "Isolated window") }
         window.simulatesVisibility = true; window.shown = true
-        defer { app.closeDrawingColors() }
+        defer { app.closeDrawingColors(); DisplayOptions.override = nil }
         for custom in [false, true] {
             app.applyChosenColor(custom ? NSColor(deviceRed: 0.18, green: 0.62, blue: 0.55, alpha: 1) : OriginalDrawingControls.presets[0].color, modifiers: [])
             app.presentDrawingColors(hover: false)
-            let content = try (app.colorPopover?.contentViewController?.view).unwrap("popover content")
-            let title = try (content.subviews.compactMap { $0 as? NSTextField }.first).unwrap("Drawing colors title")
+            guard let host = app.colorPanel else { throw Failure(description: "No colour panel") }
+            host.window.contentView?.layoutSubtreeIfNeeded()
             let row = try (app.customColorButton).unwrap("Custom color… row")
-            // Only the row's label: the chip, the check and the accent outline sit outside it and would flatter the reading.
-            let rowText = NSRect(x: row.frame.minX + (custom ? 56 : 24), y: row.frame.minY + 6, width: row.frame.width - (custom ? 80 : 48), height: row.frame.height - 12)
+            let sizes = textSizes(in: host.container)
+            try expect(!sizes.isEmpty && sizes.allSatisfy { $0 >= 20 } && row.titleLabel.font?.pointSize ?? 0 >= 20, "All the panel's text is 20 pt or more (\(sizes))")
+            // Reduce Transparency: each plate shows its opaque fallback, and the title and the row's text read on it in every appearance.
+            DisplayOptions.override = DisplayOptions(reduceTransparency: true)
+            host.accessibility = DisplayOptions.current.chrome
+            host.window.contentView?.layoutSubtreeIfNeeded()
+            for plate in host.plates { try expect(plate.transparencyPlate != nil, "Reduce Transparency gives each plate an opaque fallback") }
+            let first = host.plates[0], second = host.plates[1]
+            let title = try (first.arrangedViews.first?.subviews.compactMap { $0 as? NSTextField }.first).unwrap("Drawing colors title")
             for (name, appearance) in ContrastProbe.appearances {
-                let reading = ContrastProbe.measure(content, appearance: appearance, plateAt: NSPoint(x: 3, y: content.bounds.height - 3), textFrames: [title.frame, rowText])
                 let label = "\(custom ? "custom" : "preset") colour, \(name)"
-                try expect(reading.plateOpaque, "The popover content draws an opaque plate (\(label))")
-                try expect(reading.textRatios[0] >= 4.5, "\"Drawing colors\" reads at 4.5:1 on the plate (\(label): \(reading.textRatios[0]))")
-                try expect(reading.textRatios[1] >= 4.5, "\"Custom color…\" reads at 4.5:1 on the plate (\(label): \(reading.textRatios[1]))")
+                let titleReading = ContrastProbe.measure(first, appearance: appearance, plateAt: NSPoint(x: first.bounds.width - 24, y: first.bounds.height - 22),
+                                                         textFrames: [first.convert(title.bounds, from: title)])
+                try expect(titleReading.plateOpaque, "The first plate draws an opaque fallback (\(label))")
+                try expect(titleReading.textRatios[0] >= 4.5, "\"Drawing colors\" reads at 4.5:1 on its plate (\(label): \(titleReading.textRatios[0]))")
+                let rowReading = ContrastProbe.measure(second, appearance: appearance, plateAt: NSPoint(x: second.bounds.width - 24, y: second.bounds.height / 2),
+                                                       textFrames: [second.convert(row.titleLabel.bounds, from: row.titleLabel)])
+                try expect(rowReading.plateOpaque, "The second plate draws an opaque fallback (\(label))")
+                try expect(rowReading.textRatios[0] >= 4.5, "\"Custom color…\" reads at 4.5:1 on its plate (\(label): \(rowReading.textRatios[0]))")
             }
-            // Re-resolved on appearance change: the same view flipped from light to dark changes its plate.
-            let light = ContrastProbe.measure(content, appearance: ContrastProbe.appearances[0].appearance, plateAt: NSPoint(x: 3, y: content.bounds.height - 3), textFrames: [])
-            let dark = ContrastProbe.measure(content, appearance: ContrastProbe.appearances[1].appearance, plateAt: NSPoint(x: 3, y: content.bounds.height - 3), textFrames: [])
-            try expect(DesignTokens.Palette.luminance(light.plate) > 0.5 && DesignTokens.Palette.luminance(dark.plate) < 0.2,
-                       "The plate follows the appearance: light \(light.plate), dark \(dark.plate)")
+            DisplayOptions.override = nil
             app.closeDrawingColors()
         }
+    }
+
+    /// The point size of every piece of text a view tree can draw.
+    private static func textSizes(in root: NSView) -> [CGFloat] {
+        var sizes: [CGFloat] = []
+        func walk(_ view: NSView) {
+            if let field = view as? NSTextField, !field.stringValue.isEmpty { sizes.append(field.font?.pointSize ?? 0) }
+            for child in view.subviews { walk(child) }
+        }
+        walk(root)
+        return sizes
     }
 
     private static func modernPalettePopover() throws {
@@ -1895,10 +2012,26 @@ extension AppSafetyTests {
         guard let window = app.window as? AppSafetyWindow else { throw Failure(description: "Isolated window") }
         window.simulatesVisibility = true; window.shown = true
         app.showDrawingColors(app.paletteButton)
-        try expect(app.colorPopover?.isShown == true, "The Modern Color popover opens")
-        try expect(app.colorPopover?.preferredEdge == .minY && app.colorPopover?.anchor === app.paletteButton && app.paletteButton.isDescendant(of: chrome.header),
-                   "Color sits in the top bar, so its popover opens below it")
-        try expect(app.colorPopover?.appearance == nil && app.colorPopover?.contentViewController?.view.appearance == nil, "Modern leaves the popover on the system appearance")
+        guard let host = app.colorPanel, host.isShown else { throw Failure(description: "The Modern Color panel did not open") }
+        try expect(host.placement?.edge == .minY && host.anchor === app.paletteButton && app.paletteButton.isDescendant(of: chrome.header),
+                   "Color sits in the top bar, so its panel opens below it (edge \(String(describing: host.placement?.edge)), frame \(String(describing: host.placement?.frame)), anchor \(String(describing: host.anchor)), inHeader \(app.paletteButton.isDescendant(of: chrome.header)))")
+        try expect(host.alignment == .center && host.requestedKey, "It is centred under the control and takes the keyboard when opened on purpose")
+        let control = window.convertToScreen(app.paletteButton.convert(app.paletteButton.bounds, to: nil))
+        try expect(host.placement.map { $0.frame.maxY <= control.minY && abs($0.frame.midX - control.midX) < 1 } == true,
+                   "The panel really hangs below the control and is centred on it (panel \(String(describing: host.placement?.frame)), control \(control))")
+        try expect(host.window.appearance == nil && host.container.appearance == nil, "Modern leaves the panel on the system appearance")
+        try expect(host.window.backgroundColor == .clear && !host.window.isOpaque, "The panel window is transparent: only the glass plates are drawn")
+        host.window.contentView?.layoutSubtreeIfNeeded()
+        var containers = 0, plates = 0, nested = 0
+        func walk(_ view: NSView, insideGlass: Bool) {
+            let isContainer = view is NSGlassEffectContainerView, isPlate = view is NSGlassEffectView
+            if isContainer { containers += 1 }
+            if isPlate { plates += 1 }
+            if (isContainer || isPlate) && insideGlass { nested += 1 }
+            for child in view.subviews { walk(child, insideGlass: insideGlass || isPlate) }
+        }
+        walk(host.container, insideGlass: false)
+        try expect(containers == 1 && plates == 2 && nested == 0, "One glass container with two plates, and no glass inside glass (\(containers), \(plates), \(nested))")
         try expect(app.presetColorButtons.count == OriginalDrawingControls.presets.count, "The presets are all there")
         app.closeDrawingColors()
     }

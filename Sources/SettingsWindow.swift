@@ -5,6 +5,10 @@ import AppKit
 // preferences, the shortcut manager, the destination list, the destinations sheet) and it owns nothing else, so a test can build
 // it with in-memory stand-ins. The strip is ours, not an NSToolbar's, because AppKit draws toolbar labels at about 13 pt and an
 // app-owned label is 20 pt. The title bar text is the one thing the OS still sets; it follows the selected tab.
+//
+// Every choice the app owns is a Liquid Glass button: one glass plate per related group (the four tabs; each radio set; related
+// check boxes; the Upload commands), and the buttons on a plate draw their own state fills, so there is never glass inside glass. The
+// destination list and the shortcut recorders are content and form fields, and stay solid and native.
 
 /// Sizes and row builders shared by the four tabs, so every tab is the same aligned form grid.
 @MainActor
@@ -16,8 +20,6 @@ enum SettingsLayout {
     static let contentWidth: CGFloat = 640
     static let horizontalMargin = Space.s6, verticalMargin = Space.s5
     static let rowSpacing = Space.s4, columnSpacing = Space.s4
-    /// The checkbox glyph and its gap, so a wrapped title is measured against the room it really has.
-    static let checkboxIndent: CGFloat = 28
 
     static var gridWidth: CGFloat { contentWidth - 2 * horizontalMargin }
 
@@ -60,53 +62,92 @@ enum SettingsLayout {
         ceil((text as NSString).size(withAttributes: [.font: Typography.font(.caption)]).width)
     }
 
-    /// A checkbox. With `wrapWidth` the title wraps inside that width (the checkbox glyph included).
-    static func checkbox(_ title: String, identifier: String, target: AnyObject, action: Selector, wrapWidth: CGFloat? = nil) -> NSButton {
-        let button = NSButton(checkboxWithTitle: title, target: target, action: action)
-        guard let wrapWidth else { configure(button, identifier: identifier); return button }
-        let measured = (title as NSString).boundingRect(with: NSSize(width: wrapWidth - checkboxIndent, height: .greatestFiniteMagnitude),
-                                                       options: .usesLineFragmentOrigin, attributes: [.font: Typography.font(.body)])
-        configure(button, identifier: identifier, height: ceil(measured.height))
-        button.cell?.wraps = true; button.cell?.isScrollable = false; button.cell?.lineBreakMode = .byWordWrapping
-        button.widthAnchor.constraint(equalToConstant: wrapWidth).isActive = true
-        return button
-    }
-
-    static func radio(_ title: String, tag: Int, identifier: String, target: AnyObject, action: Selector) -> NSButton {
-        let button = NSButton(radioButtonWithTitle: title, target: target, action: action)
-        button.tag = tag
-        configure(button, identifier: identifier)
-        return button
-    }
-
-    static func pushButton(_ title: String, identifier: String, target: AnyObject, action: Selector) -> NSButton {
-        let button = NSButton(title: title, target: target, action: action)
-        button.bezelStyle = .rounded
-        configure(button, identifier: identifier)
-        button.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.control).isActive = true
-        return button
-    }
-
-    /// A checkbox or radio keeps its own intrinsic height, so a row's first baseline is the button's real one; a push button is at least a control tall.
-    private static func configure(_ button: NSButton, identifier: String, height: CGFloat? = nil) {
-        Typography.apply(.body, to: button)
-        button.controlSize = .large
+    /// A checkbox: a toggle choice (square glyph, filled with a check while on) that sends its action when it flips. With `wrapWidth` the title wraps
+    /// at that width and the row grows to hold the lines.
+    static func toggle(_ title: String, identifier: String, target: AnyObject, action: Selector, wrapWidth: CGFloat? = nil) -> GlassChoiceButton {
+        let button = GlassChoiceButton(title: title, kind: .toggle, indicator: .checkbox, layout: .row)
         button.identifier = NSUserInterfaceItemIdentifier(identifier)
-        button.setContentCompressionResistancePriority(.required, for: .horizontal)
-        if let height { button.heightAnchor.constraint(equalToConstant: height).isActive = true }
+        button.target = target; button.action = action
+        button.accessibility = ChromeAccessibility.live
+        button.wrapWidth = wrapWidth
+        return button
     }
 
-    static func choices(_ buttons: [NSButton]) -> NSStackView {
-        let stack = NSStackView(views: buttons)
-        stack.orientation = .horizontal; stack.alignment = .firstBaseline; stack.spacing = Space.s4
-        return stack
+    /// The width a toggle's title may take inside a plate `plateWidth` wide: the plate's inset, the button's padding and its checkbox glyph are paid for first.
+    static func toggleTextWidth(inPlateOfWidth plateWidth: CGFloat) -> CGFloat {
+        plateWidth - 2 * GlassChrome.Metrics.groupInset - 2 * GlassChoiceButton.padding - GlassChoiceButton.glyphSide - GlassChoiceButton.gap
     }
 
-    static func group(_ views: [NSView]) -> NSStackView {
-        let stack = NSStackView(views: views)
-        stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = Space.s2
-        return stack
+    /// One glass plate around related toggles, one row each. It is an accessibility group with a name.
+    static func togglePlate(_ toggles: [GlassChoiceButton], identifier: String, label: String) -> GlassSurfaceView {
+        let plate = GlassChrome.plate(toggles, identifier: identifier, accessibility: ChromeAccessibility.live, axis: .vertical)
+        plate.setAccessibilityElement(true); plate.setAccessibilityLabel(label); plate.setAccessibilityRole(.group)
+        return plate
     }
+
+    /// A radio set: exclusive choices on ONE plate with a radio glyph each, one tab stop, arrows move the choice. Each button keeps its own
+    /// `tag` (the stored value it stands for) and identifier; `action` goes to `target` once per user change, with the group as sender.
+    static func radioGroup(_ choices: [(title: String, tag: Int, identifier: String)], label: String, identifier: String, target: AnyObject, action: Selector) -> GlassChoiceGroup {
+        let group = GlassChoiceGroup(choices: choices.map { GlassChoiceGroup.Choice($0.title, identifier: $0.identifier) }, selectedIndex: -1, layout: .segment,
+                                     axis: .horizontal, indicator: .radio, accessibilityLabel: label, identifier: identifier)
+        for (button, choice) in zip(group.buttons, choices) { button.tag = choice.tag }
+        group.target = target; group.action = action
+        return group
+    }
+
+    /// The stored value of the chosen button, or nil when nothing is chosen.
+    static func chosenTag(of group: GlassChoiceGroup) -> Int? { group.buttons.indices.contains(group.selectedIndex) ? group.buttons[group.selectedIndex].tag : nil }
+    /// Chooses the button that stands for `tag` without sending the action; none matches, none is chosen.
+    static func choose(tag: Int, in group: GlassChoiceGroup) { group.selectedIndex = group.buttons.firstIndex { $0.tag == tag } ?? -1 }
+
+    /// Where the first line of a choice's text sits below the top of its plate: the plate's inset, the padding above the line and the line's
+    /// own baseline. A grid row aligns its label to this, so the label sits on the same baseline as the first choice and not on the plate's edge.
+    static func firstChoiceBaseline(of button: GlassChoiceButton?) -> CGFloat {
+        let font = Typography.font(.bodyStrong)
+        let line = ceil(font.boundingRectForFont.height)
+        let probe = NSTextField(labelWithString: "Ag")
+        probe.font = font; probe.frame = NSRect(x: 0, y: 0, width: 120, height: line)
+        let rowHeight = button?.intrinsicContentSize.height ?? GlassChoiceButton.height
+        // A wrapped row is its lines plus the row padding; a one-line row is a control high with the line centred.
+        let above = rowHeight > GlassChoiceButton.height ? Space.s2 : ((GlassChoiceButton.height - line) / 2).rounded()
+        return GlassChrome.Metrics.groupInset + above + probe.firstBaselineOffsetFromTop
+    }
+
+    /// A titled command for an action plate: the chrome's command button, so it draws its own rest, hover, pressed, focus and disabled fills.
+    static func actionButton(_ title: String, identifier: String, target: AnyObject, action: Selector) -> SettingsActionButton {
+        let button = SettingsActionButton(title: title, target: target, action: action)
+        button.configure()
+        button.identifier = NSUserInterfaceItemIdentifier(identifier)
+        return button
+    }
+
+    /// One glass plate around a group of commands. It is an accessibility group with a name, so VoiceOver announces what the buttons belong to.
+    static func actionPlate(_ buttons: [SettingsActionButton], identifier: String, label: String) -> GlassSurfaceView {
+        let plate = GlassChrome.plate(buttons, identifier: identifier, accessibility: ChromeAccessibility.live)
+        plate.setAccessibilityElement(true); plate.setAccessibilityLabel(label); plate.setAccessibilityRole(.group)
+        return plate
+    }
+}
+
+/// A grid cell around a plate (or a radio group): the cell reports the first line of the plate's text as its baseline, so a row's label
+/// lines up with the first choice. A glass plate has no baseline of its own, and the grid would sit the label on the plate's bottom edge.
+@MainActor
+final class SettingsPlateCell: NSView {
+    let content: NSView
+    private let baseline: CGFloat
+
+    init(_ content: NSView, firstChoice: GlassChoiceButton?) {
+        self.content = content
+        baseline = SettingsLayout.firstChoiceBaseline(of: firstChoice)
+        super.init(frame: .zero)
+        content.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(content)
+        NSLayoutConstraint.activate([content.leadingAnchor.constraint(equalTo: leadingAnchor), content.trailingAnchor.constraint(equalTo: trailingAnchor),
+                                     content.topAnchor.constraint(equalTo: topAnchor), content.bottomAnchor.constraint(equalTo: bottomAnchor)])
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+
+    override var firstBaselineOffsetFromTop: CGFloat { baseline }
 }
 
 /// The values the General and Drawing tabs edit. It publishes an edit and never echoes a synchronize back as one, so a parent
@@ -145,6 +186,8 @@ final class SettingsPreferencesModel {
 @MainActor
 class SettingsTabViewController: NSViewController {
     private(set) var grid = NSGridView()
+    /// The container the tab's grid sits in, and with it every glass plate of the tab.
+    private(set) var glassContainer = NSGlassEffectContainerView()
     /// A tab whose content changed height asks the window to refit.
     var onResize: (() -> Void)?
     /// The label and control column widths of this tab's grid. A subclass with a short form sets them in `makeRows`.
@@ -153,6 +196,23 @@ class SettingsTabViewController: NSViewController {
 
     /// Rows of [label, control]; a row with no label uses `NSGridCell.emptyContentView`. Subclasses override.
     func makeRows() -> [[NSView]] { [] }
+
+    /// The glass plates of this tab and the controls drawn on them, kept in step with the display options (Reduce Transparency, Increase
+    /// Contrast, Reduce Motion, Differentiate Without Color) for as long as the tab lives.
+    private(set) var plates: [GlassSurfaceView] = []
+    private var plateControls: [ChromeFillable] = []
+    private var displayObservation: DisplayOptions.Observation?
+
+    /// Registers plates and the controls drawn on them (a radio group is both); they take the live display options now and whenever the user changes them.
+    func adopt(plates newPlates: [GlassSurfaceView] = [], controls: [ChromeFillable] = []) {
+        plates += newPlates; plateControls += controls
+        applyDisplayOptions()
+    }
+    private func applyDisplayOptions() {
+        let options = ChromeAccessibility.live
+        for plate in plates { plate.accessibility = options }
+        for control in plateControls { control.accessibility = options }
+    }
     /// Re-reads whatever the tab shows from its source of truth. Delivers nothing.
     func refresh() {}
 
@@ -163,16 +223,19 @@ class SettingsTabViewController: NSViewController {
         let width = root.widthAnchor.constraint(equalToConstant: SettingsLayout.contentWidth)
         width.priority = .defaultHigh; width.isActive = true
         grid = NSGridView(views: makeRows())
+        displayObservation = DisplayOptions.observe { [weak self] _ in self?.applyDisplayOptions() }
         grid.translatesAutoresizingMaskIntoConstraints = false
         grid.rowSpacing = SettingsLayout.rowSpacing; grid.columnSpacing = SettingsLayout.columnSpacing
         grid.column(at: 0).xPlacement = .trailing; grid.column(at: 0).width = labelWidth
         grid.column(at: 1).xPlacement = .leading; grid.column(at: 1).width = controlWidth
         for index in 0..<grid.numberOfRows { grid.row(at: index).rowAlignment = .firstBaseline }
-        root.addSubview(grid)
+        // The glass plates of a tab share one container, so nearby glass is drawn in one pass and never samples another plate.
+        glassContainer = GlassChrome.container(around: grid, identifier: "SettingsTabPlates")
+        root.addSubview(glassContainer)
         NSLayoutConstraint.activate([
-            grid.topAnchor.constraint(equalTo: root.topAnchor, constant: SettingsLayout.verticalMargin),
-            grid.bottomAnchor.constraint(equalTo: root.bottomAnchor, constant: -SettingsLayout.verticalMargin),
-            grid.centerXAnchor.constraint(equalTo: root.centerXAnchor)])
+            glassContainer.topAnchor.constraint(equalTo: root.topAnchor, constant: SettingsLayout.verticalMargin),
+            glassContainer.bottomAnchor.constraint(equalTo: root.bottomAnchor, constant: -SettingsLayout.verticalMargin),
+            glassContainer.centerXAnchor.constraint(equalTo: root.centerXAnchor)])
         view = root
     }
 
@@ -197,8 +260,12 @@ final class GeneralSettingsTab: SettingsTabViewController {
     /// Wide enough that the snap sentence wraps to two lines, not three.
     private static let minimumControlWidth: CGFloat = 420
     let model: SettingsPreferencesModel
-    private(set) var presenceButtons: [NSButton] = []
-    private(set) var snapCheckbox: NSButton!, hoverHintsCheckbox: NSButton!, keyboardTipsCheckbox: NSButton!
+    /// Where OpenSnap shows: Dock (2), Menu bar (1), Both (0). One radio set on one plate.
+    private(set) var presenceGroup: GlassChoiceGroup!
+    var presenceButtons: [NSButton] { presenceGroup?.buttons ?? [] }
+    private(set) var snapCheckbox: GlassChoiceButton!, hoverHintsCheckbox: GlassChoiceButton!, keyboardTipsCheckbox: GlassChoiceButton!
+    /// The plates the toggles sit on: the snap sentence on its own, the two hint options together.
+    private(set) var snapPlate: GlassSurfaceView!, hintsPlate: GlassSurfaceView!
 
     init(model: SettingsPreferencesModel) {
         self.model = model
@@ -209,36 +276,40 @@ final class GeneralSettingsTab: SettingsTabViewController {
     required init?(coder: NSCoder) { fatalError("Use init(model:)") }
 
     override func makeRows() -> [[NSView]] {
-        presenceButtons = [SettingsLayout.radio("Dock", tag: 2, identifier: "presenceDock", target: self, action: #selector(changePresence(_:))),
-                           SettingsLayout.radio("Menu bar", tag: 1, identifier: "presenceMenuBar", target: self, action: #selector(changePresence(_:))),
-                           SettingsLayout.radio("Both", tag: 0, identifier: "presenceBoth", target: self, action: #selector(changePresence(_:)))]
-        hoverHintsCheckbox = SettingsLayout.checkbox("Show hover hints for tools", identifier: "showToolTips", target: self, action: #selector(changeHoverHints(_:)))
-        keyboardTipsCheckbox = SettingsLayout.checkbox("Show keyboard tip overlay", identifier: "showKeyboardTips", target: self, action: #selector(changeKeyboardTips(_:)))
-        let presence = SettingsLayout.choices(presenceButtons)
+        presenceGroup = SettingsLayout.radioGroup([("Dock", 2, "presenceDock"), ("Menu bar", 1, "presenceMenuBar"), ("Both", 0, "presenceBoth")],
+                                                  label: "Show in", identifier: "SettingsPresence", target: self, action: #selector(changePresence(_:)))
+        hoverHintsCheckbox = SettingsLayout.toggle("Show hover hints for tools", identifier: "showToolTips", target: self, action: #selector(changeHoverHints(_:)))
+        keyboardTipsCheckbox = SettingsLayout.toggle("Show keyboard tip overlay", identifier: "showKeyboardTips", target: self, action: #selector(changeKeyboardTips(_:)))
+        hintsPlate = SettingsLayout.togglePlate([hoverHintsCheckbox, keyboardTipsCheckbox], identifier: "SettingsHints", label: "Hints")
         // The form is as wide as its widest control and no wider, so the window centres it; the long snap sentence wraps inside that width.
         labelWidth = SettingsLayout.labelWidth(for: Self.rowLabels)
         let available = SettingsLayout.availableControlWidth(labelWidth: labelWidth)
-        controlWidth = min(available, ceil(max(presence.fittingSize.width, hoverHintsCheckbox.fittingSize.width, keyboardTipsCheckbox.fittingSize.width, Self.minimumControlWidth)))
-        snapCheckbox = SettingsLayout.checkbox("Show OpenSnap window in fullscreen and crosshair snaps", identifier: "includeApp",
-                                               target: self, action: #selector(changeSnap(_:)), wrapWidth: controlWidth)
+        controlWidth = min(available, ceil(max(presenceGroup.fittingSize.width, hintsPlate.fittingSize.width, Self.minimumControlWidth)))
+        snapCheckbox = SettingsLayout.toggle("Show OpenSnap window in fullscreen and crosshair snaps", identifier: "includeApp", target: self,
+                                             action: #selector(changeSnap(_:)), wrapWidth: SettingsLayout.toggleTextWidth(inPlateOfWidth: controlWidth))
+        snapPlate = SettingsLayout.togglePlate([snapCheckbox], identifier: "SettingsSnapping", label: "Snapping")
+        adopt(plates: [snapPlate, hintsPlate], controls: [presenceGroup, snapCheckbox, hoverHintsCheckbox, keyboardTipsCheckbox])
         let rows: [[NSView]] = [
-            [SettingsLayout.rowLabel("Show in:"), presence],
-            [SettingsLayout.rowLabel("Snapping:"), snapCheckbox],
-            [SettingsLayout.rowLabel("Hints:"), SettingsLayout.group([hoverHintsCheckbox, keyboardTipsCheckbox])]]
+            [SettingsLayout.rowLabel("Show in:"), SettingsPlateCell(presenceGroup, firstChoice: presenceGroup.buttons.first)],
+            [SettingsLayout.rowLabel("Snapping:"), SettingsPlateCell(snapPlate, firstChoice: snapCheckbox)],
+            [SettingsLayout.rowLabel("Hints:"), SettingsPlateCell(hintsPlate, firstChoice: hoverHintsCheckbox)]]
         defer { refresh() }
         return rows
     }
 
     override func refresh() {
-        guard isViewLoaded || !presenceButtons.isEmpty else { return }
+        guard presenceGroup != nil else { return }
         let state = model.state
-        for button in presenceButtons { button.state = button.tag == state.statusMenu ? .on : .off }
+        SettingsLayout.choose(tag: state.statusMenu, in: presenceGroup)
         snapCheckbox.state = state.includeApp ? .on : .off
         hoverHintsCheckbox.state = state.showToolTips ? .on : .off
         keyboardTipsCheckbox.state = state.showKeyboardTips ? .on : .off
     }
 
-    @objc private func changePresence(_ sender: NSButton) { model.edit { $0.statusMenu = sender.tag } }
+    @objc private func changePresence(_ sender: GlassChoiceGroup) {
+        guard let tag = SettingsLayout.chosenTag(of: sender) else { return }
+        model.edit { $0.statusMenu = tag }
+    }
     @objc private func changeSnap(_ sender: NSButton) { model.edit { $0.includeApp = sender.state == .on } }
     @objc private func changeHoverHints(_ sender: NSButton) { model.edit { $0.showToolTips = sender.state == .on } }
     @objc private func changeKeyboardTips(_ sender: NSButton) { model.edit { $0.showKeyboardTips = sender.state == .on } }
@@ -249,8 +320,10 @@ final class DrawingSettingsTab: SettingsTabViewController {
     static let rowLabels = ["Drawing precision:", "Arrow head:"]
     private static let note = "Holding Option reverses the setting."
     let model: SettingsPreferencesModel
-    private(set) var precisionButtons: [NSButton] = []
-    private(set) var arrowButtons: [NSButton] = []
+    /// Precise (0), Medium (1), Loose (2); End (2), Start (1). Each is one radio set on one plate.
+    private(set) var precisionGroup: GlassChoiceGroup!, arrowGroup: GlassChoiceGroup!
+    var precisionButtons: [NSButton] { precisionGroup?.buttons ?? [] }
+    var arrowButtons: [NSButton] { arrowGroup?.buttons ?? [] }
 
     init(model: SettingsPreferencesModel) {
         self.model = model
@@ -261,45 +334,49 @@ final class DrawingSettingsTab: SettingsTabViewController {
     required init?(coder: NSCoder) { fatalError("Use init(model:)") }
 
     override func makeRows() -> [[NSView]] {
-        precisionButtons = [SettingsLayout.radio("Precise", tag: 0, identifier: "precisionPrecise", target: self, action: #selector(changePrecision(_:))),
-                            SettingsLayout.radio("Medium", tag: 1, identifier: "precisionMedium", target: self, action: #selector(changePrecision(_:))),
-                            SettingsLayout.radio("Loose", tag: 2, identifier: "precisionLoose", target: self, action: #selector(changePrecision(_:)))]
-        arrowButtons = [SettingsLayout.radio("End", tag: 2, identifier: "arrowEnd", target: self, action: #selector(changeArrow(_:))),
-                        SettingsLayout.radio("Start", tag: 1, identifier: "arrowStart", target: self, action: #selector(changeArrow(_:)))]
-        let precision = SettingsLayout.choices(precisionButtons), arrow = SettingsLayout.choices(arrowButtons)
+        precisionGroup = SettingsLayout.radioGroup([("Precise", 0, "precisionPrecise"), ("Medium", 1, "precisionMedium"), ("Loose", 2, "precisionLoose")],
+                                                   label: "Drawing precision", identifier: "SettingsPrecision", target: self, action: #selector(changePrecision(_:)))
+        arrowGroup = SettingsLayout.radioGroup([("End", 2, "arrowEnd"), ("Start", 1, "arrowStart")],
+                                               label: "Arrow head", identifier: "SettingsArrowHead", target: self, action: #selector(changeArrow(_:)))
+        adopt(controls: [precisionGroup, arrowGroup])
         labelWidth = SettingsLayout.labelWidth(for: Self.rowLabels)
         controlWidth = min(SettingsLayout.availableControlWidth(labelWidth: labelWidth),
-                           ceil(max(precision.fittingSize.width, arrow.fittingSize.width, SettingsLayout.captionWidth(Self.note))))
+                           ceil(max(precisionGroup.fittingSize.width, arrowGroup.fittingSize.width, SettingsLayout.captionWidth(Self.note))))
         let rows: [[NSView]] = [
-            [SettingsLayout.rowLabel("Drawing precision:"), precision],
-            [SettingsLayout.rowLabel("Arrow head:"), arrow],
+            [SettingsLayout.rowLabel("Drawing precision:"), SettingsPlateCell(precisionGroup, firstChoice: precisionGroup.buttons.first)],
+            [SettingsLayout.rowLabel("Arrow head:"), SettingsPlateCell(arrowGroup, firstChoice: arrowGroup.buttons.first)],
             [NSGridCell.emptyContentView, SettingsLayout.caption(Self.note, width: controlWidth)]]
         defer { refresh() }
         return rows
     }
 
     override func refresh() {
-        guard !precisionButtons.isEmpty else { return }
+        guard precisionGroup != nil else { return }
         let state = model.state
         let precision: Int
         switch state.drawingPrecision { case .precise: precision = 0; case .medium: precision = 1; case .loose: precision = 2 }
-        for button in precisionButtons { button.state = button.tag == precision ? .on : .off }
-        for button in arrowButtons { button.state = button.tag == state.arrowHead ? .on : .off }
+        SettingsLayout.choose(tag: precision, in: precisionGroup)
+        SettingsLayout.choose(tag: state.arrowHead, in: arrowGroup)
     }
 
-    @objc private func changePrecision(_ sender: NSButton) {
+    @objc private func changePrecision(_ sender: GlassChoiceGroup) {
+        guard let tag = SettingsLayout.chosenTag(of: sender) else { return }
         model.edit {
-            switch sender.tag { case 0: $0.drawingPrecision = .precise; case 2: $0.drawingPrecision = .loose; default: $0.drawingPrecision = .medium }
+            switch tag { case 0: $0.drawingPrecision = .precise; case 2: $0.drawingPrecision = .loose; default: $0.drawingPrecision = .medium }
         }
     }
-    @objc private func changeArrow(_ sender: NSButton) { model.edit { $0.arrowHead = sender.tag } }
+    @objc private func changeArrow(_ sender: GlassChoiceGroup) {
+        guard let tag = SettingsLayout.chosenTag(of: sender) else { return }
+        model.edit { $0.arrowHead = tag }
+    }
 }
 
 @MainActor
 final class CaptureSettingsTab: SettingsTabViewController {
     private let defaults: UserDefaults
     private let hotkeys: any GlobalHotkeyEditing
-    private(set) var flashCheckbox: NSButton!
+    private(set) var flashCheckbox: GlassChoiceButton!
+    private(set) var flashPlate: GlassSurfaceView!
     private(set) var hotkeyForm: GlobalHotkeyForm!
 
     init(defaults: UserDefaults, hotkeys: any GlobalHotkeyEditing) {
@@ -310,7 +387,9 @@ final class CaptureSettingsTab: SettingsTabViewController {
     required init?(coder: NSCoder) { fatalError("Use init(defaults:hotkeys:)") }
 
     override func makeRows() -> [[NSView]] {
-        flashCheckbox = SettingsLayout.checkbox("Show capture flash", identifier: "showCaptureFlash", target: self, action: #selector(changeFlash(_:)))
+        flashCheckbox = SettingsLayout.toggle("Show capture flash", identifier: "showCaptureFlash", target: self, action: #selector(changeFlash(_:)))
+        flashPlate = SettingsLayout.togglePlate([flashCheckbox], identifier: "SettingsFlash", label: "Flash")
+        adopt(plates: [flashPlate], controls: [flashCheckbox])
         hotkeyForm = GlobalHotkeyForm(manager: hotkeys, labelWidth: SettingsLayout.labelColumnWidth, width: SettingsLayout.gridWidth)
         hotkeyForm.translatesAutoresizingMaskIntoConstraints = false
         hotkeyForm.onResize = { [weak self] in
@@ -319,7 +398,7 @@ final class CaptureSettingsTab: SettingsTabViewController {
         }
         hotkeyForm.setShortcutsPaused(shortcutsPaused)
         defer { refresh() }
-        return [[SettingsLayout.rowLabel("Flash:"), flashCheckbox], [hotkeyForm, NSGridCell.emptyContentView]]
+        return [[SettingsLayout.rowLabel("Flash:"), SettingsPlateCell(flashPlate, firstChoice: flashCheckbox)], [hotkeyForm, NSGridCell.emptyContentView]]
     }
 
     override func loadView() {
@@ -496,10 +575,11 @@ final class UploadSettingsTab: SettingsTabViewController {
     private let listSurface = SettingsListSurface()
     private var listStack: NSStackView { listSurface.stack }
     private let emptyLabel = NSTextField(wrappingLabelWithString: "No destinations yet")
-    private(set) var addButton: NSButton!, editButton: NSButton!, removeButton: NSButton!, defaultButton: NSButton!
-    /// The Add… button inside an empty list; with destinations the row of four buttons below the list takes over.
-    private(set) var emptyAddButton: NSButton!
-    private var buttonRow: NSStackView!
+    private(set) var addButton: SettingsActionButton!, editButton: SettingsActionButton!, removeButton: SettingsActionButton!, defaultButton: SettingsActionButton!
+    /// The Add… button inside an empty list; with destinations the plate of four buttons below the list takes over.
+    private(set) var emptyAddButton: SettingsActionButton!
+    /// The glass plates the buttons sit on: one for the four commands, one for the lone Add… in the empty list.
+    private(set) var actionPlate: GlassSurfaceView!, emptyAddPlate: GlassSurfaceView!
     private(set) var rows: [SettingsDestinationRow] = []
     private var listed: [PublishingDestination] = []
     private var defaultID: String?
@@ -530,13 +610,14 @@ final class UploadSettingsTab: SettingsTabViewController {
         emptyLabel.preferredMaxLayoutWidth = Self.listWidth - 2 * DesignTokens.Space.s4
         listSurface.translatesAutoresizingMaskIntoConstraints = false
         listSurface.widthAnchor.constraint(equalToConstant: Self.listWidth).isActive = true
-        addButton = SettingsLayout.pushButton("Add…", identifier: "addDestination", target: self, action: #selector(addTapped))
-        editButton = SettingsLayout.pushButton("Edit…", identifier: "editDestination", target: self, action: #selector(editTapped))
-        removeButton = SettingsLayout.pushButton("Remove", identifier: "removeDestination", target: self, action: #selector(removeTapped))
-        defaultButton = SettingsLayout.pushButton("Make Default", identifier: "makeDefaultDestination", target: self, action: #selector(makeDefaultTapped))
-        emptyAddButton = SettingsLayout.pushButton("Add…", identifier: "addFirstDestination", target: self, action: #selector(addTapped))
-        buttonRow = NSStackView(views: [addButton, editButton, removeButton, defaultButton])
-        buttonRow.orientation = .horizontal; buttonRow.spacing = DesignTokens.Space.s2
+        addButton = SettingsLayout.actionButton("Add…", identifier: "addDestination", target: self, action: #selector(addTapped))
+        editButton = SettingsLayout.actionButton("Edit…", identifier: "editDestination", target: self, action: #selector(editTapped))
+        removeButton = SettingsLayout.actionButton("Remove", identifier: "removeDestination", target: self, action: #selector(removeTapped))
+        defaultButton = SettingsLayout.actionButton("Make Default", identifier: "makeDefaultDestination", target: self, action: #selector(makeDefaultTapped))
+        emptyAddButton = SettingsLayout.actionButton("Add…", identifier: "addFirstDestination", target: self, action: #selector(addTapped))
+        actionPlate = SettingsLayout.actionPlate([addButton, editButton, removeButton, defaultButton], identifier: "SettingsDestinationActions", label: "Destination actions")
+        emptyAddPlate = SettingsLayout.actionPlate([emptyAddButton], identifier: "SettingsFirstDestinationAction", label: "First destination")
+        adopt(plates: [actionPlate, emptyAddPlate], controls: [addButton, editButton, removeButton, defaultButton, emptyAddButton])
         hintLabel = SettingsLayout.caption(Self.hint, width: Self.listWidth)
         defer { refresh() }
         let heading = NSTextField(labelWithString: "Destinations")
@@ -544,7 +625,7 @@ final class UploadSettingsTab: SettingsTabViewController {
         heading.setAccessibilityRole(.staticText)
         return [[NSGridCell.emptyContentView, heading],
                 [NSGridCell.emptyContentView, listSurface],
-                [NSGridCell.emptyContentView, buttonRow],
+                [NSGridCell.emptyContentView, actionPlate],
                 [NSGridCell.emptyContentView, hintLabel]]
     }
 
@@ -605,9 +686,9 @@ final class UploadSettingsTab: SettingsTabViewController {
         }
         let empty = list.destinations.isEmpty
         emptyLabel.isHidden = !empty
-        emptyAddButton.isHidden = !empty
+        emptyAddButton.isHidden = !empty; emptyAddPlate.isHidden = !empty
         if empty {
-            let column = NSStackView(views: [emptyLabel, emptyAddButton])
+            let column = NSStackView(views: [emptyLabel, emptyAddPlate])
             column.orientation = .vertical; column.alignment = .leading; column.spacing = DesignTokens.Space.s3
             let wrapper = NSView(); wrapper.translatesAutoresizingMaskIntoConstraints = false
             column.translatesAutoresizingMaskIntoConstraints = false; wrapper.addSubview(column)
@@ -633,138 +714,107 @@ final class UploadSettingsTab: SettingsTabViewController {
     @objc private func makeDefaultTapped() { if let selected = selectedDestination { onMakeDefault(selected) } }
 }
 
-/// One tab on the strip: an icon and a 20 pt label. It is a real NSButton with a title, so the G4 walker judges its text.
-/// Rest, hover, pressed and selected are drawn as fills; selected adds a 1 pt accent border and an accent icon, the same cues
-/// as the selected tool in the main chrome, so the state is never colour alone.
+/// One tab on the strip: an icon and a 20 pt label on the strip's glass plate. It is the chrome's `CommandButton`, so it is a real
+/// NSButton with a title (the G4 walker judges its text) and its rest, hover, pressed and selected states are the fills `StatePlate` draws
+/// from `StateStyles.command`: selected is the accent fill, a 1 pt accent border, a semibold label and a solid glyph, and Differentiate
+/// Without Color adds the capsule under the glyph, so the current tab is never colour alone.
 @MainActor
-final class SettingsTabButton: NSButton {
-    static let height = DesignTokens.Size.row
+final class SettingsTabButton: CommandButton {
+    static let height = GlassChrome.Metrics.commandHeight
     static let horizontalPadding = DesignTokens.Space.s3
-    private typealias Palette = DesignTokens.Palette
-
-    let icon: FAIcon
-    private(set) var isCurrent = false
-    private(set) var isHovered = false
-    private(set) var isPressed = false
-    private var trackingArea: NSTrackingArea?
-    /// The outline for Differentiate Without Color follows the system setting as it changes, not only when the tab is next selected.
-    private var displayObservation: DisplayOptions.Observation?
+    private typealias Typography = DesignTokens.Typography
 
     init(title: String, icon: FAIcon) {
-        self.icon = icon
         super.init(frame: .zero)
+        GlassChrome.useExtraLarge(self)
+        Typography.apply(.body, to: self)
+        iconPointSize = Typography.iconInline
+        iconFamily = .solid; selectedFamily = .solid
+        self.icon = icon
         self.title = title
-        isBordered = false; setButtonType(.momentaryChange); imagePosition = .imageLeading; imageHugsTitle = true
-        image = ChromeIcons.resolve(icon, family: .solid, pointSize: DesignTokens.Typography.iconRegular).image
-        refusesFirstResponder = true; focusRingType = .none
-        wantsLayer = true; layer?.cornerRadius = DesignTokens.Radius.md
+        refusesFirstResponder = true
         identifier = NSUserInterfaceItemIdentifier("settingsTab." + title)
         setAccessibilityElement(true); setAccessibilityRole(.radioButton); setAccessibilityLabel(title)
-        applyTitle()
-        applyState()
-        displayObservation = DisplayOptions.observe { [weak self] _ in self?.applyState() }
+        // The label is drawn from an attributed string: the button's own title field would keep the system's 13 pt and take no state colour.
+        plate.onApply = { [weak self] _ in self?.styleTitle() }
+        styleTitle()
+        translatesAutoresizingMaskIntoConstraints = false
+        widthAnchor.constraint(equalToConstant: Self.width(for: title)).isActive = true
+        heightAnchor.constraint(equalToConstant: Self.height).isActive = true
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
 
-    override var intrinsicContentSize: NSSize {
-        let size = super.intrinsicContentSize
-        return NSSize(width: size.width + 2 * Self.horizontalPadding, height: Self.height)
+    /// The width of a tab: its glyph, the gap, the label in the strong weight (so choosing a tab never moves its neighbours) and the padding.
+    static func width(for title: String) -> CGFloat {
+        let label = ceil((title as NSString).size(withAttributes: [.font: Typography.font(.bodyStrong)]).width)
+        return label + Typography.iconInline + DesignTokens.Space.s2 + 2 * horizontalPadding
     }
 
-    /// The title is attributed so its size and colour are ours and not the button style's.
-    private func applyTitle() {
-        let font = DesignTokens.Typography.font(.body)
-        self.font = font; cell?.font = font
-        attributedTitle = NSAttributedString(string: title, attributes: [.font: font, .foregroundColor: Palette.Text.primary])
+    /// The label in the weight and colour the state resolved: semibold while this is the current tab.
+    private func styleTitle() {
+        let text = visibleTitle
+        guard !text.isEmpty else { return }
+        let style = plate.stateStyle
+        attributedTitle = NSAttributedString(string: text, attributes: [.font: Typography.font(style.strongText ? .bodyStrong : .body), .foregroundColor: style.content])
     }
 
-    func setCurrent(_ current: Bool) {
-        isCurrent = current
-        applyState()
+    var isCurrent: Bool { state == .on }
+    func setCurrent(_ current: Bool) { state = current ? .on : .off }
+
+    override var title: String {
+        didSet { styleTitle() }
     }
+    override var intrinsicContentSize: NSSize { NSSize(width: Self.width(for: visibleTitle), height: Self.height) }
 
     override func accessibilityValue() -> Any? { isCurrent ? 1 : 0 }
     override func accessibilityPerformPress() -> Bool { performClick(nil); return true }
-
-    // MARK: State
-
-    override func viewDidChangeEffectiveAppearance() {
-        super.viewDidChangeEffectiveAppearance()
-        applyState()
-    }
-
-    private func applyState() {
-        effectiveAppearance.performAsCurrentDrawingAppearance {
-            let accent = Palette.accent
-            contentTintColor = isCurrent ? accent : Palette.Text.secondary
-            guard let layer else { return }
-            if isCurrent {
-                layer.backgroundColor = (isPressed ? accent.withAlphaComponent(0.32) : Palette.State.selectedFill).cgColor
-                // Differentiate Without Color: the current tab is also a 2 pt outline in the text colour, a shape and not a tint alone.
-                let outline = DisplayOptions.current.differentiateWithoutColor
-                layer.borderColor = (outline ? Palette.Text.primary : accent).cgColor; layer.borderWidth = outline ? 2 : 1
-            } else {
-                layer.borderWidth = 0; layer.borderColor = nil
-                layer.backgroundColor = (isPressed ? Palette.State.pressed : (isHovered ? Palette.State.hover : NSColor.clear)).cgColor
-            }
-        }
-    }
-
-    override func updateTrackingAreas() {
-        super.updateTrackingAreas()
-        if let trackingArea { removeTrackingArea(trackingArea) }
-        let area = NSTrackingArea(rect: bounds, options: [.mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect], owner: self, userInfo: nil)
-        addTrackingArea(area); trackingArea = area
-    }
-    func setHovered(_ hovered: Bool) { isHovered = hovered; applyState() }
-    func setPressed(_ pressed: Bool) { isPressed = pressed; applyState() }
-    override func mouseEntered(with event: NSEvent) { setHovered(true) }
-    override func mouseExited(with event: NSEvent) { setHovered(false) }
-    /// `super.mouseDown` tracks the whole click, so the pressed fill is on for exactly as long as the mouse is down.
-    override func mouseDown(with event: NSEvent) {
-        setPressed(true)
-        super.mouseDown(with: event)
-        setPressed(false)
-    }
 }
 
-/// The strip of tabs: a solid surface (Settings is a content window, and glass is for navigation), one key-view stop, the
-/// Left and Right arrows move between tabs while it has focus, and it presents itself as a tab group.
+/// The strip of tabs: the four tabs share ONE glass plate (the only glass in it; the tabs draw their own state fills) in the bar's glass
+/// container, over the window surface. It is one key-view stop, the Left and Right arrows move between tabs while it has focus, and it
+/// presents itself as a tab group.
 @MainActor
 final class SettingsTabStrip: NSView {
     static let verticalPadding = DesignTokens.Space.s2
-    static let height = SettingsTabButton.height + 2 * verticalPadding
+    static let height = GlassChrome.Metrics.headerHeight + 2 * verticalPadding
 
     let buttons: [SettingsTabButton]
+    /// The one glass plate the tabs sit on, and the container that shares its render pass.
+    let plate: GlassSurfaceView
+    let container: NSGlassEffectContainerView
     private(set) var selectedIndex = -1
     /// Called with the index the user asked for, by click or arrow key.
     var onSelect: ((Int) -> Void)?
-    private let row: NSStackView
+    private var displayObservation: DisplayOptions.Observation?
 
     init(items: [(title: String, icon: FAIcon)]) {
         buttons = items.map { SettingsTabButton(title: $0.title, icon: $0.icon) }
-        row = NSStackView(views: buttons)
+        plate = GlassChrome.plate(buttons, identifier: "SettingsTabBar", accessibility: ChromeAccessibility.live)
+        container = GlassChrome.container(around: plate, identifier: "SettingsTabs")
         super.init(frame: .zero)
         wantsLayer = true
         focusRingType = .none
-        row.orientation = .horizontal; row.alignment = .centerY; row.spacing = DesignTokens.Space.s1
-        row.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(row)
+        addSubview(container)
         NSLayoutConstraint.activate([
-            row.centerXAnchor.constraint(equalTo: centerXAnchor), row.centerYAnchor.constraint(equalTo: centerYAnchor),
-            row.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: DesignTokens.Space.s3),
+            container.centerXAnchor.constraint(equalTo: centerXAnchor), container.centerYAnchor.constraint(equalTo: centerYAnchor),
+            container.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: DesignTokens.Space.s3),
             heightAnchor.constraint(equalToConstant: Self.height)])
         for (index, button) in buttons.enumerated() {
             button.tag = index; button.target = self; button.action = #selector(tabClicked(_:))
-            button.translatesAutoresizingMaskIntoConstraints = false
-            button.heightAnchor.constraint(equalToConstant: SettingsTabButton.height).isActive = true
+            button.accessibility = ChromeAccessibility.live
+        }
+        displayObservation = DisplayOptions.observe { [weak self] _ in
+            guard let self else { return }
+            let options = ChromeAccessibility.live
+            self.plate.accessibility = options
+            for button in self.buttons { button.accessibility = options }
         }
         setAccessibilityElement(true); setAccessibilityRole(.tabGroup); setAccessibilityLabel("Settings sections")
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
 
     /// The width the four tabs take side by side, so a test can hold it against the window width.
-    var contentWidth: CGFloat { row.fittingSize.width }
+    var contentWidth: CGFloat { plate.fittingSize.width }
 
     func select(_ index: Int) {
         guard buttons.indices.contains(index) else { return }
@@ -818,7 +868,7 @@ final class SettingsTabStrip: NSView {
     }
     override var focusRingMaskBounds: NSRect { focusRect }
     override func drawFocusRingMask() {
-        NSBezierPath(roundedRect: focusRect, xRadius: DesignTokens.Radius.md, yRadius: DesignTokens.Radius.md).fill()
+        NSBezierPath(roundedRect: focusRect, xRadius: StatePlate.radius, yRadius: StatePlate.radius).fill()
     }
 
     // MARK: Accessibility
