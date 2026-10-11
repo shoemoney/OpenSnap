@@ -109,8 +109,17 @@ Shared-file rule: two workers touching the same file stay in their named hunks. 
 ## GUI slot protocol (workers)
 
 Compiling is free. Running any AppKit test binary, `tools/test.py`, `tools/test-app-safety.sh`, `tools/eye-dump-audit.sh` or
-`tools/e2e-session.sh` needs the single slot: `until mkdir /tmp/opensnap-glass-gui.lock 2>/dev/null; do sleep 20; done` before,
-`rmdir /tmp/opensnap-glass-gui.lock` after (also on failure). Never `build/OpenSnap.app` in place; never the real stores.
+`tools/e2e-session.sh` needs the single slot, taken and released in ONE shell command with an owner check (protocol v2, from 23:50 CDT;
+the first unowned `mkdir`/`rmdir` recipe let one worker remove another's lock):
+
+```sh
+until mkdir /tmp/opensnap-glass-gui.lock 2>/dev/null; do sleep 20; done; echo "<worker>-$$" > /tmp/opensnap-glass-gui.lock/owner
+# ... run ...
+[ "$(cat /tmp/opensnap-glass-gui.lock/owner 2>/dev/null)" = "<worker>-$$" ] && rm -rf /tmp/opensnap-glass-gui.lock
+```
+
+Never remove a lock you did not create. Worker runs made before v2 may have overlapped and are not evidence; only the orchestrator's
+serialized integration and candidate runs are. Never `build/OpenSnap.app` in place; never the real stores.
 
 ## Record
 
