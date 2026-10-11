@@ -653,9 +653,13 @@ final class GlobalHotkeyForm: NSView {
         let key: GlassPopUpButton
         let keyCell: ChromeFillCell
         let modifiers: [GlassChoiceButton]
+        /// The four toggles in one accessibility group, named after the row.
+        let group: NSStackView
         let plate: GlassSurfaceView
-        init(key: GlassPopUpButton, keyCell: ChromeFillCell, modifiers: [GlassChoiceButton], plate: GlassSurfaceView) {
-            self.key = key; self.keyCell = keyCell; self.modifiers = modifiers; self.plate = plate
+        /// The toggle that is the group's one tab stop: where the keyboard last was, else the first.
+        var stop = 0
+        init(key: GlassPopUpButton, keyCell: ChromeFillCell, modifiers: [GlassChoiceButton], group: NSStackView, plate: GlassSurfaceView) {
+            self.key = key; self.keyCell = keyCell; self.modifiers = modifiers; self.group = group; self.plate = plate
         }
     }
 
@@ -691,6 +695,10 @@ final class GlobalHotkeyForm: NSView {
     /// The four modifier toggles of an action's row, in `modifierSegments` order (Command, Option, Control, Shift).
     func modifierToggles(for action: GlobalHotkeyAction) -> [GlassChoiceButton] { rows[action]!.modifiers }
     func rowPlate(for action: GlobalHotkeyAction) -> GlassSurfaceView { rows[action]!.plate }
+    /// The group that holds an action's four modifier toggles: one tab stop, named "<action> modifiers" for VoiceOver.
+    func modifierGroup(for action: GlobalHotkeyAction) -> NSStackView { rows[action]!.group }
+    /// The modifier toggle that is that group's tab stop now.
+    func modifierStop(for action: GlobalHotkeyAction) -> GlassChoiceButton { rows[action]!.modifiers[rows[action]!.stop] }
 
     init(manager: any GlobalHotkeyEditing, labelWidth: CGFloat, width: CGFloat) {
         self.manager = manager
@@ -717,7 +725,7 @@ final class GlobalHotkeyForm: NSView {
             key.setAccessibilityLabel("\(action.title) key")
             key.target = self; key.action = #selector(keyChanged(_:))
             let keyCell = ChromeFillCell(key, size: NSSize(width: max(Self.keyPopupWidth, ceil(key.intrinsicContentSize.width)), height: GlassChrome.Metrics.commandHeight))
-            let toggles = Self.modifierSegments.map { entry -> GlassChoiceButton in
+            let toggles = Self.modifierSegments.enumerated().map { index, entry -> GlassChoiceButton in
                 let toggle = GlassChoiceButton(title: entry.1, kind: .toggle, indicator: GlassChoiceButton.Indicator.none, layout: .segment)
                 toggle.minimumWidth = Self.modifierSegmentWidth
                 toggle.identifier = NSUserInterfaceItemIdentifier("GlobalHotkey.\(action.rawValue).\(entry.2.lowercased())")
@@ -725,10 +733,21 @@ final class GlobalHotkeyForm: NSView {
                 toggle.setAccessibilityLabel("\(action.title) \(entry.2)")
                 toggle.target = self; toggle.action = #selector(modifiersChanged(_:))
                 AppToolTip.setText(Self.modifierToolTip, for: toggle)
+                Self.centre(symbol: entry.1, in: toggle)
+                // The four toggles are ONE tab stop, like the segmented control they replace: only the stop takes Tab, and the arrows move within the row.
+                toggle.participatesInKeyLoop = index == 0
+                toggle.keyHandler = { [weak self, weak toggle] event in
+                    guard let self, let toggle else { return false }
+                    return self.modifierKey(event, from: toggle, action: action)
+                }
                 return toggle
             }
-            let rowPlate = plate([keyCell] + toggles, identifier: "GlobalHotkeyRow." + action.rawValue, name: "\(action.title) shortcut")
-            rows[action] = Row(key: key, keyCell: keyCell, modifiers: toggles, plate: rowPlate)
+            let group = NSStackView(views: toggles)
+            group.orientation = .horizontal; group.alignment = .centerY; group.spacing = GlassChrome.Metrics.groupSpacing
+            group.setAccessibilityElement(true); group.setAccessibilityRole(.group); group.setAccessibilityLabel("\(action.title) modifiers")
+            group.setAccessibilityChildren(toggles)
+            let rowPlate = plate([keyCell, group], identifier: "GlobalHotkeyRow." + action.rawValue, name: "\(action.title) shortcut")
+            rows[action] = Row(key: key, keyCell: keyCell, modifiers: toggles, group: group, plate: rowPlate)
             gridRows.append([label(action.title + ":"), rowPlate])
         }
         statusField.font = Typography.font(.body)
@@ -835,7 +854,55 @@ final class GlobalHotkeyForm: NSView {
         for toggle in row.modifiers { toggle.isEnabled = hasKey; if !hasKey { toggle.state = .off } }
         commit()
     }
-    @objc private func modifiersChanged(_ sender: NSButton) { commit() }
+    @objc private func modifiersChanged(_ sender: NSButton) {
+        if let row = rows.values.first(where: { $0.modifiers.contains { $0 === sender } }), let index = row.modifiers.firstIndex(where: { $0 === sender }) { setStop(index, in: row) }
+        commit()
+    }
+
+    /// Makes one of a row's modifier toggles the group's tab stop; the others leave the key loop.
+    private func setStop(_ index: Int, in row: Row) {
+        row.stop = index
+        for (position, toggle) in row.modifiers.enumerated() { toggle.participatesInKeyLoop = position == index }
+    }
+
+    /// Keys on a focused modifier toggle. Left and Right move the focus within the four (wrapping, skipping any that is disabled), and Space,
+    /// Return and Enter flip the focused one exactly once. Anything else (Tab included) is left to the window. The toggle the keyboard is on
+    /// becomes the group's stop, so Tab comes back to it.
+    private func modifierKey(_ event: NSEvent, from toggle: GlassChoiceButton, action: GlobalHotkeyAction) -> Bool {
+        guard let row = rows[action], let index = row.modifiers.firstIndex(where: { $0 === toggle }) else { return false }
+        setStop(index, in: row)
+        guard event.modifierFlags.intersection(.deviceIndependentFlagsMask).isEmpty else { return false }
+        switch event.keyCode {
+        case 123, 124:
+            let step = event.keyCode == 124 ? 1 : -1, count = row.modifiers.count
+            var next = index
+            for _ in 0..<count {
+                next = (next + step + count) % count
+                if row.modifiers[next].isEnabled { break }
+            }
+            guard next != index, row.modifiers[next].isEnabled else { return true }
+            window?.makeFirstResponder(row.modifiers[next])
+            setStop(next, in: row)
+            return true
+        case 49, 36, 76:
+            toggle.performClick(nil)
+            return true
+        default: return false
+        }
+    }
+
+    /// A modifier symbol drawn at its own glyph's ink centre. Some of the four sit high or low in their em box (the control caret is a small
+    /// mark at the top of it), so each is lowered or raised until the middle of its ink is on the middle of the line the others sit on.
+    private static func centre(symbol: String, in toggle: GlassChoiceButton) {
+        let font = Typography.font(.body)
+        let ink = CTLineGetImageBounds(CTLineCreateWithAttributedString(NSAttributedString(string: symbol, attributes: [.font: font])), nil)
+        let target = (font.ascender + font.descender) / 2
+        let shift = target - ink.midY
+        guard abs(shift) > 0.5 else { return }
+        let label = toggle.titleLabel
+        label.attributedStringValue = NSAttributedString(string: symbol, attributes: [.font: label.font ?? font, .foregroundColor: label.textColor ?? DesignTokens.Palette.Text.primary,
+                                                                                      .baselineOffset: shift])
+    }
     /// Clear All sets every key to None (first launch claims no shortcut, so this is also where a fresh install starts).
     @objc private func clearAll(_ sender: Any?) {
         fill(.defaults); commit()

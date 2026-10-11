@@ -111,6 +111,8 @@ private enum SettingsWindowTests {
         flash()
         shortcuts()
         shortcutForm()
+        modifierKeyboard()
+        modifierGlyphs()
         upload()
         uploadActionPlates()
         uploadWithPublishing()
@@ -920,9 +922,10 @@ private enum SettingsWindowTests {
                "the form has eight plates: Shortcuts, six actions, Clear All (\(formPlates.count))")
         expect(GlobalHotkeyAction.allCases.allSatisfy { action in
             let plate = form.rowPlate(for: action)
-            return plate.arrangedViews.count == 5 && plate.arrangedViews[0] is ChromeFillCell && form.keyPopup(for: action).isDescendant(of: plate)
-                && zip(plate.arrangedViews.dropFirst(), form.modifierToggles(for: action)).allSatisfy { $0 === $1 }
-        }, "each action's key and its four modifiers share ONE plate, in order")
+            let group = form.modifierGroup(for: action)
+            return plate.arrangedViews.count == 2 && plate.arrangedViews[0] is ChromeFillCell && plate.arrangedViews[1] === group && form.keyPopup(for: action).isDescendant(of: plate)
+                && group.arrangedSubviews.count == 4 && zip(group.arrangedSubviews, form.modifierToggles(for: action)).allSatisfy { $0 === $1 }
+        }, "each action's key and its four modifiers (grouped) share ONE plate, in order")
         expect(form.enabledPlate.arrangedViews.count == 1 && form.enabledPlate.arrangedViews[0] === form.enabledCheckbox && form.clearPlate.arrangedViews.count == 1 && form.clearPlate.arrangedViews[0] === form.clearButton,
                "the enable box and Clear All each have a plate of their own")
         expect(nestedGlass(in: form).isEmpty && !descendants(form).contains { $0 is NSSegmentedControl } && form.rowPlates.allSatisfy { $0.tintColor == nil }, "no glass inside glass, no segmented control left, no tint")
@@ -1155,6 +1158,143 @@ private enum SettingsWindowTests {
         expect(manager.settings == .defaults && GlobalHotkeyAction.allCases.allSatisfy { form.keyPopup(for: $0).indexOfSelectedItem == 0 && form.modifierToggles(for: $0).allSatisfy { !$0.isEnabled && $0.state == .off } },
                "Clear All sets every pop-up to None and every modifier off")
         expect(backend.bindings.isEmpty, "and nothing stays registered")
+    }
+
+    // MARK: The modifier toggles on the keyboard and to the eye
+
+    private static func spaceKey(window: NSWindow) -> NSEvent { keyEvent(" ", code: 49, flags: [], window: window) }
+
+    /// The Tab loop of the Capture tab, from the strip: each row's four modifiers are ONE stop (only when they are enabled), the arrows move within
+    /// the row, Space and Return flip the focused one exactly once, and what is stored is exactly what the toggles show.
+    private static func modifierKeyboard() {
+        let (controller, defaults, manager, _, _, _) = makeController()
+        controller.select(2)
+        let window = controller.window, form = controller.capture.hotkeyForm!
+        window.contentView?.layoutSubtreeIfNeeded()
+        try? manager.install(globalScreen: {}, globalWindow: {}, globalFullscreen: {}, globalFrame: {}, globalUpload: {}, globalShow: {})
+        let saved = KeyboardNavigation.fullKeyboardAccess
+        KeyboardNavigation.fullKeyboardAccess = { true }
+        defer { KeyboardNavigation.fullKeyboardAccess = saved }
+        func loop() -> [NSView] {
+            window.recalculateKeyViewLoop()
+            var seen: [NSView] = [], view: NSView? = controller.strip
+            for _ in 0..<120 { view = view?.nextValidKeyView; guard let next = view, next !== controller.strip else { break }; seen.append(next) }
+            return seen
+        }
+        func modifierStops(_ views: [NSView]) -> [GlassChoiceButton] {
+            let all = GlobalHotkeyAction.allCases.flatMap { form.modifierToggles(for: $0) }
+            return views.compactMap { $0 as? GlassChoiceButton }.filter { toggle in all.contains { $0 === toggle } }
+        }
+        let k = GlobalHotkeyKeys.choices.firstIndex { $0.name == "K" }! + 1
+        func pick(_ action: GlobalHotkeyAction, _ index: Int) { let popup = form.keyPopup(for: action); popup.selectItem(at: index); _ = popup.target?.perform(popup.action, with: popup) }
+
+        // With no key nothing in a modifier group takes Tab; the rest of the tab is the strip, Flash, the enable box, six keys and Clear All.
+        let bare = loop()
+        let bareKinds = bare.map { String(describing: type(of: $0)) }
+        expect(modifierStops(bare).isEmpty && bare.filter { $0 is GlassPopUpButton }.count == 6, "with no key chosen the modifier groups are out of the Tab loop and the six key pop-ups are in it: \(bareKinds)")
+        // Each key chosen puts exactly one stop for that row's group into the loop, on the first toggle.
+        for (index, action) in GlobalHotkeyAction.allCases.enumerated() {
+            pick(action, k + index)
+            let stops = modifierStops(loop())
+            expect(stops.count == index + 1 && stops.last === form.modifierToggles(for: action)[0], "\(action.title): its four modifiers add ONE Tab stop, the first toggle (\(stops.count) stops)")
+        }
+        let full = loop()
+        expect(full.count == bare.count + 6 && modifierStops(full).count == 6, "six rows of four modifiers are six Tab stops, not twenty-four (\(full.count) against \(bare.count) with no key)")
+        expect(GlobalHotkeyAction.allCases.allSatisfy { action in form.modifierToggles(for: action).filter(\.canBecomeKeyView).count == 1 }, "exactly one toggle of each row can become the key view")
+
+        // Arrows move the focus within the row, wrapping, and the toggle the keyboard is on becomes the stop.
+        let action = GlobalHotkeyAction.window
+        let toggles = form.modifierToggles(for: action)
+        expect(window.makeFirstResponder(toggles[0]) && window.firstResponder === toggles[0], "the stop takes the keyboard")
+        func arrow(_ code: UInt16, from toggle: GlassChoiceButton) { toggle.keyDown(with: arrowEvent(code, window: window)) }
+        arrow(124, from: toggles[0])
+        expect(window.firstResponder === toggles[1] && form.modifierStop(for: action) === toggles[1] && toggles[1].canBecomeKeyView && !toggles[0].canBecomeKeyView, "Right moves the focus to Option and Option becomes the stop")
+        arrow(124, from: toggles[1]); arrow(124, from: toggles[2])
+        expect(window.firstResponder === toggles[3], "Right walks on to Shift")
+        arrow(124, from: toggles[3])
+        expect(window.firstResponder === toggles[0] && form.modifierStop(for: action) === toggles[0], "Right wraps from Shift to Command")
+        arrow(123, from: toggles[0])
+        expect(window.firstResponder === toggles[3], "Left wraps from Command to Shift")
+        expect(modifierStops(loop()).filter { toggles.contains($0) } == [toggles[3]], "Tab returns to where the keyboard was: Shift is the row's stop")
+        // Nothing stored moved: arrows never change a modifier.
+        let stored = manager.settings
+        expect(toggles.allSatisfy { $0.state == .off } && manager.settings == stored, "arrows move the focus and change nothing stored")
+
+        // Space, Return and Enter flip the focused toggle exactly once, and the manager stores exactly the flags the toggles show.
+        func flags(_ action: GlobalHotkeyAction) -> GlobalHotkeyModifiers {
+            var result: GlobalHotkeyModifiers = []
+            for (toggle, entry) in zip(form.modifierToggles(for: action), GlobalHotkeyForm.modifierSegments) where toggle.state == .on { result.insert(entry.0) }
+            return result
+        }
+        // (Every row holding a key with no modifier would refuse any edit, so start again from Clear All with only this row's key.)
+        form.clearButton.performClick(nil)
+        pick(action, k)
+        expect(toggles.allSatisfy(\.isEnabled) && toggles.allSatisfy { $0.state == .off }, "Clear All and one key chosen: the row's modifiers are enabled and off")
+        window.makeFirstResponder(toggles[0])
+        toggles[0].keyDown(with: spaceKey(window: window))
+        expect(toggles[0].state == .on && flags(action) == .command && manager.settings.window == .init(keyCode: GlobalHotkeyKeys.choices[k - 1].code, modifiers: .command),
+               "Space flips Command once and Command plus the key is stored (\(manager.settings.window))")
+        toggles[0].keyDown(with: spaceKey(window: window))
+        expect(toggles[0].state == .off && flags(action).isEmpty && form.statusField.stringValue.hasPrefix("Error: ") && manager.settings.window.modifiers == .command,
+               "a second Space flips it back; a key alone is refused, so the saved Command stands")
+        window.makeFirstResponder(toggles[2])
+        toggles[2].keyDown(with: keyEvent("\r", code: 36, flags: [], window: window))
+        expect(toggles[2].state == .on && flags(action) == .control && manager.settings.window.modifiers == .control, "Return flips Control once and Control plus the key is stored")
+        toggles[2].keyDown(with: keyEvent("\u{3}", code: 76, flags: [], window: window))
+        expect(toggles[2].state == .off, "Enter flips it back")
+        expect(hotkeySettings(defaults).window == manager.settings.window && form.draft().window.modifiers == flags(action), "what is stored is what the toggles show")
+        // A key with a modifier held, and Tab, are the window's, not the toggle's.
+        let before = toggles[1].state
+        toggles[1].keyDown(with: keyEvent(" ", code: 49, flags: .command, window: window))
+        expect(toggles[1].state == before, "Command-Space is not Space")
+        expect(modifierStops(loop()).count == 1, "after Clear All and one key, the one enabled row has the one stop")
+
+        // VoiceOver still finds four check boxes inside a group named after the row.
+        for action in GlobalHotkeyAction.allCases {
+            let group = form.modifierGroup(for: action)
+            expect(group.accessibilityRole() == .group && group.accessibilityLabel() == "\(action.title) modifiers" && group.isAccessibilityElement(), "\(action.title): a group named '\(action.title) modifiers'")
+            expect((group.accessibilityChildren() ?? []).count == 4 && form.modifierToggles(for: action).allSatisfy { $0.isDescendant(of: group) && $0.accessibilityRole() == .checkBox }, "\(action.title): four check boxes inside it")
+        }
+    }
+
+    /// Each modifier symbol sits on the middle of its button: the ink of the drawn glyph, measured from pixels, is within a point of the button's
+    /// centre (the control caret sits at the top of its em box and was 3.5 pt high).
+    private static func modifierGlyphs() {
+        let (controller, _, _, _, _, _) = makeController()
+        controller.select(2)
+        let window = controller.window, form = controller.capture.hotkeyForm!
+        window.contentView?.layoutSubtreeIfNeeded()
+        /// The vertical middle of the drawn ink of a toggle's label, in the toggle's own (y up) space.
+        func inkMiddle(of toggle: GlassChoiceButton) -> CGFloat? {
+            let label = toggle.titleLabel, color = label.textColor
+            label.textColor = .black
+            defer { label.textColor = color }
+            guard let rep = label.bitmapImageRepForCachingDisplay(in: label.bounds) else { return nil }
+            label.cacheDisplay(in: label.bounds, to: rep)
+            let scale = CGFloat(rep.pixelsWide) / label.bounds.width
+            var top: Int?, bottom: Int?
+            for y in 0..<rep.pixelsHigh {
+                let row = (0..<rep.pixelsWide).contains { rep.colorAt(x: $0, y: y)?.alphaComponent ?? 0 > 0.3 }
+                if row { if top == nil { top = y }; bottom = y }
+            }
+            guard let top, let bottom else { return nil }
+            return label.frame.maxY - CGFloat(top + bottom + 1) / 2 / scale
+        }
+        var worst: CGFloat = 0
+        for action in GlobalHotkeyAction.allCases {
+            for (index, toggle) in form.modifierToggles(for: action).enumerated() {
+                guard let middle = inkMiddle(of: toggle) else { expect(false, "\(action.title) \(toggle.title): the symbol drew nothing"); continue }
+                let delta = abs(middle - toggle.bounds.midY)
+                worst = max(worst, delta)
+                expect(delta <= 1, "\(action.title) \(toggle.accessibilityLabel() ?? ""): the symbol's ink is \(delta) pt off the button's centre")
+                expect(toggle.titleLabel.font?.pointSize == 20 && toggle.titleLabel.attributedStringValue.string == GlobalHotkeyForm.modifierSegments[index].1, "the symbol keeps its size and its place in the order")
+            }
+        }
+        // Chosen (the semibold face) it still holds, and the shift survives the state change.
+        let toggles = form.modifierToggles(for: .screen)
+        toggles.forEach { $0.state = .on }
+        for toggle in toggles { if let middle = inkMiddle(of: toggle) { expect(abs(middle - toggle.bounds.midY) <= 1, "\(toggle.accessibilityLabel() ?? ""): chosen, the symbol's ink is \(abs(middle - toggle.bounds.midY)) pt off the centre") } }
+        print("  Modifier symbols: 24 toggles, ink centre within \(String(format: "%.2f", worst)) pt of the button's centre")
     }
 
     // MARK: Upload
