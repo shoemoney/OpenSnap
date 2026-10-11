@@ -110,6 +110,7 @@ private enum SettingsWindowTests {
         rowBaselines()
         flash()
         shortcuts()
+        shortcutForm()
         upload()
         uploadActionPlates()
         uploadWithPublishing()
@@ -651,8 +652,8 @@ private enum SettingsWindowTests {
             expect(cells >= (index == 2 ? 1 : 2), "\(name): the grid rows were checked (\(cells))")
             if index == 2 {
                 let form = controller.capture.hotkeyForm!
-                let box = alignment(of: form.enabledCheckbox, in: tab)
-                expect(abs(box.minX - controlColumn) < 1.5, "Capture: the embedded Enable checkbox starts at the control column (\(box.minX) vs \(controlColumn))")
+                let box = alignment(of: form.enabledPlate, in: tab)
+                expect(abs(box.minX - controlColumn) < 1.5, "Capture: the embedded Enable plate starts at the control column (\(box.minX) vs \(controlColumn))")
             }
         }
         // The Capture tab's shortcut rows sit in the same label column as the rows above them.
@@ -662,8 +663,8 @@ private enum SettingsWindowTests {
         let screenLabel = descendants(tab).compactMap { $0 as? NSTextField }.first { $0.stringValue == "Screen region:" }!
         expect(abs(frame(of: flashLabel, in: tab).maxX - frame(of: screenLabel, in: tab).maxX) < 0.5, "the embedded shortcut rows line up with the Flash row")
         let flashBox = alignment(of: controller.capture.flashPlate, in: tab)
-        let popupBox = alignment(of: controller.capture.hotkeyForm.keyPopup(for: .screen), in: tab)
-        expect(abs(flashBox.minX - popupBox.minX) < 1.5, "the Flash plate and the key popup share the control column: \(flashBox.minX) vs \(popupBox.minX)")
+        let popupBox = alignment(of: controller.capture.hotkeyForm.rowPlate(for: .screen), in: tab)
+        expect(abs(flashBox.minX - popupBox.minX) < 1.5, "the Flash plate and the shortcut rows share the control column: \(flashBox.minX) vs \(popupBox.minX)")
         let labelWidth = SettingsLayout.labelColumnWidth
         let widest = SettingsLayout.rowLabels.map { ($0 as NSString).size(withAttributes: [.font: DesignTokens.Typography.font(.bodyStrong)]).width }.max()!
         expect(labelWidth >= widest, "the label column is wide enough for the longest row label (\(labelWidth) vs \(widest))")
@@ -726,6 +727,18 @@ private enum SettingsWindowTests {
         expect(state(drawing.precisionButtons) == [1] && general.hoverHintsCheckbox.state == .off, "refresh re-reads the owner's stored state (still Medium, hints off), not the last edit")
     }
 
+    /// A choice's label is drawn whole: its frame is at least what the text field itself says it needs (the text plus the cell's own padding),
+    /// and a wrapped label has the height of every line at the width it was given. A label cut short ends in an ellipsis or loses its last line.
+    private static func labelIsWhole(_ button: GlassChoiceButton) -> Bool {
+        let label = button.titleLabel
+        guard label.frame.width > 0 else { return false }
+        if button.wrapWidth == nil { return label.fittingSize.width <= label.frame.width + 0.01 }
+        let kept = label.preferredMaxLayoutWidth
+        label.preferredMaxLayoutWidth = label.frame.width
+        defer { label.preferredMaxLayoutWidth = kept }
+        return label.fittingSize.height <= label.frame.height + 0.01
+    }
+
     // MARK: Radio sets
 
     private static func arrowEvent(_ code: UInt16, window: NSWindow) -> NSEvent {
@@ -753,6 +766,7 @@ private enum SettingsWindowTests {
             expect(group.buttons.allSatisfy { $0.kind == .option && $0.indicator == .radio && $0.markImage != nil && $0.showsMark }, "\(name): every choice is an option with a radio glyph")
             expect(plates(in: group).count == 1 && group.plate.arrangedViews.count == titles.count && group.plate.axis == .horizontal && group.plate.tintColor == nil, "\(name): the set is ONE untinted horizontal plate")
             expect(group.buttons.allSatisfy { $0.titleLabel.font?.pointSize == 20 && $0.frame.height == GlassChoiceButton.height }, "\(name): each choice is a 20 pt label in a control-high button")
+            expect(group.buttons.allSatisfy { labelIsWhole($0) }, "\(name): no choice label is cut short: \(group.buttons.map { "\($0.title) \($0.titleLabel.frame.width) of \($0.titleLabel.fittingSize.width)" })")
             expect(group.accessibilityRole() == .radioGroup && group.accessibilityLabel() == label, "\(name): VoiceOver gets a radio group named '\(label)'")
             expect(group.buttons.allSatisfy { $0.accessibilityRole() == .radioButton && $0.accessibilityLabel() == $0.title }, "\(name): every choice is a radio button with its own name")
             let on = group.buttons.filter { $0.accessibilityValue() as? NSNumber == 1 }
@@ -838,6 +852,7 @@ private enum SettingsWindowTests {
         expect(general.snapPlate.arrangedViews.count == 1 && general.snapPlate.arrangedViews[0] === snap && general.snapPlate !== general.hintsPlate && plates(in: general.view).count == 3,
                "the snap option has its own plate, and the General tab has three: Show in, Snapping, Hints")
         expect(general.hintsPlate.accessibilityRole() == .group && general.hintsPlate.accessibilityLabel() == "Hints", "the plate is a named group")
+        expect([hover, keys, snap].allSatisfy { labelIsWhole($0) }, "no check box label is cut short, and the wrapped one keeps every line: \([hover, keys, snap].map { "\($0.title.prefix(12)) \($0.titleLabel.frame.size) needs \($0.titleLabel.fittingSize)" })")
         // The sentence wraps: two readable lines, wholly inside its row, the plate no wider than the control column.
         window.contentView?.layoutSubtreeIfNeeded()
         let lines = ceil(snap.titleLabel.frame.height / ceil(DesignTokens.Typography.font(.bodyStrong).boundingRectForFont.height))
@@ -882,7 +897,7 @@ private enum SettingsWindowTests {
     /// Every tab holds its plates in one container and no plate is inside another; the choices draw fills, never glass.
     private static func glassStructure() {
         let (controller, _, _, _, _, _) = makeController(destinations: sampleDestinations(count: 2))
-        let expectedPlates = [3, 2, 1, 1]
+        let expectedPlates = [3, 2, 9, 1]
         for index in controller.tabItems.indices {
             controller.select(index)
             let tab = controller.tabItems[index].viewController, name = controller.tabItems[index].label
@@ -897,9 +912,20 @@ private enum SettingsWindowTests {
         // The destination list and the shortcut recorders stay solid and native.
         controller.select(3)
         expect(!descendants(controller.upload.listScroll).contains { $0 is NSGlassEffectView }, "the destination list is solid content")
+        // The shortcut form is glass too: the enable box, one plate per action (key pop-up and four modifier toggles) and Clear All.
         controller.select(2)
-        expect(!descendants(controller.capture.hotkeyForm).contains { $0 is NSGlassEffectView || $0 is GlassChoiceButton } && descendants(controller.capture.hotkeyForm).contains { $0 is NSPopUpButton },
-               "the shortcut recorders stay native form fields")
+        let form = controller.capture.hotkeyForm!
+        let formPlates = plates(in: form)
+        expect(formPlates.count == 8 && formPlates.contains { $0 === form.enabledPlate } && formPlates.contains { $0 === form.clearPlate } && form.rowPlates.count == 6 && form.rowPlates.allSatisfy { p in formPlates.contains { $0 === p } },
+               "the form has eight plates: Shortcuts, six actions, Clear All (\(formPlates.count))")
+        expect(GlobalHotkeyAction.allCases.allSatisfy { action in
+            let plate = form.rowPlate(for: action)
+            return plate.arrangedViews.count == 5 && plate.arrangedViews[0] is ChromeFillCell && form.keyPopup(for: action).isDescendant(of: plate)
+                && zip(plate.arrangedViews.dropFirst(), form.modifierToggles(for: action)).allSatisfy { $0 === $1 }
+        }, "each action's key and its four modifiers share ONE plate, in order")
+        expect(form.enabledPlate.arrangedViews.count == 1 && form.enabledPlate.arrangedViews[0] === form.enabledCheckbox && form.clearPlate.arrangedViews.count == 1 && form.clearPlate.arrangedViews[0] === form.clearButton,
+               "the enable box and Clear All each have a plate of their own")
+        expect(nestedGlass(in: form).isEmpty && !descendants(form).contains { $0 is NSSegmentedControl } && form.rowPlates.allSatisfy { $0.tintColor == nil }, "no glass inside glass, no segmented control left, no tint")
         // The display options reach every set and toggle while the window is up.
         defer { DisplayOptions.override = nil }
         controller.select(0)
@@ -929,7 +955,9 @@ private enum SettingsWindowTests {
         let rows: [(tab: Int, label: String, first: () -> GlassChoiceButton?)] = [
             (0, "Show in:", { controller.general.presenceGroup.buttons.first }), (0, "Snapping:", { controller.general.snapCheckbox }),
             (0, "Hints:", { controller.general.hoverHintsCheckbox }), (1, "Drawing precision:", { controller.drawing.precisionGroup.buttons.first }),
-            (1, "Arrow head:", { controller.drawing.arrowGroup.buttons.first }), (2, "Flash:", { controller.capture.flashCheckbox })]
+            (1, "Arrow head:", { controller.drawing.arrowGroup.buttons.first }), (2, "Flash:", { controller.capture.flashCheckbox }),
+            (2, "Shortcuts:", { controller.capture.hotkeyForm.enabledCheckbox }), (2, "Screen region:", { controller.capture.hotkeyForm.modifierToggles(for: .screen)[0] }),
+            (2, "Show OpenSnap:", { controller.capture.hotkeyForm.modifierToggles(for: .show)[0] })]
         for row in rows {
             controller.select(row.tab)
             controller.window.contentView?.layoutSubtreeIfNeeded()
@@ -972,45 +1000,161 @@ private enum SettingsWindowTests {
         let form = controller.capture.hotkeyForm!
         expect(form.isDescendant(of: controller.capture.view), "the shortcut form is embedded in the Capture tab")
         try? manager.install(globalScreen: {}, globalWindow: {}, globalFullscreen: {}, globalFrame: {}, globalUpload: {}, globalShow: {})
-        let popup = form.keyPopup(for: .screen), modifiers = form.modifierControl(for: .screen)
+        let popup = form.keyPopup(for: .screen), modifiers = form.modifierToggles(for: .screen)
         let k = GlobalHotkeyKeys.choices.firstIndex { $0.name == "K" }! + 1
-        expect(popup.indexOfSelectedItem == 0 && !modifiers.isEnabled, "an action with no key starts at None with its modifiers off")
-        popup.selectItem(at: k); _ = popup.target?.perform(popup.action, with: popup)
-        expect(modifiers.isEnabled, "choosing a key enables its modifiers")
+        func press(_ toggle: GlassChoiceButton) { toggle.performClick(nil) }
+        func pick(_ popup: GlassPopUpButton, _ index: Int) { popup.selectItem(at: index); _ = popup.target?.perform(popup.action, with: popup) }
+        expect(popup.indexOfSelectedItem == 0 && modifiers.allSatisfy { !$0.isEnabled && $0.state == .off }, "an action with no key starts at None with its modifiers off")
+        pick(popup, k)
+        expect(modifiers.allSatisfy(\.isEnabled), "choosing a key enables its modifiers")
         expect(manager.settings.screen == .none && form.statusField.stringValue.hasPrefix("Error: "), "a key without Command or Control is refused and said so: '\(form.statusField.stringValue)'")
         expect(hotkeySettings(defaults).screen == .none && backend.bindings.isEmpty, "the refused edit changed nothing stored or registered")
-        modifiers.setSelected(true, forSegment: 0); _ = modifiers.target?.perform(modifiers.action, with: modifiers)
+        press(modifiers[0])
         expect(manager.settings.screen == .init(keyCode: GlobalHotkeyKeys.choices[k - 1].code, modifiers: .command), "Command plus K reaches the GlobalHotkeys model: \(manager.settings.screen)")
         expect(hotkeySettings(defaults).screen == manager.settings.screen, "and is persisted through the model's own store")
         expect(backend.bindings[GlobalHotkeyAction.screen.carbonID] != nil && !form.statusField.stringValue.hasPrefix("Error"), "a running manager registers it at once and the error clears")
-        modifiers.setSelected(true, forSegment: 3); _ = modifiers.target?.perform(modifiers.action, with: modifiers)
+        press(modifiers[3])
         expect(manager.settings.screen.modifiers == [.command, .shift], "a second modifier is added")
-        let other = form.keyPopup(for: .window)
-        other.selectItem(at: k); _ = other.target?.perform(other.action, with: other)
-        form.modifierControl(for: .window).setSelected(true, forSegment: 0); form.modifierControl(for: .window).setSelected(true, forSegment: 3)
-        _ = form.modifierControl(for: .window).target?.perform(form.modifierControl(for: .window).action, with: form.modifierControl(for: .window))
-        expect(manager.settings.window == .none && form.statusField.stringValue.contains("same shortcut"), "a duplicate shortcut is refused with the manager's own message: '\(form.statusField.stringValue)'")
-        popup.selectItem(at: 0); _ = popup.target?.perform(popup.action, with: popup)
-        expect(!modifiers.isEnabled && (0..<4).allSatisfy { !modifiers.isSelected(forSegment: $0) }, "None clears and disables the modifiers")
-        form.enabledCheckbox.state = .off; _ = form.enabledCheckbox.target?.perform(form.enabledCheckbox.action, with: form.enabledCheckbox)
-        expect(!manager.settings.enabled && !hotkeySettings(defaults).enabled, "the enable box turns every shortcut off")
+        let other = form.keyPopup(for: .window), otherMods = form.modifierToggles(for: .window)
+        pick(other, k)
+        press(otherMods[0])
+        let keyCodeK = GlobalHotkeyKeys.choices[k - 1].code
+        expect(manager.settings.window == .init(keyCode: keyCodeK, modifiers: .command), "Command plus K on Window is its own shortcut, so it is accepted")
+        press(otherMods[3])
+        expect(manager.settings.window == .init(keyCode: keyCodeK, modifiers: .command) && manager.settings.screen.modifiers == [.command, .shift] && form.statusField.stringValue.contains("same shortcut"),
+               "adding Shift makes it Screen region's shortcut: refused with the manager's own message, and nothing saved changes: '\(form.statusField.stringValue)'")
+        pick(popup, 0)
+        expect(modifiers.allSatisfy { !$0.isEnabled && $0.state == .off }, "None clears and disables the modifiers")
+        form.enabledCheckbox.performClick(nil)
+        expect(!manager.settings.enabled && !hotkeySettings(defaults).enabled && form.enabledCheckbox.state == .off, "the enable box turns every shortcut off")
         form.clearButton.performClick(nil)
         expect(manager.settings == .defaults && form.enabledCheckbox.state == .on && GlobalHotkeyAction.allCases.allSatisfy { manager.settings[$0] == .none }, "Clear All sets every key to None at once")
         expect(form.clearButton.title == "Clear All" && !descendants(form).contains { ($0 as? NSButton)?.title == "Disable All" || ($0 as? NSButton)?.title == "Reset Defaults" },
                "Reset Defaults is Clear All, and Disable All is gone: the enable box is the one switch")
         // F-J2-020: a duplicate the manager refused leaves a red line; unticking the box answers it instead of validating the same draft again.
         for action in [GlobalHotkeyAction.screen, .window] {
-            let key = form.keyPopup(for: action), mods = form.modifierControl(for: action)
-            key.selectItem(at: k); _ = key.target?.perform(key.action, with: key)
-            mods.setSelected(true, forSegment: 0); _ = mods.target?.perform(mods.action, with: mods)
+            pick(form.keyPopup(for: action), k)
+            press(form.modifierToggles(for: action)[0])
         }
         expect(form.statusField.stringValue.hasPrefix("Error: ") && form.statusField.stringValue.contains("same shortcut"), "the duplicate leaves its error on screen: '\(form.statusField.stringValue)'")
-        form.enabledCheckbox.state = .off; _ = form.enabledCheckbox.target?.perform(form.enabledCheckbox.action, with: form.enabledCheckbox)
+        // A chosen modifier reads as chosen on its plate: the accent fill and border and the semibold face, not colour alone.
+        let chosenToggle = form.modifierToggles(for: .window)[0], bareToggle = form.modifierToggles(for: .window)[1]
+        expect(chosenToggle.state == .on && chosenToggle.plate.stateStyle.fill != nil && chosenToggle.plate.stateStyle.borderWidth == 1 && chosenToggle.plate.stateStyle.strongText
+               && chosenToggle.titleLabel.font == DesignTokens.Typography.font(.bodyStrong), "a chosen modifier is the accent fill, a border and a semibold symbol")
+        expect(bareToggle.state == .off && bareToggle.plate.stateStyle.fill == nil && bareToggle.titleLabel.font == DesignTokens.Typography.font(.body), "an unchosen one rests bare")
+        form.enabledCheckbox.performClick(nil)
         expect(!manager.settings.enabled && form.enabledCheckbox.state == .off && form.statusField.stringValue == GlobalHotkeyForm.idleLiveStatus && form.statusField.textColor == DesignTokens.Palette.Text.primary,
                "Unticking the box clears the stale duplicate error: '\(form.statusField.stringValue)'")
         expect(form.keyPopup(for: .window).indexOfSelectedItem == 0, "the rejected draft is dropped, not kept beside a disabled form")
-        expect(GlobalHotkeyAction.allCases.allSatisfy { form.modifierControl(for: $0).selectedSegmentBezelColor == DesignTokens.Palette.accent }, "a chosen modifier is drawn in the accent")
         controller.show(); controller.window.orderOut(nil)
+    }
+
+    // MARK: The shortcut form's glass choices
+
+    /// The enable box, each row's key pop-up and four modifier toggles, and Clear All: what they store, how they are named, and that none is cut short.
+    private static func shortcutForm() {
+        let (controller, defaults, manager, backend, _, _) = makeController()
+        controller.select(2)
+        let window = controller.window, form = controller.capture.hotkeyForm!
+        window.contentView?.layoutSubtreeIfNeeded()
+        try? manager.install(globalScreen: {}, globalWindow: {}, globalFullscreen: {}, globalFrame: {}, globalUpload: {}, globalShow: {})
+        let k = GlobalHotkeyKeys.choices.firstIndex { $0.name == "K" }! + 1
+
+        // Names and roles: six rows of Command are told apart by ear, every toggle is a check box with a value, the key is a pop-up button.
+        var names: [String] = []
+        for action in GlobalHotkeyAction.allCases {
+            let toggles = form.modifierToggles(for: action), key = form.keyPopup(for: action)
+            expect(toggles.map(\.title) == ["\u{2318}", "\u{2325}", "\u{2303}", "\u{21E7}"], "\(action.title): the four modifiers are drawn as their symbols, Command first")
+            expect(toggles.map { $0.accessibilityLabel() ?? "" } == ["\(action.title) Command", "\(action.title) Option", "\(action.title) Control", "\(action.title) Shift"], "\(action.title): each modifier is spoken with its action")
+            names += toggles.map { $0.accessibilityLabel() ?? "" }
+            expect(toggles.allSatisfy { $0.kind == .toggle && $0.indicator == GlassChoiceButton.Indicator.none && $0.accessibilityRole() == .checkBox && ($0.accessibilityValue() as? NSNumber)?.intValue == 0 && AppToolTip.text(for: $0) == GlobalHotkeyForm.modifierToolTip },
+                   "\(action.title): the modifiers are check boxes, off, with the modifier tooltip: \(toggles.map { "\($0.kind) \($0.indicator) \(String(describing: $0.accessibilityRole())) \(String(describing: $0.accessibilityValue())) \(String(describing: AppToolTip.text(for: $0)))" })")
+            expect(key.accessibilityRole() == .popUpButton && key.accessibilityLabel() == "\(action.title) key" && key.indexOfSelectedItem == 0 && key.numberOfItems == GlobalHotkeyKeys.choices.count + 1 && key.itemTitle(at: 0) == "None",
+                   "\(action.title): the key is a pop-up named '\(action.title) key', None first, then every key")
+            let plate = form.rowPlate(for: action)
+            expect(plate.accessibilityRole() == .group && plate.accessibilityLabel() == "\(action.title) shortcut" && plate.identifier?.rawValue == "GlobalHotkeyRow." + action.rawValue, "\(action.title): the plate is a named group")
+        }
+        expect(Set(names).count == names.count, "all \(names.count) modifier names are unique")
+        expect(form.enabledCheckbox.kind == .toggle && form.enabledCheckbox.indicator == .checkbox && form.enabledCheckbox.accessibilityRole() == .checkBox && form.enabledCheckbox.accessibilityValue() as? NSNumber == 1
+               && form.enabledCheckbox.title == "Enable global capture shortcuts", "the enable box is a labelled check box, on")
+        expect(form.clearButton is CommandButton && form.clearButton.title == "Clear All" && form.clearButton.cell?.accessibilityRole() == .button && (form.clearButton.attributedTitle.attribute(.font, at: 0, effectiveRange: nil) as? NSFont)?.pointSize == 20, "Clear All is a titled command button at 20 pt")
+
+        // With no key the modifiers are off, dimmed and skipped by the keyboard.
+        let screenMods = form.modifierToggles(for: .screen), screenKey = form.keyPopup(for: .screen)
+        let saved = KeyboardNavigation.fullKeyboardAccess
+        KeyboardNavigation.fullKeyboardAccess = { true }
+        defer { KeyboardNavigation.fullKeyboardAccess = saved }
+        expect(screenMods.allSatisfy { !$0.isEnabled && $0.alphaValue == StateStyles.disabledAlpha && !$0.canBecomeKeyView && !$0.acceptsFirstResponder }, "with no key the modifiers dim and take no focus")
+        expect(screenKey.canBecomeKeyView && screenKey.acceptsFirstResponder, "the key pop-up is on the Tab loop")
+
+        // The key is chosen through the panel: a long list that scrolls, rows named like the keys, the chosen one marked, one action sent.
+        let host = screenKey.choicePanel.host
+        var presented = 0
+        host.presenter = { _, _ in presented += 1 }
+        host.visibleFrameOverride = NSRect(x: 0, y: 0, width: 1440, height: 900)
+        host.accessibility = .none
+        screenKey.performClick(nil)
+        let panel = screenKey.choicePanel
+        expect(host.isShown && presented == 1 && panel.rows.count == GlobalHotkeyKeys.choices.count + 1 && panel.rows.first?.title == "None" && panel.rows.last?.title == "Space",
+               "the key pop-up opens a glass panel of None and every key (\(panel.rows.count) rows)")
+        expect(host.contentSize.height > 900 && host.placement?.scrolls == true && (host.placement?.frame.height ?? .infinity) <= 900, "the long list is taller than the screen, so the panel caps and scrolls (\(host.contentSize.height) pt in \(String(describing: host.placement)))")
+        expect(panel.rows.filter(\.isChosen).map(\.title) == ["None"], "None is the chosen row to start")
+        let before = manager.settings
+        panel.activate(panel.rows.first { $0.title == "K" }!)
+        expect(!host.isShown && screenKey.indexOfSelectedItem == k && screenKey.titleOfSelectedItem == "K", "choosing a row closes the panel and sets the pop-up to K")
+        expect(screenMods.allSatisfy { $0.isEnabled && $0.alphaValue == 1 } && manager.settings == before && form.statusField.stringValue.hasPrefix("Error: "),
+               "a key alone is refused (no Command or Control), and the modifiers wake up")
+        screenKey.performClick(nil)
+        expect(panel.rows.filter(\.isChosen).map(\.title) == ["K"], "the panel marks the current key")
+        host.close()
+        expect(KeyboardNavigation.reaches(screenMods[0]), "an enabled modifier is on the Tab loop")
+
+        // Every combination of the four modifiers stores exactly those flags; the ones the manager refuses leave the saved value alone.
+        let all = GlobalHotkeyForm.modifierSegments.map(\.0)
+        var accepted = 0, refused = 0
+        for mask in 0..<16 {
+            let wanted = GlobalHotkeyModifiers(all.indices.filter { mask & (1 << $0) != 0 }.map { all[$0] })
+            let previous = manager.settings.screen   // the steps toward a refused set can pass through accepted ones, so only "an accepted shortcut stays" is asserted
+            for (index, toggle) in screenMods.enumerated() where (toggle.state == .on) != (wanted.contains(all[index])) { toggle.performClick(nil) }
+            expect(zip(screenMods, all).allSatisfy { ($0.state == .on) == wanted.contains($1) } && form.draft().screen.modifiers == wanted, "the toggles show \(wanted.rawValue) and the draft holds the same flags")
+            if wanted.contains(.command) || wanted.contains(.control) {
+                expect(manager.settings.screen == .init(keyCode: GlobalHotkeyKeys.choices[k - 1].code, modifiers: wanted) && hotkeySettings(defaults).screen == manager.settings.screen && !form.statusField.stringValue.hasPrefix("Error"),
+                       "flags \(wanted.rawValue) with K are stored and registered exactly as chosen"); accepted += 1
+            } else {
+                let standing = manager.settings.screen
+                expect(form.statusField.stringValue.hasPrefix("Error: ") && (standing == .none || (standing.keyCode == GlobalHotkeyKeys.choices[k - 1].code && !standing.modifiers.isDisjoint(with: [.command, .control]))) && hotkeySettings(defaults).screen == standing,
+                       "flags \(wanted.rawValue) with K are refused with an error, and what stays saved is a shortcut the manager accepted (\(standing.modifiers.rawValue), was \(previous.modifiers.rawValue))"); refused += 1
+            }
+            expect(screenMods.map { ($0.accessibilityValue() as? NSNumber)?.intValue ?? -1 } == all.map { wanted.contains($0) ? 1 : 0 }, "the check boxes read the same flags")
+        }
+        expect(accepted == 12 && refused == 4, "twelve of the sixteen combinations carry Command or Control (\(accepted) and \(refused))")
+        expect(backend.bindings[GlobalHotkeyAction.screen.carbonID] != nil, "the shortcut stays registered")
+        // A chosen modifier carries the capsule under Differentiate Without Color, and the chosen look otherwise.
+        defer { DisplayOptions.override = nil }
+        for toggle in screenMods where toggle.state == .off { toggle.performClick(nil) }
+        DisplayOptions.override = DisplayOptions(differentiateWithoutColor: true)
+        NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
+        expect(screenMods.allSatisfy { $0.state == .on && $0.showsIndicator && $0.plate.stateStyle.strongText && $0.plate.stateStyle.fill != nil }, "chosen modifiers are the fill, the border, the semibold symbol and the capsule")
+        expect(form.modifierToggles(for: .window).allSatisfy { !$0.showsIndicator }, "an unchosen row stays bare")
+        DisplayOptions.override = nil
+        NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
+
+        // Nothing is cut short: the symbols, the pop-up faces, the enable label and Clear All.
+        window.contentView?.layoutSubtreeIfNeeded()
+        let toggles = GlobalHotkeyAction.allCases.flatMap { form.modifierToggles(for: $0) } + [form.enabledCheckbox]
+        expect(toggles.allSatisfy { labelIsWhole($0) }, "no modifier symbol and no enable label is cut short")
+        expect(GlobalHotkeyAction.allCases.allSatisfy { action in
+            let key = form.keyPopup(for: action)
+            return key.frame.width + 0.5 >= key.intrinsicContentSize.width && key.frame.height == GlassChoiceButton.height
+        }, "every key pop-up is wide enough for its widest key name and a control tall")
+        expect(form.clearButton.frame.width + 0.5 >= SettingsActionButton.width(for: "Clear All"), "Clear All holds its label")
+        expect(toggles.allSatisfy { $0.titleLabel.font?.pointSize == 20 } && form.clearButton.font?.pointSize == 20, "every label is 20 pt")
+
+        // Clear All resets every key, the modifiers and the pop-ups together.
+        form.clearButton.performClick(nil)
+        expect(manager.settings == .defaults && GlobalHotkeyAction.allCases.allSatisfy { form.keyPopup(for: $0).indexOfSelectedItem == 0 && form.modifierToggles(for: $0).allSatisfy { !$0.isEnabled && $0.state == .off } },
+               "Clear All sets every pop-up to None and every modifier off")
+        expect(backend.bindings.isEmpty, "and nothing stays registered")
     }
 
     // MARK: Upload

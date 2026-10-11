@@ -589,37 +589,85 @@ protocol GlobalHotkeyEditing: AnyObject {
 }
 extension GlobalHotkeyEditing { func setEditing(_ value: Bool) {} }
 
+/// A titled command on a glass action plate: the chrome's `CommandButton` (borderless, a 20 pt label, its own rest, hover, pressed, focus
+/// and disabled fills drawn by `StatePlate`) sized to its label, so it reads as a button on a plate. Nothing here is a second glass
+/// surface. The Settings window's Upload commands and the shortcut form's Clear All use it; it lives here because both files compile together.
+@MainActor
+final class SettingsActionButton: CommandButton {
+    static let padding = DesignTokens.Space.s4
+
+    /// The width a button takes for this label: the label and the padding either side.
+    static func width(for title: String) -> CGFloat {
+        ceil((title as NSString).size(withAttributes: [.font: DesignTokens.Typography.font(.body)]).width) + 2 * padding
+    }
+
+    /// Called once the title initializer has finished: it sets the system's 13 pt font after `init(frame:)`, which the chrome floors to 18 pt.
+    func configure() {
+        GlassChrome.useExtraLarge(self)
+        DesignTokens.Typography.apply(.body, to: self)
+        accessibility = ChromeAccessibility.live
+        setContentCompressionResistancePriority(.required, for: .horizontal)
+        // The label is drawn from an attributed string: the button's own title field would keep the system's 13 pt and take no state colour.
+        plate.onApply = { [weak self] _ in self?.styleTitle() }
+        styleTitle()
+    }
+
+    private func styleTitle() {
+        let text = visibleTitle
+        guard !text.isEmpty else { return }
+        attributedTitle = NSAttributedString(string: text, attributes: [.font: DesignTokens.Typography.font(.body), .foregroundColor: plate.stateStyle.content])
+    }
+
+    override var title: String {
+        didSet { invalidateIntrinsicContentSize(); styleTitle() }
+    }
+    override var intrinsicContentSize: NSSize { NSSize(width: Self.width(for: visibleTitle), height: GlassChrome.Metrics.commandHeight) }
+}
+
 /// The shortcut editor, the one surface for capture shortcuts (Settings › Capture; the app menu's Capture Shortcuts… opens it there).
 /// Every edit is applied through the manager at once, and one the manager rejects stays on screen with an "Error:" line until the
-/// next edit that it accepts.
+/// next edit that it accepts. Its choices are glass: the enable box is a checkbox toggle on a plate, each action's key is a glass pop-up
+/// and its four modifiers are toggles on ONE plate per row, and Clear All is a titled command on an action plate. The buttons draw their
+/// own state fills, so there is never glass inside glass.
 @MainActor
 final class GlobalHotkeyForm: NSView {
     private typealias Typography = DesignTokens.Typography
     private typealias Space = DesignTokens.Space
 
-    /// Segment order of the modifier control: symbol, spoken name.
+    /// Modifier order on a row: the symbol drawn, the spoken name.
     static let modifierSegments: [(GlobalHotkeyModifiers, String, String)] = [
         (.command, "\u{2318}", "Command"), (.option, "\u{2325}", "Option"), (.control, "\u{2303}", "Control"), (.shift, "\u{21E7}", "Shift")]
     static let idleLiveStatus = "Shortcuts are saved as you change them. They pause while this window is in front."
     /// What the note says while the shortcuts really are paused, so the state is readable without firing one (F-J7-004).
     static let pausedStatus = "Shortcuts are paused while this window is in front."
     static let keyPopupWidth: CGFloat = 120, modifierSegmentWidth: CGFloat = 44
+    /// What the modifier toggles say when the pointer rests on them.
+    static let modifierToolTip = "Modifier keys: " + modifierSegments.map { "\($0.1) \($0.2)" }.joined(separator: ", ")
 
     /// The label column is shared with the form it sits in, so its labels line up with the rows around it.
     static func labelTexts() -> [String] { ["Shortcuts:"] + GlobalHotkeyAction.allCases.map { $0.title + ":" } }
     static func labelFont() -> NSFont { Typography.font(.bodyStrong) }
 
+    /// One action's row: the key pop-up (in a fill cell, which supplies its hover and press fills) and the four modifier toggles, all on one plate.
     private final class Row {
-        let key: NSPopUpButton
-        let modifiers: NSSegmentedControl
-        init(key: NSPopUpButton, modifiers: NSSegmentedControl) { self.key = key; self.modifiers = modifiers }
+        let key: GlassPopUpButton
+        let keyCell: ChromeFillCell
+        let modifiers: [GlassChoiceButton]
+        let plate: GlassSurfaceView
+        init(key: GlassPopUpButton, keyCell: ChromeFillCell, modifiers: [GlassChoiceButton], plate: GlassSurfaceView) {
+            self.key = key; self.keyCell = keyCell; self.modifiers = modifiers; self.plate = plate
+        }
     }
 
     private weak var manager: (any GlobalHotkeyEditing)?
     private var rows: [GlobalHotkeyAction: Row] = [:]
-    let enabledCheckbox = NSButton(checkboxWithTitle: "Enable global capture shortcuts", target: nil, action: nil)
+    let enabledCheckbox = GlassChoiceButton(title: "Enable global capture shortcuts", kind: .toggle, indicator: .checkbox, layout: .row)
     let statusField = NSTextField(wrappingLabelWithString: "")
-    private(set) var clearButton: NSButton!
+    private(set) var clearButton: SettingsActionButton!
+    /// The plates: one for the enable box, one per action, one for Clear All.
+    private(set) var enabledPlate: GlassSurfaceView!, clearPlate: GlassSurfaceView!
+    var rowPlates: [GlassSurfaceView] { GlobalHotkeyAction.allCases.compactMap { rows[$0]?.plate } }
+    private var displayObservation: DisplayOptions.Observation?
     /// The status line changed height, so the window holding the form may need a new size.
     var onResize: (() -> Void)?
     /// Whether the manager has the shortcuts paused because this form is the thing in use. The note follows it (an error keeps the line
@@ -639,8 +687,10 @@ final class GlobalHotkeyForm: NSView {
         } else if !showsError || errorFromPause { setStatus(liveStatus, isError: false) }
     }
 
-    func keyPopup(for action: GlobalHotkeyAction) -> NSPopUpButton { rows[action]!.key }
-    func modifierControl(for action: GlobalHotkeyAction) -> NSSegmentedControl { rows[action]!.modifiers }
+    func keyPopup(for action: GlobalHotkeyAction) -> GlassPopUpButton { rows[action]!.key }
+    /// The four modifier toggles of an action's row, in `modifierSegments` order (Command, Option, Control, Shift).
+    func modifierToggles(for action: GlobalHotkeyAction) -> [GlassChoiceButton] { rows[action]!.modifiers }
+    func rowPlate(for action: GlobalHotkeyAction) -> GlassSurfaceView { rows[action]!.plate }
 
     init(manager: any GlobalHotkeyEditing, labelWidth: CGFloat, width: CGFloat) {
         self.manager = manager
@@ -651,42 +701,51 @@ final class GlobalHotkeyForm: NSView {
             field.font = Self.labelFont(); field.alignment = .right; field.textColor = DesignTokens.Palette.Text.primary
             return field
         }
-        enabledCheckbox.font = Typography.font(.body); enabledCheckbox.controlSize = .large
+        func plate(_ views: [NSView], identifier: String, name: String, axis: NSUserInterfaceLayoutOrientation = .horizontal) -> GlassSurfaceView {
+            let plate = GlassChrome.plate(views, identifier: identifier, accessibility: ChromeAccessibility.live, axis: axis)
+            plate.setAccessibilityElement(true); plate.setAccessibilityLabel(name); plate.setAccessibilityRole(.group)
+            return plate
+        }
+        enabledCheckbox.identifier = NSUserInterfaceItemIdentifier("GlobalHotkeyEnabled")
         enabledCheckbox.target = self; enabledCheckbox.action = #selector(enabledChanged(_:))
-        var gridRows: [[NSView]] = [[label("Shortcuts:"), enabledCheckbox]]
+        enabledPlate = plate([enabledCheckbox], identifier: "GlobalHotkeyEnabledPlate", name: "Shortcuts", axis: .vertical)
+        var gridRows: [[NSView]] = [[label("Shortcuts:"), enabledPlate]]
         for action in GlobalHotkeyAction.allCases {
-            let key = NSPopUpButton(frame: .zero, pullsDown: false)
-            Typography.apply(.body, to: key)
+            let key = GlassPopUpButton(frame: .zero, pullsDown: false)
             key.addItems(withTitles: ["None"] + GlobalHotkeyKeys.choices.map(\.name))
-            key.widthAnchor.constraint(equalToConstant: Self.keyPopupWidth).isActive = true
+            key.panelIdentifier = "GlobalHotkeyKey." + action.rawValue; key.panelLabel = "\(action.title) key"
             key.setAccessibilityLabel("\(action.title) key")
             key.target = self; key.action = #selector(keyChanged(_:))
-            let modifiers = NSSegmentedControl(labels: Self.modifierSegments.map(\.1), trackingMode: .selectAny, target: self, action: #selector(modifiersChanged(_:)))
-            modifiers.font = Typography.font(.body); modifiers.controlSize = .large
-            // A chosen modifier is drawn in the app's accent, not the system's pale selection, so it reads against the ones left off.
-            modifiers.selectedSegmentBezelColor = DesignTokens.Palette.accent
-            for index in Self.modifierSegments.indices { modifiers.setWidth(Self.modifierSegmentWidth, forSegment: index) }
-            modifiers.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.control).isActive = true
-            modifiers.setAccessibilityLabel("\(action.title) modifier keys")
-            AppToolTip.setText("Modifier keys: " + Self.modifierSegments.map { "\($0.1) \($0.2)" }.joined(separator: ", "), for: modifiers)
-            let line = NSStackView(views: [key, modifiers])
-            line.orientation = .horizontal; line.alignment = .centerY; line.spacing = Space.s3
-            rows[action] = Row(key: key, modifiers: modifiers)
-            gridRows.append([label(action.title + ":"), line])
+            let keyCell = ChromeFillCell(key, size: NSSize(width: max(Self.keyPopupWidth, ceil(key.intrinsicContentSize.width)), height: GlassChrome.Metrics.commandHeight))
+            let toggles = Self.modifierSegments.map { entry -> GlassChoiceButton in
+                let toggle = GlassChoiceButton(title: entry.1, kind: .toggle, indicator: GlassChoiceButton.Indicator.none, layout: .segment)
+                toggle.minimumWidth = Self.modifierSegmentWidth
+                toggle.identifier = NSUserInterfaceItemIdentifier("GlobalHotkey.\(action.rawValue).\(entry.2.lowercased())")
+                // The symbol is what is drawn; the name VoiceOver speaks says whose modifier it is, so six rows of Command are told apart.
+                toggle.setAccessibilityLabel("\(action.title) \(entry.2)")
+                toggle.target = self; toggle.action = #selector(modifiersChanged(_:))
+                AppToolTip.setText(Self.modifierToolTip, for: toggle)
+                return toggle
+            }
+            let rowPlate = plate([keyCell] + toggles, identifier: "GlobalHotkeyRow." + action.rawValue, name: "\(action.title) shortcut")
+            rows[action] = Row(key: key, keyCell: keyCell, modifiers: toggles, plate: rowPlate)
+            gridRows.append([label(action.title + ":"), rowPlate])
         }
         statusField.font = Typography.font(.body)
         statusField.setAccessibilityRole(.staticText)
         statusField.preferredMaxLayoutWidth = statusWidth
         statusField.widthAnchor.constraint(equalToConstant: statusWidth).isActive = true
         gridRows.append([NSGridCell.emptyContentView, statusField])
-        clearButton = Self.button("Clear All", self, #selector(clearAll(_:)))
-        let buttonRow = NSStackView(views: [clearButton]); buttonRow.orientation = .horizontal; buttonRow.spacing = Space.s3
-        gridRows.append([NSGridCell.emptyContentView, buttonRow])
+        clearButton = SettingsActionButton(title: "Clear All", target: self, action: #selector(clearAll(_:)))
+        clearButton.configure()
+        clearButton.identifier = NSUserInterfaceItemIdentifier("GlobalHotkeyClearAll")
+        clearPlate = plate([clearButton], identifier: "GlobalHotkeyClearPlate", name: "Clear shortcuts")
+        gridRows.append([NSGridCell.emptyContentView, clearPlate])
 
         let grid = NSGridView(views: gridRows)
         grid.translatesAutoresizingMaskIntoConstraints = false
-        // The Settings tab sits in a window with one height for every tab, so its rows sit close.
-        grid.rowSpacing = Space.s3; grid.columnSpacing = Space.s4
+        // The Settings tab has to fit a small screen, so its rows sit close: a plate carries its own 4 pt of padding either side.
+        grid.rowSpacing = Space.s1; grid.columnSpacing = Space.s4
         grid.column(at: 0).xPlacement = .trailing; grid.column(at: 0).width = labelWidth
         grid.column(at: 1).xPlacement = .leading
         for index in 0..<grid.numberOfRows { grid.row(at: index).yPlacement = .center }
@@ -694,15 +753,20 @@ final class GlobalHotkeyForm: NSView {
         NSLayoutConstraint.activate([
             grid.leadingAnchor.constraint(equalTo: leadingAnchor), grid.trailingAnchor.constraint(equalTo: trailingAnchor),
             grid.topAnchor.constraint(equalTo: topAnchor), grid.bottomAnchor.constraint(equalTo: bottomAnchor)])
+        applyDisplayOptions()
+        displayObservation = DisplayOptions.observe { [weak self] _ in self?.applyDisplayOptions() }
         reload()
     }
     required init?(coder: NSCoder) { fatalError("Use init(manager:labelWidth:width:)") }
 
-    private static func button(_ title: String, _ target: AnyObject, _ action: Selector) -> NSButton {
-        let button = NSButton(title: title, target: target, action: action)
-        button.bezelStyle = .rounded; Typography.apply(.body, to: button)
-        button.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.control).isActive = true
-        return button
+    /// The plates and the buttons on them follow the display options (Reduce Transparency, Increase Contrast, Reduce Motion, Differentiate
+    /// Without Color) while the window is up.
+    private func applyDisplayOptions() {
+        let options = ChromeAccessibility.live
+        for plate in [enabledPlate, clearPlate].compactMap({ $0 }) + rowPlates { plate.accessibility = options }
+        enabledCheckbox.accessibility = options
+        clearButton?.accessibility = options
+        for row in rows.values { row.keyCell.accessibility = options; for toggle in row.modifiers { toggle.accessibility = options } }
     }
 
     /// Shows what the manager has saved, drops any unsaved draft and clears the status line. Delivers nothing.
@@ -730,8 +794,10 @@ final class GlobalHotkeyForm: NSView {
             let binding = settings[action]
             let index = binding.keyCode.flatMap { code in GlobalHotkeyKeys.choices.firstIndex { $0.code == code } }.map { $0 + 1 } ?? 0
             row.key.selectItem(at: index)
-            for (segment, entry) in Self.modifierSegments.enumerated() { row.modifiers.setSelected(binding.modifiers.contains(entry.0), forSegment: segment) }
-            row.modifiers.isEnabled = index > 0
+            for (toggle, entry) in zip(row.modifiers, Self.modifierSegments) {
+                toggle.state = binding.modifiers.contains(entry.0) ? .on : .off
+                toggle.isEnabled = index > 0
+            }
         }
     }
 
@@ -740,7 +806,7 @@ final class GlobalHotkeyForm: NSView {
         for action in GlobalHotkeyAction.allCases {
             guard let row = rows[action], row.key.indexOfSelectedItem > 0 else { settings[action] = .none; continue }
             var modifiers: GlobalHotkeyModifiers = []
-            for (segment, entry) in Self.modifierSegments.enumerated() where row.modifiers.isSelected(forSegment: segment) { modifiers.insert(entry.0) }
+            for (toggle, entry) in zip(row.modifiers, Self.modifierSegments) where toggle.state == .on { modifiers.insert(entry.0) }
             settings[action] = .init(keyCode: GlobalHotkeyKeys.choices[row.key.indexOfSelectedItem - 1].code, modifiers: modifiers)
         }
         return settings
@@ -765,11 +831,11 @@ final class GlobalHotkeyForm: NSView {
     @objc private func enabledChanged(_ sender: NSButton) { if sender.state == .off { disableSaved() } else { commit() } }
     @objc private func keyChanged(_ sender: NSPopUpButton) {
         guard let row = rows.values.first(where: { $0.key === sender }) else { return }
-        row.modifiers.isEnabled = sender.indexOfSelectedItem > 0
-        if !row.modifiers.isEnabled { for segment in Self.modifierSegments.indices { row.modifiers.setSelected(false, forSegment: segment) } }
+        let hasKey = sender.indexOfSelectedItem > 0
+        for toggle in row.modifiers { toggle.isEnabled = hasKey; if !hasKey { toggle.state = .off } }
         commit()
     }
-    @objc private func modifiersChanged(_ sender: NSSegmentedControl) { commit() }
+    @objc private func modifiersChanged(_ sender: NSButton) { commit() }
     /// Clear All sets every key to None (first launch claims no shortcut, so this is also where a fresh install starts).
     @objc private func clearAll(_ sender: Any?) {
         fill(.defaults); commit()

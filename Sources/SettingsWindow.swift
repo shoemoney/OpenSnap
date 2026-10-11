@@ -564,40 +564,6 @@ struct SettingsDestinationActions {
     var removalPrompt: (PublishingDestination) -> (title: String, detail: String) = { ("Remove “\($0.name)”?", "This cannot be undone.") }
 }
 
-/// A titled command on the Upload tab: the chrome's `CommandButton` (borderless, a 20 pt label, its own rest, hover, pressed, focus and
-/// disabled fills drawn by `StatePlate`) sized to its label, so it reads as a button on a glass plate. Nothing here is a second glass surface.
-@MainActor
-final class SettingsActionButton: CommandButton {
-    static let padding = DesignTokens.Space.s4
-
-    /// The width a button takes for this label: the label and the padding either side.
-    static func width(for title: String) -> CGFloat {
-        ceil((title as NSString).size(withAttributes: [.font: DesignTokens.Typography.font(.body)]).width) + 2 * padding
-    }
-
-    /// Called once the title initializer has finished: it sets the system's 13 pt font after `init(frame:)`, which the chrome floors to 18 pt.
-    func configure() {
-        GlassChrome.useExtraLarge(self)
-        DesignTokens.Typography.apply(.body, to: self)
-        accessibility = ChromeAccessibility.live
-        setContentCompressionResistancePriority(.required, for: .horizontal)
-        // The label is drawn from an attributed string: the button's own title field would keep the system's 13 pt and take no state colour.
-        plate.onApply = { [weak self] _ in self?.styleTitle() }
-        styleTitle()
-    }
-
-    private func styleTitle() {
-        let text = visibleTitle
-        guard !text.isEmpty else { return }
-        attributedTitle = NSAttributedString(string: text, attributes: [.font: DesignTokens.Typography.font(.body), .foregroundColor: plate.stateStyle.content])
-    }
-
-    override var title: String {
-        didSet { invalidateIntrinsicContentSize(); styleTitle() }
-    }
-    override var intrinsicContentSize: NSSize { NSSize(width: Self.width(for: visibleTitle), height: GlassChrome.Metrics.commandHeight) }
-}
-
 @MainActor
 final class UploadSettingsTab: SettingsTabViewController {
     /// This tab has no label column: "Destinations" is a heading over a list that takes the whole content width, with its four buttons under

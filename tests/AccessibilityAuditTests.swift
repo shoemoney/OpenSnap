@@ -659,7 +659,7 @@ private enum AccessibilityAuditTests {
         form.keyPopup(for: .screen).selectItem(at: 3)
         _ = form.keyPopup(for: .screen).target?.perform(form.keyPopup(for: .screen).action, with: form.keyPopup(for: .screen))
         expect(form.statusField.stringValue.hasPrefix("Error: "), "Shortcuts: a binding with no modifier is rejected with an Error: line: \(form.statusField.stringValue)")
-        expect((0..<4).allSatisfy { !(form.modifierControl(for: .screen).label(forSegment: $0) ?? "").isEmpty }, "Shortcuts: the four modifier segments are labelled")
+        expect(form.modifierToggles(for: .screen).allSatisfy { $0.accessibilityRole() == .checkBox && !Audit.label(of: $0).isEmpty }, "Shortcuts: the four modifier toggles are labelled check boxes")
 
         // Settings: the tab strip is a tab group of four radio buttons, one of them current.
         let settingsSuite = "OpenSnapAccessibilityAudit.labels.settings." + UUID().uuidString
