@@ -1,6 +1,6 @@
 # Follow-up implementation record — History glass pass and open behaviour fixes
 
-> Status: version 3, 2026-10-10, **final for this pass**. All four packages are merged on the integration branch, the independent review's four items (FR-1 to FR-4) are fixed, and the final candidate is `718f601`. Integrated gates passed at `718f601`. Nothing is on `main`. After version 3, the mirror case (Resize sheet up, enter full screen, Cancel) was fixed: `3976ac0`, merged as `1ac6674` (section 4).
+> Status: version 3, 2026-10-10, **final for this pass**. All four packages are merged on the integration branch, the independent review's four items (FR-1 to FR-4) are fixed, and the reviewed candidate was `718f601`, where the integrated gates passed. Nothing is on `main`. After version 3, the mirror case (Resize sheet up, enter full screen, Cancel) was fixed: `3976ac0`, merged as `1ac6674` (section 4).
 
 ## 1. Scope and authorization
 
