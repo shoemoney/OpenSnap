@@ -33,7 +33,11 @@ least as good as the native control it replaces.
 | 4 Settings | Presence (3), Precision (3), Arrow head (2) radios | native radios | `GlassChoiceGroup` (radio role, circle / circle-check glyph) |
 | 4 Settings | hover hints, keyboard tips, include app, capture flash | native checkboxes | `GlassChoiceButton` toggles (checkbox role, square / filled square-check glyph) |
 | 4 Settings | Add…, Edit…, Remove, Make Default, empty-state Add… | native push buttons | titled `CommandButton`s on one action plate |
-| 4 Settings | destination list, shortcut recorders | content list / form fields | **kept solid / native** (readable content) |
+| 4 Settings › Capture | "Enable global capture shortcuts" | native checkbox | `GlassChoiceButton` toggle |
+| 4 Settings › Capture | per-shortcut key pop-up | native pop-up | `GlassPopUpButton` (long list: scrolls inside the height cap) |
+| 4 Settings › Capture | per-shortcut modifiers ⌃⌥⇧⌘ | native multi-select segmented control | four `GlassChoiceButton` toggles on one plate per row |
+| 4 Settings › Capture | Clear All | native push button | titled `CommandButton` on an action plate |
+| 4 Settings | destination list | content list | **kept solid** (readable content) |
 | 4 Settings › Destination sheet | Protocol (`protocolPopup`), key source (`sourcePopup`) | native pop-ups | `GlassChoiceGroup` when the set is small and fixed, else glass pop-up face + `MenuChoicePanel` |
 | 4 Settings › Destination sheet | "Make uploads public-read" (`aclCheckbox`) | native checkbox | `GlassChoiceButton` toggle on the related plate; default, visibility and save/test payload unchanged |
 | 4 Settings › Destination sheet | Test / Save / Cancel and other sheet buttons | native push buttons | titled `CommandButton`s on one action plate; default/cancel keys kept |
@@ -78,7 +82,7 @@ least as good as the native control it replaces.
 | M1 shared primitives | P — `.todo-worktrees/gp-primitives` / `impl/gp-primitives` | `Sources/GlassChoices.swift` (new), `Sources/GlassChrome.swift`, `Sources/FontAwesomeIcons.swift`, `Sources/FontAwesomeFree.swift`, `Sources/ChromeIcons.swift`, `tests/GlassChoicesTests.swift` (new), `tools/test.py` suite lists, `tools/fetch-fontawesome.sh` glyph list, icon tests |
 | M2 Toolbox / Zoom / Upload | A — `gp-menus` / `impl/gp-menus` | `Sources/ModernEditorChrome.swift`, `Sources/App+ModernChrome.swift`, `Sources/App.swift` Toolbox hunk (`bezelToolbox`), the `dragOriginalControl` declaration and Upload hunk (`configureWebpostButton` … `setDefaultDestination`), `Sources/App+Upload.swift`, their tests in `tests/GlassChromeTests.swift`, `tests/AppSafetyModernCases.swift`, `tests/AppSafetyWebpostCases.swift`, `tests/AppSafetyMenuCases.swift` |
 | M3 Color / Size | B — `gp-color-size` / `impl/gp-color-size` | `Sources/BezelDrawingControls.swift`, `Sources/App.swift` Color hunk (`syncDrawingControls` … `releaseCustomColorPanel`, the `colorPopover` declaration), `Sources/App+Keyboard.swift`, Color/Size tests (`tests/AppSafetyTests.swift` Color/Size cases, `tests/GlassChromeTests.swift` Size cases only) |
-| M4 Settings | C — `gp-settings` / `impl/gp-settings` | `Sources/SettingsWindow.swift`, `tests/SettingsWindowTests.swift`, Settings cases in `tests/ViewTreeAuditTests.swift`, `tests/AccessibilityAuditTests.swift`, `tests/AppSafetyWindowChromeCases.swift` |
+| M4 Settings | C — `gp-settings` / `impl/gp-settings` | `Sources/SettingsWindow.swift`, the `GlobalHotkeyForm` part of `Sources/GlobalHotkeys.swift`, `tests/SettingsWindowTests.swift`, `tests/GlobalHotkeysTests.swift`, the `hotkey-tests` line of `tools/test.py`, Settings cases in `tests/ViewTreeAuditTests.swift`, `tests/AccessibilityAuditTests.swift`, `tests/AppSafetyWindowChromeCases.swift` |
 | M5 Resize + History choices | D — `gp-resize` / `impl/gp-resize` | `Sources/ResizePanel.swift`, `Sources/HistoryBrowser.swift` (date filter, category and Drag as choices only), `tests/ResizePanelTests.swift`, `tests/ResizePanelLayoutTests.swift`, `tests/HistoryBrowserTests.swift`, Resize/History cases in the audit suites |
 | M5b Destination sheet | F — `gp-destinations` / `impl/gp-destinations` | `Sources/PublishingDestinationsView.swift`, `tests/PublishingDestinationsTests.swift`, destination-sheet cases in the audit suites |
 | M6 audit harness captures | E — `gp-harness` / `impl/gp-harness` | `Sources/EyeDumpAudit*.swift`, `tools/eye-dump-audit*.{sh,py}`, `tools/check-eye-dump.py`, `tools/test-eye-dump-audit-guard.py`, `tools/e2e-inventory.py` |
@@ -99,7 +103,7 @@ Shared-file rule: two workers touching the same file stay in their named hunks. 
 - [ ] Upload: destinations rebuilt on each open, default checked, busy Cancel Upload, empty state disabled, settings/share entries.
 - [ ] Color: hover-open does not take key, click pins, preset and custom choice, Shift background path; Size: undo grouping per gesture, presets close, dismissal mid-drag ends the gesture.
 - [ ] History: date filter, category and Drag as are glass choices; search and grid stay native.
-- [ ] Destination sheet: protocol and key-source picks and its buttons are glass; fields and status stay native; validation and Keychain paths unchanged.
+- [ ] Destination sheet: protocol and key-source picks, the public-read toggle and its buttons are glass; fields and status stay native; validation and Keychain paths unchanged.
 - [ ] Settings: radios and toggles unambiguous, tabs keyboardable, window sizing unchanged; Resize: mode/limit/anchor/preset behaviour, validation errors, Return = OK, Escape = Cancel.
 - [ ] Text ≥ 18 pt (20 pt normal); only Font Awesome / existing semantic glyphs; no emoji or decorative arrows.
 - [ ] Harness: direct captures of every new panel (rest, hover, keyboard focus, chosen, disabled, dismissed + focus restored), light and dark.
