@@ -1378,15 +1378,20 @@ private enum GlassChromeTests {
         RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.02))
         expect(host.isShown && target.hits == 1, "The accepted Color press opens its panel exactly once")
         host.close()
+        opener.performClick(nil)
+        expect(!host.isShown && target.hits == 1, "The button-cell click route also waits for the accessibility reply")
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.02))
+        expect(host.isShown && target.hits == 2, "The button-cell click route opens Color exactly once")
+        host.close()
         let openerTree = AXTree.walk(window)
         if let reached = reach(openerTree, .button, "Drawing colors", "Color opener") {
             expect(reached.object === opener, "The Color opener publishes its own accessibility action")
-            expect(AXTree.press(reached) && !host.isShown && target.hits == 1, "Reached AXPress succeeds before dispatch")
+            expect(AXTree.press(reached) && !host.isShown && target.hits == 2, "Reached AXPress succeeds before dispatch")
             RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.02))
-            expect(host.isShown && target.hits == 2, "Reached AXPress opens Color and dispatches exactly once")
+            expect(host.isShown && target.hits == 3, "Reached AXPress opens Color and dispatches exactly once")
             host.close()
             opener.isEnabled = false
-            expect(!AXTree.press(reached) && !host.isShown && target.hits == 2, "A disabled Color opener sends no action")
+            expect(!AXTree.press(reached) && !host.isShown && target.hits == 3, "A disabled Color opener sends no action")
         }
         _ = window
     }
