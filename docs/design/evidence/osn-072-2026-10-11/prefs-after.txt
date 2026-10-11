@@ -1,0 +1,2 @@
+69a671b036d59f71bd19d28fc3f74bec850bcd5d3555ed9019a27750fe066049  ~/Library/Preferences/com.shoemoney.skitch-redux.plist
+ls: ~/Library/Preferences/com.shoemoney.opensnap.plist: No such file or directory

@@ -1,0 +1,24 @@
+OpenSnap migration report
+
+History entries found: 58
+  converted to .opensnap: 58
+  kept as picture only (document could not be converted): 0
+  omitted (document and preview both unusable): 0
+  previews copied: 58
+  files in the old History folder not in its index (not migrated): 0
+Upload destinations copied: 2 (default: AWS cdn)
+  files: destinations.json, destination.json
+Preferences copied: 24, of which renamed: SkitchRedux.GlobalHotkeys.v1 -> OpenSnap.GlobalHotkeys.v1, skitchInSnap -> opensnapInSnap
+  already set in OpenSnap, kept: none
+  obsolete, not copied: disableSounds
+Keychain items: 2 copied, 0 already present, 0 failed
+
+No failures.
+
+The previous app's folder, preferences and Keychain items were not changed.
+
+DRY-RUN VERIFIED: 58 History entries open in the new store (58 editable, 0 picture-only); all .opensnap: true
+DRY-RUN VERIFIED: destinations 2, default AWS cdn
+DRY-RUN VERIFIED: copied preference keys 24 of 25; Keychain (placeholders) copied 2
+DRY-RUN VERIFIED: resize preset rows 14 of 14; row ids renamed: 1 (old-named ids in input: 1, old-named ids left in output: 0)
+DRY-RUN VERIFIED: old copy unchanged: true

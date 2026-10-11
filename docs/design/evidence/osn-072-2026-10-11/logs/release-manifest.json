@@ -1,0 +1,9 @@
+{
+  "version": "0.3.0",
+  "git_sha": "42545054866d02b9290e046930e9911a781f9cf6",
+  "binary_sha256": "94e556a2520a2deb872206758d32cb14be0b12c59d083373f9ccb28aa6bbb04f",
+  "zip": "OpenSnap-0.3.0-arm64.zip",
+  "zip_sha256": "4e811d38c34c5b39ef340cfc350bf08a04ae0f60116682781b1f3e07cdafeefa",
+  "signature": "adhoc",
+  "notarized": false
+}

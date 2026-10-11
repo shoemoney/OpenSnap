@@ -1,0 +1,1 @@
+PASS check-no-original (build/OpenSnap.app: no original assets by name, catalog entry or hash; no sound files)

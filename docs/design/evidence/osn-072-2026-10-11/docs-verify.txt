@@ -1,0 +1,5 @@
+SPOT E13BF8CA elements 8 8 texts 1 preview-bytes-equal True canvas-json-equal-except-format-id True
+SPOT 652C70D6 elements 9 9 texts 1 preview-bytes-equal True canvas-json-equal-except-format-id True
+SPOT 8A5646C1 elements 9 9 texts 1 preview-bytes-equal True canvas-json-equal-except-format-id True
+panned documents whose full pan source was preserved: ['A6B3BE93']
+checked 58 documents, 139 elements total, mismatches: 0

@@ -1,0 +1,3 @@
+git -C /tmp/osn072/clone diff --quiet HEAD
+git -C /tmp/osn072/clone ls-files --others --exclude-standard -- Sources Resources Info.plist tools
+git -C /tmp/osn072/clone rev-parse HEAD

@@ -1,0 +1,89 @@
+/tmp/osn072/clone/build/source-snapshot.fAwD9F/App.swift:242:13: warning: '@preconcurrency' on conformance to 'NSMenuDelegate' has no effect
+ 240 | 
+ 241 | @MainActor
+ 242 | final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItemValidation, NSFontChanging, @preconcurrency NSSharingServicePickerDelegate, NSSharingServiceDelegate, @preconcurrency NSMenuDelegate {
+     |             `- warning: '@preconcurrency' on conformance to 'NSMenuDelegate' has no effect
+ 243 |     var window: NSWindow!
+ 244 |     let canvas = CanvasView(frame: NSRect(x: 0, y: 0, width: 1000, height: 700))
+/tmp/osn072/clone/build/source-snapshot.fAwD9F/DocumentModel.swift:323:71: warning: conditional downcast from 'NSColor?' to 'NSColor' does nothing
+321 |         context.setShadow(offset: CGSize(width: shadowOffset.width,
+322 |                                          height: inFlippedView ? -shadowOffset.height : shadowOffset.height),
+323 |                           blur: shadowBlurRadius, color: (shadowColor as? NSColor)?.cgColor)
+    |                                                                       `- warning: conditional downcast from 'NSColor?' to 'NSColor' does nothing
+324 |     }
+325 | }
+/tmp/osn072/clone/build/source-snapshot.fAwD9F/EyeDumpAuditGlass.swift:336:37: warning: capture of 'script' with non-Sendable type 'AuditRun.GlassPanelScript' in a '@Sendable' closure [#SendableClosureCaptures]
+ 304 | 
+ 305 |     /// One panel under test: how to open it, what opens it, and where its captures go.
+ 306 |     struct GlassPanelScript {
+     |            `- note: consider making struct 'GlassPanelScript' conform to the 'Sendable' protocol
+ 307 |         let id: String, surface: String, identifier: String, base: String
+ 308 |         let opener: NSView
+     :
+ 334 |         let watchdog = Timer(timeInterval: 1.5, repeats: false) { [self] _ in
+ 335 |             MainActor.assumeIsolated {
+ 336 |                 if glassPanelWindow(script.identifier) == nil { script.nativeMenu?.cancelTracking(); NSApp.mainMenu?.cancelTracking() }
+     |                                     `- warning: capture of 'script' with non-Sendable type 'AuditRun.GlassPanelScript' in a '@Sendable' closure [#SendableClosureCaptures]
+ 337 |             }
+ 338 |         }
+
+/tmp/osn072/clone/build/source-snapshot.fAwD9F/EyeDumpAuditGlass.swift:483:42: warning: conditional cast from 'ZoomPopUpButton' to 'GlassPopUpButton' always succeeds
+ 481 |         defer { verifyGlassCaptures("S51") }
+ 482 |         loadSynthetic(size: CGSize(width: 1000, height: 700), name: "Glass Zoom")
+ 483 |         guard let zoom = app.zoomControl as? GlassPopUpButton else { gap("S51", "Zoom panel", "the zoom control is not a GlassPopUpButton"); return }
+     |                                          `- warning: conditional cast from 'ZoomPopUpButton' to 'GlassPopUpButton' always succeeds
+ 484 |         let script = GlassPanelScript(id: "S51", surface: "Zoom panel", identifier: zoom.panelIdentifier, base: "zoom", opener: zoom,
+ 485 |                                       refs: ["ModernEditorChrome.swift|final class ZoomPopUpButton", "App+ModernChrome.swift|zoomControl.addItems"], open: { zoom.openChoices(keyboard: false) }, nativeMenu: zoom.menu)
+
+[#SendableClosureCaptures]: <https://docs.swift.org/compiler/documentation/diagnostics/sendable-closure-captures>
+/tmp/osn072/clone/build/source-snapshot.fAwD9F/EyeDumpAuditSurfaces.swift:158:21: warning: capture of 'dismissTimer' with non-Sendable type 'Timer?' in a '@Sendable' closure [#SendableClosureCaptures]
+ 156 |                     let again = Timer(timeInterval: 0.3, repeats: true) { _ in MainActor.assumeIsolated { dismiss(); NSApp.mainMenu?.cancelTracking() } }
+ 157 |                     RunLoop.main.add(again, forMode: .common)
+ 158 |                     dismissTimer = again
+     |                     `- warning: capture of 'dismissTimer' with non-Sendable type 'Timer?' in a '@Sendable' closure [#SendableClosureCaptures]
+ 159 |                 }
+ 160 |             }
+
+Swift.Optional:1:21: note: generic enum 'Optional' does not conform to the 'Sendable' protocol
+1 | @frozen public enum Optional<Wrapped> : ~Copyable, ~Escapable where Wrapped : ~Copyable, Wrapped : ~Escapable {
+  |                     `- note: generic enum 'Optional' does not conform to the 'Sendable' protocol
+2 |     case none
+3 |     case some(Wrapped)
+
+/tmp/osn072/clone/build/source-snapshot.fAwD9F/EyeDumpAuditSurfaces.swift:1851:13: warning: variable 'contrastTick' was written to, but never read
+1849 |         if seen.isEmpty { gap("S14", "countdown overlay", "no countdown panel became visible at full alpha during 90 manual ticks") }
+1850 |         // Increase Contrast: the plate is darker (0.8 instead of 0.55). Reduce Motion: the panel is at full alpha from the first frame.
+1851 |         var contrastTick: (@MainActor @Sendable () -> Void)?
+     |             `- warning: variable 'contrastTick' was written to, but never read
+1852 |         let contrast = OriginalCaptureCountdown(scheduler: { _, action in contrastTick = action; return { contrastTick = nil } }, screenFrames: { [screen.visibleFrame] },
+1853 |                                                 reduceMotion: { true }, increaseContrast: { true }, announce: { _ in })
+
+[#SendableClosureCaptures]: <https://docs.swift.org/compiler/documentation/diagnostics/sendable-closure-captures>
+/tmp/osn072/clone/build/source-snapshot.fAwD9F/PublishingDestinationsView.swift:487:15: warning: 'token' mutated after capture by sendable closure
+484 |         field.setAccessibilityHelp(sentence)
+485 |         window?.makeFirstResponder(field)
+486 |         var token: NSObjectProtocol?
+    |             `- note: variable defined here
+487 |         token = NotificationCenter.default.addObserver(forName: NSControl.textDidChangeNotification, object: field, queue: .main) { [weak field] _ in
+    |               |                                                                                                                   `- note: variable captured by sendable closure
+    |               `- warning: 'token' mutated after capture by sendable closure
+488 |             MainActor.assumeIsolated { field?.layer?.borderWidth = 0; field?.setAccessibilityHelp(nil) }
+489 |             if let token { NotificationCenter.default.removeObserver(token) }
+    |             `- note: capturing use
+490 |         }
+491 |     }
+/tmp/osn072/clone/build/OpenSnap.app: replacing existing signature
+/tmp/osn072/clone/build/OpenSnap.app/Contents/MacOS/OpenSnap: Mach-O 64-bit executable arm64
+PASS check-no-original (/var/folders/_5/kk_5dshn1zx_mn3ftl5dl7g40000gp/T/tmp.mNmUw9bh4i/OpenSnap.app: no original assets by name, catalog entry or hash; no sound files)
+/var/folders/_5/kk_5dshn1zx_mn3ftl5dl7g40000gp/T/tmp.mNmUw9bh4i/OpenSnap.app: valid on disk
+/var/folders/_5/kk_5dshn1zx_mn3ftl5dl7g40000gp/T/tmp.mNmUw9bh4i/OpenSnap.app: satisfies its Designated Requirement
+{
+  "version": "0.3.0",
+  "git_sha": "42545054866d02b9290e046930e9911a781f9cf6",
+  "binary_sha256": "94e556a2520a2deb872206758d32cb14be0b12c59d083373f9ccb28aa6bbb04f",
+  "zip": "OpenSnap-0.3.0-arm64.zip",
+  "zip_sha256": "4e811d38c34c5b39ef340cfc350bf08a04ae0f60116682781b1f3e07cdafeefa",
+  "signature": "adhoc",
+  "notarized": false
+}
+release: /tmp/osn072/clone/build/OpenSnap-0.3.0-arm64.zip
