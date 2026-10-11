@@ -459,8 +459,8 @@ enum PublishingDestinationsTests {
                     let name = field.accessibilityLabel() ?? ""
                     try expect(captions.contains(name), "\(transport)/\(source): a filled field is named “\(name)”, not one of \(captions.sorted())")
                 }
-                for popup in [view.protocolPopup, view.sourcePopup] where !popup.isHiddenOrHasHiddenAncestor {
-                    try expect(captions.contains(popup.accessibilityLabel() ?? ""), "\(transport)/\(source): a pop-up has no caption as its name")
+                for face in [view.protocolFace, view.sourceFace] where !face.isHiddenOrHasHiddenAncestor {
+                    try expect(captions.contains(face.accessibilityLabel() ?? ""), "\(transport)/\(source): a glass face has no caption as its name")
                 }
                 for field in fields { field.stringValue = "" }
             }
@@ -745,6 +745,9 @@ enum PublishingDestinationsTests {
         _ = NSApplication.shared
         NSApp.setActivationPolicy(.prohibited)
         let fake = NSRect(x: 0, y: 0, width: 1280, height: 800)
+        // The editor itself is built on a 900-high screen: its glass plates (44 pt rows) make the S3 and SFTP forms taller than the 680 pt
+        // sheet a 800-high screen allows, and the sheet-height assertions below need room to differ per protocol.
+        let screen = NSRect(x: 0, y: 0, width: 1280, height: 900)
 
         // Size: 720 wide, min(720, visible height - 120), never taller than the screen.
         let size = PublishingDestinationsView.sheetSize(visibleFrame: fake)
@@ -756,20 +759,20 @@ enum PublishingDestinationsTests {
 
         let destinations = fixtureDestinations()
         let publisher = try coordinator(destinations: destinations)
-        let (panel, view) = publisher.buildEditor(editing: nil, visibleFrame: fake)
+        let (panel, view) = publisher.buildEditor(editing: nil, visibleFrame: screen)
         defer { panel.orderOut(nil) }
         panel.contentView?.layoutSubtreeIfNeeded()
         try expect(view.scrollView.hasVerticalScroller && !view.scrollView.hasHorizontalScroller && view.scrollView.documentView != nil, "the form lives in a vertical NSScrollView")
         try expect(panel.title == "Add Destination" && publisher.buildEditor(editing: destinations[0]).0.title == "Edit Destination", "the sheet is titled for what it does")
         func contentHeight(_ p: NSPanel) -> CGFloat { p.contentRect(forFrameRect: p.frame).height }
         let panelWidth = panel.contentRect(forFrameRect: panel.frame).width
-        try expect(panelWidth == 720 && panel.frame.height <= fake.height, "the sheet is 720 wide: \(panelWidth)")
+        try expect(panelWidth == 720 && panel.frame.height <= screen.height, "the sheet is 720 wide: \(panelWidth)")
         // The sheet is sized to the protocol's form (top edge fixed).
         let topEdge = panel.frame.maxY
         view.showForm(for: nil); panel.contentView?.layoutSubtreeIfNeeded()
         let webDAVHeight = contentHeight(panel)
-        try expect(webDAVHeight < 680 && abs(webDAVHeight - view.preferredHeight) <= 0.5 && panel.frame.maxY == topEdge,
-                   "the new-destination form hugs its rows instead of the 680 maximum: \(webDAVHeight), top \(panel.frame.maxY) vs \(topEdge)")
+        try expect(webDAVHeight < 760 && abs(webDAVHeight - view.preferredHeight) <= 0.5 && panel.frame.maxY == topEdge,
+                   "the new-destination form hugs its rows instead of the 760 maximum: \(webDAVHeight), top \(panel.frame.maxY) vs \(topEdge)")
         func blankBand(_ p: NSPanel, _ v: PublishingDestinationsView) throws -> CGFloat {
             p.contentView?.layoutSubtreeIfNeeded()
             let help = try unwrap(descendants(v).compactMap { $0 as? NSTextField }.first { !$0.isHiddenOrHasHiddenAncestor && $0.stringValue == PublishingDestinationsView.formCopy(for: v.selectedProtocol).help })
@@ -785,7 +788,7 @@ enum PublishingDestinationsTests {
             let help = try unwrap(descendants(view).compactMap { $0 as? NSTextField }.first { !$0.isHiddenOrHasHiddenAncestor && $0.stringValue == PublishingDestinationsView.formCopy(for: transport).help })
             let needed = ceil(help.cell?.cellSize(forBounds: NSRect(x: 0, y: 0, width: help.frame.width, height: .greatestFiniteMagnitude)).height ?? 0)
             try expect(help.frame.height + 0.5 >= needed, "\(transport) help is clipped: \(help.frame.height) of \(needed)")
-            try expect(abs(heights[transport]! - view.preferredHeight) <= 0.5 && panel.frame.maxY == topEdge && panel.frame.height <= fake.height, "\(transport) sheet \(heights[transport]!) follows its form")
+            try expect(abs(heights[transport]! - view.preferredHeight) <= 0.5 && panel.frame.maxY == topEdge && panel.frame.height <= screen.height, "\(transport) sheet \(heights[transport]!) follows its form")
             let band = try blankBand(panel, view)
             try expect(band < 120, "\(transport) leaves \(band) pt of blank band")
         }
@@ -877,12 +880,16 @@ enum PublishingDestinationsTests {
         try expect(view.visibleFormCaptions.contains { $0.stringValue == "Endpoint" } && view.endpointField.placeholderString?.contains("Blank for AWS") == true,
                    "the S3 endpoint row is labelled Endpoint with the AWS hint as its placeholder")
         panel.contentView?.layoutSubtreeIfNeeded()
-        let popupFont = try unwrap(view.protocolPopup.font)
-        for item in view.protocolPopup.itemArray {
-            let width = (item.title as NSString).size(withAttributes: [.font: popupFont]).width
-            try expect(width + 30 <= view.protocolPopup.frame.width && view.protocolPopup.frame.width >= view.protocolPopup.intrinsicContentSize.width - 0.5,
-                       "the Protocol item “\(item.title)” (\(width) pt) truncates in a \(view.protocolPopup.frame.width) pt popup that wants \(view.protocolPopup.intrinsicContentSize.width)")
+        // The Protocol face shows every title whole: the face is as wide as the widest title, and the label is never cut.
+        let faceFont = DesignTokens.Typography.font(.bodyStrong)
+        for (index, item) in view.protocolPopup.itemArray.enumerated() {
+            view.protocolPopup.selectItem(at: index); view.formChanged(); panel.contentView?.layoutSubtreeIfNeeded()
+            let face = view.protocolFace, label = face.titleLabel
+            let width = ceil((item.title as NSString).size(withAttributes: [.font: faceFont]).width)
+            try expect(face.title == item.title && label.stringValue == item.title, "the face shows the chosen protocol “\(item.title)”, got “\(face.title)”")
+            try expect(label.frame.width + 0.5 >= width && face.frame.width >= width + 30, "the Protocol item “\(item.title)” (\(width) pt) truncates in a \(label.frame.width) pt label on a \(face.frame.width) pt face")
             try expect(item.toolTip?.isEmpty == false && item.title.count <= 16, "“\(item.title)” is a short title with the provider detail in its tooltip")
+            try expect(AppToolTip.text(for: face) == PublishingProtocol.allCases[index].detail, "the face's tooltip is the provider detail of “\(item.title)”")
         }
 
         view.showForm(for: nil); panel.contentView?.layoutSubtreeIfNeeded()
