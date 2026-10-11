@@ -784,17 +784,23 @@ final class BezelHoverButton: NSButton {
         _ = sendAction(on: .leftMouseDown)
         setAccessibilityElement(true)
     }
-    /// Assistive activation dispatches the same action once, without the cell's mouse-tracking path. This button acts on mouse-down;
-    /// the standard cell's accessibility press could open the panel yet report an unsupported attribute to the outside client.
+    /// Opening Color refreshes this button's image and accessibility value. Complete the assistive reply before those changes
+    /// replace AppKit's button-cell representation, so an external AXPress does not report AXAttributeUnsupported after opening.
     override func accessibilityRole() -> NSAccessibility.Role? { .button }
     override func accessibilityChildren() -> [Any]? { [] }
     override func accessibilityPerformPress() -> Bool {
-        guard isEnabled, let action else { return false }
-        return sendAction(action, to: target)
+        guard isEnabled, action != nil else { return false }
+        performClick(nil)
+        return true
     }
-    override func accessibilityPerformAction(_ action: NSAccessibility.Action) {
-        if action == .press { _ = accessibilityPerformPress() }
-        else { super.accessibilityPerformAction(action) }
+    /// AppKit's legacy button-cell AX action reaches performClick rather than the view's protocol method.
+    override func performClick(_ sender: Any?) {
+        guard isEnabled, let action else { return }
+        let target = self.target
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.isEnabled else { return }
+            _ = self.sendAction(action, to: target)
+        }
     }
     override var canBecomeKeyView: Bool { KeyboardNavigation.reaches(self) }
     private var hoverTracking: NSTrackingArea?
