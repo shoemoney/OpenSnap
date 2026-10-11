@@ -206,7 +206,11 @@ final class AuditRun {
         let scale = CGFloat(first.image.width) / first.frame.width
         guard let context = CGContext(data: nil, width: Int((union.width * scale).rounded()), height: Int((union.height * scale).rounded()), bitsPerComponent: 8, bytesPerRow: 0,
                                       space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
-        for part in parts {
+        // Overlays (popover, tooltip plate, glass panel) are drawn last, whatever order the caller listed the windows in: a glass panel
+        // listed before its editor window would otherwise be painted over and vanish from the composite.
+        let kinds = windows.map(Self.isOverlay)
+        let drawOrder = parts.indices.filter { !kinds[$0] } + parts.indices.filter { kinds[$0] }
+        for part in drawOrder.map({ parts[$0] }) {
             context.draw(part.image, in: CGRect(x: (part.frame.minX - union.minX) * scale, y: (part.frame.minY - union.minY) * scale,
                                                 width: part.frame.width * scale, height: part.frame.height * scale))
         }
