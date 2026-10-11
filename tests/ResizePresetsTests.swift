@@ -40,6 +40,7 @@ private enum ResizePresetsTests {
     static func main() throws {
         try catalog()
         try validation()
+        try retiredRows()
         try persistence()
         try corruption()
         print("ResizePresetsTests: \(checks) checks passed")
@@ -51,11 +52,11 @@ private enum ResizePresetsTests {
             ("Ad: Rectangle (Small)", 240, 160), ("Ad: Thumbnail", 100, 100),
             ("Ad: Square Pop-up", 250, 250), ("Ad: Leaderboard", 728, 90),
             ("Ad: Banner (Full)", 468, 60), ("Ad: Banner (Half)", 234, 60),
-            ("Ad: Sky Scraper", 120, 600), ("Ad: Sky Scraper (Wide)", 160, 600),
-            ("KeyFrame: Viddler", 437, 370), ("KeyFrame: YouTube", 425, 355),
-            ("Dribble", 400, 300)]
-        try expect(ResizePreset.builtins.count == 13, "Original catalog count")
-        try expect(Set(ResizePreset.builtins.map(\.id)).count == 13, "Unique builtin IDs")
+            ("Ad: Skyscraper", 120, 600), ("Ad: Skyscraper (Wide)", 160, 600),
+            ("KeyFrame: YouTube", 425, 355), ("Dribbble", 400, 300)]
+        try expect(ResizePreset.builtins.count == 12, "Catalog count: Viddler is gone")
+        try expect(!ResizePreset.builtins.contains { $0.name.contains("Viddler") || $0.name.contains("Sky Scraper") || $0.name == "Dribble" }, "Retired names are not offered")
+        try expect(Set(ResizePreset.builtins.map(\.id)).count == 12, "Unique builtin IDs")
         try expect(PresetResizeMode.crop.rawValue == 0 && PresetResizeMode.scale.rawValue == 1
                    && PresetResizeMode.limit.rawValue == 2, "Original resize mode values")
         try expect(ResizeLimitMode.greatest.rawValue == 0 && ResizeLimitMode.width.rawValue == 1
@@ -130,6 +131,30 @@ private enum ResizePresetsTests {
         try rejects { _ = try ResizePreset(settings: [ResizePresetKeys.width: NSDecimalNumber(string: "1.000000000000001")]) }
     }
 
+    /// Stored rows written by earlier builds: the retired preset is dropped, the renamed ones keep their place, nothing is flagged corrupt.
+    static func retiredRows() throws {
+        func old(_ name: String, _ width: Int, _ height: Int, proportions: Bool) -> [String: Any] {
+            ResizePreset(name: name, width: width, height: height, mode: .scale, proportions: proportions, editable: false).settings
+        }
+        try suite { defaults in
+            var rows: [[String: Any]] = [old("Ad: Sky Scraper", 120, 600, proportions: false), old("Ad: Sky Scraper (Wide)", 160, 600, proportions: false),
+                                         old("KeyFrame: Viddler", 437, 370, proportions: true), old("KeyFrame: YouTube", 425, 355, proportions: true),
+                                         old("Dribble", 400, 300, proportions: true)]
+            rows.append(ResizePreset(id: "mine", name: "Mine", width: 10, height: 20).settings.merging([ResizePresetKeys.id: "mine"]) { a, _ in a })
+            defaults.set(rows, forKey: ResizePresetKeys.defaults)
+            let store = ResizePresetStore(defaults: defaults)
+            try expect(!store.hasMalformedData && store.loadIssues.isEmpty, "A stored retired row is not corruption: \(store.loadIssues)")
+            try expect(!store.presets.contains { $0.name.contains("Viddler") }, "The Viddler row is ignored")
+            try expect(store.presets.filter { $0.name == "Dribbble" }.count == 1 && store.presets.filter { $0.name.hasPrefix("Ad: Skyscraper") }.count == 2, "Renamed rows resolve to the new names, once each")
+            try expect(store.presets.count == 13 && store.presets.last?.id == "mine", "The user's own preset survives (\(store.presets.count))")
+            try store.add(ResizePreset(id: "second", name: "Second"))
+            let reopened = ResizePresetStore(defaults: defaults)
+            try expect(!reopened.hasMalformedData && reopened.presets == store.presets, "The next write rewrites the rows without the retired one")
+            let names = (defaults.array(forKey: ResizePresetKeys.defaults) as? [[String: Any]] ?? []).compactMap { $0[ResizePresetKeys.name] as? String }
+            try expect(!names.contains("KeyFrame: Viddler") && !names.contains("Dribble") && names.contains("Dribbble"), "Stored names after the write: \(names)")
+        }
+    }
+
     static func persistence() throws {
         try suite { defaults in
             let store = ResizePresetStore(defaults: defaults)
@@ -139,7 +164,7 @@ private enum ResizePresetsTests {
                                       mode: .crop, format: 77, anchor: 8, proportions: false,
                                       limitSize: 1024, limitMode: .height)
             try store.add(custom)
-            try expect(store.presets.count == 14, "Addition")
+            try expect(store.presets.count == 13, "Addition")
             let saved = defaults.object(forKey: ResizePresetKeys.defaults)!
             let second = ResizePresetStore(defaults: defaults)
             try expect(second.presets == store.presets, "Reopen entire array")
@@ -173,7 +198,7 @@ private enum ResizePresetsTests {
             legacy["UnknownLegacyExtension"] = ["preserve": [1, 2, 3]]
             defaults.set([legacy], forKey: ResizePresetKeys.defaults)
             let store = ResizePresetStore(defaults: defaults)
-            try expect(store.presets.count == 14 && store.presets.last?.id == "legacy:0", "Legacy custom migration")
+            try expect(store.presets.count == 13 && store.presets.last?.id == "legacy:0", "Legacy custom migration")
             try expect(equal([legacy], defaults.object(forKey: ResizePresetKeys.defaults)!), "Migration does not write on load")
             var edited = store.presets.last!; edited.name = "Legacy renamed"
             try store.update(edited)
@@ -190,7 +215,7 @@ private enum ResizePresetsTests {
             try expect(!store.hasMalformedData && store.presets == ResizePreset.builtins, "Original complete catalog admission")
             try store.add(ResizePreset(name: "Custom"))
             let rows = defaults.array(forKey: ResizePresetKeys.defaults) as! [[String: Any]]
-            try expect(rows.prefix(13).allSatisfy { $0.count == 10 }, "Builtins persist original ten-key schema")
+            try expect(rows.prefix(12).allSatisfy { $0.count == 10 }, "Builtins persist original ten-key schema")
         }
         try suite { defaults in
             defaults.set([], forKey: ResizePresetKeys.defaults)
@@ -227,7 +252,7 @@ private enum ResizePresetsTests {
                 defaults.set(bad, forKey: ResizePresetKeys.defaults)
                 let store = ResizePresetStore(defaults: defaults)
                 try expect(store.hasMalformedData && !store.loadIssues.isEmpty, "Corruption reported")
-                try expect(Array(store.presets.prefix(13)) == ResizePreset.builtins, "Canonical builtins remain protected")
+                try expect(Array(store.presets.prefix(12)) == ResizePreset.builtins, "Canonical builtins remain protected")
                 try rejects(.malformedDefaults) { try store.add(ResizePreset(name: "New")) }
                 try rejects(.malformedDefaults) { try store.remove(id: "builtin:0") }
                 try expect(equal(bad, defaults.object(forKey: ResizePresetKeys.defaults)!), "Malformed legacy data never erased")

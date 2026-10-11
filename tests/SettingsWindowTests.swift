@@ -125,6 +125,7 @@ private enum SettingsWindowTests {
         tabStripContrast()
         closing()
         fit()
+        sheetNeverLargerThanParent()
         alignmentAndTypography()
         preferenceControls()
         radioGroups()
@@ -532,6 +533,37 @@ private enum SettingsWindowTests {
     }
 
     // MARK: Fit
+
+    /// Signoff: a sheet that hangs from Settings is never bigger than Settings. The window grows to hold it, and goes back when the sheet is gone.
+    private static func sheetNeverLargerThanParent() {
+        let (controller, _, _, _, _, _) = makeController()
+        let window = controller.window
+        let tall = NSRect(x: 0, y: 0, width: 1280, height: 1100)
+        controller.visibleFrame = { tall }
+        controller.select(3)
+        controller.fit(animated: false)
+        window.setFrameTopLeftPoint(NSPoint(x: 100, y: tall.maxY - 20))
+        let before = window.frame
+        let sheet = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 640, height: 640), styleMask: [.titled], backing: .buffered, defer: false)
+        sheet.isReleasedWhenClosed = false
+        expect(sheet.frame.height > before.height, "the fixture sheet (\(sheet.frame.height) pt) is taller than the Settings window (\(before.height) pt)")
+        window.beginSheet(sheet)
+        let titleBar = window.frameRect(forContentRect: .zero).height
+        expect(window.frame.height >= sheet.frame.height + titleBar - 0.5, "Settings grows to hold the sheet: window \(window.frame.height) pt, sheet \(sheet.frame.height) pt + \(titleBar) pt title bar")
+        expect(abs(window.frame.maxY - before.maxY) < 0.5 && window.frame.minY >= tall.minY - 0.5, "the top edge stays put and the window stays on the screen (\(window.frame), was \(before))")
+        // The destination form changes height as its protocol changes; the window follows the sheet.
+        sheet.setContentSize(NSSize(width: 640, height: 500)); spin(0.05)
+        expect(window.frame.height >= sheet.frame.height + titleBar - 0.5, "a sheet that resizes is still held (window \(window.frame.height), sheet \(sheet.frame.height))")
+        // A tiny screen caps the window to the screen.
+        controller.sheetDidEnd()
+        expect(abs(window.frame.height - before.height) < 0.5 && abs(window.frame.width - before.width) < 0.5, "the window goes back to its tab's size once the sheet is gone (\(window.frame) vs \(before))")
+        window.endSheet(sheet); sheet.orderOut(nil)
+        controller.sheetDidEnd()
+        controller.visibleFrame = { NSRect(x: 0, y: 0, width: 1280, height: 420) }
+        controller.sheetWillBegin(sheet)
+        expect(window.frame.height <= 420 + 0.5, "on a short screen the window is capped to it (\(window.frame.height))")
+        controller.sheetDidEnd()
+    }
 
     private static func fit() {
         let (controller, _, _, _, _, _) = makeController(destinations: sampleDestinations(count: 3))
@@ -969,6 +1001,12 @@ private enum SettingsWindowTests {
         expect(snap.wrapWidth != nil && lines >= 2 && snap.bounds.insetBy(dx: -0.5, dy: -0.5).contains(snap.titleLabel.frame) && snap.frame.height > GlassChoiceButton.height,
                "the long sentence wraps onto \(lines) lines inside a taller row and nothing is cut: \(snap.titleLabel.frame) in \(snap.bounds)")
         expect(general.snapPlate.frame.width <= general.controlWidth + 0.5 && general.snapPlate.frame.maxX <= general.grid.bounds.maxX + 0.5, "the wrapped plate stays inside the control column (\(general.snapPlate.frame.width) of \(general.controlWidth))")
+        expect(abs(general.hintsPlate.frame.width - general.snapPlate.frame.width) < 0.5, "a checked option is a chip as wide as the others: Hints \(general.hintsPlate.frame.width) pt, Snapping \(general.snapPlate.frame.width) pt")
+        controller.select(2); window.contentView?.layoutSubtreeIfNeeded()
+        let capture = controller.capture
+        expect(abs(capture.flashPlate.frame.width - capture.hotkeyForm.enabledPlate.frame.width) < 0.5,
+               "Flash and Shortcuts checkboxes sit on plates of one width: \(capture.flashPlate.frame.width) and \(capture.hotkeyForm.enabledPlate.frame.width) pt")
+        controller.select(0); window.contentView?.layoutSubtreeIfNeeded()
         expect(snap.titleLabel.frame.width + 0.5 >= (snap.title as NSString).boundingRect(with: NSSize(width: snap.wrapWidth!, height: .greatestFiniteMagnitude), options: .usesLineFragmentOrigin,
                                                                                          attributes: [.font: DesignTokens.Typography.font(.bodyStrong)]).width,
                "the label is as wide as the wrapped text needs")

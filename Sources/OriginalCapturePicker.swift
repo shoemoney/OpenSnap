@@ -351,7 +351,7 @@ final class OriginalCaptureSelectionView: NSView {
     private func updateMagnifier(pointer: NSPoint) {
         guard let magnifier else { return }
         magnifier.mousePoint = pointer
-        magnifier.labelString = "\(Int(pointer.x))x\(Int(pointer.y))"
+        magnifier.labelString = "\(Int(pointer.x))×\(Int(pointer.y))"
         magnifier.frame = OriginalCaptureMagnifierGeometry.placementFrame(
             mousePoint: pointer, requiredSize: magnifier.requiredDisplaySize, in: bounds)
     }
@@ -433,14 +433,17 @@ final class OriginalCaptureSelectionView: NSView {
         }
     }
 
-    /// The "%dx%dpx" read-out: HUD type on a light plate with a hairline edge, so it holds up on dark and light pixels alike.
+    /// The "%d×%dpx" read-out: HUD type on a light plate with a hairline edge, so it holds up on dark and light pixels alike.
     static let readoutPlateInset = NSSize(width: 6, height: 4)
     static func readoutAttributes() -> [NSAttributedString.Key: Any] {
         DesignTokens.Typography.attributes(.hud, color: DesignTokens.Palette.Overlay.plateText)
     }
 
+    /// The selection's size read-out, with the multiplication sign every other size in the app uses.
+    static func sizeReadout(for size: NSSize) -> String { "\(Int(size.width))×\(Int(size.height))px" }
+
     private func drawSize(_ rect: NSRect) {
-        let text = "\(Int(rect.width))x\(Int(rect.height))px" as NSString
+        let text = Self.sizeReadout(for: rect.size) as NSString
         let attributes = Self.readoutAttributes()
         let size = text.size(withAttributes: attributes)
         let inset = Self.readoutPlateInset

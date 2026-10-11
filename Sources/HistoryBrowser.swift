@@ -39,8 +39,9 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         func includes(_ item: Item) -> Bool { self == .all || item.action == title }
     }
     enum DateFilter: Int, CaseIterable {
-        case all, lastHour, yesterday, last48
-        var title: String { ["All dates", "Last hour", "Yesterday", "Last 48 hours"][rawValue] }
+        /// Shortest window to longest, then everything: the hour, the calendar day, the one before it, two days back.
+        case all, lastHour, today, yesterday, last48
+        var title: String { ["All dates", "Last hour", "Today", "Yesterday", "Last 48 hours"][rawValue] }
     }
     enum Action: Int, CaseIterable {
         case open, copy, copyLink, openLink, remove, deleteFiles, deleteRemote
@@ -50,11 +51,9 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         /// not the editor's eye-slash, which means "hide the window" there.
         var icon: FAIcon { [FAIcon.openExternal, .copy, .link, .globe, .folderMinus, .trash, .linkSlash][rawValue] }
         var shortTitle: String { ["Open", "Copy", "Copy Link", "Open Link", "Hide", "Trash", "Delete from Web"][rawValue] }
-        /// The three that take something away keep their label at every width.
-        var removesSomething: Bool { self == .remove || self == .deleteFiles || self == .deleteRemote }
     }
-    /// How much of the action row's text is shown: every label, only the three destructive ones, or icons alone (never chosen at the minimum width).
-    enum ActionLabels: Int { case all, destructiveOnly, none }
+    /// How much of the action row's text is shown: every label or icons alone. The row collapses as one, so no command keeps a label the others lost.
+    enum ActionLabels: Int { case all, none }
     struct Section { var day: Date; var title: String; var items: [Item] }
     /// Persisted keys. `jpeg` is the stored name for JPG, and `opensnap` is the editable document.
     nonisolated static let dragFormats = ["png", "jpeg", "pdf", "tiff", "svg", "opensnap"]
@@ -136,7 +135,10 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
     private let formatPopup = GlassPopUpButton(frame:.zero,pullsDown:false)
     private var datePlate: GlassSurfaceView?
     private var formatPlate: GlassSurfaceView?
-    private let search = NSSearchField()
+    private let search = HistorySearchField()
+    /// The search field's glass plate: one control high like the plates beside it, with the same icon family as the rest of the chrome.
+    private(set) var searchPlate: GlassSurfaceView!
+    var searchField: NSSearchField { search }
     private let status = NSTextField(labelWithString: "")
     private let warning = NSTextField(wrappingLabelWithString: "")
     private let detailsImage = NSImageView()
@@ -208,7 +210,7 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         // Core supplies reverse insertion order. Dates can be edited or imported;
         // timestamp sorting here would change the recovered History ordering.
         let updated = items.filter { seen.insert($0.id).inserted }
-        let movingDateWindow = dateFilter == .lastHour || dateFilter == .last48
+        let movingDateWindow = dateFilter == .lastHour || dateFilter == .last48 || dateFilter == .today
         guard updated != self.items || lastRefreshDay != calendar.startOfDay(for:now()) || movingDateWindow else { return }
         let old = Dictionary(uniqueKeysWithValues:self.items.map { ($0.id,$0) })
         for value in updated where old[value.id] != value {
@@ -293,6 +295,10 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         case .all: return true
         case .lastHour: return date > reference.addingTimeInterval(-3600) && date < .distantFuture
         case .last48: return date > reference.addingTimeInterval(-172800) && date < .distantFuture
+        case .today:
+            let start = calendar.startOfDay(for:reference)
+            guard let nextDay = calendar.date(byAdding:.day,value:1,to:start) else { return false }
+            return date >= start && date < nextDay
         case .yesterday:
             let today = calendar.startOfDay(for:reference)
             guard let start = calendar.date(byAdding:.day,value:-1,to:today),
@@ -383,14 +389,13 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
 
         // Filter row: category, search, date. It lives in the content area.
         categoryControl.selectedIndex = 0; categoryControl.target = self; categoryControl.action = #selector(filtersChanged)
-        Typography.apply(.body,to:search); search.placeholderString = "Search history"; search.delegate = self
+        Typography.apply(.body,to:search); search.placeholderString = "Search"; search.delegate = self
         search.sendsSearchStringImmediately = true; search.setAccessibilityLabel("Search history")
-        search.widthAnchor.constraint(greaterThanOrEqualToConstant:160).isActive = true
-        search.setContentHuggingPriority(.defaultLow,for:.horizontal)
+        let searchPlate = historySearchPlate(search); self.searchPlate = searchPlate
         datePopup.addItems(withTitles:DateFilter.allCases.map(\.title))
         datePopup.target = self; datePopup.action = #selector(filtersChanged); datePopup.setAccessibilityLabel("History date filter")
         let datePlate = historyPopUpPlate(datePopup,identifier:"HistoryDateFilter",label:"History date filter"); self.datePlate = datePlate
-        configure(filterRow,[categoryControl,search,datePlate]); root.addArrangedSubview(filterRow)
+        configure(filterRow,[categoryControl,searchPlate,datePlate]); root.addArrangedSubview(filterRow)
 
         // Action bar: the seven actions on three glass plates inside one container. The plates are the only glass; each button draws its own
         // rest, hover, pressed, focus and disabled fill on its plate. Disabled ones stay in place so the row does not jump.
@@ -408,8 +413,7 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         formatPlate.widthAnchor.constraint(lessThanOrEqualToConstant:Self.formatPopupMaximumWidth).isActive = true   // R2-015: a pop-up, not a column
         buildActionBar()
         root.addArrangedSubview(actionContainer!)
-        // "Drag as" sits at the end of the footer line, not in the action row: with it the row held no labels at 1000 wide, and
-        // the three commands that take something away must keep theirs at the 880 minimum.
+        // "Drag as" sits at the end of the footer line, not in the action row: with it the row held no labels at 1000 wide.
         let spring = NSView(); spring.setContentHuggingPriority(.init(1),for:.horizontal)
         configure(footerRow,[status,spring,formatLabel,formatPlate])
 
@@ -504,15 +508,15 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
             for button in self.buttons.values { button.accessibility = options }
             self.clearFiltersButton.accessibility = options
             self.categoryControl.accessibility = options
-            for plate in [self.datePlate,self.formatPlate] { plate?.accessibility = options; (plate?.arrangedViews.first as? ChromeFillable)?.accessibility = options }
+            for plate in [self.searchPlate,self.datePlate,self.formatPlate] { plate?.accessibility = options; (plate?.arrangedViews.first as? ChromeFillable)?.accessibility = options }
         }
     }
-    /// Shows as many labels as the bar holds: all seven, else the three destructive ones, else icons. Measured from
+    /// Shows every label when the bar holds them all, else icons alone. Measured from
     /// the live buttons at the live font, so a wider system font or a longer label moves the threshold by itself.
     func updateActionLabels(forContentWidth width: CGFloat) {
         let available = width - 2 * Space.s4
         var chosen = ActionLabels.none
-        for mode in [ActionLabels.all,.destructiveOnly] where actionBarWidth(mode:mode) <= available { chosen = mode; break }
+        if actionBarWidth(mode:.all) <= available { chosen = .all }
         applyActionLabels(chosen)
     }
     /// The plates' inset and spacing, the buttons at their width for the mode, and the gaps between plates and the flexible gap.
@@ -526,14 +530,14 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
     }
     private func labelledWidth(of action: Action,mode: ActionLabels) -> CGFloat {
         guard let button = buttons[action] else { return 0 }
-        let shows = mode == .all || (mode == .destructiveOnly && action.removesSomething)
+        let shows = mode == .all
         return HistoryActionButton.width(title:shows ? action.shortTitle : "",glyph:button.image)
     }
     private func applyActionLabels(_ mode: ActionLabels) {
         actionLabels = mode
         for action in Action.allCases {
             guard let button = buttons[action], button.image != nil else { continue }
-            let shows = mode == .all || (mode == .destructiveOnly && action.removesSomething)
+            let shows = mode == .all
             button.title = shows ? action.shortTitle : ""
         }
     }
@@ -1040,6 +1044,45 @@ final class HistoryFilePromise: NSFilePromiseProvider {
 
 /// A glass pop-up as it sits in History: the `GlassPopUpButton` (model, face and every way of opening it) on its own plate, in a fill cell
 /// that supplies the hover fill. The face is as wide as its longest choice, so choosing one never moves its neighbours.
+/// A search field whose text sits on the middle of its line like the pop-ups beside it (a borderless one draws it at the top edge).
+final class HistorySearchFieldCell: NSSearchFieldCell {
+    private func centred(_ text: NSRect, in rect: NSRect) -> NSRect {
+        var result = text
+        let line = ceil((font ?? DesignTokens.Typography.font(.body)).boundingRectForFont.height)
+        result.origin.y = rect.minY + ((rect.height - line) / 2).rounded(); result.size.height = line
+        return result
+    }
+    override func searchTextRect(forBounds rect: NSRect) -> NSRect { centred(super.searchTextRect(forBounds: rect), in: rect) }
+    override func titleRect(forBounds rect: NSRect) -> NSRect { centred(super.titleRect(forBounds: rect), in: rect) }
+    override func drawingRect(forBounds rect: NSRect) -> NSRect { centred(super.drawingRect(forBounds: rect), in: rect) }
+}
+final class HistorySearchField: NSSearchField {
+    override class var cellClass: AnyClass? { get { HistorySearchFieldCell.self } set {} }
+}
+
+/// The search field on a glass plate as tall as the filter plates beside it. The field draws no bezel of its own and its magnifier and clear
+/// glyphs are Font Awesome like every other icon in the chrome (the system's search glyphs are SF Symbols). The plate stretches with the row.
+@MainActor
+private func historySearchPlate(_ field: NSSearchField) -> GlassSurfaceView {
+    field.isBezeled = false; field.isBordered = false; field.drawsBackground = false
+    field.focusRingType = .none
+    if let cell = field.cell as? NSSearchFieldCell {
+        let magnifier = ChromeIcons.resolve(.magnifyingGlass,family:.regular,pointSize:GlassChrome.Metrics.iconPointSize * 0.8).image
+        let clear = ChromeIcons.resolve(.xmark,family:.regular,pointSize:GlassChrome.Metrics.iconPointSize * 0.7).image
+        magnifier?.isTemplate = true; clear?.isTemplate = true
+        cell.searchButtonCell?.image = magnifier; cell.searchButtonCell?.alternateImage = magnifier
+        cell.cancelButtonCell?.image = clear; cell.cancelButtonCell?.alternateImage = clear
+    }
+    field.translatesAutoresizingMaskIntoConstraints = false
+    field.setContentHuggingPriority(.defaultLow,for:.horizontal)
+    // The plate adds its own inset on each side: the minimum is what the bare field had (160), so the 880 pt window still holds the row.
+    NSLayoutConstraint.activate([field.heightAnchor.constraint(equalToConstant:GlassChoiceButton.height),
+                                 field.widthAnchor.constraint(greaterThanOrEqualToConstant:160 - 2 * GlassChrome.Metrics.groupInset)])
+    let plate = GlassChrome.plate([field],identifier:"HistorySearchPlate",accessibility:.live)
+    plate.setContentHuggingPriority(.defaultLow,for:.horizontal)
+    return plate
+}
+
 @MainActor
 private func historyPopUpPlate(_ popUp: GlassPopUpButton,identifier: String,label: String) -> GlassSurfaceView {
     popUp.panelIdentifier = identifier; popUp.panelLabel = label

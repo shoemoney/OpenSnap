@@ -281,7 +281,7 @@ extension AppSafetyTests {
             b6Window(app, width: width)
             let compact = width < 1100
             try expect(app.dragFormatToggle.isCompact == compact, "\(Int(width)): the format toggle is \(compact ? "one compact button" : "two segments") (\(app.dragFormatToggle.frame.width) pt)")
-            if compact { try expect(app.dragFormatToggle.frame.width < 80, "\(Int(width)): about 64 pt (\(app.dragFormatToggle.frame.width))") }
+            if compact { try expect(app.dragFormatToggle.frame.width < 100, "\(Int(width)): one compact button with its swap cue, about 94 pt (\(app.dragFormatToggle.frame.width))") }
             else { try expect(app.dragFormatToggle.frame.width > 100, "\(Int(width)): both segments (\(app.dragFormatToggle.frame.width))") }
         }
     }

@@ -1331,7 +1331,7 @@ extension AuditRun {
         guard let target = list.destinations.first(where: { $0.id == list.defaultID }) ?? list.destinations.first else { return }
         // The editor is begun on the Settings window directly so the harness can close it the way Cancel would.
         func edit(_ destination: PublishingDestination?, visibleFrame: NSRect? = nil, hostWidth: CGFloat? = nil) -> (NSPanel, PublishingDestinationsView) {
-            let (panel, view) = app.publishing.buildEditor(editing: destination, visibleFrame: visibleFrame, hostWidth: hostWidth)
+            let (panel, view) = app.publishing.buildEditor(editing: destination, visibleFrame: visibleFrame, hostWidth: hostWidth ?? settings.frame.width)   // showEditor hands over its window's width
             settings.beginSheet(panel); pump(0.8)
             return (panel, view)
         }

@@ -15,14 +15,21 @@ final class StatusTextField: NSTextField {
     override var stringValue: String {
         get { super.stringValue }
         set {
-            if !settingVariant { variants = [] }
+            if !settingVariant { variants = Self.withShortForm([newValue]).count > 1 ? Self.withShortForm([newValue]) : [] }
             super.stringValue = newValue
         }
     }
 
+    /// A save notice names its file ("Saved Quarterly mockup.opensnap"), which the window title already says; where the slot cannot hold the
+    /// whole line it keeps the word alone ("Saved") and the tooltip keeps the name, instead of cutting the name mid-word.
+    static func withShortForm(_ texts: [String]) -> [String] {
+        guard let last = texts.last, last.hasPrefix("Saved "), last.count > "Saved ".count else { return texts }
+        return texts + ["Saved"]
+    }
+
     func setVariants(_ texts: [String]) {
         var unique: [String] = []
-        for text in texts where unique.last != text { unique.append(text) }
+        for text in Self.withShortForm(texts) where unique.last != text { unique.append(text) }
         variants = unique
         // Show the whole text until the next layout pass has decided how much room it really gets.
         settingVariant = true
@@ -267,7 +274,7 @@ final class ModernEditorChrome: NSView {
     private func fit(_ id: String) -> CGFloat { surfaceList.first { $0.identifier?.rawValue == id }?.fittingSize.width ?? 0 }
     /// The Original size toggle's side padding and the gap between its checkbox mark and its title. The mark's box has a few points of
     /// room of its own around the glyph, so these read as roomier than they are. With the 87 pt zoom they leave the 980 pt floor 5 pt more
-    /// than an upload error at its narrowest ("Failed" and both commands, with the status at its 60 pt minimum) needs beside the toggle (F-J7-006).
+    /// than an upload error at its narrowest ("Failed" and both commands, with the status at its 60 pt minimum) needs beside the toggle.
     static let originalSizePadding: CGFloat = 6
     static let originalSizeGap: CGFloat = DesignTokens.Space.s1
 
@@ -293,7 +300,7 @@ final class ModernEditorChrome: NSView {
         guard let toggle = controls.dragFormatControl as? SegmentedToggle, let constraint = formatWidthConstraint else { return fit("GlassFooterRow") }
         let compact = SegmentedToggle(titles: toggle.titles)
         compact.isCompact = true
-        return fit("GlassFooterRow") - constraint.constant + ceil(compact.intrinsicContentSize.width)
+        return fit("GlassFooterRow") - constraint.constant + ceil(compact.intrinsicContentSize.width) + Self.formatSwapCueWidth
     }
 
     /// The width the bottom bar leaves for the status slot at the window's current width: the bar's width less its four plates and gaps.
@@ -311,8 +318,8 @@ final class ModernEditorChrome: NSView {
         probe.stringValue = text
         return ceil(probe.cellSize.width)
     }
-    /// The least room a message needs. An error has a whole-line, a coded and a bare ("Failed") form and is read at the narrowest of them, so
-    /// at 980 pt it gives up its words before the Original size checkbox is asked to leave (F-J7-006); the others keep the twenty characters.
+    /// The least room a message needs. An error has a whole-line, a coded and a bare ("Failed") form and is read at the narrowest of them;
+    /// the others keep the twenty characters.
     func minimumMessageWidth(for state: UploadState) -> CGFloat {
         guard state.isFailure, let narrowest = state.statusVariants.last else { return Self.minimumUploadStatusWidth }
         return min(Self.minimumUploadStatusWidth, statusCellWidth(of: narrowest))
@@ -324,14 +331,25 @@ final class ModernEditorChrome: NSView {
         let commands = state.isUploading ? 1 : (state.isFailure || state.link != nil ? 2 : 0)
         var need = minimumMessageWidth(for: state)
         if state.isUploading { need += UploadStatusControls.spinnerSide + Self.statusRowSpacing }
-        return need + CGFloat(commands) * (GlassChrome.Metrics.iconButton.width + Self.statusRowSpacing)
+        // The commands sit on one plate: its inset on each side, the gap between icons, and the gap before the plate.
+        guard commands > 0 else { return need }
+        typealias M = GlassChrome.Metrics
+        return need + CGFloat(commands) * M.iconButton.width + CGFloat(commands - 1) * M.groupSpacing + 2 * M.groupInset + Self.statusRowSpacing
     }
 
-    /// Whether the Original size checkbox can stay beside the upload's message and commands: only when the slot, measured at the window's
-    /// current width, holds the checkbox as well as everything `slotNeed` lists. At 980 an error keeps it (the message shrinks to "Failed"); an upload
-    /// in progress or done does not have the room, so the checkbox steps aside there; from about 1100 on it stays.
+    /// The most any upload state asks of the slot: a transfer under way, a copied link and an error each have their own spinner, message and
+    /// commands, and the dearest sets the bar for all of them.
+    var slotNeedDuringAnyUpload: CGFloat {
+        let sample = URL(string: "https://cdn.example.com/pics/shot.png")!
+        return [UploadState.uploading(name: ""), .success(url: sample, copied: true), .failure(message: "Failed")].map(slotNeed(for:)).max() ?? 0
+    }
+
+    /// Whether the Original size checkbox can stay beside an upload's message and commands: only when the slot, measured at the window's
+    /// current width, holds the checkbox as well as the dearest state `slotNeedDuringAnyUpload` lists. The answer is the same for every state,
+    /// so the checkbox is hidden for the whole life of an upload or shown for all of it: the bar never jumps as a transfer goes from running
+    /// to done or failed. At 980 it steps aside throughout; from about 1100 on it stays.
     func slotHasRoomForCheckbox(during state: UploadState) -> Bool {
-        bounds.width - 2 * DesignTokens.Layout.margin - fitFooterGroups(withOriginalSize: true) >= slotNeed(for: state)
+        bounds.width - 2 * DesignTokens.Layout.margin - fitFooterGroups(withOriginalSize: true) >= slotNeedDuringAnyUpload
     }
     /// The status line keeps at least this much beside the Original size checkbox at the minimum window.
     static let minimumStatusWidth: CGFloat = 120
@@ -651,6 +669,7 @@ final class ModernEditorChrome: NSView {
 
         // The status takes whatever width the groups leave; the Original size checkbox only exists for a large shot.
         // An upload swaps what sits here (spinner and Cancel, Open and Copy, Retry and Details) and hides the checkbox; the slot never grows.
+        uploadControls.attach(plate: plate(uploadControls.commandButtons, "GlassUploadCommands"))
         let statusRow = NSStackView(views: uploadControls.leadingViews + [controls.status] + uploadControls.trailingViews)
         statusRow.orientation = .horizontal
         statusRow.spacing = Self.statusRowSpacing
@@ -715,6 +734,12 @@ final class ModernEditorChrome: NSView {
 
     /// Below this window width the PNG | JPG toggle is the one compact button (R2-014).
     static let compactFormatBelow: CGFloat = 1100
+    /// What the compact button adds for its swap cue: a small left-right glyph at its trailing edge, so one button that shows "PNG" does not
+    /// look like the selected segment of the two-segment toggle but like a control that flips to the other format.
+    static let formatSwapCueWidth: CGFloat = 28
+    private let formatSwapCue = FormatSwapCue()
+    /// Whether the swap cue shows: only while the toggle is the one compact button.
+    var formatSwapCueVisible: Bool { !formatSwapCue.isHidden }
     private var formatWidthConstraint: NSLayoutConstraint?
     private var regularFormatWidth: CGFloat = 0
     /// Collapses or restores the format toggle for the window's current width; the bar's own layout pass calls it.
@@ -722,8 +747,18 @@ final class ModernEditorChrome: NSView {
         guard let toggle = controls.dragFormatControl as? SegmentedToggle, let constraint = formatWidthConstraint else { return }
         let compact = bounds.width > 0 && bounds.width < Self.compactFormatBelow
         if toggle.isCompact != compact { toggle.isCompact = compact }
-        let width = compact ? ceil(toggle.intrinsicContentSize.width) : regularFormatWidth
+        if formatSwapCue.superview !== toggle { installSwapCue(on: toggle) }
+        formatSwapCue.isHidden = !compact
+        let width = compact ? ceil(toggle.intrinsicContentSize.width) + Self.formatSwapCueWidth : regularFormatWidth
         if constraint.constant != width { constraint.constant = width }
+    }
+    private func installSwapCue(on toggle: SegmentedToggle) {
+        formatSwapCue.image = ChromeIcons.resolve(.leftRight, family: .regular, pointSize: GlassChrome.Metrics.iconPointSize * 0.6).image
+        formatSwapCue.contentTintColor = DesignTokens.Palette.Text.secondary
+        formatSwapCue.translatesAutoresizingMaskIntoConstraints = false
+        toggle.addSubview(formatSwapCue)
+        NSLayoutConstraint.activate([formatSwapCue.trailingAnchor.constraint(equalTo: toggle.trailingAnchor, constant: -DesignTokens.Space.s2),
+                                     formatSwapCue.centerYAnchor.constraint(equalTo: toggle.centerYAnchor)])
     }
     override func layout() {
         updateFormatCompaction()
@@ -733,6 +768,17 @@ final class ModernEditorChrome: NSView {
     }
 }
 
+
+/// The glyph on the compact format button. It never takes a click: the toggle underneath does.
+final class FormatSwapCue: NSImageView {
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        imageScaling = .scaleNone; isHidden = true
+        setAccessibilityElement(false)
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+}
 
 /// Modern only: a document smaller than the visible area sits in the middle of it, per axis. A larger one is
 /// constrained exactly as NSClipView does, so scrolling, panning and the scroll origin are unchanged.

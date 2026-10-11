@@ -764,7 +764,7 @@ extension AuditRun {
         syntheticDestinations()
         guard let controller = openSettingsUpload() else { gap("S58", "Destination sheet", "Settings did not open"); return }
         let settings = controller.window
-        let (sheet, view) = app.publishing.buildEditor(editing: nil, visibleFrame: nil, hostWidth: nil)
+        let (sheet, view) = app.publishing.buildEditor(editing: nil, visibleFrame: nil, hostWidth: settings.frame.width)
         settings.beginSheet(sheet)
         pump(0.8)
         defer { app.closePreferences() }

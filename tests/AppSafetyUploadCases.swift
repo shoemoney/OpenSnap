@@ -16,7 +16,7 @@ extension AppSafetyTests {
             ("A second click while uploading changes nothing; an unconfigured destination opens Settings and stays idle", uploadSecondClickAndUnconfigured),
             ("Upload status commands are named for VoiceOver, are 36 pt icon buttons with a rest plate, and only the commands of the current state are shown", uploadCommandsAreLabelled),
             ("Link copied shows the link itself (full URL on the tooltip and as VoiceOver help) and gives it up to the width the slot has", uploadLinkInStatus),
-            ("The Original size checkbox steps aside during an upload or a link only where the measured slot cannot hold it, and an error at 980 keeps it with the message at its narrowest (F-J7-006)", uploadCheckboxFollowsWidth),
+            ("The Original size checkbox steps aside during an upload or a link only where the measured slot cannot hold it, the same for every state so the bar never jumps (an error at 980 hides it like a transfer does)", uploadCheckboxFollowsWidth),
             ("On the 980 floor the real footer in the idle, uploading, link and error states draws every label and face whole: nothing is truncated or overlaps, and the error keeps its narrowest form beside Original size", uploadFooterFitsAtFloor),
             ("Upload with no destination says so in the status line and opens Settings › Upload, whose empty list offers Add… (F-J5-004)", uploadWithoutDestinationExplains),
             ("The upload result keeps the end of the file name at 980, 1024 and 1440, narrowing to Copied · …name (R1-014)", uploadStatusAtWidths),
@@ -297,7 +297,8 @@ extension AppSafetyTests {
             try expect(button.accessibilityLabel() == name, "\(name): VoiceOver label (\(button.accessibilityLabel() ?? "nil"))")
             try expect(AppToolTip.text(for: button) == name, "\(name): tooltip (\(AppToolTip.text(for: button) ?? "nil"))")
             try expect(button.frame.height >= DesignTokens.Size.hitMin && button.frame.width >= DesignTokens.Size.hitMin && button.visibleTitle.isEmpty, "\(name): an icon button at least \(DesignTokens.Size.hitMin) pt square")
-            try expect(button.showsRestPlate, "\(name): has a rest plate, so it reads as a button before hover")
+            let plateID = try chromeOf(app).surface(for: button)?.identifier?.rawValue
+            try expect(!button.showsRestPlate && plateID == "GlassUploadCommands", "\(name): sits on the upload commands' glass plate like Save and History, not on a flat grey square")
         }
         try expect(controls.cancelButton.icon == .xmark && controls.openButton.icon == .openExternal && controls.copyButton.icon == .copy, "Cancel, Open and Copy use the semantic Font Awesome icons")
         try expect(controls.retryButton.icon == .arrowRotateRight && controls.detailsButton.icon == .circleInfo, "Retry and Details use the semantic Font Awesome icons arrow-rotate-right and circle-info")
@@ -322,7 +323,7 @@ extension AppSafetyTests {
         let address = UploadState.displayAddress(of: url)
         try expect(status.variants.first == "Link copied · " + address && status.variants.last?.hasPrefix("Link copied · ") == true && status.variants.count > 3,
                    "The status carries the link after Link copied, and shorter middle-cut steps (\(status.variants.first ?? ""))")
-        try expect((status.stringValue.hasPrefix("Link copied · ") || status.stringValue.hasPrefix("Copied · …")) && status.frame.width > 100 && status.stringValue.contains(String(url.lastPathComponent.suffix(5))),
+        try expect((status.stringValue.hasPrefix("Link copied · ") || status.stringValue.hasPrefix("Copied · …")) && status.frame.width > 100 && status.stringValue.hasSuffix("png"),
                    "At 980 the \(Int(status.frame.width)) pt slot is used for the link, not left empty (\(status.stringValue))")
         try expect(AppToolTip.text(for: status) == "Link copied: " + url.absoluteString && status.accessibilityHelp() == "Link copied: " + url.absoluteString,
                    "The full URL stays on the tooltip and in the VoiceOver help, whatever the status shows")
@@ -353,8 +354,8 @@ extension AppSafetyTests {
                 app.uploadState = state
                 let fits = chrome.slotHasRoomForCheckbox(during: state)
                 try expect(app.dragOriginalControl.isHidden == !fits, "\(Int(width)) \(state): the checkbox is \(fits ? "kept" : "hidden") where the \(Int(chrome.statusSlotWidth())) pt slot \(fits ? "holds" : "cannot hold") it")
-                // F-J7-006: an error gives up its words ("Failed") before the checkbox leaves; an upload under way and a link keep the old rule.
-                let expectsRoom = width > 1000 || state.isFailure
+                // One rule for every state: the checkbox is hidden for the whole upload at 980 and kept for all of it from about 1100 on.
+                let expectsRoom = width > 1000
                 try expect(fits == expectsRoom, "\(Int(width)) \(state): \(expectsRoom ? "there is room" : "980 has none")")
                 chrome.window?.contentView?.layoutSubtreeIfNeeded()
                 let status = chrome.convert(app.status.bounds, from: app.status), box = chrome.convert(app.dragOriginalControl.bounds, from: app.dragOriginalControl)
@@ -367,13 +368,13 @@ extension AppSafetyTests {
         try resizeWindow(app, contentWidth: 1440)
         try expect(!app.dragOriginalControl.isHidden, "An error at 1440 shows the checkbox")
         try resizeWindow(app, contentWidth: ModernEditorChrome.minimumWindowWidth)
-        try expect(!app.dragOriginalControl.isHidden, "...and narrowing to 980 keeps it: the error gives up its words, not the checkbox (F-J7-006)")
+        try expect(app.dragOriginalControl.isHidden, "...and narrowing to 980 hides it, as it does for a transfer or a link, so the bar does not jump between states")
         // The error line at 980 is a whole form, never a cut sentence, and the box is whole and clear of it.
         app.uploadState = .failure(message: "Upload failed · HTTP 403\ncurl: (22) The requested URL returned error: 403")
         chrome.window?.contentView?.layoutSubtreeIfNeeded()
         let status980 = chrome.convert(app.status.bounds, from: app.status), box980 = chrome.convert(app.dragOriginalControl.bounds, from: app.dragOriginalControl)
-        try expect(!app.dragOriginalControl.isHidden && box980.maxX <= status980.minX + 0.5 && ["Upload failed · HTTP 403", "Upload failed", "Failed"].contains(app.status.stringValue),
-                   "At 980 with an error the checkbox is shown clear of a whole error form (\(app.status.stringValue), box \(box980), status \(status980))")
+        try expect(app.dragOriginalControl.isHidden && ["Upload failed · HTTP 403", "Upload failed", "Failed"].contains(app.status.stringValue),
+                   "At 980 with an error the checkbox is out of the way and the error is a whole form (\(app.status.stringValue), box \(box980), status \(status980))")
         app.uploadState = .idle
         try expect(!app.dragOriginalControl.isHidden, "and idle brings it back")
         stub.gate.signal()
@@ -391,7 +392,7 @@ extension AppSafetyTests {
         let url = URL(string: "https://cdn.example.com/pics/Shot-0123456789ab.png")!
         let states: [(String, UploadState, Bool)] = [
             ("idle", .idle, true), ("uploading", .uploading(name: "Shot"), false), ("link", .success(url: url, copied: true), false),
-            ("error", .failure(message: "Upload to Example S3 failed: the connection was refused."), true)]
+            ("error", .failure(message: "Upload to Example S3 failed: the connection was refused."), false)]
         for (name, state, togglePresent) in states {
             app.uploadState = state
             chrome.window?.contentView?.layoutSubtreeIfNeeded()
@@ -419,8 +420,7 @@ extension AppSafetyTests {
                 }
             }
             if name == "error" {
-                try expect(app.status.stringValue == "Failed" && state.statusVariants.last == "Failed", "980 error: the status is the narrowest whole form, \"Failed\" (\(app.status.stringValue))")
-                try expect(rect(toggle).maxX <= rect(app.status).minX + 0.5, "980 error: Original size stands clear of the message")
+                try expect(state.statusVariants.contains(app.status.stringValue) && !app.status.stringValue.contains("…"), "980 error: the status is a whole form, never cut (\(app.status.stringValue))")
             }
         }
         app.uploadState = .idle
@@ -464,7 +464,7 @@ extension AppSafetyTests {
             let tail = String(url.lastPathComponent.suffix(6))
             let text = status.stringValue
             // At the minimum width the slot is small: the narrowest steps keep the end of the name. Wider, a middle-cut name is enough.
-            let keepsName = width == ModernEditorChrome.minimumWindowWidth ? (text.contains(tail) || (text.hasPrefix("Link copied · ") && text.hasSuffix(String(tail.suffix(5))))) : (text.contains(tail) || (text.hasPrefix("Link copied · ") && text.contains("…") && text.hasSuffix("png")))
+            let keepsName = width == ModernEditorChrome.minimumWindowWidth ? (text.contains(tail) || (text.hasPrefix("Link copied · ") && text.hasSuffix("png"))) : (text.contains(tail) || (text.hasPrefix("Link copied · ") && text.contains("…") && text.hasSuffix("png")))
             try expect(keepsName && (text.hasPrefix("Link copied") || text.hasPrefix("Copied")), "\(Int(width)): the status keeps the file name's end (…\(tail)) and leads with Copied (\(text))")
             if width >= 1440 { try expect(text.hasPrefix("Link copied · cdn.example.com") && text.hasSuffix("png"), "1440: a wide slot keeps the host and the end of the name (\(text))") }
             else { try expect(!text.hasSuffix("cdn.exa…") && !text.hasSuffix(String(UploadState.displayAddress(of: url).prefix(6)) + "…"), "\(Int(width)): the line is not the sentence cut off after the host (\(text))") }

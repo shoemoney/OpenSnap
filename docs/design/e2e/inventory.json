@@ -13305,7 +13305,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "case .xmark; Free codepoint 0xF00D; SF fallback xmark; used in ModernEditorChrome.swift, UploadStatus.swift",
+   "note": "case .xmark; Free codepoint 0xF00D; SF fallback xmark; used in HistoryBrowser.swift, ModernEditorChrome.swift, UploadStatus.swift",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -16317,7 +16317,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "case .leftRight; Free codepoint 0xF337; SF fallback arrow.left.and.right; used in GlassChoices.swift",
+   "note": "case .leftRight; Free codepoint 0xF337; SF fallback arrow.left.and.right; used in GlassChoices.swift, ModernEditorChrome.swift",
    "shortcut": null,
    "proof": [
     {
@@ -16428,7 +16428,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "case .magnifyingGlass; Free codepoint 0xF002; SF fallback magnifyingglass; used in GlassChoices.swift",
+   "note": "case .magnifyingGlass; Free codepoint 0xF002; SF fallback magnifyingglass; used in GlassChoices.swift, HistoryBrowser.swift",
    "shortcut": null,
    "proof": [
     {

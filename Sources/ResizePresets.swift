@@ -122,17 +122,16 @@ struct ResizePreset: Equatable, Identifiable {
         try validate()
     }
 
-    // loadPresets (0x7527b), in original order and spelling. All are scale=1;
-    // KeyFrame and Dribble inherit constrainProportions=1 from SKResize init.
+    // The original catalog, with its spelling corrected (Skyscraper, Dribbble) and the Viddler preset dropped (the service is gone).
+    // All are scale=1; KeyFrame and Dribbble inherit constrainProportions=1 from SKResize init.
     static let builtins: [ResizePreset] = {
         let rows: [(String, Int, Int)] = [
             ("Ad: Rectangle (Large)", 336, 280), ("Ad: Rectangle (Medium)", 300, 250),
             ("Ad: Rectangle (Small)", 240, 160), ("Ad: Thumbnail", 100, 100),
             ("Ad: Square Pop-up", 250, 250), ("Ad: Leaderboard", 728, 90),
             ("Ad: Banner (Full)", 468, 60), ("Ad: Banner (Half)", 234, 60),
-            ("Ad: Sky Scraper", 120, 600), ("Ad: Sky Scraper (Wide)", 160, 600),
-            ("KeyFrame: Viddler", 437, 370), ("KeyFrame: YouTube", 425, 355),
-            ("Dribble", 400, 300)]
+            ("Ad: Skyscraper", 120, 600), ("Ad: Skyscraper (Wide)", 160, 600),
+            ("KeyFrame: YouTube", 425, 355), ("Dribbble", 400, 300)]
         return rows.enumerated().map { index, row in
             ResizePreset(id: "builtin:\(index)", name: row.0, width: row.1,
                          height: row.2, proportions: index >= 10, editable: false)
@@ -155,6 +154,14 @@ enum ResizePresetKeys {
     // Optional forward-compatible extension: original initWithSettings ignores it.
     // Kept in the same array so identity and edits commit in one defaults write.
     static let id = "OpenSnapResizePresetID"
+}
+
+/// Built-in presets that earlier builds stored by their old name. Rows are kept in defaults, so a reload must still recognise them:
+/// a renamed one resolves to its new name and a retired one (nil) is ignored; the next write drops it. Neither is corruption.
+enum ResizePresetRetirements {
+    static let renamed: [String: String?] = [
+        "Ad: Sky Scraper": "Ad: Skyscraper", "Ad: Sky Scraper (Wide)": "Ad: Skyscraper (Wide)",
+        "Dribble": "Dribbble", "KeyFrame: Viddler": nil]
 }
 
 /// Foundation-only store. Loading never writes defaults. Mutations commit one
@@ -181,8 +188,13 @@ final class ResizePresetStore {
         var seen = Set<String>()
         for (index, row) in rows.enumerated() {
             do {
-                guard let dictionary = row as? [String: Any] else {
+                guard var dictionary = row as? [String: Any] else {
                     throw ResizePresetError.invalidField("entry")
+                }
+                if dictionary[ResizePresetKeys.id] == nil, let oldName = dictionary[ResizePresetKeys.name] as? String,
+                   let replacement = ResizePresetRetirements.renamed[oldName] {
+                    guard let newName = replacement else { continue }
+                    dictionary[ResizePresetKeys.name] = newName
                 }
                 let id: String
                 if let value = dictionary[ResizePresetKeys.id] {
