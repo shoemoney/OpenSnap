@@ -24,9 +24,9 @@ least as good as the native control it replaces.
 | 1 History | Category (All / Shared / Exported / Saved, `categoryControl`) | native segmented control | `GlassChoiceGroup` on one plate |
 | 1 History | Search field, thumbnail grid, details | content / form | **kept native** (readable content) |
 | 1 History | Grid right-click menu | native contextual menu | **kept native** (contextual menu, not a picker) |
-| 2 Toolbox | 18 commands in 5 groups (copied main-menu items) | native `NSMenu` rows | `MenuChoicePanel`: 5 group plates, rows with icon, title, shortcut, toggle state |
-| 2 Zoom | 25–200 %, computed Fit/Frame row (tag 999), Actual Size (tag 998) | native pop-up menu | `MenuChoicePanel` from the pop-up's own menu, options + Actual Size toggle |
-| 2 Upload | Cancel Upload (busy), destinations (default checked), "No destination configured" (disabled), Destination Settings…, Share with macOS… | native menu on right-click / Control-click / AX ShowMenu | `MenuChoicePanel` via `OriginalActionButton.menuPresenter`; rebuilt on every open |
+| 2 Toolbox | 18 commands in 5 groups (copied main-menu items) | native `NSMenu` rows | `MenuChoicePanel`: 5 group plates, rows with a Font Awesome Free glyph (`MenuChoiceIcons`), title, shortcut, toggle state; the native menu bar keeps its SF Symbols |
+| 2 Zoom | 25–200 %, computed Fit/Frame row (tag 999), Actual Size (tag 998) | native pop-up menu | `MenuChoicePanel` from the pop-up's own menu: percentage options, a computed row that names its mode (`Fit, 83%`), and an Actual Size row (Free magnifying-glass glyph) |
+| 2 Upload | Cancel Upload (busy), destinations (default checked), "No destination configured" (disabled), Destination Settings…, Share with macOS… | native menu on right-click / Control-click / AX ShowMenu | `MenuChoicePanel` via `OriginalActionButton.menuPresenter`; rebuilt on every open, and a rebuild closes the old panel |
 | 3 Color | 10 preset swatches, Custom color… | solid content in `NSPopover` | `GlassPanelHost`: swatch plate + Custom color plate |
 | 3 Size | track + readout, 5 presets | solid content in `NSPopover` | `GlassPanelHost`: track plate + preset plate |
 | 4 Settings | tab strip (4) | app-owned solid strip | one glass plate, `StatePlate` fills |
@@ -38,7 +38,7 @@ least as good as the native control it replaces.
 | 4 Settings › Capture | per-shortcut modifiers ⌃⌥⇧⌘ | native multi-select segmented control | four `GlassChoiceButton` toggles on one plate per row |
 | 4 Settings › Capture | Clear All | native push button | titled `CommandButton` on an action plate |
 | 4 Settings | destination list | content list | **kept solid** (readable content) |
-| 4 Settings › Destination sheet | Protocol (`protocolPopup`), key source (`sourcePopup`) | native pop-ups | `GlassChoiceGroup` when the set is small and fixed, else glass pop-up face + `MenuChoicePanel` |
+| 4 Settings › Destination sheet | Protocol (`protocolPopup`), key source (`sourcePopup`) | native pop-ups | Glass pop-up faces (`GlassPopUpButton`) with choices in a `MenuChoicePanel`; the Source face reads "AWS profile" or "Keychain" at 560 pt, with the full text kept in the menu, panel, AX and tooltip |
 | 4 Settings › Destination sheet | "Make uploads public-read" (`aclCheckbox`) | native checkbox | `GlassChoiceButton` toggle on the related plate; default, visibility and save/test payload unchanged |
 | 4 Settings › Destination sheet | Test / Save / Cancel and other sheet buttons | native push buttons | titled `CommandButton`s on one action plate; default/cancel keys kept |
 | 4 Settings › Destination sheet | host, user, password, path, URL fields, status text | form fields / status | **kept native** |
@@ -94,22 +94,39 @@ Shared-file rule: two workers touching the same file stay in their named hunks. 
 
 ## Acceptance checklist
 
-- [ ] Toolbox, Zoom, Upload, History format and Resize preset open app-owned glass panels; no `NSMenu.popUp` / `popUpContextMenu` remains on those paths.
-- [ ] One `NSGlassEffectContainerView` per panel, one plate per menu group; no `NSGlassEffectView` inside another.
-- [ ] Selected/on state = accent fill + border + bodyStrong + glyph; Differentiate Without Color adds the indicator; disabled rows dim and skip focus.
-- [ ] Keyboard: in the editor bars (no default button) a focused opener opens with Return, Space or Down; inside a sheet or dialog with a default button (Resize, destination sheet) Return and keypad Enter stay with the default button (OK / Save) and Space or Down opens the focused choice face. In an open panel: Up/Down/Tab/Home/End move, Return/Space choose, Escape closes the panel FIRST (the sheet's Cancel only runs on a second Escape) and focus returns to the opener. Tests drive the real window event paths (synthesized NSEvents through the window), not only `openChoices()` / `activate()`.
-- [ ] Mouse: hover fills, click chooses, click outside or on the opener closes, a second click on the opener does not reopen.
-- [ ] Toolbox validation (enabled/disabled, Fill/Shadow/Font state), long-list scrolling and small-screen height cap.
-- [ ] Zoom: percentage choice, computed Fit row, Actual Size toggle state and its refusal path unchanged.
-- [ ] Upload: destinations rebuilt on each open, default checked, busy Cancel Upload, empty state disabled, settings/share entries.
-- [ ] Color: hover-open does not take key, click pins, preset and custom choice, Shift background path; Size: undo grouping per gesture, presets close, dismissal mid-drag ends the gesture.
-- [ ] History: date filter, category and Drag as are glass choices; search and grid stay native.
-- [ ] Destination sheet: protocol and key-source picks, the public-read toggle and its buttons are glass; fields and status stay native; validation and Keychain paths unchanged.
-- [ ] Settings: radios and toggles unambiguous, tabs keyboardable, one Tab stop per radio group and per shortcut-modifier row; the fit logic is unchanged but the windows are deliberately taller with 44 pt glass rows (General 301 → 371, Drawing 242 → 282, Capture 601 → 633, Upload 440 → 448 with three destinations, 277 → 285 empty) and every tab still fits the 1280 × 800 screen check; the destination sheet keeps SFTP, WebDAV and FTP/FTPS unscrolled at 1280 × 800 (S3 scrolled before and still does) and every face reads whole at 560, 640 and 900 pt; Resize: mode/limit/anchor/preset behaviour, validation errors, Return = OK, Escape = Cancel.
-- [ ] Text ≥ 18 pt (20 pt normal); only Font Awesome / existing semantic glyphs; no emoji or decorative arrows.
-- [ ] Harness: direct captures of every new panel (rest, hover, keyboard focus, chosen, disabled, dismissed + focus restored), light and dark.
-- [ ] `python3 tools/test.py` green with no source drift and the real-store guard; red proofs recorded for the key behaviour tests.
-- [ ] One adversarial Opus review round; real defects fixed.
+Each item carries the kind of proof behind it. The kinds are never merged:
+
+- `[x] unit/source`: a named test in a suite (`tools/test.py`).
+- `[x] guarded render`: an eye-dump capture that passed the checker (`tools/check-eye-dump.py`).
+- `[x] routing (offscreen)`: synthesized window events through `sendEvent` on non-active or offscreen windows. No real HID input.
+- `[ ] pending root native pass`: live parent/child key-window focus, live Return in a sheet, real pointer hover and click. This record does not claim them.
+
+- [x] unit/source: Toolbox, Zoom, Upload, History format and Resize preset open app-owned glass panels (`MenuChoicePanel` / `GlassPanelHost`). On those paths no `NSMenu.popUp` or `popUpContextMenu` runs. `OriginalActionButton` keeps its native presenter only as the class default; Upload installs a glass presenter. The remaining `popUp` calls in `Sources/EyeDumpAudit*` are harness triggers.
+- [x] unit/source: one `NSGlassEffectContainerView` per panel and one plate per menu group, with no glass view inside another (`GlassChoicesTests`).
+- [x] unit/source: selected state is accent fill, border, bodyStrong and glyph; disabled rows dim and skip focus.
+- [x] unit/source: the Differentiate Without Color indicator on chosen choices and the current Settings tab (`StateStylesTests`, `SettingsWindowTests` `liveDifferentiateOutline` / `liveDifferentiateRow`). [ ] pending root native pass: the live system setting; no DWC capture is recorded here.
+- [x] routing (offscreen): synthesized NSEvents through the window drive Return, Space, Down, arrows and Escape on offscreen sheets and panels; red proofs are recorded for Return and for real-flag arrows.
+- [ ] pending root native pass: live Return in a real sheet, Escape closing the panel before the sheet's Cancel in a live session, and focus returning to the opener in a live session.
+- [x] routing (offscreen): a synthesized mouseDown/up through `sendEvent` chooses on an ordered, invisible, non-key panel.
+- [x] unit/source: hover over Color does not close another open panel.
+- [ ] pending root native pass: real pointer hover fill, click, click outside, and a second click on the opener not reopening.
+- [x] unit/source: Toolbox validation (`AppSafetyMenuCases`); placement, long-list scrolling and the small-screen height cap (`GlassChoicesTests` scrolling and placement tests).
+- [x] unit/source: Zoom percentage choice, computed Fit row (`Fit, 83%`), Actual Size toggle and its refusal path (`AppSafetyModernCases`, `GlassChoicesTests`).
+- [x] unit/source: Upload destinations rebuilt on each open, default checked, busy and empty states, choosing persists the default (`webpostChoicesPanel`); a rebuild closes the old panel (`webpostPanelRebuildClosesOld`).
+- [x] unit/source: Color hover-opened palette never asks for the keyboard (`AppSafetyTests`, hover cases).
+- [x] unit/source: Size undo grouping per gesture and dismissal mid-drag (`AppSafetyModernCases` "The Size pill opens its panel below and every gesture, preset, key and assistive step is exactly one undo step, even when the panel is dismissed mid-drag"; `GlassChromeTests` "A click outside the panel ends the open group", "A preset pick closes the panel"); Color custom row chosen (`AppSafetyModernCases`). [x] routing (offscreen): the first press on a non-key panel starts the track drag and its undo group, chooses a Size preset and applies a hover-opened swatch (`AppSafetyTests`, real mouseDown/up through `sendEvent` on an ordered, invisible, offscreen panel).
+- [x] unit/source: History date filter, category and Drag as are glass pop-ups; search and grid stay native (`HistoryBrowserTests`).
+- [x] unit/source: destination sheet protocol and key-source picks, the public-read toggle payload and its buttons (`PublishingDestinationsTests`); fields and status stay native.
+- [x] unit/source: every destination face reads whole at 560, 640 and 900 pt (laid-out width tests, `cf1f954`); SFTP, WebDAV and FTP/FTPS fit unscrolled at 1280 × 800 (S3 scrolls, as before).
+- [x] unit/source: Settings radios and toggles, one Tab stop per radio group and per modifier row (`SettingsWindowTests`); window heights General 301 → 371, Drawing 242 → 282, Capture 601 → 633, Upload 440 → 448 with three destinations, 277 → 285 empty, all fitting the 1280 × 800 check.
+- [x] routing (offscreen): real-flag arrows reach the modifier toggles and the Settings tab strip; Escape and Command-W work with Caps Lock on.
+- [x] unit/source: Resize mode, limit, anchor, preset behaviour and validation errors (`ResizePanelTests`, `ResizePanelLayoutTests`).
+- [x] routing (offscreen): Return reaches the Resize OK default button through `sendEvent`; Return on a focused group does not swallow it.
+- [ ] pending root native pass: Escape = Cancel on a live Resize sheet, and live Return = OK.
+- [x] unit/source: text is 20 pt normal with an 18 pt floor; truncation is measured for button titles, shortcuts and glass pop-up faces. Glyphs are Font Awesome or existing semantic glyphs, with no emoji (`IconCoverageTests`, and the glass-row icon test `menuIconTests` in `GlassChoicesTests`).
+- [x] guarded render: the glass surfaces S50–S60, light and dark, with the checker's required rest, hover, keyboard-focus, chosen, disabled (where one exists) and dismissed captures per panel. Each dismissed capture records the panel gone and focus back on the opener. The checker also enforces no nested glass, text ≥ 18 pt, no truncation of measured labels and faces, and panels inside a parent they fit (`88a95e3`, `ccccfe0`, `db2d574`). Hover is driven by `setHovered`, focus by `makeFirstResponder`, Escape by a synthesized key event: app-driven states, not real pointer or keyboard input. Results are in FINAL GATES.
+- [x] unit/source: `python3 tools/test.py` green with no source drift and the real-store guard on `fa3ddf7` (FINAL GATES below); red proofs are listed in the Record.
+- [x] unit/source and routing (offscreen): one adversarial Opus review round at `996f7fa`; 6 confirmed and 2 plausible findings, all fixed. Each finding's proof class is in the Record.
 
 ## GUI slot protocol (workers)
 
@@ -128,4 +145,96 @@ serialized integration and candidate runs are. Never `build/OpenSnap.app` in pla
 
 ## Record
 
-(Filled in at integration: candidate branch/head/tree, logs, coverage and limits.)
+### Tested source
+
+- Tested source: `fa3ddf7` (tree `7db217a`), the merge of P `ad2cf6c` into `impl/glass-pickers-20261010`, base `57ec799`.
+- Only the orchestrator's serialized integration and candidate runs are evidence. Worker-level AppKit runs before GUI slot protocol v2 may have overlapped and are not evidence.
+
+### Final gates
+
+<!-- FINAL GATES: filled by orchestrator -->
+
+| Gate | Result |
+| --- | --- |
+| `python3 tools/test.py` on `fa3ddf7` (tree `7db217a`), serialized, no other native process | exit 0: 52 suites; app-safety 275/275; "All suites passed on arm64 with no source drift"; real-store guard unchanged (122 files, 2 defaults plists); clean worktree; only the FA Pro glyph branch skipped ("FA not bundled") |
+| Eye-dump captures and checker on `fa3ddf7` | glass S50–S60, light and dark, icons sf (no Pro subsets; embedded FA Free before SF): 206 PNGs, checker 0 failures, 0 advisories, 6 contrast samples skipped, input fence keyboard 0 / buttons 0 / pointer 0. Baseline set S06, S08, S09, S17, S19, S20, S23, S30, S31, light and dark: 180 PNGs, checker 0 failures, 0 advisories, 14 skipped, input fence keyboard 0 / buttons 0 / pointer 69 (a parked cursor during native menu tracking or the Save panel; no product input). Real stores unchanged in both (digest `dbde037ac2085108`). Orchestrator visual review: no objection. Root reviews the images independently and owns the evidence pack. |
+
+### Worker branches and commits
+
+| Area | Branch | Worker commits |
+| --- | --- | --- |
+| P primitives | `impl/gp-primitives` | `048d37a` API; `ad2cf6c` Font Awesome glyphs on glass menu rows (`MenuChoiceIcons`, 10 new Free 7.3.1 vectors, E2E-ICON-116..125); `e2d6223`, `0fb7786` single flip for toggles; `a3e7d69` `GlassPopUpButton`; `1ab00bd` tests; `b2d9650` label sizing; `996cae2` face metrics and option-only initial focus; `6974b9a` accessibility walker judges glass groups; `c4f92eb` review fixes; `ab3bb20` parent-window containment |
+| A menus | `impl/gp-menus` | `5c72d35`, `658d95f` Toolbox, Zoom and Upload panels, Original size toggle; `18e0027`, `9bf2b99` F-J7-006 restored at the 980 pt floor, Zoom computed row names its mode; `da8641a` Focus Toolbar survives a keyboard-opened panel, Upload rebuild closes the old panel |
+| B color and size | `impl/gp-color-size` | `e558cd8` Color and Size glass panels; `8d9bfa2` facade removed; `48115fd` first press on a non-key panel, hover keeps other panels, default-glass contrast restored |
+| C settings | `impl/gp-settings` | `c220ea9` Settings and Capture tab; `cd426be` one Tab stop per modifier row, optical centring; `4383889` modifier labels fit; `d27400b` real arrow flags, key panel keeps shortcut editing paused |
+| D resize and history | `impl/gp-resize` | `a6995d4` Resize and History choices; `49bafa5` Resize keeps keyboard focus; Return red-proofed through `sendEvent` |
+| F destination sheet | `impl/gp-destinations` | `e9aaaad` fit at 1280 × 800, `GlassPopUpButton` faces; `8d5183d` readable faces at 560 pt; `cf1f954` laid-out width tests |
+| E harness | `impl/gp-harness` | `88a95e3` S50–S60 glass surfaces and checker rules; `ccccfe0` containment gate; `db2d574` independent fit decision, false fallbacks fail |
+| G inventory | `impl/gp-inventory` | `d9225c2`, `f1345db`, `4f42665` UI-changed reset, history, promotion rule |
+| Docs (earlier pass) | `impl/gp-docs` | `dcfc752` technical-spec Glass choices section, todo checklist, roadmap |
+
+### Adversarial review round
+
+One adversarial Opus review at `996f7fa`: 6 confirmed and 2 plausible findings, all fixed. Each proof class is stated so the kinds stay separate.
+
+| # | Finding | Owner of the fix | Proof class |
+| --- | --- | --- | --- |
+| 1 | The first click on a non-key Size panel, or on a hover-opened Color panel, was ignored | B | `routing (offscreen)`: real mouseDown/up through `window.sendEvent` to an ordered, invisible, offscreen non-key panel; red proof recorded |
+| 2 | Return on a focused `GlassChoiceGroup` was swallowed, so the Resize sheet's OK never ran | P (fix), D (test) | `routing (offscreen)`: red proof with only P's guard reverted: `FAIL Return reaching the group through sendEvent does not choose the focused segment (mode crop)` |
+| 3 | Real arrow events carry `.numericPad` and `.function`; modifier toggles and the Settings tab strip rejected them | C | `routing (offscreen)` with real flags; red proofs recorded |
+| 4 | A keyboard-opened panel turned off Window > Focus Toolbar | A | `unit/source`: calls `windowDidResignKey` directly; not a live key handoff |
+| 5 | The Settings Capture key panel un-paused global shortcuts | C | `unit/source`: handler order with a presenter stub |
+| 6 | An arrow in the Resize mode group dropped focus | D | `routing (offscreen)`: real-flag arrows through `sendEvent` on an offscreen sheet |
+| 7 | Type-to-select was lost in glass pop-ups | P | `unit/source` |
+| 8 | Hover over Color closed another open panel | B | `unit/source` (app-safety) |
+
+Hardening from the same round: a stale item after a menu rebuild (P); host invalidate and deinit remove the monitor and observers (P); the Upload panel rebuild closes the old panel (A).
+
+### Root-requested corrections
+
+- Scope added during the work: History `datePopup` and `categoryControl`; destination sheet choices and the ACL toggle; footer Original size; Capture-tab enable, key, modifiers and Clear All.
+- Secondary routes (right-click, Control-click, `AXShowMenu`, context key, `menu(for:)`) all reach the glass panel. Native menu tracking counted zero.
+- Sheet keyboard rule: Return and keypad Enter stay with the default button. Space and Down open a focused face. The first Escape closes the panel before Cancel.
+- F-J7-006 restored word for word at the 980 pt floor: toggle 174 → 158 pt (per-instance padding 6 and gap 4), Zoom chevron 27 → 25, slot 177 against 172 needed.
+- The Zoom computed row shows its mode in the panel (`Fit, 83%`); the face stays percentage-only.
+- Settings windows are taller with 44 pt glass rows: General 301 → 371, Drawing 242 → 282, Capture 601 → 633, Upload 440 → 448 (three destinations), 277 → 285 (empty). The 1280 × 800 fit checks pass.
+- The destination sheet fits SFTP, WebDAV and FTP/FTPS unscrolled at 1280 × 800 (SFTP has 2 pt spare). S3 still scrolls.
+- Glass menu rows (Toolbox, Zoom Actual Size) draw Font Awesome (`ad2cf6c`). The native menu bar keeps its SF Symbols. Before that fix, the rows copied the `MenuSymbols` SF images: a root-found defect, now fixed.
+
+### Superseded candidates
+
+- `2bdd28e` (tree `572a267`): `tools/test.py` passed (52 suites, app-safety 275/275) and captures passed the checker. Visual review then found panels hanging outside their window (Upload about 270 pt, Size about 55 pt, History Drag as). Superseded by the containment fix (P `ab3bb20`, E `ccccfe0` and `db2d574`). Its captures are superseded developer evidence.
+- `9cce74d`: the pre-icon rows still showed copied SF images. Superseded by P `ad2cf6c` (see the icon correction above).
+
+### Inventory totals
+
+Rows in `docs/design/e2e/inventory.json`, by evidence class.
+
+| Snapshot | Rows | E2E | rendered | retired | unit/source | unverified |
+| --- | --- | --- | --- | --- | --- | --- |
+| Baseline `57ec799` | 597 | 312 | 45 | 27 | 93 | 120 |
+| Pre-reset | 616 | 312 | 45 | 27 | 112 | 120 |
+| Current | 616 | 234 | 32 | 27 | 112 | 211 |
+
+- Current `unverified` 211 = 120 earlier unverified + 91 converted rows (78 from E2E, 13 from rendered). The 3 rows that were already unverified (E2E-BAR-034, -035, -041) sit inside the 120.
+- 94 rows carry `UI changed`, each with its byte-exact `history`.
+- 12 intrinsic gaps stay as they were: E2E-BAR-039 (unsafe), E2E-BAR-043 (OS-owned), HOT-019, HOT-024 to HOT-031 and HOT-042 (unsafe).
+- A converted row leaves `UI changed` only with new glass evidence: a new SHA, a real path and a reviewer.
+
+### Icon mode
+
+The suites and captures run with the harness's `--icons sf` mode, which strips Font Awesome Pro only. No Pro subsets are bundled. `ChromeIcons.resolve` then draws the embedded Font Awesome Free 7.3.1 vectors (`Sources/FontAwesomeFree.swift`) before any SF Symbol fallback. Chrome glyphs therefore render as Font Awesome Free. Only the Pro branch is skipped ("FA not bundled"). Cite `IconCoverageTests` and the glass-row icon test (`GlassChoicesTests`, `menuIconTests`). The captures do not use SF icons only.
+
+### Known limits
+
+- No real HID input, no VoiceOver speech and no live key-window handoff are verified by the orchestrator. The root's guarded native pass covers parent/child focus and Return; this record does not claim it.
+- Liquid Glass cannot be rendered offscreen. Contrast unit checks measure label ink against the window and canvas colours, with the plate treated as clear. The screenshot harness covers the material.
+- Truncation is measured for `GlassChoiceButton` titles and shortcuts, `GlassPopUpButton` faces (`faceTextMetrics` uses plain string sizing) and titled command buttons. Not measured: `SegmentedToggle` segments, the Size readout and header, swatch glyphs and the Custom chip, anchor cells, plain labels, captions, status, Resize fields, Size preset stroke glyphs, the Toolbox face, menu header labels, tooltips and VoiceOver text.
+- No `--display` options or extra sizes were captured.
+- The F-J7-006 margin is 5 pt at current font metrics.
+- The destination sheet overhangs a 640 pt Settings window by 17 pt when S3 scrolls. This is pre-existing and identical at `57ec799`.
+- Hover does not move keyboard focus inside a panel. Native menus do.
+- Each modifier toggle row is one Tab stop. ⌘⌥⌃⇧ are reached with the arrows.
+- `tools/test-app-safety.sh` still carries a no-op text replacement for the removed `colorPopover: NSPopover?`.
+- Worker-level AppKit runs before lock v2 may have overlapped. Only the orchestrator's serialized integration runs are evidence.
+- Ownership: P's round 6 (icons) changed two narrow hunks owned by A: `tests/AppSafetyMenuCases.swift` (the Toolbox row asserts Font Awesome rendering; the title, shortcut, validation and action assertions are kept) and `tests/AppSafetyModernCases.swift` (the Zoom Actual Size row's Font Awesome proof). The root reviewed and accepted both.
