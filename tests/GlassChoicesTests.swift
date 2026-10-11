@@ -165,6 +165,8 @@ private enum GlassChoicesTests {
 
         labelSizingTests()
         placementTests()
+        containerPlacementTests()
+        containmentHostTests()
         shortcutTests()
         surfaceAxisTests()
         buttonSemanticsTests()
@@ -315,6 +317,160 @@ private enum GlassChoicesTests {
             }
         }
         expect(checked > 800, "The placement grid ran (\(checked) cases)")
+    }
+
+
+    // MARK: placement inside the parent window
+
+    /// The panel stays inside the window it was opened from whenever it fits: an opener near the window's right edge gets a panel that ends at
+    /// the opener's trailing edge, not one that hangs far out past the window.
+    private static func containerPlacementTests() {
+        let visible = NSRect(x: 0, y: 0, width: 1000, height: 800)
+        let container = NSRect(x: 200, y: 100, width: 600, height: 500)   // x 200...800
+        let size = NSSize(width: 240, height: 200)
+        func place(_ anchor: NSRect, edge: NSRectEdge = .minY, alignment: GlassPanelHost.Alignment = .leading, in container: NSRect? = container,
+                   screen: NSRect = visible, size: NSSize = size) -> GlassPanelHost.Placement {
+            GlassPanelHost.frame(contentSize: size, anchor: anchor, preferredEdge: edge, visible: screen, alignment: alignment, container: container)
+        }
+
+        // 1. An opener near the container's right edge: the panel ends at the opener's trailing edge, inside the container.
+        let right = NSRect(x: 700, y: 400, width: 80, height: 36)
+        func same(_ a: GlassPanelHost.Placement, _ b: GlassPanelHost.Placement) -> Bool { a.frame == b.frame && a.edge == b.edge && a.scrolls == b.scrolls }
+        let nearRight = place(right)
+        let leadingOnly = place(right, in: nil)
+        expect(leadingOnly.containment == .screenFallback, "(setup) without a container nothing is contained")
+        expect(leadingOnly.frame.maxX == 940 && leadingOnly.frame.maxX > container.maxX, "(setup) leading-only would hang out 140 pt past the window (\(leadingOnly.frame))")
+        expect(nearRight.frame.maxX <= container.maxX && nearRight.frame.maxX == right.maxX && nearRight.frame.width == 240 && nearRight.containment == .parent,
+               "Near the container's right edge, with the window fully on screen, the panel is trailing-aligned, inside the container, and contained (\(nearRight))")
+        expect(nearRight.frame.minY == leadingOnly.frame.minY && nearRight.frame.height == leadingOnly.frame.height && nearRight.edge == leadingOnly.edge && nearRight.scrolls == leadingOnly.scrolls,
+               "...with the vertical placement untouched")
+        // The same from a bottom-right opener whose panel flips above, and from an opener that would hang out by only a little.
+        let bottomRight = place(NSRect(x: 700, y: 110, width: 80, height: 36))
+        expect(bottomRight.edge == .maxY && bottomRight.frame.maxX == 780 && bottomRight.frame.maxX <= container.maxX, "A bottom-right opener flips the panel above and still keeps it inside (\(bottomRight))")
+        let slight = place(NSRect(x: 570, y: 400, width: 80, height: 36))
+        expect(slight.frame.maxX == 650 && slight.frame.maxX <= container.maxX, "An opener that overflows by 10 pt also switches to the trailing edge (\(slight.frame))")
+
+        // 2. An opener near the left edge, and one in the middle, are unchanged.
+        for anchor in [NSRect(x: 210, y: 400, width: 80, height: 36), NSRect(x: 400, y: 400, width: 80, height: 36)] {
+            expect(same(place(anchor), place(anchor, in: nil)) && place(anchor).frame.minX == anchor.minX && place(anchor).containment == .parent,
+                   "A panel that fits leading-aligned inside the container is unchanged, and is contained (\(place(anchor).frame))")
+        }
+
+        // An explicit alignment is the first try: trailing near the left edge flips to leading, centre near either edge takes the side that fits.
+        let left = NSRect(x: 210, y: 400, width: 80, height: 36)
+        expect(place(left, alignment: .trailing).frame.minX == left.minX, "Trailing near the left edge overflows the container, so leading is used (\(place(left, alignment: .trailing).frame))")
+        expect(place(NSRect(x: 400, y: 400, width: 80, height: 36), alignment: .trailing).frame.maxX == 480, "Trailing that fits stays trailing")
+        expect(place(left, alignment: .center).frame.minX == left.minX, "Centre near the left edge takes leading")
+        expect(place(right, alignment: .center).frame.maxX == right.maxX, "Centre near the right edge takes trailing")
+        expect(place(NSRect(x: 400, y: 400, width: 80, height: 36), alignment: .center).frame.midX == 440, "Centre that fits stays centred")
+
+        // 3. Neither alignment fits the container but the panel does: clamped into it.
+        let narrow = NSRect(x: 200, y: 100, width: 300, height: 500)   // x 200...500
+        let squeezed = place(NSRect(x: 400, y: 400, width: 20, height: 36), in: narrow)
+        expect(squeezed.frame.minX == 260 && squeezed.frame.maxX == narrow.maxX, "Neither edge fits a 300 pt container, so the panel is clamped into it (\(squeezed.frame))")
+
+        // 4. A panel wider than the container falls back to the screen rules alone.
+        let tiny = NSRect(x: 200, y: 100, width: 200, height: 500)
+        for anchor in [NSRect(x: 210, y: 400, width: 80, height: 36), NSRect(x: 350, y: 400, width: 40, height: 36)] {
+            expect(same(place(anchor, in: tiny), place(anchor, in: nil)) && place(anchor, in: tiny).containment == .screenFallback,
+                   "A panel wider than the container (240 vs 200) is placed by the screen rules alone and says so (\(place(anchor, in: tiny).frame))")
+        }
+        expect(place(NSRect(x: 900, y: 400, width: 80, height: 36), in: tiny).frame.maxX == 992, "...and the screen margin still clamps it")
+
+        // 5. The container reaching past the screen edge: the screen margin is still the final clamp.
+        let overhang = NSRect(x: 600, y: 100, width: 600, height: 500)   // x 600...1200, the screen ends at 1000
+        let onScreenEdge = place(NSRect(x: 900, y: 400, width: 80, height: 36), in: overhang)
+        expect(onScreenEdge.frame.maxX <= 1000 - 8 && onScreenEdge.frame.maxX == 980, "A container that overhangs the screen is only as roomy as the screen: leading would pass the margin, so the panel ends at the opener (\(onScreenEdge.frame))")
+        let atEdge = NSRect(x: 400, y: 100, width: 600, height: 500)     // x 400...1000, exactly the screen edge
+        let edgeOpener = place(NSRect(x: 915, y: 400, width: 80, height: 36), in: atEdge)
+        expect(edgeOpener.frame.maxX == 992 && edgeOpener.frame.minX >= atEdge.minX, "A window flush with the screen edge: the panel ends at the screen margin, not at the window edge (\(edgeOpener.frame))")
+        let offLeft = NSRect(x: -100, y: 100, width: 600, height: 500)   // x -100...500, partly off the screen
+        let leftEdge = place(NSRect(x: -90, y: 400, width: 80, height: 36), in: offLeft)
+        expect(leftEdge.frame.minX == 8 && leftEdge.frame.maxX <= offLeft.maxX && leftEdge.containment == .parent,
+               "A window half off the left of the screen: the panel fits the part that shows, so it is contained in it, at the screen margin (\(leftEdge))")
+        let offLeftRight = place(NSRect(x: 400, y: 400, width: 80, height: 36), in: offLeft)
+        expect(offLeftRight.frame.maxX == 480 && offLeftRight.frame.minX >= 8 && offLeftRight.containment == .parent, "...and an opener near the window's right edge there is trailing-aligned (\(offLeftRight))")
+        let sliver = NSRect(x: -200, y: 100, width: 300, height: 500)    // only x 8...100 shows: too narrow for the 240 pt panel
+        for anchor in [NSRect(x: -190, y: 400, width: 80, height: 36), NSRect(x: 20, y: 400, width: 40, height: 36)] {
+            let narrowPart = place(anchor, in: sliver)
+            expect(narrowPart.containment == .screenFallback && narrowPart.frame.minX >= 8 && narrowPart.frame.maxX <= 992 && narrowPart.frame.width == 240,
+                   "A window whose visible part is too narrow falls back to the screen, fully visible (\(narrowPart))")
+        }
+        let tooWide = place(NSRect(x: 900, y: 400, width: 80, height: 36), in: tiny)
+        expect(tooWide.containment == .screenFallback && tooWide.frame.minX >= 8 && tooWide.frame.maxX <= 992, "A panel wider than the parent is .screenFallback and fully on screen (\(tooWide))")
+
+        // Sideways panels (left or right of the anchor) ignore the container, as before.
+        let beside = place(right, edge: .maxX)
+        expect(same(beside, place(right, edge: .maxX, in: nil)) && beside.containment == .screenFallback, "A panel beside its anchor is placed as before and is not a containment case")
+
+        // Over a grid: the vertical result is identical with and without the container, and a panel that fits the container and whose opener is
+        // inside it is always inside it.
+        var checked = 0, insideChecked = 0
+        let window = NSRect(x: 100, y: 50, width: 700, height: 650)
+        for anchorX in stride(from: 100.0, through: 720.0, by: 31.0) {
+            for anchorY in stride(from: 60.0, through: 640.0, by: 83.0) {
+                for height in [60.0, 200.0, 500.0, 900.0] {
+                    for panelWidth in [120.0, 240.0, 420.0, 760.0] {
+                        for alignment in [GlassPanelHost.Alignment.leading, .center, .trailing] {
+                            let anchor = NSRect(x: anchorX, y: anchorY, width: 80, height: 36)
+                            let content = NSSize(width: panelWidth, height: height)
+                            let with = place(anchor, alignment: alignment, in: window, size: content), without = place(anchor, alignment: alignment, in: nil, size: content)
+                            expect(with.edge == without.edge && with.scrolls == without.scrolls && with.frame.minY == without.frame.minY && with.frame.height == without.frame.height
+                                   && with.frame.width == without.frame.width, "The container never changes the vertical rules or the size (anchor \(anchor), \(content), \(alignment))")
+                            expect((with.containment == .parent) == (content.width <= window.width), "containment says whether the panel was containable: width \(panelWidth) in a \(window.width) pt window gives \(with.containment)")
+                            expect(visible.insetBy(dx: 8, dy: 8).insetBy(dx: -0.001, dy: -0.001).contains(with.frame), "...and the screen margin always holds: \(with.frame)")
+                            if panelWidth <= window.width, anchor.minX >= window.minX, anchor.maxX <= window.maxX {
+                                expect(with.frame.minX >= window.minX - 0.001 && with.frame.maxX <= window.maxX + 0.001,
+                                       "A panel that fits the window, opened from inside it, stays inside it: anchor \(anchor) width \(panelWidth) \(alignment) gives \(with.frame)")
+                                insideChecked += 1
+                            }
+                            checked += 1
+                        }
+                    }
+                }
+            }
+        }
+        expect(checked > 1500 && insideChecked > 700, "The container grid ran (\(checked) cases, \(insideChecked) inside checks)")
+    }
+
+
+    /// The host passes the window the anchor sits in: a panel opened from the right edge of its window stays inside it, and says so.
+    private static func containmentHostTests() {
+        let rig = Rig()
+        let right = NSButton(frame: NSRect(x: 700, y: 500, width: 80, height: 36))      // content x 700...780 of 800
+        rig.window.contentView?.addSubview(right)
+        let host = GlassPanelHost(plates: [plate(["Alpha", "A rather longer second row"])], identifier: "Contain", accessibilityLabel: "Contain")
+        rig.attach(host)
+        let panel = host.window
+        func screenFrame(of view: NSView) -> NSRect { rig.window.convertToScreen(view.convert(view.bounds, to: nil)) }
+
+        host.show(relativeTo: right.bounds, of: right, preferredEdge: .minY, makeKey: true)
+        let opener = screenFrame(of: right)
+        expect(opener.minX + panel.frame.width > rig.window.frame.maxX, "(setup) a leading-aligned panel would hang out past the window (opener \(opener), panel width \(panel.frame.width), window \(rig.window.frame))")
+        expect(panel.frame.maxX <= rig.window.frame.maxX + 0.001 && abs(panel.frame.maxX - opener.maxX) < 0.5 && host.placement?.containment == .parent,
+               "An opener at the window's right edge gets a trailing-aligned panel inside the window: panel \(panel.frame), window \(rig.window.frame), containment \(String(describing: host.placement?.containment))")
+        host.close()
+
+        // The same host from an opener near the left edge is leading-aligned as before.
+        host.show(relativeTo: rig.anchor.bounds, of: rig.anchor, preferredEdge: .minY, makeKey: true)
+        expect(abs(panel.frame.minX - rig.anchorOnScreen.minX) < 0.5 && host.placement?.containment == .parent, "An opener near the left edge keeps a leading-aligned panel, contained")
+        host.close()
+
+        // Following the window: when it moves the panel is re-placed against its new frame.
+        host.show(relativeTo: right.bounds, of: right, preferredEdge: .minY, makeKey: true)
+        rig.window.setFrameOrigin(NSPoint(x: rig.window.frame.minX + 100, y: rig.window.frame.minY))
+        host.revalidate()
+        expect(host.isShown && panel.frame.maxX <= rig.window.frame.maxX + 0.001 && abs(panel.frame.maxX - screenFrame(of: right).maxX) < 0.5, "After the window moves the panel is still inside it (\(panel.frame) vs \(rig.window.frame))")
+        host.close()
+
+        // A panel wider than its window is a legitimate fallback: placed by the screen alone, fully visible, and it says so.
+        host.minimumWidth = 900
+        host.show(relativeTo: right.bounds, of: right, preferredEdge: .minY, makeKey: true)
+        expect(host.placement?.containment == .screenFallback && panel.frame.width >= 900 - 0.5, "(setup) a 900 pt panel does not fit an 800 pt window")
+        expect(Rig.visible.insetBy(dx: 8, dy: 8).insetBy(dx: -0.001, dy: -0.001).contains(panel.frame), "...and falls back to the screen: fully on screen (\(panel.frame))")
+        host.close()
+        host.minimumWidth = 0
+        right.removeFromSuperview()
     }
 
     // MARK: shortcut text
