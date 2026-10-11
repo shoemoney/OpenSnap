@@ -192,20 +192,20 @@ extension AuditRun {
                 "textWidth": Double(textWidth), "fits": fits]
     }
 
-    /// The face of every GlassPopUpButton at or under `root`: the title it draws, what that needs, and the rectangle it is drawn in (the button's
-    /// width less its padding on both sides and the chevron column, as `GlassPopUpButton.draw` lays it out).
+    /// The face of every GlassPopUpButton at or under `root`, read from the pop-up's own `faceTextMetrics` / `faceTextFits`.
     func popUpFaceMetrics(in root: NSView) -> [[String: Any]] {
         var faces: [[String: Any]] = []
         func walk(_ view: NSView) {
             if view.isHidden || view.alphaValue <= 0.01 { return }
             if let popup = view as? GlassPopUpButton {
-                let font = DesignTokens.Typography.font(.body)
-                let title = popup.faceTitle
-                let textWidth = ceil((title as NSString).size(withAttributes: [.font: font]).width)
-                let available = max(0, popup.bounds.width - 2 * GlassChoiceButton.padding - (GlassChoiceButton.gap + GlassChoiceButton.glyphSide))
-                let height = ceil(font.boundingRectForFont.height)
-                faces.append(["title": title, "kind": "pop-up face", "fittingSize": [Double(textWidth), Double(height)], "frameSize": [Double(available), Double(max(popup.bounds.height, height))],
-                              "textWidth": Double(textWidth), "fits": available > 0 && textWidth <= available + 0.5, "identifier": popup.panelIdentifier])
+                // The pop-up's own measurement: the title it draws, the font, what that needs and the rectangle it is drawn in (after its face
+                // padding and chevron column, which the zoom control tightens).
+                let metrics = popup.faceTextMetrics
+                faces.append(["title": metrics.title, "kind": "pop-up face", "font": fontInfo(metrics.font) as Any,
+                              "fittingSize": [Double(metrics.needed.width), Double(metrics.needed.height)],
+                              "frameSize": [Double(metrics.available.width), Double(metrics.available.height)],
+                              "textWidth": Double(metrics.needed.width), "fits": popup.faceTextFits && metrics.available.width > 0, "identifier": popup.panelIdentifier,
+                              "facePadding": Double(popup.facePadding), "chevronColumn": Double(popup.chevronColumn), "source": "GlassPopUpButton.faceTextMetrics"])
             }
             view.subviews.forEach(walk)
         }
