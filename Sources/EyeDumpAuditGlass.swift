@@ -1,0 +1,414 @@
+import AppKit
+import CoreGraphics
+
+/// Glass-choice captures (S50-S59). Every app-owned glass choice panel and group is drawn as a real window and measured: the
+/// `glassPanel` record in each capture's meta JSON is what tools/check-eye-dump.py holds the run to (one glass container per panel,
+/// nested glass 0, text >= 18 pt, a hovered / focused / chosen / disabled row where the capture promises one, and for a dismissal that the
+/// panel is gone and focus is back on its opener). The slugs below are the checker's GLASS_SURFACES; tools/test-eye-dump-audit-guard.py
+/// fails if the two lists drift.
+///
+/// Input rules: hover is `setHovered(_:)`, focus is `makeFirstResponder`, dismissal is a synthesized Escape key event handed to the panel's
+/// own `sendEvent` (never `NSApp.sendEvent`, which the input fence swallows and counts as real input) with `cancelOperation` on the first
+/// responder as the recorded fallback. No CGEvent, no AppleScript, no screen capture.
+extension AuditRun {
+    static let glassPanelPrefix = "GlassChoicePanel."
+
+    /// The captures each glass surface must produce, in light and dark: the checker's GLASS_SURFACES, which tools/test-eye-dump-audit-guard.py
+    /// compares with this table. Whatever a surface fails to take is recorded as a gap, so a silent skip cannot pass.
+    static let glassRequired: [String: [String]] = [
+        "S50": ["toolbox-rest", "toolbox-hover", "toolbox-focus", "toolbox-disabled", "toolbox-chosen", "toolbox-dismissed"],
+        "S51": ["zoom-rest", "zoom-hover", "zoom-focus", "zoom-chosen", "zoom-actual-size", "zoom-dismissed"],
+        "S52": ["upload-rest", "upload-hover", "upload-focus", "upload-chosen", "upload-busy", "upload-empty", "upload-dismissed"],
+        "S53": ["color-rest", "color-hover", "color-focus", "color-custom", "color-dismissed"],
+        "S54": ["size-rest", "size-hover", "size-focus", "size-pressed", "size-dismissed"],
+        "S55": ["history-category-rest", "history-category-hover", "history-category-focus", "history-date-rest", "history-date-hover", "history-date-focus", "history-date-chosen", "history-date-dismissed", "history-dragas-rest", "history-dragas-hover", "history-dragas-focus", "history-dragas-chosen", "history-dragas-dismissed"],
+        "S56": ["settings-tabs-rest", "settings-tabs-hover", "settings-tabs-focus", "settings-radios-rest", "settings-radios-hover", "settings-radios-focus", "settings-toggles-rest", "settings-toggles-hover", "settings-toggles-focus", "settings-actions-rest", "settings-actions-hover", "settings-actions-focus", "settings-actions-disabled"],
+        "S57": ["resize-groups-rest", "resize-groups-hover", "resize-groups-focus", "resize-anchor-rest", "resize-anchor-hover", "resize-anchor-focus", "resize-preset-rest", "resize-preset-hover", "resize-preset-focus", "resize-preset-chosen", "resize-preset-dismissed"],
+        "S58": ["destination-protocol-rest", "destination-protocol-hover", "destination-protocol-focus", "destination-source-rest", "destination-source-hover", "destination-source-focus", "destination-acl-off", "destination-acl-on"],
+        "S59": ["footer-original-on", "footer-original-off", "footer-original-hidden"],
+    ]
+
+    func verifyGlassCaptures(_ id: String) {
+        for slug in AuditRun.glassRequired[id] ?? [] where !FileManager.default.fileExists(atPath: dir.appendingPathComponent("meta/\(stemFor(id, slug)).json").path) {
+            gap(id, "glass / \(slug)", "the required glass capture \(slug) was not taken")
+        }
+    }
+
+
+    // MARK: finding things
+
+    func glassPanelWindow(_ identifier: String) -> NSWindow? {
+        NSApp.windows.first { $0.isVisible && $0.identifier?.rawValue == AuditRun.glassPanelPrefix + identifier }
+    }
+
+    var anyGlassPanelWindow: NSWindow? {
+        NSApp.windows.first { $0.isVisible && ($0.identifier?.rawValue ?? "").hasPrefix(AuditRun.glassPanelPrefix) }
+    }
+
+    /// Reading order: top to bottom, then left to right (windows are not flipped, so a larger maxY is higher).
+    func readingOrder(_ views: [NSView]) -> [NSView] {
+        func key(_ view: NSView) -> (Int, CGFloat) {
+            let frame = view.convert(view.bounds, to: nil)
+            return (-Int((frame.midY / 8).rounded()), frame.minX)
+        }
+        return views.sorted { key($0) < key($1) }
+    }
+
+    func visibleTitle(_ button: NSButton) -> String {
+        // A glass choice draws its words in a label subview; its own title stays empty for VoiceOver.
+        if let choice = button as? GlassChoiceButton, !choice.titleLabel.stringValue.isEmpty { return choice.titleLabel.stringValue }
+        if !button.title.isEmpty { return button.title }
+        if button.attributedTitle.length > 0 { return button.attributedTitle.string }
+        return button.accessibilityLabel() ?? ""
+    }
+
+    /// The choice rows under `root`: glass choice buttons, and any other command button that carries a visible title (an action plate).
+    func glassRows(in root: NSView) -> [CommandButton] {
+        var found: [CommandButton] = []
+        func walk(_ view: NSView) {
+            if view.isHidden || view.alphaValue <= 0.01 { return }
+            if let button = view as? CommandButton, button is GlassChoiceButton || !visibleTitle(button).isEmpty { found.append(button) }
+            view.subviews.forEach(walk)
+        }
+        walk(root)
+        return readingOrder(found) as! [CommandButton]
+    }
+
+    func isChosen(_ row: CommandButton) -> Bool {
+        if let choice = row as? GlassChoiceButton { return choice.isChosen }
+        return row.state == .on
+    }
+
+    /// (containers, plates, nested) of the glass views under `root`. Nested counts a glass view or container that has a glass plate above it.
+    func glassCounts(in root: NSView) -> (containers: Int, plates: Int, nested: Int) {
+        var containers = 0, plates = 0, nested = 0
+        func walk(_ view: NSView, insidePlate: Bool) {
+            let isContainer = view is NSGlassEffectContainerView, isPlate = view is NSGlassEffectView
+            if isContainer { containers += 1; if insidePlate { nested += 1 } }
+            if isPlate { plates += 1; if insidePlate { nested += 1 } }
+            for sub in view.subviews { walk(sub, insidePlate: insidePlate || isPlate) }
+        }
+        walk(root, insidePlate: false)
+        return (containers, plates, nested)
+    }
+
+    /// The smallest point size of any text drawn under `root` (button titles, labels, text views), nil when there is none.
+    func minimumTextSize(in root: NSView) -> Double? {
+        var smallest: CGFloat?
+        func note(_ font: NSFont?) { if let font { smallest = min(smallest ?? font.pointSize, font.pointSize) } }
+        func walk(_ view: NSView) {
+            if view.isHidden || view.alphaValue <= 0.01 { return }
+            if let button = view as? NSButton {
+                if button.attributedTitle.length > 0 {
+                    button.attributedTitle.enumerateAttribute(.font, in: NSRange(location: 0, length: button.attributedTitle.length)) { value, _, _ in note(value as? NSFont) }
+                    if button.attributedTitle.attribute(.font, at: 0, effectiveRange: nil) == nil { note(button.font) }
+                } else if !button.title.isEmpty { note(button.font) }
+            } else if let field = view as? NSTextField, !field.stringValue.isEmpty {
+                note(field.font)
+            } else if let text = view as? NSTextView, !text.string.isEmpty {
+                note(text.font)
+            }
+            view.subviews.forEach(walk)
+        }
+        walk(root)
+        return smallest.map(Double.init)
+    }
+
+    // MARK: the record
+
+    /// What the harness measured on a panel or group, for the checker. `rowsRoot` limits the rows to one group's plate; the glass counts
+    /// always cover `host`'s whole content, so nested glass anywhere in the window is seen.
+    func glassRecord(kind: String, identifier: String, variant: String, host: NSWindow, rowsRoot: NSView? = nil, extra: [String: Any] = [:]) -> [String: Any] {
+        let content = host.contentView ?? NSView()
+        let rows = glassRows(in: rowsRoot ?? content)
+        let counts = glassCounts(in: content)
+        func index(where test: (CommandButton) -> Bool) -> Int? { rows.firstIndex(where: test) }
+        var record: [String: Any] = [
+            "kind": kind, "identifier": identifier, "variant": variant, "windowIdentifier": host.identifier?.rawValue ?? "",
+            "rowTitles": rows.map { visibleTitle($0) }, "rowClasses": rows.map { String(describing: type(of: $0)) },
+            "chosenIndexes": rows.indices.filter { isChosen(rows[$0]) },
+            "disabledRows": rows.indices.filter { !rows[$0].isEnabled },
+            "glassContainerCount": counts.containers, "plateCount": counts.plates, "nestedGlassCount": counts.nested,
+            "panelFrame": rectJSON(host.frame), "firstResponder": host.firstResponder.map { String(describing: type(of: $0)) } ?? "none",
+            "isKey": host.isKeyWindow
+        ]
+        if let hovered = index(where: { $0.isHovered }) { record["hoveredRow"] = hovered }
+        if let focused = index(where: { host.firstResponder === $0 }) { record["focusedRow"] = focused }
+        if let font = minimumTextSize(in: rowsRoot ?? content) { record["minFontSize"] = font }
+        for (key, value) in extra { record[key] = value }
+        return record
+    }
+
+    // MARK: driving a panel
+
+    /// One panel under test: how to open it, what opens it, and where its captures go.
+    struct GlassPanelScript {
+        let id: String, surface: String, identifier: String, base: String
+        let opener: NSView
+        let refs: [String]
+        let open: () -> Void
+        /// The native menu the opener would show in a build without the panel. If the open call blocks in it, the watchdog cancels tracking.
+        var nativeMenu: NSMenu?
+    }
+
+    struct OpenedGlassPanel {
+        let panel: NSWindow
+        let responderBefore: NSResponder?
+        let openerHadFocus: Bool
+    }
+
+    /// Puts the keyboard on the opener, opens the panel, and returns it, or nil (with a gap) when no glass panel appeared. A build that still
+    /// opens a native menu would block here, so a watchdog cancels menu tracking after 1.5 s and the caller records the gap.
+    func openGlassPanel(_ script: GlassPanelScript) -> OpenedGlassPanel? {
+        window.makeKeyAndOrderFront(nil)
+        let accepted = window.makeFirstResponder(script.opener)
+        let before = window.firstResponder
+        let hadFocus = accepted && before === script.opener
+        let watchdog = Timer(timeInterval: 1.5, repeats: false) { [self] _ in
+            MainActor.assumeIsolated {
+                if glassPanelWindow(script.identifier) == nil { script.nativeMenu?.cancelTracking(); NSApp.mainMenu?.cancelTracking() }
+            }
+        }
+        RunLoop.main.add(watchdog, forMode: .common)
+        script.open()
+        watchdog.invalidate()
+        pump(0.5)
+        guard let panel = glassPanelWindow(script.identifier) else {
+            gap(script.id, script.surface + " / " + script.base, "the glass panel \(script.identifier) did not appear (a native menu or nothing opened instead)")
+            return nil
+        }
+        return OpenedGlassPanel(panel: panel, responderBefore: before, openerHadFocus: hadFocus)
+    }
+
+    /// Captures the open panel over the editor, with its glassPanel record.
+    @discardableResult
+    func shootGlassPanel(_ id: String, _ slug: String, surface: String, state: String, panel: NSWindow, opener: NSView?, refs: [String],
+                         variant: String = "rest", identifier: String = "", extra: [String: Any] = [:], alsoPanelOnly: Bool = false) -> String? {
+        let record = glassRecord(kind: "panel", identifier: identifier.isEmpty ? (panel.identifier?.rawValue ?? "") : identifier, variant: variant, host: panel, extra: extra)
+        let stem = shoot(id, slug, surface: surface, state: state, windows: [panel, window], refs: refs, settle: 0.3, extra: ["glassPanel": record])
+        if alsoPanelOnly {
+            shoot(id, slug + "-only", surface: surface, state: state + " (the panel window alone)", windows: [panel], refs: refs, settle: 0.1, extra: ["glassPanel": record])
+        }
+        return stem
+    }
+
+    /// Sends Escape to the panel the way a key press reaches a window: a synthesized key event through `NSWindow.sendEvent`. Returns how it closed.
+    func sendEscape(to panel: NSWindow) -> String {
+        if let event = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
+                                        windowNumber: panel.windowNumber, context: nil, characters: "\u{1B}", charactersIgnoringModifiers: "\u{1B}",
+                                        isARepeat: false, keyCode: 53) {
+            panel.sendEvent(event)
+            pump(0.4)
+            if !panel.isVisible { return "synthesized Escape key event through NSWindow.sendEvent" }
+        }
+        _ = panel.firstResponder?.tryToPerform(#selector(NSResponder.cancelOperation(_:)), with: nil)
+        pump(0.4)
+        return panel.isVisible ? "Escape did not close the panel" : "cancelOperation on the first responder (the key event alone did not close it)"
+    }
+
+    /// Escape, then the proof: the panel window is gone, the host registry is clear, and the keyboard is back on the opener.
+    @discardableResult
+    func dismissGlassPanel(_ id: String, _ slug: String, surface: String, state: String, script: GlassPanelScript, opened: OpenedGlassPanel, capture: Bool = true) -> Bool {
+        let route = sendEscape(to: opened.panel)
+        pump(0.3)
+        let gone = glassPanelWindow(script.identifier) == nil && !opened.panel.isVisible
+        let returned = window.firstResponder === opened.responderBefore
+        if capture {
+            let record = glassRecord(kind: "panel", identifier: script.identifier, variant: "dismissed", host: window, rowsRoot: NSView(), extra: [
+                "panelGone": gone, "focusReturned": returned, "openerHadFocus": opened.openerHadFocus, "dismissedBy": route,
+                "hostRegistryClear": GlassPanelHost.current == nil, "openerClass": String(describing: type(of: script.opener)),
+                "glassContainerCount": 0, "plateCount": 0, "nestedGlassCount": 0])
+            shoot(id, slug, surface: surface, state: state, windows: [window], refs: script.refs, settle: 0.2, extra: ["glassPanel": record])
+        }
+        return gone && returned
+    }
+
+    /// The standard hover, focus and (when a row is disabled) disabled captures of one open panel.
+    func glassPanelStates(_ script: GlassPanelScript, _ opened: OpenedGlassPanel, restState: String) {
+        let panel = opened.panel
+        let rows = glassRows(in: panel.contentView ?? NSView())
+        shootGlassPanel(script.id, script.base + "-rest", surface: script.surface, state: restState, panel: panel, opener: script.opener, refs: script.refs,
+                        identifier: script.identifier, alsoPanelOnly: true)
+        let enabled = rows.indices.filter { rows[$0].isEnabled }
+        // Hover a row that is neither the first nor chosen, so the fill is visibly the hover's.
+        if let target = enabled.first(where: { !isChosen(rows[$0]) && $0 > 0 }) ?? enabled.first {
+            rows[target].setHovered(true)
+            shootGlassPanel(script.id, script.base + "-hover", surface: script.surface, state: "\(restState); row \(target) (\(visibleTitle(rows[target]))) hovered", panel: panel,
+                            opener: script.opener, refs: script.refs, variant: "hover", identifier: script.identifier)
+            rows[target].setHovered(false)
+        }
+        if let first = enabled.first {
+            panel.makeKeyAndOrderFront(nil)
+            let took = panel.makeFirstResponder(rows[first])
+            shootGlassPanel(script.id, script.base + "-focus", surface: script.surface, state: "\(restState); keyboard focus on row \(first) (\(visibleTitle(rows[first])))", panel: panel,
+                            opener: script.opener, refs: script.refs, variant: "focus", identifier: script.identifier, extra: ["focusAccepted": took])
+        }
+        if let off = rows.indices.first(where: { !rows[$0].isEnabled }) {
+            rows[off].setHovered(true)
+            let took = panel.makeFirstResponder(rows[off])
+            let tookFocus = took && panel.firstResponder === rows[off]
+            shootGlassPanel(script.id, script.base + "-disabled", surface: script.surface, state: "\(restState); disabled row \(off) (\(visibleTitle(rows[off]))) hovered and offered focus",
+                            panel: panel, opener: script.opener, refs: script.refs, variant: "disabled", identifier: script.identifier, extra: ["disabledTookFocus": tookFocus])
+            rows[off].setHovered(false)
+        }
+    }
+
+    // MARK: S50 Toolbox
+
+    func s50() {
+        defer { verifyGlassCaptures("S50") }
+        loadSynthetic(size: CGSize(width: 1000, height: 700), name: "Glass Toolbox")
+        let named = addAllAnnotationKinds(scale: 1)
+        guard let toolbox = firstView(of: ToolboxPopUpButton.self) else { gap("S50", "Toolbox panel", "the Toolbox button was not found"); return }
+        let script = GlassPanelScript(id: "S50", surface: "Toolbox panel", identifier: "Toolbox", base: "toolbox", opener: toolbox,
+                                      refs: ["ModernEditorChrome.swift|final class ToolboxPopUpButton", "App.swift|func bezelToolbox()"], open: { toolbox.openMenu() }, nativeMenu: toolbox.menu)
+        // Rest, hover, focus and disabled: nothing selected, so the commands that need a selection are disabled.
+        canvas.selection = []
+        app.setTool(.arrow)
+        guard let opened = openGlassPanel(script) else { return }
+        glassPanelStates(script, opened, restState: "Toolbox panel open on a drawing with nothing selected")
+        dismissGlassPanel("S50", "toolbox-dismissed", surface: script.surface, state: "Toolbox panel dismissed with Escape: gone, focus back on the Toolbox button", script: script, opened: opened)
+        // Chosen: a filled shape selected and the Rectangle tool current, so the toggle rows read on.
+        if let filled = named["rectangle-filled"] { canvas.selection = [filled.id] }
+        app.setTool(.rectangle)
+        pump(0.2)
+        guard let again = openGlassPanel(script) else { return }
+        shootGlassPanel("S50", "toolbox-chosen", surface: script.surface, state: "Toolbox panel with a filled rectangle selected: the toggle and tool rows that are on", panel: again.panel,
+                        opener: toolbox, refs: script.refs, variant: "chosen", identifier: "Toolbox")
+        dismissGlassPanel("S50", "toolbox-dismissed-2", surface: script.surface, state: "", script: script, opened: again, capture: false)
+    }
+
+    // MARK: S51 Zoom
+
+    func s51() {
+        defer { verifyGlassCaptures("S51") }
+        loadSynthetic(size: CGSize(width: 1000, height: 700), name: "Glass Zoom")
+        let zoom = app.zoomControl
+        let script = GlassPanelScript(id: "S51", surface: "Zoom panel", identifier: "Zoom", base: "zoom", opener: zoom,
+                                      refs: ["ModernEditorChrome.swift|final class ZoomPopUpButton", "App+ModernChrome.swift|zoomControl.addItems"], open: { zoom.performClick(nil) }, nativeMenu: zoom.menu)
+        // A computed Fit row is part of the choices: fit the drawing to the window first.
+        app.fitCanvasToWindow()
+        pump(0.3)
+        guard let opened = openGlassPanel(script) else { return }
+        glassPanelStates(script, opened, restState: "Zoom panel open with a computed Fit row chosen")
+        shootGlassPanel("S51", "zoom-chosen", surface: script.surface, state: "Zoom panel: the computed Fit row is the chosen row", panel: opened.panel, opener: zoom, refs: script.refs, variant: "chosen", identifier: "Zoom")
+        dismissGlassPanel("S51", "zoom-dismissed", surface: script.surface, state: "Zoom panel dismissed with Escape: gone, focus back on the zoom button", script: script, opened: opened)
+        // Actual Size on: the toggle row carries its on state (a fill, a border and a glyph, not colour alone).
+        app.toggleActualSize()
+        pump(0.5)
+        if let again = openGlassPanel(script) {
+            shootGlassPanel("S51", "zoom-actual-size", surface: script.surface, state: "Zoom panel while Actual Size is on: the Actual Size toggle row is chosen", panel: again.panel,
+                            opener: zoom, refs: script.refs, variant: "chosen", identifier: "Zoom", extra: ["actualSizeOn": app.isActualSize])
+            dismissGlassPanel("S51", "zoom-dismissed-2", surface: script.surface, state: "", script: script, opened: again, capture: false)
+        }
+        app.leaveActualSize()
+    }
+
+    // MARK: S52 Upload
+
+    func s52() {
+        defer { verifyGlassCaptures("S52") }
+        guard let share = app.webpostButton else { gap("S52", "Upload panel", "the Upload (Webpost) button was not found"); return }
+        let refs = ["App.swift|func uploadDestinationMenuItems", "App.swift|func rebuildUploadMenu", "OriginalActionButton.swift|var menuPresenter"]
+        let script = GlassPanelScript(id: "S52", surface: "Upload panel", identifier: "Upload", base: "upload", opener: share, refs: refs,
+                                      open: { _ = share.accessibilityPerformShowMenu() }, nativeMenu: share.menu)
+        // Empty state first (no destination saved): the disabled "No destination configured" row.
+        loadSynthetic(size: CGSize(width: 1000, height: 700), name: "Glass Upload")
+        if let menu = share.menu { app.rebuildUploadMenu(menu) }
+        if let opened = openGlassPanel(script) {
+            let rows = glassRows(in: opened.panel.contentView ?? NSView())
+            let off = rows.firstIndex { !$0.isEnabled }
+            if let off { rows[off].setHovered(true) }
+            let took = off.map { opened.panel.makeFirstResponder(rows[$0]) && opened.panel.firstResponder === rows[$0] } ?? false
+            shootGlassPanel("S52", "upload-empty", surface: script.surface, state: "Upload panel with no destination saved: the disabled No destination configured row, Destination Settings… and Share with macOS…",
+                            panel: opened.panel, opener: share, refs: refs, variant: "disabled", identifier: "Upload", extra: ["disabledTookFocus": took])
+            dismissGlassPanel("S52", "upload-dismissed-empty", surface: script.surface, state: "", script: script, opened: opened, capture: false)
+        }
+        // Three fake destinations, Example S3 the default (checked): rest, hover, focus, then a different default for the chosen capture.
+        syntheticDestinations()
+        if let menu = share.menu { app.rebuildUploadMenu(menu) }
+        guard let opened = openGlassPanel(script) else { return }
+        glassPanelStates(script, opened, restState: "Upload panel with three fake destinations, the default checked")
+        let ids = (try? AppDelegate.publishingStore.load().destinations.map(\.id)) ?? []
+        dismissGlassPanel("S52", "upload-dismissed", surface: script.surface, state: "Upload panel dismissed with Escape: gone, focus back on the Upload button", script: script, opened: opened)
+        if ids.count > 1 { app.setDefaultDestination(ids[1]) }
+        pump(0.2)
+        if let again = openGlassPanel(script) {
+            shootGlassPanel("S52", "upload-chosen", surface: script.surface, state: "Upload panel after the default was switched to the second destination: the check follows it", panel: again.panel,
+                            opener: share, refs: refs, variant: "chosen", identifier: "Upload")
+            dismissGlassPanel("S52", "upload-dismissed-2", surface: script.surface, state: "", script: script, opened: again, capture: false)
+        }
+        if let first = ids.first { app.setDefaultDestination(first) }
+        // Busy: an upload in flight offers Cancel Upload. The uploader is a stub that waits; nothing leaves the process.
+        let gate = UploadGate()
+        gate.mode = "wait"
+        app.publishing.clipboardWriter = { _ in }
+        app.linkOpener = { _ in }
+        app.publishing.uploader = { _, _, plan, _ in
+            _ = gate.release.wait(timeout: .now() + 8)
+            return plan.publicURL ?? plan.remoteURL
+        }
+        app.uploadState = .idle
+        app.publishImage()
+        pump(0.8)
+        if let busy = openGlassPanel(script) {
+            shootGlassPanel("S52", "upload-busy", surface: script.surface, state: "Upload panel while an upload runs: Cancel Upload leads the rows", panel: busy.panel, opener: share, refs: refs,
+                            variant: "busy", identifier: "Upload")
+            dismissGlassPanel("S52", "upload-dismissed-busy", surface: script.surface, state: "", script: script, opened: busy, capture: false)
+        }
+        gate.release.signal()
+        pump(1.5)
+        app.expireUploadSuccess()
+        pump(0.3)
+    }
+
+    // MARK: S59 footer Original size toggle
+
+    /// The footer's glass "Original size" toggle on a large shot: on, off, and at 980 pt during an upload, where the status slot reflows and hides it.
+    /// The record names the toggle row, its chosen state and its visibility, measured on the footer itself.
+    func s59() {
+        defer { verifyGlassCaptures("S59") }
+        let refs = ["App+ModernChrome.swift|dragOriginalControl", "ModernEditorChrome.swift|statusRow", "AppViewport.swift|var isLargeShot"]
+        func footerRecord(variant: String, extra: [String: Any]) -> [String: Any] {
+            let footer = find("OpenSnapFooter") ?? window.contentView ?? NSView()
+            let toggle = app.dragOriginalControl
+            var facts: [String: Any] = ["originalSizeVisible": !toggle.isHiddenOrHasHiddenAncestor, "originalSizeChosen": toggle.state == .on,
+                                        "largeShot": app.isLargeShot, "windowWidth": Double(window.frame.width.rounded()),
+                                        "uploadActive": app.uploadState != .idle, "originalSizeClass": String(describing: type(of: toggle))]
+            for (key, value) in extra { facts[key] = value }
+            return glassRecord(kind: "group", identifier: "FooterOriginalSize", variant: variant, host: window, rowsRoot: footer, extra: facts)
+        }
+        guard loadLargeShot(name: "Quarterly planning review of the new upload flow") != nil else { gap("S59", "Original size", "no synthetic size made isLargeShot true"); return }
+        placeWindow(CGSize(width: 1280, height: 800))
+        for (slug, on, variant) in [("footer-original-on", true, "chosen"), ("footer-original-off", false, "rest")] {
+            app.dragOriginalControl.state = on ? .on : .off
+            app.changeDragOptions(nil)
+            pump(0.4)
+            shoot("S59", slug, surface: "footer Original size", state: "large shot at 1280: the Original size toggle \(on ? "on" : "off")", crop: footerCrop(), refs: refs, settle: 0.3,
+                  extra: ["glassPanel": footerRecord(variant: variant, extra: [:])])
+        }
+        app.dragOriginalControl.state = .on
+        app.changeDragOptions(nil)
+        // 980 pt with an upload in flight: the slot has no room for the toggle beside the upload state, so it steps aside. The uploader is a stub.
+        syntheticDestinations()
+        let gate = UploadGate()
+        gate.mode = "wait"
+        app.publishing.clipboardWriter = { _ in }
+        app.linkOpener = { _ in }
+        app.publishing.uploader = { _, _, plan, _ in
+            _ = gate.release.wait(timeout: .now() + 8)
+            return plan.publicURL ?? plan.remoteURL
+        }
+        placeWindow(CGSize(width: 980, height: CGFloat(window.minSize.height)))
+        window.makeKeyAndOrderFront(nil)
+        app.uploadState = .idle
+        app.publishImage()
+        pump(0.9)
+        shoot("S59", "footer-original-hidden", surface: "footer Original size", state: "large shot at 980 during an upload: the status slot reflows and the Original size toggle steps aside", crop: footerCrop(),
+              refs: refs, settle: 0.2, extra: ["glassPanel": footerRecord(variant: "hidden", extra: [:])])
+        gate.release.signal()
+        pump(1.5)
+        app.expireUploadSuccess()
+        pump(0.3)
+    }
+}

@@ -20,6 +20,12 @@ Hard checks (a failure exits 1):
   rail       where the layout JSON has a `rail` field it is "absent", railChecks report nothing retired or stray, and the
              viewport's trailing margin is 12 +/- 0.5 measured from its recorded rect against the window width, not just the
              harness's own boolean
+  glass      the glass-choice surfaces (S50-S58, tools/eye-dump-audit.sh --groups glass): every surface the run asked for (its
+             requested-surfaces.jsonl, else every glass surface seen) must have every required capture for each appearance and icon mode
+             (GLASS_SURFACES), and each capture's `glassPanel` record must show: one glass container per panel, nested glass 0, the minimum
+             text size >= 18 pt, and the variant's own proof -- hover names a hovered row, focus a focused row, chosen a chosen row,
+             disabled a disabled row that never took focus, dismissed a panel that is gone with focus back on its opener. A glass gap
+             (a panel that never appeared) always fails.
 Advisory check (printed as ADVISORY; exits 1 only under --strict or --strict-contrast):
   contrast   the layout JSON does not record text or background colours, so for the text-bearing controls whose frames it does
              record (status text, zoom popup, Original size checkbox) the checker samples the PNG inside the frame: the
@@ -511,6 +517,218 @@ def check_menu_gaps(folder):
     return problems
 
 
+# ---------------------------------------------------------------- glass choices
+
+READABLE_MINIMUM = 18.0
+GLASS_PANEL_PREFIX = "GlassChoicePanel."
+# Required captures per glass surface (slug suffixes; the same strings are in Sources/EyeDumpAuditGlass.swift, and
+# tools/test-eye-dump-audit-guard.py fails if the two drift). Every one is taken in light and dark and in each icon mode that ran.
+GLASS_SURFACES = {
+    "S50": ["toolbox-rest", "toolbox-hover", "toolbox-focus", "toolbox-disabled", "toolbox-chosen", "toolbox-dismissed"],
+    "S51": ["zoom-rest", "zoom-hover", "zoom-focus", "zoom-chosen", "zoom-actual-size", "zoom-dismissed"],
+    "S52": ["upload-rest", "upload-hover", "upload-focus", "upload-chosen", "upload-busy", "upload-empty", "upload-dismissed"],
+    "S53": ["color-rest", "color-hover", "color-focus", "color-custom", "color-dismissed"],
+    "S54": ["size-rest", "size-hover", "size-focus", "size-pressed", "size-dismissed"],
+    "S55": ["history-category-rest", "history-category-hover", "history-category-focus",
+            "history-date-rest", "history-date-hover", "history-date-focus", "history-date-chosen", "history-date-dismissed",
+            "history-dragas-rest", "history-dragas-hover", "history-dragas-focus", "history-dragas-chosen", "history-dragas-dismissed"],
+    "S56": ["settings-tabs-rest", "settings-tabs-hover", "settings-tabs-focus",
+            "settings-radios-rest", "settings-radios-hover", "settings-radios-focus",
+            "settings-toggles-rest", "settings-toggles-hover", "settings-toggles-focus",
+            "settings-actions-rest", "settings-actions-hover", "settings-actions-focus", "settings-actions-disabled"],
+    "S57": ["resize-groups-rest", "resize-groups-hover", "resize-groups-focus", "resize-anchor-rest", "resize-anchor-hover", "resize-anchor-focus",
+            "resize-preset-rest", "resize-preset-hover", "resize-preset-focus", "resize-preset-chosen", "resize-preset-dismissed"],
+    "S58": ["destination-protocol-rest", "destination-protocol-hover", "destination-protocol-focus",
+            "destination-source-rest", "destination-source-hover", "destination-source-focus",
+            "destination-acl-off", "destination-acl-on"],
+    "S59": ["footer-original-on", "footer-original-off", "footer-original-hidden"],
+}
+GLASS_VARIANTS = ("rest", "hover", "focus", "chosen", "disabled", "dismissed", "busy", "pressed", "hidden")
+# The variant a capture's slug promises; the record must say the same and carry that variant's own proof.
+SLUG_VARIANTS = {"acl-off": "rest", "acl-on": "chosen", "original-off": "rest", "original-on": "chosen", "original-hidden": "hidden", "actual-size": "chosen", "custom": "chosen", "empty": "disabled", "busy": "busy", "pressed": "pressed"}
+
+
+def promised_variant(slug):
+    for suffix, variant in SLUG_VARIANTS.items():
+        if slug.endswith("-" + suffix):
+            return variant
+    return slug.rsplit("-", 1)[-1]
+
+
+def load_captures(folder):
+    """[capture dict] with `_mode` (icon mode): raw runs' meta/*.json first, else the packed manifest's captures."""
+    captures = []
+    for path in sorted(folder.glob("raw-*/meta/*.json")):
+        try:
+            record = json.loads(path.read_text())
+        except ValueError:
+            continue
+        record["_mode"] = path.parent.parent.name.removeprefix("raw-")
+        captures.append(record)
+    if not captures:
+        manifest_path = folder / "manifest.json"
+        if manifest_path.is_file():
+            try:
+                for record in json.loads(manifest_path.read_text()).get("captures", []):
+                    record = dict(record)
+                    record["_mode"] = record.get("iconMode", "sf")
+                    captures.append(record)
+            except ValueError:
+                pass
+    return captures
+
+
+def toggle_problems(label, glass, rows, needle, want_on):
+    """[problem] unless the row naming `needle` is among the rows and its chosen state is `want_on`."""
+    toggle = next((i for i, title in enumerate(rows) if needle in str(title).lower()), None)
+    if toggle is None:
+        return [f"glass: {label} shows no {needle} toggle among its rows"]
+    if (toggle in (glass.get("chosenIndexes") or [])) != want_on:
+        return [f"glass: {label} {needle} toggle is {'off' if want_on else 'on'}, the capture is named for {'on' if want_on else 'off'}"]
+    return []
+
+
+def check_glass_record(label, record):
+    """[problem] for one capture's `glassPanel` record (what the harness measured on the real panel or groups)."""
+    glass = record.get("glassPanel")
+    promised = promised_variant(str(record.get("slug", "")))
+    if not isinstance(glass, dict):
+        return [f"glass: {label} has no glassPanel record"]
+    problems = []
+    variant = glass.get("variant")
+    rows = glass.get("rowTitles") or []
+    if variant not in GLASS_VARIANTS:
+        problems.append(f"glass: {label} variant {variant!r} is not one of {', '.join(GLASS_VARIANTS)}")
+    elif variant != promised:
+        problems.append(f"glass: {label} is named for a {promised} capture but records variant {variant!r}")
+    if glass.get("kind") == "panel":
+        if glass.get("glassContainerCount") != 1 and variant != "dismissed":
+            problems.append(f"glass: {label} panel holds {glass.get('glassContainerCount')} glass containers, expected exactly 1")
+        if variant != "dismissed" and not glass.get("plateCount"):
+            problems.append(f"glass: {label} panel has no glass plate")
+    if glass.get("nestedGlassCount") != 0:
+        problems.append(f"glass: {label} has nested glass (nestedGlassCount {glass.get('nestedGlassCount')!r}, expected 0)")
+    if variant not in ("dismissed", "hidden"):
+        if not rows:
+            problems.append(f"glass: {label} lists no choice rows")
+        font = glass.get("minFontSize")
+        if not isinstance(font, (int, float)):
+            problems.append(f"glass: {label} recorded no minFontSize for its {len(rows)} row(s)")
+        elif font < READABLE_MINIMUM:
+            problems.append(f"glass: {label} has text at {font:g} pt, below the {READABLE_MINIMUM:g} pt floor")
+    if variant == "hover" and glass.get("hoveredRow") is None:
+        problems.append(f"glass: {label} is a hover capture but no row is hovered")
+    if variant == "focus" and glass.get("focusedRow") is None:
+        problems.append(f"glass: {label} is a focus capture but no row has keyboard focus")
+    if variant == "chosen" and not glass.get("chosenIndexes"):
+        problems.append(f"glass: {label} is a chosen capture but no row is chosen")
+    if variant == "disabled":
+        if not glass.get("disabledRows"):
+            problems.append(f"glass: {label} is a disabled capture but no row is disabled")
+        if glass.get("disabledTookFocus") is not False:
+            problems.append(f"glass: {label} a disabled row took (or was not proven not to take) keyboard focus")
+    slug = str(record.get("slug", ""))
+    if slug.endswith(("-acl-off", "-acl-on")):
+        # The destination sheet's "Make uploads public-read" checkbox toggle, S3-compatible protocol selected: its chosen state is the proof.
+        problems += toggle_problems(label, glass, rows, "public-read", slug.endswith("-acl-on"))
+        if glass.get("protocol") != "S3":
+            problems.append(f"glass: {label} was not taken with the S3-compatible protocol selected (protocol {glass.get('protocol')!r})")
+    if slug.endswith(("-original-off", "-original-on")):
+        # The footer's "Original size" toggle on a large shot: visible, and chosen or not as the capture says.
+        problems += toggle_problems(label, glass, rows, "original size", slug.endswith("-original-on"))
+        if glass.get("originalSizeVisible") is not True or glass.get("largeShot") is not True:
+            problems.append(f"glass: {label} must show the Original size toggle on a large shot (visible {glass.get('originalSizeVisible')!r}, largeShot {glass.get('largeShot')!r})")
+    if variant == "hidden":
+        if glass.get("originalSizeVisible") is not False:
+            problems.append(f"glass: {label} is the reflow capture but the Original size toggle is still visible")
+        if glass.get("uploadActive") is not True:
+            problems.append(f"glass: {label} is the reflow capture but no upload state was active")
+        if not isinstance(glass.get("windowWidth"), (int, float)) or glass["windowWidth"] > 980.5:
+            problems.append(f"glass: {label} must be taken in the 980 pt window (windowWidth {glass.get('windowWidth')!r})")
+    if variant == "busy" and "Cancel Upload" not in rows:
+        problems.append(f"glass: {label} is a busy capture but offers no Cancel Upload row")
+    if variant == "pressed" and glass.get("trackPressed") is not True:
+        problems.append(f"glass: {label} is a pressed capture but the track was not pressed")
+    if variant == "dismissed":
+        if glass.get("panelGone") is not True:
+            problems.append(f"glass: {label} the panel is still on screen after Escape")
+        if glass.get("focusReturned") is not True:
+            problems.append(f"glass: {label} focus did not return to the opener (first responder {glass.get('firstResponder')!r})")
+        if glass.get("openerHadFocus") is not True:
+            problems.append(f"glass: {label} the opener never had focus before the panel opened, so the return proves nothing")
+    return problems
+
+
+def requested_runs(folder):
+    """[{mode, appearance, surfaces}] the run was asked for: tools/eye-dump-audit.sh's requested-surfaces.jsonl (one JSON record per
+    harness launch, surfaces comma-separated), else the `requested` list a packed manifest.json carries."""
+    runs = []
+    path = folder / "requested-surfaces.jsonl"
+    if path.is_file():
+        for line in path.read_text().splitlines():
+            if line.strip():
+                try:
+                    record = json.loads(line)
+                except ValueError:
+                    continue
+                runs.append(record)
+    elif (folder / "manifest.json").is_file():
+        try:
+            runs = json.loads((folder / "manifest.json").read_text()).get("requested", [])
+        except ValueError:
+            runs = []
+    out = []
+    for record in runs:
+        surfaces = record.get("surfaces", [])
+        if isinstance(surfaces, str):
+            surfaces = [part.strip().upper() for part in surfaces.split(",") if part.strip()]
+        out.append({"mode": record.get("mode", "sf"), "appearance": record.get("appearance"), "surfaces": surfaces})
+    return out
+
+
+def check_glass(folder):
+    """[problem] for the glass-choice surfaces of a raw run or packed folder (see the module docstring)."""
+    captures = load_captures(folder)
+    glass_ids = set(GLASS_SURFACES)
+    problems = []
+    # What the run was asked to capture: its requested-surfaces.jsonl, else every glass surface that appears in it.
+    wanted = set()
+    for run in requested_runs(folder):
+        for surface in run["surfaces"]:
+            if surface in glass_ids:
+                wanted.add((run["mode"], run["appearance"], surface))
+    for record in captures:
+        if record.get("id") in glass_ids:
+            wanted.add((record["_mode"], record.get("appearance"), record["id"]))
+    have = {(c["_mode"], c.get("appearance"), c.get("id"), c.get("slug")): c for c in captures}
+    for mode, appearance, surface in sorted(wanted, key=str):
+        for slug in GLASS_SURFACES[surface]:
+            if (mode, appearance, surface, slug) not in have:
+                problems.append(f"glass: {surface} {slug} was never captured ({appearance}, icons {mode})")
+    for (mode, appearance, surface, slug), record in sorted(have.items(), key=str):
+        if surface in glass_ids and slug in GLASS_SURFACES[surface]:
+            problems += check_glass_record(f"{surface}/{slug} ({appearance}, icons {mode})", record)
+    gaps = []
+    manifest_path = folder / "manifest.json"
+    if manifest_path.is_file():
+        try:
+            gaps += json.loads(manifest_path.read_text()).get("gaps", [])
+        except ValueError:
+            pass
+    for path in sorted(folder.glob("raw-*/gapsraw/*.json")) + sorted(folder.glob("gapsraw/*.json")):
+        try:
+            gaps += json.loads(path.read_text())
+        except ValueError:
+            pass
+    seen = set()
+    for gap in gaps:
+        key = (gap.get("id"), gap.get("appearance"), gap.get("surface"), gap.get("reason"))
+        if gap.get("id") in glass_ids and not gap.get("explained") and key not in seen:
+            seen.add(key)
+            problems.append(f"glass: gap in {gap.get('id')} {gap.get('appearance')} {gap.get('surface')}: {gap.get('reason')}")
+    return problems
+
+
 def run(folder, jobs, strict, strict_contrast):
     folder = folder.resolve()
     pairs, orphans = pair_layouts(folder)
@@ -529,6 +747,7 @@ def run(folder, jobs, strict, strict_contrast):
         notes += [f"{name}: {n}" for n in result["notes"]]
     problems += check_manifest(folder, results)
     problems += check_menu_gaps(folder)
+    problems += check_glass(folder)
     problems += [f"layout: {path.relative_to(folder)} has no PNG" for path in orphans]
     laid_out = sum(1 for layout in pairs.values() if layout)
     for line in problems:
@@ -673,6 +892,118 @@ def self_test():
             got = subprocess.run([sys.executable, script, str(folder), "--jobs", "1"], capture_output=True).returncode
             print(f"  self-test {label}: exit {got} (expected {expected})")
             failed |= got != expected
+        # glass choices (S50-S59): a run missing a required capture, or showing nested glass, small text or a panel that did not dismiss, fails
+        def glass_record(surface, slug, appearance="light"):
+            variant = promised_variant(slug)
+            panel = {"kind": "panel", "variant": variant, "rowTitles": ["Alpha", "Beta", "Gamma"], "glassContainerCount": 1, "plateCount": 2,
+                     "nestedGlassCount": 0, "minFontSize": 20.0}
+            if variant == "hover":
+                panel["hoveredRow"] = 1
+            if variant == "focus":
+                panel["focusedRow"] = 0
+            if variant == "chosen":
+                panel["chosenIndexes"] = [1]
+            if variant == "disabled":
+                panel.update(disabledRows=[2], disabledTookFocus=False)
+            if variant == "busy":
+                panel["rowTitles"] = ["Cancel Upload", "Alpha"]
+            if variant == "pressed":
+                panel["trackPressed"] = True
+            if slug.endswith(("-acl-off", "-acl-on")):
+                panel.update(rowTitles=["Make uploads public-read"], protocol="S3", chosenIndexes=[0] if slug.endswith("-acl-on") else [])
+            if slug.endswith(("-original-off", "-original-on")):
+                panel.update(rowTitles=["Original size"], chosenIndexes=[0] if slug.endswith("-original-on") else [], originalSizeVisible=True, largeShot=True)
+            if variant == "hidden":
+                panel.update(rowTitles=[], originalSizeVisible=False, uploadActive=True, windowWidth=980)
+            if variant == "dismissed":
+                panel.update(panelGone=True, focusReturned=True, openerHadFocus=True, rowTitles=[], plateCount=0, glassContainerCount=0)
+            return {"id": surface, "slug": slug, "appearance": appearance, "iconMode": "sf", "state": "x", "glassPanel": panel}
+
+        def glass_folder(label, edit=lambda records, gaps: None, surfaces=("S50",), appearances=("light",), requested=None):
+            folder = Path(workdir) / re.sub(r"\W+", "-", "glass " + label)
+            (folder / "raw-sf" / "meta").mkdir(parents=True)
+            (folder / "raw-sf" / "gapsraw").mkdir()
+            (folder / "case.png").write_bytes(good)
+            records = {(a, sid, slug): glass_record(sid, slug, a) for a in appearances for sid in surfaces for slug in GLASS_SURFACES[sid]}
+            gaps = []
+            edit(records, gaps)
+            for (a, sid, slug), record in records.items():
+                (folder / "raw-sf" / "meta" / f"{sid}-{slug}-{a}.json").write_text(json.dumps(record))
+            (folder / "raw-sf" / "gapsraw" / "gaps.json").write_text(json.dumps(gaps))
+            if requested is not False:
+                asked = requested or [{"mode": "sf", "appearance": a, "surfaces": ",".join(surfaces)} for a in appearances]
+                (folder / "requested-surfaces.jsonl").write_text("\n".join(json.dumps(r) for r in asked) + "\n")
+            return folder
+
+        def drop(sid, slug, a="light"):
+            return lambda records, gaps: records.pop((a, sid, slug))
+
+        def tweak(sid, slug, **fields):
+            return lambda records, gaps: records[("light", sid, slug)]["glassPanel"].update(fields)
+
+        def drop_field(sid, slug, field):
+            return lambda records, gaps: records[("light", sid, slug)]["glassPanel"].pop(field)
+
+        for label, edit, kwargs, expected in [
+            ("sound glass run", lambda r, g: None, {}, 0),
+            ("sound glass run, light and dark", lambda r, g: None, {"appearances": ("light", "dark")}, 0),
+            ("required capture missing", drop("S50", "toolbox-hover"), {}, 1),
+            ("dismissal capture missing", drop("S50", "toolbox-dismissed"), {}, 1),
+            ("dark twin missing", drop("S50", "toolbox-rest", "dark"), {"appearances": ("light", "dark")}, 1),
+            ("requested surface captured nothing", lambda r, g: r.clear(), {}, 1),
+            ("nested glass found", tweak("S50", "toolbox-rest", nestedGlassCount=1), {}, 1),
+            ("nested glass count absent", drop_field("S50", "toolbox-rest", "nestedGlassCount"), {}, 1),
+            ("text at 17 pt", tweak("S50", "toolbox-rest", minFontSize=17.0), {}, 1),
+            ("text at exactly 18 pt", tweak("S50", "toolbox-rest", minFontSize=18.0), {}, 0),
+            ("text size unrecorded", drop_field("S50", "toolbox-rest", "minFontSize"), {}, 1),
+            ("two glass containers", tweak("S50", "toolbox-rest", glassContainerCount=2), {}, 1),
+            ("no choice rows", tweak("S50", "toolbox-rest", rowTitles=[]), {}, 1),
+            ("hover names no row", tweak("S50", "toolbox-hover", hoveredRow=None), {}, 1),
+            ("focus names no row", tweak("S50", "toolbox-focus", focusedRow=None), {}, 1),
+            ("chosen has no chosen row", tweak("S50", "toolbox-chosen", chosenIndexes=[]), {}, 1),
+            ("disabled capture with no disabled row", tweak("S50", "toolbox-disabled", disabledRows=[]), {}, 1),
+            ("disabled row took focus", tweak("S50", "toolbox-disabled", disabledTookFocus=True), {}, 1),
+            ("panel still on screen after Escape", tweak("S50", "toolbox-dismissed", panelGone=False), {}, 1),
+            ("focus did not return to the opener", tweak("S50", "toolbox-dismissed", focusReturned=False), {}, 1),
+            ("opener never had focus", tweak("S50", "toolbox-dismissed", openerHadFocus=False), {}, 1),
+            ("slug and variant disagree", tweak("S50", "toolbox-hover", variant="rest"), {}, 1),
+            ("busy capture without Cancel Upload", tweak("S52", "upload-busy", rowTitles=["Alpha"]), {"surfaces": ("S52",)}, 1),
+            ("sound upload surface", lambda r, g: None, {"surfaces": ("S52",)}, 0),
+            ("public-read on capture with the toggle off", tweak("S58", "destination-acl-on", chosenIndexes=[]), {"surfaces": ("S58",)}, 1),
+            ("public-read off capture with the toggle on", tweak("S58", "destination-acl-off", chosenIndexes=[0]), {"surfaces": ("S58",)}, 1),
+            ("public-read toggle missing", tweak("S58", "destination-acl-on", rowTitles=["Something else"]), {"surfaces": ("S58",)}, 1),
+            ("public-read capture on another protocol", tweak("S58", "destination-acl-on", protocol="SFTP"), {"surfaces": ("S58",)}, 1),
+            ("Original size on capture with the toggle off", tweak("S59", "footer-original-on", chosenIndexes=[]), {"surfaces": ("S59",)}, 1),
+            ("Original size off capture with the toggle on", tweak("S59", "footer-original-off", chosenIndexes=[0]), {"surfaces": ("S59",)}, 1),
+            ("Original size toggle not visible on a large shot", tweak("S59", "footer-original-on", originalSizeVisible=False), {"surfaces": ("S59",)}, 1),
+            ("Original size capture not on a large shot", tweak("S59", "footer-original-off", largeShot=False), {"surfaces": ("S59",)}, 1),
+            ("Original size reflow capture still shows the toggle", tweak("S59", "footer-original-hidden", originalSizeVisible=True), {"surfaces": ("S59",)}, 1),
+            ("Original size reflow capture with no upload active", tweak("S59", "footer-original-hidden", uploadActive=False), {"surfaces": ("S59",)}, 1),
+            ("Original size reflow capture in a wide window", tweak("S59", "footer-original-hidden", windowWidth=1280), {"surfaces": ("S59",)}, 1),
+            ("sound footer Original size surface", lambda r, g: None, {"surfaces": ("S59",)}, 0),
+            ("sound destination surface", lambda r, g: None, {"surfaces": ("S58",)}, 0),
+            ("pressed capture, track not pressed", tweak("S54", "size-pressed", trackPressed=False), {"surfaces": ("S54",)}, 1),
+            ("glass record missing", lambda r, g: r[("light", "S50", "toolbox-rest")].pop("glassPanel"), {}, 1),
+            ("glass gap (the panel never appeared)", lambda r, g: g.append({"id": "S50", "appearance": "light", "surface": "Toolbox", "reason": "panel did not appear"}), {}, 1),
+            ("glass gap with an explained note", lambda r, g: g.append({"id": "S50", "appearance": "light", "surface": "Toolbox", "reason": "x", "explained": "n/a"}), {}, 0),
+            ("a non-glass gap is not this check's business", lambda r, g: g.append({"id": "S09", "appearance": "light", "surface": "footer", "reason": "x"}), {}, 0),
+        ]:
+            folder = glass_folder(label, edit, **kwargs)
+            outcome = subprocess.run([sys.executable, script, str(folder), "--jobs", "1"], capture_output=True, text=True)
+            got = outcome.returncode
+            # A seeded fault must fail for the glass reason, not because some other check tripped over the fixture.
+            named = expected == 0 or "FAIL glass" in outcome.stdout or "FAIL case.png: glass" in outcome.stdout
+            print(f"  self-test glass: {label}: exit {got} (expected {expected}){'' if named else ' -- but not for a glass reason'}")
+            failed |= got != expected or not named
+        # Without a requested-surfaces.jsonl the surfaces seen decide: S50 alone needs only S50, but an S50 with a hole in it still fails.
+        folder = glass_folder("no request file, complete", requested=False)
+        got = subprocess.run([sys.executable, script, str(folder), "--jobs", "1"], capture_output=True).returncode
+        print(f"  self-test glass: no request file, complete: exit {got} (expected 0)")
+        failed |= got != 0
+        folder = glass_folder("no request file, hole", drop("S50", "toolbox-focus"), requested=False)
+        got = subprocess.run([sys.executable, script, str(folder), "--jobs", "1"], capture_output=True).returncode
+        print(f"  self-test glass: no request file, hole: exit {got} (expected 1)")
+        failed |= got != 1
         # contrast: advisory by default, fatal under --strict
         low = png_bytes(64, 48, lambda x, y: (128, 128, 128) if (x + y) % 7 else (140, 140, 140))
         weak = sample_layout(windowSize=[64, 48])

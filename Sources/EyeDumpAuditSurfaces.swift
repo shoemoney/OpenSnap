@@ -381,6 +381,10 @@ extension AuditRun {
             step("S45", "audit batch 8: WebDAV note, footer error with the box, pause note, Details size, Resize unticked") { s45() }
             step("S46", "audit batch 10: oversized Resize, corner drag, Export accessory, selected Upload row, Capture note error, Details after delete") { s46() }
             step("S47", "audit batch 11: Actual Size after an oversized Resize, native-width Resize, ticked corner drag, Export accessory when nothing differs") { s47() }
+            step("S50", "glass: Toolbox panel") { s50() }
+            step("S51", "glass: Zoom panel") { s51() }
+            step("S52", "glass: Upload panel") { s52() }
+            step("S59", "glass: footer Original size toggle") { s59() }
             step("S13", "capture picker") { s13() }
             step("S14", "countdown") { s14() }
             step("S15", "capture flash") { s15() }
@@ -656,17 +660,31 @@ extension AuditRun {
             }
             toggle.selectedSegment = 0; app.changeDragOptions(toggle)
         }
-        guard let format = firstView(of: NSPopUpButton.self, label: "Drag Me format") else {
-            if firstView(of: SegmentedToggle.self, label: "Image format") == nil { gap("S09", "format control", "neither the format popup nor the PNG|JPG toggle was found") }
-            return
+        // The format control is the PNG|JPG toggle now; the old pop-up only matters if a build still has it. Its absence must never skip the
+        // Upload capture below (the early return that used to sit here hid the whole Upload menu from S09).
+        if let format = firstView(of: NSPopUpButton.self, label: "Drag Me format") {
+            captureTrackedMenu("S09", "format-popup-open", surface: "footer", state: "format popup open (PNG selected)", refs: ["ModernEditorChrome.swift|let formatHolder", "App+ModernChrome.swift|dragFormatControl.addItems"],
+                               dismiss: { format.menu?.cancelTracking() }, trigger: { format.menu?.popUp(positioning: nil, at: NSPoint(x: 0, y: format.bounds.height), in: format) })
+            pump(0.4)
+        } else if firstView(of: SegmentedToggle.self, label: "Image format") == nil {
+            gap("S09", "format control", "neither the format popup nor the PNG|JPG toggle was found")
         }
-        captureTrackedMenu("S09", "format-popup-open", surface: "footer", state: "format popup open (PNG selected)", refs: ["ModernEditorChrome.swift|let formatHolder", "App+ModernChrome.swift|dragFormatControl.addItems"],
-                           dismiss: { format.menu?.cancelTracking() }, trigger: { format.menu?.popUp(positioning: nil, at: NSPoint(x: 0, y: format.bounds.height), in: format) })
-        pump(0.4)
-        if let share = app.webpostButton, let menu = share.menu {
-            captureTrackedMenu("S09", "upload-menu-open", surface: "footer", state: "Upload (Webpost) destination menu open, no destination configured",
-                               refs: ["App.swift|func uploadDestinationMenuItems", "App.swift|func configureWebpostButton"],
+        guard let share = app.webpostButton else { gap("S09", "Upload menu", "the Upload (Webpost) button was not found"); return }
+        captureUploadChoices("S09", "upload-menu-open", surface: "footer", state: "Upload (Webpost) destination choices open, no destination configured",
+                             refs: ["App.swift|func uploadDestinationMenuItems", "App.swift|func configureWebpostButton"], share: share)
+    }
+
+    /// Opens the Upload choices the way a user does (the button's own show-menu request) and captures what really appeared: the app-owned
+    /// glass panel when the build has one, else the native menu (tracked) it replaced. Never skipped for lack of a menu.
+    func captureUploadChoices(_ id: String, _ slug: String, surface: String, state: String, refs: [String], share: NSButton) {
+        if let panel = openGlassPanel(identifier: "Upload", opener: share, open: { _ = share.accessibilityPerformShowMenu() }) {
+            shootGlassPanel(id, slug, surface: surface, state: state + " (glass panel)", panel: panel, opener: share, refs: refs)
+            dismissGlassPanel(id, slug + "-dismissed", surface: surface, state: "Upload panel dismissed with Escape", panel: panel, opener: share, refs: refs)
+        } else if let menu = share.menu {
+            captureTrackedMenu(id, slug, surface: surface, state: state, refs: refs,
                                dismiss: { menu.cancelTracking() }, trigger: { menu.popUp(positioning: nil, at: NSPoint(x: 0, y: share.bounds.height + 4), in: share) })
+        } else {
+            gap(id, surface + " / " + state, "the Upload button has neither a glass panel nor a menu")
         }
     }
 

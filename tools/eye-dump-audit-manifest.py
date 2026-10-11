@@ -31,12 +31,19 @@ def main():
                 "displayOptions": meta.get("displayOptions"), "windowSize": meta.get("windowSize"), "pixelSize": meta["pixelSize"], "pointSize": meta["pointSize"], "scale": meta["scale"],
                 "sourceSha": meta.get("sourceSha", args.sha), "method": meta["method"], "sourceRefs": meta["sourceRefs"],
                 "file": f"{raw.name}/{meta['file']}",
+                **({"glassPanel": meta["glassPanel"]} if "glassPanel" in meta else {}),
             })
         for gap_file in sorted((raw / "gapsraw").glob("*.json")):
             gaps.extend(json.loads(gap_file.read_text()))
+    requested = []
+    requested_file = out / "requested-surfaces.jsonl"
+    if requested_file.is_file():
+        for line in requested_file.read_text().splitlines():
+            if line.strip():
+                requested.append(json.loads(line))
     injected = sorted({tuple(c["displayOptions"]["active"]) for c in captures if (c.get("displayOptions") or {}).get("injected")})
     manifest = {"sourceSha": args.sha, "bundleId": args.bundle_id, "injectedDisplayOptions": [list(group) for group in injected],
-                "captureCount": len(captures), "captures": captures,
+                "captureCount": len(captures), "captures": captures, "requested": requested,
                 "unavailable": unavailable, "gaps": gaps}
     (out / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n")
     print(f"{len(captures)} captures, {len(unavailable)} unavailable icon modes, {len(gaps)} gap records")
