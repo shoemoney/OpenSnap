@@ -285,11 +285,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     let widthControl = BezelSizeSlider(frame: .zero)
     let sizeLabel = NSTextField(labelWithString: "Size · 6.75")
     let paletteButton = BezelHoverButton(title: "Color…", target: nil, action: nil)
-    var colorPopover: NSPopover?
+    /// The Drawing colors panel while it is up: one glass container with two plates (the swatches, then Custom color…).
+    var colorPanel: GlassPanelHost?
+    /// Runs on every new colour panel before it is shown. A test gives it a presenter, so the panel never reaches the screen.
+    var colorPanelSetup: (GlassPanelHost) -> Void = { _ in }
+    var colorPanelWindow: NSWindow? { colorPanel?.isShown == true ? colorPanel?.window : nil }
     var colorControlHovered = false, colorPaletteHovered = false, colorOpenedByHover = false
     private var colorHoverDismissal: DispatchWorkItem?
+    private var colorHoverTracker: PaletteHoverTracker?
+    /// A zero-size view at the bottom centre of the Color control. A hover-opened panel hangs from it instead of the control, so the
+    /// host does not treat the click that pins the palette as a click on its anchor (which only closes).
+    private var colorHoverAnchor: NSView?
     var presetColorButtons: [BezelColorButton] = []
-    weak var customColorButton: BezelCustomColorButton?
+    weak var customColorButton: GlassChoiceButton?
     var sizeUndoGrouping = false
     /// The system Colors panel; a test hands in a panel that is never ordered on screen.
     var colorPanelProvider: () -> NSColorPanel = { NSColorPanel.shared }
@@ -1100,16 +1108,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             button.state = preset.map { SketchColor($0.color) == chosen } == true ? .on : .off
         }
         // A colour that is none of the presets is marked on the Custom color… row instead.
-        customColorButton?.currentColor = presetColorButtons.contains { $0.state == .on } ? nil : canvas.strokeColor
+        if let customColorButton { BezelCustomColorButton.apply(presetColorButtons.contains { $0.state == .on } ? nil : canvas.strokeColor, to: customColorButton) }
         paletteButton.setAccessibilityValue(String(format: "Red %.3g, green %.3g, blue %.3g, alpha %.3g", chosen.red, chosen.green, chosen.blue, chosen.alpha))
     }
     @objc func showDrawingColors(_ sender: NSButton) {
         guard !terminationStarted, !frameCaptureInProgress, window.attachedSheet == nil else { return }
-        if let colorPopover, colorPopover.isShown {
-            // Keep click/keyboard access stable when entering Color first
-            // opened it by hover. An explicit activation pins the palette.
+        if let colorPanel, colorPanel.isShown {
             if colorOpenedByHover {
-                colorOpenedByHover = false; colorHoverDismissal?.cancel(); colorHoverDismissal = nil
+                // Keep click/keyboard access stable when entering Color first opened it by hover. An explicit activation pins the
+                // palette: it comes up again from the Color control itself (a click there now closes it, as on any anchor) and takes the keyboard.
+                closeDrawingColors(); presentDrawingColors(hover: false)
             } else { closeDrawingColors() }
             writeLayoutEvidence(); return
         }
@@ -1119,10 +1127,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         if palette { colorPaletteHovered = inside } else { colorControlHovered = inside }
         colorHoverDismissal?.cancel(); colorHoverDismissal = nil
         if inside {
-            if !palette && colorPopover?.isShown != true { presentDrawingColors(hover: true) }
+            if !palette && colorPanel?.isShown != true { presentDrawingColors(hover: true) }
         } else if colorOpenedByHover && !colorControlHovered && !colorPaletteHovered {
-            // The modern popover has an arrow gap absent from the old panel.
-            // Briefly bridge that gap so crossing into the swatches cannot close it.
+            // The panel floats a few points below the Color control. Briefly bridge that gap (and the one between its plates) so
+            // crossing into the swatches cannot close it.
             let work = DispatchWorkItem { [weak self] in
                 guard let self, self.colorOpenedByHover, !self.colorControlHovered, !self.colorPaletteHovered else { return }
                 self.closeDrawingColors()
@@ -1134,41 +1142,64 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     func closeDrawingColors() {
         colorHoverDismissal?.cancel(); colorHoverDismissal = nil
         colorOpenedByHover = false; colorControlHovered = false; colorPaletteHovered = false
-        (colorPopover?.contentViewController?.view as? BezelHoverPaletteView)?.onHover = nil
-        colorPopover?.performClose(nil)
+        colorHoverTracker?.detach(); colorHoverTracker = nil
+        let panel = colorPanel
+        panel?.close()
+    }
+    /// The panel went away by any route (a pick, Escape, a click outside, the app resigning): drop what it left behind.
+    private func colorPanelDidClose() {
+        colorHoverDismissal?.cancel(); colorHoverDismissal = nil
+        colorOpenedByHover = false; colorControlHovered = false; colorPaletteHovered = false
+        colorHoverTracker?.detach(); colorHoverTracker = nil
+        colorPanel = nil
     }
     func presentDrawingColors(hover: Bool) {
         guard !terminationStarted, !frameCaptureInProgress, window.isVisible,
-              window.attachedSheet == nil, colorPopover?.isShown != true else { return }
+              window.attachedSheet == nil, colorPanel?.isShown != true else { return }
         colorOpenedByHover = hover
-        // 12 pt margins around a grid of five 42 x 32 swatches (each draws 3 pt inside its frame); the Custom color… row spans exactly the
-        // drawn grid, so the left and right edges of every row line up.
-        let view = BezelHoverPaletteView(frame: NSRect(x: 0, y: 0, width: 246, height: 155))
-        view.onHover = { [weak self] inside in self?.drawingColorHover(inside, palette: true) }
-        let title = label("Drawing colors"); title.textColor = DesignTokens.Palette.Text.primary; title.frame = NSRect(x: 13, y: 118, width: 220, height: 25); view.addSubview(title)
         presetColorButtons.removeAll()
-        for (index, preset) in OriginalDrawingControls.presets.enumerated() {
-            let button = BezelColorButton(frame: NSRect(x: CGFloat(12+(index%5)*45), y: CGFloat(78-(index/5)*34), width: 42, height: 32))
+        for preset in OriginalDrawingControls.presets {
+            let button = BezelColorButton(frame: NSRect(origin: .zero, size: NSSize(width: 42, height: 32)))
             button.title = ""; button.isBordered = false; button.font = DesignTokens.Typography.font(.body)
             button.drawingColor = preset.color; button.tag = preset.tag
             button.target = self; button.action = #selector(choosePresetColor(_:))
             button.setAccessibilityLabel(preset.name); AppToolTip.setText(preset.name + "; Shift changes the background", for: button)
             trackHint(button, owner: "color-" + String(preset.tag)) { OriginalHintMessages.hover(actionTag: preset.tag) }
-            presetColorButtons.append(button); view.addSubview(button)
+            presetColorButtons.append(button)
         }
-        let custom = BezelCustomColorButton(title: "Custom color…", target: self, action: #selector(chooseCustomColor(_:)))
-        custom.font = DesignTokens.Typography.font(.body)
-        custom.frame = NSRect(x: 15, y: 12, width: 216, height: 30); custom.tag = 110; view.addSubview(custom)
+        let custom = BezelCustomColorButton.make(target: self, action: #selector(chooseCustomColor(_:)))
         customColorButton = custom
-        // The popover is its own window: the preset swatches in reading order, then Custom color…, then round again.
-        let swatchOrder: [NSView] = presetColorButtons + [custom]
-        for (index, swatch) in swatchOrder.enumerated() { swatch.nextKeyView = swatchOrder[(index + 1) % swatchOrder.count] }
-        AppToolTip.install(on: view)
-        let controller = NSViewController(); controller.view = view
-        let popover = NSPopover(); popover.behavior = .transient; popover.contentViewController = controller
-        colorPopover = popover; syncDrawingControls()
-        popover.show(relativeTo: paletteButton.bounds, of: paletteButton, preferredEdge: .minY)
+        let content = ColorPaletteContent(title: label("Drawing colors"), swatches: presetColorButtons, custom: custom)
+        let host = GlassPanelHost(plates: content.plates, identifier: "DrawingColors", accessibilityLabel: "Drawing colors")
+        host.alignment = .center
+        host.didClose = { [weak self, weak host] in
+            guard let self, self.colorPanel === host else { return }
+            self.colorPanelDidClose()
+        }
+        let tracker = PaletteHoverTracker()
+        tracker.onHover = { [weak self] inside in self?.drawingColorHover(inside, palette: true) }
+        for plate in content.plates { tracker.attach(to: plate) }
+        colorHoverTracker = tracker
+        colorPanelSetup(host)
+        colorPanel = host
+        syncDrawingControls()
+        AppToolTip.install(on: host.container)
+        // A hover-opened panel never takes the keyboard. One opened on purpose does, and when the keyboard opened it the chosen
+        // swatch (else the first) is focused; closing hands the keyboard back to where it was.
+        let byKeyboard = NSApp.currentEvent.map { $0.type == .keyDown || $0.type == .keyUp } ?? false
+        let anchor = hover ? hoverAnchor() : paletteButton
+        host.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .minY, makeKey: !hover)
+        if !hover, byKeyboard, host.isShown { host.window.makeFirstResponder(presetColorButtons.first { $0.state == .on } ?? presetColorButtons.first) }
         writeLayoutEvidence()
+    }
+    /// The view a hover-opened panel hangs from: a zero-size mark at the bottom centre of the Color control (see `colorHoverAnchor`).
+    private func hoverAnchor() -> NSView {
+        let anchor = colorHoverAnchor ?? NSView(frame: .zero)
+        if anchor.superview !== paletteButton { paletteButton.addSubview(anchor) }
+        anchor.setAccessibilityElement(false)
+        anchor.frame = NSRect(x: paletteButton.bounds.midX, y: 0, width: 0, height: 0)
+        colorHoverAnchor = anchor
+        return anchor
     }
     @objc func choosePresetColor(_ sender: NSButton) {
         guard !terminationStarted, !frameCaptureInProgress,
@@ -2563,7 +2594,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             evidence["drawingControls"] = ["size": widthControl.doubleValue, "fontSize": canvas.fontSize,
                                            "colorRGBA": [chosen.red,chosen.green,chosen.blue,chosen.alpha],
                                            "customRGBA": [custom.red,custom.green,custom.blue,custom.alpha],
-                                           "popoverShown": colorPopover?.isShown ?? false, "sizeUndoGrouping": sizeUndoGrouping,
+                                           "popoverShown": colorPanel?.isShown ?? false, "sizeUndoGrouping": sizeUndoGrouping,
                                            "hoverOpened": colorOpenedByHover, "controlHovered": colorControlHovered, "paletteHovered": colorPaletteHovered]
             evidence["bezelLayout"] = ["contentSize": NSStringFromSize(content.bounds.size), "minimumWindowSize": NSStringFromSize(window.minSize)]
             if let header = (modernChrome ?? content).subviews.first(where: { $0.identifier?.rawValue == "OpenSnapHeader" }),

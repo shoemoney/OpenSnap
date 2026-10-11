@@ -69,14 +69,48 @@ enum OriginalDrawingControls {
     }
 }
 
-/// A preset colour swatch in the Drawing colours popover. Rest is a 1 pt separator outline, hover strengthens it, a press fills it, and
+/// A preset colour swatch in the Drawing colors panel. Rest is a 1 pt separator outline, hover strengthens it, a press fills it, and
 /// the selected swatch gets a 3 pt accent outline plus a check glyph, so the choice is never colour alone (`StateStyles.swatch`).
+/// Behind the swatch sits the same rounded hover and pressed fill every glass choice draws (`StatePlate`); selection stays the outline
+/// and check, so the plate never takes the selected fill.
 @MainActor
 final class BezelColorButton: NSButton {
     static let checkPointSize: CGFloat = 16
     var drawingColor: NSColor = .red { didSet { needsDisplay = true } }
     private(set) var isHovered = false
     private var hoverArea: NSTrackingArea?
+    private(set) lazy var plate = StatePlate(view: self)
+    private var primaryTracking = false
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        syncPlate()
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    private func syncPlate() {
+        plate.accessibility = DisplayOptions.current.chrome
+        plate.update(hovered: isHovered, pressed: primaryTracking || isHighlighted, selected: false, disabled: !isEnabled)
+    }
+    override func highlight(_ flag: Bool) {
+        super.highlight(flag)
+        syncPlate()
+    }
+    // NSButton highlights its cell directly while tracking a primary click and never calls highlight(_:), so the press is bracketed here.
+    override func mouseDown(with event: NSEvent) {
+        guard isEnabled else { return }
+        primaryTracking = true; syncPlate()
+        super.mouseDown(with: event)
+        primaryTracking = false; syncPlate()
+    }
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        syncPlate()
+    }
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        syncPlate()
+    }
 
     var controlState: ControlState {
         if !isEnabled { return .disabled }
@@ -94,6 +128,7 @@ final class BezelColorButton: NSButton {
     func setHovered(_ hovered: Bool) {
         guard isHovered != hovered else { return }
         isHovered = hovered
+        syncPlate()
         needsDisplay = true
     }
 
@@ -111,7 +146,7 @@ final class BezelColorButton: NSButton {
         if newWindow == nil { setHovered(false) }
         super.viewWillMove(toWindow: newWindow)
     }
-    override var isEnabled: Bool { didSet { needsDisplay = true } }
+    override var isEnabled: Bool { didSet { syncPlate(); needsDisplay = true } }
     override var state: NSControl.StateValue { didSet { needsDisplay = true } }
 
     override func draw(_ dirtyRect: NSRect) {
@@ -156,26 +191,31 @@ final class BezelColorButton: NSButton {
     }
 }
 
-/// The "Custom color…" row of the Drawing colors popover. While the stroke colour is none of the presets, this row carries the colour in
-/// use: a chip of it with the check glyph beside the title, and the 3 pt accent outline a selected preset swatch gets, so the popover always
-/// shows which colour is active and the choice is never colour alone. With a preset current it is the plain button it always was.
+/// The "Custom color…" row of the Drawing colors panel: a `GlassChoiceButton` on a plate of its own. While the stroke colour is none of
+/// the presets, the row is the chosen option and carries the colour in use: a chip of it with the check glyph leading the title, next to
+/// the selected fill, border and semibold title every chosen glass choice gets, so the panel always shows which colour is active and the
+/// choice is never colour alone. With a preset current it is the plain row it always was.
 @MainActor
-final class BezelCustomColorButton: OriginalActionButton {
-    static let chipSize = NSSize(width: 28, height: 20)
-    static let cornerRadius: CGFloat = 7
-    /// The stroke colour while it is a custom one; nil while a preset is current.
-    var currentColor: NSColor? { didSet { refreshCurrent() } }
-    var isCurrentChoice: Bool { currentColor != nil }
+enum BezelCustomColorButton {
+    static let title = "Custom color…"
+    /// The tag the row has always carried.
+    static let tag = 110
+    static let chipSize = NSSize(width: GlassChoiceButton.glyphSide, height: 18)
 
-    private func refreshCurrent() {
-        if let currentColor {
-            image = Self.chip(for: currentColor)
-            imagePosition = .imageLeading
-        } else {
-            image = nil
-            imagePosition = .noImage
-        }
-        needsDisplay = true
+    static func make(target: AnyObject?, action: Selector?) -> GlassChoiceButton {
+        let row = GlassChoiceButton(title: title, kind: .option, indicator: GlassChoiceButton.Indicator.none, layout: .row)
+        row.tag = tag
+        row.identifier = NSUserInterfaceItemIdentifier("color.custom")
+        row.reservesIconColumn = true
+        row.target = target; row.action = action
+        row.accessibility = .live
+        return row
+    }
+
+    /// Marks the row as the current choice with `color`'s chip, or clears the mark (nil).
+    static func apply(_ color: NSColor?, to row: GlassChoiceButton) {
+        row.leadingImage = color.map(chip(for:))
+        row.isChosen = color != nil
     }
 
     /// The colour as a small rounded chip over the transparency checkerboard (the colour may be translucent), with the check on it.
@@ -199,37 +239,29 @@ final class BezelCustomColorButton: OriginalActionButton {
             return true
         }
     }
-
-    override func draw(_ dirtyRect: NSRect) {
-        super.draw(dirtyRect)
-        guard isCurrentChoice else { return }
-        let style = StateStyles.swatch(.selected, highContrast: DisplayOptions.current.increaseContrast, appearance: effectiveAppearance)
-        let outline = NSBezierPath(roundedRect: bounds.insetBy(dx: style.outlineWidth / 2, dy: style.outlineWidth / 2), xRadius: Self.cornerRadius, yRadius: Self.cornerRadius)
-        style.outline.setStroke(); outline.lineWidth = style.outlineWidth; outline.stroke()
-    }
-
-    override func accessibilityValue() -> Any? { isCurrentChoice ? "Selected" : super.accessibilityValue() }
 }
 
-/// The Size control: a 48 x 36 pill that draws the current stroke thickness as a horizontal line and opens a popover
-/// with a track and five presets. The pill stays the one model object: the value, the target/action, the undo
-/// grouping and the "Size N" tooltip all live here, and the popover drives them through the same gesture API.
+/// The Size control: a 48 x 36 pill that draws the current stroke thickness as a horizontal line and opens a glass panel
+/// (`GlassPanelHost`) with a track and five presets. The pill stays the one model object: the value, the target/action, the undo
+/// grouping and the "Size N" tooltip all live here, and the panel drives them through the same gesture API.
 /// Five ordinary steps from the recovered control; Shift gives continuous values throughout.
 @MainActor
-final class BezelSizeSlider: NSControl, NSPopoverDelegate {
+final class BezelSizeSlider: NSControl {
     static let pillSize = NSSize(width: 48, height: 36)
     static let glyphLength: CGFloat = 24
     /// One preset step, the distance between neighbouring sizes.
     static let stepSize = 2.625
-    /// The VoiceOver action that opens the popover with the five presets and the track.
+    /// The VoiceOver action that opens the panel with the five presets and the track.
     static let showOptionsActionName = "Show size options"
     var onBegin: (() -> Bool)?
     var onEnd: (() -> Void)?
-    /// Tests hand in a popover that never reaches the screen.
-    var popoverProvider: () -> NSPopover = { NSPopover() }
-    private(set) var popover: NSPopover?
+    /// Runs on every new panel before it is shown. A test gives it a presenter, so the panel never reaches the screen.
+    var panelSetup: (GlassPanelHost) -> Void = { _ in }
+    private(set) var panel: GlassPanelHost?
     private(set) var popoverContent: SizePopoverContent?
-    var isPopoverShown: Bool { popover?.isShown == true }
+    var isPopoverShown: Bool { panel?.isShown == true }
+    /// The panel's own window, while it is up (the screenshot harness orders it front).
+    var panelWindow: NSWindow? { isPopoverShown ? panel?.window : nil }
     private var tracking = false
     private var value = OriginalDrawingControls.initialSize
     private var lastPopoverClose: TimeInterval = -.infinity
@@ -335,7 +367,7 @@ final class BezelSizeSlider: NSControl, NSPopoverDelegate {
         NSBezierPath(roundedRect: focusBounds, xRadius: focusBounds.height / 2, yRadius: focusBounds.height / 2).fill()
     }
 
-    // MARK: gesture API shared by the pill and the popover
+    // MARK: gesture API shared by the pill and the panel
 
     /// Opens the undo group for one gesture; false when the app declines (terminating, capturing, a sheet is up).
     @discardableResult func beginGesture() -> Bool {
@@ -369,34 +401,36 @@ final class BezelSizeSlider: NSControl, NSPopoverDelegate {
         update(raw, continuous: continuous); endTracking()
     }
 
-    // MARK: popover
+    // MARK: panel
 
+    /// Opens the Size panel below the pill. It does not take the keyboard: the pill keeps it (arrows step, Space and Return toggle,
+    /// Escape closes), and a click inside the panel hands the panel the keyboard as it does any floating panel.
     func showPopover() {
         guard isEnabled, let window, window.attachedSheet == nil, !isPopoverShown else { return }
         let content = SizePopoverContent(slider: self)
-        AppToolTip.install(on: content)
-        let controller = NSViewController()
-        controller.view = content
-        let popover = popoverProvider()
-        popover.behavior = .transient
-        popover.contentViewController = controller
-        popover.delegate = self
-        self.popover = popover; popoverContent = content
+        let host = GlassPanelHost(plates: content.plates, identifier: "Size", accessibilityLabel: "Size")
+        host.alignment = .center
+        host.willClose = { [weak self] in self?.panelWillClose() }
+        host.didClose = { [weak self] in self?.panelDidClose() }
+        panelSetup(host)
+        panel = host; popoverContent = content
         content.sync()
-        popover.show(relativeTo: bounds, of: self, preferredEdge: .minY)
+        AppToolTip.install(on: host.container)
+        host.show(relativeTo: bounds, of: self, preferredEdge: .minY, makeKey: false)
     }
-    /// Closes the popover and ends any gesture it still has open, so a dismissal mid-drag cannot leave an undo group behind.
+    /// Closes the panel and ends any gesture it still has open, so a dismissal mid-drag cannot leave an undo group behind.
     func dismissPopover() {
         endTracking()
-        popover?.performClose(nil)
+        let host = panel
+        host?.close()
     }
-    func popoverWillClose(_ notification: Notification) {
+    private func panelWillClose() {
         setPressed(false)
         endTracking()
         lastPopoverClose = ProcessInfo.processInfo.systemUptime
     }
-    func popoverDidClose(_ notification: Notification) {
-        popover = nil; popoverContent = nil
+    private func panelDidClose() {
+        panel = nil; popoverContent = nil
     }
 
     override func mouseDown(with event: NSEvent) {
@@ -405,7 +439,8 @@ final class BezelSizeSlider: NSControl, NSPopoverDelegate {
         // The original slider does not end native annotation typing. Keep that editor's focus.
         if !(window?.firstResponder is NSTextView) { window?.makeFirstResponder(self) }
         if isPopoverShown { dismissPopover() }
-        // A transient popover already closed on this very click; reopening it would make the pill unable to toggle.
+        // The panel's host swallows a click on the pill while it is up, so the pill never sees that press. Should a press still arrive
+        // within the same click (a host that lets it through), reopening the panel would make the pill unable to toggle.
         else if event.timestamp - lastPopoverClose > 0.3 || event.timestamp < lastPopoverClose { showPopover() }
     }
     override func keyDown(with event: NSEvent) {
@@ -424,60 +459,63 @@ final class BezelSizeSlider: NSControl, NSPopoverDelegate {
     }
 }
 
-/// The solid (non-glass) content of the Size popover: a title and a numeric readout, a horizontal track and the five presets.
-final class SizePopoverContent: NSView {
-    static let size = NSSize(width: 320, height: 156)
+/// The content of the Size panel, as two glass plates for one `GlassPanelHost`: the title with its numeric readout and the track on the
+/// first, the five presets on the second. The plates are the only glass; the track and the presets draw their own states on top.
+@MainActor
+final class SizePopoverContent {
+    /// The rows are this wide, so each plate is this plus its 4 pt inset on either side.
+    static let rowWidth: CGFloat = 312
+    static let rowHeight = GlassChrome.Metrics.commandHeight
+    static let horizontalPadding = DesignTokens.Space.s3
+    static let presetSpacing = GlassChrome.Metrics.groupSpacing
     private weak var slider: BezelSizeSlider?
     let titleLabel = NSTextField(labelWithString: "Size")
     let readout = NSTextField(labelWithString: "")
     let trackView: SizeTrackView
     let presetButtons: [SizePresetButton]
+    let headerRow = NSView(), trackRow = NSView(), presetRow = NSView()
+    let trackPlate: GlassSurfaceView, presetPlate: GlassSurfaceView
+    var plates: [GlassSurfaceView] { [trackPlate, presetPlate] }
 
-    init(slider: BezelSizeSlider) {
+    init(slider: BezelSizeSlider, accessibility: ChromeAccessibility = .live) {
         self.slider = slider
         trackView = SizeTrackView(slider: slider)
         presetButtons = OriginalDrawingControls.sizeSteps.map { SizePresetButton(size: $0, slider: slider) }
-        super.init(frame: NSRect(origin: .zero, size: Self.size))
-        wantsLayer = true
         titleLabel.font = DesignTokens.Typography.font(.bodyStrong)
+        titleLabel.textColor = DesignTokens.Palette.Text.primary
         readout.font = .monospacedDigitSystemFont(ofSize: DesignTokens.Typography.readableDefault, weight: .regular)
+        readout.textColor = DesignTokens.Palette.Text.primary
         readout.alignment = .right
         readout.setAccessibilityLabel("Size value")
-        for view in [titleLabel, readout, trackView] + presetButtons {
-            view.translatesAutoresizingMaskIntoConstraints = false
-            addSubview(view)
-        }
+
+        let pad = Self.horizontalPadding
+        for view in [titleLabel, readout] { view.translatesAutoresizingMaskIntoConstraints = false; headerRow.addSubview(view) }
+        trackView.translatesAutoresizingMaskIntoConstraints = false
+        trackRow.addSubview(trackView)
+        let presets = NSStackView(views: presetButtons)
+        presets.orientation = .horizontal; presets.spacing = Self.presetSpacing; presets.distribution = .fillEqually
+        presets.translatesAutoresizingMaskIntoConstraints = false
+        presetRow.addSubview(presets)
         var constraints = [
-            widthAnchor.constraint(equalToConstant: Self.size.width), heightAnchor.constraint(equalToConstant: Self.size.height),
-            titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16), titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 16),
-            titleLabel.heightAnchor.constraint(equalToConstant: 28),
-            readout.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16), readout.topAnchor.constraint(equalTo: topAnchor, constant: 16),
-            readout.heightAnchor.constraint(equalToConstant: 28), readout.leadingAnchor.constraint(greaterThanOrEqualTo: titleLabel.trailingAnchor, constant: 8),
-            trackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16), trackView.topAnchor.constraint(equalTo: topAnchor, constant: 56),
-            trackView.widthAnchor.constraint(equalToConstant: SizeTrackView.size.width), trackView.heightAnchor.constraint(equalToConstant: SizeTrackView.size.height)
+            titleLabel.leadingAnchor.constraint(equalTo: headerRow.leadingAnchor, constant: pad), titleLabel.centerYAnchor.constraint(equalTo: headerRow.centerYAnchor),
+            readout.trailingAnchor.constraint(equalTo: headerRow.trailingAnchor, constant: -pad), readout.centerYAnchor.constraint(equalTo: headerRow.centerYAnchor),
+            readout.leadingAnchor.constraint(greaterThanOrEqualTo: titleLabel.trailingAnchor, constant: DesignTokens.Space.s2),
+            trackView.centerXAnchor.constraint(equalTo: trackRow.centerXAnchor), trackView.centerYAnchor.constraint(equalTo: trackRow.centerYAnchor),
+            trackView.widthAnchor.constraint(equalToConstant: SizeTrackView.size.width), trackView.heightAnchor.constraint(equalToConstant: SizeTrackView.size.height),
+            presets.leadingAnchor.constraint(equalTo: presetRow.leadingAnchor), presets.trailingAnchor.constraint(equalTo: presetRow.trailingAnchor),
+            presets.topAnchor.constraint(equalTo: presetRow.topAnchor), presets.bottomAnchor.constraint(equalTo: presetRow.bottomAnchor)
         ]
-        let gap = (SizeTrackView.size.width - 5 * SizePresetButton.size.width) / 4
-        for (index, button) in presetButtons.enumerated() {
-            constraints += [
-                button.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16 + CGFloat(index) * (SizePresetButton.size.width + gap)),
-                button.topAnchor.constraint(equalTo: topAnchor, constant: 104),
-                button.widthAnchor.constraint(equalToConstant: SizePresetButton.size.width), button.heightAnchor.constraint(equalToConstant: SizePresetButton.size.height)
-            ]
+        for row in [headerRow, trackRow, presetRow] {
+            row.translatesAutoresizingMaskIntoConstraints = false
+            constraints += [row.widthAnchor.constraint(equalToConstant: Self.rowWidth), row.heightAnchor.constraint(equalToConstant: Self.rowHeight)]
         }
+        constraints += presetButtons.map { $0.heightAnchor.constraint(equalToConstant: SizePresetButton.size.height) }
         NSLayoutConstraint.activate(constraints)
-        // A popover is its own window, so the main window's loop does not reach it: the track, then the five presets, then round again.
+        trackPlate = GlassChrome.plate([headerRow, trackRow], identifier: "GlassSizeTrack", accessibility: accessibility, axis: .vertical)
+        presetPlate = GlassChrome.plate([presetRow], identifier: "GlassSizePresets", accessibility: accessibility, axis: .vertical)
+        // The panel is its own window, so the main window's loop does not reach it: the track, then the five presets, then round again.
         let order: [NSView] = [trackView] + presetButtons
         for (index, view) in order.enumerated() { view.nextKeyView = order[(index + 1) % order.count] }
-    }
-    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-
-    override var wantsUpdateLayer: Bool { true }
-    override func updateLayer() {
-        effectiveAppearance.performAsCurrentDrawingAppearance { layer?.backgroundColor = DesignTokens.Palette.Surface.content.cgColor }
-    }
-    override func viewDidChangeEffectiveAppearance() {
-        super.viewDidChangeEffectiveAppearance()
-        needsDisplay = true
     }
 
     /// Re-reads the slider: readout, knob and the selected preset.
@@ -485,11 +523,11 @@ final class SizePopoverContent: NSView {
         guard let slider else { return }
         readout.stringValue = String(format: "%.0f", slider.doubleValue.rounded())
         trackView.needsDisplay = true
-        for button in presetButtons { button.needsDisplay = true }
+        for button in presetButtons { button.sync() }
     }
 }
 
-/// The horizontal track in the popover: drag anywhere. A plain drag snaps to the five sizes, Shift keeps it continuous.
+/// The horizontal track in the Size panel: drag anywhere. A plain drag snaps to the five sizes, Shift keeps it continuous.
 /// The knob grows to 1.15 on hover and 1.25 while held, the track takes an accent wash while held, and a disabled pill
 /// dims the whole track to 0.38 and ignores the pointer (`StateStyles.track`).
 @MainActor
@@ -604,32 +642,51 @@ final class SizeTrackView: NSControl {
     }
 }
 
-/// One of the five sizes. It draws the command states (`StateStyles.command`); the selected one is marked by a thicker accent border
-/// and a tinted fill, never by colour alone.
+/// One of the five sizes, a glass choice in the Size panel. The rounded fill and border behind it are the same `StatePlate` every glass
+/// choice draws (hover, pressed, selected); the view itself draws only the stroke glyph, a line as thick as the size. The chosen one
+/// is marked three ways, never colour alone: the selected fill with its accent border, a longer line (visual weight), and, under
+/// Differentiate Without Color, the capsule `StateStyles.command` adds under the glyph.
 @MainActor
 final class SizePresetButton: NSButton {
     static let size = NSSize(width: 48, height: 36)
+    /// How much longer the chosen preset's line is drawn than the others'.
+    static let chosenGlyphExtra: CGFloat = 6
     let presetSize: Double
     private weak var slider: BezelSizeSlider?
     private(set) var isHovered = false
     private var hoverArea: NSTrackingArea?
+    private var primaryTracking = false, hasKeyboardFocus = false
+    private(set) lazy var plate = StatePlate(view: self)
     var isSelectedPreset: Bool { slider.map { abs($0.doubleValue - presetSize) < 0.01 } ?? false }
 
     var controlState: ControlState {
         if slider?.isEnabled == false { return .disabled }
-        if isHighlighted { return .pressed }
+        if primaryTracking || isHighlighted { return .pressed }
         if isSelectedPreset { return .selected }
         return isHovered ? .hover : .rest
     }
     /// The command style this preset draws right now, under the live display options.
     var commandStyle: StateStyle {
         let options = DisplayOptions.current
-        return StateStyles.command(controlState, primary: false, focused: false, highContrast: options.increaseContrast,
+        return StateStyles.command(controlState, primary: false, focused: hasKeyboardFocus, highContrast: options.increaseContrast,
                                    differentiate: options.differentiateWithoutColor, selected: isSelectedPreset, appearance: effectiveAppearance)
+    }
+    /// The length of the stroke glyph as drawn now.
+    var glyphLength: CGFloat {
+        let style = commandStyle
+        let base = BezelSizeSlider.glyphLength * (DisplayOptions.current.reduceMotion ? 1 : style.glyphScale)
+        return base + (isSelectedPreset ? Self.chosenGlyphExtra : 0)
+    }
+    /// Re-reads the slider and the pointer into the fill, the border and the glyph.
+    func sync() {
+        plate.accessibility = DisplayOptions.current.chrome
+        plate.update(hovered: isHovered, pressed: primaryTracking || isHighlighted, selected: isSelectedPreset,
+                     disabled: slider?.isEnabled == false, focused: hasKeyboardFocus)
+        needsDisplay = true
     }
     func setHovered(_ hovered: Bool) {
         guard isHovered != hovered else { return }
-        isHovered = hovered; needsDisplay = true
+        isHovered = hovered; sync()
     }
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
@@ -641,6 +698,28 @@ final class SizePresetButton: NSButton {
     override func mouseEntered(with event: NSEvent) { setHovered(true) }
     override func mouseExited(with event: NSEvent) { setHovered(false) }
     override func viewDidHide() { super.viewDidHide(); setHovered(false) }
+    override func highlight(_ flag: Bool) { super.highlight(flag); sync() }
+    // NSButton highlights its cell directly while tracking a primary click and never calls highlight(_:), so the press is bracketed here.
+    override func mouseDown(with event: NSEvent) {
+        guard slider?.isEnabled != false else { return }
+        primaryTracking = true; sync()
+        super.mouseDown(with: event)
+        primaryTracking = false; sync()
+    }
+    override func viewDidChangeEffectiveAppearance() { super.viewDidChangeEffectiveAppearance(); sync() }
+    override func viewDidMoveToWindow() { super.viewDidMoveToWindow(); sync() }
+    override func becomeFirstResponder() -> Bool {
+        let accepted = super.becomeFirstResponder()
+        if accepted { hasKeyboardFocus = true; sync() }
+        return accepted
+    }
+    override func resignFirstResponder() -> Bool {
+        let resigned = super.resignFirstResponder()
+        if resigned { hasKeyboardFocus = false; sync() }
+        return resigned
+    }
+    override var acceptsFirstResponder: Bool { slider?.isEnabled ?? false }
+    override var canBecomeKeyView: Bool { acceptsFirstResponder }
 
     init(size: Double, slider: BezelSizeSlider) {
         presetSize = size
@@ -653,35 +732,37 @@ final class SizePresetButton: NSButton {
         target = self; action = #selector(choose)
         let name = "Size " + String(format: "%.0f", size.rounded())
         setAccessibilityLabel(name); AppToolTip.setText(name, for: self)
+        sync()
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    /// A preset is a discrete pick, so it closes the popover as a colour pick does; dragging the track is continuous and keeps it open.
+    /// A preset is a discrete pick, so it closes the panel as a colour pick does; dragging the track is continuous and keeps it open.
     @objc private func choose() { slider?.performValueChange(presetSize, continuous: false); slider?.dismissPopover() }
     override func isAccessibilitySelected() -> Bool { isSelectedPreset }
+    override func accessibilityRole() -> NSAccessibility.Role? { .radioButton }
+    override func accessibilityValue() -> Any? { NSNumber(value: isSelectedPreset ? 1 : 0) }
 
     override func draw(_ dirtyRect: NSRect) {
         let style = commandStyle
-        let frame = bounds.insetBy(dx: 1, dy: 1)
-        let outline = NSBezierPath(roundedRect: frame, xRadius: 8, yRadius: 8)
         NSGraphicsContext.saveGraphicsState()
         defer { NSGraphicsContext.restoreGraphicsState() }
         if style.contentAlpha < 1 { NSGraphicsContext.current?.cgContext.setAlpha(style.contentAlpha) }
-        if let fill = style.fill { fill.setFill(); outline.fill() }
-        // A preset is a discrete option, so it keeps a hairline outline at rest; the selected one doubles it in the accent.
-        (style.border ?? DesignTokens.Palette.separator).setStroke()
-        outline.lineWidth = style.border == nil ? 1 : 2
-        outline.stroke()
-        let thickness = CGFloat(presetSize)
-        let length = BezelSizeSlider.glyphLength * (DisplayOptions.current.reduceMotion ? 1 : style.glyphScale)
+        let thickness = CGFloat(presetSize), length = glyphLength
         let line = NSRect(x: (bounds.width - length) / 2, y: (bounds.height - thickness) / 2, width: length, height: thickness)
         style.content.setFill()
         NSBezierPath(roundedRect: line, xRadius: thickness / 2, yRadius: thickness / 2).fill()
+        if style.indicator {
+            let mark = StateStyles.indicatorSize(highContrast: DisplayOptions.current.increaseContrast)
+            let y = isFlipped ? bounds.height - StateStyles.indicatorInset - mark.height : StateStyles.indicatorInset
+            NSBezierPath(roundedRect: NSRect(x: bounds.midX - mark.width / 2, y: y, width: mark.width, height: mark.height),
+                         xRadius: mark.height / 2, yRadius: mark.height / 2).fill()
+        }
     }
     override var focusRingMaskBounds: NSRect { bounds.insetBy(dx: 1, dy: 1) }
     override func drawFocusRingMask() {
         NSColor.black.setFill()
-        NSBezierPath(roundedRect: bounds.insetBy(dx: 1, dy: 1), xRadius: 8, yRadius: 8).fill()
+        let frame = bounds.insetBy(dx: 1, dy: 1)
+        NSBezierPath(roundedRect: frame, xRadius: StatePlate.radius, yRadius: StatePlate.radius).fill()
     }
 }
 
@@ -698,29 +779,81 @@ final class BezelHoverButton: NSButton {
     override func mouseEntered(with event: NSEvent) { onHover?(true) }
     override func mouseExited(with event: NSEvent) { onHover?(false) }
 }
-/// The Drawing colors popover's content. It paints its own opaque content plate, as the Size popover does, so its text and controls
-/// never sit on the system popover material (which can come out dark under a light app); the plate follows the appearance.
-final class BezelHoverPaletteView: NSView {
+/// Reports the pointer entering and leaving the Drawing colors panel without taking the keyboard, so the hover bridge in the app can
+/// keep a hover-opened palette up while the pointer crosses from the Color control into it. It tracks the plates, not the panel window,
+/// so the panel needs no solid content view of its own.
+@MainActor
+final class PaletteHoverTracker: NSObject {
     var onHover: ((Bool) -> Void)?
-    private var hoverTracking: NSTrackingArea?
-    override init(frame frameRect: NSRect) {
-        super.init(frame: frameRect)
-        wantsLayer = true
+    private var areas: [(view: NSView, area: NSTrackingArea)] = []
+
+    func attach(to view: NSView) {
+        let area = NSTrackingArea(rect: .zero, options: [.mouseEnteredAndExited, .activeInActiveApp, .inVisibleRect, .enabledDuringMouseDrag], owner: self, userInfo: nil)
+        view.addTrackingArea(area)
+        areas.append((view, area))
     }
-    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-    override var wantsUpdateLayer: Bool { true }
-    override func updateLayer() {
-        effectiveAppearance.performAsCurrentDrawingAppearance { layer?.backgroundColor = DesignTokens.Palette.Surface.content.cgColor }
+
+    /// Stops tracking for good: a retired panel can no longer report into a replacement.
+    func detach() {
+        onHover = nil
+        for (view, area) in areas { view.removeTrackingArea(area) }
+        areas.removeAll()
     }
-    override func viewDidChangeEffectiveAppearance() {
-        super.viewDidChangeEffectiveAppearance()
-        needsDisplay = true
+
+    // An NSTrackingArea owner is sent `mouseEntered:` and `mouseExited:`; Swift would export these as `mouseEnteredWith:` and so on.
+    @objc(mouseEntered:) func mouseEntered(with event: NSEvent) { onHover?(true) }
+    @objc(mouseExited:) func mouseExited(with event: NSEvent) { onHover?(false) }
+}
+
+/// The content of the Drawing colors panel, as two glass plates for one `GlassPanelHost`: the title and the 5 x 2 swatch grid on the
+/// first, the "Custom color…" choice on the second. The swatches and the Custom row are made by the app (they carry its targets and
+/// hints); this lays them out.
+@MainActor
+final class ColorPaletteContent {
+    static let swatchPitch = NSSize(width: 45, height: 34)
+    static let columns = 5
+    /// 12 pt margins around five 42 pt swatches 3 pt apart (each draws 3 pt inside its frame); every row is this wide, so the title,
+    /// the grid and the Custom row share their edges.
+    static let rowWidth: CGFloat = 246
+    static let horizontalPadding = DesignTokens.Space.s3
+    static let rowHeight = GlassChrome.Metrics.commandHeight
+    let titleLabel: NSTextField
+    let swatches: [BezelColorButton]
+    let customButton: GlassChoiceButton
+    let titleRow = NSView(), gridRow = NSView()
+    let palettePlate: GlassSurfaceView, customPlate: GlassSurfaceView
+    var plates: [GlassSurfaceView] { [palettePlate, customPlate] }
+    /// The swatches in reading order, then Custom color…: the loop Tab walks inside the panel.
+    var keyLoop: [NSView] { swatches + [customButton] }
+
+    init(title: NSTextField, swatches: [BezelColorButton], custom: GlassChoiceButton, accessibility: ChromeAccessibility = .live) {
+        titleLabel = title; self.swatches = swatches; customButton = custom
+        title.font = DesignTokens.Typography.font(.bodyStrong)
+        title.textColor = DesignTokens.Palette.Text.primary
+        title.translatesAutoresizingMaskIntoConstraints = false
+        titleRow.addSubview(title)
+        var constraints = [title.leadingAnchor.constraint(equalTo: titleRow.leadingAnchor, constant: Self.horizontalPadding),
+                           title.trailingAnchor.constraint(lessThanOrEqualTo: titleRow.trailingAnchor, constant: -Self.horizontalPadding),
+                           title.centerYAnchor.constraint(equalTo: titleRow.centerYAnchor)]
+        let swatchSize = NSSize(width: 42, height: 32)
+        for (index, swatch) in swatches.enumerated() {
+            swatch.translatesAutoresizingMaskIntoConstraints = false
+            gridRow.addSubview(swatch)
+            constraints += [swatch.leadingAnchor.constraint(equalTo: gridRow.leadingAnchor, constant: Self.horizontalPadding + CGFloat(index % Self.columns) * Self.swatchPitch.width),
+                            swatch.topAnchor.constraint(equalTo: gridRow.topAnchor, constant: CGFloat(index / Self.columns) * Self.swatchPitch.height),
+                            swatch.widthAnchor.constraint(equalToConstant: swatchSize.width), swatch.heightAnchor.constraint(equalToConstant: swatchSize.height)]
+        }
+        let gridRows = (swatches.count + Self.columns - 1) / Self.columns
+        let gridHeight = CGFloat(max(0, gridRows - 1)) * Self.swatchPitch.height + swatchSize.height
+        custom.translatesAutoresizingMaskIntoConstraints = false
+        for row in [titleRow, gridRow] { row.translatesAutoresizingMaskIntoConstraints = false }
+        constraints += [titleRow.widthAnchor.constraint(equalToConstant: Self.rowWidth), titleRow.heightAnchor.constraint(equalToConstant: Self.rowHeight),
+                        gridRow.widthAnchor.constraint(equalToConstant: Self.rowWidth), gridRow.heightAnchor.constraint(equalToConstant: gridHeight),
+                        custom.widthAnchor.constraint(equalToConstant: Self.rowWidth), custom.heightAnchor.constraint(equalToConstant: Self.rowHeight)]
+        NSLayoutConstraint.activate(constraints)
+        palettePlate = GlassChrome.plate([titleRow, gridRow], identifier: "GlassColorPalette", accessibility: accessibility, axis: .vertical)
+        customPlate = GlassChrome.plate([custom], identifier: "GlassColorCustom", accessibility: accessibility, axis: .vertical)
+        let loop = keyLoop
+        for (index, view) in loop.enumerated() { view.nextKeyView = loop[(index + 1) % loop.count] }
     }
-    override func updateTrackingAreas() {
-        if let hoverTracking { removeTrackingArea(hoverTracking) }
-        let area = NSTrackingArea(rect: .zero, options: [.mouseEnteredAndExited, .activeInActiveApp, .inVisibleRect, .enabledDuringMouseDrag], owner: self)
-        addTrackingArea(area); hoverTracking = area; super.updateTrackingAreas()
-    }
-    override func mouseEntered(with event: NSEvent) { onHover?(true) }
-    override func mouseExited(with event: NSEvent) { onHover?(false) }
 }
