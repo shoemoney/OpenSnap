@@ -968,14 +968,15 @@ final class GlassPanelHost: NSObject {
         parent.convertToScreen(view.convert(anchorRect, to: nil))
     }
 
-    /// `preferredEdge` is in the anchor view's own coordinates, like `NSPopover`: `.minY` of an unflipped view is below the rect, of a flipped view above it.
+    /// `preferredEdge` is in screen terms whatever the anchor view's flippedness (NSPopover reads it in view coordinates, where an NSButton may or may not
+    /// be flipped): `.minY` is below the anchor, `.maxY` above it, `.minX` left, `.maxX` right. The panel flips when the preferred side lacks room.
     func show(relativeTo rect: NSRect, of view: NSView, preferredEdge edge: NSRectEdge, makeKey: Bool) {
         guard let parent = view.window else { return }
         if isShown { close(restoreFocus: false) }
         if let other = Self.current, other !== self { other.close() }
         anchor = view
         anchorRect = rect
-        preferredEdge = view.isFlipped ? Self.opposite(edge) : edge
+        preferredEdge = edge
         self.parent = parent
         savedResponder = parent.firstResponder
         requestedKey = makeKey
@@ -1395,7 +1396,7 @@ class GlassPopUpButton: NSPopUpButton {
 
     // A different menu is a different panel: the old one goes away with it, not on the next open.
     override var menu: NSMenu? {
-        didSet { if cachedPanel != nil, cachedPanel?.menu !== menu { discardPanel() } }
+        didSet { menu?.font = DesignTokens.Typography.font(.body); if cachedPanel != nil, cachedPanel?.menu !== menu { discardPanel() } }
     }
 
     private func discardPanel() {
