@@ -198,6 +198,7 @@ extension FAIcon {
     /// tools (`circle`, `square`) take the regular outline when unselected, so selecting one fills it. Four Pro-only icons use the closest Free shape instead:
     /// `slash-forward` is a diagonal `minus`, `text` is `t`, `arrow-up-right` is `arrow-right` turned 45° up
     /// (rotation is SVG degrees: negative turns counter-clockwise as drawn) and `camera-viewfinder` is `expand` (four capture-frame corners).
+    /// The right and left chevrons are the embedded `chevron-down` turned a quarter turn (counter-clockwise for right, clockwise for left).
     var freeSource: FreeSource {
         switch self {
         case .eyeSlash: return .init(name: "eye-slash", rotation: 0, hasRegular: false)
@@ -237,6 +238,8 @@ extension FAIcon {
         case .circleInfo: return .init(name: "circle-info", rotation: 0, hasRegular: false)
         case .chevronDown: return .init(name: "chevron-down", rotation: 0, hasRegular: false)
         case .folderMinus: return .init(name: "folder-minus", rotation: 0, hasRegular: false)
+        case .chevronRight: return .init(name: "chevron-down", rotation: -90, hasRegular: false)
+        case .chevronLeft: return .init(name: "chevron-down", rotation: 90, hasRegular: false)
         }
     }
 }

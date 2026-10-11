@@ -224,6 +224,24 @@ private enum IconCoverageTests {
         if let line = quadrants(.slashForward) {
             expect(line.upperRight + line.lowerLeft > 4 * (line.upperLeft + line.lowerRight), "The line tool's icon runs from lower left to upper right, like a slash")
         } else { expect(false, "The line tool icon did not render") }
+        // The chevrons are the embedded chevron-down turned a quarter turn: a ">" has its tip at the right (at mid height the ink sits
+        // further right than near the top), a "<" the mirror image. Measured on the pixels, so a wrong turn direction fails.
+        func meanX(_ icon: FAIcon, rows: ClosedRange<Double>) -> Double? {
+            guard let glyph = FontAwesomeFree.glyph(for: icon), let image = FontAwesomeFree.image(glyph, pointSize: 40) else { return nil }
+            let rep = render(image, scale: 1), pixels = rep.pixelsWide
+            var sum = 0.0, total = 0.0
+            for y in Int(rows.lowerBound * Double(pixels))..<Int(rows.upperBound * Double(pixels)) { for x in 0..<pixels {
+                let alpha = Double(rep.bitmapData![y * rep.bytesPerRow + x * 4 + 3])
+                sum += Double(x) * alpha; total += alpha
+            } }
+            return total > 0 ? sum / total : nil
+        }
+        for (icon, direction) in [(FAIcon.chevronRight, 1.0), (FAIcon.chevronLeft, -1.0)] {
+            if let top = meanX(icon, rows: 0.2...0.35), let middle = meanX(icon, rows: 0.45...0.55) {
+                expect((middle - top) * direction > 4, "\(icon) points \(direction > 0 ? "right" : "left"): its tip (\(middle)) is on the pointing side of its arms (\(top))")
+            } else { expect(false, "\(icon) did not render") }
+            expect(icon.freeSource.name == "chevron-down" && abs(icon.freeSource.rotation) == 90, "\(icon) is the embedded chevron-down turned a quarter")
+        }
         expect(FontAwesomeFree.image(FontAwesomeFree.glyph(for: .circle)!, pointSize: 0) == nil, "Non-positive sizes render nothing")
     }
 
