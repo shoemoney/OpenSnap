@@ -94,6 +94,11 @@ private func key(_ code: UInt16, chars: String = "", modifiers: NSEvent.Modifier
                      characters: chars, charactersIgnoringModifiers: chars, isARepeat: false, keyCode: code)!
 }
 
+@MainActor
+private final class LongFacePopUp: GlassPopUpButton {
+    override var faceTitle: String { "A deliberately long face title that cannot possibly fit" }
+}
+
 /// Records the key-downs that reach it: what the pop-up did not take.
 @MainActor
 private final class KeyProbeView: NSView {
@@ -1386,9 +1391,11 @@ private enum GlassChoicesTests {
         rig.attach(panel.host)
         func press(_ code: UInt16, modifiers: NSEvent.ModifierFlags = []) { panel.host.window.sendEvent(key(code, modifiers: modifiers)) }
 
-        // keyboard: true focuses the chosen row.
+        // keyboard: true starts on the first enabled row: Beta is a toggle that happens to be on (state, not a choice), so it is not preferred.
         panel.present(relativeTo: rig.anchor, preferredEdge: .minY, keyboard: true)
-        expect(panel.focusedRow?.title == "Beta" && panel.host.window.firstResponder === panel.focusedRow, "A keyboard open focuses the chosen row")
+        expect(panel.focusedRow?.title == "Alpha" && panel.host.window.firstResponder === panel.focusedRow, "A keyboard open on a command menu focuses the first enabled row, not the toggle that is on")
+        press(Keys.down)
+        expect(panel.focusedRow?.title == "Beta", "Down moves on to the next row")
         // Down skips the disabled Gamma, wraps; Up goes back the same way.
         press(Keys.down)
         expect(panel.focusedRow?.title == "Delta", "Down skips a disabled row (Gamma): \(panel.focusedRow?.title ?? "nil")")
@@ -1412,6 +1419,7 @@ private enum GlassChoicesTests {
             log.lines = []
             panel.present(relativeTo: rig.anchor, preferredEdge: .minY, keyboard: true)
             press(Keys.down)
+            press(Keys.down)
             expect(panel.focusedRow?.title == "Delta", "(setup for \(label))")
             press(code)
             expect(!panel.host.isShown && log.count("act:Delta") == 1, "\(label) chooses the focused row")
@@ -1423,10 +1431,29 @@ private enum GlassChoicesTests {
         press(Keys.enter)
         expect(panel.host.isShown, "Return with no row focused does nothing")
         press(Keys.down)
-        expect(panel.focusedRow?.title == "Beta", "The first arrow key focuses the chosen row")
+        expect(panel.focusedRow?.title == "Alpha", "The first arrow key focuses the first enabled row of a command menu (the toggle that is on is not a choice)")
         panel.present(relativeTo: rig.anchor, preferredEdge: .minY, keyboard: false)
         press(Keys.up)
-        expect(panel.focusedRow?.title == "Beta", "...for Up as well")
+        expect(panel.focusedRow?.title == "Alpha", "...for Up as well")
+
+        // In a menu of options the chosen option is where the keyboard starts, on open and on the first arrow key.
+        let optionPanel = MenuChoicePanel(menu: menu, identifier: "Options", accessibilityLabel: "Options", kind: { _ in .option })
+        rig.attach(optionPanel.host)
+        optionPanel.present(relativeTo: rig.anchor, preferredEdge: .minY, keyboard: true)
+        expect(optionPanel.focusedRow?.title == "Beta" && optionPanel.rows.first { $0.isChosen }?.title == "Beta", "A keyboard open focuses the chosen option")
+        optionPanel.present(relativeTo: rig.anchor, preferredEdge: .minY, keyboard: false)
+        expect(optionPanel.focusedRow == nil, "A pointer open focuses nothing")
+        _ = optionPanel.handleKey(key(Keys.up))
+        expect(optionPanel.focusedRow?.title == "Beta", "The first arrow key starts from the chosen option")
+        optionPanel.host.close()
+        // A chosen option wins over a toggle that is on, whatever their order.
+        let mixed = MenuChoicePanel(menu: menu, identifier: "Mixed", accessibilityLabel: "Mixed", kind: { $0.title == "Delta" ? .option : .toggle })
+        rig.attach(mixed.host)
+        menu.items[8].state = .on
+        mixed.present(relativeTo: rig.anchor, preferredEdge: .minY, keyboard: true)
+        expect(mixed.rows.filter(\.isChosen).map(\.title) == ["Beta", "Delta"] && mixed.focusedRow?.title == "Delta", "With a toggle on and an option chosen, the option takes the keyboard (\(mixed.focusedRow?.title ?? "nil"))")
+        menu.items[8].state = .off
+        mixed.host.close()
         // With no chosen row it is the first enabled one.
         menu.items[1].state = .off
         panel.present(relativeTo: rig.anchor, preferredEdge: .minY, keyboard: true)
@@ -1440,7 +1467,11 @@ private enum GlassChoicesTests {
         panel.present(relativeTo: rig.anchor, preferredEdge: .minY, keyboard: true)
         let alpha = panel.rows.first { $0.title == "Alpha" }!
         alpha.setHovered(true)
-        expect(alpha.plate.style.fill != nil && panel.focusedRow?.title == "Beta", "Hovering a row fills it without moving the keyboard focus")
+        expect(alpha.plate.style.fill != nil && panel.focusedRow?.title == "Alpha", "Hovering a row fills it")
+        let delta = panel.rows.first { $0.title == "Delta" }!
+        delta.setHovered(true)
+        expect(delta.plate.style.fill != nil && panel.focusedRow?.title == "Alpha", "...without moving the keyboard focus")
+        delta.setHovered(false)
         alpha.setHovered(false)
         panel.host.close()
 
@@ -1714,6 +1745,73 @@ private enum GlassChoicesTests {
         expect(!pop.canBecomeKeyView, "Tab reaches the pop-up only with Full Keyboard Access, like every chrome control")
         KeyboardNavigation.fullKeyboardAccess = { true }
         expect(pop.canBecomeKeyView, "...and does with it")
+
+        // Face metrics: the defaults are the roomy ones; a tight face measures title + 2 x padding + chevron column and never truncates.
+        expect(pop.facePadding == 12 && pop.chevronColumn == 33, "The default face metrics are unchanged: 12 pt padding, a 33 pt chevron column")
+        let bodyAttributes: [NSAttributedString.Key: Any] = [.font: DesignTokens.Typography.font(.body)]
+        func width(_ text: String) -> CGFloat { ceil((text as NSString).size(withAttributes: bodyAttributes).width) }
+        let allTitles = pop.menu!.items.map(\.title)
+        let widest = allTitles.map(width).max() ?? 0
+        expect(pop.intrinsicContentSize.width == 2 * 12 + widest + 33, "...so the default face measures title + 2 x 12 + 33 (\(pop.intrinsicContentSize.width))")
+        let tight = GlassPopUpButton(frame: .zero, pullsDown: false)
+        tight.addItems(withTitles: ["25%", "50%", "100%", "200%", "Fit"])
+        tight.selectItem(at: 2)
+        tight.facePadding = 4
+        tight.chevronColumn = 25
+        let tightWidest = tight.menu!.items.map { width($0.title) }.max() ?? 0
+        expect(tight.intrinsicContentSize.width == 2 * 4 + tightWidest + 25 && tight.intrinsicContentSize.height == 36, "A tight face measures title + 2 x 4 + 25 (\(tight.intrinsicContentSize))")
+        expect(tight.intrinsicContentSize.width < pop.intrinsicContentSize.width, "...and is narrower than the roomy one")
+        tight.frame = NSRect(origin: NSPoint(x: 10, y: 60), size: tight.intrinsicContentSize)
+        rig.window.contentView?.addSubview(tight)
+        for index in 0..<tight.numberOfItems {
+            tight.selectItem(at: index)
+            tight.layoutSubtreeIfNeeded()
+            expect(tight.titleRect.width >= width(tight.faceTitle), "The 20 pt title \"\(tight.faceTitle)\" has room in a tight face: \(width(tight.faceTitle)) of \(tight.titleRect.width)")
+        }
+        expect(tight.fittingSize.width <= tight.frame.width + 0.01, "A tight face never needs more than its own width")
+        expect(tight.titleRect.minX == 4 && tight.chevronRect.maxX == tight.bounds.width - 4 && tight.chevronRect.minX >= tight.titleRect.maxX - 0.01 && tight.bounds.contains(tight.chevronRect),
+               "The tight chevron sits at the trailing end, after the title, inside the face (\(tight.titleRect), \(tight.chevronRect))")
+        expect(!tight.subviews.isEmpty && tight.subviews.contains { $0.frame == tight.chevronRect && !$0.isHidden }, "The chevron view is where the metrics say, and visible")
+        expect(tight.focusRingMaskBounds == tight.bounds.insetBy(dx: 1, dy: 1), "The focus ring still follows the whole face")
+        guard let tightRep = tight.bitmapImageRepForCachingDisplay(in: tight.bounds) else { return expect(false, "The tight face renders") }
+        tight.cacheDisplay(in: tight.bounds, to: tightRep)
+        func tightInk(_ x0: Int, _ x1: Int) -> Int {
+            var count = 0
+            for y in 0..<tightRep.pixelsHigh { for x in max(0, x0)..<min(tightRep.pixelsWide, x1) where (tightRep.colorAt(x: x, y: y)?.alphaComponent ?? 0) > 0.5 { count += 1 } }
+            return count
+        }
+        let scale = Double(tightRep.pixelsWide) / Double(tight.bounds.width)
+        expect(tightInk(Int(4 * scale), Int((4 + width(tight.faceTitle)) * scale)) > 40, "The tight face draws its title")
+        expect(tightInk(Int(Double(tight.chevronRect.minX + 4) * scale), Int(Double(tight.bounds.width) * scale)) > 20, "...and its chevron")
+        // Changing the metrics re-measures.
+        let tightBefore = tight.intrinsicContentSize.width
+        tight.chevronColumn = 33
+        expect(tight.intrinsicContentSize.width == tightBefore + 8, "Changing the chevron column re-measures the face")
+        // The face's text metrics are what draw(_:) uses: normal titles fit at the default and tight metrics, a long one in a narrow frame does not.
+        for face in [pop, tight] {
+            face.frame = NSRect(origin: NSPoint(x: 10, y: 60), size: face.intrinsicContentSize)
+            rig.window.contentView?.addSubview(face)
+            for index in 0..<face.numberOfItems {
+                face.selectItem(at: index)
+                let metrics = face.faceTextMetrics
+                expect(metrics.title == face.faceTitle && metrics.font == DesignTokens.Typography.font(.body) && metrics.font.pointSize == 20, "The metrics name the title and the 20 pt face")
+                expect(metrics.needed.width == width(face.faceTitle) && metrics.needed.height >= 20 && metrics.available == face.titleRect, "...the real text size and the rectangle that is drawn into (\(metrics.needed) in \(metrics.available))")
+                expect(face.faceTextFits, "\"\(face.faceTitle)\" fits its face at padding \(face.facePadding) / chevron column \(face.chevronColumn)")
+            }
+            face.removeFromSuperview()
+        }
+        let long = LongFacePopUp(frame: NSRect(x: 10, y: 60, width: 100, height: 36), pullsDown: false)
+        long.addItem(withTitle: "Short")
+        rig.window.contentView?.addSubview(long)
+        let longMetrics = long.faceTextMetrics
+        expect(!long.faceTextFits && longMetrics.needed.width > longMetrics.available.width, "A long title in a narrow frame reports that it does not fit (needs \(longMetrics.needed.width) of \(longMetrics.available.width))")
+        long.frame.size.width = long.intrinsicContentSize.width
+        expect(long.faceTextFits, "...and fits once the face has its own width")
+        let squat = GlassPopUpButton(frame: NSRect(x: 10, y: 60, width: 200, height: 20), pullsDown: false)
+        squat.addItem(withTitle: "Short")
+        expect(!squat.faceTextFits && squat.faceTextMetrics.needed.height > squat.faceTextMetrics.available.height, "A face too short for a 20 pt line reports that it does not fit")
+        long.removeFromSuperview()
+        tight.removeFromSuperview()
 
         // The face: the selected title at 20 pt and a chevron, drawn without a bezel.
         pop.selectItem(at: 1)
