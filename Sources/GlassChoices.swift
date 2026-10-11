@@ -770,11 +770,21 @@ private final class FlippedDocumentView: NSView {
 final class GlassPanelHost: NSObject {
     enum Alignment { case leading, center, trailing }
 
+    /// Where the panel ended up relative to the window it was opened from.
+    enum Containment: Equatable {
+        /// Horizontally inside the parent window (as much of it as the screen shows): the panel did not hang out past it.
+        case parent
+        /// Not contained, and legitimately so: no parent was given, the panel sits beside its anchor, or it is wider than the parent (or than
+        /// the part of it the screen shows), so the screen's visible frame alone decided where it went.
+        case screenFallback
+    }
+
     struct Placement: Equatable {
         var frame: NSRect
         /// The edge of the anchor the panel sits on, in screen terms (`.minY` is below the anchor).
         var edge: NSRectEdge
         var scrolls: Bool
+        var containment = Containment.screenFallback
     }
 
     /// The panel that is shown now; showing another closes it.
@@ -797,7 +807,13 @@ final class GlassPanelHost: NSObject {
     }
 
     /// Where a panel of `contentSize` goes next to `anchor` (all in screen coordinates, y up).
-    static func frame(contentSize: NSSize, anchor: NSRect, preferredEdge: NSRectEdge, visible: NSRect, alignment: Alignment = .leading) -> Placement {
+    ///
+    /// `container` is the window the anchor sits in. Above or below the anchor the panel stays inside it horizontally whenever it fits:
+    /// the requested `alignment` first; if that overflows the container, the anchor's opposite edge (a panel opened from the right edge of
+    /// a window ends at the anchor's trailing edge instead of hanging out past the window); if neither fits, clamped into the container.
+    /// A panel wider than the container (or no container) keeps the screen rules alone, and the screen margin is always the final clamp.
+    static func frame(contentSize: NSSize, anchor: NSRect, preferredEdge: NSRectEdge, visible: NSRect, alignment: Alignment = .leading,
+                      container: NSRect? = nil) -> Placement {
         let area = visible.insetBy(dx: screenMargin, dy: screenMargin)
         let width = min(contentSize.width, area.width)
         func room(_ edge: NSRectEdge) -> CGFloat {
@@ -826,11 +842,31 @@ final class GlassPanelHost: NSObject {
             scrolls = true
         }
         var origin = NSPoint.zero
+        var containment = Containment.screenFallback
         if vertical {
-            switch alignment {
-            case .leading: origin.x = anchor.minX
-            case .center: origin.x = anchor.midX - size.width / 2
-            case .trailing: origin.x = anchor.maxX - size.width
+            func originX(_ alignment: Alignment) -> CGFloat {
+                switch alignment {
+                case .leading: return anchor.minX
+                case .center: return anchor.midX - size.width / 2
+                case .trailing: return anchor.maxX - size.width
+                }
+            }
+            origin.x = originX(alignment)
+            if let container {
+                // The container as far as the screen allows it: a window half off the screen is not room to put a panel.
+                let low = max(container.minX, area.minX), high = min(container.maxX, area.maxX)
+                if size.width <= high - low + 0.001 {
+                    containment = .parent
+                    func fits(_ x: CGFloat) -> Bool { x >= low - 0.001 && x + size.width <= high + 0.001 }
+                    if !fits(origin.x) {
+                        let others: [Alignment] = alignment == .leading ? [.trailing] : (alignment == .trailing ? [.leading] : [.leading, .trailing])
+                        if let other = others.first(where: { fits(originX($0)) }) {
+                            origin.x = originX(other)
+                        } else {
+                            origin.x = min(max(origin.x, low), high - size.width)
+                        }
+                    }
+                }
             }
             origin.y = edge == .minY ? anchor.minY - gap - size.height : anchor.maxY + gap
         } else {
@@ -839,7 +875,7 @@ final class GlassPanelHost: NSObject {
         }
         origin.x = min(max(origin.x, area.minX), max(area.minX, area.maxX - size.width))
         origin.y = min(max(origin.y, area.minY), max(area.minY, area.maxY - size.height))
-        return Placement(frame: NSRect(origin: origin, size: size), edge: edge, scrolls: scrolls)
+        return Placement(frame: NSRect(origin: origin, size: size), edge: edge, scrolls: scrolls, containment: containment)
     }
 
     // MARK: state
@@ -1048,7 +1084,7 @@ final class GlassPanelHost: NSObject {
     private func reposition() {
         guard let anchor, let parent = anchor.window ?? self.parent else { return }
         let next = Self.frame(contentSize: contentSize, anchor: screenAnchor(of: anchor, in: parent), preferredEdge: preferredEdge,
-                              visible: visibleFrame(for: parent), alignment: alignment)
+                              visible: visibleFrame(for: parent), alignment: alignment, container: parent.frame)
         placement = next
         applyScroll(next.scrolls)
         if window.frame != next.frame { window.setFrame(next.frame, display: false) }
