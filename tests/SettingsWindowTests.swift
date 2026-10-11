@@ -190,6 +190,7 @@ private enum SettingsWindowTests {
             }
         }
         expect(tree.parentProblems().isEmpty, "General: every parent agrees with the tree: \(tree.parentProblems().prefix(3))")
+        expect(tree.shapeProblems().isEmpty, "General: no AXUnknown wrapper, role-less node (\(tree.shapeProblems().count)): \(tree.shapeProblems().prefix(3))")
 
         // Capture: the enable toggle, a modifier group per shortcut and Clear All.
         controller.select(2)
@@ -212,6 +213,7 @@ private enum SettingsWindowTests {
             expect(children(tree, clear) == ["Clear All"], "the Clear plate shows Clear All: \(children(tree, clear))")
         }
         expect(tree.parentProblems().isEmpty, "Capture: every parent agrees with the tree: \(tree.parentProblems().prefix(3))")
+        expect(tree.shapeProblems().isEmpty, "Capture: no AXUnknown wrapper, role-less node (\(tree.shapeProblems().count)): \(tree.shapeProblems().prefix(3))")
 
         // Upload: the destination action plate.
         controller.select(3)
@@ -226,6 +228,7 @@ private enum SettingsWindowTests {
             expect(kids.map { $0.enabled } == tab.actionPlate.arrangedViews.compactMap { ($0 as? NSButton)?.isEnabled }, "...and which of them is disabled")
         }
         expect(tree.parentProblems().isEmpty, "Upload: every parent agrees with the tree: \(tree.parentProblems().prefix(3))")
+        expect(tree.shapeProblems().isEmpty, "Upload: no AXUnknown wrapper, role-less node (\(tree.shapeProblems().count)): \(tree.shapeProblems().prefix(3))")
     }
 
     private static func general(_ controller: SettingsWindowController) -> GeneralSettingsTab { controller.general }

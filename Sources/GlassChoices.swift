@@ -774,16 +774,10 @@ final class GlassChoiceWindow: NSPanel {
 // MARK: - Panel host
 
 /// The panel's content root: an element of its own (a labelled group), and an app class so the accessibility audit judges its label. Its children
-/// are the panel's real controls, from every plate in visual order (the rows scrolled out of view included), so the list is explicit rather than
-/// whatever AppKit finds below the glass container.
-private final class PanelRootView: NSView {
-    weak var host: GlassPanelHost?
-
-    override func accessibilityChildren() -> [Any]? {
-        guard let host else { return super.accessibilityChildren() }
-        return GlassAccessibility.elements(in: host.plates)
-    }
-}
+/// are whatever AppKit's own traversal finds below the glass container, which is every control on every plate in visual order (the rows scrolled
+/// out of view included, as the scroll area is kept out of the tree). A list of our own is wrong here: an override that hands out the raw control
+/// views is published by the server as AXUnknown wrappers around the real controls.
+private final class PanelRootView: NSView {}
 
 /// The scrolling panel's document: flipped, so a panel taller than its window starts at its first row instead of its last.
 private final class FlippedDocumentView: NSView {
@@ -971,7 +965,6 @@ final class GlassPanelHost: NSObject {
         root.setAccessibilityRole(.group)
         root.setAccessibilityLabel(accessibilityLabel)
         window.escapeHandler = { [weak self] in self?.close() }
-        root.host = self
         root.addSubview(container)
         layoutConstraints = pin(container, to: root)
         NSLayoutConstraint.activate(layoutConstraints)

@@ -36,6 +36,20 @@ enum AXTree {
         fileprivate(set) var nodes: [Node] = []
         /// Elements the walk reached twice: an element listed under two parents, or under itself.
         fileprivate(set) var duplicates: [String] = []
+        /// What is wrong with the RAW lists the elements answer with, before any unignored expansion (see `shapeProblems`).
+        fileprivate(set) var rawProblems: [String] = []
+
+        /// What an assistive client would find odd about the tree's shape: an element's own `accessibilityChildren()` that hands out something other
+        /// than a real element (the AX server publishes a plain view in such a list as a role-less AXUnknown wrapper around the control inside it,
+        /// which `unignoredChildren` would quietly flatten away in the walk), or a node with no role. AppKit's native title-bar groups can be unnamed;
+        /// app-owned group names are checked by each surface's required-control assertions.
+        func shapeProblems() -> [String] {
+            var problems = rawProblems
+            for node in nodes {
+                if node.role == nil || node.role == .unknown { problems.append("a node of unknown role: \"\(node.label ?? "")\" (\(type(of: node.object)))") }
+            }
+            return problems
+        }
 
         func nodes(role: NSAccessibility.Role) -> [Node] { nodes.filter { $0.role == role } }
         func find(_ role: NSAccessibility.Role, _ label: String) -> Node? { nodes.first { $0.role == role && $0.label == label } }
@@ -101,6 +115,8 @@ enum AXTree {
         var tree = Tree(window: window)
         var seen = Set<ObjectIdentifier>([ObjectIdentifier(window)])
         func visit(_ raw: [Any]?, from parent: Int?, depth: Int) {
+            let owner = parent.map { "\(tree.nodes[$0].role?.rawValue ?? "?") \"\(tree.nodes[$0].label ?? "")\"" } ?? "the window"
+            for item in raw ?? [] { if let problem = rawProblem(item) { tree.rawProblems.append("\(owner) lists \(problem)") } }
             for case let child as any NSAccessibilityProtocol in NSAccessibility.unignoredChildren(from: raw ?? []) {
                 guard tree.nodes.count < limit else { return }
                 let object = child as AnyObject
@@ -138,6 +154,20 @@ enum AXTree {
         if let label = element.accessibilityLabel(), !label.isEmpty { return label }
         if let label = (element as? NSCell)?.controlView?.accessibilityLabel(), !label.isEmpty { return label }
         return legacy(element, .description)
+    }
+
+    /// Why an item in an element's raw children list is not a real element, or nil. A view in the list must itself be an accessibility element
+    /// (a standard control is not: its cell is, and AppKit's own lists hand out the cell); anything else must have a role.
+    private static func rawProblem(_ item: Any) -> String? {
+        // AppKit also publishes legacy cell proxies which do not adopt the newer protocol. Judge their server-facing role attribute,
+        // rather than rejecting an otherwise valid accessibility object for its implementation type.
+        let element = item as? any NSAccessibilityProtocol
+        let legacy = item as? NSObject
+        let role = element?.accessibilityRole()?.rawValue ?? legacy?.accessibilityAttributeValue(.role) as? String
+        let name = element?.accessibilityLabel() ?? legacy?.accessibilityAttributeValue(.description) as? String ?? ""
+        if role == nil || role == NSAccessibility.Role.unknown.rawValue { return "\(type(of: item)) \"\(name)\" with no role" }
+        if let view = item as? NSView, !view.isAccessibilityElement() { return "the plain view \(type(of: item)) \"\(name)\", which is not an accessibility element" }
+        return nil
     }
 
     /// What a client calls the element: its description, else its title.

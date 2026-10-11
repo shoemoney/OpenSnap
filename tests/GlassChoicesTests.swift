@@ -1833,6 +1833,10 @@ private enum GlassChoicesTests {
     private static func expectCoherent(_ tree: AXTree.Tree, _ context: String) {
         let problems = tree.parentProblems()
         expect(problems.isEmpty, "\(context): parents agree with the tree and lead back to the window: \(problems.prefix(4))")
+        // The shape a client sees: every list an element hands out holds real elements (no raw views the server would wrap as AXUnknown), no node of
+        // unknown role.
+        let shape = tree.shapeProblems()
+        expect(shape.isEmpty, "\(context): the tree has no AXUnknown wrapper, role-less node (\(shape.count)): \(shape.prefix(4))")
     }
 
     private static func externalTreeTests() {

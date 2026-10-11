@@ -209,6 +209,8 @@ private enum ResizePanelLayoutTests {
         try expectTree(tree.find(.radioButton, "Crop")?.number == 1 && mode.selectedIndex == 1, "AXPress chose Crop (the group says so)")
         let problems = tree.parentProblems()
         try expectTree(problems.isEmpty, "every parent agrees with the tree and leads back to the window: \(problems.prefix(3))")
+        let shape = tree.shapeProblems()
+        try expectTree(shape.isEmpty, "no AXUnknown wrapper, role-less node (\(shape.count)): \(shape.prefix(3))")
     }
 
     private static func expectTree(_ condition: @autoclosure () -> Bool, _ message: String) throws {
