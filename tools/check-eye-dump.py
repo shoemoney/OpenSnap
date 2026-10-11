@@ -602,6 +602,44 @@ def toggle_problems(label, glass, rows, needle, want_on):
     return []
 
 
+PLACEMENT_TOLERANCE = 1.0
+
+
+def placement_problems(label, glass):
+    """[problem] when a panel hangs outside the window it belongs to. Frames are screen rectangles [x, y, width, height] with a bottom-left origin.
+
+    A panel no wider than its parent window must lie horizontally inside it (1 pt tolerance); one wider than the window cannot, so it is exempt.
+    A panel that opens below or above its opener and is no taller than the parent's content must not reach up into the parent's title bar, the strip
+    between the content area's top edge and the window's top edge.
+    """
+    panel, parent, content, opener = (glass.get(key) for key in ("panelFrame", "parentFrame", "parentContentFrame", "openerFrame"))
+
+    def good(frame):
+        return isinstance(frame, list) and len(frame) == 4 and all(isinstance(v, (int, float)) for v in frame)
+
+    if not (good(panel) and good(parent)):
+        return [f"glass: {label} records no panel frame and parent window frame, so its placement was not checked"]
+    problems = []
+    p_left, p_right = panel[0], panel[0] + panel[2]
+    w_left, w_right = parent[0], parent[0] + parent[2]
+    if panel[2] <= parent[2] + PLACEMENT_TOLERANCE:
+        if p_left < w_left - PLACEMENT_TOLERANCE or p_right > w_right + PLACEMENT_TOLERANCE:
+            out = max(w_left - p_left, p_right - w_right)
+            problems.append(f"glass: {label} panel (x {p_left:g}..{p_right:g}) hangs {out:g} pt outside its parent window (x {w_left:g}..{w_right:g}) though it is narrower than it")
+    if good(content) and good(opener):
+        p_bottom, p_top = panel[1], panel[1] + panel[3]
+        o_bottom, o_top = opener[1], opener[1] + opener[3]
+        below = p_top <= o_bottom + 2 * PLACEMENT_TOLERANCE
+        above = p_bottom >= o_top - 2 * PLACEMENT_TOLERANCE
+        content_top, window_top = content[1] + content[3], parent[1] + parent[3]
+        fits = panel[3] <= content[3] + PLACEMENT_TOLERANCE
+        horizontal = p_left < w_right and p_right > w_left
+        if (below or above) and fits and horizontal and window_top - content_top > PLACEMENT_TOLERANCE:
+            if p_top > content_top + PLACEMENT_TOLERANCE and p_bottom < window_top:
+                problems.append(f"glass: {label} panel (y {p_bottom:g}..{p_top:g}) overlaps its parent's title bar (y {content_top:g}..{window_top:g})")
+    return problems
+
+
 def check_glass_record(label, record):
     """[problem] for one capture's `glassPanel` record (what the harness measured on the real panel or groups)."""
     glass = record.get("glassPanel")
@@ -620,6 +658,8 @@ def check_glass_record(label, record):
             problems.append(f"glass: {label} panel holds {glass.get('glassContainerCount')} glass containers, expected exactly 1")
         if variant != "dismissed" and not glass.get("plateCount"):
             problems.append(f"glass: {label} panel has no glass plate")
+    if glass.get("kind") == "panel" and variant != "dismissed":
+        problems += placement_problems(label, glass)
     if glass.get("nestedGlassCount") != 0:
         problems.append(f"glass: {label} has nested glass (nestedGlassCount {glass.get('nestedGlassCount')!r}, expected 0)")
     if variant not in ("dismissed", "hidden"):
@@ -992,7 +1032,9 @@ def self_test():
         def glass_record(surface, slug, appearance="light"):
             variant = promised_variant(slug)
             panel = {"kind": "panel", "variant": variant, "rowTitles": ["Alpha", "Beta", "Gamma"], "glassContainerCount": 1, "plateCount": 2,
-                     "nestedGlassCount": 0, "minFontSize": 20.0, "faceTitles": [], "unmeasuredText": ["SegmentedToggle segments"]}
+                     "nestedGlassCount": 0, "minFontSize": 20.0, "faceTitles": [], "unmeasuredText": ["SegmentedToggle segments"],
+                     # A contained panel under its opener: inside an 800 x 600 window whose title bar is the top 30 pt.
+                     "panelFrame": [100, 100, 200, 300], "parentFrame": [0, 0, 800, 600], "parentContentFrame": [0, 0, 800, 570], "openerFrame": [90, 420, 60, 30]}
             if variant == "hover":
                 panel["hoveredRow"] = 1
             if variant == "focus":
@@ -1079,6 +1121,16 @@ def self_test():
             ("text at exactly 18 pt", tweak("S50", "toolbox-rest", minFontSize=18.0), {}, 0),
             ("text size unrecorded", drop_field("S50", "toolbox-rest", "minFontSize"), {}, 1),
             ("two glass containers", tweak("S50", "toolbox-rest", glassContainerCount=2), {}, 1),
+            ("a panel hanging off the right edge of its parent", tweak("S50", "toolbox-rest", panelFrame=[700, 100, 240, 300]), {}, 1),
+            ("a panel hanging off the left edge of its parent", tweak("S50", "toolbox-rest", panelFrame=[-60, 100, 240, 300]), {}, 1),
+            ("a panel contained in its parent", tweak("S50", "toolbox-rest", panelFrame=[560, 100, 240, 300]), {}, 0),
+            ("a panel 1 pt past the parent edge (within tolerance)", tweak("S50", "toolbox-rest", panelFrame=[561, 100, 240, 300]), {}, 0),
+            ("a panel 1.5 pt past the parent edge", tweak("S50", "toolbox-rest", panelFrame=[561.5, 100, 240, 300]), {}, 1),
+            ("a panel wider than its parent is exempt", tweak("S50", "toolbox-rest", panelFrame=[-20, 100, 900, 300]), {}, 0),
+            ("a panel above its opener reaching the title bar", tweak("S50", "toolbox-rest", panelFrame=[100, 340, 200, 260], openerFrame=[90, 300, 60, 30]), {}, 1),
+            ("a panel above its opener staying below the title bar", tweak("S50", "toolbox-rest", panelFrame=[100, 340, 200, 200], openerFrame=[90, 300, 60, 30]), {}, 0),
+            ("a panel taller than its parent is exempt from the title bar rule", tweak("S50", "toolbox-rest", panelFrame=[100, 0, 200, 620], openerFrame=[90, 300, 60, 30]), {}, 0),
+            ("panel and parent frames not recorded", drop_field("S50", "toolbox-rest", "parentFrame"), {}, 1),
             ("a title needs more width than its label has", tweak_metric("S50", "toolbox-rest", fittingSize=[200, 24], frameSize=[120, 24], textWidth=200, fits=False), {}, 1),
             ("a title needs more height than its label has", tweak_metric("S50", "toolbox-rest", fittingSize=[60, 48], frameSize=[80, 24]), {}, 1),
             ("a title that fits exactly", tweak_metric("S50", "toolbox-rest", fittingSize=[80, 24], frameSize=[80, 24], textWidth=80), {}, 0),

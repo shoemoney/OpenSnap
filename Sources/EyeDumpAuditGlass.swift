@@ -264,6 +264,17 @@ extension AuditRun {
         record["truncatedRows"] = (labels + faces).filter { ($0["fits"] as? Bool) != true }.compactMap { $0["title"] as? String }
         record["unmeasuredText"] = AuditRun.unmeasuredText
         if kind == "panel", variant != "dismissed" {
+            // Placement: where the panel is and where the window it hangs from is (screen coordinates, bottom-left origin, [x, y, width, height]), plus the
+            // parent's content area (the title bar is what lies above it) and the opener's frame, so a panel that hangs outside its parent can be judged.
+            let parent = host.parent ?? extraFaceRoots.first?.window
+            if let parent {
+                record["parentFrame"] = rectJSON(parent.frame)
+                record["parentContentFrame"] = rectJSON(parent.convertToScreen(parent.contentLayoutRect))
+                record["parentClass"] = String(describing: type(of: parent))
+            }
+            if let opener = extraFaceRoots.first, let openerWindow = opener.window {
+                record["openerFrame"] = rectJSON(openerWindow.convertToScreen(opener.convert(opener.bounds, to: nil)))
+            }
             // Height cap: how many rows the panel has, how many are wholly in view, and whether the host scrolls them.
             record["totalRows"] = rows.count
             record["visibleRows"] = rows.filter { isWhollyInView($0) }.count
