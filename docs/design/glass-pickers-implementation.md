@@ -104,7 +104,7 @@ Each item carries the kind of proof behind it. The kinds are never merged:
 - [x] unit/source: Toolbox, Zoom, Upload, History format and Resize preset open app-owned glass panels (`MenuChoicePanel` / `GlassPanelHost`). On those paths no `NSMenu.popUp` or `popUpContextMenu` runs. `OriginalActionButton` keeps its native presenter only as the class default; Upload installs a glass presenter. The remaining `popUp` calls in `Sources/EyeDumpAudit*` are harness triggers.
 - [x] unit/source: one `NSGlassEffectContainerView` per panel and one plate per menu group, with no glass view inside another (`GlassChoicesTests`).
 - [x] unit/source: selected state is accent fill, border, bodyStrong and glyph; disabled rows dim and skip focus.
-- [ ] pending root native pass: the Differentiate Without Color indicator. The setting cannot be changed in a live E2E session, and no DWC capture is recorded here.
+- [x] unit/source: the Differentiate Without Color indicator on chosen choices and the current Settings tab (`StateStylesTests`, `SettingsWindowTests` `liveDifferentiateOutline` / `liveDifferentiateRow`). [ ] pending root native pass: the live system setting; no DWC capture is recorded here.
 - [x] routing (offscreen): synthesized NSEvents through the window drive Return, Space, Down, arrows and Escape on offscreen sheets and panels; red proofs are recorded for Return and for real-flag arrows.
 - [ ] pending root native pass: live Return in a real sheet, Escape closing the panel before the sheet's Cancel in a live session, and focus returning to the opener in a live session.
 - [x] routing (offscreen): a synthesized mouseDown/up through `sendEvent` chooses on an ordered, invisible, non-key panel.
@@ -114,7 +114,7 @@ Each item carries the kind of proof behind it. The kinds are never merged:
 - [x] unit/source: Zoom percentage choice, computed Fit row (`Fit, 83%`), Actual Size toggle and its refusal path (`AppSafetyModernCases`, `GlassChoicesTests`).
 - [x] unit/source: Upload destinations rebuilt on each open, default checked, busy and empty states, choosing persists the default (`webpostChoicesPanel`); a rebuild closes the old panel (`webpostPanelRebuildClosesOld`).
 - [x] unit/source: Color hover-opened palette never asks for the keyboard (`AppSafetyTests`, hover cases).
-- [ ] unit/source: Color click-pin and preset/custom choice, and Size undo grouping per gesture with dismissal mid-drag ending the gesture. No named test is cited in this record for these yet.
+- [x] unit/source: Size undo grouping per gesture and dismissal mid-drag (`AppSafetyModernCases` "The Size pill opens its panel below and every gesture, preset, key and assistive step is exactly one undo step, even when the panel is dismissed mid-drag"; `GlassChromeTests` "A click outside the panel ends the open group", "A preset pick closes the panel"); Color custom row chosen (`AppSafetyModernCases`). [x] routing (offscreen): the first press on a non-key panel starts the track drag and its undo group, chooses a Size preset and applies a hover-opened swatch (`AppSafetyTests`, real mouseDown/up through `sendEvent` on an ordered, invisible, offscreen panel).
 - [x] unit/source: History date filter, category and Drag as are glass pop-ups; search and grid stay native (`HistoryBrowserTests`).
 - [x] unit/source: destination sheet protocol and key-source picks, the public-read toggle payload and its buttons (`PublishingDestinationsTests`); fields and status stay native.
 - [x] unit/source: every destination face reads whole at 560, 640 and 900 pt (laid-out width tests, `cf1f954`); SFTP, WebDAV and FTP/FTPS fit unscrolled at 1280 × 800 (S3 scrolls, as before).
@@ -124,8 +124,8 @@ Each item carries the kind of proof behind it. The kinds are never merged:
 - [x] routing (offscreen): Return reaches the Resize OK default button through `sendEvent`; Return on a focused group does not swallow it.
 - [ ] pending root native pass: Escape = Cancel on a live Resize sheet, and live Return = OK.
 - [x] unit/source: text is 20 pt normal with an 18 pt floor; truncation is measured for button titles, shortcuts and glass pop-up faces. Glyphs are Font Awesome or existing semantic glyphs, with no emoji (`IconCoverageTests`, and the glass-row icon test `menuIconTests` in `GlassChoicesTests`).
-- [x] guarded render: the glass surfaces S50–S60 cover, light and dark, through the eye-dump checker and its rules (`88a95e3`). The candidate capture result is in the FINAL GATES section below. Hover, keyboard focus, disabled, dismissed and focus-restored captures of every panel are not claimed here.
-- [ ] unit/source: `python3 tools/test.py` green with no source drift and the real-store guard. The suite result is in the FINAL GATES section below; red proofs are listed in the Record.
+- [x] guarded render: the glass surfaces S50–S60, light and dark, with the checker's required rest, hover, keyboard-focus, chosen, disabled (where one exists) and dismissed captures per panel. Each dismissed capture records the panel gone and focus back on the opener. The checker also enforces no nested glass, text ≥ 18 pt, no truncation of measured labels and faces, and panels inside a parent they fit (`88a95e3`, `ccccfe0`, `db2d574`). Hover is driven by `setHovered`, focus by `makeFirstResponder`, Escape by a synthesized key event: app-driven states, not real pointer or keyboard input. Results are in FINAL GATES.
+- [x] unit/source: `python3 tools/test.py` green with no source drift and the real-store guard on `fa3ddf7` (FINAL GATES below); red proofs are listed in the Record.
 - [x] unit/source and routing (offscreen): one adversarial Opus review round at `996f7fa`; 6 confirmed and 2 plausible findings, all fixed. Each finding's proof class is in the Record.
 
 ## GUI slot protocol (workers)
@@ -156,8 +156,8 @@ serialized integration and candidate runs are. Never `build/OpenSnap.app` in pla
 
 | Gate | Result |
 | --- | --- |
-| `python3 tools/test.py` on `fa3ddf7` | FILL |
-| Eye-dump captures and checker on `fa3ddf7` | FILL |
+| `python3 tools/test.py` on `fa3ddf7` (tree `7db217a`), serialized, no other native process | exit 0: 52 suites; app-safety 275/275; "All suites passed on arm64 with no source drift"; real-store guard unchanged (122 files, 2 defaults plists); clean worktree; only the FA Pro glyph branch skipped ("FA not bundled") |
+| Eye-dump captures and checker on `fa3ddf7` | glass S50–S60, light and dark, icons sf (no Pro subsets; embedded FA Free before SF): 206 PNGs, checker 0 failures, 0 advisories, 6 contrast samples skipped, input fence keyboard 0 / buttons 0 / pointer 0. Baseline set S06, S08, S09, S17, S19, S20, S23, S30, S31, light and dark: 180 PNGs, checker 0 failures, 0 advisories, 14 skipped, input fence keyboard 0 / buttons 0 / pointer 69 (a parked cursor during native menu tracking or the Save panel; no product input). Real stores unchanged in both (digest `dbde037ac2085108`). Orchestrator visual review: no objection. Root reviews the images independently and owns the evidence pack. |
 
 ### Worker branches and commits
 
