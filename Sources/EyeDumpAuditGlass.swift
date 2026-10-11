@@ -115,27 +115,32 @@ extension AuditRun {
         return (containers, plates, nested)
     }
 
-    /// The smallest point size of any text drawn under `root` (button titles, labels, text views), nil when there is none.
-    func minimumTextSize(in root: NSView) -> Double? {
-        var smallest: CGFloat?
-        func note(_ font: NSFont?) { if let font { smallest = min(smallest ?? font.pointSize, font.pointSize) } }
+    /// The smallest point size of any text drawn under `root` (button titles, labels, text views) and which view draws it, nil when there is none.
+    func smallestText(in root: NSView) -> (size: Double, source: String)? {
+        var smallest: (size: CGFloat, source: String)?
+        func note(_ font: NSFont?, _ view: NSView, _ text: String) {
+            guard let font, smallest == nil || font.pointSize < smallest!.size else { return }
+            smallest = (font.pointSize, "\(type(of: view)) '\(text.prefix(30))' id=\(view.identifier?.rawValue ?? "-")")
+        }
         func walk(_ view: NSView) {
             if view.isHidden || view.alphaValue <= 0.01 { return }
             if let button = view as? NSButton {
                 if button.attributedTitle.length > 0 {
-                    button.attributedTitle.enumerateAttribute(.font, in: NSRange(location: 0, length: button.attributedTitle.length)) { value, _, _ in note(value as? NSFont) }
-                    if button.attributedTitle.attribute(.font, at: 0, effectiveRange: nil) == nil { note(button.font) }
-                } else if !button.title.isEmpty { note(button.font) }
+                    button.attributedTitle.enumerateAttribute(.font, in: NSRange(location: 0, length: button.attributedTitle.length)) { value, _, _ in note(value as? NSFont, view, button.attributedTitle.string) }
+                    if button.attributedTitle.attribute(.font, at: 0, effectiveRange: nil) == nil { note(button.font, view, button.attributedTitle.string) }
+                } else if !button.title.isEmpty { note(button.font, view, button.title) }
             } else if let field = view as? NSTextField, !field.stringValue.isEmpty {
-                note(field.font)
+                note(field.font, view, field.stringValue)
             } else if let text = view as? NSTextView, !text.string.isEmpty {
-                note(text.font)
+                note(text.font, view, text.string)
             }
             view.subviews.forEach(walk)
         }
         walk(root)
-        return smallest.map(Double.init)
+        return smallest.map { (Double($0.size), $0.source) }
     }
+
+    func minimumTextSize(in root: NSView) -> Double? { smallestText(in: root)?.size }
 
     // MARK: the record
 
@@ -157,7 +162,7 @@ extension AuditRun {
         ]
         if let hovered = index(where: { isHovered($0) }) { record["hoveredRow"] = hovered }
         if let focused = index(where: { host.firstResponder === $0 }) { record["focusedRow"] = focused }
-        if let font = minimumTextSize(in: rowsRoot ?? content) { record["minFontSize"] = font }
+        if let smallest = smallestText(in: rowsRoot ?? content) { record["minFontSize"] = smallest.size; record["minFontSource"] = smallest.source }
         for (key, value) in extra { record[key] = value }
         return record
     }
@@ -634,7 +639,7 @@ extension AuditRun {
         glassGroupStates("S57", base: "resize-groups", surface: "Resize sheet", refs: refs, host: sheet, windows: [sheet, window], root: content,
                          restState: "Resize sheet: the mode, lock proportions, preset and button choices on their plates")
         // Crop mode shows the anchor plate.
-        if let mode = find("ResizeMode", in: content) as? GlassChoiceGroup { mode.choose(1) } else { gap("S57", "Resize sheet / crop", "the mode group (ResizeMode) was not found") }
+        if let mode = find("ResizeMode.group", in: content) as? GlassChoiceGroup { mode.choose(1) } else { gap("S57", "Resize sheet / crop", "the mode group (ResizeMode) was not found") }
         pump(0.6)
         if let grid = firstView(of: ResizeAnchorGrid.self, in: content), !grid.isHiddenOrHasHiddenAncestor {
             func anchorRecord(_ variant: String) -> [String: Any] {
@@ -656,7 +661,7 @@ extension AuditRun {
             shoot("S57", "resize-anchor-focus", surface: "Resize sheet", state: "Crop mode: the anchor plate has keyboard focus (ring on the chosen cell)", windows: [sheet, window], refs: refs, settle: 0.25, extra: ["glassPanel": anchorRecord("focus")])
             sheet.makeFirstResponder(nil)
         } else { gap("S57", "Resize sheet / anchor", "the anchor grid was not visible in Crop mode") }
-        if let mode = find("ResizeMode", in: content) as? GlassChoiceGroup { mode.choose(0) }
+        if let mode = find("ResizeMode.group", in: content) as? GlassChoiceGroup { mode.choose(0) }
         pump(0.4)
         // The preset choice panel.
         guard let face = find("ResizePresetFace", in: content) as? GlassChoiceButton else { gap("S57", "Resize sheet / preset", "the preset face (ResizePresetFace) was not found"); return }
