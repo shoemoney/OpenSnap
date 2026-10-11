@@ -339,6 +339,7 @@ extension AppSafetyTests {
         try b11Large(app, ticked: false)
         try b11Apply(app, width: 1667)
         try expect(abs(app.canvas.zoom - 0.6) < 0.01, "The first document is shown at about 60% (\(app.canvas.zoom))")
+        let windowed = window.frame
         window.setFrame(NSRect(x: 0, y: 0, width: 2056, height: 1329), display: false)
         window.contentView?.layoutSubtreeIfNeeded()
         window.simulatesFullScreen = true
@@ -349,7 +350,9 @@ extension AppSafetyTests {
         try expect(app.fullScreenZoom?.generation == record.generation && record.generation != app.documentGeneration, "The record is the old document's")
         app.toggleActualSize()
         try expect(app.isActualSize, "Actual Size is up in full screen")
+        // AppKit puts the frame the window had before full screen back, then says it is done.
         window.simulatesFullScreen = false
+        window.setFrame(windowed, display: false); window.contentView?.layoutSubtreeIfNeeded()
         app.windowDidExitFullScreen(Notification(name: NSWindow.didExitFullScreenNotification, object: window))
         app.toggleActualSize()
         try expect(!app.isActualSize && app.fullScreenZoom == nil, "Actual Size is over and full screen's record is gone")
@@ -357,6 +360,12 @@ extension AppSafetyTests {
         try expect(app.canvas.zoom == 1, "The new document is shown at 100%, as it was in the window it began in (\(app.canvas.zoom))")
         let room = app.canvas.outputSize.width * app.canvas.zoom
         try expect(app.window.frame.width >= room - 1, "…in a window that holds it (\(app.window.frame.width) for \(room))")
+        // …and one the screen can hold: a window sized for the picture's full pixels at 100% (FR-1) holds it too, and is far past the screen.
+        let visible = try (window.screen ?? NSScreen.main).b6Unwrap("a screen").visibleFrame
+        try expect(app.window.frame.width <= visible.width + 1 && app.window.frame.height <= visible.height + 1,
+                   "…not larger than the screen (\(app.window.frame.size) in \(visible.size))")
+        let viewport = app.canvas.enclosingScrollView?.frame.width ?? 0
+        try expect(viewport <= room + 21, "…and not sized for more than the picture (viewport \(viewport) for \(room))")
     }
 
     // MARK: R5-004

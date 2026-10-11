@@ -858,6 +858,26 @@ struct HistoryBrowserTests {
                     try expect(remove == ["Hide from History","Move to Trash","Delete from Web"],"Only the three that take something away share the last plate: \(remove)")
                 }
             }),
+            ("Each action plate is an accessibility group with its name, so VoiceOver speaks \"Open and copy, group\", and its buttons stay reachable inside it (FR-4)", {
+                try browser { browser,_ in
+                    browser.update(items:[item("A")]); laidOut(browser,width:1000,height:720)
+                    func reaches(_ element: Any?,_ target: AnyObject,depth: Int = 0) -> Bool {
+                        // A button reaches a client through its cell, which stands in for it in the tree.
+                        if let cell = element as? NSCell,cell.controlView === target { return true }
+                        guard depth < 10,let element = element as? NSAccessibilityProtocol else { return false }
+                        if (element as AnyObject) === target { return true }
+                        return (element.accessibilityChildren() ?? []).contains { reaches($0,target,depth:depth+1) }
+                    }
+                    for (plate,group) in zip(browser.actionPlates,HistoryBrowser.actionGroups) {
+                        try expect(plate.isAccessibilityElement(),"\(group.label) is an accessibility element, not skipped over")
+                        try expect(plate.accessibilityRole() == .group && plate.accessibilityLabel() == group.label,"…with the group role and the name \(group.label)")
+                        for button in descendants(plate).compactMap({ $0 as? HistoryActionButton }) {
+                            try expect(reaches(plate,button),"…and a client walking its children still reaches \(button.accessibilityLabel() ?? "a button")")
+                            try expect(reaches(browser.window!,button),"…and the window reaches it through the plate")
+                        }
+                    }
+                }
+            }),
             ("Glass is only the chrome: no glass inside glass, none over the grid, tiles or details", {
                 try browser { browser,_ in
                     browser.update(items:[item("A"),item("B",-1)]); laidOut(browser,width:1000,height:720)
