@@ -35,6 +35,8 @@ enum PublishingDestinationsTests {
         try storeOperations()
         try MainActor.assumeIsolated { try destinationsSheet() }
         try MainActor.assumeIsolated { try formCopyAndLabels() }
+        try MainActor.assumeIsolated { try glassChoiceSheet() }
+        try MainActor.assumeIsolated { try publicReadToggle() }
         try MainActor.assumeIsolated { try resultBandAndSheetWidth() }
         try connectionTests()
         print("Destination and S3 self-checks passed: \(checks). No uploads were executed.")
@@ -737,6 +739,216 @@ enum PublishingDestinationsTests {
         var s3 = awsCDN(); s3.s3?.credentialsProfile = "default"
         var dav = PublishingSettings(); dav.endpoint = "https://dav.example.com/files"; dav.publicBaseURL = "https://dav.example.com/files"
         return [PublishingDestination(name: "Example S3", settings: s3), PublishingDestination(name: "Example WebDAV", settings: dav)]
+    }
+
+    // MARK: Glass choices on the destination sheet (Protocol, Source, the action buttons, public-read)
+
+    /// A sheet in a window that is never shown, with its glass panels' presentation replaced so nothing reaches the screen.
+    @MainActor static func glassSheet(editing: PublishingDestination? = nil) -> (NSWindow, PublishingDestinationsView) {
+        _ = NSApplication.shared
+        NSApp.setActivationPolicy(.prohibited)
+        let view = PublishingDestinationsView(editing: editing)
+        view.frame = NSRect(x: 0, y: 0, width: PublishingDestinationsView.sheetWidth, height: 760)
+        let window = NSWindow(contentRect: view.frame, styleMask: [.titled], backing: .buffered, defer: true)
+        window.isReleasedWhenClosed = false; window.contentView = view
+        for face in [view.protocolFace, view.sourceFace] {
+            let host = view.choicePanel(for: face).host
+            host.presenter = { _, _ in }
+            host.visibleFrameOverride = NSRect(x: 0, y: 0, width: 1440, height: 1000)
+            host.keyStateProbe = { false }
+        }
+        view.layoutSubtreeIfNeeded()
+        return (window, view)
+    }
+    @MainActor static func plate(of view: NSView) -> GlassSurfaceView? {
+        var current = view.superview
+        while let parent = current { if let plate = parent as? GlassSurfaceView { return plate }; current = parent.superview }
+        return nil
+    }
+    /// Chooses `title` the way a person does: open the face's panel, press that row.
+    @MainActor static func choose(_ title: String, from face: GlassChoiceButton, in view: PublishingDestinationsView) throws {
+        view.openChoices(from: face, keyboard: false)
+        let panel = view.choicePanel(for: face)
+        try expect(panel.host.isShown, "the \(face.accessibilityLabel() ?? "") face opened its panel")
+        let row = try unwrap(panel.rows.first { $0.title == title })
+        panel.activate(row)
+        view.layoutSubtreeIfNeeded()
+    }
+    /// The rows each protocol and credential source must show, written out here rather than read from the form (the OSN-052 behaviour).
+    @MainActor static func expectedVisibility(_ transport: PublishingProtocol, keychain: Bool, legacyEndpoint: Bool = false) -> [String: Bool] {
+        let s3 = transport == .s3
+        return ["endpoint": transport != .sftp || legacyEndpoint, "region": s3, "bucket": s3, "alias": transport == .sftp, "root": transport == .sftp,
+                "port": transport == .sftp, "acl": s3, "source": s3, "profile": s3 && !keychain, "username": s3 ? keychain : true,
+                "password": s3 ? keychain : transport != .sftp, "folder": true, "public": true, "name": true]
+    }
+
+    @MainActor static func glassChoiceSheet() throws {
+        let (window, view) = glassSheet()
+        defer { window.orderOut(nil) }
+        let fields: [String: NSView] = ["endpoint": view.endpointField, "region": view.regionField, "bucket": view.bucketField, "alias": view.aliasField,
+            "root": view.remoteRootField, "port": view.portField, "acl": view.aclCheckbox, "source": view.sourceFace, "profile": view.profileField,
+            "username": view.usernameField, "password": view.passwordField, "folder": view.folderField, "public": view.publicField, "name": view.nameField]
+
+        // Structure: the pop-ups are the model and are off screen; the faces, buttons and toggle are glass choice buttons on plates.
+        try expect(view.protocolPopup.superview == nil && view.sourcePopup.superview == nil, "the model pop-ups are not in the view tree")
+        let tree = descendants(view)
+        try expect(!tree.contains { $0 is NSPopUpButton }, "no native pop-up is left on the sheet")
+        let buttons = tree.compactMap { $0 as? NSButton }
+        try expect(!buttons.isEmpty && buttons.allSatisfy { $0 is GlassChoiceButton }, "every button on the sheet is a glass choice button: \(buttons.map { type(of: $0) })")
+        for (face, caption) in [(view.protocolFace, "Protocol"), (view.sourceFace, "Source")] {
+            try expect(face.kind == .submenu && face.indicator == .chevron && face.accessibilityRole() == .menuButton, "\(caption) face is a menu button with a chevron")
+            try expect(face.accessibilityLabel() == caption, "\(caption) face is named \(caption), got \(String(describing: face.accessibilityLabel()))")
+            try expect(plate(of: face) != nil, "\(caption) face sits on a glass plate")
+        }
+        try expect(view.protocolFace.accessibilityValueDescription() == "WebDAV" && view.protocolFace.title == "WebDAV", "the Protocol face reads the chosen protocol")
+        // No glass inside glass: no plate has another glass view under it, and the footer is the only container.
+        let plates = tree.compactMap { $0 as? GlassSurfaceView }
+        try expect(plates.count >= 5, "the sheet has its plates: \(plates.count)")
+        for plate in plates {
+            let inside = descendants(plate).filter { $0 !== plate && ($0 is NSGlassEffectView || $0 is NSGlassEffectContainerView) }
+            try expect(inside.isEmpty, "plate \(plate.identifier?.rawValue ?? "") holds another glass view: \(inside)")
+        }
+        try expect(tree.filter { $0 is NSGlassEffectContainerView }.count == 1, "one glass container on the sheet (the footer)")
+        // Text: every glass button's words are 20 pt (the chosen weight is semibold, still 20), nothing under the 18 pt floor.
+        for button in tree.compactMap({ $0 as? GlassChoiceButton }) {
+            try expect((button.titleLabel.font?.pointSize ?? 0) >= 20, "\(button.title) is \((button.titleLabel.font?.pointSize ?? 0)) pt")
+        }
+
+        // Protocol through the glass panel: the pop-up's items are the panel's rows, in order, with the chosen one marked.
+        view.nameField.stringValue = "Mine"; view.folderField.stringValue = "shots"; view.publicField.stringValue = "https://cdn.example.com/s"
+        view.openChoices(from: view.protocolFace, keyboard: false)
+        let protocolPanel = view.choicePanel(for: view.protocolFace)
+        try expect(protocolPanel.host.isShown && protocolPanel.rows.map(\.title) == PublishingProtocol.allCases.map(\.title), "the Protocol panel lists every protocol: \(protocolPanel.rows.map(\.title))")
+        try expect(protocolPanel.rows.filter(\.isChosen).map(\.title) == ["WebDAV"], "the chosen protocol is marked in the panel")
+        try expect(protocolPanel.host.container.subviews.count == 1 || protocolPanel.host.plates.count >= 1, "the panel holds the rows on a plate")
+        protocolPanel.host.close()
+        for transport in PublishingProtocol.allCases {
+            for keychain in [false, true] where transport == .s3 || !keychain {
+                try choose(transport.title, from: view.protocolFace, in: view)
+                if transport == .s3 { try choose(keychain ? "Access key stored in Keychain" : "AWS credentials profile", from: view.sourceFace, in: view) }
+                try expect(view.selectedProtocol == transport && view.protocolPopup.titleOfSelectedItem == transport.title && view.protocolFace.title == transport.title,
+                           "choosing \(transport.title) selects it in the model and on the face")
+                for (id, visible) in expectedVisibility(transport, keychain: keychain) {
+                    let control = try unwrap(fields[id])
+                    try expect(!control.isHiddenOrHasHiddenAncestor == visible, "\(transport.title)/keychain=\(keychain): \(id) should be \(visible ? "shown" : "hidden")")
+                }
+                try expect(view.formResult.kind == .hint && view.formResult.text.stringValue == PublishingDestinationsView.formCopy(for: transport).testNote,
+                           "\(transport.title): the Test note follows the protocol")
+            }
+        }
+        try expect(view.nameField.stringValue == "Mine" && view.folderField.stringValue == "shots" && view.publicField.stringValue == "https://cdn.example.com/s",
+                   "typed values survive every protocol change")
+        try expect(!protocolPanel.host.isShown, "choosing closes the panel")
+
+        // The key source: Keychain credentials need both parts; a profile discards typed keys.
+        try choose("S3-compatible", from: view.protocolFace, in: view)
+        view.bucketField.stringValue = "pics"
+        try choose("Access key stored in Keychain", from: view.sourceFace, in: view)
+        try expect(view.sourceFace.title == "Access key stored in Keychain" && view.sourcePopup.indexOfSelectedItem == 1, "the Source face follows its choice")
+        view.usernameField.stringValue = "AKIAEXAMPLE"; view.passwordField.stringValue = ""
+        try rejects("a Keychain source with no secret") { _ = try view.makeDraft() }
+        view.passwordField.stringValue = "not-a-real-secret"
+        var draft = try view.makeDraft()
+        try expect(draft.destination.settings.username == "AKIAEXAMPLE" && draft.password == "not-a-real-secret" && draft.destination.settings.s3?.credentialsProfile == "",
+                   "the Keychain source carries the typed key id and secret and no profile")
+        try choose("AWS credentials profile", from: view.sourceFace, in: view)
+        view.profileField.stringValue = "default"
+        draft = try view.makeDraft()
+        try expect(draft.destination.settings.username == "" && draft.password == "" && draft.destination.settings.s3?.credentialsProfile == "default",
+                   "the profile source discards typed keys and carries the profile")
+        view.profileField.stringValue = ""
+        try rejects("a profile source with no profile") { _ = try view.makeDraft() }
+
+        // A protocol the system tools cannot run is a disabled row that chooses nothing.
+        view.setUnavailable([.sftp])
+        try choose("WebDAV", from: view.protocolFace, in: view)
+        view.openChoices(from: view.protocolFace, keyboard: false)
+        let sftpRow = try unwrap(protocolPanel.rows.first { $0.title == "SFTP" })
+        try expect(!sftpRow.isEnabled, "an unavailable protocol is a disabled row")
+        protocolPanel.activate(sftpRow)
+        try expect(view.selectedProtocol == .webDAV && protocolPanel.host.isShown, "pressing a disabled row chooses nothing and leaves the panel open")
+        protocolPanel.host.close()
+        view.setUnavailable([])
+
+        // Keyboard: Down opens the panel on the chosen row, Down again moves, Return chooses, Escape closes without choosing.
+        window.makeFirstResponder(view.protocolFace)
+        try expect(view.protocolFace.keyHandler?(keyEvent("\u{F701}", keyCode: 125, window: window)) == true && protocolPanel.host.isShown, "Down opens the Protocol panel")
+        try expect(protocolPanel.focusedRow?.title == "WebDAV", "a keyboard open focuses the chosen row, got \(String(describing: protocolPanel.focusedRow?.title))")
+        _ = protocolPanel.handleKey(keyEvent("\u{F701}", keyCode: 125, window: window))
+        try expect(protocolPanel.focusedRow?.title == "FTP", "Down moves to the next row")
+        try expect(protocolPanel.handleKey(keyEvent("\r", keyCode: 36, window: window)) && view.selectedProtocol == .ftp && !protocolPanel.host.isShown, "Return chooses the focused protocol and closes")
+        view.openChoices(from: view.protocolFace, keyboard: true)
+        _ = protocolPanel.handleKey(keyEvent("\u{F701}", keyCode: 125, window: window))
+        protocolPanel.host.window.escapeHandler?()
+        try expect(!protocolPanel.host.isShown && view.selectedProtocol == .ftp, "Escape closes the panel and keeps the choice")
+        view.protocolFace.performClick(nil)
+        try expect(protocolPanel.host.isShown, "pressing the face (Space or a click) opens the panel")
+        view.openChoices(from: view.protocolFace, keyboard: false)
+        window.contentView = NSView()
+        try expect(!protocolPanel.host.isShown, "taking the sheet out of its window closes an open panel")
+        window.contentView = view
+        view.setUnavailable([])
+    }
+
+    @MainActor static func publicReadToggle() throws {
+        var options = S3Options(); options.bucket = "pics"; options.credentialsProfile = "default"
+        func s3Destination(acl: Bool) -> PublishingDestination {
+            var settings = PublishingSettings(); settings.transport = .s3; var o = options; o.publicReadACL = acl; settings.s3 = o
+            return PublishingDestination(name: "Pics", settings: settings)
+        }
+        // Default: a new S3 destination is private (ACL off), the toggle is a labelled checkbox with value 0, and only S3 shows it.
+        let (window, view) = glassSheet()
+        defer { window.orderOut(nil) }
+        let toggle = view.aclCheckbox
+        try expect(toggle.kind == .toggle && toggle.indicator == .checkbox && toggle.accessibilityRole() == .checkBox, "public-read is a checkbox-style toggle")
+        try expect(toggle.title == "Make uploads public-read" && toggle.accessibilityLabel() == "Make uploads public-read", "public-read keeps its label")
+        try expect(toggle.state == .off && !toggle.isChosen && (toggle.accessibilityValue() as? NSNumber) == 0, "public-read starts off")
+        try expect(plate(of: toggle) != nil, "the toggle sits on a glass plate")
+        try expect(toggle.isHiddenOrHasHiddenAncestor, "public-read is hidden for WebDAV")
+        try choose("S3-compatible", from: view.protocolFace, in: view)
+        try expect(!toggle.isHiddenOrHasHiddenAncestor, "public-read shows for S3")
+        for transport in PublishingProtocol.allCases where transport != .s3 {
+            try choose(transport.title, from: view.protocolFace, in: view)
+            try expect(toggle.isHiddenOrHasHiddenAncestor, "public-read is hidden for \(transport.title)")
+        }
+        try choose("S3-compatible", from: view.protocolFace, in: view)
+        view.bucketField.stringValue = "pics"
+        try choose("AWS credentials profile", from: view.sourceFace, in: view)
+        view.profileField.stringValue = "default"
+
+        var saved: [PublishingDestination] = [], tested: [PublishingDestination] = []
+        view.onSave = { destination, _ in saved.append(destination) }
+        view.onTest = { destination, _ in tested.append(destination) }
+        try expect(try view.makeDraft().destination.settings.s3?.publicReadACL == false, "the default draft is private")
+
+        // One press flips it, and the value, the draft, Save and Test all carry the flag.
+        toggle.performClick(nil)
+        try expect(toggle.state == .on && toggle.isChosen && (toggle.accessibilityValue() as? NSNumber) == 1, "one press turns public-read on")
+        try expect(try view.makeDraft().destination.settings.s3?.publicReadACL == true, "the draft carries public-read")
+        view.saveButton.performClick(nil)
+        view.testButton.performClick(nil)
+        try expect(saved.count == 1 && saved[0].settings.s3?.publicReadACL == true, "Save writes public-read on")
+        try expect(tested.count == 1 && tested[0].settings.s3?.publicReadACL == true, "Test is asked with public-read on")
+        toggle.performClick(nil)
+        try expect(toggle.state == .off && (toggle.accessibilityValue() as? NSNumber) == 0, "a second press turns it off")
+        view.saveButton.performClick(nil)
+        view.testButton.performClick(nil)
+        try expect(saved.count == 2 && saved[1].settings.s3?.publicReadACL == false && tested.count == 2 && tested[1].settings.s3?.publicReadACL == false, "Save and Test carry public-read off")
+        // Only S3 destinations carry S3 options at all.
+        try choose("WebDAV", from: view.protocolFace, in: view)
+        view.endpointField.stringValue = "https://dav.example.com/up"
+        try expect(try view.makeDraft().destination.settings.s3 == nil, "a WebDAV draft carries no S3 options, so no ACL flag")
+
+        // Editing a saved destination opens on its own flag; a blank form is back to off.
+        view.showForm(for: s3Destination(acl: true))
+        try expect(toggle.state == .on && (toggle.accessibilityValue() as? NSNumber) == 1 && !toggle.isHiddenOrHasHiddenAncestor, "editing a public-read destination opens with the toggle on")
+        saved.removeAll()
+        view.saveButton.performClick(nil)
+        try expect(saved.count == 1 && saved[0].settings.s3?.publicReadACL == true && saved[0].settings.s3?.bucket == "pics", "saving it unchanged keeps public-read on")
+        view.showForm(for: s3Destination(acl: false))
+        try expect(toggle.state == .off, "editing a private destination opens with the toggle off")
+        view.showForm(for: s3Destination(acl: true)); view.showForm(for: nil)
+        try expect(toggle.state == .off, "a blank form resets the toggle")
     }
 
     /// The editor sheet: sized from the screen and its parent, hugging its form, scrolling when the screen is short, with Return saving and

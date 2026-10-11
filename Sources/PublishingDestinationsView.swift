@@ -63,8 +63,15 @@ final class PublishingDestinationsView: NSView {
     private(set) lazy var protocolFace = makeFace(popup: protocolPopup, caption: "Protocol", identifier: "DestinationProtocol")
     private(set) lazy var sourceFace = makeFace(popup: sourcePopup, caption: "Source", identifier: "DestinationSource")
     private var facePanels: [ObjectIdentifier: MenuChoicePanel] = [:]
-    /// The panel a face opened, for tests and for closing it with the sheet.
-    func choicePanel(for face: GlassChoiceButton) -> MenuChoicePanel? { facePanels[ObjectIdentifier(face)] }
+    /// The glass panel that lists a face's choices, made on first use from the pop-up's own menu (tests reach its host for their seams).
+    func choicePanel(for face: GlassChoiceButton) -> MenuChoicePanel {
+        let key = ObjectIdentifier(face), model = face === protocolFace ? protocolPopup : sourcePopup
+        if let panel = facePanels[key] { return panel }
+        let panel = MenuChoicePanel(menu: model.menu ?? NSMenu(), identifier: (face.identifier?.rawValue ?? "DestinationFace") + ".panel",
+                                    accessibilityLabel: face.accessibilityLabel() ?? "Choices", popUp: model)
+        facePanels[key] = panel
+        return panel
+    }
     private var glassPlates: [GlassSurfaceView] = []
     private var displayOptionsObservation: DisplayOptions.Observation?
     private(set) var sectionHeaders: [NSTextField] = []
@@ -383,11 +390,8 @@ final class PublishingDestinationsView: NSView {
     /// Opens the pop-up's own menu as a glass panel under its face. The menu stays the source of truth: a choice selects its item in the
     /// pop-up and sends the pop-up's action, which is `formChanged`.
     func openChoices(from face: GlassChoiceButton, keyboard: Bool) {
-        guard face.isEnabled, !face.isHiddenOrHasHiddenAncestor, let menu = popup(for: face).menu else { return }
-        let key = ObjectIdentifier(face)
-        let panel = facePanels[key] ?? MenuChoicePanel(menu: menu, identifier: (face.identifier?.rawValue ?? "DestinationFace") + ".panel",
-                                                       accessibilityLabel: face.accessibilityLabel() ?? "Choices", popUp: popup(for: face))
-        facePanels[key] = panel
+        guard face.isEnabled, !face.isHiddenOrHasHiddenAncestor else { return }
+        let panel = choicePanel(for: face)
         panel.minimumWidth = max(240, face.bounds.width)
         panel.present(relativeTo: face, preferredEdge: .minY, keyboard: keyboard)
     }
