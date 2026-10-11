@@ -113,6 +113,7 @@ private enum SettingsWindowTests {
         shortcutForm()
         modifierKeyboard()
         modifierGlyphs()
+        modifierLabelsFit()
         upload()
         uploadActionPlates()
         uploadWithPublishing()
@@ -734,7 +735,7 @@ private enum SettingsWindowTests {
     private static func labelIsWhole(_ button: GlassChoiceButton) -> Bool {
         let label = button.titleLabel
         guard label.frame.width > 0 else { return false }
-        if button.wrapWidth == nil { return label.fittingSize.width <= label.frame.width + 0.01 }
+        if button.wrapWidth == nil { return label.fittingSize.width <= label.frame.width + 0.01 && label.fittingSize.height <= label.frame.height + 0.01 }
         let kept = label.preferredMaxLayoutWidth
         label.preferredMaxLayoutWidth = label.frame.width
         defer { label.preferredMaxLayoutWidth = kept }
@@ -1145,7 +1146,7 @@ private enum SettingsWindowTests {
         // Nothing is cut short: the symbols, the pop-up faces, the enable label and Clear All.
         window.contentView?.layoutSubtreeIfNeeded()
         let toggles = GlobalHotkeyAction.allCases.flatMap { form.modifierToggles(for: $0) } + [form.enabledCheckbox]
-        expect(toggles.allSatisfy { labelIsWhole($0) }, "no modifier symbol and no enable label is cut short")
+        expect(toggles.allSatisfy { labelIsWhole($0) }, "no modifier symbol and no enable label is cut short: \(toggles.filter { !labelIsWhole($0) }.map { "\($0.accessibilityLabel() ?? "") needs \($0.titleLabel.fittingSize) has \($0.titleLabel.frame.size)" })")
         expect(GlobalHotkeyAction.allCases.allSatisfy { action in
             let key = form.keyPopup(for: action)
             return key.frame.width + 0.5 >= key.intrinsicContentSize.width && key.frame.height == GlassChoiceButton.height
@@ -1295,6 +1296,32 @@ private enum SettingsWindowTests {
         toggles.forEach { $0.state = .on }
         for toggle in toggles { if let middle = inkMiddle(of: toggle) { expect(abs(middle - toggle.bounds.midY) <= 1, "\(toggle.accessibilityLabel() ?? ""): chosen, the symbol's ink is \(abs(middle - toggle.bounds.midY)) pt off the centre") } }
         print("  Modifier symbols: 24 toggles, ink centre within \(String(format: "%.2f", worst)) pt of the button's centre")
+    }
+
+    /// Every modifier label, chosen and unchosen, is drawn in a frame that holds what the real label needs (its font, whatever shifts its ink, the
+    /// semibold face): the optical centring moves the ink and never asks the 36 pt button for more line height than it gave the label.
+    private static func modifierLabelsFit() {
+        let (controller, _, _, _, _, _) = makeController()
+        controller.select(2)
+        let window = controller.window, form = controller.capture.hotkeyForm!
+        window.contentView?.layoutSubtreeIfNeeded()
+        var judged = 0
+        for chosen in [false, true] {
+            for action in GlobalHotkeyAction.allCases {
+                for toggle in form.modifierToggles(for: action) {
+                    toggle.state = chosen ? .on : .off
+                    toggle.layoutSubtreeIfNeeded()
+                    window.contentView?.layoutSubtreeIfNeeded()
+                    let label = toggle.titleLabel, need = label.fittingSize
+                    expect(need.height <= label.frame.height + 0.01 && need.width <= label.frame.width + 0.01,
+                           "\(action.title) \(toggle.title) \(chosen ? "chosen" : "unchosen"): the label needs \(need.width) x \(need.height) pt and has \(label.frame.width) x \(label.frame.height)")
+                    expect(label.frame.height <= toggle.bounds.height && toggle.frame.height == GlassChoiceButton.height && label.font?.pointSize == 20,
+                           "\(action.title) \(toggle.title): the label sits inside the unchanged control-high button at 20 pt")
+                    judged += 1
+                }
+            }
+        }
+        print("  Modifier labels: \(judged) judged (24 toggles, chosen and unchosen), every fitting size within its frame")
     }
 
     // MARK: Upload
