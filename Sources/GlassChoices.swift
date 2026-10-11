@@ -729,6 +729,9 @@ final class GlassChoiceWindow: NSPanel {
 
 // MARK: - Panel host
 
+/// The panel's content root: an element of its own (a labelled group), and an app class so the accessibility audit judges its label.
+private final class PanelRootView: NSView {}
+
 /// The scrolling panel's document: flipped, so a panel taller than its window starts at its first row instead of its last.
 private final class FlippedDocumentView: NSView {
     override var isFlipped: Bool { true }
@@ -846,7 +849,7 @@ final class GlassPanelHost: NSObject {
     var accessibility: ChromeAccessibility = .live { didSet { pushAccessibility() } }
 
     private let stack = NSStackView()
-    private let root = NSView()
+    private let root = PanelRootView()
     private(set) var scrollView: NSScrollView?
     private var document: FlippedDocumentView?
     private var layoutConstraints: [NSLayoutConstraint] = []
@@ -1302,7 +1305,9 @@ final class MenuChoicePanel: NSObject {
 
     private func enabledRows() -> [GlassChoiceButton] { rows.filter { $0.isEnabled } }
     private func firstEnabledRow() -> GlassChoiceButton? { enabledRows().first }
-    private func chosenRow() -> GlassChoiceButton? { rows.first { $0.isEnabled && $0.isChosen && $0 !== backRow } }
+    /// The row a keyboard open starts on: the chosen OPTION. A toggle that is on (Filled Shapes in a command menu) is state, not a choice,
+    /// so a command menu opens on its first enabled row, as native menus do.
+    private func chosenRow() -> GlassChoiceButton? { rows.first { $0.isEnabled && $0.isChosen && $0.kind == .option } }
 
     func focus(_ row: GlassChoiceButton?) {
         focusedRow = row
@@ -1488,30 +1493,72 @@ class GlassPopUpButton: NSPopUpButton {
         didSet { chevronView.alphaValue = isEnabled ? 1 : StateStyles.disabledAlpha; needsDisplay = true; noteFocusRingMaskChanged() }
     }
 
-    private var chevronColumn: CGFloat { GlassChoiceButton.gap + GlassChoiceButton.glyphSide }
+    // The face is [facePadding][title][chevron column][facePadding]; the chevron glyph sits at the trailing end of its column. The defaults
+    // are the roomy values of a choice row; a pop-up on a crowded bar (the zoom control) tightens both.
+    static let defaultFacePadding = GlassChoiceButton.padding
+    static let defaultChevronColumn = GlassChoiceButton.gap + GlassChoiceButton.glyphSide
+
+    /// Space between the face's edge and its title (leading) and its chevron (trailing).
+    var facePadding: CGFloat = GlassPopUpButton.defaultFacePadding { didSet { faceMetricsDidChange() } }
+    /// Room the chevron takes at the trailing end, including its gap from the title.
+    var chevronColumn: CGFloat = GlassPopUpButton.defaultChevronColumn { didSet { faceMetricsDidChange() } }
+
+    private func faceMetricsDidChange() {
+        invalidateIntrinsicContentSize()
+        needsLayout = true
+        needsDisplay = true
+    }
+
+    /// Where the title is drawn: the whole face between the padding and the chevron column, centred vertically.
+    var titleRect: NSRect {
+        let height = ceil(DesignTokens.Typography.font(.body).boundingRectForFont.height)
+        return NSRect(x: facePadding, y: ((bounds.height - height) / 2).rounded(), width: max(0, bounds.width - 2 * facePadding - chevronColumn), height: height)
+    }
+
+    /// Where the chevron glyph is: at the trailing end of its column.
+    var chevronRect: NSRect {
+        let side = min(GlassChoiceButton.glyphSide, chevronColumn)
+        return NSRect(x: bounds.width - facePadding - side, y: ((bounds.height - side) / 2).rounded(), width: side, height: side)
+    }
 
     override var intrinsicContentSize: NSSize {
         let attributes: [NSAttributedString.Key: Any] = [.font: DesignTokens.Typography.font(.body)]
         let titles = (menu?.items.map(\.title) ?? []) + [faceTitle]
         let widest = titles.map { ceil(($0 as NSString).size(withAttributes: attributes).width) }.max() ?? 0
-        return NSSize(width: 2 * GlassChoiceButton.padding + widest + chevronColumn, height: GlassChoiceButton.height)
+        return NSSize(width: 2 * facePadding + widest + chevronColumn, height: GlassChoiceButton.height)
     }
 
     override func layout() {
         super.layout()
-        let side = GlassChoiceButton.glyphSide
-        chevronView.frame = NSRect(x: bounds.width - GlassChoiceButton.padding - side, y: ((bounds.height - side) / 2).rounded(), width: side, height: side)
+        chevronView.frame = chevronRect
+    }
+
+    /// Exactly what `draw(_:)` draws with: the 20 pt body face, truncating at the tail.
+    private func faceAttributes(color: NSColor? = nil) -> [NSAttributedString.Key: Any] {
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.lineBreakMode = .byTruncatingTail
+        var attributes: [NSAttributedString.Key: Any] = [.font: DesignTokens.Typography.font(.body), .paragraphStyle: paragraph]
+        if let color { attributes[.foregroundColor] = color }
+        return attributes
+    }
+
+    /// The face's text as it is drawn right now: the title, its font, the room the text really needs, and the rectangle `draw(_:)` gives it
+    /// (after the face padding and the chevron column, and no taller than the face itself). Read-only; the screenshot harness records it.
+    var faceTextMetrics: (title: String, font: NSFont, needed: NSSize, available: NSRect) {
+        let attributes = faceAttributes()
+        let size = (faceTitle as NSString).size(withAttributes: attributes)
+        return (faceTitle, DesignTokens.Typography.font(.body), NSSize(width: ceil(size.width), height: ceil(size.height)), titleRect.intersection(bounds))
+    }
+
+    /// Whether the title is drawn whole: it neither truncates nor is cut off vertically.
+    var faceTextFits: Bool {
+        let metrics = faceTextMetrics
+        return metrics.needed.width <= metrics.available.width + 0.01 && metrics.needed.height <= metrics.available.height + 0.01
     }
 
     override func draw(_ dirtyRect: NSRect) {
-        let paragraph = NSMutableParagraphStyle()
-        paragraph.lineBreakMode = .byTruncatingTail
-        let font = DesignTokens.Typography.font(.body)
         let color = isEnabled ? DesignTokens.Palette.Text.primary : DesignTokens.Palette.Text.disabled
-        let height = ceil(font.boundingRectForFont.height)
-        let width = max(0, bounds.width - 2 * GlassChoiceButton.padding - chevronColumn)
-        let rect = NSRect(x: GlassChoiceButton.padding, y: ((bounds.height - height) / 2).rounded(), width: width, height: height)
-        (faceTitle as NSString).draw(in: rect, withAttributes: [.font: font, .foregroundColor: color, .paragraphStyle: paragraph])
+        (faceTitle as NSString).draw(in: titleRect, withAttributes: faceAttributes(color: color))
     }
 
     private var focusBounds: NSRect { bounds.insetBy(dx: 1, dy: 1) }
