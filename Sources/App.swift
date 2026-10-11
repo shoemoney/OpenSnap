@@ -263,6 +263,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     /// Test seams: replace the real NSSharingServicePicker and the Sharing Settings sheet.
     var sharePickerPresenter: ((NSImage, NSView?) -> Void)?
     var sharingSettingsPresenter: (() -> Void)?
+    /// The Upload button's destination choices (a glass panel over the rebuilt upload menu); see `presentUploadChoices`.
+    let uploadChoices = UploadChoices()
     /// `var` so a test can give it a fake adapter; production never reassigns it.
     var historyRemoteDeletion = HistoryRemoteDeletionCoordinator(destinationBinding: nil, store: AppDelegate.publishingStore)
     /// Test seam: the window the keyboard is in.
@@ -300,7 +302,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     var customDrawingColor = NSColor(calibratedRed: 0, green: 1, blue: 1, alpha: 1) // token-exempt: drawing colour data, not chrome
     let zoomControl = ZoomPopUpButton(frame: .zero, pullsDown: false)
     let dragFormatToggle = SegmentedToggle(titles: FormatToggle.titles)
-    let dragOriginalControl = NSButton(checkboxWithTitle: "Export at original size", target: nil, action: nil)
+    /// Original size: a glass toggle with a checkbox mark. It is an NSButton, so its `state` is the choice everything else reads.
+    let dragOriginalControl = GlassChoiceButton(title: "Original size", kind: .toggle, indicator: .checkbox, layout: .row)
     let dragSizeLabel = NSTextField(labelWithString: "")
     var dragExportView: DragExportView?
     var dragPreviewTimer: Timer?
@@ -834,7 +837,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         [#selector(rotateCW), #selector(flipH), #selector(trimSnap), #selector(wipeSnap)],
         [#selector(toggleBezelFill(_:)), #selector(toggleBezelShadow(_:)), #selector(chooseFont)]
     ]
-    /// The Toolbox pops up the rows copied from the menu bar, icons and all (see `ToolboxPopUpButton` for why it is not a pull-down).
+    /// The Toolbox opens the rows copied from the menu bar, icons and all, as glass group plates (see `ToolboxPopUpButton` for why it is not a pull-down).
     func bezelToolbox() -> NSPopUpButton {
         let control = ToolboxPopUpButton()
         control.font = DesignTokens.Typography.font(.body)
@@ -846,7 +849,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             }
         }
         MenuTypography.apply(to: choices)
-        control.install(choices); control.setAccessibilityLabel("Toolbox")
+        control.install(choices, toggles: [#selector(toggleBezelFill(_:)), #selector(toggleBezelShadow(_:)), #selector(chooseFont)])
+        control.setAccessibilityLabel("Toolbox")
         AppToolTip.setText("Drawing, edit and capture commands; everything else is in the menu bar", for: control)
         return control
     }
@@ -1844,13 +1848,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     @objc func printImage() { let view = NSImageView(frame: NSRect(origin: .zero,size: canvas.outputSize)); view.image = canvas.renderedImage(); view.imageScaling = .scaleProportionallyUpOrDown; let p = NSPrintInfo.shared.copy() as! NSPrintInfo; p.horizontalPagination = .fit; p.verticalPagination = .fit; NSPrintOperation(view: view, printInfo: p).run() }
     static let webpostHelp = "Upload image and copy link · Right-click for destinations"
     struct UploadDestination: Equatable { let id: String; let title: String }
-    /// Left-click uploads to the default destination; right-click or Control-click shows the destination menu.
+    /// Left-click uploads to the default destination; right-click or Control-click (or the accessibility Show Menu action) opens the
+    /// destination choices as a glass panel above the button. The menu stays the source of truth and is rebuilt on every open.
     func configureWebpostButton(_ button: NSButton) {
         webpostButton = button
         AppToolTip.setText(Self.webpostHelp, for: button)
         let menu = NSMenu(); menu.autoenablesItems = false; menu.delegate = self; MenuTypography.apply(to: menu)
         button.menu = menu
-        (button as? OriginalActionButton)?.showMenuOnLeftClick = false
+        if let original = button as? OriginalActionButton {
+            original.showMenuOnLeftClick = false
+            original.menuPresenter = { [weak self] menu, event, button in self?.presentUploadChoices(menu, event: event, from: button) }
+        }
         rebuildUploadMenu(menu)
     }
     @objc func share(_ sender: NSButton) { publishImage() }
