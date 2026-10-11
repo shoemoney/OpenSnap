@@ -305,6 +305,8 @@ extension AuditRun {
     func glassPanelStates(_ script: GlassPanelScript, _ opened: OpenedGlassPanel, restState: String) {
         let panel = opened.panel
         let rows = glassRows(in: panel.contentView ?? NSView())
+        // A keyboard or VoiceOver open puts focus on a row; the rest capture is the mouse-style open, so the ring waits for the focus capture.
+        panel.makeFirstResponder(nil)
         shootGlassPanel(script.id, script.base + "-rest", surface: script.surface, state: restState, panel: panel, opener: script.opener, refs: script.refs,
                         identifier: script.identifier, alsoPanelOnly: true, context: script.context)
         let enabled = rows.indices.filter { rows[$0].isEnabled }
@@ -363,9 +365,9 @@ extension AuditRun {
     func s51() {
         defer { verifyGlassCaptures("S51") }
         loadSynthetic(size: CGSize(width: 1000, height: 700), name: "Glass Zoom")
-        let zoom = app.zoomControl
-        let script = GlassPanelScript(id: "S51", surface: "Zoom panel", identifier: "Zoom", base: "zoom", opener: zoom,
-                                      refs: ["ModernEditorChrome.swift|final class ZoomPopUpButton", "App+ModernChrome.swift|zoomControl.addItems"], open: { zoom.performClick(nil) }, nativeMenu: zoom.menu)
+        guard let zoom = app.zoomControl as? GlassPopUpButton else { gap("S51", "Zoom panel", "the zoom control is not a GlassPopUpButton"); return }
+        let script = GlassPanelScript(id: "S51", surface: "Zoom panel", identifier: zoom.panelIdentifier, base: "zoom", opener: zoom,
+                                      refs: ["ModernEditorChrome.swift|final class ZoomPopUpButton", "App+ModernChrome.swift|zoomControl.addItems"], open: { zoom.openChoices(keyboard: false) }, nativeMenu: zoom.menu)
         // A computed Fit row is part of the choices: fit the drawing to the window first.
         app.fitCanvasToWindow()
         pump(0.3)
@@ -632,7 +634,7 @@ extension AuditRun {
     /// the "Make uploads public-read" toggle off and on. In-memory fake destination only: nothing is tested, saved or sent.
     func s58() {
         defer { verifyGlassCaptures("S58") }
-        let refs = ["PublishingDestinationsView.swift|private(set) lazy var protocolFace", "PublishingDestinationsView.swift|let aclCheckbox", "GlassChoices.swift|final class MenuChoicePanel"]
+        let refs = ["PublishingDestinationsView.swift|let protocolPopup", "PublishingDestinationsView.swift|let aclCheckbox", "GlassChoices.swift|final class MenuChoicePanel"]
         syntheticDestinations()
         guard let controller = openSettingsUpload() else { gap("S58", "Destination sheet", "Settings did not open"); return }
         let settings = controller.window
@@ -643,11 +645,11 @@ extension AuditRun {
         view.protocolPopup.selectItem(withTitle: PublishingProtocol.s3.title)
         view.formChanged()
         pump(0.5)
-        func script(_ face: GlassChoiceButton, base: String) -> GlassPanelScript {
-            GlassPanelScript(id: "S58", surface: "Destination sheet", identifier: view.choicePanel(for: face).identifier, base: base, opener: face, refs: refs,
-                             open: { face.performClick(nil) }, nativeMenu: nil, host: sheet, context: [sheet, settings])
+        func script(_ popup: GlassPopUpButton, base: String) -> GlassPanelScript {
+            GlassPanelScript(id: "S58", surface: "Destination sheet", identifier: popup.panelIdentifier, base: base, opener: popup, refs: refs,
+                             open: { popup.openChoices(keyboard: false) }, nativeMenu: popup.menu, host: sheet, context: [sheet, settings])
         }
-        for (face, base) in [(view.protocolFace, "destination-protocol"), (view.sourceFace, "destination-source")] {
+        for (face, base) in [(view.protocolPopup, "destination-protocol"), (view.sourcePopup, "destination-source")] {
             let panelScript = script(face, base: base)
             guard let opened = openGlassPanel(panelScript) else { continue }
             glassPanelStates(panelScript, opened, restState: "\(base == "destination-protocol" ? "Protocol" : "Key source") choices open on the destination sheet, S3-compatible selected")
@@ -712,13 +714,13 @@ extension AuditRun {
         if let mode = find("ResizeMode.group", in: content) as? GlassChoiceGroup { mode.choose(0) }
         pump(0.4)
         // The preset choice panel.
-        guard let face = find("ResizePresetFace", in: content) as? GlassChoiceButton else { gap("S57", "Resize sheet / preset", "the preset face (ResizePresetFace) was not found"); return }
-        let script = GlassPanelScript(id: "S57", surface: "Resize sheet", identifier: "ResizePreset", base: "resize-preset", opener: face, refs: refs,
-                                      open: { face.performClick(nil) }, nativeMenu: nil, host: sheet, context: [sheet, window])
+        guard let face = firstView(of: GlassPopUpButton.self, in: content) else { gap("S57", "Resize sheet / preset", "the preset pop-up (a GlassPopUpButton) was not found"); return }
+        let script = GlassPanelScript(id: "S57", surface: "Resize sheet", identifier: face.panelIdentifier, base: "resize-preset", opener: face, refs: refs,
+                                      open: { face.openChoices(keyboard: false) }, nativeMenu: face.menu, host: sheet, context: [sheet, window])
         guard let opened = openGlassPanel(script) else { return }
         glassPanelStates(script, opened, restState: "Resize sheet: the preset choices open (Custom size chosen, built-in and two saved presets)")
         shootGlassPanel("S57", "resize-preset-chosen", surface: script.surface, state: "Resize sheet: the preset panel with its chosen row", panel: opened.panel, opener: face, refs: refs,
-                        variant: "chosen", identifier: "ResizePreset", context: script.context)
+                        variant: "chosen", identifier: face.panelIdentifier, context: script.context)
         dismissGlassPanel("S57", "resize-preset-dismissed", surface: script.surface, state: "Preset choices dismissed with Escape: gone, focus back on the preset face", script: script, opened: opened)
     }
 
@@ -750,13 +752,14 @@ extension AuditRun {
             glassGroupStates("S55", base: "history-category", surface: "History glass choices", refs: refs, host: history, root: category,
                              restState: "History: the All / Shared / Exported / Saved category group on one plate")
         } else { gap("S55", "History / category", "the category group (HistoryCategory) was not found") }
-        for (faceID, panelID, base, label) in [("HistoryDateFilterFace", "HistoryDateFilter", "history-date", "Date filter"), ("HistoryDragFormatFace", "HistoryDragFormat", "history-dragas", "Drag as")] {
-            guard let face = find(faceID, in: content) as? GlassChoiceButton else { gap("S55", "History / \(base)", "the \(label) face (\(faceID)) was not found"); continue }
-            let script = GlassPanelScript(id: "S55", surface: "History glass choices", identifier: panelID, base: base, opener: face, refs: refs,
-                                          open: { face.performClick(nil) }, nativeMenu: nil, host: history, context: [history])
+        guard let browser = app.historyBrowser else { gap("S55", "History", "no history browser"); return }
+        for (popup, base, label) in [(browser.dateFilterPopUp, "history-date", "Date filter"), (browser.dragFormatPopUp, "history-dragas", "Drag as")] {
+            let panelID = popup.panelIdentifier
+            let script = GlassPanelScript(id: "S55", surface: "History glass choices", identifier: panelID, base: base, opener: popup, refs: refs,
+                                          open: { popup.openChoices(keyboard: false) }, nativeMenu: popup.menu, host: history, context: [history])
             guard let opened = openGlassPanel(script) else { continue }
             glassPanelStates(script, opened, restState: "History: the \(label) choices open")
-            shootGlassPanel("S55", base + "-chosen", surface: script.surface, state: "History: the \(label) panel with its chosen row", panel: opened.panel, opener: face, refs: refs,
+            shootGlassPanel("S55", base + "-chosen", surface: script.surface, state: "History: the \(label) panel with its chosen row", panel: opened.panel, opener: popup, refs: refs,
                             variant: "chosen", identifier: panelID, context: script.context)
             dismissGlassPanel("S55", base + "-dismissed", surface: script.surface, state: "\(label) choices dismissed with Escape: gone, focus back on the face", script: script, opened: opened)
         }
