@@ -49,6 +49,13 @@ enum MenuShortcut {
     }
 }
 
+extension NSEvent {
+    /// Whether a key carries a modifier that makes it a shortcut for someone else: Command, Option or Control. Shift keeps its own meaning
+    /// (Shift-Tab), and the numeric-pad and function flags AppKit puts on every arrow key, and Caps Lock, are not modifiers at all, so a
+    /// handler must never reject an arrow for carrying them (never intersect with `.deviceIndependentFlagsMask`).
+    var hasShortcutModifier: Bool { !modifierFlags.intersection([.command, .option, .control]).isEmpty }
+}
+
 // MARK: - Passive content views
 
 /// A glyph inside a choice row. It is decoration for the row, not an element of its own: clicks fall through to the row and
@@ -431,8 +438,13 @@ final class GlassChoiceButton: CommandButton {
     override func keyDown(with event: NSEvent) {
         if let keyHandler, keyHandler(event) { return }
         // Space is a click on the focused button, handled here (not left to AppKit) so it is the same path in a key or a background window.
-        if event.keyCode == 49, isEnabled, event.modifierFlags.intersection([.command, .control, .option]).isEmpty {
+        if event.keyCode == 49, isEnabled, !event.hasShortcutModifier {
             performClick(nil)
+            return
+        }
+        // Return and Enter are the window's default button's (a sheet's OK), never this button's.
+        if event.keyCode == 36 || event.keyCode == 76, window?.defaultButtonCell != nil {
+            nextResponder?.keyDown(with: event)
             return
         }
         super.keyDown(with: event)
@@ -663,17 +675,23 @@ final class GlassChoiceGroup: NSView, ChromeFillable {
 
     // MARK: keyboard
 
-    /// Arrow keys step to the next enabled button (no wrap); Space, Return and Enter choose the focused one.
+    /// Arrow keys step to the next enabled button (no wrap); Space chooses the focused one, and so do Return and Enter unless the window has a
+    /// default button (a sheet's OK), which keeps them, as it does for a native radio group.
     private func handleKey(_ event: NSEvent) -> Bool {
+        guard !event.hasShortcutModifier else { return false }
         switch event.keyCode {
         case 123, 126: return step(-1)
         case 124, 125: return step(1)
-        case 49, 36, 76:
-            guard let focused = window?.firstResponder as? GlassChoiceButton, let index = buttons.firstIndex(of: focused) else { return false }
-            choose(index)
-            return true
+        case 49: return chooseFocused()
+        case 36, 76: return window?.defaultButtonCell == nil && chooseFocused()
         default: return false
         }
+    }
+
+    private func chooseFocused() -> Bool {
+        guard let focused = window?.firstResponder as? GlassChoiceButton, let index = buttons.firstIndex(of: focused) else { return false }
+        choose(index)
+        return true
     }
 
     private func step(_ delta: Int) -> Bool {
@@ -761,6 +779,8 @@ final class GlassPanelHost: NSObject {
 
     /// The panel that is shown now; showing another closes it.
     static weak var current: GlassPanelHost?
+    /// How many hosts have a click monitor installed right now: one per shown host, none once they are closed or released.
+    private(set) static var installedMonitors = 0
     static let gap: CGFloat = 6
     static let screenMargin: CGFloat = DesignTokens.Space.s2
     /// When the room on a side is smaller than this the panel keeps this much (or its own height) and overlaps the anchor.
@@ -865,7 +885,6 @@ final class GlassPanelHost: NSObject {
     private var tokens: [NSObjectProtocol] = []
     private var mouseMonitor: Any?
     private weak var savedResponder: NSResponder?
-    private var restoresFocus = true
 
     init(plates: [GlassSurfaceView], identifier: String, accessibilityLabel: String) {
         self.identifier = identifier
@@ -891,6 +910,11 @@ final class GlassPanelHost: NSObject {
         layoutConstraints = pin(container, to: root)
         NSLayoutConstraint.activate(layoutConstraints)
         setPlates(plates)
+        followDisplayOptions()
+    }
+
+    private func followDisplayOptions() {
+        guard displayObservation == nil else { return }
         displayObservation = DisplayOptions.observe { [weak self] options in self?.accessibility = options.chrome }
     }
 
@@ -1005,7 +1029,7 @@ final class GlassPanelHost: NSObject {
         self.parent = parent
         savedResponder = parent.firstResponder
         requestedKey = makeKey
-        restoresFocus = true
+        followDisplayOptions()
         pushAccessibility()
         window.level = parent.level
         isShown = true
@@ -1076,12 +1100,16 @@ final class GlassPanelHost: NSObject {
             let consumed = MainActor.assumeIsolated { self.handleMouseDown(in: event.window, at: event.locationInWindow) }
             return consumed ? nil : event
         }
+        if mouseMonitor != nil { Self.installedMonitors += 1 }
     }
 
     private func removeObservers() {
         for token in tokens { NotificationCenter.default.removeObserver(token) }
         tokens = []
-        if let mouseMonitor { NSEvent.removeMonitor(mouseMonitor) }
+        if let mouseMonitor {
+            NSEvent.removeMonitor(mouseMonitor)
+            Self.installedMonitors -= 1
+        }
         mouseMonitor = nil
     }
 
@@ -1105,6 +1133,25 @@ final class GlassPanelHost: NSObject {
         }
         savedResponder = nil
         didClose?()
+    }
+
+    /// For an owner that replaces or drops this host: closes it without handing the keyboard anywhere, and stops following the display
+    /// options. A host that is simply released does the equivalent in `deinit`, so no child window or click monitor outlives its owner.
+    func invalidate() {
+        close(restoreFocus: false)
+        displayObservation?.invalidate()
+        displayObservation = nil
+    }
+
+    deinit {
+        MainActor.assumeIsolated {
+            removeObservers()
+            displayObservation?.invalidate()
+            if isShown {
+                parent?.removeChildWindow(window)
+                window.orderOut(nil)
+            }
+        }
     }
 }
 
@@ -1157,6 +1204,9 @@ final class MenuChoicePanel: NSObject {
         host.didClose = { [weak self] in self?.panelDidClose() }
     }
 
+    /// For an owner that replaces or drops this panel: closes it and detaches its host. Releasing the panel does the same.
+    func invalidate() { host.invalidate() }
+
     func item(for row: GlassChoiceButton) -> NSMenuItem? { itemForRow[ObjectIdentifier(row)] }
     var isBackRowShown: Bool { backRow != nil }
 
@@ -1167,6 +1217,7 @@ final class MenuChoicePanel: NSObject {
     func present(relativeTo view: NSView, preferredEdge: NSRectEdge, keyboard: Bool) {
         guard view.window != nil else { return }
         if host.isShown { host.close(restoreFocus: false) }
+        resetTypeAhead()
         path = [menu]
         refresh(menu)
         opened = true
@@ -1186,6 +1237,7 @@ final class MenuChoicePanel: NSObject {
     private func panelDidClose() {
         guard opened else { return }
         opened = false
+        resetTypeAhead()
         for open in path.reversed() { open.delegate?.menuDidClose?(open) }
         path = []
         focusedRow = nil
@@ -1274,9 +1326,14 @@ final class MenuChoicePanel: NSObject {
             drillIn(submenu, keyboard: window?.firstResponder === row)
             return
         }
-        let owner = item.menu ?? menu
-        let index = owner.index(of: item)
+        // The menu may have been rebuilt while the panel was open (a dynamic menu): then the row's item is no longer in any menu.
+        let found = current(item)
         host.close()
+        guard let (item, owner, index) = found else {
+            // Nothing equivalent is left to perform through a menu; the item the user chose still carries its own action.
+            if let action = item.action { _ = NSApplication.shared.sendAction(action, to: item.target, from: item) }
+            return
+        }
         if let popUp, owner === popUp.menu {
             if let action = item.action, hasOwnAction(item) {
                 // Not performActionForItem: on a pop-up's menu AppKit also selects the item in the pop-up, and an item with its own
@@ -1286,14 +1343,45 @@ final class MenuChoicePanel: NSObject {
                 popUp.select(item)
                 _ = popUp.sendAction(popUp.action, to: popUp.target)
             }
-        } else if index >= 0 {
+        } else {
             owner.performActionForItem(at: index)
         }
+    }
+
+    /// The item to perform for a row, with the menu it is in and its index there. The row's own item when it is still in a menu; when the
+    /// menu was rebuilt, the equivalent new item: the same action, represented object and title, else the only item with that action and
+    /// represented object (a title that changed with the state).
+    private func current(_ item: NSMenuItem) -> (NSMenuItem, NSMenu, Int)? {
+        var menus: [NSMenu] = []
+        for candidate in [item.menu] + path.reversed() + [menu] {
+            if let candidate, !menus.contains(where: { $0 === candidate }) { menus.append(candidate) }
+        }
+        for owner in menus {
+            let index = owner.index(of: item)
+            if index >= 0 { return (item, owner, index) }
+        }
+        func sameObject(_ a: Any?, _ b: Any?) -> Bool {
+            switch (a, b) {
+            case (nil, nil): return true
+            case let (x as NSObject, y as NSObject): return x.isEqual(y)
+            default: return false
+            }
+        }
+        guard let action = item.action else { return nil }
+        for owner in menus {
+            let same = owner.items.enumerated().filter { _, candidate in
+                !candidate.isSeparatorItem && candidate.action == action && sameObject(candidate.representedObject, item.representedObject)
+            }
+            if let exact = same.first(where: { $0.element.title == item.title }) { return (exact.element, owner, exact.offset) }
+            if same.count == 1 { return (same[0].element, owner, same[0].offset) }
+        }
+        return nil
     }
 
     private var window: NSWindow? { host.window }
 
     private func drillIn(_ submenu: NSMenu, keyboard: Bool) {
+        resetTypeAhead()
         path.append(submenu)
         refresh(submenu)
         focusedRow = nil
@@ -1303,6 +1391,7 @@ final class MenuChoicePanel: NSObject {
 
     func goBack() {
         guard path.count > 1, let left = path.popLast() else { return }
+        resetTypeAhead()
         let parentItem = path.last?.items.first { $0.submenu === left }
         left.delegate?.menuDidClose?(left)
         focusedRow = nil
@@ -1335,25 +1424,81 @@ final class MenuChoicePanel: NSObject {
         focus(candidates[(index + delta + candidates.count) % candidates.count])
     }
 
+    // MARK: type-ahead
+
+    /// How long a typed prefix lives: a key typed later than this after the last one starts a new prefix.
+    static let typeAheadInterval: TimeInterval = 1
+    private var typedPrefix = ""
+    private var typedAt = -TimeInterval.infinity
+
+    private func isTyping(at time: TimeInterval) -> Bool { !typedPrefix.isEmpty && time - typedAt <= Self.typeAheadInterval }
+    private func resetTypeAhead() { typedPrefix = ""; typedAt = -.infinity }
+
+    /// The characters of a printable key: none for the arrows and other function keys (private-use characters) and control characters.
+    private func printable(_ event: NSEvent) -> String? {
+        guard let characters = event.characters, !characters.isEmpty,
+              characters.unicodeScalars.allSatisfy({ $0.value >= 0x20 && $0.value != 0x7F && !(0xF700...0xF8FF).contains($0.value) }) else { return nil }
+        return characters
+    }
+
+    /// Type to select, as in a native menu: printable keys build a prefix (it restarts after a second) and focus the first enabled row whose
+    /// title starts with it, ignoring case and diacritics. A new prefix searches on from the row after the focused one, wrapping, so a
+    /// repeated letter cycles through the rows that start with it; a longer prefix keeps the focused row while it still matches.
+    private func typeAhead(_ characters: String, at time: TimeInterval) {
+        let continuing = isTyping(at: time)
+        typedPrefix = (continuing ? typedPrefix : "") + characters
+        typedAt = time
+        let candidates = rows.filter { $0.isEnabled && $0 !== backRow }
+        guard !candidates.isEmpty else { return }
+        let current = focusedRow.flatMap { candidates.firstIndex(of: $0) }
+        func search(_ prefix: String, from start: Int) -> GlassChoiceButton? {
+            for offset in 0..<candidates.count {
+                let row = candidates[((start + offset) % candidates.count + candidates.count) % candidates.count]
+                if row.title.range(of: prefix, options: [.caseInsensitive, .diacriticInsensitive, .anchored]) != nil { return row }
+            }
+            return nil
+        }
+        if let match = search(typedPrefix, from: continuing ? (current ?? 0) : (current ?? -1) + 1) {
+            focus(match)
+        } else if typedPrefix.count > 1, Set(typedPrefix.lowercased()).count == 1, let match = search(String(typedPrefix.prefix(1)), from: (current ?? -1) + 1) {
+            focus(match)   // the same letter again cycles
+        }
+    }
+
+    // MARK: keys
+
     /// Up, Down, Tab, Shift-Tab, Home, End move the focus (wrapping, enabled rows only); Return, Space and keypad Enter choose the focused
-    /// row; Right enters a submenu and Left or Escape leaves one; Escape at the top level is left to the panel, which closes.
+    /// row; Right enters a submenu and Left or Escape leaves one; Escape at the top level is left to the panel, which closes. Any other
+    /// printable key is type-to-select, and while a prefix is being typed (within a second) Space is part of it, not a choice.
     func handleKey(_ event: NSEvent) -> Bool {
+        guard !event.hasShortcutModifier else { return false }
+        let typing = isTyping(at: event.timestamp)
+        if event.keyCode == 49, typing, let characters = printable(event) {
+            typeAhead(characters, at: event.timestamp)
+            return true
+        }
         switch event.keyCode {
-        case 125: move(by: 1)
-        case 126: move(by: -1)
-        case 48: move(by: event.modifierFlags.contains(.shift) ? -1 : 1)
-        case 115: focus(firstEnabledRow())
-        case 119: focus(enabledRows().last)
+        case 125: resetTypeAhead(); move(by: 1)
+        case 126: resetTypeAhead(); move(by: -1)
+        case 48: resetTypeAhead(); move(by: event.modifierFlags.contains(.shift) ? -1 : 1)
+        case 115: resetTypeAhead(); focus(firstEnabledRow())
+        case 119: resetTypeAhead(); focus(enabledRows().last)
         case 36, 76, 49:
+            resetTypeAhead()
             if let focusedRow { activate(focusedRow) }
         case 124:
+            resetTypeAhead()
             if let focusedRow, focusedRow.kind == .submenu { activate(focusedRow) }
         case 123:
+            resetTypeAhead()
             if path.count > 1 { goBack() }
         case 53:
+            resetTypeAhead()
             guard path.count > 1 else { return false }
             goBack()
-        default: return false
+        default:
+            guard let characters = printable(event) else { return false }
+            typeAhead(characters, at: event.timestamp)
         }
         return true
     }
@@ -1415,7 +1560,7 @@ class GlassPopUpButton: NSPopUpButton {
     /// The panel for the current menu, rebuilt when the menu, the identifier or the label changes.
     var choicePanel: MenuChoicePanel {
         if let cachedPanel, cachedPanel.menu === menu { return cachedPanel }
-        cachedPanel?.host.close(restoreFocus: false)
+        cachedPanel?.invalidate()
         let panel = MenuChoicePanel(menu: menu ?? NSMenu(), identifier: panelIdentifier, accessibilityLabel: panelLabel, kind: { [weak self] item in
             guard let self else { return MenuChoicePanel.defaultKind(item) }
             if let kind = self.kind { return kind(item) }
@@ -1433,7 +1578,7 @@ class GlassPopUpButton: NSPopUpButton {
     }
 
     private func discardPanel() {
-        cachedPanel?.host.close(restoreFocus: false)
+        cachedPanel?.invalidate()
         cachedPanel = nil
     }
 
@@ -1459,6 +1604,7 @@ class GlassPopUpButton: NSPopUpButton {
     /// Space, Down and Up open the choices. Return and keypad Enter do too, unless the window has a default button (a sheet, a dialog):
     /// then they are left for it, as a native pop-up leaves them.
     override func keyDown(with event: NSEvent) {
+        guard !event.hasShortcutModifier else { nextResponder?.keyDown(with: event); return }
         switch event.keyCode {
         case 49, 125, 126: openChoices(keyboard: true)
         case 36, 76:

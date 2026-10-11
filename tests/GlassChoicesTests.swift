@@ -14,7 +14,7 @@ import AppKit
 
 /// Any attempt to order a window front or to attach a child window fails: the presenter seam must replace it.
 @MainActor
-private final class NonorderingWindow: NSWindow {
+private class NonorderingWindow: NSWindow {
     override func orderFront(_ sender: Any?) { preconditionFailure("No desktop windows") }
     override func orderFrontRegardless() { preconditionFailure("No desktop windows") }
     override func makeKeyAndOrderFront(_ sender: Any?) { preconditionFailure("No desktop windows") }
@@ -89,9 +89,27 @@ private final class Rig {
     var anchorOnScreen: NSRect { window.convertToScreen(anchor.convert(anchor.bounds, to: nil)) }
 }
 
-private func key(_ code: UInt16, chars: String = "", modifiers: NSEvent.ModifierFlags = []) -> NSEvent {
-    NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: modifiers, timestamp: 0, windowNumber: 0, context: nil,
-                     characters: chars, charactersIgnoringModifiers: chars, isARepeat: false, keyCode: code)!
+/// A key-down the way AppKit delivers it: the arrow keys carry the numeric-pad and function flags and their private-use characters, Home / End /
+/// Page keys the function flag, Return its carriage return. (A handler that rejected an event for carrying those flags would never see a real
+/// arrow, and a key with no characters crashes AppKit's key-equivalent search when it reaches the window.)
+private func key(_ code: UInt16, chars: String = "", modifiers: NSEvent.ModifierFlags = [], timestamp: TimeInterval = 0) -> NSEvent {
+    var flags = modifiers
+    var characters = chars
+    switch code {
+    case 123: flags.formUnion([.numericPad, .function]); if chars.isEmpty { characters = "\u{F702}" }
+    case 124: flags.formUnion([.numericPad, .function]); if chars.isEmpty { characters = "\u{F703}" }
+    case 125: flags.formUnion([.numericPad, .function]); if chars.isEmpty { characters = "\u{F701}" }
+    case 126: flags.formUnion([.numericPad, .function]); if chars.isEmpty { characters = "\u{F700}" }
+    case 115: flags.insert(.function); if chars.isEmpty { characters = "\u{F729}" }
+    case 119: flags.insert(.function); if chars.isEmpty { characters = "\u{F72B}" }
+    case 36, 76: if chars.isEmpty { characters = "\r" }
+    case 48: if chars.isEmpty { characters = "\t" }
+    case 49: if chars.isEmpty { characters = " " }
+    case 53: if chars.isEmpty { characters = "\u{1B}" }
+    default: break
+    }
+    return NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: flags, timestamp: timestamp, windowNumber: 0, context: nil,
+                            characters: characters, charactersIgnoringModifiers: characters, isARepeat: false, keyCode: code)!
 }
 
 @MainActor
@@ -107,8 +125,13 @@ private final class AuditContainer: NSView {}
 @MainActor
 private final class KeyProbeView: NSView {
     var keys: [UInt16] = []
+    /// Let the key go on to the window, as an unhandled key does (a default button fires there); off, the probe swallows it (no beep).
+    var forwardsToWindow = false
     override var acceptsFirstResponder: Bool { false }
-    override func keyDown(with event: NSEvent) { keys.append(event.keyCode) }
+    override func keyDown(with event: NSEvent) {
+        keys.append(event.keyCode)
+        if forwardsToWindow { super.keyDown(with: event) }
+    }
 }
 
 private enum Keys {
@@ -160,6 +183,10 @@ private enum GlassChoicesTests {
         menuActivationTests()
         menuKeyboardTests()
         submenuTests()
+        returnKeyTests()
+        typeAheadTests()
+        rebuiltMenuTests()
+        hostReleaseTests()
         displayOptionTests()
         popUpButtonTests()
         auditTests()
@@ -1531,7 +1558,9 @@ private enum GlassChoicesTests {
         expect(panel.focusedRow?.title == "Alpha", "With nothing chosen a keyboard open focuses the first enabled row")
         menu.items[1].state = .on
         // Unhandled keys fall through to the window.
-        expect(!panel.handleKey(key(0, chars: "a")), "Keys the panel does not use are not consumed")
+        expect(!panel.handleKey(key(122, chars: "\u{F704}")) && !panel.handleKey(key(0, chars: "a", modifiers: .command)) && !panel.handleKey(key(125, modifiers: .control)),
+               "Function keys and Command / Control combinations are not the panel's: they are not consumed")
+        expect(panel.handleKey(key(125, modifiers: [.numericPad, .function, .capsLock])), "...but an arrow with the flags AppKit adds (and Caps Lock) is")
         panel.host.close()
 
         // Hover fills come from the button itself and never move the keyboard focus.
@@ -1630,6 +1659,349 @@ private enum GlassChoicesTests {
         panel.host.close()
     }
 
+
+
+    // MARK: Return belongs to the default button
+
+    /// A sheet with a default button: Return and Enter on a focused choice go to the button, never to the choice. Tested two ways: the key
+    /// delivered straight to the focused control (proving the handler itself lets Return go up the responder chain, to a probe that stands in for
+    /// the window), and through `window.sendEvent` (AppKit offers a key equivalent to the OK button before the control ever sees it).
+    private static func returnKeyTests() {
+        let window = NonorderingWindow(contentRect: NSRect(x: 0, y: 0, width: 700, height: 400), styleMask: [.titled], backing: .buffered, defer: false)
+        let probe = KeyProbeView(frame: NSRect(x: 0, y: 0, width: 700, height: 400))
+        window.contentView = probe
+        let okTarget = ClickTarget()
+        let ok = NSButton(title: "OK", target: okTarget, action: #selector(ClickTarget.clicked(_:)))
+        ok.frame = NSRect(x: 560, y: 20, width: 100, height: 36)
+        ok.identifier = NSUserInterfaceItemIdentifier("OK")
+        probe.addSubview(ok)
+        let groupTarget = ClickTarget()
+        let group = GlassChoiceGroup(titles: ["Resize", "Crop", "Limit"], selectedIndex: 0, accessibilityLabel: "Mode", identifier: "mode", accessibility: plain)
+        group.target = groupTarget
+        group.action = #selector(ClickTarget.clicked(_:))
+        place(group, in: window)
+        let toggleTarget = ClickTarget()
+        let toggle = makeButton("Lock proportions", .toggle, indicator: .checkbox, target: toggleTarget)
+        toggle.frame = NSRect(x: 20, y: 200, width: 260, height: 36)
+        probe.addSubview(toggle)
+        let pop = GlassPopUpButton(frame: NSRect(x: 20, y: 260, width: 170, height: 36), pullsDown: false)
+        pop.addItems(withTitles: ["Fixed", "Free"])
+        probe.addSubview(pop)
+        let rig = Rig()
+        rig.attach(pop.choicePanel.host)
+        func setDefault(_ on: Bool) {
+            ok.keyEquivalent = on ? "\r" : ""
+            window.defaultButtonCell = on ? ok.cell as? NSButtonCell : nil
+            probe.forwardsToWindow = on
+        }
+
+        // Without a default button, Return and Enter choose the focused segment.
+        setDefault(false)
+        _ = window.makeFirstResponder(group.buttons[1])
+        window.sendEvent(key(Keys.enter, chars: "\r"))
+        expect(group.selectedIndex == 1 && groupTarget.senders.count == 1 && okTarget.senders.isEmpty && probe.keys.isEmpty, "With no default button Return chooses the focused segment (selected \(group.selectedIndex), ok \(okTarget.senders))")
+        window.sendEvent(key(Keys.keypadEnter, chars: "\r"))
+        expect(groupTarget.senders.count == 1, "...and choosing the chosen segment again sends nothing")
+        group.selectedIndex = 0
+        groupTarget.senders = []
+
+        // With one, the handler does not take the key: it goes up the responder chain and the choice stays.
+        setDefault(true)
+        for (name, code) in [("Return", Keys.enter), ("keypad Enter", Keys.keypadEnter)] {
+            _ = window.makeFirstResponder(group.buttons[1])
+            probe.keys = []
+            group.buttons[1].keyDown(with: key(code, chars: "\r"))
+            expect(group.selectedIndex == 0 && groupTarget.senders.isEmpty && !group.buttons[1].isChosen, "\(name) on a focused segment does not move the choice when the window has a default button")
+            expect(probe.keys == [code], "...and the key goes up the responder chain to the window (\(probe.keys))")
+            okTarget.senders = []
+            window.sendEvent(key(code, chars: "\r"))
+            expect(group.selectedIndex == 0 && groupTarget.senders.isEmpty && okTarget.senders == ["OK"], "...and through the window the default button fires exactly once (\(okTarget.senders))")
+        }
+        // Space still chooses, and the arrows (with the flags AppKit adds) still move.
+        _ = window.makeFirstResponder(group.buttons[2])
+        window.sendEvent(key(Keys.space, chars: " "))
+        expect(group.selectedIndex == 2 && groupTarget.senders.count == 1, "Space still chooses the focused segment next to a default button")
+        window.sendEvent(key(Keys.left, modifiers: [.numericPad, .function]))
+        expect(group.selectedIndex == 1 && groupTarget.senders.count == 2 && window.firstResponder === group.buttons[1], "A real arrow event (numeric pad + function flags) moves the choice and the focus")
+        window.sendEvent(key(Keys.right, modifiers: [.numericPad, .function, .capsLock]))
+        expect(group.selectedIndex == 2 && groupTarget.senders.count == 3, "...Caps Lock does not matter either")
+        window.sendEvent(key(Keys.left, modifiers: [.numericPad, .function, .command]))
+        window.sendEvent(key(Keys.left, modifiers: [.numericPad, .function, .option]))
+        expect(group.selectedIndex == 2 && groupTarget.senders.count == 3, "A Command or Option arrow is someone else's shortcut: the group leaves it alone")
+
+        // A focused toggle: Return is the default button's; Space flips.
+        _ = window.makeFirstResponder(toggle)
+        probe.keys = []
+        toggle.keyDown(with: key(Keys.enter, chars: "\r"))
+        expect(!toggle.isChosen && toggleTarget.states.isEmpty && probe.keys == [Keys.enter], "Return on a focused toggle goes up the chain and does not flip it (\(probe.keys))")
+        okTarget.senders = []
+        window.sendEvent(key(Keys.enter, chars: "\r"))
+        expect(!toggle.isChosen && toggleTarget.states.isEmpty && okTarget.senders == ["OK"], "...and through the window it fires the default button")
+        window.sendEvent(key(Keys.space, chars: " "))
+        expect(toggle.isChosen && toggleTarget.states == [.on], "Space flips it")
+
+        // A pop-up: Return and Enter go to the default button, Space / Down / Up open it (with AppKit's arrow flags).
+        _ = window.makeFirstResponder(pop)
+        probe.keys = []
+        rig.presented = []
+        pop.keyDown(with: key(Keys.enter, chars: "\r"))
+        pop.keyDown(with: key(Keys.keypadEnter, chars: "\r"))
+        expect(rig.presented.isEmpty && probe.keys == [Keys.enter, Keys.keypadEnter], "Return and Enter on a focused pop-up go up the chain and open nothing (\(probe.keys))")
+        okTarget.senders = []
+        window.sendEvent(key(Keys.enter, chars: "\r"))
+        expect(rig.presented.isEmpty && okTarget.senders == ["OK"], "...and through the window they fire the default button")
+        window.sendEvent(key(Keys.down, modifiers: [.numericPad, .function]))
+        expect(pop.choicePanel.host.isShown && rig.presented.count == 1, "A real Down arrow opens the pop-up")
+        pop.choicePanel.host.close()
+        window.sendEvent(key(Keys.down, modifiers: [.numericPad, .function, .command]))
+        expect(!pop.choicePanel.host.isShown, "Command-Down is not the pop-up's")
+        setDefault(false)
+    }
+
+    // MARK: type to select
+
+    private static func typeAheadTests() {
+        let rig = Rig()
+        let log = Log()
+        let fixture = MenuFixture(log: log)
+        fixture.disabledTitles = ["Delete"]
+        let menu = NSMenu()
+        for title in ["None", "Escape", "Delete", "Return", "Right Command", "Right Option", "Éclair", "Echo", "F1", "Space bar"] {
+            let item = NSMenuItem(title: title, action: #selector(MenuFixture.act(_:)), keyEquivalent: "")
+            item.target = fixture
+            menu.addItem(item)
+        }
+        let panel = MenuChoicePanel(menu: menu, identifier: "Type", accessibilityLabel: "Type")
+        rig.attach(panel.host)
+        panel.present(relativeTo: rig.anchor, preferredEdge: .minY, keyboard: true)
+        var clock: TimeInterval = 100
+        func type(_ text: String, after gap: TimeInterval = 0.2) {
+            clock += gap
+            for character in text {
+                clock += gap == 0 ? 0 : 0.05
+                panel.host.window.sendEvent(key(character == " " ? Keys.space : 0, chars: String(character), timestamp: clock))
+            }
+        }
+        expect(panel.focusedRow?.title == "None", "(setup) the keyboard open starts on the first row")
+
+        type("r", after: 2)
+        expect(panel.focusedRow?.title == "Return", "r focuses the first row starting with r, searching from the row after the focused one")
+        type("i")
+        expect(panel.focusedRow?.title == "Right Command", "ri extends the prefix and moves on to the first match (\(panel.focusedRow?.title ?? "nil"))")
+        type("ght o")
+        expect(panel.focusedRow?.title == "Right Option", "Space is part of the prefix while one is being typed: \"right o\" finds Right Option (\(panel.focusedRow?.title ?? "nil"))")
+        // The prefix lives about a second: after a pause a new one starts, searching on from the row after the focused one.
+        type("e", after: 1.5)
+        expect(panel.focusedRow?.title == "Éclair", "After a pause a new prefix starts: e finds the next row starting with e, ignoring the accent (\(panel.focusedRow?.title ?? "nil"))")
+        type("e", after: 1.5)
+        expect(panel.focusedRow?.title == "Echo", "...and the same letter again cycles on (\(panel.focusedRow?.title ?? "nil"))")
+        type("e", after: 1.5)
+        expect(panel.focusedRow?.title == "Escape", "...wrapping round the end of the list (\(panel.focusedRow?.title ?? "nil"))")
+        type("e", after: 1.5)
+        type("c")
+        expect(panel.focusedRow?.title == "Éclair", "ec keeps Éclair: a longer prefix stays on the focused row while it still matches (\(panel.focusedRow?.title ?? "nil"))")
+        type("h")
+        expect(panel.focusedRow?.title == "Echo", "ech moves on to Echo (\(panel.focusedRow?.title ?? "nil"))")
+        type("É", after: 1.5)
+        expect(panel.focusedRow?.title == "Escape", "An upper-case accented letter matches case- and diacritic-insensitively: the first e-row after Echo, wrapping (\(panel.focusedRow?.title ?? "nil"))")
+        // A disabled row is never found, and an unmatched prefix keeps the focus.
+        type("d", after: 1.5)
+        expect(panel.focusedRow?.title == "Escape", "Delete is disabled: d finds nothing and the focus stays")
+        type("z", after: 1.5)
+        expect(panel.focusedRow?.title == "Escape", "A prefix nothing starts with leaves the focus alone")
+        // Printable keys are consumed (no beep); function keys are not typed characters.
+        clock += 5
+        expect(panel.handleKey(key(0, chars: "q", timestamp: clock)), "A printable key is consumed even when nothing matches")
+        expect(!panel.handleKey(key(122, chars: "\u{F704}")), "A function key is not a typed character")
+        // An arrow ends the prefix: the next letter starts a new one.
+        type("r", after: 2)
+        expect(panel.focusedRow?.title == "Return", "(setup) r from Escape finds Return")
+        _ = panel.handleKey(key(Keys.down, timestamp: clock + 0.1))
+        expect(panel.focusedRow?.title == "Right Command", "A real Down arrow still moves the focus")
+        type("e", after: 0.2)
+        expect(panel.focusedRow?.title == "Éclair", "A letter right after an arrow is a fresh prefix, not \"re\" (which would go back to Return): \(panel.focusedRow?.title ?? "nil")")
+        // Space chooses when no prefix is being typed, and does not when one is.
+        type("f", after: 3)
+        expect(panel.focusedRow?.title == "F1", "(setup) f finds F1")
+        log.lines = []
+        panel.host.window.sendEvent(key(Keys.space, chars: " ", timestamp: clock + 3))
+        expect(!panel.host.isShown && log.count("act:F1") == 1, "Space with no prefix being typed chooses the focused row")
+        panel.present(relativeTo: rig.anchor, preferredEdge: .minY, keyboard: true)
+        clock += 10
+        type("s", after: 0)
+        expect(panel.focusedRow?.title == "Space bar" && panel.host.isShown, "s finds Space bar")
+        log.lines = []
+        panel.host.window.sendEvent(key(Keys.space, chars: " ", timestamp: clock + 0.1))
+        expect(panel.host.isShown && log.count("act:Space bar") == 0 && panel.focusedRow?.title == "Space bar", "Space right after a typed letter is part of the prefix, not a choice")
+        panel.host.window.sendEvent(key(Keys.enter, chars: "\r", timestamp: clock + 0.2))
+        expect(!panel.host.isShown && log.count("act:Space bar") == 1, "Return chooses")
+        // A Command letter is a shortcut, not a type.
+        panel.present(relativeTo: rig.anchor, preferredEdge: .minY, keyboard: true)
+        expect(!panel.handleKey(key(0, chars: "r", modifiers: .command, timestamp: clock + 20)) && panel.focusedRow?.title == "None", "Command-r is not type-to-select")
+        // The prefix does not leak into the next open: \"r\" then a reopen then \"i\" is just \"i\" (not \"ri\", which would find Right Command).
+        type("r", after: 30)
+        expect(panel.focusedRow?.title == "Return", "(setup) r finds Return")
+        panel.present(relativeTo: rig.anchor, preferredEdge: .minY, keyboard: true)
+        type("i", after: 0.1)
+        expect(panel.focusedRow?.title == "None", "A new open starts a new prefix (\(panel.focusedRow?.title ?? "nil"))")
+        panel.host.close()
+    }
+
+    // MARK: a menu rebuilt while the panel is open
+
+    private static func rebuiltMenuTests() {
+        let rig = Rig()
+        let log = Log()
+        let fixture = MenuFixture(log: log)
+        func build(_ menu: NSMenu, titles: [String]) {
+            menu.removeAllItems()
+            for title in titles {
+                let item = NSMenuItem(title: title, action: #selector(MenuFixture.act(_:)), keyEquivalent: "")
+                item.target = fixture
+                item.representedObject = "id-\(title.prefix(5))"
+                menu.addItem(item)
+            }
+        }
+        let menu = NSMenu()
+        build(menu, titles: ["Alpha one", "Beta two", "Gamma three"])
+        let panel = MenuChoicePanel(menu: menu, identifier: "Rebuilt", accessibilityLabel: "Rebuilt")
+        rig.attach(panel.host)
+        var senders: [NSMenuItem] = []
+        fixture.onAction = { senders.append($0) }
+
+        // Still in the menu: the row's own item is performed.
+        panel.present(relativeTo: rig.anchor, preferredEdge: .minY, keyboard: false)
+        let stable = panel.rows[1]
+        let stableItem = panel.item(for: stable)
+        panel.activate(stable)
+        expect(log.count("act:Beta two") == 1 && senders.last === stableItem, "(setup) an item still in the menu is performed as itself")
+
+        // Rebuilt with equivalent items (same action, represented object and title): the NEW item is performed, not nothing.
+        senders = []
+        log.lines = []
+        panel.present(relativeTo: rig.anchor, preferredEdge: .minY, keyboard: false)
+        let staleRow = panel.rows[1], staleItem = panel.item(for: staleRow)!
+        build(menu, titles: ["Alpha one", "Beta two", "Gamma three"])
+        expect(staleItem.menu == nil && menu.index(of: staleItem) == -1, "(setup) the row's item left the menu")
+        panel.activate(staleRow)
+        expect(!panel.host.isShown && log.count("act:Beta two") == 1, "A row whose item was replaced by an equivalent one still performs it (\(log.lines))")
+        expect(senders.count == 1 && senders[0] !== staleItem && senders[0] === menu.items[1], "...as the menu's current item, not the stale one")
+
+        // The title changed with the state, but the action and represented object still identify it.
+        senders = []
+        log.lines = []
+        panel.present(relativeTo: rig.anchor, preferredEdge: .minY, keyboard: false)
+        let renamedRow = panel.rows[2]
+        build(menu, titles: ["Alpha one", "Beta two", "Gamma three (new)"])
+        menu.items[2].representedObject = "id-Gamma"
+        panel.activate(renamedRow)
+        expect(log.count("act:Gamma three (new)") == 1 && senders.first === menu.items[2], "A changed title is matched by action and represented object (\(log.lines))")
+
+        // Nothing equivalent is left: the chosen item's own action is still sent, rather than silently doing nothing.
+        senders = []
+        log.lines = []
+        panel.present(relativeTo: rig.anchor, preferredEdge: .minY, keyboard: false)
+        let orphanRow = panel.rows[0], orphan = panel.item(for: orphanRow)!
+        menu.removeAllItems()
+        panel.activate(orphanRow)
+        expect(!panel.host.isShown && log.count("act:Alpha one") == 1 && senders.first === orphan, "With no equivalent left the chosen item's own action still runs (\(log.lines))")
+
+        // A pop-up whose menu was rebuilt: the equivalent new item is the one selected.
+        let popLog = Log()
+        let popFixture = MenuFixture(log: popLog)
+        let pop = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 100, height: 30), pullsDown: false)
+        pop.addItems(withTitles: ["25%", "50%", "100%"])
+        pop.target = popFixture
+        pop.action = #selector(MenuFixture.popChanged(_:))
+        let popPanel = MenuChoicePanel(menu: pop.menu!, identifier: "RebuiltPop", accessibilityLabel: "Zoom", kind: { _ in .option }, popUp: pop)
+        rig.attach(popPanel.host)
+        popPanel.present(relativeTo: rig.anchor, preferredEdge: .minY, keyboard: false)
+        let staleChoice = popPanel.rows[1]
+        pop.removeAllItems()
+        pop.addItems(withTitles: ["25%", "50%", "100%"])
+        popPanel.activate(staleChoice)
+        expect(pop.indexOfSelectedItem == 1 && popLog.lines.contains("popAction:1"), "A rebuilt pop-up menu: the equivalent new item is selected and the pop-up's action sent (\(popLog.lines), selected \(pop.indexOfSelectedItem))")
+    }
+
+    // MARK: a host that is released or replaced while shown
+
+    private final class RecordingWindow: NonorderingWindow {
+        var removedChildren: [NSWindow] = []
+        override func removeChildWindow(_ childWin: NSWindow) { removedChildren.append(childWin) }
+    }
+
+    private static func hostReleaseTests() {
+        let parent = RecordingWindow(contentRect: NSRect(x: 200, y: 300, width: 800, height: 600), styleMask: [.titled], backing: .buffered, defer: false)
+        parent.contentView = NSView(frame: NSRect(x: 0, y: 0, width: 800, height: 600))
+        let anchor = NSButton(frame: NSRect(x: 40, y: 500, width: 80, height: 36))
+        parent.contentView?.addSubview(anchor)
+        let baseline = GlassPanelHost.installedMonitors
+        var shownWindow: GlassChoiceWindow?
+        weak var weakHost: GlassPanelHost?
+
+        func makeHost(_ identifier: String) -> GlassPanelHost {
+            let host = GlassPanelHost(plates: [plate(["One", "Two"])], identifier: identifier, accessibilityLabel: identifier)
+            host.presenter = { window, _ in shownWindow = window }
+            host.visibleFrameOverride = Rig.visible
+            host.accessibility = .none
+            return host
+        }
+
+        // Released while shown: the click monitor and the observers go, and the child window is taken off its parent.
+        autoreleasepool {
+            let host = makeHost("Released")
+            host.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .minY, makeKey: true)
+            weakHost = host
+            expect(GlassPanelHost.installedMonitors == baseline + 1 && host.isShown, "(setup) a shown host has one click monitor")
+        }
+        expect(weakHost == nil, "A shown host is not kept alive by its own observers, monitor or callbacks")
+        expect(GlassPanelHost.installedMonitors == baseline, "Releasing a shown host removes its click monitor (\(GlassPanelHost.installedMonitors) vs \(baseline))")
+        expect(parent.removedChildren.contains { $0 === shownWindow }, "...and takes its window off the parent, so no orphan child window stays behind")
+        // The notification observers are gone too: a late event reaches nothing.
+        NotificationCenter.default.post(name: NSApplication.didResignActiveNotification, object: NSApp)
+        NotificationCenter.default.post(name: NSWindow.willCloseNotification, object: parent)
+        shownWindow = nil
+
+        // An owner that replaces its host calls invalidate(): closed, no monitor, no keyboard handed anywhere.
+        let first = makeHost("Replaced")
+        var closes = 0
+        first.didClose = { closes += 1 }
+        first.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .minY, makeKey: true)
+        expect(GlassPanelHost.installedMonitors == baseline + 1, "(setup) the replaced host is shown")
+        first.invalidate()
+        expect(!first.isShown && closes == 1 && GlassPanelHost.installedMonitors == baseline, "invalidate() closes a shown host and removes its monitor")
+        first.invalidate()
+        expect(closes == 1 && GlassPanelHost.installedMonitors == baseline, "...and is harmless twice")
+        // An invalidated host can be shown again (it follows the display options once more).
+        first.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .minY, makeKey: true)
+        first.close()
+        expect(GlassPanelHost.installedMonitors == baseline, "Showing and closing again leaves no monitor behind")
+
+        // A menu panel released while open does the same through its host; a pop-up that replaces its menu invalidates the old panel.
+        weak var weakPanel: MenuChoicePanel?
+        autoreleasepool {
+            let log = Log()
+            let panel = MenuChoicePanel(menu: standardMenu(MenuFixture(log: log)), identifier: "ReleasedMenu", accessibilityLabel: "Menu")
+            panel.host.presenter = { window, _ in shownWindow = window }
+            panel.host.visibleFrameOverride = Rig.visible
+            panel.present(relativeTo: anchor, preferredEdge: .minY, keyboard: false)
+            weakPanel = panel
+            expect(GlassPanelHost.installedMonitors == baseline + 1, "(setup) the menu panel is open")
+        }
+        expect(weakPanel == nil && GlassPanelHost.installedMonitors == baseline, "A released menu panel leaves no monitor behind")
+        let pop = GlassPopUpButton(frame: NSRect(x: 300, y: 300, width: 160, height: 36), pullsDown: false)
+        pop.addItems(withTitles: ["One", "Two"])
+        parent.contentView?.addSubview(pop)
+        let old = pop.choicePanel
+        old.host.presenter = { window, _ in shownWindow = window }
+        old.host.visibleFrameOverride = Rig.visible
+        old.present(relativeTo: pop, preferredEdge: .minY, keyboard: false)
+        expect(old.host.isShown && GlassPanelHost.installedMonitors == baseline + 1, "(setup) the pop-up's panel is open")
+        pop.panelLabel = "Another label"
+        expect(!old.host.isShown && GlassPanelHost.installedMonitors == baseline, "A pop-up that replaces its panel closes the old one and removes its monitor")
+        pop.removeFromSuperview()
+        shownWindow = nil
+    }
 
     // MARK: glass pop-up button
 
