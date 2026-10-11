@@ -5,6 +5,10 @@ import AppKit
 // preferences, the shortcut manager, the destination list, the destinations sheet) and it owns nothing else, so a test can build
 // it with in-memory stand-ins. The strip is ours, not an NSToolbar's, because AppKit draws toolbar labels at about 13 pt and an
 // app-owned label is 20 pt. The title bar text is the one thing the OS still sets; it follows the selected tab.
+//
+// Every choice the app owns is a Liquid Glass button: one glass plate per related group (the four tabs; each radio set; related
+// check boxes; the Upload commands), and the buttons on a plate draw their own state fills, so there is never glass inside glass. The
+// destination list and the shortcut recorders are content and form fields, and stay solid and native.
 
 /// Sizes and row builders shared by the four tabs, so every tab is the same aligned form grid.
 @MainActor

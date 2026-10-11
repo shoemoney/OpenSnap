@@ -3,9 +3,11 @@
 // xcrun swiftc -swift-version 5 -target arm64-apple-macosx26.0 -D SETTINGS_WINDOW_TESTS \
 //   Sources/SettingsWindow.swift Sources/GeneralPreferencesState.swift Sources/GlobalHotkeys.swift Sources/AppToolTip.swift \
 //   Sources/DesignTokens.swift Sources/FontAwesomeIcons.swift Sources/ChromeIcons.swift Sources/FontAwesomeFree.swift \
-//   Sources/SVGPath.swift Sources/StrokeFitting.swift Sources/DisplayOptions.swift Sources/OriginalCaptureFlash.swift \
-//   Sources/Publishing.swift Sources/PublishingS3.swift Sources/PublishingDestinations.swift Sources/PublishingDestinationsView.swift \
-//   tests/TestDefaults.swift tests/ViewTreeAudit.swift tests/SettingsWindowTests.swift -o build/settings-window-tests
+//   Sources/SVGPath.swift Sources/StrokeFitting.swift Sources/DisplayOptions.swift Sources/DisplayOptions+ChromeAccessibility.swift \
+//   Sources/OriginalActionButton.swift Sources/StateStyles.swift Sources/GlassChrome.swift Sources/GlassChoices.swift \
+//   Sources/OriginalCaptureFlash.swift Sources/AppAlert.swift Sources/Publishing.swift Sources/PublishingS3.swift \
+//   Sources/PublishingDestinations.swift Sources/PublishingDestinationsView.swift \
+//   tests/TestDefaults.swift tests/ViewTreeAudit.swift tests/ContrastProbe.swift tests/SettingsWindowTests.swift -o build/settings-window-tests
 #if SETTINGS_WINDOW_TESTS
 import AppKit
 import Carbon
