@@ -185,6 +185,7 @@ private enum GlassChoicesTests {
         menuActivationTests()
         menuKeyboardTests()
         submenuTests()
+        externalTreeTests()
         menuIconTests()
         returnKeyTests()
         typeAheadTests()
@@ -1818,6 +1819,172 @@ private enum GlassChoicesTests {
 
 
 
+
+
+    // MARK: the tree an external client sees
+
+    /// Reached rows: role, label and value, found by walking the tree the AX server publishes (window.accessibilityChildren() down), never from the row objects.
+    private static func expectRow(_ tree: AXTree.Tree, _ role: NSAccessibility.Role, _ label: String, value: Int? = nil, enabled: Bool = true, in context: String) {
+        guard let node = tree.find(role, label) else { return expect(false, "\(context): \(role.rawValue) \"\(label)\" is not reachable from the window. Tree:\n\(tree.outline)") }
+        if let value { expect(node.number == value, "\(context): \"\(label)\" has value \(value) (got \(String(describing: node.value)))") }
+        expect(node.enabled == enabled, "\(context): \"\(label)\" is \(enabled ? "enabled" : "disabled") for assistive technology")
+    }
+
+    private static func expectCoherent(_ tree: AXTree.Tree, _ context: String) {
+        let problems = tree.parentProblems()
+        expect(problems.isEmpty, "\(context): parents agree with the tree and lead back to the window: \(problems.prefix(4))")
+    }
+
+    private static func externalTreeTests() {
+        let rig = Rig()
+        let log = Log()
+        let fixture = MenuFixture(log: log)
+        func item(_ menu: NSMenu, _ title: String, state: NSControl.StateValue = .off, enabled: Bool = true) {
+            let made = NSMenuItem(title: title, action: #selector(MenuFixture.act(_:)), keyEquivalent: "")
+            made.target = fixture
+            made.state = state
+            menu.addItem(made)
+            if !enabled { fixture.disabledTitles.insert(title) }
+        }
+
+        // The Toolbox: five groups, 18 rows, three of them toggles.
+        let toolboxTitles = [["Save to History", "Export…"], ["Copy", "Paste", "Duplicate", "Delete", "Select All"], ["Snap", "Fullscreen Snapshot", "Frame Snapshot", "Re-snap"],
+                             ["Rotate Clockwise", "Flip Horizontal", "Crop Snap at Current Edges", "Remove Snap Picture"], ["Filled Shapes", "Shadow", "Text Style…"]]
+        let toolbox = NSMenu(title: "Toolbox")
+        for (index, group) in toolboxTitles.enumerated() {
+            if index > 0 { toolbox.addItem(.separator()) }
+            for title in group { item(toolbox, title, state: title == "Shadow" ? .on : .off) }
+        }
+        let toggles: Set<String> = ["Filled Shapes", "Shadow", "Text Style…"]
+        let toolboxPanel = MenuChoicePanel(menu: toolbox, identifier: "Toolbox", accessibilityLabel: "Toolbox", kind: { toggles.contains($0.title) ? .toggle : .command })
+        rig.attach(toolboxPanel.host)
+        toolboxPanel.present(relativeTo: rig.anchor, preferredEdge: .minY, keyboard: false)
+        var tree = AXTree.walk(toolboxPanel.host.window)
+        guard let root = tree.find(.group, "Toolbox") else { return expect(false, "The Toolbox panel's group is reachable from its window:\n\(tree.outline)") }
+        expect(tree.children(of: root).count == 18 && tree.descendants(of: root).count == 18, "The Toolbox group holds the 18 rows and nothing else (\(tree.children(of: root).count)):\n\(tree.outline)")
+        for title in toolboxTitles.joined() {
+            expectRow(tree, toggles.contains(title) ? .checkBox : .button, title, value: toggles.contains(title) ? (title == "Shadow" ? 1 : 0) : nil, in: "Toolbox")
+        }
+        expect(tree.children(of: root).map { $0.label ?? "" } == Array(toolboxTitles.joined()), "The rows come in the panel's visual order, top to bottom")
+        expectCoherent(tree, "Toolbox")
+        // AXPress on a row reached from the window performs it and closes the panel.
+        log.lines = []
+        guard let paste = tree.find(.button, "Paste") else { return expect(false, "Paste is reachable") }
+        expect(AXTree.press(paste) && log.count("act:Paste") == 1 && !toolboxPanel.host.isShown, "AXPress on the reached Paste row performs the command and closes the panel")
+
+        // The zoom: percentages are options (value 0/1), Actual Size is a toggle command.
+        let zoom = GlassPopUpButton(frame: NSRect(x: 300, y: 300, width: 120, height: 36), pullsDown: false)
+        zoom.menu?.autoenablesItems = false
+        zoom.addItems(withTitles: ["25%", "50%", "75%", "100%", "150%", "200%"])
+        zoom.selectItem(withTitle: "100%")
+        zoom.menu?.addItem(.separator())
+        let actualSize = NSMenuItem(title: "Actual Size", action: #selector(MenuFixture.act(_:)), keyEquivalent: ""); actualSize.target = fixture
+        zoom.menu?.addItem(actualSize)
+        zoom.panelIdentifier = "Zoom"; zoom.panelLabel = "Canvas zoom"
+        rig.window.contentView?.addSubview(zoom)
+        rig.attach(zoom.choicePanel.host)
+        zoom.performClick(nil)
+        tree = AXTree.walk(zoom.choicePanel.host.window)
+        for percent in ["25%", "50%", "75%", "100%", "150%", "200%"] { expectRow(tree, .radioButton, percent, value: percent == "100%" ? 1 : 0, in: "Zoom") }
+        expectRow(tree, .button, "Actual Size", in: "Zoom")
+        expect(tree.find(.group, "Canvas zoom").map { tree.children(of: $0).count } == 7, "The zoom group holds six percentages and Actual Size")
+        expectCoherent(tree, "Zoom")
+        zoom.choicePanel.host.close()
+        zoom.removeFromSuperview()
+
+        // A pop-up on a window is published as itself (its value, its name, its actions), so an assistive client's AXPress and AXShowMenu reach the
+        // glass panel and not AppKit's own pop-up tracking.
+        let face = GlassPopUpButton(frame: NSRect(x: 300, y: 200, width: 160, height: 36), pullsDown: false)
+        face.addItems(withTitles: ["One", "Two", "Three"])
+        face.selectItem(withTitle: "Two")
+        face.setAccessibilityLabel("Preset")
+        face.panelIdentifier = "AXFace"; face.panelLabel = "Preset"
+        rig.window.contentView?.addSubview(face)
+        rig.attach(face.choicePanel.host)
+        rig.presented = []
+        tree = AXTree.walk(rig.window)
+        guard let faceNode = tree.find(.popUpButton, "Preset") else { return expect(false, "The pop-up is reachable from its window:\n\(tree.outline)") }
+        expect(faceNode.text == "Two" && faceNode.enabled && faceNode.object === face, "The pop-up is published as itself, with its selected title as the value (\(String(describing: faceNode.value)))")
+        expect(AXTree.press(faceNode) && face.choicePanel.host.isShown && rig.presented.count == 1, "AXPress on the reached pop-up opens the glass panel")
+        face.choicePanel.host.close()
+        rig.presented = []
+        expect(faceNode.element.accessibilityPerformShowMenu() && face.choicePanel.host.isShown && rig.presented.count == 1, "AXShowMenu on the reached pop-up opens the glass panel")
+        face.choicePanel.host.close()
+        face.removeFromSuperview()
+
+        // The Upload panel: destinations are options (the default chosen), the rest commands, one row disabled.
+        let upload = NSMenu(title: "Upload")
+        item(upload, "AWS cdn", state: .on); item(upload, "Backup SFTP"); upload.addItem(.separator())
+        item(upload, "Destination Settings…"); item(upload, "Share with macOS…"); item(upload, "No destination configured", enabled: false)
+        let uploadPanel = MenuChoicePanel(menu: upload, identifier: "Upload", accessibilityLabel: "Upload destinations",
+                                          kind: { ["AWS cdn", "Backup SFTP"].contains($0.title) ? .option : .command })
+        rig.attach(uploadPanel.host)
+        uploadPanel.present(relativeTo: rig.anchor, preferredEdge: .maxY, keyboard: false)
+        tree = AXTree.walk(uploadPanel.host.window)
+        expectRow(tree, .radioButton, "AWS cdn", value: 1, in: "Upload"); expectRow(tree, .radioButton, "Backup SFTP", value: 0, in: "Upload")
+        expectRow(tree, .button, "Destination Settings…", in: "Upload"); expectRow(tree, .button, "Share with macOS…", in: "Upload")
+        expectRow(tree, .button, "No destination configured", enabled: false, in: "Upload")
+        expectCoherent(tree, "Upload")
+        uploadPanel.host.close()
+
+        // The Capture key list: None plus fifty keys in a scrolling panel; every row is reachable, the scrolled-off ones too.
+        let keys = GlassPopUpButton(frame: NSRect(x: 300, y: 300, width: 200, height: 36), pullsDown: false)
+        keys.menu?.autoenablesItems = false
+        let keyTitles = ["None"] + (1...12).map { "F\($0)" } + "ABCDEFGHIJKLMNOPQRSTUVWXYZ".map { String($0) } + (0...9).map { String($0) }
+        keys.addItems(withTitles: keyTitles)
+        keys.selectItem(withTitle: "F5")
+        keys.panelIdentifier = "CaptureKey"; keys.panelLabel = "Screen shortcut key"
+        rig.window.contentView?.addSubview(keys)
+        rig.attach(keys.choicePanel.host)
+        keys.choicePanel.host.visibleFrameOverride = NSRect(x: 0, y: 0, width: 1440, height: 500)
+        keys.performClick(nil)
+        expect(keys.choicePanel.host.scrolls, "(setup) the key list scrolls in a 500 pt screen")
+        tree = AXTree.walk(keys.choicePanel.host.window)
+        expect(tree.nodes(role: .radioButton).count == keyTitles.count, "All \(keyTitles.count) key rows are reachable, scrolled-off ones included (got \(tree.nodes(role: .radioButton).count))")
+        expectRow(tree, .radioButton, "F5", value: 1, in: "Capture key"); expectRow(tree, .radioButton, "None", value: 0, in: "Capture key"); expectRow(tree, .radioButton, "9", value: 0, in: "Capture key")
+        expect(tree.nodes.allSatisfy { $0.role != .scrollArea }, "The scroll area is not a level of its own in the tree")
+        expectCoherent(tree, "Capture key")
+        keys.choicePanel.host.close()
+        keys.removeFromSuperview()
+
+        // A section header is static text in the tree.
+        let sectioned = NSMenu()
+        sectioned.addItem(NSMenuItem.sectionHeader(title: "Recent"))
+        item(sectioned, "One"); item(sectioned, "Two")
+        let sectionPanel = MenuChoicePanel(menu: sectioned, identifier: "Sectioned", accessibilityLabel: "Sectioned")
+        rig.attach(sectionPanel.host)
+        sectionPanel.present(relativeTo: rig.anchor, preferredEdge: .minY, keyboard: false)
+        tree = AXTree.walk(sectionPanel.host.window)
+        expectRow(tree, .staticText, "Recent", in: "Sectioned"); expectRow(tree, .button, "One", in: "Sectioned"); expectCoherent(tree, "Sectioned")
+        sectionPanel.host.close()
+
+        // Ordinary windows: a labelled plate of toggles (Settings' Snapping), an unlabelled one, and a radio group.
+        let window = NonorderingWindow(contentRect: NSRect(x: 0, y: 0, width: 700, height: 500), styleMask: [.titled], backing: .buffered, defer: false)
+        window.contentView = NSView(frame: NSRect(x: 0, y: 0, width: 700, height: 500))
+        let snap = makeButton("Snap to the nearest edge", .toggle, indicator: .checkbox), crosshair = makeButton("Show a crosshair", .toggle, indicator: .checkbox)
+        crosshair.isChosen = true
+        let snapping = GlassChrome.plate([snap, crosshair], identifier: "Snapping", accessibility: plain, axis: .vertical)
+        snapping.setAccessibilityElement(true); snapping.setAccessibilityLabel("Snapping"); snapping.setAccessibilityRole(.group)
+        let hint = makeButton("Hover hints", .toggle, indicator: .checkbox)
+        let plain = GlassChrome.plate([hint], identifier: "Hints", accessibility: self.plain, axis: .vertical)
+        let showIn = GlassChoiceGroup(titles: ["Dock", "Menu bar", "Both"], selectedIndex: 1, accessibilityLabel: "Show in", identifier: "showIn", accessibility: self.plain)
+        for view in [snapping, plain, showIn] as [NSView] { place(view, in: window) }
+        window.contentView?.subviews.enumerated().forEach { $0.element.setFrameOrigin(NSPoint(x: 20, y: 20 + 120 * CGFloat($0.offset))) }
+        window.contentView?.layoutSubtreeIfNeeded()
+        tree = AXTree.walk(window)
+        guard let snappingGroup = tree.find(.group, "Snapping") else { return expect(false, "The labelled Snapping plate is reachable:\n\(tree.outline)") }
+        expect(tree.children(of: snappingGroup).count == 2, "The labelled plate shows its two toggles (a glass plate that is an element used to answer with none): \(tree.children(of: snappingGroup).count)\n\(tree.outline)")
+        expectRow(tree, .checkBox, "Snap to the nearest edge", value: 0, in: "Settings plate"); expectRow(tree, .checkBox, "Show a crosshair", value: 1, in: "Settings plate")
+        expectRow(tree, .checkBox, "Hover hints", value: 0, in: "unlabelled plate")
+        expect(tree.find(.group, "Snapping").map { tree.index(of: $0) } != nil && tree.descendants(of: snappingGroup).allSatisfy { $0.role == .checkBox }, "Only the toggles are below the plate")
+        guard let radios = tree.find(.radioGroup, "Show in") else { return expect(false, "The Show-in radio group is reachable") }
+        expect(tree.children(of: radios).map { $0.label ?? "" } == ["Dock", "Menu bar", "Both"] && tree.children(of: radios).map { $0.number } == [0, 1, 0], "The radio group shows its three radio buttons with value 0 / 1")
+        expectCoherent(tree, "Settings-style window")
+        guard let press = tree.find(.checkBox, "Snap to the nearest edge") else { return expect(false, "toggle reachable") }
+        expect(AXTree.press(press) && snap.isChosen, "AXPress on a toggle reached from the window flips it")
+        guard let radioPress = tree.find(.radioButton, "Both") else { return expect(false, "radio reachable") }
+        expect(AXTree.press(radioPress) && showIn.selectedIndex == 2, "AXPress on a radio button reached from the window chooses it")
+    }
 
     // MARK: Font Awesome glyphs on glass rows
 

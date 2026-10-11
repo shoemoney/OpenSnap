@@ -195,6 +195,10 @@ final class GlassChoiceButton: CommandButton {
         refreshIcon()
         refreshIndicatorImages()
         syncRole()
+        // The button is its own accessibility element (its role, value and label are answered here). Left as a standard control it is ignored and
+        // its cell stands in for it, but this class answers no children (the label and glyphs are not elements), so AppKit found neither the
+        // button nor its cell: every choice button on a panel or a plate was dropped from the tree an assistive client reads.
+        setAccessibilityElement(true)
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -423,6 +427,13 @@ final class GlassChoiceButton: CommandButton {
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
     override var acceptsFirstResponder: Bool { isEnabled }
+
+    // VoiceOver moves the focus to a row by making it first responder; one below the fold of a scrolling panel must come into view with it.
+    override func becomeFirstResponder() -> Bool {
+        let accepted = super.becomeFirstResponder()
+        if accepted { scrollToVisible(bounds) }
+        return accepted
+    }
     override var canBecomeKeyView: Bool { participatesInKeyLoop && super.canBecomeKeyView }
 
     /// A toggle flips once, an option becomes chosen (and never un-chooses), a command and a submenu row keep their state; then the
@@ -523,6 +534,7 @@ final class GlassChoiceLabel: NSView {
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     var title: String { label.stringValue }
+    override func isAccessibilityEnabled() -> Bool { true }
 
     override var intrinsicContentSize: NSSize {
         NSSize(width: LabelMetrics.fit(label.stringValue, style: .bodyStrong).width + 2 * GlassChoiceButton.padding, height: GlassChoiceButton.height)
@@ -761,8 +773,17 @@ final class GlassChoiceWindow: NSPanel {
 
 // MARK: - Panel host
 
-/// The panel's content root: an element of its own (a labelled group), and an app class so the accessibility audit judges its label.
-private final class PanelRootView: NSView {}
+/// The panel's content root: an element of its own (a labelled group), and an app class so the accessibility audit judges its label. Its children
+/// are the panel's real controls, from every plate in visual order (the rows scrolled out of view included), so the list is explicit rather than
+/// whatever AppKit finds below the glass container.
+private final class PanelRootView: NSView {
+    weak var host: GlassPanelHost?
+
+    override func accessibilityChildren() -> [Any]? {
+        guard let host else { return super.accessibilityChildren() }
+        return GlassAccessibility.elements(in: host.plates)
+    }
+}
 
 /// The scrolling panel's document: flipped, so a panel taller than its window starts at its first row instead of its last.
 private final class FlippedDocumentView: NSView {
@@ -950,6 +971,7 @@ final class GlassPanelHost: NSObject {
         root.setAccessibilityRole(.group)
         root.setAccessibilityLabel(accessibilityLabel)
         window.escapeHandler = { [weak self] in self?.close() }
+        root.host = self
         root.addSubview(container)
         layoutConstraints = pin(container, to: root)
         NSLayoutConstraint.activate(layoutConstraints)
@@ -1025,6 +1047,8 @@ final class GlassPanelHost: NSObject {
         if wanted {
             let scroll = NSScrollView()
             scroll.translatesAutoresizingMaskIntoConstraints = false
+            // The rows are the root's own children (see PanelRootView), so the scroll area stays out of the accessibility tree: a row's parent is the panel.
+            scroll.setAccessibilityElement(false)
             scroll.drawsBackground = false
             scroll.borderType = .noBorder
             scroll.hasVerticalScroller = true
@@ -1642,6 +1666,9 @@ class GlassPopUpButton: NSPopUpButton {
         chevronView.contentTintColor = DesignTokens.Palette.Text.primary
         addSubview(chevronView)
         setAccessibilityRole(.popUpButton)
+        // The pop-up is its own accessibility element: its name, value and actions are answered here, not by an ignored control's cell, which
+        // knew neither the label a consumer set nor the panel it opens.
+        setAccessibilityElement(true)
     }
 
     // MARK: the panel

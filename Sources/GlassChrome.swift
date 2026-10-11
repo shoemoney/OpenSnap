@@ -528,6 +528,37 @@ final class ChromeFillCell: NSView, ChromeFillable {
     }
 }
 
+/// What a glass plate or panel shows to assistive technology: its real controls, in visual order. AppKit's default traversal already looks through
+/// the private views of an NSGlassEffectView, so these lists are not what made the defect go away (the choice button being an ignored control with no
+/// children was: see `GlassChoiceButton`); they make the plate's and the panel's answer explicit, ordered, and independent of how AppKit walks
+/// glass hosting views.
+@MainActor
+enum GlassAccessibility {
+    /// The accessibility elements among `views` and below them, in visual order: a visible control, or a view that is an element, stands for
+    /// itself (its own children are its business), anything else is looked through; a glass view is looked through by way of its content
+    /// view, never its private hosting views. A standard control is no "element" in the new-style sense (`isAccessibilityElement()` is false for
+    /// a plain NSButton, whose accessibility lives in its cell), so every NSControl counts and AppKit substitutes the cell when the list is
+    /// published (`NSAccessibility.unignoredChildren`).
+    static func elements(in views: [NSView]) -> [NSView] {
+        var found: [NSView] = []
+        for view in views { collect(view, into: &found) }
+        return found
+    }
+
+    private static func collect(_ view: NSView, into found: inout [NSView]) {
+        guard !view.isHidden else { return }
+        if let glass = view as? NSGlassEffectView, !glass.isAccessibilityElement() {
+            if let content = glass.contentView { collect(content, into: &found) }
+            return
+        }
+        if view is NSControl || view.isAccessibilityElement() {
+            found.append(view)
+            return
+        }
+        for sub in view.subviews { collect(sub, into: &found) }
+    }
+}
+
 /// One Liquid Glass plate around one GROUP of controls. The plate is the only glass in the group: the buttons on it draw their own
 /// hover, pressed and selected fills, so there is never glass inside glass. It sizes itself to its content, so a hidden control
 /// (Cancel outside Frame mode) leaves no slot behind. Display options:
@@ -603,6 +634,14 @@ final class GlassSurfaceView: NSGlassEffectView {
 
     /// Hidden arranged views leave the stack, so the plate narrows with them.
     func setSpacing(_ spacing: CGFloat) { stack.spacing = spacing }
+
+    /// A plate that is an accessibility element (its consumer gave it a label and a group role) answers with its own controls, in order, so what a
+    /// labelled group contains does not depend on how AppKit walks the glass's private hosting views. An unlabelled plate is not an element, and
+    /// AppKit already looks through it.
+    override func accessibilityChildren() -> [Any]? {
+        guard isAccessibilityElement() else { return super.accessibilityChildren() }
+        return GlassAccessibility.elements(in: arrangedViews)
+    }
 
     private func applyDisplayOptions() {
         // Nothing ever tints the plate; the saturated accent lives on one button's fill.

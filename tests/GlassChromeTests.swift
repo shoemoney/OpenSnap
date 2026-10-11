@@ -173,6 +173,7 @@ private enum GlassChromeTests {
             formatCompactionChecks()
             menuChoiceChecks()
             originalSizeChecks()
+            externalTreeChecks()
             if let fonts {
                 for family in FAFamily.allCases {
                     expect(FontAwesomeFont.register(url: fonts.appendingPathComponent(family.resourceName + ".ttf"), family: family), "Subset font \(family) registers")
@@ -1278,6 +1279,93 @@ private enum GlassChromeTests {
         expect(M.toolButton == NSSize(width: 44, height: 36) && M.iconButton == NSSize(width: 48, height: 36) && M.commandHeight == 36 && M.headerHeight == 44 && M.groupGap == 12,
                "Metrics match the plan: 36 pt controls on 44 pt plates")
         expect(M.iconPointSize == 22 && M.groupSpacing == 2 && M.groupInset == 4 && DesignTokens.Size.hitMin == 36, "Spacing, inset and type metrics match the plan; every control keeps a 36 pt hit height")
+    }
+
+
+    // MARK: what an external client sees
+
+    /// The editor bar, the Size panel and the Color panel walked from their windows down, the way the AX server publishes them: every plate's controls
+    /// are reachable with a name, a role and a value, AXPress works on a reached control, and every parent agrees with the tree.
+    private static func externalTreeChecks() {
+        func reach(_ tree: AXTree.Tree, _ role: NSAccessibility.Role, _ label: String, _ what: String) -> AXTree.Node? {
+            let node = tree.find(role, label)
+            expect(node != nil, "\(what): \(role.rawValue) \"\(label)\" is reachable from the window. Tree:\n\(tree.outline)")
+            return node
+        }
+
+        // The bar: plates that are not labelled elements. A regression guard: the controls were reachable before and must stay so.
+        let rig = makeRig(NSSize(width: 1100, height: 700))
+        var tree = AXTree.walk(rig.window)
+        let buttons = ["Hide", "Photos", "Snap", "Select tool", "Brush tool", "Line tool", "Ellipse tool", "Rectangle tool", "Fill tool", "Eraser tool", "Text tool", "Arrow tool",
+                       "Crop tool", "Drawing colors", "Font", "Undo", "Clear image", "Resize…", "Save", "History", "Upload image"]
+        for name in buttons { _ = reach(tree, .button, name, "bar") }
+        _ = reach(tree, .menuButton, "Toolbox", "bar"); _ = reach(tree, .slider, "Drawing size", "bar")
+        _ = reach(tree, .popUpButton, "Canvas zoom", "bar"); _ = reach(tree, .checkBox, "Export at original size", "bar")
+        if let format = reach(tree, .radioGroup, "Image format", "bar") {
+            expect(tree.children(of: format).map { $0.label ?? "" } == ["PNG", "JPG"], "bar: the format toggle shows PNG and JPG")
+        }
+        let tools = tree.nodes.filter { ($0.label ?? "").hasSuffix(" tool") }
+        expect(tools.count == 10 && tools.map { $0.label ?? "" } == buttons.filter { $0.hasSuffix(" tool") }, "bar: the ten tools come in reading order (\(tools.count))")
+        let barNames = Set(buttons + ["Toolbox", "Drawing size", "Canvas zoom", "Export at original size", "Image format"])
+        let barProblems = tree.parentProblems { barNames.contains($0.label ?? "") }
+        expect(barProblems.isEmpty, "bar: the named controls' parents agree with the tree and lead back to the window: \(barProblems.prefix(3))")
+
+        // The Size panel: the track and the five presets.
+        let (window, content) = window(NSSize(width: 400, height: 300))
+        let slider = BezelSizeSlider(frame: NSRect(x: 40, y: 200, width: 48, height: 36))
+        content.addSubview(slider)
+        slider.panelSetup = offscreenPanel
+        slider.showPopover()
+        guard let sizeWindow = slider.panelWindow else { return expect(false, "The Size panel is up") }
+        tree = AXTree.walk(sizeWindow)
+        if let group = reach(tree, .group, "Size", "Size panel") {
+            expect(tree.children(of: group).count == 4, "Size panel: the panel group holds the title, the value, the track and the presets (\(tree.children(of: group).count))")
+        }
+        if let track = reach(tree, .slider, "Size", "Size panel") { expect(track.value != nil && track.enabled, "Size panel: the track has a value and is enabled") }
+        if let presets = reach(tree, .radioGroup, "Size presets", "Size panel") {
+            expect(tree.children(of: presets).map { $0.label ?? "" } == ["Size 2", "Size 4", "Size 7", "Size 9", "Size 12"], "Size panel: the five presets come in order: \(tree.children(of: presets).map { $0.label ?? "" })")
+            if let seven = tree.children(of: presets).first(where: { $0.label == "Size 12" }) {
+                let before = slider.doubleValue
+                expect(AXTree.press(seven) && slider.doubleValue != before, "Size panel: AXPress on a reached preset sets the size (\(before) -> \(slider.doubleValue))")
+            }
+        }
+        expect(tree.parentProblems().isEmpty, "Size panel: every parent agrees with the tree: \(tree.parentProblems().prefix(3))")
+        slider.dismissPopover()
+
+        // The Color panel: ten swatches and the Custom colour row.
+        var picked: [Int] = []
+        let swatches = (0..<10).map { index -> BezelColorButton in
+            let swatch = BezelColorButton(frame: NSRect(x: 0, y: 0, width: 42, height: 32))
+            swatch.title = ""; swatch.isBordered = false; swatch.setButtonType(.toggle)
+            swatch.setAccessibilityLabel("Color \(index + 1)")
+            swatch.tag = index
+            return swatch
+        }
+        let swatchTarget = SwatchTarget { picked.append($0) }
+        for swatch in swatches { swatch.target = swatchTarget; swatch.action = #selector(SwatchTarget.picked(_:)) }
+        let custom = GlassChoiceButton(title: "Custom color…", kind: .command)
+        let palette = ColorPaletteContent(title: NSTextField(labelWithString: "Drawing colors"), swatches: swatches, custom: custom, accessibility: .none)
+        let host = GlassPanelHost(plates: palette.plates, identifier: "Color", accessibilityLabel: "Drawing colors")
+        offscreenPanel(host)
+        host.accessibility = .none
+        host.show(relativeTo: slider.bounds, of: slider, preferredEdge: .minY, makeKey: false)
+        tree = AXTree.walk(host.window)
+        if let group = reach(tree, .group, "Drawing colors", "Color panel") {
+            let kids = tree.children(of: group).filter { $0.role != .staticText }
+            expect(kids.map { $0.label ?? "" } == (1...10).map { "Color \($0)" } + ["Custom color…"], "Color panel: ten swatches and Custom color… in reading order: \(kids.map { $0.label ?? "" })")
+            expect(kids.dropLast().allSatisfy { $0.role == .checkBox } && kids.last?.role == .button, "Color panel: the swatches are check boxes and Custom is a button")
+        }
+        if let third = tree.find(.checkBox, "Color 3") { expect(AXTree.press(third) && picked == [2], "Color panel: AXPress on a reached swatch chooses it (\(picked))") }
+        expect(tree.parentProblems().isEmpty, "Color panel: every parent agrees with the tree: \(tree.parentProblems().prefix(3))")
+        host.close()
+        _ = window
+    }
+
+    @MainActor
+    private final class SwatchTarget: NSObject {
+        let handler: (Int) -> Void
+        init(_ handler: @escaping (Int) -> Void) { self.handler = handler }
+        @objc func picked(_ sender: NSButton) { handler(sender.tag) }
     }
 
     // MARK: ModernEditorChrome

@@ -116,6 +116,32 @@ struct HistoryBrowserTests {
                     try expect(grid.accessibilityLabel() == "History thumbnail grid","Grid accessibility name")
                 }
             }),
+            ("The History command groups reach an external client: each plate is a named group holding its commands, in order, with a coherent parent chain", {
+                try browser { browser,_ in
+                    selectingEverythingEnabled(browser)
+                    laidOut(browser,width:1100,height:700)
+                    let window = browser.window!
+                    let tree = AXTree.walk(window)
+                    let expected: [(String,[HistoryBrowser.Action])] = HistoryBrowser.actionGroups.map { ($0.label,$0.actions) }
+                    try expect(expected.map(\.0) == ["Open and copy","Web link","Remove"],"The three command groups")
+                    for (label,actions) in expected {
+                        guard let group = tree.find(.group,label) else { throw Failure("The \(label) group is not reachable from the window:\n\(tree.outline)") }
+                        let kids = tree.children(of: group)
+                        try expect(kids.count == actions.count && kids.allSatisfy { $0.role == .button },"The \(label) plate shows its \(actions.count) buttons (it used to answer with none): \(kids.map { $0.label ?? "" })")
+                        // Each command is named by its full title (AXDescription); the visible label may be the shorter one while the bar is narrow.
+                        try expect(kids.map { $0.label ?? "" } == actions.map(\.title),"The \(label) commands are named in order: AXDescription \(kids.map { $0.axDescription ?? "nil" }), AXTitle \(kids.map { $0.title ?? "nil" })")
+                        try expect(kids.allSatisfy(\.enabled),"With a drawing selected every command is enabled")
+                    }
+                    let problems = tree.parentProblems()
+                    try expect(problems.isEmpty,"Every parent agrees with the tree and leads back to the window: \(problems.prefix(3))")
+                    // AXPress on a reached command runs it.
+                    var opened = 0
+                    browser.onOpen = { _ in opened += 1 }
+                    guard let open = tree.find(.button,"Open") else { throw Failure("Open is reachable") }
+                    let pressed = AXTree.press(open)
+                    try expect(pressed && opened == 1,"AXPress on the reached Open command opens the drawing (press returned \(pressed), opened \(opened), element \(type(of: open.object)), enabled \(open.enabled))")
+                }
+            }),
             ("Supplied reverse insertion order and local day groups are preserved", {
                 try browser { browser,_ in
                     let old = item("Old",-4), yesterday = item("Yesterday",-1), a = item("A"), b = item("B")
