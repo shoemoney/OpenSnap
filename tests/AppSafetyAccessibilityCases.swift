@@ -12,7 +12,8 @@ extension AppSafetyTests {
             ("Key-view loop: top bar left to right, the canvas, then the bottom bar left to right; walking it visits every control once and returns", mainWindowKeyLoop),
             ("Focus Toolbar (Window menu) puts the keyboard on the first top-bar control; on the canvas Tab leaves it and Control-Tab swaps the pencil", mainWindowFocusToolbar),
             ("The Size and Color popovers close their own key-view loops", mainWindowPopoverLoops),
-            ("Capture success, Frame on and off, Undo and Redo are announced; an Undo with nothing to undo is silent", mainWindowAnnouncements)
+            ("Capture success, Frame on and off, Undo and Redo are announced; an Undo with nothing to undo is silent", mainWindowAnnouncements),
+            ("Announcement inventory: every state change a blind user must hear, driven through Announcer.poster; announced rows post exactly the expected text, pending rows post nothing yet", announcementInventory)
         ]
     }
 
@@ -279,6 +280,253 @@ extension AppSafetyTests {
         app.redo()
         try expect(posted.count == 2, "Redo with nothing to redo says nothing")
         try expect(posted.allSatisfy { $0.1 == .medium }, "These are medium priority; only errors are high")
+    }
+}
+
+// MARK: - Announcement inventory (OSN-062 WP2)
+//
+// ONE table of the state changes a blind user must hear. Each row is driven on a fresh Fixture through the Announcer.poster seam and
+// compared with what was posted. A row is in exactly one state:
+//   announced      the app posts it today: the posted [text, priority] sequence must equal `expected`, exactly
+//   pendingWP3     it should be announced and is not yet: NOTHING may be posted. The row fails the moment something is, so a site that
+//                  WP3 adds forces this row to be promoted to `announced` (a stale entry fails), and `fired` proves the event really ran
+//   silentByDesign nothing is posted on purpose (an Undo with nothing to undo)
+// Rows driven by another suite (the countdown and AppAlert have no Fixture) name it; rows that cannot be driven here say why.
+// Breadth is a decision for the owner: delete a row to narrow what is announced; the integrity check only needs ids 1...23 to stay present.
+
+extension AppSafetyTests {
+    typealias Heard = (String, NSAccessibilityPriorityLevel)
+
+    @MainActor
+    final class AnnouncementRun {
+        var posted: [Heard] = []
+        var fixture: Fixture?
+        var file: URL?
+        var cleanups: [() -> Void] = []
+        func app() throws -> AppDelegate {
+            if fixture == nil { fixture = try Fixture() }
+            return try fixture.unwrapped("the fixture").app
+        }
+    }
+
+    struct AnnouncementRow {
+        enum Status { case announced, pendingWP3, silentByDesign }
+        enum Driver {
+            case app(setup: (AnnouncementRun) throws -> Void, act: (AnnouncementRun) throws -> Void, fired: (AnnouncementRun) throws -> Bool)
+            case suite(String)
+            case notDriven(String)
+        }
+        let id: String, event: String, trigger: String
+        let expected: [Heard]
+        let status: Status
+        let driver: Driver
+    }
+
+    private static func tinyImage() throws -> NSImage { try image(size: CGSize(width: 40, height: 30)) }
+
+    private static func row(_ id: String, _ event: String, _ trigger: String, _ expected: [Heard], _ status: AnnouncementRow.Status,
+                            setup: @escaping (AnnouncementRun) throws -> Void = { _ in }, fired: @escaping (AnnouncementRun) throws -> Bool = { _ in true },
+                            act: @escaping (AnnouncementRun) throws -> Void) -> AnnouncementRow {
+        AnnouncementRow(id: id, event: event, trigger: trigger, expected: expected, status: status, driver: .app(setup: setup, act: act, fired: fired))
+    }
+    private static func elsewhere(_ id: String, _ event: String, _ trigger: String, _ expected: [Heard], _ status: AnnouncementRow.Status, suite: String) -> AnnouncementRow {
+        AnnouncementRow(id: id, event: event, trigger: trigger, expected: expected, status: status, driver: .suite(suite))
+    }
+    private static func undriven(_ id: String, _ event: String, _ trigger: String, _ expected: [Heard], _ status: AnnouncementRow.Status, why: String) -> AnnouncementRow {
+        AnnouncementRow(id: id, event: event, trigger: trigger, expected: expected, status: status, driver: .notDriven(why))
+    }
+
+    /// {w} {h} are the canvas output size in whole pixels after the event, {file} the saved file's name.
+    private static func filled(_ text: String, _ run: AnnouncementRun) -> String {
+        guard let app = try? run.app() else { return text }
+        let size = SketchDocument.wholePixels(app.canvas.outputSize)
+        return text.replacingOccurrences(of: "{w}", with: String(Int(size.width))).replacingOccurrences(of: "{h}", with: String(Int(size.height)))
+            .replacingOccurrences(of: "{file}", with: run.file?.lastPathComponent ?? "")
+    }
+
+    private static func withContent(_ run: AnnouncementRun) throws {
+        try run.app().receiveCapture(.success(try tinyImage()), discardAlreadyApproved: true)
+    }
+    private static func withUndoable(_ run: AnnouncementRun) throws {
+        try run.app().canvas.setBackgroundColor(.yellow)
+    }
+    private static func uploadURL() -> URL { URL(string: "https://example.com/pics/a.png")! }
+    private static let failedCapture = NSError(domain: "OpenSnap", code: 9, userInfo: [NSLocalizedDescriptionKey: "The screen could not be captured."])
+    private static let migrationNotice = "Your old settings were moved to OpenSnap."
+
+    // swiftlint:disable function_body_length
+    static var announcementTable: [AnnouncementRow] {
+        [
+            row("1", "Capture finished and opened in the editor", "receiveCapture(.success)", [("Screenshot captured", .medium)], .announced) { run in
+                try run.app().receiveCapture(.success(try tinyImage()), discardAlreadyApproved: true) },
+            row("1b", "Frame capture finished (frame mode ends first)", "receiveFrameCapture(.success)", [("Frame mode off", .medium), ("Screenshot captured", .medium)], .announced,
+                setup: { try $0.app().enterFrame(keepingAnnotations: false, manualFlags: []) }) { run in
+                let app = try run.app()
+                app.receiveFrameCapture(.success(try tinyImage()), keepingAnnotations: false, expectedGeneration: app.documentGeneration) },
+            row("2", "Capture cancelled (picker Escape)", "receiveCapture(.failure(NSUserCancelledError))", [("Capture cancelled", .medium)], .pendingWP3,
+                fired: { _ in AppSafetyAlert.seen.isEmpty }) { run in
+                try run.app().receiveCapture(.failure(AppSafetyCaptureCoordinator.cancellation)) },
+            row("3", "Capture failed (error alert)", "receiveCapture(.failure(error))", [("Error: The screen could not be captured.", .high)], .pendingWP3,
+                setup: { run in AppSafetyAlert.answers = [.init(title: failedCapture.localizedDescription, response: .alertFirstButtonReturn)]; _ = try run.app()
+                    run.cleanups.append { AppSafetyAlert.reset() } },
+                fired: { _ in AppSafetyAlert.seen == [failedCapture.localizedDescription] }) { run in
+                try run.app().receiveCapture(.failure(failedCapture)) },
+            row("4", "Picker opened (crosshair)", "startCapture(\"crosshair\")",
+                [("Choose an area to capture. Drag to select, Space for the window under the pointer, Escape to cancel", .medium)], .pendingWP3,
+                fired: { _ in AppSafetyCaptureCoordinator.requests.last == "crosshair" }) { run in
+                try run.app().startCapture("crosshair") },
+            elsewhere("5", "Countdown 3, 2, 1", "OriginalCaptureCountdown tick", [("3", .high), ("2", .high), ("1", .high)], .announced, suite: "OriginalCaptureCountdownTests"),
+            elsewhere("6", "Countdown cancelled", "OriginalCaptureCountdown.cancel()", [("Capture cancelled", .medium)], .pendingWP3, suite: "OriginalCaptureCountdownTests"),
+            row("7a", "Upload started", "uploadState = .uploading", [("Uploading Shot 1", .medium)], .announced) { run in
+                try run.app().uploadState = .uploading(name: "Shot 1") },
+            row("7b", "Upload retrying", "uploadState = .uploading (retry)", [("Retrying Shot 1", .medium)], .announced,
+                setup: { run in UploadState.retryingName = "Shot 1"; run.cleanups.append { UploadState.retryingName = nil } }) { run in
+                try run.app().uploadState = .uploading(name: "Shot 1") },
+            row("8a", "Upload succeeded, link copied", "uploadState = .success(copied: true)", [("Upload complete. Link copied.", .medium)], .announced) { run in
+                try run.app().uploadState = .success(url: uploadURL(), copied: true) },
+            row("8b", "Upload succeeded, link not copied", "uploadState = .success(copied: false)", [("Upload complete", .medium)], .announced) { run in
+                try run.app().uploadState = .success(url: uploadURL(), copied: false) },
+            row("9", "Upload failed", "uploadState = .failure", [("Error: The server refused it", .high)], .announced) { run in
+                try run.app().uploadState = .failure(message: "The server refused it\nSecond line is not read") },
+            row("10", "Upload cancelled", "receivePublishing(.failure(NSUserCancelledError))", [("Upload cancelled", .medium)], .pendingWP3,
+                setup: { run in run.cleanups.append { UploadNotice.clear() } }, fired: { _ in UploadNotice.text == "Upload cancelled" }) { run in
+                try run.app().receivePublishing(.failure(NSError(domain: NSCocoaErrorDomain, code: NSUserCancelledError))) },
+            row("11a", "Upload refused: one is already running", "publishImage() while busy", [("An upload is already running", .medium)], .announced,
+                setup: { run in
+                    let app = try run.app(), gate = DispatchSemaphore(value: 0)
+                    app.publishing.uploader = { _, _, plan, _ in gate.wait(); return plan.publicURL ?? plan.remoteURL }
+                    run.cleanups.append { gate.signal(); try? waitForMain("the blocked upload ends") { !app.publishing.isBusy } }
+                    try withContent(run); app.publishImage()
+                    try waitForMain("the first upload is running") { app.publishing.isBusy } },
+                fired: { run in try run.app().publishing.isBusy }) { run in
+                try run.app().publishImage() },
+            row("11b", "Upload refused: no destination", "publishImage() with no destination", [(AppDelegate.noDestinationNotice, .medium)], .pendingWP3,
+                setup: { run in let app = try run.app(); try configureDestinations(app, []); app.sharingSettingsPresenter = {} },
+                fired: { run in try run.app().statusNotice == AppDelegate.noDestinationNotice }) { run in
+                try run.app().publishImage() },
+            row("12a", "Saved to file", "save()", [("Saved {file}", .medium)], .pendingWP3,
+                setup: { run in let app = try run.app(); app.canvas.newBlank(size: NSSize(width: 200, height: 150)); run.file = run.fixture?.file("Row12a"); app.currentURL = run.file },
+                fired: { run in try run.app().statusNotice?.hasPrefix("Saved ") == true }) { run in
+                _ = try run.app().save() },
+            row("12b", "Saved to History", "saveHistory()", [("Saved to History", .medium)], .pendingWP3,
+                setup: { try withContent($0) }, fired: { run in try run.app().statusNotice == "Saved to History" }) { run in
+                try run.app().saveHistory() },
+            row("12c", "Nothing to save to History", "saveHistory() on a blank canvas", [(AppDelegate.nothingToSaveNotice, .medium)], .pendingWP3,
+                setup: { try $0.app().canvas.newBlank(size: NSSize(width: 200, height: 150)) }, fired: { run in try run.app().statusNotice == AppDelegate.nothingToSaveNotice }) { run in
+                try run.app().saveHistory() },
+            undriven("12d", "Exported", "exportAs", [("Exported {file}", .medium)], .pendingWP3, why: "Export runs a modal NSSavePanel that the fixture cannot answer"),
+            row("13a", "Undo", "undo()", [("Undid Background Color", .medium)], .announced, setup: { try withUndoable($0) }) { run in try run.app().undo() },
+            row("13b", "Redo", "redo()", [("Redid Background Color", .medium)], .announced,
+                setup: { run in try withUndoable(run); try run.app().undo() }) { run in try run.app().redo() },
+            row("13c", "Undo with nothing to undo", "undo() on a fresh canvas", [], .silentByDesign) { run in try run.app().undo() },
+            row("14", "Tool changed from the keyboard or a menu", "setTool(.brush)", [("Brush tool", .low)], .pendingWP3,
+                fired: { run in try run.app().canvas.tool == .brush }) { run in
+                try run.app().setTool(.brush) },
+            undriven("15", "Image format toggled (PNG or JPG)", "the format radio", [], .silentByDesign,
+                     why: "VoiceOver reads the radio change itself; GlassChoiceGroup posts valueChanged, asserted by the glass choices suites"),
+            row("16a", "Frame mode on", "enterFrame()", [("Frame mode on. Drag to choose the area to capture.", .medium)], .announced) { run in
+                try run.app().enterFrame(keepingAnnotations: false, manualFlags: []) },
+            row("16b", "Frame mode off", "cancelFrame()", [("Frame mode off", .medium)], .announced,
+                setup: { try $0.app().enterFrame(keepingAnnotations: false, manualFlags: []) }) { run in
+                try run.app().cancelFrame() },
+            row("17a", "Frame cannot start in full screen", "enterFrame() while full screen", [(MainWindowFrame.exitFullScreenForFrame, .high)], .pendingWP3,
+                setup: { run in let app = try run.app(); let window = try (app.window as? AppSafetyWindow).unwrapped("the fixture window")
+                    window.simulatesFullScreen = true
+                    try expect(app.isFullScreen, "the fixture window reports full screen")
+                    run.cleanups.append { window.simulatesFullScreen = false } },
+                fired: { run in try run.app().statusNotice == MainWindowFrame.exitFullScreenForFrame }) { run in
+                try run.app().enterFrame(keepingAnnotations: false, manualFlags: []) },
+            row("17b", "Re-Snap needs the whole drawing visible", "performFrameSnap() with annotations kept", [("Error: Re-Snap needs the whole drawing visible. Reduce zoom or enlarge the window, then try again.", .high)], .pendingWP3,
+                setup: { run in let app = try run.app(); try b6Large(app); app.enterFrame(keepingAnnotations: true, manualFlags: [])
+                    app.setCanvasDisplayZoom(4, label: "Zoom")
+                    try expect(!app.canvasIsFullyVisible, "the zoomed drawing does not fit the fixture window (visible \(app.canvas.visibleRect), bounds \(app.canvas.bounds))") },
+                fired: { run in try run.app().statusNotice?.hasPrefix("Re-Snap needs") == true }) { run in
+                try run.app().performFrameSnap() },
+            undriven("17c", "Re-Snap: the drawing view changed during the capture", "performFrameSnap() completion", [("Error: The drawing view changed during Re-Snap. Position the frame and try again.", .high)], .pendingWP3,
+                     why: "needs a held capture completion that also moves the view; WP3 drives it with the fake coordinator's held callbacks"),
+            row("18a", "Actual Size on", "toggleActualSize()", [("Actual size on", .medium)], .pendingWP3,
+                setup: { run in try b6Large(run.app()) }, fired: { run in try run.app().isActualSize }) { run in
+                try run.app().toggleActualSize() },
+            row("18b", "Actual Size off", "toggleActualSize() again", [("Actual size off", .medium)], .pendingWP3,
+                setup: { run in let app = try run.app(); try b6Large(app); app.toggleActualSize() }, fired: { run in try !run.app().isActualSize }) { run in
+                try run.app().toggleActualSize() },
+            row("19a", "Crop applied", "canvas.crop(to:)", [("Cropped to {w} by {h}", .medium)], .pendingWP3,
+                setup: { try $0.app().canvas.newBlank(size: NSSize(width: 400, height: 300)) },
+                fired: { run in let size = try run.app().canvas.outputSize; return size.width == 200 && size.height == 100 }) { run in
+                try run.app().canvas.crop(to: CGRect(x: 10, y: 10, width: 200, height: 100)) },
+            row("19b", "Resize applied", "the Size sheet's Apply", [("Resized to {w} by {h}", .medium)], .pendingWP3,
+                setup: { try $0.app().canvas.newBlank(size: NSSize(width: 400, height: 300)) },
+                fired: { run in try run.app().canvas.outputSize.width == 200 }) { run in
+                let session = try run.app().makeResizeSession().unwrapped("the resize session")
+                session.state.edit(.width, text: "200")
+                try expect(try session.commit(), "Apply 200 wide")
+                session.cancel() },
+            undriven("20a", "Deleting a web post", "Delete from Web confirmed", [("Deleting web post…", .medium)], .pendingWP3,
+                     why: "needs a History entry bound to a web post and the Delete from Web sheet"),
+            undriven("20b", "Web post deleted / refused", "historyRemoteDeletion result", [("Deleted from example.com. Cached copies of the link can persist for a while.", .medium), ("Error: …", .high)], .pendingWP3,
+                     why: "same History flow as 20a; the success line already goes to the History footer"),
+            row("21", "Migration notice at launch", "applicationDidFinishLaunching with OpenSnapMigration.launchNotice", [(migrationNotice, .high)], .pendingWP3,
+                setup: { run in let saved = OpenSnapMigration.launchNotice; OpenSnapMigration.launchNotice = migrationNotice
+                    run.cleanups.append { OpenSnapMigration.launchNotice = saved } },
+                fired: { run in try run.app().status.stringValue == migrationNotice }) { run in
+                _ = try run.app() },
+            elsewhere("22a", "Alert sheet presented (title and message)", "AppAlert.present", [("Error: …", .high)], .pendingWP3, suite: "AppAlertTests"),
+            elsewhere("22b", "Alert inline validation error", "AppAlert OK with a wrong entry", [("Error: Enter a number of seconds from 0 to 120.", .high)], .announced, suite: "AppAlertTests"),
+            row("23", "Any status notice (generic path)", "postStatusNotice(text)", [("Row twenty-three probe notice", .medium)], .pendingWP3,
+                fired: { run in try run.app().statusNotice == "Row twenty-three probe notice" }) { run in
+                try run.app().postStatusNotice("Row twenty-three probe notice") }
+        ]
+    }
+    // swiftlint:enable function_body_length
+
+    static func announcementInventory() throws {
+        let rows = announcementTable
+        // Integrity: the table is the single source, so it must be well formed before any row is driven.
+        try expect(Set(rows.map(\.id)).count == rows.count, "Inventory ids are unique")
+        let numbers = Set(rows.compactMap { Int($0.id.prefix { $0.isNumber }) })
+        try expect(numbers == Set(1...23), "Inventory covers state changes 1 through 23 (\(numbers.sorted()))")
+        for row in rows {
+            switch row.status {
+            case .announced, .pendingWP3: try expect(!row.expected.isEmpty, "Row \(row.id) names the text it announces or must announce")
+            case .silentByDesign: try expect(row.expected.isEmpty, "Row \(row.id) is silent by design, so it expects no text")
+            }
+            for (text, _) in row.expected { try expect(!text.lowercased().contains("ski" + "tch"), "Row \(row.id) text does not name the retired product") }
+        }
+
+        let saved = (Announcer.poster, Announcer.clock, Announcer.target)
+        defer { (Announcer.poster, Announcer.clock, Announcer.target) = saved; Announcer.reset() }
+        var driven = 0, announced = 0, pending = 0
+        for row in rows {
+            guard case .app(let setup, let act, let fired) = row.driver else { continue }
+            let run = AnnouncementRun()
+            var now = 0.0
+            Announcer.reset()
+            Announcer.clock = { now += 2; return now }
+            Announcer.poster = { _, _, _ in }
+            defer { run.cleanups.reversed().forEach { $0() }; Announcer.poster = { _, _, _ in }; AppSafetyAlert.reset() }
+            AppSafetyAlert.reset()
+            try setup(run)
+            run.posted = []
+            Announcer.poster = { _, text, priority in run.posted.append((text, priority)) }
+            try act(run)
+            let got = run.posted.map { "\($0.0) [\($0.1.rawValue)]" }
+            let want = row.expected.map { "\(filled($0.0, run)) [\($0.1.rawValue)]" }
+            try expect(try fired(run), "Row \(row.id) (\(row.event)): the event did not actually happen, so the row proves nothing")
+            switch row.status {
+            case .announced:
+                try expect(got == want, "Row \(row.id) (\(row.event)) must post exactly \(want) but posted \(got)")
+                announced += 1
+            case .silentByDesign:
+                try expect(got.isEmpty, "Row \(row.id) (\(row.event)) is silent by design but posted \(got)")
+            case .pendingWP3:
+                try expect(got.isEmpty, "Row \(row.id) (\(row.event)) is listed pending WP3 but now posts \(got): promote it to .announced with that text")
+                pending += 1
+            }
+            driven += 1
+        }
+        let elsewhere = rows.filter { if case .suite = $0.driver { return true } else { return false } }.count
+        let undrivenCount = rows.filter { if case .notDriven = $0.driver { return true } else { return false } }.count
+        print("announcement inventory: \(rows.count) rows, \(driven) driven here (\(announced) announced, \(pending) pending WP3), \(elsewhere) in other suites, \(undrivenCount) not drivable")
     }
 }
 
