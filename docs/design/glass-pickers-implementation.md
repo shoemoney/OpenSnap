@@ -17,6 +17,7 @@ least as good as the native control it replaces.
 | Area | Choice | Today | After |
 | --- | --- | --- | --- |
 | 1 Editor | Top/bottom bar commands, tools, Snap | glass plates + `CommandButton` | unchanged; consistency pass only |
+| 1 Editor | Footer "Original size" (`dragOriginalControl`) | native checkbox beside the status | `GlassChoiceButton` toggle on a footer plate; `DragOriginalSize`, large-shot visibility, status-slot reflow and width budgets unchanged; no glass behind the status text |
 | 1 History | Action groups | glass plates + `CommandButton` | unchanged; consistency pass only |
 | 1 History | "Drag as" format pop-up | native `NSPopUpButton` menu | glass pop-up face, choices in a `MenuChoicePanel` |
 | 1 History | Date filter pop-up (`datePopup`) | native `NSPopUpButton` menu | glass pop-up face, choices in a `MenuChoicePanel` |
@@ -75,7 +76,7 @@ least as good as the native control it replaces.
 | Milestone | Owner (worktree / branch) | Files owned |
 | --- | --- | --- |
 | M1 shared primitives | P — `.todo-worktrees/gp-primitives` / `impl/gp-primitives` | `Sources/GlassChoices.swift` (new), `Sources/GlassChrome.swift`, `Sources/FontAwesomeIcons.swift`, `Sources/FontAwesomeFree.swift`, `Sources/ChromeIcons.swift`, `tests/GlassChoicesTests.swift` (new), `tools/test.py` suite lists, `tools/fetch-fontawesome.sh` glyph list, icon tests |
-| M2 Toolbox / Zoom / Upload | A — `gp-menus` / `impl/gp-menus` | `Sources/ModernEditorChrome.swift`, `Sources/App+ModernChrome.swift`, `Sources/App.swift` Toolbox hunk (`bezelToolbox`) and Upload hunk (`configureWebpostButton` … `setDefaultDestination`), `Sources/App+Upload.swift`, their tests in `tests/GlassChromeTests.swift`, `tests/AppSafetyModernCases.swift`, `tests/AppSafetyWebpostCases.swift`, `tests/AppSafetyMenuCases.swift` |
+| M2 Toolbox / Zoom / Upload | A — `gp-menus` / `impl/gp-menus` | `Sources/ModernEditorChrome.swift`, `Sources/App+ModernChrome.swift`, `Sources/App.swift` Toolbox hunk (`bezelToolbox`), the `dragOriginalControl` declaration and Upload hunk (`configureWebpostButton` … `setDefaultDestination`), `Sources/App+Upload.swift`, their tests in `tests/GlassChromeTests.swift`, `tests/AppSafetyModernCases.swift`, `tests/AppSafetyWebpostCases.swift`, `tests/AppSafetyMenuCases.swift` |
 | M3 Color / Size | B — `gp-color-size` / `impl/gp-color-size` | `Sources/BezelDrawingControls.swift`, `Sources/App.swift` Color hunk (`syncDrawingControls` … `releaseCustomColorPanel`, the `colorPopover` declaration), `Sources/App+Keyboard.swift`, Color/Size tests (`tests/AppSafetyTests.swift` Color/Size cases, `tests/GlassChromeTests.swift` Size cases only) |
 | M4 Settings | C — `gp-settings` / `impl/gp-settings` | `Sources/SettingsWindow.swift`, `tests/SettingsWindowTests.swift`, Settings cases in `tests/ViewTreeAuditTests.swift`, `tests/AccessibilityAuditTests.swift`, `tests/AppSafetyWindowChromeCases.swift` |
 | M5 Resize + History choices | D — `gp-resize` / `impl/gp-resize` | `Sources/ResizePanel.swift`, `Sources/HistoryBrowser.swift` (date filter, category and Drag as choices only), `tests/ResizePanelTests.swift`, `tests/ResizePanelLayoutTests.swift`, `tests/HistoryBrowserTests.swift`, Resize/History cases in the audit suites |
