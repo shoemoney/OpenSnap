@@ -624,6 +624,25 @@ final class SettingsActionButton: CommandButton {
     override var intrinsicContentSize: NSSize { NSSize(width: Self.width(for: visibleTitle), height: GlassChrome.Metrics.commandHeight) }
 }
 
+/// A label cell that draws its text higher (positive) or lower (negative) than its frame centres it, and changes nothing about what the field
+/// needs: its cell size, and so the field's fitting size, are the plain text's. The modifier symbols use it to sit optically centred on a button.
+final class ShiftedLabelCell: NSTextFieldCell {
+    /// Points the text is raised in the field (negative lowers it).
+    var raise: CGFloat = 0
+
+    override func titleRect(forBounds rect: NSRect) -> NSRect {
+        var shifted = super.titleRect(forBounds: rect)
+        // Drawing space is flipped in a text field (y grows downward) and not in a plain view.
+        shifted.origin.y += (controlView?.isFlipped ?? true) ? -raise : raise
+        return shifted
+    }
+    override func drawingRect(forBounds rect: NSRect) -> NSRect {
+        var shifted = super.drawingRect(forBounds: rect)
+        shifted.origin.y += (controlView?.isFlipped ?? true) ? -raise : raise
+        return shifted
+    }
+}
+
 /// The shortcut editor, the one surface for capture shortcuts (Settings › Capture; the app menu's Capture Shortcuts… opens it there).
 /// Every edit is applied through the manager at once, and one the manager rejects stays on screen with an "Error:" line until the
 /// next edit that it accepts. Its choices are glass: the enable box is a checkbox toggle on a plate, each action's key is a glass pop-up
@@ -892,7 +911,9 @@ final class GlobalHotkeyForm: NSView {
     }
 
     /// A modifier symbol drawn at its own glyph's ink centre. Some of the four sit high or low in their em box (the control caret is a small
-    /// mark at the top of it), so each is lowered or raised until the middle of its ink is on the middle of the line the others sit on.
+    /// mark at the top of it), so each is drawn lower or higher until the middle of its ink is on the middle of the line the others sit on.
+    /// The shift is in the cell's drawing and nowhere else: a baseline offset in the text would make the field need a taller line than the
+    /// button gave its label, so the label's fitting size stays the plain symbol's and its frame holds it whole.
     private static func centre(symbol: String, in toggle: GlassChoiceButton) {
         let font = Typography.font(.body)
         let ink = CTLineGetImageBounds(CTLineCreateWithAttributedString(NSAttributedString(string: symbol, attributes: [.font: font])), nil)
@@ -900,8 +921,14 @@ final class GlobalHotkeyForm: NSView {
         let shift = target - ink.midY
         guard abs(shift) > 0.5 else { return }
         let label = toggle.titleLabel
-        label.attributedStringValue = NSAttributedString(string: symbol, attributes: [.font: label.font ?? font, .foregroundColor: label.textColor ?? DesignTokens.Palette.Text.primary,
-                                                                                      .baselineOffset: shift])
+        let cell = ShiftedLabelCell(textCell: symbol)
+        cell.font = label.font ?? font
+        cell.textColor = label.textColor
+        cell.isBordered = false; cell.drawsBackground = false; cell.isSelectable = false; cell.isEditable = false
+        cell.alignment = label.alignment; cell.lineBreakMode = .byClipping; cell.usesSingleLineMode = true
+        cell.raise = shift
+        label.cell = cell
+        label.font = cell.font
     }
     /// Clear All sets every key to None (first launch claims no shortcut, so this is also where a fresh install starts).
     @objc private func clearAll(_ sender: Any?) {
