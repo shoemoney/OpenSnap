@@ -54,10 +54,25 @@ private enum AppAlertTests {
 
     /// F-J5-001: a prompt whose entry is wrong stays open and says why, instead of closing without a word.
     private static func inlineValidation() {
+        // OSN-062 inventory rows 22a/22b: the inline line is announced through Announcer.poster at high priority (22b). Presenting a sheet
+        // announces nothing today (22a, pending WP3): this fails the day it starts, so the inventory entry cannot go stale.
+        let savedAnnouncer = (Announcer.poster, Announcer.clock, Announcer.target)
+        defer { (Announcer.poster, Announcer.clock, Announcer.target) = savedAnnouncer; Announcer.reset() }
+        var heard: [(String, NSAccessibilityPriorityLevel)] = [], now = 0.0
+        Announcer.reset(); Announcer.clock = { now += 2; return now }; Announcer.target = { NSObject() }
+        Announcer.poster = { _, text, priority in heard.append((text, priority)) }
+        let savedPresentable = AppAlert.hostIsPresentable
+        AppAlert.hostIsPresentable = { _ in true }
+        let sheetHost = host(), plain = AppAlert(title: "Upload failed", message: "The server refused it", buttons: [.init(title: "OK")])
+        plain.present(on: sheetHost) { _ in }
+        expect(heard.isEmpty, "Inventory row 22a is pending WP3: presenting an alert posts nothing today, but it posted \(heard); promote the row to announced")
+        plain.buttonViews[0].performClick(nil)
+        AppAlert.hostIsPresentable = savedPresentable
         let field = NSTextField(string: "abc"); field.frame = NSRect(x: 0, y: 0, width: 300, height: 40)
         let alert = AppAlert(title: "Timed Snapshot", message: "Delay in seconds", buttons: [.init(title: "OK"), .init(title: "Cancel", role: .cancel)], accessoryView: field)
         alert.validator = { $0 == 0 ? (Double(field.stringValue) == nil ? "Enter a number of seconds from 0 to 120." : nil) : nil }
         let before = alert.panel.contentView!.frame.height, button = alert.buttonViews[0].frame
+        heard = []
         let titleTop = alert.titleLabel.frame.maxY - alert.panel.contentView!.frame.height
         alert.buttonViews[0].performClick(nil)
         expect(alert.response == nil && alert.errorLabel?.stringValue == "Error: Enter a number of seconds from 0 to 120.", "OK with a wrong entry keeps the sheet open and says why")
@@ -67,6 +82,7 @@ private enum AppAlertTests {
         expect(abs((alert.titleLabel.frame.maxY - content.frame.height) - titleTop) < 0.5, "the title kept its distance from the top")
         expect(line.frame.maxY <= field.frame.minY && line.frame.minY >= alert.buttonViews[0].frame.maxY, "the line sits between the field and the buttons: \(line.frame) \(field.frame) \(alert.buttonViews[0].frame)")
         expect(line.accessibilityLabel() == "Error: Enter a number of seconds from 0 to 120.", "VoiceOver reads it")
+        expect(heard.count == 1 && heard[0].0 == "Error: Enter a number of seconds from 0 to 120." && heard[0].1 == .high, "and it is announced once through Announcer.poster at high priority: \(heard)")
         alert.buttonViews[0].performClick(nil)
         let grown = content.frame.height
         expect(alert.response == nil && grown == content.frame.height, "pressing OK again does not grow the sheet again")

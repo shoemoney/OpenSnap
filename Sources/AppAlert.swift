@@ -246,7 +246,7 @@ final class AppAlert: NSObject {
         }
         field.frame = NSRect(x: layoutInset, y: y, width: inner, height: height)
         if isNew { content.addSubview(field) }
-        NSAccessibility.post(element: field, notification: .announcementRequested, userInfo: [.announcement: text, .priority: NSAccessibilityPriorityLevel.high.rawValue])
+        Announcer.announce(text, priority: .high)
     }
 
     /// What Escape does: the Cancel button, or the only button.

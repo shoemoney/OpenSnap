@@ -101,8 +101,10 @@ private final class Harness {
         guard artwork else { return }
         for number in 1...3 { resources[number] = OriginalCaptureCountdown.numeral(number) }
     }
-    func make() -> OriginalCaptureCountdown {
-        OriginalCaptureCountdown(panelFactory: { [self] rect in
+    /// `viaSeam` leaves the announcer unset, so the countdown uses its production path (Announcer.announce).
+    func make(viaSeam: Bool = false) -> OriginalCaptureCountdown {
+        let recorder: OriginalCaptureCountdown.Announce = { [self] text in announcements.append(text) }
+        return OriginalCaptureCountdown(panelFactory: { [self] rect in
             let panel = Panel(contentRect: rect, styleMask: [.borderless, .nonactivatingPanel],
                               backing: .buffered, defer: true)
             panel.events = events; panels.append(panel); factoryHook?()
@@ -112,7 +114,7 @@ private final class Harness {
         }, scheduler: { [self] interval, tick in clock.schedule(interval, tick) },
         screenFrames: { [self] in screenHook?(); return screens },
         reduceMotion: { [self] in reduceMotion }, increaseContrast: { [self] in increaseContrast },
-        announce: { [self] in announcements.append($0) })
+        announce: viaSeam ? nil : recorder)
     }
 }
 
@@ -233,6 +235,34 @@ enum OriginalCaptureCountdownTests {
         let none = Harness(); let idle = none.make()
         idle.start(rect: rect, parent: nil, delay: 0, cue: {}, completion: {})
         expect(none.announcements.isEmpty, "Zero delay announces nothing")
+        throughTheSeam()
+    }
+
+    /// OSN-062 inventory rows 5 and 6: the production announcer is Announcer.announce, so the numerals reach Announcer.poster at high priority.
+    /// Row 6 (a cancelled countdown says "Capture cancelled") is pending WP3: until the site exists, cancelling posts nothing, and this fails the
+    /// day it starts so the inventory entry cannot go stale.
+    private static func throughTheSeam() {
+        let saved = (Announcer.poster, Announcer.clock, Announcer.target)
+        defer { (Announcer.poster, Announcer.clock, Announcer.target) = saved; Announcer.reset() }
+        let sentinel = NSObject()
+        var heard: [(String, NSAccessibilityPriorityLevel, Bool)] = []
+        var now = 0.0
+        Announcer.reset()
+        Announcer.clock = { now += 2; return now }
+        Announcer.target = { sentinel }
+        Announcer.poster = { element, text, priority in heard.append((text, priority, (element as AnyObject) === sentinel)) }
+        let h = Harness(); let countdown = h.make(viaSeam: true)
+        countdown.start(rect: rect, parent: nil, delay: 3, cue: {}, completion: {})
+        for _ in 0..<31 { h.clock.fire() }
+        expect(heard.map(\.0) == ["3", "2", "1"], "The countdown posts 3, 2, 1 through Announcer.poster: \(heard)")
+        expect(heard.allSatisfy { $0.1 == .high && $0.2 }, "each numeral is high priority and goes to the Announcer target")
+        heard = []; Announcer.reset()
+        let cancelled = Harness(); let second = cancelled.make(viaSeam: true)
+        second.start(rect: rect, parent: nil, delay: 6, cue: {}, completion: {})
+        for _ in 0..<3 { cancelled.clock.fire() }
+        heard = []
+        second.cancel()
+        expect(heard.isEmpty, "Inventory row 6 is pending WP3: a cancelled countdown posts nothing today, but it posted \(heard); promote the row to announced")
     }
 
     private static func cancellationAndAttachment() {

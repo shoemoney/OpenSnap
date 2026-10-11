@@ -13,7 +13,7 @@ protocol CaptureCountdownPresenting: AnyObject, Sendable {
 final class OriginalCaptureCountdown: CaptureCountdownPresenting {
     typealias Flag = @MainActor () -> Bool
     /// Speaks one numeral to VoiceOver.
-    typealias Announcer = @MainActor (String) -> Void
+    typealias Announce = @MainActor (String) -> Void
     typealias PanelFactory = @MainActor (NSRect) -> NSPanel
     typealias Images = @MainActor (Int) -> NSImage?
     typealias ScreenFrames = @MainActor () -> [NSRect]
@@ -45,7 +45,7 @@ final class OriginalCaptureCountdown: CaptureCountdownPresenting {
     private let scheduler: Scheduler
     private let screenFrames: ScreenFrames
     private let reduceMotion: Flag
-    private let announce: Announcer
+    private let announce: Announce
     private var session: Session?
     private var displayObservation: DisplayOptions.Observation?
     private var cleaningUp = false
@@ -59,7 +59,7 @@ final class OriginalCaptureCountdown: CaptureCountdownPresenting {
     /// Contrast redraws the numeral on screen the moment it changes.
     init(panelFactory: PanelFactory? = nil, images: Images? = nil,
          scheduler: Scheduler? = nil, screenFrames: ScreenFrames? = nil,
-         reduceMotion: Flag? = nil, increaseContrast: Flag? = nil, announce: Announcer? = nil) {
+         reduceMotion: Flag? = nil, increaseContrast: Flag? = nil, announce: Announce? = nil) {
         self.reduceMotion = reduceMotion ?? { DisplayOptions.current.reduceMotion }
         self.announce = announce ?? Self.postAnnouncement
         let increaseContrast = increaseContrast ?? { DisplayOptions.current.increaseContrast }
@@ -190,11 +190,9 @@ final class OriginalCaptureCountdown: CaptureCountdownPresenting {
         announce(String(number))
     }
 
-    /// VoiceOver hears "3", "2", "1" without the panel taking focus.
+    /// VoiceOver hears "3", "2", "1" without the panel taking focus, through the shared Announcer seam.
     static func postAnnouncement(_ text: String) {
-        guard let app = NSApp else { return }
-        NSAccessibility.post(element: app, notification: .announcementRequested, userInfo: [
-            .announcement: text, .priority: NSAccessibilityPriorityLevel.high.rawValue])
+        Announcer.announce(text, priority: .high)
     }
 
     func cancel() {
