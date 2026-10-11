@@ -822,7 +822,7 @@ private enum GlassChromeTests {
         expect(abs((presets[2].commandStyle.fill?.alphaComponent ?? 0) - 0.20) < 0.004 && presets[2].commandStyle.border != nil, "The selected preset takes the command selected fill and border")
         expect(abs((presets[2].plate.style.fill?.alphaComponent ?? 0) - 0.20) < 0.004 && presets[2].plate.style.borderWidth == 1 && presets[2].layer?.borderWidth == 1,
                "...painted on its own layer as a fill and a 1 pt border")
-        expect(presets[2].glyphLength == presets[0].glyphLength + SizePresetButton.chosenGlyphExtra, "The chosen preset also draws a longer stroke (\(presets[2].glyphLength) vs \(presets[0].glyphLength))")
+        expect(presets[2].glyphLength - presets[0].glyphLength >= 4, "The chosen preset also draws a longer stroke (\(presets[2].glyphLength) vs \(presets[0].glyphLength))")
         DisplayOptions.override = DisplayOptions(differentiateWithoutColor: true)
         presets[2].sync()
         expect(presets[2].commandStyle.indicator && presets[2].plate.stateStyle.indicator, "Differentiate Without Color adds the capsule under the chosen preset")

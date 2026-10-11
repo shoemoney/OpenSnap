@@ -508,6 +508,7 @@ final class SizePopoverContent {
         presets.orientation = .horizontal; presets.spacing = Self.presetSpacing; presets.distribution = .fillEqually
         presets.translatesAutoresizingMaskIntoConstraints = false
         presetRow.addSubview(presets)
+        presetRow.setAccessibilityElement(true); presetRow.setAccessibilityRole(.radioGroup); presetRow.setAccessibilityLabel("Size presets")
         var constraints = [
             titleLabel.leadingAnchor.constraint(equalTo: headerRow.leadingAnchor, constant: pad), titleLabel.centerYAnchor.constraint(equalTo: headerRow.centerYAnchor),
             readout.trailingAnchor.constraint(equalTo: headerRow.trailingAnchor, constant: -pad), readout.centerYAnchor.constraint(equalTo: headerRow.centerYAnchor),
