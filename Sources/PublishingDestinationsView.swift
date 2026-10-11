@@ -202,7 +202,7 @@ final class PublishingDestinationsView: NSView {
 
     private let formHelp = NSTextField(wrappingLabelWithString: "")
 
-    private static let captionWidth: CGFloat = 190
+    private static let captionWidth: CGFloat = 180
 
     private func styled(_ field: NSTextField, _ placeholder: String) -> NSTextField {
         Typography.apply(.body, to: field); field.placeholderString = placeholder
