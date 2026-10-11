@@ -321,9 +321,11 @@ private enum ViewTreeAuditTests {
         about.versionLabel.font = font(12)
         let shrunkAbout = Audit.audit(about, surface: "About (seeded)").violations
         expect(shrunkAbout.count == 1 && shrunkAbout[0].pointSize == 12, "About: a 12 pt version label is caught on the real window: \(shrunkAbout)")
-        destinations.cancelButton.font = font(14)
+        // The glass Cancel draws its words in the label under the button (the button itself floors its own font), so that is the text to shrink.
+        destinations.cancelButton.titleLabel.font = font(14)
         let shrunkDestinations = Audit.audit(destinations, surface: "Destinations (seeded)").violations
-        expect(shrunkDestinations.count == 1 && shrunkDestinations[0].role == .control, "Destinations: a 14 pt Cancel button is caught on the real sheet: \(shrunkDestinations)")
+        expect(shrunkDestinations.count == 1 && shrunkDestinations[0].pointSize == 14 && shrunkDestinations[0].text == "Cancel",
+               "Destinations: a 14 pt Cancel label is caught on the real sheet: \(shrunkDestinations)")
 
         var total = 0
         for (surface, report) in reports {
