@@ -413,6 +413,16 @@ private enum ResizePanelLayoutTests {
                     if let field = view as? NSTextField, !field.isHiddenOrHasHiddenAncestor { try expect((field.font?.pointSize ?? 0) >= 18, "Text '\(field.stringValue)' is at least 18 pt") }
                     if let button = view as? GlassChoiceButton, !button.isHiddenOrHasHiddenAncestor { try expect((button.titleLabel.font?.pointSize ?? 0) >= 20, "'\(button.title)' is 20 pt") }
                 }
+                for button in descendants(rig.content).compactMap({ $0 as? GlassChoiceButton }) where !button.isHiddenOrHasHiddenAncestor {
+                    let needed = ceil(button.titleLabel.intrinsicContentSize.width)
+                    try expect(needed <= button.titleLabel.frame.width + 0.5 && button.titleLabel.frame.maxX <= button.bounds.maxX + 0.5, "Mode \(index): '\(button.title)' is not truncated (\(needed) needed in \(button.titleLabel.frame.width))")
+                }
+                if let popup: GlassPopUpButton = private_(rig.resize, "presetPopup") {
+                    let attributes: [NSAttributedString.Key: Any] = [.font: DesignTokens.Typography.font(.body)]
+                    let room = popup.bounds.width - 2 * GlassChoiceButton.padding - GlassChoiceButton.gap - GlassChoiceButton.glyphSide
+                    let longest = popup.itemTitles.map { ceil(($0 as NSString).size(withAttributes: attributes).width) }.max() ?? 0
+                    try expect(longest <= room + 0.5, "Mode \(index): the preset pop-up shows its longest name whole (\(longest) in \(room))")
+                }
                 let glass = descendants(rig.content).filter { $0 is NSGlassEffectView }
                 try expect(glass.allSatisfy { view in glass.allSatisfy { $0 === view || !descendants($0).contains(view) } }, "Mode \(index): no glass inside glass")
             }

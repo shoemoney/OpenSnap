@@ -1052,6 +1052,15 @@ struct HistoryBrowserTests {
                     group.choose(2)
                     try expect(browser.category == before,"Choosing the chosen button changes nothing")
                     try expect(group.buttons.allSatisfy { ($0.titleLabel.font?.pointSize ?? 0) >= 20 },"Category titles are 20 pt")
+                    for width in [880.0,1000.0] as [CGFloat] {
+                        laidOut(browser,width:width,height:720)
+                        try expect(group.buttons.allSatisfy { ceil($0.titleLabel.intrinsicContentSize.width) <= $0.titleLabel.frame.width + 0.5 && $0.titleLabel.frame.maxX <= $0.bounds.maxX + 0.5 },"Category titles are not truncated at \(Int(width)) wide: \(group.buttons.map { "\($0.title) \(ceil($0.titleLabel.intrinsicContentSize.width))/\($0.titleLabel.frame.width)" })")
+                        for popup in [browser.dateFilterPopUp,browser.dragFormatPopUp] {
+                            let room = popup.bounds.width - 2 * GlassChoiceButton.padding - GlassChoiceButton.gap - GlassChoiceButton.glyphSide
+                            let longest = popup.itemTitles.map { ceil(($0 as NSString).size(withAttributes:[.font:DesignTokens.Typography.font(.body)]).width) }.max() ?? 0
+                            try expect(longest <= room + 0.5,"\(popup.accessibilityLabel() ?? "pop-up") shows its longest choice whole at \(Int(width)) wide (\(longest) in \(room))")
+                        }
+                    }
                 }
             }),
             ("Date filter is a glass pop-up; choosing a row in its panel filters exactly as before", {
