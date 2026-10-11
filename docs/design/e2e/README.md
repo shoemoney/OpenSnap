@@ -34,7 +34,7 @@ The matrix ends with two columns that answer different questions and must not be
 | Column | Who writes it | Meaning |
 |---|---|---|
 | `reachability note` | The generator, from `inventory.json` | A prediction made from the sources of why the row may be hard to drive: `e2e-partial: os-panel`, `gap: printer`, `gap: removed`. Blank when nothing is expected to stand in the way. Regenerated every run. |
-| `gap reason` | The auditor, preserved across regenerates | The finding for a row whose evidence class is `unverified`: why no E2E evidence exists. Exactly one of `permission`, `hardware`, `OS-owned`, `harness`, `unsafe`, `AX presence only`, `AX value only`, `text readout only`, `retired`, `UI changed`. Empty for every other class. `UI changed` is only for a row whose control was converted (the glass choices change, `impl/glass-pickers-20261010`) after it had E2E or rendered evidence: its current class is `unverified`, and the earlier native evidence is kept unchanged as `history` in `inventory.json`. |
+| `gap reason` | The auditor, preserved across regenerates | The finding for a row whose evidence class is `unverified`: why no E2E evidence exists. Exactly one of `permission`, `hardware`, `OS-owned`, `harness`, `unsafe`, `AX presence only`, `AX value only`, `text readout only`, `retired`, `UI changed`. Empty for every other class. `UI changed` is only for a row whose control was converted (the glass choices change, `impl/glass-pickers-20261010`) after it had E2E or rendered evidence, or is one of the three explicitly permitted rows that were already unverified (NATIVE_LIMITED: E2E-BAR-034, E2E-BAR-035, E2E-BAR-041): its current class is `unverified`, and the earlier native evidence is kept unchanged as `history` in `inventory.json`. |
 
 When the two differ, `gap reason` is what was observed and `reachability note` is only what was expected (an `os-panel` row can turn out `unsafe`; a `printer` row can only have been seen as `AX presence only`). The auditor also writes the same reason in the `observed` cell as `<lane>: gap: <reason>.` (a parenthetical detail may follow), and `--check` requires the two to agree.
 
@@ -81,4 +81,4 @@ sh tools/e2e-session.sh stop [SESSION_ID|APP_PID]
 
 - Light appearance, Reduce Transparency, Increase Contrast, Differentiate Without Color and Reduce Motion cannot be changed in an E2E session (no global accessibility or appearance changes). The harness injects them inside its throwaway copy; that is `rendered` evidence only.
 - `tools/real_store_guard.py` includes the `e2e-` throwaway-plist prefix; `stop` also validates and cleans only its own session identity.
-- The History glass/text polish request in `QUEUE.md` is deferred: audit History fully, but do not activate that feature.
+- The History glass/text polish was integrated at `b6b6b2e`, before the glass-choices pass (`impl/glass-pickers-20261010`). Audit History as it is now; its rows reflect the integrated state.
