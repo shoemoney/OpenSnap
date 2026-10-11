@@ -473,6 +473,28 @@ private enum GlassChoicesTests {
         click()
         expect(toggle.state == .on && target.states == [.off, .on], "...and again")
 
+        // The report that a toggle clicked twice stayed off: a button that was never in a window, three clicks from off.
+        let loneTarget = ClickTarget()
+        let lone = makeButton("Lone", .toggle, indicator: .checkbox, target: loneTarget)
+        lone.performClick(nil)
+        lone.performClick(nil)
+        lone.performClick(nil)
+        expect(loneTarget.states == [.on, .off, .on] && lone.state == .on, "A toggle outside any window: performClick x3 reads on, off, on and ends on (\(loneTarget.states))")
+        _ = lone.accessibilityPerformPress()
+        _ = lone.accessibilityPerformPress()
+        expect(loneTarget.states == [.on, .off, .on, .off, .on] && lone.state == .on, "...and so does the accessibility press (\(loneTarget.states))")
+        let inWindow = ClickTarget()
+        let placed = makeButton("Placed", .toggle, indicator: .checkbox, target: inWindow)
+        placed.frame = NSRect(x: 300, y: 250, width: 200, height: 36)
+        rig.window.contentView?.addSubview(placed)
+        for _ in 0..<3 { placed.performClick(nil) }
+        expect(inWindow.states == [.on, .off, .on] && placed.state == .on, "A toggle in a window: performClick x3 reads on, off, on (\(inWindow.states))")
+        _ = rig.window.makeFirstResponder(placed)
+        placed.keyDown(with: key(Keys.space, chars: " "))
+        placed.keyDown(with: key(Keys.space, chars: " "))
+        expect(inWindow.states == [.on, .off, .on, .off, .on] && placed.state == .on, "...and Space with the button as first responder flips once per press (\(inWindow.states))")
+        placed.removeFromSuperview()
+
         // Programmatic writes never send.
         target.states = []
         toggle.state = .off
