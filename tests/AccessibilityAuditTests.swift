@@ -315,13 +315,12 @@ private enum AccessibilityAuditTests {
         resize.show(attachedTo: resizeParent)
         let resizePanel: NSPanel? = private_(resize, "panel")
         expect(resizePanel != nil, "the Resize or Crop panel was built")
-        if let resizePanel, let modeControl: NSSegmentedControl = private_(resize, "modeControl") {
+        if let resizePanel, let modeControl: GlassChoiceGroup = private_(resize, "modeControl") {
             for (index, name) in ["Resize", "Crop", "Limit"].enumerated() {
-                modeControl.selectedSegment = index
-                _ = modeControl.target?.perform(modeControl.action, with: modeControl)
+                modeControl.choose(index)
                 resizePanel.contentView?.layoutSubtreeIfNeeded()
                 record("Resize or Crop (\(name))", Audit.audit(resizePanel, surface: "Resize or Crop (\(name))"))
-                expect(modeControl.label(forSegment: index) == name, "the \(name) segment is labelled")
+                expect(modeControl.buttons[index].title == name && modeControl.buttons[index].accessibilityLabel() == name, "the \(name) segment is labelled")
             }
             expect(modeControl.accessibilityLabel() == "Size operation", "the mode control has a group label")
         } else { expect(false, "the mode control was found") }
@@ -398,12 +397,15 @@ private enum AccessibilityAuditTests {
         let strippedDestinations = Audit.audit(destinations, surface: "Destinations (seeded)").violations
         expect(strippedDestinations.count == 1 && strippedDestinations[0].kind == .missingLabel, "Destinations: a stripped Name label is caught on the real form: \(strippedDestinations)")
         destinations.nameField.setAccessibilityLabel(kept)
-        if let modeControl: NSSegmentedControl = private_(resize, "modeControl") {
-            let label = modeControl.accessibilityLabel()
-            modeControl.setAccessibilityLabel(nil)
+        if let widthField: NSTextField = private_(resize, "widthField"), let modeControl: GlassChoiceGroup = private_(resize, "modeControl") {
+            let label = widthField.accessibilityLabel()
+            widthField.setAccessibilityLabel(nil)
             let strippedResize = Audit.audit(resizePanel!, surface: "Resize (seeded)").violations
-            expect(strippedResize.count == 1 && strippedResize[0].kind == .missingLabel, "Resize: a stripped mode label is caught on the real panel: \(strippedResize)")
-            modeControl.setAccessibilityLabel(label)
+            expect(strippedResize.count == 1 && strippedResize[0].kind == .missingLabel, "Resize: a stripped Width label is caught on the real panel: \(strippedResize)")
+            widthField.setAccessibilityLabel(label)
+            // The glass mode group is a custom radio group: the walker does not hold it, so its name and role are asserted here.
+            expect(modeControl.accessibilityLabel() == "Size operation" && modeControl.accessibilityRole() == .radioGroup && modeControl.buttons.allSatisfy { $0.accessibilityRole() == .radioButton },
+                   "Resize: the mode group is a named radio group of radio buttons")
         }
         about.versionLabel.setAccessibilityLabel("Version 1.2.3 of " + Audit.retiredName)
         expect(kinds(Audit.audit(about, surface: "About (seeded)")).contains(.retiredName), "About: the retired name in a label is caught on the real window")
@@ -628,8 +630,8 @@ private enum AccessibilityAuditTests {
         let resize = ResizePanel(session: ResizePanelSession(size: CGSize(width: 800, height: 600), onApply: { _, _, _ in }), presets: ResizePresetStore(defaults: defaults))
         resize.show(attachedTo: parent)
         if let panel: NSPanel = private_(resize, "panel"), let widthField: NSTextField = private_(resize, "widthField"), let errorLabel: NSTextField = private_(resize, "errorLabel"),
-           let modeControl: NSSegmentedControl = private_(resize, "modeControl") {
-            expect((0..<modeControl.segmentCount).map { modeControl.label(forSegment: $0) } == ["Resize", "Crop", "Limit"], "Resize: the mode segments are labelled Resize, Crop and Limit")
+           let modeControl: GlassChoiceGroup = private_(resize, "modeControl") {
+            expect(modeControl.buttons.map(\.title) == ["Resize", "Crop", "Limit"], "Resize: the mode segments are labelled Resize, Crop and Limit")
             expect(errorLabel.accessibilityRole() == .staticText, "Resize: the validation line is a static text")
             widthField.stringValue = "abc"
             widthField.delegate?.controlTextDidChange?(Notification(name: NSControl.textDidChangeNotification, object: widthField))
