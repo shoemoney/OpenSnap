@@ -427,7 +427,7 @@ final class BezelSizeSlider: NSControl {
         panel = host; popoverContent = content
         content.sync()
         AppToolTip.install(on: host.container)
-        host.show(relativeTo: bounds, of: self, preferredEdge: isFlipped ? .maxY : .minY, makeKey: false)
+        host.show(relativeTo: bounds, of: self, preferredEdge: .minY, makeKey: false)
     }
     /// Closes the panel and ends any gesture it still has open, so a dismissal mid-drag cannot leave an undo group behind.
     func dismissPopover() {

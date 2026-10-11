@@ -1190,8 +1190,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         // swatch (else the first) is focused; closing hands the keyboard back to where it was.
         let byKeyboard = NSApp.currentEvent.map { $0.type == .keyDown || $0.type == .keyUp } ?? false
         let anchor = hover ? hoverAnchor() : paletteButton
-        // A button is a flipped view, whose bottom edge is its maxY.
-        host.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: anchor.isFlipped ? .maxY : .minY, makeKey: !hover)
+        host.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .minY, makeKey: !hover)
         if !hover, byKeyboard, host.isShown { host.window.makeFirstResponder(presetColorButtons.first { $0.state == .on } ?? presetColorButtons.first) }
         writeLayoutEvidence()
     }
