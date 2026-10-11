@@ -611,4 +611,61 @@ extension AuditRun {
                   extra: ["glassPanel": record])
         }
     }
+
+    // MARK: S57 Resize sheet
+
+    /// The Resize sheet: every glass choice in it (mode, lock, limit, preset face and the sheet buttons), the 3 x 3 anchor plate in Crop mode,
+    /// and the preset choice panel. Presets are written to the harness's isolated support folder, as S08 does.
+    func s57() {
+        defer { verifyGlassCaptures("S57") }
+        let refs = ["ResizePanel.swift|final class ResizePanel", "ResizePanel.swift|final class ResizeAnchorGrid", "GlassChoices.swift|final class GlassChoiceGroup"]
+        loadSynthetic(size: CGSize(width: 1000, height: 700), name: "Glass Resize")
+        let store = ResizePresetStore()
+        try? store.add(ResizePreset(name: "Blog hero", width: 1600, height: 900, mode: .scale))
+        try? store.add(ResizePreset(name: "Avatar", width: 256, height: 256, mode: .crop))
+        app.resize()
+        pump(1.0)
+        guard let sheet = window.attachedSheet, let content = sheet.contentView else { gap("S57", "Resize sheet", "the Resize sheet did not attach"); return }
+        defer {
+            if let attached = window.attachedSheet { window.endSheet(attached, returnCode: .cancel) }
+            app.activeResizeSession?.cancel()
+            pump(0.4)
+        }
+        glassGroupStates("S57", base: "resize-groups", surface: "Resize sheet", refs: refs, host: sheet, windows: [sheet, window], root: content,
+                         restState: "Resize sheet: the mode, lock proportions, preset and button choices on their plates")
+        // Crop mode shows the anchor plate.
+        if let mode = find("ResizeMode", in: content) as? GlassChoiceGroup { mode.choose(1) } else { gap("S57", "Resize sheet / crop", "the mode group (ResizeMode) was not found") }
+        pump(0.6)
+        if let grid = firstView(of: ResizeAnchorGrid.self, in: content), !grid.isHiddenOrHasHiddenAncestor {
+            func anchorRecord(_ variant: String) -> [String: Any] {
+                var record = glassRecord(kind: "group", identifier: "ResizeAnchor", variant: variant, host: sheet, rowsRoot: NSView())
+                record["rowTitles"] = ResizePanelAnchor.allCases.map(\.title)
+                record["chosenIndexes"] = [grid.anchor.rawValue]
+                if let hovered = grid.hovered { record["hoveredRow"] = hovered.rawValue }
+                if sheet.firstResponder === grid { record["focusedRow"] = grid.anchor.rawValue }
+                record["disabledRows"] = [Int]()
+                if let font = minimumTextSize(in: content) { record["minFontSize"] = font }
+                return record
+            }
+            sheet.makeKeyAndOrderFront(nil)
+            shoot("S57", "resize-anchor-rest", surface: "Resize sheet", state: "Crop mode: the 3 x 3 anchor plate, Center chosen", windows: [sheet, window], refs: refs, settle: 0.3, extra: ["glassPanel": anchorRecord("rest")])
+            grid.setHovered(.topRight)
+            shoot("S57", "resize-anchor-hover", surface: "Resize sheet", state: "Crop mode: the Top Right cell hovered", windows: [sheet, window], refs: refs, settle: 0.25, extra: ["glassPanel": anchorRecord("hover")])
+            grid.setHovered(nil)
+            sheet.makeFirstResponder(grid)
+            shoot("S57", "resize-anchor-focus", surface: "Resize sheet", state: "Crop mode: the anchor plate has keyboard focus (ring on the chosen cell)", windows: [sheet, window], refs: refs, settle: 0.25, extra: ["glassPanel": anchorRecord("focus")])
+            sheet.makeFirstResponder(nil)
+        } else { gap("S57", "Resize sheet / anchor", "the anchor grid was not visible in Crop mode") }
+        if let mode = find("ResizeMode", in: content) as? GlassChoiceGroup { mode.choose(0) }
+        pump(0.4)
+        // The preset choice panel.
+        guard let face = find("ResizePresetFace", in: content) as? GlassChoiceButton else { gap("S57", "Resize sheet / preset", "the preset face (ResizePresetFace) was not found"); return }
+        let script = GlassPanelScript(id: "S57", surface: "Resize sheet", identifier: "ResizePreset", base: "resize-preset", opener: face, refs: refs,
+                                      open: { face.performClick(nil) }, nativeMenu: nil, host: sheet, context: [sheet, window])
+        guard let opened = openGlassPanel(script) else { return }
+        glassPanelStates(script, opened, restState: "Resize sheet: the preset choices open (Custom size chosen, built-in and two saved presets)")
+        shootGlassPanel("S57", "resize-preset-chosen", surface: script.surface, state: "Resize sheet: the preset panel with its chosen row", panel: opened.panel, opener: face, refs: refs,
+                        variant: "chosen", identifier: "ResizePreset", context: script.context)
+        dismissGlassPanel("S57", "resize-preset-dismissed", surface: script.surface, state: "Preset choices dismissed with Escape: gone, focus back on the preset face", script: script, opened: opened)
+    }
 }

@@ -386,6 +386,7 @@ extension AuditRun {
             step("S52", "glass: Upload panel") { s52() }
             step("S53", "glass: Colour panel") { s53() }
             step("S54", "glass: Size panel") { s54() }
+            step("S57", "glass: Resize sheet choices") { s57() }
             step("S58", "glass: destination sheet choices") { s58() }
             step("S59", "glass: footer Original size toggle") { s59() }
             step("S13", "capture picker") { s13() }
