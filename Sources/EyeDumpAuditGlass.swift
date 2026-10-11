@@ -130,7 +130,8 @@ extension AuditRun {
                     if button.attributedTitle.attribute(.font, at: 0, effectiveRange: nil) == nil { note(button.font, view, button.attributedTitle.string) }
                 } else if !button.title.isEmpty { note(button.font, view, button.title) }
             } else if let field = view as? NSTextField, !field.stringValue.isEmpty {
-                note(field.font, view, field.stringValue)
+                // AppKit's own title field inside a standard button reports its default 13 pt, not what the cell draws; the button's font is read above.
+                if String(describing: type(of: field)) != "NSButtonTextField" { note(field.font, view, field.stringValue) }
             } else if let text = view as? NSTextView, !text.string.isEmpty {
                 note(text.font, view, text.string)
             }
