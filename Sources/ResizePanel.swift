@@ -411,12 +411,14 @@ final class ResizePanelSession {
 /// The crop anchor: nine cells laid out like the picture they stand for, the chosen one marking the part of the image that is kept.
 /// One tab stop; the arrow keys move the choice, the pointer picks a cell, and VoiceOver sees a radio group of nine named cells.
 @MainActor
-final class ResizeAnchorGrid: NSView {
+final class ResizeAnchorGrid: NSView, ChromeFillable {
     static let cellSize = NSSize(width: 56, height: 40)
     static let spacing: CGFloat = DesignTokens.Space.s2
     var anchor: ResizePanelAnchor = .center { didSet { if anchor != oldValue { needsDisplay = true; invalidateAccessibility() } } }
     var onChange: ((ResizePanelAnchor) -> Void)?
-    private var hovered: ResizePanelAnchor?
+    var accessibility: ChromeAccessibility = .live { didSet { needsDisplay = true } }
+    private(set) var hovered: ResizePanelAnchor?
+    private(set) var pressed: ResizePanelAnchor?
     private var hoverArea: NSTrackingArea?
     private var cellElements: [ResizeAnchorCellElement] = []
 
@@ -450,22 +452,34 @@ final class ResizeAnchorGrid: NSView {
         onChange?(cell)
     }
 
+    /// What a cell draws: the shared command state (rest, hover, pressed, selected) resolved by `StateStyles.command`, so a cell reads like
+    /// every other button on a glass plate and follows Increase Contrast and Differentiate Without Color.
+    func style(of cell: ResizePanelAnchor) -> StateStyle {
+        StateStyles.command(StatePlate.controlState(hovered: cell == hovered, pressed: cell == pressed, selected: cell == anchor, disabled: false),
+                            primary: false, focused: false, highContrast: accessibility.increaseContrast,
+                            differentiate: accessibility.differentiateWithoutColor, selected: cell == anchor, appearance: effectiveAppearance)
+    }
+
     override func draw(_ dirtyRect: NSRect) {
         for cell in ResizePanelAnchor.allCases {
             let rect = frame(of: cell).insetBy(dx: 1, dy: 1)
+            let style = style(of: cell)
             let selected = cell == anchor
-            let path = NSBezierPath(roundedRect: rect, xRadius: DesignTokens.Radius.md, yRadius: DesignTokens.Radius.md)
-            if selected { DesignTokens.Palette.State.selectedFill.setFill(); path.fill() }
-            else if cell == hovered { DesignTokens.Palette.State.hover.setFill(); path.fill() }
-            (selected ? DesignTokens.Palette.accent : DesignTokens.Palette.separator).setStroke()
-            path.lineWidth = selected ? 2 : 1
-            path.stroke()
+            let path = NSBezierPath(roundedRect: rect, xRadius: StatePlate.radius, yRadius: StatePlate.radius)
+            // A resting cell keeps a hairline so the nine read as cells on the plate; the selected one is the accent fill and border.
+            if let fill = style.fill { fill.setFill(); path.fill() }
+            if let border = style.border, style.borderWidth > 0 { border.setStroke(); path.lineWidth = style.borderWidth; path.stroke() }
+            else { DesignTokens.Palette.separator.setStroke(); path.lineWidth = 1; path.stroke() }
             // The dot is the kept part; a selected cell carries a ring as well, so the choice never rests on colour alone.
             let dot = NSRect(x: rect.midX - 6, y: rect.midY - 6, width: 12, height: 12)
-            let mark = NSBezierPath(ovalIn: dot)
-            DesignTokens.Palette.Text.primary.setFill()
-            if selected { mark.fill(); let ring = NSBezierPath(ovalIn: dot.insetBy(dx: -4, dy: -4)); ring.lineWidth = 1.5; DesignTokens.Palette.Text.primary.setStroke(); ring.stroke() }
-            else { DesignTokens.Palette.Text.secondary.setFill(); NSBezierPath(ovalIn: dot.insetBy(dx: 3, dy: 3)).fill() }
+            style.content.setFill()
+            if selected {
+                NSBezierPath(ovalIn: dot).fill()
+                let ring = NSBezierPath(ovalIn: dot.insetBy(dx: -4, dy: -4)); ring.lineWidth = 1.5; style.content.setStroke(); ring.stroke()
+            } else {
+                style.content.withAlphaComponent(0.6).setFill()
+                NSBezierPath(ovalIn: dot.insetBy(dx: 3, dy: 3)).fill()
+            }
         }
     }
     override var focusRingMaskBounds: NSRect { bounds }
@@ -476,8 +490,13 @@ final class ResizeAnchorGrid: NSView {
     }
     override func mouseDown(with event: NSEvent) {
         window?.makeFirstResponder(self)
-        if let cell = cell(at: convert(event.locationInWindow, from: nil)) { select(cell) }
+        if let cell = cell(at: convert(event.locationInWindow, from: nil)) { setPressed(cell); select(cell) }
     }
+    override func mouseUp(with event: NSEvent) { setPressed(nil) }
+    /// Press and hover entry points; the pointer events and the tests both go through them.
+    func setPressed(_ cell: ResizePanelAnchor?) { if cell != pressed { pressed = cell; needsDisplay = true } }
+    func setHovered(_ cell: ResizePanelAnchor?) { if cell != hovered { hovered = cell; needsDisplay = true } }
+    override func viewDidChangeEffectiveAppearance() { super.viewDidChangeEffectiveAppearance(); needsDisplay = true }
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
         if let hoverArea { removeTrackingArea(hoverArea) }
@@ -485,10 +504,9 @@ final class ResizeAnchorGrid: NSView {
         addTrackingArea(area); hoverArea = area
     }
     override func mouseMoved(with event: NSEvent) {
-        let cell = cell(at: convert(event.locationInWindow, from: nil))
-        if cell != hovered { hovered = cell; needsDisplay = true }
+        setHovered(cell(at: convert(event.locationInWindow, from: nil)))
     }
-    override func mouseExited(with event: NSEvent) { if hovered != nil { hovered = nil; needsDisplay = true } }
+    override func mouseExited(with event: NSEvent) { setHovered(nil); setPressed(nil) }
     override func keyDown(with event: NSEvent) {
         let column = anchor.rawValue % 3, row = anchor.rawValue / 3
         let moved: (Int, Int)?
@@ -528,31 +546,38 @@ final class ResizeAnchorCellElement: NSAccessibilityElement {
 }
 
 @MainActor
-final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
+final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate, NSMenuDelegate {
     private let session: ResizePanelSession
     private var panel: NSPanel?
     private var widthField: NSTextField?
     private var heightField: NSTextField?
-    private var ratioButton: NSButton?
-    private var modeControl: NSSegmentedControl?
+    private var ratioButton: GlassChoiceButton?
+    private var ratioPlate: GlassSurfaceView?
+    private var modeControl: GlassChoiceGroup?
     private var anchorGrid: ResizeAnchorGrid?
     private var anchorRow: NSStackView?
     private var dimensionRow: NSStackView?
     private var contentStack: NSStackView?
-    private var presetDisclosure: NSButton?
+    private var presetDisclosure: GlassChoiceButton?
     private var presetManagement: NSStackView?
     private var errorLabel: NSTextField?
     private var helpLabel: NSTextField?
     private var limitRow: NSStackView?
     private var limitField: NSTextField?
-    private var limitPopup: NSPopUpButton?
+    private var limitControl: GlassChoiceGroup?
     private var previewTimer: Timer?
     private let presets: ResizePresetStore
     private var selectedPresetID: String?
-    private var presetPopup: NSPopUpButton?
+    /// The preset choice: an `NSPopUpButton` model whose menu is what the glass preset panel lists and whose action applies the preset. Every
+    /// way of opening it (click, keys, VoiceOver, context menu) goes to that panel, never to the native dropdown.
+    private var presetPopup: GlassPopUpButton?
     private var presetName: NSTextField?
-    private var savePresetButton: NSButton?
-    private var removePresetButton: NSButton?
+    private var savePresetButton: GlassChoiceButton?
+    private var removePresetButton: GlassChoiceButton?
+    /// The glass plates and the controls on them that follow the display options (Reduce Transparency, Increase Contrast...).
+    private var plates: [GlassSurfaceView] = []
+    private var fillables: [ChromeFillable] = []
+    private var displayObservation: DisplayOptions.Observation?
 
     init(size: CGSize, onApply: @escaping (CGSize, Bool, CGPoint) -> Void) {
         session = ResizePanelSession(size: size, onApply: onApply)
@@ -597,16 +622,18 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
     }
 
     /// The sheet reads top to bottom as the job is done: what to do (Resize, Crop or Limit), how big, then the optional extras. Presets sit
-    /// one row below with their management folded away, so the dimensions are the first thing under the mode control.
+    /// one row below with their management folded away, so the dimensions are the first thing under the mode choice. Every choice is a glass
+    /// button; each related group is one plate, so the plate is the only glass in the group.
     private func buildContent(in panel: NSPanel) {
         let content = NSView()
         panel.contentView = content
+        let options = ChromeAccessibility.live
         let heading = label("Resize or Crop", style: .title)
-        let mode = NSSegmentedControl(labels: ["Resize", "Crop", "Limit"], trackingMode: .selectOne,
-                                      target: self, action: #selector(changeMode(_:)))
-        mode.font = DesignTokens.Typography.font(.body)
-        mode.selectedSegment = session.state.mode.rawValue
-        mode.setAccessibilityLabel("Size operation")
+        let mode = GlassChoiceGroup(titles: ["Resize", "Crop", "Limit"], selectedIndex: session.state.mode.rawValue, accessibilityLabel: "Size operation",
+                                    identifier: "ResizeMode", accessibility: options)
+        mode.target = self; mode.action = #selector(changeMode(_:))
+        for button in mode.buttons { button.minimumWidth = 150 }
+        fillables.append(mode)
         modeControl = mode
 
         let help = NSTextField(wrappingLabelWithString: "")
@@ -624,57 +651,73 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         dimensions.setCustomSpacing(DesignTokens.Space.s5, after: width)
         dimensions.setCustomSpacing(DesignTokens.Space.s2, after: height)
         dimensionRow = dimensions
-        let ratio = NSButton(checkboxWithTitle: "Lock proportions", target: self, action: #selector(changeRatio(_:)))
-        ratio.font = DesignTokens.Typography.font(.body)
+        let ratio = choiceButton("Lock proportions", kind: .toggle, indicator: .checkbox, layout: .row, identifier: "ResizeLockProportions", action: #selector(changeRatio(_:)))
         ratioButton = ratio
+        let ratioGroup = plate([ratio], identifier: "ResizeLockPlate", label: "Lock proportions")
+        ratioPlate = ratioGroup
 
-        // Limit: one size and what it limits.
+        // Limit: what it limits, then one size.
         let limit = dimensionField(value: session.state.displayLimitText, name: "Size limit in pixels")
         limitField = limit
-        let limitChoice = NSPopUpButton(frame: .zero, pullsDown: false)
-        limitChoice.font = DesignTokens.Typography.font(.body)
-        limitChoice.addItems(withTitles: ResizePanelLimitMode.allCases.map(\.title))
-        for item in limitChoice.itemArray { item.attributedTitle = NSAttributedString(string: item.title, attributes: [.font: DesignTokens.Typography.font(.body)]) }
+        let limitChoice = GlassChoiceGroup(titles: ResizePanelLimitMode.allCases.map(\.title), selectedIndex: session.state.limitMode.rawValue,
+                                           accessibilityLabel: "Limit by", identifier: "ResizeLimitBy", accessibility: options)
         limitChoice.target = self; limitChoice.action = #selector(changeLimit(_:))
-        limitChoice.setAccessibilityLabel("Limit by")
-        limitPopup = limitChoice
-        let limitControls = NSStackView(views: [label("Limit"), limitChoice, limit, label("pixels")])
-        limitControls.orientation = .horizontal; limitControls.alignment = .firstBaseline; limitControls.spacing = DesignTokens.Space.s3
+        fillables.append(limitChoice)
+        limitControl = limitChoice
+        let limitBy = NSStackView(views: [label("Limit by"), limitChoice])
+        limitBy.orientation = .horizontal; limitBy.alignment = .centerY; limitBy.spacing = DesignTokens.Space.s3
+        let limitSize = NSStackView(views: [label("Limit"), limit, label("pixels")])
+        limitSize.orientation = .horizontal; limitSize.alignment = .firstBaseline; limitSize.spacing = DesignTokens.Space.s3
+        let limitControls = NSStackView(views: [limitBy, limitSize])
+        limitControls.orientation = .vertical; limitControls.alignment = .leading; limitControls.spacing = DesignTokens.Space.s3
         limitRow = limitControls
 
-        // Crop: the 3 x 3 grid is the picture; the cell picked is the part of the image that stays.
+        // Crop: the 3 x 3 grid is the picture; the cell picked is the part of the image that stays. The grid sits on one plate.
         let grid = ResizeAnchorGrid()
         grid.onChange = { [weak self] anchor in self?.chooseAnchor(anchor) }
+        grid.accessibility = options
+        fillables.append(grid)
         anchorGrid = grid
+        let gridPlate = plate([grid], identifier: "ResizeAnchorPlate", label: "Crop anchor", axis: .vertical)
         let anchorCaption = NSTextField(wrappingLabelWithString: "The marked cell is the part of the image that stays.")
         anchorCaption.font = DesignTokens.Typography.font(.body)
         anchorCaption.textColor = DesignTokens.Palette.Text.secondary
         anchorCaption.preferredMaxLayoutWidth = 300
-        let anchor = NSStackView(views: [grid, anchorCaption])
+        let anchor = NSStackView(views: [gridPlate, anchorCaption])
         anchor.orientation = .horizontal; anchor.alignment = .centerY; anchor.spacing = DesignTokens.Space.s4
         anchorRow = anchor
 
-        // Presets: the choice is one pop-up; naming, saving and removing are behind the disclosure.
-        let presetChoice = NSPopUpButton(frame: .zero, pullsDown: false)
-        presetChoice.font = DesignTokens.Typography.font(.body)
+        // Presets: the choice is one glass pop-up; naming, saving and removing are behind the disclosure.
+        let presetChoice = GlassPopUpButton(frame: .zero, pullsDown: false)
+        presetChoice.panelIdentifier = "ResizePreset"; presetChoice.panelLabel = "Size preset"
+        presetChoice.minimumPanelWidth = Self.presetFaceWidth
         presetChoice.target = self; presetChoice.action = #selector(selectPreset(_:))
         presetChoice.setAccessibilityLabel("Size preset")
+        presetChoice.menu?.delegate = self
+        presetChoice.identifier = NSUserInterfaceItemIdentifier("ResizePresetFace")
         presetPopup = presetChoice
-        let disclosure = NSButton(title: "", target: self, action: #selector(togglePresetManagement(_:)))
-        disclosure.setButtonType(.pushOnPushOff); disclosure.bezelStyle = .disclosure
+        let faceCell = ChromeFillCell(presetChoice, size: NSSize(width: Self.presetFaceWidth, height: GlassChoiceButton.height))
+        faceCell.accessibility = options
+        fillables.append(faceCell)
+        let facePlate = plate([faceCell], identifier: "ResizePresetPlate", label: "Size preset")
+        let disclosure = choiceButton("Manage", kind: .toggle, indicator: .chevron, layout: .row, identifier: "ResizeManagePresets", action: #selector(togglePresetManagement(_:)))
         disclosure.setAccessibilityLabel("Manage presets")
+        disclosure.setAccessibilityExpanded(false)
         presetDisclosure = disclosure
-        let presetLine = NSStackView(views: [label("Preset"), presetChoice, label("Manage"), disclosure])
+        let disclosurePlate = plate([disclosure], identifier: "ResizeManagePlate", label: "Manage presets")
+        let presetLine = NSStackView(views: [label("Preset"), facePlate, disclosurePlate])
         presetLine.orientation = .horizontal; presetLine.alignment = .centerY; presetLine.spacing = DesignTokens.Space.s3
-        presetLine.setCustomSpacing(DesignTokens.Space.s5, after: presetChoice)
-        presetLine.setCustomSpacing(DesignTokens.Space.s1, after: presetLine.views[2])
+        presetLine.setCustomSpacing(DesignTokens.Space.s5, after: facePlate)
         let presetTitle = dimensionField(value: "New Size", name: "Preset name")
         presetName = presetTitle
-        let addPreset = button("Add Preset", action: #selector(addPreset(_:)))
-        let savePreset = button("Save Preset", action: #selector(savePreset(_:)))
-        let removePreset = button("Remove", action: #selector(removePreset(_:)))
+        let addPreset = choiceButton("Add Preset", kind: .command, identifier: "ResizeAddPreset", action: #selector(addPreset(_:)))
+        let savePreset = choiceButton("Save Preset", kind: .command, identifier: "ResizeSavePreset", action: #selector(savePreset(_:)))
+        let removePreset = choiceButton("Remove", kind: .command, identifier: "ResizeRemovePreset", action: #selector(removePreset(_:)))
         savePresetButton = savePreset; removePresetButton = removePreset
-        let presetActions = NSStackView(views: [presetTitle, addPreset, savePreset, removePreset])
+        let presetActionsPlate = plate([addPreset, savePreset, removePreset], identifier: "ResizePresetActionsPlate", label: "Preset actions")
+        presetActionsPlate.setContentHuggingPriority(NSLayoutConstraint.Priority(760), for: .horizontal)
+        presetActionsPlate.setContentCompressionResistancePriority(NSLayoutConstraint.Priority(760), for: .horizontal)
+        let presetActions = NSStackView(views: [presetTitle, presetActionsPlate])
         presetActions.orientation = .horizontal; presetActions.alignment = .centerY; presetActions.spacing = DesignTokens.Space.s3
         presetManagement = presetActions
         reloadPresets()
@@ -685,20 +728,23 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         error.setAccessibilityRole(.staticText)  // the message is the label: VoiceOver reads "Error: ...", never a fixed caption over it
         errorLabel = error
 
-        // Buttons sit on the trailing edge in the standard order: Cancel, Apply, OK (the default).
-        let cancel = button("Cancel", action: #selector(cancelSheet(_:)))
+        // One action plate on the trailing edge in the standard order: Cancel, Apply, OK (the default and the only tinted control).
+        let cancel = choiceButton("Cancel", kind: .command, identifier: "ResizeCancel", action: #selector(cancelSheet(_:)))
         cancel.keyEquivalent = "\u{1b}"
-        let apply = button("Apply", action: #selector(previewSheet(_:)))
-        let ok = button("OK", action: #selector(applySheet(_:)))
+        let apply = choiceButton("Apply", kind: .command, identifier: "ResizeApply", action: #selector(previewSheet(_:)))
+        let ok = choiceButton("OK", kind: .command, identifier: "ResizeOK", action: #selector(applySheet(_:)))
+        ok.isPrimary = true
         ok.keyEquivalent = "\r"
+        for button in [cancel, apply, ok] { button.minimumWidth = 96 }
         panel.defaultButtonCell = ok.cell as? NSButtonCell
         let spacer = NSView()
         spacer.setContentHuggingPriority(NSLayoutConstraint.Priority(1), for: .horizontal)
-        let buttons = NSStackView(views: [spacer, cancel, apply, ok])
-        buttons.orientation = .horizontal; buttons.spacing = DesignTokens.Space.s4
+        let sheetActions = plate([cancel, apply, ok], identifier: "ResizeSheetActionsPlate", label: "Resize actions")
+        let buttons = NSStackView(views: [spacer, sheetActions])
+        buttons.orientation = .horizontal; buttons.alignment = .centerY; buttons.spacing = DesignTokens.Space.s4
 
         let separator = NSBox(); separator.boxType = .separator
-        let stack = NSStackView(views: [heading, mode, help, dimensions, ratio, limitControls, anchor, separator, presetLine, presetActions, error, buttons])
+        let stack = NSStackView(views: [heading, mode, help, dimensions, ratioGroup, limitControls, anchor, separator, presetLine, presetActions, error, buttons])
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = DesignTokens.Space.s4
@@ -713,41 +759,25 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
             stack.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -inset),
             stack.topAnchor.constraint(equalTo: content.topAnchor, constant: inset),
             stack.bottomAnchor.constraint(equalTo: content.bottomAnchor, constant: -inset),
-            mode.widthAnchor.constraint(equalTo: stack.widthAnchor),
             help.widthAnchor.constraint(equalTo: stack.widthAnchor),
             separator.widthAnchor.constraint(equalTo: stack.widthAnchor),
             buttons.widthAnchor.constraint(equalTo: stack.widthAnchor),
             error.widthAnchor.constraint(equalTo: stack.widthAnchor),
             presetActions.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            presetTitle.widthAnchor.constraint(greaterThanOrEqualToConstant: 160),
-            presetChoice.widthAnchor.constraint(greaterThanOrEqualToConstant: 220),
-            presetChoice.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.field),
+            presetTitle.widthAnchor.constraint(greaterThanOrEqualToConstant: 140),
             width.widthAnchor.constraint(equalToConstant: 120), height.widthAnchor.constraint(equalToConstant: 120),
             width.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.control),
             height.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.control),
-            mode.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.field),
-            ratio.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.control),
             limit.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.control),
             limit.widthAnchor.constraint(equalToConstant: 140),
-            limitChoice.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.field),
-            presetTitle.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.control),
-            cancel.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.field),
-            apply.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.field),
-            ok.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.field)
+            presetTitle.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.control)
         ])
         renderState()
         if presets.hasMalformedData { showError(ResizePresetError.malformedDefaults.localizedDescription) }
-        width.nextKeyView = height
-        height.nextKeyView = ratio
-        ratio.nextKeyView = limit
-        limit.nextKeyView = grid
-        grid.nextKeyView = presetChoice
-        presetChoice.nextKeyView = disclosure
-        disclosure.nextKeyView = cancel
-        cancel.nextKeyView = apply
-        apply.nextKeyView = ok
-        ok.nextKeyView = mode
-        mode.nextKeyView = width
+        // The glass choices are not in a hand-made chain: Tab follows the layout, one stop per group, and starts in Width.
+        panel.autorecalculatesKeyViewLoop = true
+        panel.initialFirstResponder = width
+        displayObservation = DisplayOptions.observe { [weak self] options in self?.applyDisplayOptions(options.chrome) }
         fitPanelToContent()
     }
 
@@ -761,6 +791,8 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         panel.contentView?.layoutSubtreeIfNeeded()
     }
     static let sheetWidth: CGFloat = 620
+    /// The preset face and its choice panel share this width, wide enough for the longest built-in preset.
+    static let presetFaceWidth: CGFloat = 300
 
     private func label(_ text: String, style: DesignTokens.Typography.Style = .body) -> NSTextField {
         let label = NSTextField(labelWithString: text)
@@ -776,11 +808,31 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         return field
     }
 
-    private func button(_ title: String, action: Selector) -> NSButton {
-        let button = NSButton(title: title, target: self, action: action)
-        button.bezelStyle = .rounded
-        button.font = DesignTokens.Typography.font(.body)
+    /// A glass choice button of the sheet, wired to this panel and following the live display options.
+    private func choiceButton(_ title: String, kind: GlassChoiceButton.Kind, indicator: GlassChoiceButton.Indicator? = nil,
+                              layout: GlassChoiceButton.Layout = .segment, identifier: String, action: Selector) -> GlassChoiceButton {
+        let button = GlassChoiceButton(title: title, kind: kind, indicator: indicator, layout: layout)
+        button.identifier = NSUserInterfaceItemIdentifier(identifier)
+        button.target = self; button.action = action
+        button.accessibility = .live
+        fillables.append(button)
         return button
+    }
+
+    /// One glass plate around a related group of controls. The plate is the only glass in the group.
+    private func plate(_ views: [NSView], identifier: String, label: String, axis: NSUserInterfaceLayoutOrientation = .horizontal) -> GlassSurfaceView {
+        let group = GlassChrome.plate(views, identifier: identifier, accessibility: .live, axis: axis)
+        // A plate of several buttons is a named group; a plate around one control adds no level of its own.
+        if views.count > 1, !(views[0] is ResizeAnchorGrid) {
+            group.setAccessibilityElement(true); group.setAccessibilityLabel(label); group.setAccessibilityRole(.group)
+        }
+        plates.append(group)
+        return group
+    }
+
+    private func applyDisplayOptions(_ options: ChromeAccessibility) {
+        for plate in plates { plate.accessibility = options }
+        for fillable in fillables { fillable.accessibility = options }
     }
 
     /// Errors say "Error:" in words, so they never rest on the red colour alone.
@@ -791,23 +843,23 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
     }
 
     private func renderState(editing field: NSTextField? = nil) {
-        modeControl?.selectedSegment = session.state.mode.rawValue
+        modeControl?.selectedIndex = session.state.mode.rawValue
         if field !== widthField { widthField?.stringValue = session.state.displayWidthText }
         if field !== heightField { heightField?.stringValue = session.state.displayHeightText }
         let crop = session.state.mode == .crop
         let limit = session.state.mode == .limit
         if field !== limitField { limitField?.stringValue = session.state.displayLimitText }
-        limitPopup?.selectItem(at: session.state.limitMode.rawValue)
+        limitControl?.selectedIndex = session.state.limitMode.rawValue
         dimensionRow?.isHidden = limit
         limitRow?.isHidden = !limit
-        ratioButton?.isHidden = crop || limit
-        ratioButton?.state = session.state.preserveRatio ? .on : .off
+        ratioPlate?.isHidden = crop || limit
+        ratioButton?.isChosen = session.state.preserveRatio
         anchorRow?.isHidden = !crop
         anchorGrid?.anchor = session.state.anchor
         helpLabel?.stringValue = crop ? "Choose the crop size and which part of the image to keep."
             : limit ? "Set the width, height, or longest side. Larger limits enlarge the image."
             : "Fit the image to these dimensions. Unlock proportions to add space around it without stretching."
-        presetManagement?.isHidden = presetDisclosure?.state != .on
+        presetManagement?.isHidden = presetDisclosure?.isChosen != true
         errorLabel?.stringValue = ""; errorLabel?.isHidden = true
         fitPanelToContent()
     }
@@ -834,8 +886,8 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         }
     }
 
-    @objc private func changeMode(_ sender: NSSegmentedControl) {
-        guard let mode = ResizePanelMode(rawValue: sender.selectedSegment) else { return }
+    @objc private func changeMode(_ sender: GlassChoiceGroup) {
+        guard let mode = ResizePanelMode(rawValue: sender.selectedIndex) else { return }
         panel?.makeFirstResponder(nil)
         session.state.setMode(mode)
         renderState()
@@ -844,9 +896,9 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         schedulePreview()
     }
 
-    @objc private func changeRatio(_ sender: NSButton) {
+    @objc private func changeRatio(_ sender: GlassChoiceButton) {
         panel?.makeFirstResponder(nil)
-        session.state.setPreserveRatio(sender.state == .on)
+        session.state.setPreserveRatio(sender.isChosen)
         renderState()
         schedulePreview()
     }
@@ -857,19 +909,19 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         schedulePreview()
     }
 
-    @objc private func togglePresetManagement(_ sender: NSButton) {
-        presetManagement?.isHidden = sender.state != .on
-        fitPanelToContent()
+    @objc private func togglePresetManagement(_ sender: GlassChoiceButton) {
+        setPresetManagementShown(sender.isChosen)
     }
     /// Test seam and keyboard path: opens or folds the preset management row.
     func setPresetManagementShown(_ shown: Bool) {
-        presetDisclosure?.state = shown ? .on : .off
+        presetDisclosure?.isChosen = shown
+        presetDisclosure?.setAccessibilityExpanded(shown)
         presetManagement?.isHidden = !shown
         fitPanelToContent()
     }
 
-    @objc private func changeLimit(_ sender: NSPopUpButton) {
-        guard let mode = ResizePanelLimitMode(rawValue: sender.indexOfSelectedItem) else { return }
+    @objc private func changeLimit(_ sender: GlassChoiceGroup) {
+        guard let mode = ResizePanelLimitMode(rawValue: sender.selectedIndex) else { return }
         session.state.limitMode = mode
         schedulePreview()
     }
@@ -897,17 +949,27 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         for preset in presets.presets {
             popup.addItem(withTitle: preset.name); popup.lastItem?.representedObject = preset.id
         }
-        for item in popup.itemArray {
-            item.attributedTitle = NSAttributedString(string: item.title, attributes: [.font: DesignTokens.Typography.font(.body)])
-        }
         if let id = selectedPresetID, let item = popup.itemArray.first(where: { ($0.representedObject as? String) == id }) { popup.select(item) }
         else { popup.selectItem(at: 0) }
+        markChosenPreset()
+        popup.needsDisplay = true
         let selected = presets.presets.first(where: { $0.id == selectedPresetID })
         presetName?.stringValue = selected?.name ?? "New Size"
         presetName?.isEnabled = selected == nil || selected?.editable == true
         savePresetButton?.isEnabled = selected?.editable == true && !presets.hasMalformedData
         removePresetButton?.isEnabled = selected?.editable == true && !presets.hasMalformedData
     }
+
+    /// The pop-up's checked item is the chosen row of the preset panel.
+    private func markChosenPreset() {
+        guard let popup = presetPopup else { return }
+        for item in popup.itemArray { item.state = item === popup.selectedItem ? .on : .off }
+    }
+
+    func menuNeedsUpdate(_ menu: NSMenu) { markChosenPreset() }
+
+    /// Test seam and keyboard path: opens (or closes) the preset panel under the pop-up.
+    func showPresetChoices(keyboard: Bool) { presetPopup?.openChoices(keyboard: keyboard) }
 
     @objc private func selectPreset(_ sender: NSPopUpButton) {
         persistSelectedPreset()
@@ -979,6 +1041,9 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate {
 
     private func endSheet(_ response: NSApplication.ModalResponse) {
         guard let panel else { return }
+        // The preset panel is a child of the sheet and goes with it.
+        presetPopup?.choicePanel.host.close(restoreFocus: false)
+        displayObservation?.invalidate(); displayObservation = nil
         panel.sheetParent?.endSheet(panel, returnCode: response)
         panel.orderOut(nil)
     }
