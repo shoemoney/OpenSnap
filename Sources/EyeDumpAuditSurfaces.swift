@@ -384,6 +384,8 @@ extension AuditRun {
             step("S50", "glass: Toolbox panel") { s50() }
             step("S51", "glass: Zoom panel") { s51() }
             step("S52", "glass: Upload panel") { s52() }
+            step("S53", "glass: Colour panel") { s53() }
+            step("S54", "glass: Size panel") { s54() }
             step("S59", "glass: footer Original size toggle") { s59() }
             step("S13", "capture picker") { s13() }
             step("S14", "countdown") { s14() }
@@ -573,7 +575,7 @@ extension AuditRun {
         loadSynthetic(size: CGSize(width: 1000, height: 700), name: "Color and size")
         app.presentDrawingColors(hover: false)
         pump(0.6)
-        let popoverWindow = app.colorPopover?.contentViewController?.view.window
+        let popoverWindow = app.colorPanelWindow
         shoot("S06", "color-palette", surface: "color picker", state: "preset palette popover open (original ten presets + Custom color…)",
               windows: popoverWindow.map { [window, $0] } ?? [window], refs: ["App.swift|func presentDrawingColors"])
         if let popoverWindow {
@@ -765,7 +767,7 @@ extension AuditRun {
             pump(0.2)
             app.widthControl.showPopover()
             pump(0.7)
-            let popoverWindow = app.widthControl.popover?.contentViewController?.view.window
+            let popoverWindow = app.widthControl.panelWindow
             popoverWindow?.orderFrontRegardless()
             if popoverWindow == nil { gap("S30", "Size popover", "the popover window did not appear at \(spec)") }
             shoot("S30", "size-popover-\(widthSlug(spec))", surface: "Size popover", state: "Size popover open below the pill at window width \(spec), value 6.75, Brush tool",
@@ -786,13 +788,13 @@ extension AuditRun {
                 app.applyChosenColor(color, modifiers: [])
                 app.presentDrawingColors(hover: false)
                 pump(0.7)
-                let popoverWindow = app.colorPopover?.contentViewController?.view.window
+                let popoverWindow = app.colorPanelWindow
                 popoverWindow?.orderFrontRegardless()
                 if popoverWindow == nil { gap("S31", "Colour popover", "the popover window did not appear") }
                 var extra = popoverMetrics(popoverWindow, anchor: app.paletteButton)
-                extra["customRowIsCurrent"] = app.customColorButton?.isCurrentChoice ?? false
+                extra["customRowIsCurrent"] = app.customColorButton?.isChosen ?? false
                 extra["checkedPresets"] = app.presetColorButtons.filter { $0.state == .on }.map { $0.accessibilityLabel() ?? "" }
-                if let content = app.colorPopover?.contentViewController?.view {
+                if let content = app.colorPanel?.window.contentView {
                     extra["popoverContentSize"] = [Double(content.frame.width), Double(content.frame.height)]
                     extra["rowFrames"] = (app.presetColorButtons.map { $0 as NSView } + [app.customColorButton].compactMap { $0 }).map { rectJSON($0.frame) }
                 }
@@ -819,7 +821,7 @@ extension AuditRun {
         if let swatch = app.presetColorButtons.first(where: { $0.tag == OriginalDrawingControls.presets[2].tag }) { app.choosePresetColor(swatch) }
         app.presentDrawingColors(hover: false)
         pump(0.7)
-        let popoverWindow = app.colorPopover?.contentViewController?.view.window
+        let popoverWindow = app.colorPanelWindow
         popoverWindow?.orderFrontRegardless()
         if popoverWindow == nil { gap("S41", "Colour popover", "the popover window did not appear") }
         var extra = popoverMetrics(popoverWindow, anchor: app.paletteButton)
@@ -1079,7 +1081,7 @@ extension AuditRun {
         // Size popover: the track's knob grows on hover and press.
         pill.showPopover()
         pump(0.6)
-        if let popoverWindow = pill.popover?.contentViewController?.view.window, let track = pill.popoverContent?.trackView {
+        if let popoverWindow = pill.panelWindow, let track = pill.popoverContent?.trackView {
             popoverWindow.orderFrontRegardless()
             track.setHovered(true)
             shoot("S40", "size-track-hover", surface: "component states", state: "Size popover, pointer over the track: the knob grows to 1.15", windows: popoverWindow === window ? [window] : [window, popoverWindow],
@@ -1101,7 +1103,7 @@ extension AuditRun {
         // Colour swatches: selected (3 pt accent outline + check), hover, pressed.
         app.presentDrawingColors(hover: false)
         pump(0.7)
-        if let popoverWindow = app.colorPopover?.contentViewController?.view.window, app.presetColorButtons.count > 4 {
+        if let popoverWindow = app.colorPanelWindow, app.presetColorButtons.count > 4 {
             popoverWindow.orderFrontRegardless()
             let swatches = app.presetColorButtons
             swatches[2].setHovered(true)

@@ -83,16 +83,23 @@ extension AuditRun {
         return row.state == .on
     }
 
-    func isHovered(_ row: NSButton) -> Bool { (row as? CommandButton)?.isHovered ?? false }
+    func isHovered(_ row: NSButton) -> Bool {
+        switch row {
+        case let command as CommandButton: return command.isHovered
+        case let swatch as BezelColorButton: return swatch.isHovered
+        case let preset as SizePresetButton: return preset.isHovered
+        default: return false
+        }
+    }
 
-    /// Hover as the app sees it: the shared seam when the row is a command button, else a synthesized mouse-entered event handed to the row.
+    /// Hover as the app sees it: each kind of row has its own `setHovered(_:)` test seam; nothing here moves a real pointer.
     func setHovered(_ row: NSButton, _ hovered: Bool) {
-        if let command = row as? CommandButton { command.setHovered(hovered); return }
-        guard let window = row.window,
-              let event = NSEvent.enterExitEvent(with: hovered ? .mouseEntered : .mouseExited, location: row.convert(NSPoint(x: row.bounds.midX, y: row.bounds.midY), to: nil),
-                                                 modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber, context: nil,
-                                                 eventNumber: 0, trackingNumber: 0, userData: nil) else { return }
-        if hovered { row.mouseEntered(with: event) } else { row.mouseExited(with: event) }
+        switch row {
+        case let command as CommandButton: command.setHovered(hovered)
+        case let swatch as BezelColorButton: swatch.setHovered(hovered)
+        case let preset as SizePresetButton: preset.setHovered(hovered)
+        default: break
+        }
     }
 
     /// (containers, plates, nested) of the glass views under `root`. Nested counts a glass view or container that has a glass plate above it.
@@ -510,5 +517,52 @@ extension AuditRun {
         } else { gap("S56", "Settings / settings-actions", "no glass plate was found around addDestination") }
         app.closePreferences()
         pump(0.3)
+    }
+
+    // MARK: S53 Color
+
+    func s53() {
+        defer { verifyGlassCaptures("S53") }
+        loadSynthetic(size: CGSize(width: 1000, height: 700), name: "Glass Color")
+        let opener = app.paletteButton
+        let refs = ["App.swift|func presentDrawingColors", "BezelDrawingControls.swift|final class ColorPaletteContent", "BezelDrawingControls.swift|final class BezelColorButton"]
+        let script = GlassPanelScript(id: "S53", surface: "Colour panel", identifier: "DrawingColors", base: "color", opener: opener, refs: refs,
+                                      open: { app.presentDrawingColors(hover: false) }, nativeMenu: nil)
+        app.applyChosenColor(OriginalDrawingControls.presets[0].color, modifiers: [])
+        guard let opened = openGlassPanel(script) else { return }
+        glassPanelStates(script, opened, restState: "Colour panel open with the first preset chosen")
+        dismissGlassPanel("S53", "color-dismissed", surface: script.surface, state: "Colour panel dismissed with Escape: gone, focus back on the colour swatch", script: script, opened: opened)
+        app.applyChosenColor(NSColor(deviceRed: 0.18, green: 0.62, blue: 0.55, alpha: 1), modifiers: []) // token-exempt: a custom drawing colour for the capture
+        pump(0.2)
+        if let again = openGlassPanel(script) {
+            shootGlassPanel("S53", "color-custom", surface: script.surface, state: "Colour panel with a custom colour chosen: the Custom color… row carries the chip and the check", panel: again.panel,
+                            opener: opener, refs: refs, variant: "chosen", identifier: "DrawingColors")
+            dismissGlassPanel("S53", "color-dismissed-2", surface: script.surface, state: "", script: script, opened: again, capture: false)
+        }
+        app.applyChosenColor(OriginalDrawingControls.presets[0].color, modifiers: [])
+    }
+
+    // MARK: S54 Size
+
+    func s54() {
+        defer { verifyGlassCaptures("S54") }
+        loadSynthetic(size: CGSize(width: 1000, height: 700), name: "Glass Size")
+        app.setTool(.brush)
+        let pill = app.widthControl
+        let refs = ["BezelDrawingControls.swift|func showPopover", "BezelDrawingControls.swift|final class SizePopoverContent", "BezelDrawingControls.swift|final class SizePresetButton"]
+        let script = GlassPanelScript(id: "S54", surface: "Size panel", identifier: "Size", base: "size", opener: pill, refs: refs, open: { pill.showPopover() }, nativeMenu: nil)
+        pill.doubleValue = OriginalDrawingControls.sizeSteps[2]
+        app.changeWidth(pill)
+        pump(0.2)
+        guard let opened = openGlassPanel(script) else { return }
+        glassPanelStates(script, opened, restState: "Size panel open with a preset size chosen")
+        // The track held down: the knob grows and the track takes its wash; the record says the track really is pressed.
+        if let track = pill.popoverContent?.trackView {
+            track.setPressed(true)
+            shootGlassPanel("S54", "size-pressed", surface: script.surface, state: "Size panel with the track held down", panel: opened.panel, opener: pill, refs: refs,
+                            variant: "pressed", identifier: "Size", extra: ["trackPressed": track.isPressed])
+            track.setPressed(false)
+        } else { gap("S54", "Size panel / size-pressed", "the Size panel has no track view") }
+        dismissGlassPanel("S54", "size-dismissed", surface: script.surface, state: "Size panel dismissed with Escape: gone, focus back on the size pill", script: script, opened: opened)
     }
 }
