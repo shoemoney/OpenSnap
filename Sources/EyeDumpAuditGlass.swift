@@ -427,4 +427,88 @@ extension AuditRun {
         app.expireUploadSuccess()
         pump(0.3)
     }
+
+    // MARK: groups inside a window (Settings, History, Resize, destination sheet)
+
+    /// The nearest glass plate above `view`, or the view itself when it is one.
+    func enclosingPlate(of view: NSView?) -> NSView? {
+        var current = view
+        while let candidate = current {
+            if candidate is GlassSurfaceView || candidate is GlassChoiceGroup { return candidate }
+            current = candidate.superview
+        }
+        return nil
+    }
+
+    /// A group of choices that lives in a window rather than in a floating panel: rest, hover (a row that is not chosen), keyboard focus (the
+    /// chosen row, else the first enabled one) and, when asked and a row is disabled, a disabled capture that also offers the row focus.
+    /// `root` is the plate the rows sit on; the nested-glass count still covers the whole host window.
+    func glassGroupStates(_ id: String, base: String, surface: String, refs: [String], host: NSWindow, windows: [NSWindow]? = nil, root: NSView, restState: String,
+                          disabledSlug: String? = nil, extra: [String: Any] = [:]) {
+        let shots = windows ?? [host]
+        func record(_ variant: String, _ more: [String: Any] = [:]) -> [String: Any] {
+            glassRecord(kind: "group", identifier: base, variant: variant, host: host, rowsRoot: root, extra: extra.merging(more) { $1 })
+        }
+        let rows = glassRows(in: root)
+        guard !rows.isEmpty else { gap(id, surface + " / " + base, "no choice rows were found on the \(base) plate"); return }
+        host.makeKeyAndOrderFront(nil)
+        shoot(id, base + "-rest", surface: surface, state: restState, windows: shots, refs: refs, settle: 0.3, extra: ["glassPanel": record("rest")])
+        let enabled = rows.indices.filter { rows[$0].isEnabled }
+        if let target = enabled.first(where: { !isChosen(rows[$0]) }) ?? enabled.first {
+            setHovered(rows[target], true)
+            shoot(id, base + "-hover", surface: surface, state: "\(restState); row \(target) (\(visibleTitle(rows[target]))) hovered", windows: shots, refs: refs, settle: 0.25,
+                  extra: ["glassPanel": record("hover")])
+            setHovered(rows[target], false)
+        }
+        if let focus = enabled.first(where: { isChosen(rows[$0]) }) ?? enabled.first {
+            let took = host.makeFirstResponder(rows[focus])
+            shoot(id, base + "-focus", surface: surface, state: "\(restState); keyboard focus on row \(focus) (\(visibleTitle(rows[focus])))", windows: shots, refs: refs, settle: 0.25,
+                  extra: ["glassPanel": record("focus", ["focusAccepted": took])])
+        }
+        if let slug = disabledSlug, let off = rows.indices.first(where: { !rows[$0].isEnabled }) {
+            setHovered(rows[off], true)
+            let took = host.makeFirstResponder(rows[off]) && host.firstResponder === rows[off]
+            shoot(id, slug, surface: surface, state: "\(restState); disabled row \(off) (\(visibleTitle(rows[off]))) hovered and offered focus", windows: shots, refs: refs, settle: 0.25,
+                  extra: ["glassPanel": record("disabled", ["disabledTookFocus": took])])
+            setHovered(rows[off], false)
+        }
+        host.makeFirstResponder(nil)
+    }
+
+    // MARK: S56 Settings
+
+    func s56() {
+        defer { verifyGlassCaptures("S56") }
+        let refs = ["SettingsWindow.swift|final class SettingsTabBar", "SettingsWindow.swift|final class SettingsActionButton"]
+        syntheticDestinations()
+        app.openPreferences(tab: 0)
+        pump(0.8)
+        guard let controller = app.settingsController else { gap("S56", "Settings", "Settings did not open"); return }
+        let host = controller.window
+        func tabs() -> Int { 4 }
+        /// Selects tabs until the one that holds `identifier` is showing; returns the view.
+        func reveal(_ identifier: String) -> NSView? {
+            for tab in 0..<tabs() {
+                controller.select(tab)
+                pump(0.5)
+                host.contentView?.layoutSubtreeIfNeeded()
+                if let view = find(identifier, in: host.contentView), !view.isHiddenOrHasHiddenAncestor { return view }
+            }
+            return nil
+        }
+        if let bar = reveal("SettingsTabBar") {
+            glassGroupStates("S56", base: "settings-tabs", surface: "Settings glass groups", refs: refs, host: host, root: bar, restState: "Settings tab strip on one glass plate")
+        } else { gap("S56", "Settings tabs", "the tab strip plate (SettingsTabBar) was not found") }
+        for (base, identifier, label) in [("settings-radios", "presenceDock", "Presence, Precision and Arrow head radios"), ("settings-toggles", "showToolTips", "hover hints, keyboard tips, include app and capture flash toggles")] {
+            if let anchor = reveal(identifier), let plate = enclosingPlate(of: anchor) {
+                glassGroupStates("S56", base: base, surface: "Settings glass groups", refs: refs, host: host, root: plate, restState: "Settings: \(label)")
+            } else { gap("S56", "Settings / \(base)", "no glass plate was found around \(identifier)") }
+        }
+        if let add = reveal("addDestination"), let plate = enclosingPlate(of: add) {
+            glassGroupStates("S56", base: "settings-actions", surface: "Settings glass groups", refs: refs, host: host, root: plate, restState: "Settings, Upload: the destination action plate",
+                             disabledSlug: "settings-actions-disabled")
+        } else { gap("S56", "Settings / settings-actions", "no glass plate was found around addDestination") }
+        app.closePreferences()
+        pump(0.3)
+    }
 }
