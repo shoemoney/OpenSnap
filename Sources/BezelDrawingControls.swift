@@ -235,21 +235,6 @@ enum BezelCustomColorButton {
     }
 }
 
-/// What the screenshot harness (`Sources/EyeDumpAudit*.swift`) still reads off the popovers these panels replaced: whether it is up, its
-/// content view and that view's window. Remove it once the harness reads `colorPanelWindow` and `BezelSizeSlider.panelWindow` instead.
-@MainActor
-struct PanelPopoverFacade {
-    struct Controller { let view: NSView }
-    let host: GlassPanelHost
-    var isShown: Bool { host.isShown }
-    var contentViewController: Controller? { Controller(view: host.container) }
-}
-
-extension GlassChoiceButton {
-    /// The Custom color… row reads "current" while it is the chosen option.
-    var isCurrentChoice: Bool { isChosen }
-}
-
 /// The Size control: a 48 x 36 pill that draws the current stroke thickness as a horizontal line and opens a glass panel
 /// (`GlassPanelHost`) with a track and five presets. The pill stays the one model object: the value, the target/action, the undo
 /// grouping and the "Size N" tooltip all live here, and the panel drives them through the same gesture API.
@@ -271,8 +256,6 @@ final class BezelSizeSlider: NSControl {
     var isPopoverShown: Bool { panel?.isShown == true }
     /// The panel's own window, while it is up (the screenshot harness orders it front).
     var panelWindow: NSWindow? { isPopoverShown ? panel?.window : nil }
-    /// The old popover's surface, for harness code that has not moved to `panelWindow` yet.
-    var popover: PanelPopoverFacade? { panel.map(PanelPopoverFacade.init) }
     private var tracking = false
     private var value = OriginalDrawingControls.initialSize
     private var lastPopoverClose: TimeInterval = -.infinity

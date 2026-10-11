@@ -292,8 +292,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     /// Runs on every new colour panel before it is shown. A test gives it a presenter, so the panel never reaches the screen.
     var colorPanelSetup: (GlassPanelHost) -> Void = { _ in }
     var colorPanelWindow: NSWindow? { colorPanel?.isShown == true ? colorPanel?.window : nil }
-    /// The old popover's surface, for harness code that has not moved to `colorPanelWindow` yet.
-    var colorPopover: PanelPopoverFacade? { colorPanel.map(PanelPopoverFacade.init) }
     var colorControlHovered = false, colorPaletteHovered = false, colorOpenedByHover = false
     private var colorHoverDismissal: DispatchWorkItem?
     private(set) var colorHoverTracker: PaletteHoverTracker?

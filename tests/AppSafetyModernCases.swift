@@ -1913,13 +1913,13 @@ extension AppSafetyTests {
         app.presentDrawingColors(hover: false)
         let row = try (app.customColorButton).unwrap("Custom color… row")
         try expect(app.presetColorButtons.filter { $0.state == .on }.map { $0.accessibilityLabel() ?? "" } == [red.name], "A preset colour checks exactly its own swatch (\(app.presetColorButtons.filter { $0.state == .on }.count))")
-        try expect(!row.isChosen && !row.isCurrentChoice && row.leadingIconImage == nil && (row.accessibilityValue() as? NSNumber)?.intValue == 0, "...and the Custom color… row is the plain row")
+        try expect(!row.isChosen && row.leadingIconImage == nil && (row.accessibilityValue() as? NSNumber)?.intValue == 0, "...and the Custom color… row is the plain row")
         try expect(row.plate.style.fill == nil && row.plate.style.borderWidth == 0 && row.titleLabel.font?.pointSize == 20 && row.titleLabel.font != DesignTokens.Typography.font(.bodyStrong),
                    "...drawn with no fill, no border and the regular face")
         // A colour that is no preset: no swatch is checked, and the Custom color… row is chosen and carries the colour, a check and the selected look.
         app.applyChosenColor(custom, modifiers: [])
         try expect(app.presetColorButtons.allSatisfy { $0.state == .off }, "A custom colour checks no preset swatch")
-        try expect(row.isChosen && row.isCurrentChoice && row.leadingIconImage != nil && row.kind == .option && row.title == "Custom color…",
+        try expect(row.isChosen && row.leadingIconImage != nil && row.kind == .option && row.title == "Custom color…",
                    "The Custom color… row is the chosen option, carries the active colour and keeps its name")
         try expect((row.accessibilityValue() as? NSNumber)?.intValue == 1 && row.isAccessibilitySelected() && row.accessibilityRole() == .radioButton,
                    "VoiceOver hears the row as selected, still named Custom color…")
