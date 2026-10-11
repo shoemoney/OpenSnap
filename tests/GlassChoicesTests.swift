@@ -99,6 +99,10 @@ private final class LongFacePopUp: GlassPopUpButton {
     override var faceTitle: String { "A deliberately long face title that cannot possibly fit" }
 }
 
+/// An app-owned group element, as a panel's root is.
+@MainActor
+private final class AuditContainer: NSView {}
+
 /// Records the key-downs that reach it: what the pop-up did not take.
 @MainActor
 private final class KeyProbeView: NSView {
@@ -1955,6 +1959,30 @@ private enum GlassChoicesTests {
             expect(access.violations.isEmpty && access.controls > 0, "The accessibility audit is clean for the \(name): \(access.description)")
         }
         panel.host.close()
+
+        // The walker judges an inline group itself: a group that lost its name is flagged, a named one is not, and the buttons inside are
+        // still judged on their own.
+        let nameless = GlassChoiceGroup(titles: ["Resize", "Crop"], accessibilityLabel: "", identifier: "nameless", accessibility: plain)
+        let named = GlassChoiceGroup(titles: ["Resize", "Crop"], accessibilityLabel: "Size operation", identifier: "named", accessibility: plain)
+        let namelessReport = AccessibilityAudit.audit(nameless, surface: "nameless group")
+        expect(namelessReport.count(of: .missingLabel) == 1 && namelessReport.violations.first?.path.contains("GlassChoiceGroup") == true,
+               "A GlassChoiceGroup with an empty accessibility label is flagged missingLabel: \(namelessReport.description)")
+        let namedReport = AccessibilityAudit.audit(named, surface: "named group")
+        expect(namedReport.violations.isEmpty && namedReport.controls == 3 && namedReport.labelled == 3, "A named group is clean and counts as a control with its two buttons (\(namedReport.controls) controls)")
+        nameless.buttons[0].setAccessibilityLabel("")
+        nameless.buttons[0].title = ""
+        let both = AccessibilityAudit.audit(nameless, surface: "nameless group, unlabelled button")
+        expect(both.count(of: .missingLabel) == 2, "...and a button inside it that lost its name is still flagged too (\(both.description))")
+        // A choice panel's group role is judged as well: a labelled container passes, an unlabelled one fails.
+        let rootPlate = GlassChrome.plate([makeButton("One", .command)], identifier: "container", accessibility: plain, axis: .vertical)
+        let container = AuditContainer()
+        container.addSubview(rootPlate)
+        container.setAccessibilityElement(true)
+        container.setAccessibilityRole(.group)
+        container.setAccessibilityLabel("")
+        expect(AccessibilityAudit.audit(container, surface: "unlabelled panel").count(of: .missingLabel) == 1, "An unlabelled group of choice buttons is flagged")
+        container.setAccessibilityLabel("Choices")
+        expect(AccessibilityAudit.audit(container, surface: "labelled panel").violations.isEmpty, "...and a labelled one is clean")
     }
 
     // MARK: display options

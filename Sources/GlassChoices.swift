@@ -729,6 +729,9 @@ final class GlassChoiceWindow: NSPanel {
 
 // MARK: - Panel host
 
+/// The panel's content root: an element of its own (a labelled group), and an app class so the accessibility audit judges its label.
+private final class PanelRootView: NSView {}
+
 /// The scrolling panel's document: flipped, so a panel taller than its window starts at its first row instead of its last.
 private final class FlippedDocumentView: NSView {
     override var isFlipped: Bool { true }
@@ -846,7 +849,7 @@ final class GlassPanelHost: NSObject {
     var accessibility: ChromeAccessibility = .live { didSet { pushAccessibility() } }
 
     private let stack = NSStackView()
-    private let root = NSView()
+    private let root = PanelRootView()
     private(set) var scrollView: NSScrollView?
     private var document: FlippedDocumentView?
     private var layoutConstraints: [NSLayoutConstraint] = []
