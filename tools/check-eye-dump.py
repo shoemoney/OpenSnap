@@ -538,8 +538,8 @@ GLASS_SURFACES = {
             "settings-actions-rest", "settings-actions-hover", "settings-actions-focus", "settings-actions-disabled"],
     "S57": ["resize-groups-rest", "resize-groups-hover", "resize-groups-focus", "resize-anchor-rest", "resize-anchor-hover", "resize-anchor-focus",
             "resize-preset-rest", "resize-preset-hover", "resize-preset-focus", "resize-preset-chosen", "resize-preset-dismissed"],
-    "S58": ["destination-protocol-rest", "destination-protocol-hover", "destination-protocol-focus",
-            "destination-source-rest", "destination-source-hover", "destination-source-focus",
+    "S58": ["destination-protocol-rest", "destination-protocol-hover", "destination-protocol-focus", "destination-protocol-dismissed",
+            "destination-source-rest", "destination-source-hover", "destination-source-focus", "destination-source-dismissed",
             "destination-acl-off", "destination-acl-on"],
     "S59": ["footer-original-on", "footer-original-off", "footer-original-hidden"],
 }

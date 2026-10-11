@@ -24,7 +24,7 @@ extension AuditRun {
         "S55": ["history-category-rest", "history-category-hover", "history-category-focus", "history-date-rest", "history-date-hover", "history-date-focus", "history-date-chosen", "history-date-dismissed", "history-dragas-rest", "history-dragas-hover", "history-dragas-focus", "history-dragas-chosen", "history-dragas-dismissed"],
         "S56": ["settings-tabs-rest", "settings-tabs-hover", "settings-tabs-focus", "settings-radios-rest", "settings-radios-hover", "settings-radios-focus", "settings-toggles-rest", "settings-toggles-hover", "settings-toggles-focus", "settings-actions-rest", "settings-actions-hover", "settings-actions-focus", "settings-actions-disabled"],
         "S57": ["resize-groups-rest", "resize-groups-hover", "resize-groups-focus", "resize-anchor-rest", "resize-anchor-hover", "resize-anchor-focus", "resize-preset-rest", "resize-preset-hover", "resize-preset-focus", "resize-preset-chosen", "resize-preset-dismissed"],
-        "S58": ["destination-protocol-rest", "destination-protocol-hover", "destination-protocol-focus", "destination-source-rest", "destination-source-hover", "destination-source-focus", "destination-acl-off", "destination-acl-on"],
+        "S58": ["destination-protocol-rest", "destination-protocol-hover", "destination-protocol-focus", "destination-protocol-dismissed", "destination-source-rest", "destination-source-hover", "destination-source-focus", "destination-source-dismissed", "destination-acl-off", "destination-acl-on"],
         "S59": ["footer-original-on", "footer-original-off", "footer-original-hidden"],
     ]
 
@@ -172,20 +172,26 @@ extension AuditRun {
         let open: () -> Void
         /// The native menu the opener would show in a build without the panel. If the open call blocks in it, the watchdog cancels tracking.
         var nativeMenu: NSMenu?
+        /// The window the opener lives in (its first responder is what dismissal must restore); the editor window unless a sheet or Settings hosts it.
+        var host: NSWindow?
+        /// What is imaged behind the panel, frontmost first: the editor window unless the opener lives in a sheet.
+        var context: [NSWindow]?
     }
 
     struct OpenedGlassPanel {
         let panel: NSWindow
         let responderBefore: NSResponder?
         let openerHadFocus: Bool
+        let script: GlassPanelScript
     }
 
     /// Puts the keyboard on the opener, opens the panel, and returns it, or nil (with a gap) when no glass panel appeared. A build that still
     /// opens a native menu would block here, so a watchdog cancels menu tracking after 1.5 s and the caller records the gap.
     func openGlassPanel(_ script: GlassPanelScript, recordGap: Bool = true) -> OpenedGlassPanel? {
-        window.makeKeyAndOrderFront(nil)
-        let accepted = window.makeFirstResponder(script.opener)
-        let before = window.firstResponder
+        let owner = script.host ?? window
+        owner.makeKeyAndOrderFront(nil)
+        let accepted = owner.makeFirstResponder(script.opener)
+        let before = owner.firstResponder
         let hadFocus = accepted && before === script.opener
         let watchdog = Timer(timeInterval: 1.5, repeats: false) { [self] _ in
             MainActor.assumeIsolated {
@@ -200,15 +206,15 @@ extension AuditRun {
             if recordGap { gap(script.id, script.surface + " / " + script.base, "the glass panel \(script.identifier) did not appear (a native menu or nothing opened instead)") }
             return nil
         }
-        return OpenedGlassPanel(panel: panel, responderBefore: before, openerHadFocus: hadFocus)
+        return OpenedGlassPanel(panel: panel, responderBefore: before, openerHadFocus: hadFocus, script: script)
     }
 
     /// Captures the open panel over the editor, with its glassPanel record.
     @discardableResult
     func shootGlassPanel(_ id: String, _ slug: String, surface: String, state: String, panel: NSWindow, opener: NSView?, refs: [String],
-                         variant: String = "rest", identifier: String = "", extra: [String: Any] = [:], alsoPanelOnly: Bool = false) -> String? {
+                         variant: String = "rest", identifier: String = "", extra: [String: Any] = [:], alsoPanelOnly: Bool = false, context: [NSWindow]? = nil) -> String? {
         let record = glassRecord(kind: "panel", identifier: identifier.isEmpty ? (panel.identifier?.rawValue ?? "") : identifier, variant: variant, host: panel, extra: extra)
-        let stem = shoot(id, slug, surface: surface, state: state, windows: [panel, window], refs: refs, settle: 0.3, extra: ["glassPanel": record])
+        let stem = shoot(id, slug, surface: surface, state: state, windows: [panel] + (context ?? [window]), refs: refs, settle: 0.3, extra: ["glassPanel": record])
         if alsoPanelOnly {
             shoot(id, slug + "-only", surface: surface, state: state + " (the panel window alone)", windows: [panel], refs: refs, settle: 0.1, extra: ["glassPanel": record])
         }
@@ -235,13 +241,14 @@ extension AuditRun {
         let route = sendEscape(to: opened.panel)
         pump(0.3)
         let gone = glassPanelWindow(script.identifier) == nil && !opened.panel.isVisible
-        let returned = window.firstResponder === opened.responderBefore
+        let owner = script.host ?? window
+        let returned = owner.firstResponder === opened.responderBefore
         if capture {
-            let record = glassRecord(kind: "panel", identifier: script.identifier, variant: "dismissed", host: window, rowsRoot: NSView(), extra: [
+            let record = glassRecord(kind: "panel", identifier: script.identifier, variant: "dismissed", host: owner, rowsRoot: NSView(), extra: [
                 "panelGone": gone, "focusReturned": returned, "openerHadFocus": opened.openerHadFocus, "dismissedBy": route,
                 "hostRegistryClear": GlassPanelHost.current == nil, "openerClass": String(describing: type(of: script.opener)),
                 "glassContainerCount": 0, "plateCount": 0, "nestedGlassCount": 0])
-            shoot(id, slug, surface: surface, state: state, windows: [window], refs: script.refs, settle: 0.2, extra: ["glassPanel": record])
+            shoot(id, slug, surface: surface, state: state, windows: script.context ?? [window], refs: script.refs, settle: 0.2, extra: ["glassPanel": record])
         }
         return gone && returned
     }
@@ -251,27 +258,27 @@ extension AuditRun {
         let panel = opened.panel
         let rows = glassRows(in: panel.contentView ?? NSView())
         shootGlassPanel(script.id, script.base + "-rest", surface: script.surface, state: restState, panel: panel, opener: script.opener, refs: script.refs,
-                        identifier: script.identifier, alsoPanelOnly: true)
+                        identifier: script.identifier, alsoPanelOnly: true, context: script.context)
         let enabled = rows.indices.filter { rows[$0].isEnabled }
         // Hover a row that is neither the first nor chosen, so the fill is visibly the hover's.
         if let target = enabled.first(where: { !isChosen(rows[$0]) && $0 > 0 }) ?? enabled.first {
             setHovered(rows[target], true)
             shootGlassPanel(script.id, script.base + "-hover", surface: script.surface, state: "\(restState); row \(target) (\(visibleTitle(rows[target]))) hovered", panel: panel,
-                            opener: script.opener, refs: script.refs, variant: "hover", identifier: script.identifier)
+                            opener: script.opener, refs: script.refs, variant: "hover", identifier: script.identifier, context: script.context)
             setHovered(rows[target], false)
         }
         if let first = enabled.first {
             panel.makeKeyAndOrderFront(nil)
             let took = panel.makeFirstResponder(rows[first])
             shootGlassPanel(script.id, script.base + "-focus", surface: script.surface, state: "\(restState); keyboard focus on row \(first) (\(visibleTitle(rows[first])))", panel: panel,
-                            opener: script.opener, refs: script.refs, variant: "focus", identifier: script.identifier, extra: ["focusAccepted": took])
+                            opener: script.opener, refs: script.refs, variant: "focus", identifier: script.identifier, extra: ["focusAccepted": took], context: script.context)
         }
         if let off = rows.indices.first(where: { !rows[$0].isEnabled }) {
             setHovered(rows[off], true)
             let took = panel.makeFirstResponder(rows[off])
             let tookFocus = took && panel.firstResponder === rows[off]
             shootGlassPanel(script.id, script.base + "-disabled", surface: script.surface, state: "\(restState); disabled row \(off) (\(visibleTitle(rows[off]))) hovered and offered focus",
-                            panel: panel, opener: script.opener, refs: script.refs, variant: "disabled", identifier: script.identifier, extra: ["disabledTookFocus": tookFocus])
+                            panel: panel, opener: script.opener, refs: script.refs, variant: "disabled", identifier: script.identifier, extra: ["disabledTookFocus": tookFocus], context: script.context)
             setHovered(rows[off], false)
         }
     }
@@ -564,5 +571,44 @@ extension AuditRun {
             track.setPressed(false)
         } else { gap("S54", "Size panel / size-pressed", "the Size panel has no track view") }
         dismissGlassPanel("S54", "size-dismissed", surface: script.surface, state: "Size panel dismissed with Escape: gone, focus back on the size pill", script: script, opened: opened)
+    }
+
+    // MARK: S58 destination sheet
+
+    /// The destination sheet on Settings, S3-compatible selected: the Protocol and Key source glass faces with the choice panels they open, and
+    /// the "Make uploads public-read" toggle off and on. In-memory fake destination only: nothing is tested, saved or sent.
+    func s58() {
+        defer { verifyGlassCaptures("S58") }
+        let refs = ["PublishingDestinationsView.swift|private(set) lazy var protocolFace", "PublishingDestinationsView.swift|let aclCheckbox", "GlassChoices.swift|final class MenuChoicePanel"]
+        syntheticDestinations()
+        guard let controller = openSettingsUpload() else { gap("S58", "Destination sheet", "Settings did not open"); return }
+        let settings = controller.window
+        let (sheet, view) = app.publishing.buildEditor(editing: nil, visibleFrame: nil, hostWidth: nil)
+        settings.beginSheet(sheet)
+        pump(0.8)
+        defer { closeHarnessSheet(sheet); app.closePreferences() }
+        view.protocolPopup.selectItem(withTitle: PublishingProtocol.s3.title)
+        view.formChanged()
+        pump(0.5)
+        func script(_ face: GlassChoiceButton, base: String, fallback: String) -> GlassPanelScript {
+            GlassPanelScript(id: "S58", surface: "Destination sheet", identifier: view.choicePanel(for: face)?.identifier ?? fallback, base: base, opener: face, refs: refs,
+                             open: { face.performClick(nil) }, nativeMenu: nil, host: sheet, context: [sheet, settings])
+        }
+        for (face, base, fallback) in [(view.protocolFace, "destination-protocol", "DestinationProtocol"), (view.sourceFace, "destination-source", "DestinationSource")] {
+            let panelScript = script(face, base: base, fallback: fallback)
+            guard let opened = openGlassPanel(panelScript) else { continue }
+            glassPanelStates(panelScript, opened, restState: "\(base == "destination-protocol" ? "Protocol" : "Key source") choices open on the destination sheet, S3-compatible selected")
+            dismissGlassPanel("S58", base + "-dismissed", surface: "Destination sheet", state: "choices dismissed with Escape: gone, focus back on the face", script: panelScript, opened: opened)
+        }
+        // The public-read toggle (visible for S3-compatible): off, then on. Its row is the only choice on its plate.
+        guard let plate = enclosingPlate(of: view.aclCheckbox) else { gap("S58", "Destination sheet / public-read", "no glass plate around the public-read toggle"); return }
+        for (slug, on) in [("destination-acl-off", false), ("destination-acl-on", true)] {
+            view.aclCheckbox.isChosen = on
+            pump(0.3)
+            let record = glassRecord(kind: "group", identifier: "DestinationPublicRead", variant: on ? "chosen" : "rest", host: sheet, rowsRoot: plate,
+                                     extra: ["protocol": "S3", "aclChosen": view.aclCheckbox.isChosen])
+            shoot("S58", slug, surface: "Destination sheet", state: "S3-compatible destination: Make uploads public-read \(on ? "on" : "off")", windows: [sheet, settings], refs: refs, settle: 0.3,
+                  extra: ["glassPanel": record])
+        }
     }
 }
