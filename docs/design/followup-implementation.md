@@ -1,6 +1,6 @@
 # Follow-up implementation record — History glass pass and open behaviour fixes
 
-> Status: version 3, 2026-10-10, **final for this pass**. All four packages are merged on the integration branch, the independent review's four items (FR-1 to FR-4) are fixed, and the final candidate is `718f601`. Integrated gates passed at `718f601`. Nothing is on `main`.
+> Status: version 3, 2026-10-10, **final for this pass**. All four packages are merged on the integration branch, the independent review's four items (FR-1 to FR-4) are fixed, and the final candidate is `718f601`. Integrated gates passed at `718f601`. Nothing is on `main`. After version 3, the mirror case (Resize sheet up, enter full screen, Cancel) was fixed: `3976ac0`, merged as `1ac6674` (section 4).
 
 ## 1. Scope and authorization
 
@@ -126,7 +126,17 @@ Each "red before" note was measured on the baseline `7fef2a8` through the real p
 
 Worker checks: app-safety 257/257; build, `check-tokens` and `check-tooltips` pass; real-store guard "stores unchanged" (digest `dbde037ac2085108`).
 
-Adjacent gap, found and not fixed (outside scope): entering full screen while the Resize sheet is up, then pressing Cancel there, leaves the full-screen window's zoom unfitted. This is the mirror of FS-A. The reviewer judged it unchanged and harmless.
+### Mirror case: Resize sheet up, enter full screen, Cancel (fixed after version 3)
+
+Status: **fixed**. Worker commit `3976ac0` (branch `impl/fu-mirror-cancel`), merged into the integration branch as `1ac6674`. Two files, +47: `Sources/AppViewport.swift` +11, `tests/AppSafetyFollowupCases.swift` +36. This is the mirror of FS-A. Version 3 recorded it as an adjacent gap that the reviewer judged unchanged and harmless; that judgement is withdrawn.
+
+Cause, confirmed in source: while a Resize session is active, `fitDrawingForFullScreen()` returns early, so full screen never fitted the drawing and `fullScreenZoom` stayed nil. Cancel then took the plain windowed branch, which put back the windowed zoom with no full-screen record. (`setWindowFrame` already refuses to move a full-screen window, so the windowed frame was never applied.)
+
+Fix: a new Cancel branch, placed before the plain Cancel, for "sheet opened windowed, now in full screen". It puts back the pre-sheet zoom and fit record, clears the stale full-screen records, fits the restored drawing to the Space the way a normal entry would (so `fullScreenZoom.before` is the pre-sheet zoom), keeps the pre-sheet window frame for the way out (as FS-C does), and restores the dirty and edited state. The other branches are unchanged.
+
+Test `fuCancelResizeAfterFullScreenEntry`: preview 1600 wide in a window, enter full screen with the sheet up, Cancel, then leave full screen. It asserts the picture and title size are restored, the full-screen frame is kept, the zoom is the Space's fit with `before` equal to the pre-sheet zoom, and on exit the pre-sheet zoom and windowed frame are back and the window holds the canvas.
+
+Red proof: with the fix reverted in a scratch copy, it fails with "The restored drawing is fitted to the Space, not left at the windowed 1.0 (1.0)". Green with the fix. Headless app-safety suite 263/263; build passed. Limit: simulated full-screen handler order only, not a live transition.
 
 ## 5. Real-input check of F-J1-023 (E2E class)
 
@@ -165,7 +175,7 @@ Evidence class: **real input**, the same class as the audit's E2E rows. It is no
 | Tree | `685c4ea08ee9a65385201584b34d56900c230ba1` |
 | Merge order | `72f77a9` (History), `1974325` (record v1), `770b6c0` (harness), `210e80e` (behaviour), `0cbd2b4` (record v2 and ledger rows), `718f601` (review corrections, from `4a0043f`) |
 
-Nothing has been pushed, tagged, released or installed. `main` is unchanged.
+Nothing has been pushed, tagged, released or installed. `main` is unchanged. Final candidate hashes and the final full-suite result after the mirror fix (section 4) are reported in the task hand-off.
 
 ### Gates at `718f601`
 
@@ -230,7 +240,7 @@ Real-store hashes must be unchanged for every run. The guarded harness is the on
 - **Live full-screen transition not exercised (FR-2).** The FR-2 fix is proved against simulated handler order only. The exit animation and AppKit's own frame restore have not run on screen.
 - **VoiceOver speech unproved.** The accessibility checks use the `NSAccessibility` protocol and AX reads. No assistive client has been heard announcing the editor or the History plates.
 - **Real hover, press and Tab on History not exercised.** The History action states (hover, pressed, focus, disabled) are rendered captures and unit tests only. No real pointer or key press was driven.
-- **Mirror case unchanged.** Full screen entered with the Resize sheet up, then Cancel, leaves the full-screen window's zoom unfitted. The reviewer judged it unchanged and harmless (section 4).
+- **Mirror case fixed (`3976ac0`, merged `1ac6674`).** Full screen entered with the Resize sheet up, then Cancel, now fits the drawing and keeps the way out (section 4). Proved against simulated handler order only; the live transition has not been run.
 - **F-J3-009 and R1-016 unchanged.** The only small candidate, "fit up to 200%", changes zoom semantics broadly. The navigator is already sized to its content.
 - **R1-021 and F-J4-007 unchanged.** The eraser shadow on cut fragments is a recorded design trade-off. Changing it would change stored semantics.
 - **Driver-pointer insertion oddity in the F-J1-023 real-input check.** An untargeted type after a selection landed at the driver's pointer position and did not replace the selection. Whether the cause is the driver's input route or the app's insertion handling is unresolved (section 5).
