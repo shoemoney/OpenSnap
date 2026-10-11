@@ -104,7 +104,7 @@ Shared-file rule: two workers touching the same file stay in their named hunks. 
 - [ ] Color: hover-open does not take key, click pins, preset and custom choice, Shift background path; Size: undo grouping per gesture, presets close, dismissal mid-drag ends the gesture.
 - [ ] History: date filter, category and Drag as are glass choices; search and grid stay native.
 - [ ] Destination sheet: protocol and key-source picks, the public-read toggle and its buttons are glass; fields and status stay native; validation and Keychain paths unchanged.
-- [ ] Settings: radios and toggles unambiguous, tabs keyboardable, window sizing unchanged; Resize: mode/limit/anchor/preset behaviour, validation errors, Return = OK, Escape = Cancel.
+- [ ] Settings: radios and toggles unambiguous, tabs keyboardable, one Tab stop per radio group and per shortcut-modifier row; the fit logic is unchanged but the windows are deliberately taller with 44 pt glass rows (General 301 → 371, Drawing 242 → 282, Capture 601 → 633, Upload 440 → 448 with three destinations, 277 → 285 empty) and every tab still fits the 1280 × 800 screen check; the destination sheet keeps SFTP, WebDAV and FTP/FTPS unscrolled at 1280 × 800 (S3 scrolled before and still does) and every face reads whole at 560, 640 and 900 pt; Resize: mode/limit/anchor/preset behaviour, validation errors, Return = OK, Escape = Cancel.
 - [ ] Text ≥ 18 pt (20 pt normal); only Font Awesome / existing semantic glyphs; no emoji or decorative arrows.
 - [ ] Harness: direct captures of every new panel (rest, hover, keyboard focus, chosen, disabled, dismissed + focus restored), light and dark.
 - [ ] `python3 tools/test.py` green with no source drift and the real-store guard; red proofs recorded for the key behaviour tests.
