@@ -2492,7 +2492,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native menu); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -3226,7 +3226,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native menu); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -3383,7 +3383,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a solid popover); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a solid popover); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -3426,7 +3426,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a solid popover); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a solid popover); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -3766,7 +3766,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up menu); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -3930,7 +3930,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native checkbox); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native checkbox); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -3974,7 +3974,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native contextual menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native contextual menu); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -4018,7 +4018,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native zoom pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native zoom pop-up menu); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -4052,7 +4052,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native zoom pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native zoom pop-up menu); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -4086,7 +4086,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native zoom pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native zoom pop-up menu); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -4095,7 +4095,18 @@
    "sources": [
     "source"
    ],
-   "id": "E2E-BAR-034"
+   "id": "E2E-BAR-034",
+   "history": {
+    "converted": "impl/glass-pickers-20261010",
+    "from": "d05f08b",
+    "evidenceClass": "unverified",
+    "sourceSHA": "15d5ec2",
+    "evidencePath": "docs/design/evidence/e2e-2026-10-10/j1/20-zoom-50.jpg",
+    "reviewer": "J1 lane",
+    "gapReason": "AX value only",
+    "observed": "Picked 75%: the pop-up value reads 75% (AX value only, no capture). Reclassified after review round 1: gap: AX value only; the cited image shows 50%, not 75%, so no screenshot shows the claim (no unit test names it).",
+    "digest": "sha256:e6c39be22bcd94c1b5dcbf87f25040ea76659edcf2db711ca8978881e7823a8d"
+   }
   },
   {
    "area": "BAR",
@@ -4109,7 +4120,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native zoom pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native zoom pop-up menu); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -4118,7 +4129,18 @@
    "sources": [
     "source"
    ],
-   "id": "E2E-BAR-035"
+   "id": "E2E-BAR-035",
+   "history": {
+    "converted": "impl/glass-pickers-20261010",
+    "from": "d05f08b",
+    "evidenceClass": "unverified",
+    "sourceSHA": "15d5ec2",
+    "evidencePath": "docs/design/evidence/e2e-2026-10-10/j1/20-zoom-50.jpg",
+    "reviewer": "J1 lane",
+    "gapReason": "AX value only",
+    "observed": "Picked 100%: the pop-up value reads 100% (AX value only, no capture). Reclassified after review round 1: gap: AX value only; the cited image shows 50%, not 100%, so no screenshot shows the claim (no unit test names it).",
+    "digest": "sha256:0a5648caa325f5c78f2622cd82b652dc10fd0fced6bc5eed22faee6a9912baba"
+   }
   },
   {
    "area": "BAR",
@@ -4132,7 +4154,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native zoom pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native zoom pop-up menu); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -4166,7 +4188,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native zoom pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native zoom pop-up menu); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -4200,7 +4222,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native zoom pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native zoom pop-up menu); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -4234,7 +4256,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native Upload menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native Upload menu); not yet re-audited on the glass build: its audited gap reason still applies to the glass control, so the matrix keeps it byte for byte",
    "shortcut": null,
    "proof": [
     {
@@ -4263,7 +4285,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native Upload menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native Upload menu); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -4303,7 +4325,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native Upload menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native Upload menu); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -4318,7 +4340,18 @@
    "sources": [
     "source"
    ],
-   "id": "E2E-BAR-041"
+   "id": "E2E-BAR-041",
+   "history": {
+    "converted": "impl/glass-pickers-20261010",
+    "from": "d05f08b",
+    "evidenceClass": "unverified",
+    "sourceSHA": "e953411",
+    "evidencePath": "docs/design/evidence/e2e-2026-10-10/j5/44-ax-and-state-readouts-j5.txt",
+    "reviewer": "J5 lane",
+    "gapReason": "text readout only",
+    "observed": "With no destinations (history-only seed, session 86919) the Upload menu shows No destination configured disabled, then Destination Settings… and Share with macOS…. AX read of the live menu (menus are not imaged by the harness). Reclassified after review round 1: gap: text readout only; menus are not imaged, so no screenshot shows the disabled row.",
+    "digest": "sha256:3126a57267157f26660172a57560bb792b39603a1af0f8fd05147baf4dbbc480"
+   }
   },
   {
    "area": "BAR",
@@ -4332,7 +4365,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native Upload menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native Upload menu); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -4372,7 +4405,7 @@
    "owner": "os",
    "exercise": "e2e-partial",
    "gap": "os-panel",
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native Upload menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native Upload menu); not yet re-audited on the glass build: its audited gap reason still applies to the glass control, so the matrix keeps it byte for byte",
    "shortcut": null,
    "proof": [
     {
@@ -4931,7 +4964,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a solid popover); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a solid popover); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -4978,7 +5011,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a swatch in a solid popover); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a swatch in a solid popover); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -5017,7 +5050,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a swatch in a solid popover); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a swatch in a solid popover); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -5056,7 +5089,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a swatch in a solid popover); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a swatch in a solid popover); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -5095,7 +5128,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a swatch in a solid popover); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a swatch in a solid popover); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -5134,7 +5167,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a swatch in a solid popover); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a swatch in a solid popover); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -5173,7 +5206,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a swatch in a solid popover); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a swatch in a solid popover); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -5212,7 +5245,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a swatch in a solid popover); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a swatch in a solid popover); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -5251,7 +5284,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a swatch in a solid popover); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a swatch in a solid popover); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -5290,7 +5323,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a swatch in a solid popover); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a swatch in a solid popover); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -5329,7 +5362,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a swatch in a solid popover); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a swatch in a solid popover); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -5368,7 +5401,7 @@
    "owner": "app",
    "exercise": "e2e-partial",
    "gap": "os-panel",
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a button in a solid popover); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a button in a solid popover); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -6239,7 +6272,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a solid, non-glass tab strip); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a solid, non-glass tab strip); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -6282,7 +6315,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a solid tab strip); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a solid tab strip); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": "⌘1",
    "proof": [
     {
@@ -6329,7 +6362,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a solid tab strip); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a solid tab strip); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": "⌘2",
    "proof": [
     {
@@ -6376,7 +6409,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a solid tab strip); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a solid tab strip); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": "⌘3",
    "proof": [
     {
@@ -6423,7 +6456,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a solid tab strip); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a solid tab strip); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": "⌘4",
    "proof": [
     {
@@ -6470,7 +6503,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a radio button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a radio button); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -6517,7 +6550,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a radio button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a radio button); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -6564,7 +6597,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a radio button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a radio button); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -6611,7 +6644,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a checkbox); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a checkbox); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -6658,7 +6691,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a checkbox); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a checkbox); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -6705,7 +6738,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a checkbox); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a checkbox); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -6752,7 +6785,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a radio button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a radio button); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -6799,7 +6832,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a radio button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a radio button); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -6846,7 +6879,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a radio button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a radio button); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -6893,7 +6926,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a radio button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a radio button); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -6940,7 +6973,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a radio button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a radio button); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -7010,7 +7043,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a checkbox); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a checkbox); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -7132,7 +7165,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native Add… push button in the empty list); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native Add… push button in the empty list); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -7171,7 +7204,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -7218,7 +7251,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -7261,7 +7294,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -7304,7 +7337,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -7788,7 +7821,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native checkbox); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native checkbox); not yet re-audited on the glass build: its audited gap reason still applies to the glass control, so the matrix keeps it byte for byte",
    "shortcut": null,
    "proof": [
     {
@@ -7820,7 +7853,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -7867,7 +7900,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native multi-select segmented control); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native multi-select segmented control); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -7918,7 +7951,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -7965,7 +7998,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native multi-select segmented control); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native multi-select segmented control); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -8016,7 +8049,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up); not yet re-audited on the glass build: its audited gap reason still applies to the glass control, so the matrix keeps it byte for byte",
    "shortcut": null,
    "proof": [
     {
@@ -8052,7 +8085,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native multi-select segmented control); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native multi-select segmented control); not yet re-audited on the glass build: its audited gap reason still applies to the glass control, so the matrix keeps it byte for byte",
    "shortcut": null,
    "proof": [
     {
@@ -8092,7 +8125,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up); not yet re-audited on the glass build: its audited gap reason still applies to the glass control, so the matrix keeps it byte for byte",
    "shortcut": null,
    "proof": [
     {
@@ -8128,7 +8161,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native multi-select segmented control); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native multi-select segmented control); not yet re-audited on the glass build: its audited gap reason still applies to the glass control, so the matrix keeps it byte for byte",
    "shortcut": null,
    "proof": [
     {
@@ -8168,7 +8201,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up); not yet re-audited on the glass build: its audited gap reason still applies to the glass control, so the matrix keeps it byte for byte",
    "shortcut": null,
    "proof": [
     {
@@ -8204,7 +8237,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native multi-select segmented control); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native multi-select segmented control); not yet re-audited on the glass build: its audited gap reason still applies to the glass control, so the matrix keeps it byte for byte",
    "shortcut": null,
    "proof": [
     {
@@ -8244,7 +8277,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up); not yet re-audited on the glass build: its audited gap reason still applies to the glass control, so the matrix keeps it byte for byte",
    "shortcut": null,
    "proof": [
     {
@@ -8280,7 +8313,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native multi-select segmented control); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native multi-select segmented control); not yet re-audited on the glass build: its audited gap reason still applies to the glass control, so the matrix keeps it byte for byte",
    "shortcut": null,
    "proof": [
     {
@@ -8538,7 +8571,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); not yet re-audited on the glass build: its audited gap reason still applies to the glass control, so the matrix keeps it byte for byte",
    "shortcut": null,
    "proof": [
     {
@@ -8662,7 +8695,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native segmented control); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native segmented control); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -8709,7 +8742,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native segmented control); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native segmented control); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -8756,7 +8789,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native segmented control); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native segmented control); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -8803,7 +8836,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native segmented control); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native segmented control); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -8850,7 +8883,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of a native pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of a native pop-up menu); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -8897,7 +8930,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of a native pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of a native pop-up menu); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -8944,7 +8977,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of a native pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of a native pop-up menu); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -8991,7 +9024,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of a native pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of a native pop-up menu); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -9388,7 +9421,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of a native pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of a native pop-up menu); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -9431,7 +9464,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of a native pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of a native pop-up menu); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -9474,7 +9507,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of a native pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of a native pop-up menu); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -9517,7 +9550,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of a native pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of a native pop-up menu); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -9560,7 +9593,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of a native pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of a native pop-up menu); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -9603,7 +9636,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of a native pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of a native pop-up menu); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -10144,7 +10177,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up menu item); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up menu item); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -10188,7 +10221,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up menu item); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up menu item); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -10232,7 +10265,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up menu item); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up menu item); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -10276,7 +10309,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up menu item); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up menu item); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -10320,7 +10353,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up menu item); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up menu item); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -10580,7 +10613,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -10700,7 +10733,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native checkbox); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native checkbox); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -10740,7 +10773,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -10780,7 +10813,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -10824,7 +10857,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -11189,7 +11222,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up, segmented control, checkbox and push buttons); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up, segmented control, checkbox and push buttons); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -11236,7 +11269,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -11310,7 +11343,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -11349,7 +11382,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -11392,7 +11425,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -11431,7 +11464,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native segmented control); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native segmented control); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -11478,7 +11511,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native segmented control); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native segmented control); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -11525,7 +11558,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native segmented control); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native segmented control); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -11618,7 +11651,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native checkbox); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native checkbox); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -11661,7 +11694,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -11723,7 +11756,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was an app-owned anchor view); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was an app-owned anchor view); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -11793,7 +11826,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -11836,7 +11869,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -11875,7 +11908,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [
     {
@@ -17205,7 +17238,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "Glass choice since impl/glass-pickers-20261010 (was a native zoom pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native zoom pop-up menu); its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class",
    "shortcut": null,
    "proof": [],
    "rendered": [

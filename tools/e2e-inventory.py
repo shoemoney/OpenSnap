@@ -57,9 +57,20 @@ GAP_REASONS = ("permission", "hardware", "OS-owned", "harness", "unsafe", "AX pr
 CONVERTED_REASON = "UI changed"
 CONVERTED_IN = "impl/glass-pickers-20261010"
 GLASS_NOTE = "Glass choice since "
+GLASS_TAIL = "; E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA"
+HISTORY_TAIL = "; its prior native evidence is kept as history in this entry and does not count as current glass coverage; the matrix holds the row's current class"
+KEPT_TAIL = "; not yet re-audited on the glass build: its audited gap reason still applies to the glass control, so the matrix keeps it byte for byte"
 HISTORY_FROM = "d05f08b"   # the commit whose coverage-matrix.md holds the native evidence the converted rows were reset from
 HISTORY_COLUMNS = (7, 8, 9, 10, 11, 13)   # observed, source SHA, evidence (path), evidence class, reviewer, gap reason
 HISTORY_KEYS = ("observed", "sourceSHA", "evidencePath", "evidenceClass", "reviewer", "gapReason")
+# Glass-noted rows that were ALREADY `unverified` convert too, but only when the audited limitation belonged to the native control. Every other glass-noted
+# unverified row keeps its audited reason byte for byte: it still applies to the glass control (unsafe: a live global hotkey or a network upload; OS-owned: the
+# system share picker). An intrinsic reason is never turned into `UI changed`.
+NATIVE_LIMITED = {
+    "E2E-BAR-034": "AX value only: the value was read off the native zoom pop-up (no capture); that pop-up and its AXValue no longer exist",
+    "E2E-BAR-035": "AX value only: the value was read off the native zoom pop-up (no capture); that pop-up and its AXValue no longer exist",
+    "E2E-BAR-041": "text readout only: native menus are not imaged by the harness, so the disabled row had only an AX text readout; the glass panel is a window",
+}
 EXERCISE = ("e2e", "e2e-partial", "gap")   # e2e-partial: the app-owned part is real-click, the named gap is the rest
 TYPES = ("menu item", "toolbar button", "control", "icon", "preference", "popover", "panel", "sheet", "window", "alert", "shortcut", "state", "gesture")
 AREAS = {
@@ -76,7 +87,7 @@ WAS = {}   # new (area, surface, name, type) -> the key the row had before its c
 
 def glass(was):
     """The note a converted row carries: what the control was before the glass-choices change set. The matrix keeps the evidence it already had."""
-    return f"{GLASS_NOTE}{CONVERTED_IN} (was {was}); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA"
+    return f"{GLASS_NOTE}{CONVERTED_IN} (was {was}){GLASS_TAIL}"
 
 
 def add(area, surface, name, kind, path, expected, prereq="Fresh launch, empty document", icon=None, ex="e2e", gap=None, owner="app",
@@ -1064,8 +1075,9 @@ def make_history(old):
 
 def transition_note(history):
     """What a converted row's `observed` cell says; it carries the reason in the `gap: <reason>` form the ledger reads."""
-    return (f"Converted to glass in {history['converted']}; gap: {CONVERTED_REASON}. Prior native evidence {history['evidenceClass']} at {history['sourceSHA']} "
+    note = (f"Converted to glass in {history['converted']}; gap: {CONVERTED_REASON}. Prior native evidence {history['evidenceClass']} at {history['sourceSHA']} "
             f"kept as history in inventory.json; not current glass coverage.")
+    return note + (f" Prior gap reason: {history['gapReason']}." if history["evidenceClass"] == "unverified" else "")
 
 
 def previous_entries():
@@ -1078,10 +1090,14 @@ def attach_history():
     for entry in entries:
         history = previous.get(entry["id"], {}).get("history")
         old = kept.get(entry["id"])
-        if not history and (entry.get("note") or "").startswith(GLASS_NOTE) and old and old[10] in ("E2E", "rendered") and old[7] != "TBD":
+        glassy = (entry.get("note") or "").startswith(GLASS_NOTE)
+        if not history and glassy and old and old[7] != "TBD" and (old[10] in ("E2E", "rendered") or (old[10] == "unverified" and entry["id"] in NATIVE_LIMITED)):
             history = make_history(old)
         if history:
             entry["history"] = history
+        if glassy:   # say what happened to the row's earlier evidence; the audited reason of a kept row is the matrix's, untouched
+            head = entry["note"].split(GLASS_TAIL)[0]
+            entry["note"] = head + (HISTORY_TAIL if history else (KEPT_TAIL if old and old[10] == "unverified" else GLASS_TAIL))
 
 
 def prior_cells(cells):
@@ -1149,10 +1165,13 @@ def ledger_problems(rows, history=None):
             continue
         if history_digest({key: prior.get(key, "") for key in HISTORY_KEYS}) != prior.get("digest"):
             problems.append(f"{ident}: its history in inventory.json was edited (the digest no longer matches the prior evidence)")
-        if prior.get("evidenceClass") not in ("E2E", "rendered"):
-            problems.append(f"{ident}: its history must hold prior E2E or rendered evidence (found {prior.get('evidenceClass')!r})")
-        if klass in ("E2E", "rendered") and (prior_cells(cells) == tuple(prior.get(key, "") for key in HISTORY_KEYS) or observed.startswith("Converted to glass in")):
-            problems.append(f"{ident}: still counts the prior native {prior.get('evidenceClass')} evidence at {prior.get('sourceSHA')} as current glass coverage; "
+        if prior.get("evidenceClass") not in ("E2E", "rendered", "unverified"):
+            problems.append(f"{ident}: its history must hold prior E2E, rendered or unverified evidence (found {prior.get('evidenceClass')!r})")
+        if prior.get("evidenceClass") == "unverified" and (ident not in NATIVE_LIMITED or prior.get("gapReason") not in GAP_REASONS):
+            problems.append(f"{ident}: an already-unverified row converts only when its audited limitation belonged to the native control (NATIVE_LIMITED); "
+                            f"its prior reason {prior.get('gapReason')!r} still applies to the glass control and must stay as audited")
+        if prior_cells(cells) == tuple(prior.get(key, "") for key in HISTORY_KEYS) or (klass in ("E2E", "rendered") and observed.startswith("Converted to glass in")):
+            problems.append(f"{ident}: still carries the prior native {prior.get('evidenceClass')} evidence at {prior.get('sourceSHA')} as current glass coverage; "
                             f"run python3 -I tools/e2e-inventory.py to reset it to unverified (gap: {CONVERTED_REASON}), or record new evidence on the glass control")
         if klass == "unverified" and reason == CONVERTED_REASON and not observed.startswith(transition_note(prior)):
             problems.append(f"{ident}: gap reason `{CONVERTED_REASON}` does not agree with the row's transition note and history")

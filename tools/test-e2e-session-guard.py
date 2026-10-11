@@ -765,9 +765,36 @@ def history_digest(history):
     return "sha256:" + hashlib.sha256(json.dumps([history.get(k, "") for k in HISTORY_KEYS], ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()
 
 
+INTRINSIC_REASONS = ("unsafe", "OS-owned", "permission", "hardware")   # limits of the system, not of a native control: never rewritten to `UI changed`
+NOT_EVIDENCE = ("", "TBD")
+
+
+def promotion_problems(h, row, tree):
+    """A converted row may carry NEW current evidence from an audit of the glass control, and only that: a complete E2E or rendered observation,
+    a new glass source SHA, new evidence files that exist, a reviewer and no gap reason. Returns what falls short (empty: a valid promotion)."""
+    observed, sha, path, klass, reviewer, reason = row[7], row[8], row[9], row[10], row[11], row[13]
+    problems = []
+    if observed in NOT_EVIDENCE or len(observed) < 40 or observed.startswith("Converted to glass in") or "not current glass coverage" in observed or observed == h.get("observed"):
+        problems.append("its observation is missing, the transition prose or the native text, not a new glass observation")
+    if not re.fullmatch(r"[0-9a-f]{7,40}", sha) or sha.startswith(h.get("sourceSHA", "-")) or h.get("sourceSHA", "-").startswith(sha):
+        problems.append(f"its source SHA {sha!r} is not a new glass build different from the native {h.get('sourceSHA')!r}")
+    paths = [part.strip() for part in path.split(";")]
+    native = {part.strip() for part in h.get("evidencePath", "").split(";")}
+    if path in NOT_EVIDENCE or not all(paths) or any(part in native for part in paths):
+        problems.append("its evidence path is TBD or reuses a native evidence file")
+    elif not all((tree / part).is_file() for part in paths):
+        problems.append("its evidence path names a file that does not exist")
+    if reviewer in NOT_EVIDENCE:
+        problems.append("its reviewer is not recorded")
+    if reason:
+        problems.append(f"a {klass} row carries no gap reason (found {reason!r})")
+    return problems
+
+
 def history_problems(tree, base_rows):
     """Independent of the generator: what is wrong with the history of every row converted to glass in `tree`.
-    `base_rows` is the matrix at the pinned commit; with None only the digest and the current state can be judged."""
+    `base_rows` is the matrix at the pinned commit; with None only the digest and the current state can be judged.
+    A converted row is either still reset (unverified, gap reason UI changed, the transition note, TBD evidence) or promoted by an audit of the glass control."""
     entries = json.loads((tree / "docs/design/e2e/inventory.json").read_text())["entries"]
     rows = matrix_cells((tree / "docs/design/e2e/coverage-matrix.md").read_text())
     converted = {e["id"]: e["history"] for e in entries if e.get("history")}
@@ -780,11 +807,20 @@ def history_problems(tree, base_rows):
             prior = base_rows.get(ident)
             if prior is None or tuple(prior[i] for i in HISTORY_COLUMNS) != tuple(h.get(k) for k in HISTORY_KEYS):
                 problems.append(f"{ident}: the history differs from the matrix at {h.get('from')}")
-        if h.get("evidenceClass") not in ("E2E", "rendered"):
-            problems.append(f"{ident}: a history holds prior E2E or rendered evidence, not {h.get('evidenceClass')!r}")
-        if not row or row[10] != "unverified" or row[13] != "UI changed":
-            problems.append(f"{ident}: a converted row's current class is unverified with gap reason UI changed (found {row and row[10]!r} / {row and row[13]!r})")
-        elif not row[7].startswith("Converted to glass in") or f"Prior native evidence {h.get('evidenceClass')} at {h.get('sourceSHA')} " not in row[7] or "not current glass coverage" not in row[7]:
+        if h.get("evidenceClass") not in ("E2E", "rendered", "unverified"):
+            problems.append(f"{ident}: a history holds prior E2E, rendered or unverified evidence, not {h.get('evidenceClass')!r}")
+        if h.get("evidenceClass") == "unverified" and (h.get("gapReason") in INTRINSIC_REASONS or not h.get("gapReason")):
+            problems.append(f"{ident}: an audited {h.get('gapReason')!r} gap is a limit of the system and still applies to the glass control, so it is never rewritten to UI changed")
+        if not row:
+            problems.append(f"{ident}: the matrix has no row for a converted entry")
+        elif tuple(row[i] for i in HISTORY_COLUMNS) == tuple(h.get(k) for k in HISTORY_KEYS):
+            problems.append(f"{ident}: its current cells are still the native evidence (not converted)")
+        elif row[10] in ("E2E", "rendered"):
+            problems += [f"{ident}: promoted without new glass evidence: {why}" for why in promotion_problems(h, row, tree)]
+        elif row[10] != "unverified" or row[13] != "UI changed":
+            problems.append(f"{ident}: a converted row is unverified with gap reason UI changed, or promoted with new evidence (found {row[10]!r} / {row[13]!r})")
+        elif (not row[7].startswith("Converted to glass in") or f"Prior native evidence {h.get('evidenceClass')} at {h.get('sourceSHA')} " not in row[7]
+              or "not current glass coverage" not in row[7]):
             problems.append(f"{ident}: its observed cell is not the transition note for its history")
         elif (row[8], row[9], row[11]) != ("TBD", "TBD", "TBD"):
             problems.append(f"{ident}: its source SHA, evidence path and reviewer must not carry the native evidence as current")
@@ -794,28 +830,44 @@ def history_problems(tree, base_rows):
     return problems
 
 
+def promote_row(r, history, **fields):
+    """Rewrites a matrix row's cells as an audit of the glass control would (the defaults are a valid promotion); `fields` override by cell name."""
+    cells = {"observed": "Real click on the glass control: the panel opened below its button, the row was chosen and the state changed; screenshot 01 shows it.",
+             "sha": "3a5f7c1", "path": "docs/design/evidence/e2e-fixture/01-glass.jpg", "class": "E2E", "reviewer": "G2 lane", "reason": ""}
+    cells.update(fields)
+    for column, key in ((7, "observed"), (8, "sha"), (9, "path"), (10, "class"), (11, "reviewer"), (13, "reason")):
+        r[column] = cells[key]
+
+
 def test_converted_history(base, folder):
     entries = json.loads((folder / "inventory.json").read_text())["entries"]
     converted = {e["id"]: e["history"] for e in entries if e.get("history")}
     commits = {h.get("from") for h in converted.values()}
-    check(len(converted) > 0 and len(commits) == 1, f"history: {len(converted)} rows converted to glass keep their native evidence, all from the matrix at {', '.join(sorted(map(str, commits)))}")
+    rows = matrix_cells((folder / "coverage-matrix.md").read_text())
+    kinds = {k: sum(1 for h in converted.values() if h["evidenceClass"] == k) for k in ("E2E", "rendered", "unverified")}
+    check(len(converted) > 0 and len(commits) == 1, f"history: {len(converted)} rows converted to glass keep their native evidence ({kinds}), all from the matrix at {', '.join(sorted(map(str, commits)))}")
     base_rows = base_matrix_cells(next(iter(commits))) if len(commits) == 1 else None
     problems = history_problems(root, base_rows)
+    reset = sum(1 for i in converted if rows[i][13] == "UI changed")
     check(not problems, "history: each converted row's history equals its prior cells byte for byte"
-          + ("" if base_rows is not None else " (digest only: the pinned commit is not readable in this checkout)") + " and its current class is unverified with gap reason UI changed"
+          + ("" if base_rows is not None else " (digest only: the pinned commit is not readable in this checkout)")
+          + f", and the row is either still reset to unverified with gap reason UI changed ({reset} of {len(converted)}) or promoted with new glass evidence"
           + (f" ({problems[:3]})" if problems else ""))
-    rows = matrix_cells((folder / "coverage-matrix.md").read_text())
-    check({i for i, r in rows.items() if r[13] == "UI changed"} == set(converted), "history: gap reason UI changed sits on exactly the rows that have a history")
-    check(not any(r[10] in ("E2E", "rendered") and i in converted for i, r in rows.items()), "history: no converted row still counts E2E or rendered evidence as current")
+    check({i for i, r in rows.items() if r[13] == "UI changed"} <= set(converted), "history: gap reason UI changed sits only on rows that have a history")
+    if base_rows is not None:
+        intrinsic = [i for i, r in base_rows.items() if r[13] in INTRINSIC_REASONS and rows[i][13] != r[13] and rows[i][10] == "unverified" and i in converted]
+        check(not intrinsic, f"history: no unsafe, OS-owned, permission or hardware gap was rewritten to UI changed ({intrinsic[:3]})")
 
     def restore(r):   # the pre-conversion row, exactly: native evidence counted as current again
         for column, key in zip(HISTORY_COLUMNS, HISTORY_KEYS):
             r[column] = converted[r[0]][key]
     converted_row = lambda r: r[13] == "UI changed" and r[0] in converted
+    from_unverified = lambda r: r[0] in converted and converted[r[0]]["evidenceClass"] == "unverified"
     verdicts = {
         "a converted row restored to its native E2E or rendered evidence (still counting it as current)": ledger_mutant(base, "history-restored", converted_row, restore),
         "a converted row flipped back to a counted class while it still says it was converted": ledger_mutant(
             base, "history-class-flip", converted_row, lambda r: (r.__setitem__(10, "E2E"), r.__setitem__(13, ""))),
+        "an already-unverified row restored to its native cells and reason": ledger_mutant(base, "history-restored-unverified", lambda r: from_unverified(r) and r[13] == "UI changed", restore),
         "`UI changed` on an unverified row that has no transition history": ledger_mutant(
             base, "history-stray-reason", lambda r: r[10] == "unverified" and r[0] not in converted, lambda r: (r.__setitem__(7, "J1 lane: gap: UI changed."), r.__setitem__(13, "UI changed"))),
     }
@@ -824,6 +876,8 @@ def test_converted_history(base, folder):
         check(result.returncode != 0 and ident in (result.stdout + result.stderr), f"history (can fail): {label} makes --check fail and names {ident}")
     stray_tree, stray_ident = verdicts["`UI changed` on an unverified row that has no transition history"]
     check("no history in inventory.json" in (inventory_check(stray_tree).stdout + inventory_check(stray_tree).stderr), "history (can fail): the stray `UI changed` is refused for lacking a history")
+    restored_tree, restored_ident = verdicts["a converted row restored to its native E2E or rendered evidence (still counting it as current)"]
+    check(any(restored_ident in p for p in history_problems(restored_tree, base_rows)), f"history (can fail): the guard's history check refuses the restored row too ({restored_ident})")
 
     # An edited history: the generator's digest sees it; one whose digest was recomputed to match is seen by the pinned-commit comparison.
     tree = inventory_tree(base, "history-edited")
@@ -840,7 +894,68 @@ def test_converted_history(base, folder):
         path.write_text(json.dumps(document, indent=1, ensure_ascii=False) + "\n")
         check(any(target["id"] in p and "differs from the matrix" in p for p in history_problems(tree, base_rows)),
               "history (can fail): a history edited with its digest recomputed still differs from the matrix at the pinned commit")
-    # A converted row re-labelled with another valid reason keeps the generator content but is not the state this round requires.
+
+    # An already-unverified row converts only when its limitation belonged to the native control; an unsafe, OS-owned, permission or hardware gap never does.
+    if base_rows is not None:
+        victim = next(i for i, r in base_rows.items() if r[13] == "unsafe" and r[10] == "unverified" and i not in converted and (rows[i][13] == "unsafe"))
+        tree = inventory_tree(base, "history-intrinsic")
+        doc_path = tree / "docs/design/e2e/inventory.json"
+        document = json.loads(doc_path.read_text())
+        forged = {"converted": "impl/glass-pickers-20261010", "from": next(iter(commits)), "evidenceClass": "unverified", "sourceSHA": base_rows[victim][8],
+                  "evidencePath": base_rows[victim][9], "reviewer": base_rows[victim][11], "gapReason": base_rows[victim][13], "observed": base_rows[victim][7]}
+        forged["digest"] = history_digest(forged)
+        next(e for e in document["entries"] if e["id"] == victim)["history"] = forged
+        doc_path.write_text(json.dumps(document, indent=1, ensure_ascii=False) + "\n")
+        matrix_path = tree / "docs/design/e2e/coverage-matrix.md"
+        lines = matrix_path.read_text().splitlines()
+        for index, line in enumerate(lines):
+            if line.startswith(f"| {victim} |"):
+                cells = [c.strip() for c in LEDGER_SPLIT.split(line.strip().strip("|"))]
+                cells[7] = (f"Converted to glass in impl/glass-pickers-20261010; gap: UI changed. Prior native evidence unverified at {forged['sourceSHA']} kept as history in "
+                            f"inventory.json; not current glass coverage. Prior gap reason: {forged['gapReason']}.")
+                cells[8] = cells[9] = cells[11] = "TBD"
+                cells[13] = "UI changed"
+                lines[index] = "| " + " | ".join(cells) + " |"
+        matrix_path.write_text("\n".join(lines) + "\n")
+        result = inventory_check(tree)
+        check(result.returncode != 0 and victim in (result.stdout + result.stderr), f"history (can fail): an unsafe gap rewritten to UI changed is refused by --check ({victim})")
+        check(any(victim in p and "never rewritten" in p for p in history_problems(tree, base_rows)), f"history (can fail): and by the guard's own history check ({victim})")
+
+    # A converted row can be promoted, but only by genuinely new glass evidence.
+    def promotion(name, fields=lambda ident: {}):
+        """A scratch tree whose first converted row is rewritten as an audit would; the evidence file it names is created unless the case says otherwise."""
+        tree, ident = ledger_mutant(base, name, converted_row, lambda r: promote_row(r, converted[r[0]], **fields(r[0])))
+        given = fields(ident)
+        evidence = given.get("path", "docs/design/evidence/e2e-fixture/01-glass.jpg")
+        if evidence not in NOT_EVIDENCE and given.get("exists", True):
+            for part in evidence.split(";"):
+                (tree / part.strip()).parent.mkdir(parents=True, exist_ok=True)
+                (tree / part.strip()).write_bytes(b"fixture")
+        return tree, ident
+    tree, ident = promotion("history-promoted")
+    regenerated = subprocess.run([sys.executable, "-I", str(tree / "tools/e2e-inventory.py")], capture_output=True, text=True, cwd=tree)
+    result = inventory_check(tree)
+    check(regenerated.returncode == 0 and result.returncode == 0, f"history (positive): a row promoted with a complete observation, a new glass SHA, a real new evidence file and a reviewer passes the generator ({ident})")
+    check(not [p for p in history_problems(tree, base_rows) if ident in p], f"history (positive): and the guard's history check ({ident})")
+    transition_prose = lambda ident: (f"Converted to glass in impl/glass-pickers-20261010; gap: UI changed. Prior native evidence {converted[ident]['evidenceClass']} at "
+                                      f"{converted[ident]['sourceSHA']} kept as history in inventory.json; not current glass coverage.")
+    bad = {
+        "the old native SHA with a rewritten observation": lambda ident: dict(sha=converted[ident]["sourceSHA"]),
+        "the transition prose left in as the observation": lambda ident: dict(observed=transition_prose(ident)),
+        "a TBD source SHA": lambda ident: dict(sha="TBD"),
+        "a TBD evidence path": lambda ident: dict(path="TBD"),
+        "a TBD reviewer": lambda ident: dict(reviewer="TBD"),
+        "an evidence file that does not exist": lambda ident: dict(exists=False),
+        "the native evidence file reused as the new evidence": lambda ident: dict(path=converted[ident]["evidencePath"]),
+        "the native observation copied as the new one": lambda ident: dict(observed=converted[ident]["observed"]),
+        "a gap reason left on the promoted row": lambda ident: dict(reason="UI changed"),
+    }
+    for label, fields in bad.items():
+        tree, ident = promotion("history-promotion-" + re.sub(r"\W+", "-", label)[:30], fields)
+        check(any(ident in p and "promoted without new glass evidence" in p for p in history_problems(tree, base_rows)),
+              f"history (can fail): a promotion with {label} is refused by the history check ({ident})")
+
+    # A converted row relabelled with another valid reason is not a state this contract allows.
     tree, ident = ledger_mutant(base, "history-other-reason", converted_row, lambda r: (r.__setitem__(7, "J9 lane: gap: harness."), r.__setitem__(13, "harness")))
     check(any(ident in p for p in history_problems(tree, base_rows)), f"history (can fail): a converted row relabelled with another reason is refused by the history check ({ident})")
 
