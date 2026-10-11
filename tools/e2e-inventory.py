@@ -16,10 +16,15 @@ exist in tests/ at generation time.
 --check regenerates in memory and fails when inventory.json or the matrix would change (used by the guard in tools/test.py).
 It also fails on a ledger mismatch: an `unverified` row must carry exactly one audited `gap reason` from GAP_REASONS, every other class
 must carry none, and the reason must agree with the `<lane>: gap: <reason>` the auditor wrote in the `observed` cell.
+A row whose control became a glass choice (its inventory `note` starts "Glass choice since") and that still carried E2E or rendered evidence
+for the earlier native control is converted once: the evidence moves, byte for byte, into the entry's `history` in inventory.json (with a
+digest), and the row's current cells become a generated transition note, class `unverified`, gap reason `UI changed`. `--check` fails when
+a history is edited (digest), when a converted row still counts the old evidence as current, and when `UI changed` sits on a row with no history.
 """
 from pathlib import Path
 import argparse
 import collections
+import hashlib
 import json
 import re
 import sys
@@ -46,7 +51,15 @@ GAPS = {
 RETIRED_GAPS = ("replaced", "removed")   # a row whose surface no longer exists: evidence class `retired`, whatever its historic evidence was
 # Why an `unverified` row has no E2E evidence, as recorded by the auditor (matrix column `gap reason`). Unlike GAPS, which predicts
 # reachability from the source, this is an audit finding and is only ever set on rows whose evidence class is `unverified`.
-GAP_REASONS = ("permission", "hardware", "OS-owned", "harness", "unsafe", "AX presence only", "AX value only", "text readout only")
+GAP_REASONS = ("permission", "hardware", "OS-owned", "harness", "unsafe", "AX presence only", "AX value only", "text readout only", "UI changed")
+# `UI changed`: the control the row's evidence was recorded on has been replaced (native -> glass), so that evidence no longer describes it.
+# It is only ever set by the conversion below, and only on a row that has a `history`.
+CONVERTED_REASON = "UI changed"
+CONVERTED_IN = "impl/glass-pickers-20261010"
+GLASS_NOTE = "Glass choice since "
+HISTORY_FROM = "d05f08b"   # the commit whose coverage-matrix.md holds the native evidence the converted rows were reset from
+HISTORY_COLUMNS = (7, 8, 9, 10, 11, 13)   # observed, source SHA, evidence (path), evidence class, reviewer, gap reason
+HISTORY_KEYS = ("observed", "sourceSHA", "evidencePath", "evidenceClass", "reviewer", "gapReason")
 EXERCISE = ("e2e", "e2e-partial", "gap")   # e2e-partial: the app-owned part is real-click, the named gap is the rest
 TYPES = ("menu item", "toolbar button", "control", "icon", "preference", "popover", "panel", "sheet", "window", "alert", "shortcut", "state", "gesture")
 AREAS = {
@@ -63,7 +76,7 @@ WAS = {}   # new (area, surface, name, type) -> the key the row had before its c
 
 def glass(was):
     """The note a converted row carries: what the control was before the glass-choices change set. The matrix keeps the evidence it already had."""
-    return f"Glass choice since impl/glass-pickers-20261010 (was {was}); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA"
+    return f"{GLASS_NOTE}{CONVERTED_IN} (was {was}); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA"
 
 
 def add(area, surface, name, kind, path, expected, prereq="Fresh launch, empty document", icon=None, ex="e2e", gap=None, owner="app",
@@ -582,7 +595,7 @@ def build_settings():
          proof("SettingsWindowTests.swift", "the flash option is a checkbox toggle", ("SettingsWindowTests.swift", "clicking it stores false and it reads off"), ("SettingsWindowTests.swift", "clicking again stores true and it reads on"))),
         ("Upload", "Destinations list", "control", "Every destination as a selectable row with name, transport and a Default pill; the list scrolls past what the screen leaves; solid content, not glass", "", None,
          proof("SettingsWindowTests.swift", "the destination list is solid content")),
-        ("Upload", "Empty state: No destinations yet", "state", "Shown when no destination exists, with Add… inside the list (a titled glass command button on a plate of its own)", "", None, proof("SettingsWindowTests.swift", upload_plate)),
+        ("Upload", "Empty state: No destinations yet", "state", "Shown when no destination exists, with Add… inside the list (a titled glass command button on a plate of its own)", "", "a native Add… push button in the empty list", proof("SettingsWindowTests.swift", upload_plate)),
         ("Upload", "Add…", "control", command("opens the destination editor sheet on the Settings window"), "", "a native push button",
          proof("SettingsWindowTests.swift", "Add… opens the editor on the Settings window with no destination", ("SettingsWindowTests.swift", "the four commands share one plate, in reading order"),
                ("SettingsWindowTests.swift", "the in-list Add… keeps its title and identifier"))),
@@ -916,7 +929,7 @@ def build_states():
             ("Combined display options", "Combinations render coherently", "gap", "system-setting"), ("Retina (2x) rendering", "Crisp glyphs at 2x", "e2e", None),
             ("Multiple displays / 1x", "Chrome and overlays on a second display", "gap", "display-hardware")]:
         add("STATE", "Window and display states", name, "state", name, expected, prereq=D, ex=ex, gap=gap, rendered=["S11", "S01"],
-            note="Harness-injected evidence exists (--display, --appearances)" if gap == "system-setting" else None)
+            note="Harness-injected evidence exists (--display, --appearances)" if gap == "system-setting" else (glass("a native zoom pop-up menu") if name == "Large picture fit" else None))
 
 
 def build_a11y():
@@ -1034,6 +1047,51 @@ def cell(text):
     return str(text or "").replace("|", "\\|").replace("\n", " ")
 
 
+# ------------------------------------------------------------------------------------------------------- converted (native -> glass) rows
+def history_digest(fields):
+    """sha256 over the six prior cells, so an edited history is caught even when the matrix agrees with it."""
+    return "sha256:" + hashlib.sha256(json.dumps([fields[k] for k in HISTORY_KEYS], ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()
+
+
+def make_history(old):
+    """The prior evidence of a matrix row (its 14 cells), kept verbatim."""
+    prior = dict(zip(HISTORY_KEYS, (old[i] for i in HISTORY_COLUMNS)))
+    if any("|" in value or "\n" in value for value in prior.values()):
+        raise SystemExit(f"{old[0]}: a prior evidence cell holds a pipe or a newline, so it cannot be kept byte for byte in a matrix cell; fix the cell first")
+    return {"converted": CONVERTED_IN, "from": HISTORY_FROM, "evidenceClass": prior["evidenceClass"], "sourceSHA": prior["sourceSHA"], "evidencePath": prior["evidencePath"],
+            "reviewer": prior["reviewer"], "gapReason": prior["gapReason"], "observed": prior["observed"], "digest": history_digest(prior)}
+
+
+def transition_note(history):
+    """What a converted row's `observed` cell says; it carries the reason in the `gap: <reason>` form the ledger reads."""
+    return (f"Converted to glass in {history['converted']}; gap: {CONVERTED_REASON}. Prior native evidence {history['evidenceClass']} at {history['sourceSHA']} "
+            f"kept as history in inventory.json; not current glass coverage.")
+
+
+def previous_entries():
+    return {entry["id"]: entry for entry in json.loads(INVENTORY.read_text())["entries"]} if INVENTORY.exists() else {}
+
+
+def attach_history():
+    """Keeps the history every converted row already has, and creates it (once) for a glass-noted row that still carries E2E or rendered evidence."""
+    previous, kept = previous_entries(), existing_rows()
+    for entry in entries:
+        history = previous.get(entry["id"], {}).get("history")
+        old = kept.get(entry["id"])
+        if not history and (entry.get("note") or "").startswith(GLASS_NOTE) and old and old[10] in ("E2E", "rendered") and old[7] != "TBD":
+            history = make_history(old)
+        if history:
+            entry["history"] = history
+
+
+def prior_cells(cells):
+    return tuple(cells[i] for i in HISTORY_COLUMNS)
+
+
+def histories():
+    return {entry["id"]: entry["history"] for entry in entries if entry.get("history")}
+
+
 SPLIT = re.compile(r"(?<!\\)\|")
 HEAD = ["ID", "surface", "option", "entry path", "prerequisite", "action", "expected", "observed", "source SHA", "evidence (path)", "evidence class", "reviewer",
         "reachability note", "gap reason"]
@@ -1063,8 +1121,10 @@ def existing_rows():
     return rows
 
 
-def ledger_problems(rows):
-    """Rules tying the `gap reason` column to the evidence class and the observed prose; returns one message per violation."""
+def ledger_problems(rows, history=None):
+    """Rules tying the `gap reason` column to the evidence class and the observed prose; returns one message per violation.
+    `history` maps an audit ID to the prior native evidence of a row converted to glass."""
+    history = history or {}
     problems = []
     for cells in rows:
         ident, observed, klass, reason = cells[0], cells[7], cells[10], cells[13]
@@ -1078,8 +1138,24 @@ def ledger_problems(rows):
             written = observed_reason(observed)
             if written and written != reason:
                 problems.append(f"{ident}: gap reason {reason!r} contradicts the observed cell, which says `gap: {written}`")
+            if reason == CONVERTED_REASON and ident not in history:
+                problems.append(f"{ident}: gap reason `{CONVERTED_REASON}` is only for a row converted to glass, and this row has no history in inventory.json")
         elif reason:
             problems.append(f"{ident}: a {klass} row must have an empty gap reason (found {reason!r})")
+    for cells in rows:
+        ident, observed, klass, reason = cells[0], cells[7], cells[10], cells[13]
+        prior = history.get(ident)
+        if not prior:
+            continue
+        if history_digest({key: prior.get(key, "") for key in HISTORY_KEYS}) != prior.get("digest"):
+            problems.append(f"{ident}: its history in inventory.json was edited (the digest no longer matches the prior evidence)")
+        if prior.get("evidenceClass") not in ("E2E", "rendered"):
+            problems.append(f"{ident}: its history must hold prior E2E or rendered evidence (found {prior.get('evidenceClass')!r})")
+        if klass in ("E2E", "rendered") and (prior_cells(cells) == tuple(prior.get(key, "") for key in HISTORY_KEYS) or observed.startswith("Converted to glass in")):
+            problems.append(f"{ident}: still counts the prior native {prior.get('evidenceClass')} evidence at {prior.get('sourceSHA')} as current glass coverage; "
+                            f"run python3 -I tools/e2e-inventory.py to reset it to unverified (gap: {CONVERTED_REASON}), or record new evidence on the glass control")
+        if klass == "unverified" and reason == CONVERTED_REASON and not observed.startswith(transition_note(prior)):
+            problems.append(f"{ident}: gap reason `{CONVERTED_REASON}` does not agree with the row's transition note and history")
     return problems
 
 
@@ -1099,7 +1175,9 @@ def matrix():
              "(`e2e-partial: os-panel`, `gap: printer`; blank when nothing is expected to stand in the way), while `gap reason` is the audited finding for a row whose class is `unverified`: "
              "exactly one of " + ", ".join(f"`{r}`" for r in GAP_REASONS) + ", matching the `gap: <reason>` the auditor wrote in `observed`. "
              "Every other class leaves `gap reason` empty, and `--check` fails if an unverified row lacks a valid reason, another class has one, or the two disagree. "
-             "When the two columns differ, `gap reason` is the one that was observed.", "",
+             "When the two columns differ, `gap reason` is the one that was observed. "
+             "A row whose control became a glass choice and that held E2E or rendered evidence for the earlier native control keeps that evidence as `history` in `inventory.json` "
+             "(byte for byte, with a digest); its current class is `unverified` with gap reason `UI changed` and its `observed` cell says so, until the glass control is exercised.", "",
              "| " + " | ".join(HEAD) + " |", "|" + "|".join("---" for _ in HEAD) + "|"]
     kept = existing_rows()
     for e in entries:
@@ -1112,6 +1190,10 @@ def matrix():
         if old and old[7] != "TBD":   # observed: a human or a run has filled this row in, keep its evidence columns and its audited reason
             fresh[7:12] = old[7:12]
             fresh[13] = old[13]
+            prior = e.get("history")
+            if prior and prior_cells(old) == tuple(prior[key] for key in HISTORY_KEYS):   # still the native evidence: it is history now, not current coverage
+                fresh[7:12] = [transition_note(prior), "TBD", "TBD", "unverified", "TBD"]
+                fresh[13] = CONVERTED_REASON
         if e["gap"] in RETIRED_GAPS:
             fresh[10] = "retired"
             fresh[13] = ""
@@ -1134,6 +1216,7 @@ def build(args):
         unmatched = account_for_harness(surfaces, controls)
     assign_ids()
     verify_proofs()
+    attach_history()
     return surfaces, unmatched
 
 
@@ -1147,7 +1230,7 @@ def main():
                 "harnessSurfaces": sorted(surfaces.values(), key=lambda s: s["id"]) if surfaces else [], "entries": entries}
     text = json.dumps(document, indent=1, ensure_ascii=False) + "\n"
     if args.check:
-        problems = ledger_problems(matrix_rows(MATRIX.read_text()))
+        problems = ledger_problems(matrix_rows(MATRIX.read_text()), histories())
         if problems:
             raise SystemExit("coverage-matrix.md ledger is inconsistent:\n  " + "\n  ".join(problems))
         if not INVENTORY.exists() or INVENTORY.read_text() != text or MATRIX.read_text() != matrix():
@@ -1159,7 +1242,7 @@ def main():
     MATRIX.write_text(matrix())
     rows = matrix_rows(MATRIX.read_text())
     print(json.dumps({"evidenceClass": ledger_counts(rows)[0], "gapReason": ledger_counts(rows)[1]}, indent=1, ensure_ascii=False))
-    problems = ledger_problems(rows)
+    problems = ledger_problems(rows, histories())
     if problems:
         raise SystemExit("coverage-matrix.md ledger is inconsistent:\n  " + "\n  ".join(problems))
     print(json.dumps(counts(), indent=1, ensure_ascii=False))
