@@ -105,6 +105,7 @@ private enum SettingsWindowTests {
         flash()
         shortcuts()
         upload()
+        uploadActionPlates()
         uploadWithPublishing()
         shortcutPause()
         shortcutPauseFailureAndNotification()
@@ -848,6 +849,78 @@ private enum SettingsWindowTests {
         many.0.window.contentView?.layoutSubtreeIfNeeded()
         expect(many.0.content.scrollableExtent < 0.5 && captionInside(many.0.upload), "the caption under a full list is on screen without scrolling")
         uploadOnShortScreens()
+    }
+
+    // MARK: Glass choices
+
+    /// Every glass view that sits inside another glass plate: there must be none, the plate is the only glass and the controls draw fills.
+    private static func nestedGlass(in view: NSView) -> [NSView] {
+        descendants(view).filter { candidate in
+            guard candidate is NSGlassEffectView else { return false }
+            var up = candidate.superview
+            while let ancestor = up { if ancestor is NSGlassEffectView { return true }; up = ancestor.superview }
+            return false
+        }
+    }
+    private static func plates(in view: NSView) -> [GlassSurfaceView] { descendants(view).compactMap { $0 as? GlassSurfaceView } }
+    private static func resolvedAlpha(_ color: NSColor?, in view: NSView) -> CGFloat? {
+        var alpha: CGFloat?
+        view.effectiveAppearance.performAsCurrentDrawingAppearance { alpha = color?.usingColorSpace(.sRGB)?.alphaComponent }
+        return alpha
+    }
+
+    /// Add…, Edit…, Remove and Make Default are titled command buttons on ONE glass plate, drawing their own fills; the lone Add… in an
+    /// empty list has a plate of its own that goes with it.
+    private static func uploadActionPlates() {
+        let list = sampleDestinations(count: 2)
+        let (controller, _, _, _, _, _) = makeController(destinations: list)
+        controller.select(3)
+        let tab = controller.upload
+        _ = tab.view; tab.refresh()
+        controller.window.contentView?.layoutSubtreeIfNeeded()
+        let plate = tab.actionPlate!
+        let buttons = [tab.addButton!, tab.editButton!, tab.removeButton!, tab.defaultButton!]
+        expect(plate.arrangedViews.count == 4 && zip(plate.arrangedViews, buttons).allSatisfy { $0 === $1 }, "the four commands share one plate, in reading order")
+        expect(plate.identifier?.rawValue == "SettingsDestinationActions" && plate.isDescendant(of: tab.view) && !plate.isHiddenOrHasHiddenAncestor, "the plate is on the tab and on screen")
+        expect(plate.tintColor == nil && plate.accessibilityRole() == .group && plate.accessibilityLabel() == "Destination actions", "the plate carries no tint and is a named group for VoiceOver")
+        expect(buttons.allSatisfy { $0 is CommandButton && $0.isDescendant(of: plate) && $0.font?.pointSize == 20 && $0.attributedTitle.attribute(.font, at: 0, effectiveRange: nil) is NSFont },
+               "each command is a CommandButton with a 20 pt label")
+        expect(buttons.allSatisfy { $0.frame.height == GlassChrome.Metrics.commandHeight && $0.frame.width >= SettingsActionButton.width(for: $0.title) - 0.5 }, "each is a control tall and wide enough for its label")
+        expect(nestedGlass(in: tab.view).isEmpty && plates(in: tab.view).filter { !$0.isHiddenOrHasHiddenAncestor }.count == 1, "one visible plate and no glass inside glass")
+        // The enabled and disabled logic is unchanged, and a disabled command dims through the state alpha.
+        expect(tab.editButton.isEnabled && tab.removeButton.isEnabled && !tab.defaultButton.isEnabled && tab.addButton.isEnabled, "Make Default is off for the default destination")
+        expect(tab.defaultButton.alphaValue == StateStyles.disabledAlpha && tab.defaultButton.plate.isDisabled && tab.defaultButton.plate.style.fill == nil, "a disabled command dims and draws no fill")
+        expect(tab.editButton.alphaValue == 1 && !tab.editButton.plate.isDisabled, "an enabled one is at full strength")
+        tab.editButton.setHovered(true)
+        expect(abs((resolvedAlpha(tab.editButton.plate.style.fill, in: tab.editButton) ?? 0) - 0.08) < 0.001 && tab.editButton.layer?.backgroundColor != nil, "hover fills the command, not the plate")
+        tab.editButton.setHovered(false)
+        expect(tab.editButton.plate.style.fill == nil, "the fill clears when the pointer leaves")
+        tab.rows[0].onClick?(1)
+        expect(tab.defaultButton.isEnabled && tab.defaultButton.alphaValue == 1, "choosing another row turns Make Default on at full strength")
+        // The plates follow the display options while the window is up.
+        defer { DisplayOptions.override = nil }
+        DisplayOptions.override = DisplayOptions(reduceTransparency: true, increaseContrast: true)
+        NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
+        expect(plate.transparencyPlate != nil && plate.showsContrastBorder && buttons.allSatisfy { $0.accessibility.increaseContrast }, "Reduce Transparency and Increase Contrast reach the plate and its commands live")
+        DisplayOptions.override = nil
+        NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
+        expect(plate.transparencyPlate == nil && !plate.showsContrastBorder, "and they go again when the options do")
+
+        // An empty list: the lone Add… sits on its own plate inside the list, and the four-command plate steps aside.
+        let empty = makeController()
+        empty.0.select(3)
+        let blank = empty.0.upload
+        _ = blank.view; blank.refresh()
+        empty.0.window.contentView?.layoutSubtreeIfNeeded()
+        expect(!blank.emptyAddPlate.isHiddenOrHasHiddenAncestor && blank.emptyAddPlate.arrangedViews.count == 1 && blank.emptyAddPlate.arrangedViews[0] === blank.emptyAddButton
+               && blank.emptyAddPlate.isDescendant(of: blank.listScroll), "the empty list's Add… sits on its own plate inside the list")
+        expect(blank.actionPlate.isHiddenOrHasHiddenAncestor && nestedGlass(in: blank.view).isEmpty, "the four-command plate is out of the layout while the list is empty, and nothing nests")
+        expect(!blank.emptyAddButton.isHidden && blank.emptyAddButton.title == "Add…" && blank.emptyAddButton.identifier?.rawValue == "addFirstDestination", "the in-list Add… keeps its title and identifier")
+        // Once a destination exists the lone plate goes with its button.
+        let filled = makeController(destinations: sampleDestinations(count: 1))
+        filled.0.select(3)
+        _ = filled.0.upload.view; filled.0.upload.refresh()
+        expect(filled.0.upload.emptyAddButton.isHidden && filled.0.upload.emptyAddPlate.isHidden && !filled.0.upload.actionPlate.isHiddenOrHasHiddenAncestor, "with a destination the lone plate is hidden and the four-command plate shows")
     }
 
     private static func captionInside(_ tab: UploadSettingsTab) -> Bool {

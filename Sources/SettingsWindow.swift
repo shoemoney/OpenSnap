@@ -79,12 +79,19 @@ enum SettingsLayout {
         return button
     }
 
-    static func pushButton(_ title: String, identifier: String, target: AnyObject, action: Selector) -> NSButton {
-        let button = NSButton(title: title, target: target, action: action)
-        button.bezelStyle = .rounded
-        configure(button, identifier: identifier)
-        button.heightAnchor.constraint(greaterThanOrEqualToConstant: DesignTokens.Size.control).isActive = true
+    /// A titled command for an action plate: the chrome's command button, so it draws its own rest, hover, pressed, focus and disabled fills.
+    static func actionButton(_ title: String, identifier: String, target: AnyObject, action: Selector) -> SettingsActionButton {
+        let button = SettingsActionButton(title: title, target: target, action: action)
+        button.configure()
+        button.identifier = NSUserInterfaceItemIdentifier(identifier)
         return button
+    }
+
+    /// One glass plate around a group of commands. It is an accessibility group with a name, so VoiceOver announces what the buttons belong to.
+    static func actionPlate(_ buttons: [SettingsActionButton], identifier: String, label: String) -> GlassSurfaceView {
+        let plate = GlassChrome.plate(buttons, identifier: identifier, accessibility: ChromeAccessibility.live)
+        plate.setAccessibilityElement(true); plate.setAccessibilityLabel(label); plate.setAccessibilityRole(.group)
+        return plate
     }
 
     /// A checkbox or radio keeps its own intrinsic height, so a row's first baseline is the button's real one; a push button is at least a control tall.
@@ -153,6 +160,23 @@ class SettingsTabViewController: NSViewController {
 
     /// Rows of [label, control]; a row with no label uses `NSGridCell.emptyContentView`. Subclasses override.
     func makeRows() -> [[NSView]] { [] }
+
+    /// The glass plates of this tab and the controls drawn on them, kept in step with the display options (Reduce Transparency, Increase
+    /// Contrast, Reduce Motion, Differentiate Without Color) for as long as the tab lives.
+    private(set) var plates: [GlassSurfaceView] = []
+    private var plateControls: [ChromeFillable] = []
+    private var displayObservation: DisplayOptions.Observation?
+
+    /// Registers a plate and the controls on it; they take the live display options now and whenever the user changes them.
+    func adopt(_ plate: GlassSurfaceView, controls: [ChromeFillable]) {
+        plates.append(plate); plateControls += controls
+        applyDisplayOptions()
+    }
+    private func applyDisplayOptions() {
+        let options = ChromeAccessibility.live
+        for plate in plates { plate.accessibility = options }
+        for control in plateControls { control.accessibility = options }
+    }
     /// Re-reads whatever the tab shows from its source of truth. Delivers nothing.
     func refresh() {}
 
@@ -163,6 +187,7 @@ class SettingsTabViewController: NSViewController {
         let width = root.widthAnchor.constraint(equalToConstant: SettingsLayout.contentWidth)
         width.priority = .defaultHigh; width.isActive = true
         grid = NSGridView(views: makeRows())
+        displayObservation = DisplayOptions.observe { [weak self] _ in self?.applyDisplayOptions() }
         grid.translatesAutoresizingMaskIntoConstraints = false
         grid.rowSpacing = SettingsLayout.rowSpacing; grid.columnSpacing = SettingsLayout.columnSpacing
         grid.column(at: 0).xPlacement = .trailing; grid.column(at: 0).width = labelWidth
@@ -485,6 +510,40 @@ struct SettingsDestinationActions {
     var removalPrompt: (PublishingDestination) -> (title: String, detail: String) = { ("Remove “\($0.name)”?", "This cannot be undone.") }
 }
 
+/// A titled command on the Upload tab: the chrome's `CommandButton` (borderless, a 20 pt label, its own rest, hover, pressed, focus and
+/// disabled fills drawn by `StatePlate`) sized to its label, so it reads as a button on a glass plate. Nothing here is a second glass surface.
+@MainActor
+final class SettingsActionButton: CommandButton {
+    static let padding = DesignTokens.Space.s4
+
+    /// The width a button takes for this label: the label and the padding either side.
+    static func width(for title: String) -> CGFloat {
+        ceil((title as NSString).size(withAttributes: [.font: DesignTokens.Typography.font(.body)]).width) + 2 * padding
+    }
+
+    /// Called once the title initializer has finished: it sets the system's 13 pt font after `init(frame:)`, which the chrome floors to 18 pt.
+    func configure() {
+        GlassChrome.useExtraLarge(self)
+        DesignTokens.Typography.apply(.body, to: self)
+        accessibility = ChromeAccessibility.live
+        setContentCompressionResistancePriority(.required, for: .horizontal)
+        // The label is drawn from an attributed string: the button's own title field would keep the system's 13 pt and take no state colour.
+        plate.onApply = { [weak self] _ in self?.styleTitle() }
+        styleTitle()
+    }
+
+    private func styleTitle() {
+        let text = visibleTitle
+        guard !text.isEmpty else { return }
+        attributedTitle = NSAttributedString(string: text, attributes: [.font: DesignTokens.Typography.font(.body), .foregroundColor: plate.stateStyle.content])
+    }
+
+    override var title: String {
+        didSet { invalidateIntrinsicContentSize(); styleTitle() }
+    }
+    override var intrinsicContentSize: NSSize { NSSize(width: Self.width(for: visibleTitle), height: GlassChrome.Metrics.commandHeight) }
+}
+
 @MainActor
 final class UploadSettingsTab: SettingsTabViewController {
     /// This tab has no label column: "Destinations" is a heading over a list that takes the whole content width, with its four buttons under
@@ -496,10 +555,11 @@ final class UploadSettingsTab: SettingsTabViewController {
     private let listSurface = SettingsListSurface()
     private var listStack: NSStackView { listSurface.stack }
     private let emptyLabel = NSTextField(wrappingLabelWithString: "No destinations yet")
-    private(set) var addButton: NSButton!, editButton: NSButton!, removeButton: NSButton!, defaultButton: NSButton!
-    /// The Add… button inside an empty list; with destinations the row of four buttons below the list takes over.
-    private(set) var emptyAddButton: NSButton!
-    private var buttonRow: NSStackView!
+    private(set) var addButton: SettingsActionButton!, editButton: SettingsActionButton!, removeButton: SettingsActionButton!, defaultButton: SettingsActionButton!
+    /// The Add… button inside an empty list; with destinations the plate of four buttons below the list takes over.
+    private(set) var emptyAddButton: SettingsActionButton!
+    /// The glass plates the buttons sit on: one for the four commands, one for the lone Add… in the empty list.
+    private(set) var actionPlate: GlassSurfaceView!, emptyAddPlate: GlassSurfaceView!
     private(set) var rows: [SettingsDestinationRow] = []
     private var listed: [PublishingDestination] = []
     private var defaultID: String?
@@ -530,13 +590,14 @@ final class UploadSettingsTab: SettingsTabViewController {
         emptyLabel.preferredMaxLayoutWidth = Self.listWidth - 2 * DesignTokens.Space.s4
         listSurface.translatesAutoresizingMaskIntoConstraints = false
         listSurface.widthAnchor.constraint(equalToConstant: Self.listWidth).isActive = true
-        addButton = SettingsLayout.pushButton("Add…", identifier: "addDestination", target: self, action: #selector(addTapped))
-        editButton = SettingsLayout.pushButton("Edit…", identifier: "editDestination", target: self, action: #selector(editTapped))
-        removeButton = SettingsLayout.pushButton("Remove", identifier: "removeDestination", target: self, action: #selector(removeTapped))
-        defaultButton = SettingsLayout.pushButton("Make Default", identifier: "makeDefaultDestination", target: self, action: #selector(makeDefaultTapped))
-        emptyAddButton = SettingsLayout.pushButton("Add…", identifier: "addFirstDestination", target: self, action: #selector(addTapped))
-        buttonRow = NSStackView(views: [addButton, editButton, removeButton, defaultButton])
-        buttonRow.orientation = .horizontal; buttonRow.spacing = DesignTokens.Space.s2
+        addButton = SettingsLayout.actionButton("Add…", identifier: "addDestination", target: self, action: #selector(addTapped))
+        editButton = SettingsLayout.actionButton("Edit…", identifier: "editDestination", target: self, action: #selector(editTapped))
+        removeButton = SettingsLayout.actionButton("Remove", identifier: "removeDestination", target: self, action: #selector(removeTapped))
+        defaultButton = SettingsLayout.actionButton("Make Default", identifier: "makeDefaultDestination", target: self, action: #selector(makeDefaultTapped))
+        emptyAddButton = SettingsLayout.actionButton("Add…", identifier: "addFirstDestination", target: self, action: #selector(addTapped))
+        actionPlate = SettingsLayout.actionPlate([addButton, editButton, removeButton, defaultButton], identifier: "SettingsDestinationActions", label: "Destination actions")
+        emptyAddPlate = SettingsLayout.actionPlate([emptyAddButton], identifier: "SettingsFirstDestinationAction", label: "First destination")
+        adopt(actionPlate, controls: [addButton, editButton, removeButton, defaultButton]); adopt(emptyAddPlate, controls: [emptyAddButton])
         hintLabel = SettingsLayout.caption(Self.hint, width: Self.listWidth)
         defer { refresh() }
         let heading = NSTextField(labelWithString: "Destinations")
@@ -544,7 +605,7 @@ final class UploadSettingsTab: SettingsTabViewController {
         heading.setAccessibilityRole(.staticText)
         return [[NSGridCell.emptyContentView, heading],
                 [NSGridCell.emptyContentView, listSurface],
-                [NSGridCell.emptyContentView, buttonRow],
+                [NSGridCell.emptyContentView, actionPlate],
                 [NSGridCell.emptyContentView, hintLabel]]
     }
 
@@ -605,9 +666,9 @@ final class UploadSettingsTab: SettingsTabViewController {
         }
         let empty = list.destinations.isEmpty
         emptyLabel.isHidden = !empty
-        emptyAddButton.isHidden = !empty
+        emptyAddButton.isHidden = !empty; emptyAddPlate.isHidden = !empty
         if empty {
-            let column = NSStackView(views: [emptyLabel, emptyAddButton])
+            let column = NSStackView(views: [emptyLabel, emptyAddPlate])
             column.orientation = .vertical; column.alignment = .leading; column.spacing = DesignTokens.Space.s3
             let wrapper = NSView(); wrapper.translatesAutoresizingMaskIntoConstraints = false
             column.translatesAutoresizingMaskIntoConstraints = false; wrapper.addSubview(column)
