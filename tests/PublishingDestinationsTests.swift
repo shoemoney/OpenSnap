@@ -39,6 +39,7 @@ enum PublishingDestinationsTests {
         try MainActor.assumeIsolated { try publicReadToggle() }
         try MainActor.assumeIsolated { try glassFaceEvents() }
         try MainActor.assumeIsolated { try glassFaceWidths() }
+        try MainActor.assumeIsolated { try sheetLaidOutWidth() }
         try MainActor.assumeIsolated { try resultBandAndSheetWidth() }
         try connectionTests()
         print("Destination and S3 self-checks passed: \(checks). No uploads were executed.")
@@ -1041,6 +1042,26 @@ enum PublishingDestinationsTests {
         try expect(view.protocolPopup.window === window && view.sourcePopup.window === window, "both pop-ups are in the sheet's window")
     }
 
+    /// Every glass pop-up and glass button visible on the sheet fits whole: no label is cut, nothing wants more room than it has, and
+    /// nothing reaches past the form's right margin (`sheetWidth` is the width the sheet really laid out at).
+    @MainActor static func expectChoicesFit(_ view: PublishingDestinationsView, sheetWidth: CGFloat, tag: String) throws {
+        let tree = descendants(view).filter { !$0.isHiddenOrHasHiddenAncestor }
+        let right = sheetWidth - DesignTokens.Space.s5 + 0.5
+        for popup in tree.compactMap({ $0 as? GlassPopUpButton }) {
+            let natural = ceil((popup.faceTitle as NSString).size(withAttributes: [.font: DesignTokens.Typography.font(.body)]).width)
+            let needed = natural + 2 * GlassChoiceButton.padding + GlassChoiceButton.gap + GlassChoiceButton.glyphSide
+            try expect(needed <= popup.frame.width + 0.5, "\(tag): the “\(popup.faceTitle)” face needs \(needed) pt but is \(popup.frame.width) pt")
+            try expect(popup.intrinsicContentSize.width <= popup.frame.width + 0.5, "\(tag): the \(popup.accessibilityLabel() ?? "") pop-up wants \(popup.intrinsicContentSize.width) pt, has \(popup.frame.width)")
+            try expect(popup.convert(popup.bounds, to: view).maxX <= right, "\(tag): the \(popup.accessibilityLabel() ?? "") pop-up overhangs the form")
+        }
+        for button in tree.compactMap({ $0 as? GlassChoiceButton }) {
+            let natural = ceil((button.title as NSString).size(withAttributes: [.font: DesignTokens.Typography.font(.bodyStrong)]).width)
+            try expect(button.titleLabel.frame.width + 0.5 >= natural, "\(tag): “\(button.title)” is cut: \(natural) pt of text in a \(button.titleLabel.frame.width) pt label")
+            try expect(button.fittingSize.width <= button.frame.width + 0.5, "\(tag): “\(button.title)” wants \(button.fittingSize.width) pt, has \(button.frame.width)")
+            try expect(button.convert(button.bounds, to: view).maxX <= right + DesignTokens.Space.s1, "\(tag): “\(button.title)” overhangs the sheet")
+        }
+    }
+
     /// Every glass choice in the sheet reads whole at the narrowest supported sheet (560), at Settings' 640 and at the full 900-wide host:
     /// for every protocol and key source, no label is cut, nothing needs more room than it has, and the full titles stay exposed.
     @MainActor static func glassFaceWidths() throws {
@@ -1055,21 +1076,8 @@ enum PublishingDestinationsTests {
                     view.protocolPopup.selectItem(withTitle: transport.title); view.sourcePopup.selectItem(at: source); view.formChanged()
                     view.layoutSubtreeIfNeeded()
                     let tag = "\(Int(sheetWidth)) pt / \(transport.title) / \(sourceFull[source])"
-                    let tree = descendants(view).filter { !$0.isHiddenOrHasHiddenAncestor }
-                    let right = view.bounds.width - DesignTokens.Space.s5 + 0.5
-                    for popup in tree.compactMap({ $0 as? GlassPopUpButton }) {
-                        let natural = ceil((popup.faceTitle as NSString).size(withAttributes: [.font: DesignTokens.Typography.font(.body)]).width)
-                        let needed = natural + 2 * GlassChoiceButton.padding + GlassChoiceButton.gap + GlassChoiceButton.glyphSide
-                        try expect(needed <= popup.frame.width + 0.5, "\(tag): the “\(popup.faceTitle)” face needs \(needed) pt but is \(popup.frame.width) pt")
-                        try expect(popup.intrinsicContentSize.width <= popup.frame.width + 0.5, "\(tag): the \(popup.accessibilityLabel() ?? "") pop-up wants \(popup.intrinsicContentSize.width) pt, has \(popup.frame.width)")
-                        try expect(popup.convert(popup.bounds, to: view).maxX <= right, "\(tag): the \(popup.accessibilityLabel() ?? "") pop-up overhangs the form")
-                    }
-                    for button in tree.compactMap({ $0 as? GlassChoiceButton }) {
-                        let natural = ceil((button.title as NSString).size(withAttributes: [.font: DesignTokens.Typography.font(.bodyStrong)]).width)
-                        try expect(button.titleLabel.frame.width + 0.5 >= natural, "\(tag): “\(button.title)” is cut: \(natural) pt of text in a \(button.titleLabel.frame.width) pt label")
-                        try expect(button.fittingSize.width <= button.frame.width + 0.5, "\(tag): “\(button.title)” wants \(button.fittingSize.width) pt, has \(button.frame.width)")
-                        try expect(button.convert(button.bounds, to: view).maxX <= right + DesignTokens.Space.s1, "\(tag): “\(button.title)” overhangs the sheet")
-                    }
+                    // The width the sheet really laid out at (a scrolling form adds its scroller column; see sheetLaidOutWidth).
+                    try expectChoicesFit(view, sheetWidth: view.frame.width, tag: tag)
                 }
             }
             // The full titles are still what is exposed: items, accessibility value, panel rows and tooltip; only the face is short.
@@ -1098,6 +1106,48 @@ enum PublishingDestinationsTests {
             draft = try view.makeDraft()
             try expect(draft.destination.settings.username == "" && draft.password == "" && draft.destination.settings.s3?.credentialsProfile == "default", "the AWS profile face is the profile source")
         }
+    }
+
+    /// The sheet's laid-out width, read from the real panel the coordinator builds (not from a frame the test sets).
+    /// - With room for its whole form the sheet lays out at exactly the width it was asked for, down to `sheetMinWidth`.
+    /// - When the form is taller than the screen allows it scrolls, and a legacy scroller (17 pt, the style a mouse gets) takes its width
+    ///   from the fixed-width rows, so the sheet lays out one scroller wider than asked. That predates the glass work: the baseline
+    ///   (57ec799) measured the same 577 and 657 for the same forms. The rows stay `contentWidth` wide either way, so every
+    ///   choice has the same room; only the scroller's own column is added.
+    @MainActor static func sheetLaidOutWidth() throws {
+        let publisher = try coordinator(destinations: fixtureDestinations())
+        let tall = NSRect(x: 0, y: 0, width: 1280, height: 1400), short = NSRect(x: 0, y: 0, width: 1280, height: 800)
+        var scrolled = 0, unscrolled = 0, atMinimum = 0
+        for host: CGFloat in [PublishingDestinationsView.sheetMinWidth, 640, PublishingDestinationsView.sheetWidth] {
+            let asked = PublishingDestinationsView.sheetWidth(forHostWidth: host)
+            try expect(host != PublishingDestinationsView.sheetMinWidth || asked == PublishingDestinationsView.sheetMinWidth, "a host at the minimum asks for exactly the minimum")
+            for (screen, name) in [(tall, "tall screen"), (short, "800-high screen")] {
+                let (panel, view) = publisher.buildEditor(editing: nil, visibleFrame: screen, hostWidth: host)
+                defer { panel.orderOut(nil) }
+                for transport in PublishingProtocol.allCases {
+                    for source in 0...1 {
+                        view.protocolPopup.selectItem(withTitle: transport.title); view.sourcePopup.selectItem(at: source); view.formChanged()
+                        panel.contentView?.layoutSubtreeIfNeeded()
+                        let scroll = view.scrollView, document = try unwrap(scroll.documentView)
+                        let scrolls = document.frame.height > scroll.contentView.bounds.height + 0.5
+                        let thickness = scrolls && scroll.scrollerStyle == .legacy ? NSScroller.scrollerWidth(for: .regular, scrollerStyle: .legacy) : 0
+                        let tag = "\(Int(asked)) pt host / \(transport.title) / source \(source) / \(name)"
+                        try expect(view.fittingSize.width == asked + thickness && view.frame.width == asked + thickness,
+                                   "\(tag): laid out \(view.frame.width) pt (wants \(view.fittingSize.width)), expected \(asked) + a \(thickness) pt scroller")
+                        try expect(panel.contentRect(forFrameRect: panel.frame).width == asked, "\(tag): the panel is \(asked) wide")
+                        // It scrolls exactly when its rows need more than the sheet's height (760 at most, less on a short screen).
+                        try expect(scrolls == (view.formPageHeight > view.maxSheetHeight + 0.5), "\(tag): scrolls=\(scrolls) with a \(view.formPageHeight) pt form in \(view.maxSheetHeight) pt")
+                        if scrolls { scrolled += 1 } else {
+                            unscrolled += 1
+                            try expect(view.frame.width == asked, "\(tag): a form that fits lays out at exactly the width asked, \(asked), got \(view.frame.width)")
+                            if host == PublishingDestinationsView.sheetMinWidth { atMinimum += 1 }
+                        }
+                        try expectChoicesFit(view, sheetWidth: view.frame.width, tag: tag)
+                    }
+                }
+            }
+        }
+        try expect(unscrolled > 0 && scrolled > 0 && atMinimum >= 6, "both kinds of sheet were measured (\(unscrolled) unscrolled, \(scrolled) scrolled, \(atMinimum) exactly at the minimum)")
     }
 
     @MainActor static func publicReadToggle() throws {
