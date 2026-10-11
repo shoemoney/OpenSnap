@@ -17,7 +17,8 @@ enum FAIcon: String, CaseIterable, Sendable {
          xmark, font, arrowRotateLeft = "arrow-rotate-left", broom,
          upload = "cloud-arrow-up", dragHand = "hand", check, xmarkCircle = "circle-xmark",
          openExternal = "up-right-from-square", copy, link, globe, trash, linkSlash = "link-slash", circleCheck = "circle-check", gear,
-         arrowRotateRight = "arrow-rotate-right", circleInfo = "circle-info", chevronDown = "chevron-down", folderMinus = "folder-minus"
+         arrowRotateRight = "arrow-rotate-right", circleInfo = "circle-info", chevronDown = "chevron-down", folderMinus = "folder-minus",
+         chevronRight = "chevron-right", chevronLeft = "chevron-left"
 
     var codepoint: UInt32 {
         switch self {
@@ -58,6 +59,8 @@ enum FAIcon: String, CaseIterable, Sendable {
         case .circleInfo: return 0xF05A
         case .chevronDown: return 0xF078
         case .folderMinus: return 0xF65D
+        case .chevronRight: return 0xF054
+        case .chevronLeft: return 0xF053
         }
     }
 
@@ -100,6 +103,8 @@ enum FAIcon: String, CaseIterable, Sendable {
         case .circleInfo: return "info.circle"
         case .chevronDown: return "chevron.down"
         case .folderMinus: return "folder.badge.minus"
+        case .chevronRight: return "chevron.right"
+        case .chevronLeft: return "chevron.left"
         }
     }
 }
