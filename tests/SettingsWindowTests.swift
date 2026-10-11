@@ -31,6 +31,27 @@ private final class FakeHotkeyBackend: GlobalHotkeyBackend {
     func shutdown() throws { bindings = [:] }
 }
 
+/// A shortcut manager that only records: whether the editor is up (`setEditing`), and a rule that refuses a key with no Command or Control, so a
+/// rejected draft can be made. Re-registering on `setEditing(false)` clears a stale error, as the real manager does.
+@MainActor
+private final class RecordingHotkeys: GlobalHotkeyEditing {
+    var settings = GlobalHotkeySettings()
+    var lastError: Error?
+    var editingLog: [Bool] = []
+    var editing: Bool { editingLog.last ?? false }
+    func apply(_ candidate: GlobalHotkeySettings) throws {
+        for action in GlobalHotkeyAction.allCases {
+            let binding = candidate[action]
+            if binding.keyCode != nil, binding.modifiers.isDisjoint(with: [.command, .control]) {
+                let error = NSError(domain: "RecordingHotkeys", code: 1, userInfo: [NSLocalizedDescriptionKey: "A shortcut needs Command or Control."])
+                lastError = error; throw error
+            }
+        }
+        settings = candidate; lastError = nil
+    }
+    func setEditing(_ value: Bool) { editingLog.append(value); if !value { lastError = nil } }
+}
+
 @main
 @MainActor
 private enum SettingsWindowTests {
@@ -117,6 +138,7 @@ private enum SettingsWindowTests {
         modifierGlyphs()
         modifierLabelsFit()
         realKeyFlags()
+        keyPanelKeepsEditing()
         upload()
         uploadActionPlates()
         uploadWithPublishing()
@@ -1369,6 +1391,73 @@ private enum SettingsWindowTests {
             toggles[index - 1].keyDown(with: keyEvent("\u{F703}", code: 124, flags: realArrowFlags, window: window))
             expect(window.firstResponder === toggles[index], "a real Right arrow reaches \(toggles[index].accessibilityLabel() ?? "") (Option, Control and Shift are reachable from the keyboard)")
         }
+    }
+
+    // MARK: A key pop-up's panel does not end the editing
+
+    /// Opening a key pop-up's glass panel makes Settings resign key to its own child panel. That is still the window in use: the shortcuts stay
+    /// paused, the note and a rejected draft's error stay, and nothing is re-read when the key comes back. A different window taking the key
+    /// does end it.
+    private static func keyPanelKeepsEditing() {
+        let name = "OpenSnap.SettingsTests.panel." + UUID().uuidString
+        let defaults = TestDefaults(name: name)
+        defer { TestDefaults.dispose(defaults, name: name) }
+        let hotkeys = RecordingHotkeys()
+        let controller = SettingsWindowController(state: { initialState }, hotkeys: hotkeys, defaults: defaults, destinations: { PublishingDestinationList() })
+        controller.visibleFrame = { fakeVisible }
+        controller.applicationActivity = { true }
+        controller.show(tab: SettingsWindowController.captureTabIndex)
+        controller.activityChanged(key: true, appActive: true)
+        let window = controller.window, form = controller.capture.hotkeyForm!
+        window.contentView?.layoutSubtreeIfNeeded()
+        expect(hotkeys.editing && form.shortcutsPaused, "Settings key on Capture pauses the shortcuts")
+        let k = GlobalHotkeyKeys.choices.firstIndex { $0.name == "K" }! + 1
+        let popup = form.keyPopup(for: .screen)
+        popup.selectItem(at: k); _ = popup.target?.perform(popup.action, with: popup)
+        let rejected = form.statusField.stringValue
+        expect(rejected.hasPrefix("Error: ") && hotkeys.lastError != nil && popup.indexOfSelectedItem == k, "a key with no modifier is rejected and its draft stays on screen: '\(rejected)'")
+        defaults.set(false, forKey: OriginalCaptureFlashTiming.showFlashKey)   // changed behind the window's back: a re-read would show it
+        expect(controller.capture.flashCheckbox.state == .on, "(setup) the flash box still shows on")
+
+        // The panel opens as a child of Settings and takes the key.
+        let host = popup.choicePanel.host
+        host.visibleFrameOverride = NSRect(x: 0, y: 0, width: 1440, height: 900)
+        host.accessibility = .none
+        host.presenter = { panel, parent in parent?.addChildWindow(panel, ordered: .above) }
+        let logged = hotkeys.editingLog
+        popup.performClick(nil)
+        expect(host.isShown && window.childWindows?.contains { $0 is GlassChoiceWindow } == true, "the key panel is a child of the Settings window")
+        controller.windowDidResignKey(Notification(name: NSWindow.didResignKeyNotification, object: window))
+        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: host.window)
+        expect(!hotkeys.editingLog.dropFirst(logged.count).contains(false) && hotkeys.editing, "Settings resigning key to its own panel does not end the editing: nothing was re-registered (\(hotkeys.editingLog))")
+        expect(form.shortcutsPaused && form.statusField.stringValue == rejected && hotkeys.lastError != nil, "the note, the pause and the error are as they were: '\(form.statusField.stringValue)'")
+
+        // The panel closes and the key comes back: nothing is re-read, and the rejected draft and its error remain.
+        host.close()
+        controller.windowDidBecomeKey(Notification(name: NSWindow.didBecomeKeyNotification, object: window))
+        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: window)
+        expect(!hotkeys.editingLog.dropFirst(logged.count).contains(false) && hotkeys.editing && form.shortcutsPaused, "the shortcuts never went live during the whole choice (\(hotkeys.editingLog))")
+        expect(form.statusField.stringValue == rejected && popup.indexOfSelectedItem == k && form.draft().screen.keyCode == GlobalHotkeyKeys.choices[k - 1].code,
+               "the rejected draft and its error remain after the panel closes: '\(form.statusField.stringValue)'")
+        expect(controller.capture.flashCheckbox.state == .on, "and the key coming back from the panel re-read nothing")
+        // A real key change (not from the panel) does re-read, as before.
+        controller.windowDidResignKey(Notification(name: NSWindow.didResignKeyNotification, object: window))
+        controller.windowDidBecomeKey(Notification(name: NSWindow.didBecomeKeyNotification, object: window))
+        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: window)
+        expect(controller.capture.flashCheckbox.state == .off, "an ordinary key change still refreshes the window")
+
+        // Another window taking the key while the panel is open does end it.
+        controller.activityChanged(key: true, appActive: true)
+        popup.performClick(nil)
+        expect(host.isShown, "(setup) the panel is open again")
+        controller.windowDidResignKey(Notification(name: NSWindow.didResignKeyNotification, object: window))
+        let elsewhere = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 200, height: 100), styleMask: [.titled], backing: .buffered, defer: true)
+        elsewhere.isReleasedWhenClosed = false
+        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: elsewhere)
+        expect(!hotkeys.editing, "another window becoming key, with the panel open, puts the shortcuts back")
+        host.close()
+        controller.windowHidden()
+        window.orderOut(nil)
     }
 
     // MARK: Upload
