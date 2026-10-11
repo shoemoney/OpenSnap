@@ -527,7 +527,7 @@ extension AuditRun {
         let opener = app.paletteButton
         let refs = ["App.swift|func presentDrawingColors", "BezelDrawingControls.swift|final class ColorPaletteContent", "BezelDrawingControls.swift|final class BezelColorButton"]
         let script = GlassPanelScript(id: "S53", surface: "Colour panel", identifier: "DrawingColors", base: "color", opener: opener, refs: refs,
-                                      open: { app.presentDrawingColors(hover: false) }, nativeMenu: nil)
+                                      open: { [self] in app.presentDrawingColors(hover: false) }, nativeMenu: nil)
         app.applyChosenColor(OriginalDrawingControls.presets[0].color, modifiers: [])
         guard let opened = openGlassPanel(script) else { return }
         glassPanelStates(script, opened, restState: "Colour panel open with the first preset chosen")
