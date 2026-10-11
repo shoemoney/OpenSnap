@@ -29,23 +29,11 @@ private final class ActionTarget: NSObject {
     @objc func formatChanged(_ sender: Any?) { hits.append("format:" + String((sender as? SegmentedToggle)?.selectedSegment ?? -1)) }
 }
 
-/// A popover that never reaches the screen but still reports its edge, its anchor and its close notifications.
+/// What a panel needs to open on a never-ordered window: a presenter that shows nothing, and a screen big enough to sit below its anchor.
 @MainActor
-private final class TestPopover: NSPopover {
-    var open = false
-    private(set) var edge: NSRectEdge?
-    private(set) weak var anchor: NSView?
-    override var isShown: Bool { open }
-    override func show(relativeTo positioningRect: NSRect, of positioningView: NSView, preferredEdge: NSRectEdge) {
-        open = true; edge = preferredEdge; anchor = positioningView
-    }
-    override func performClose(_ sender: Any?) { close() }
-    override func close() {
-        guard open else { return }
-        delegate?.popoverWillClose?(Notification(name: NSPopover.willCloseNotification, object: self))
-        open = false
-        delegate?.popoverDidClose?(Notification(name: NSPopover.didCloseNotification, object: self))
-    }
+private func offscreenPanel(_ host: GlassPanelHost) {
+    host.presenter = { _, _ in }
+    host.visibleFrameOverride = NSRect(x: -4000, y: -4000, width: 8000, height: 8000)
 }
 
 @MainActor
@@ -421,23 +409,8 @@ private enum GlassChromeTests {
         var begins = 0, ends = 0
         slider.onBegin = { begins += 1; return true }
         slider.onEnd = { ends += 1 }
-        slider.popoverProvider = { TestPopover() }
+        slider.panelSetup = offscreenPanel
         func groups() -> String { "begin \(begins) end \(ends)" }
-
-        // Audit fix 2: the popover's content is a solid plate and its title and readout read at 4.5:1 in all four appearances.
-        do {
-            let sizeContent = SizePopoverContent(slider: slider)
-            // Auto Layout needs a window to place the labels; it is never ordered on screen.
-            let host = NSWindow(contentRect: NSRect(origin: .zero, size: SizePopoverContent.size), styleMask: [.titled], backing: .buffered, defer: true)
-            host.isReleasedWhenClosed = false; host.contentView = sizeContent
-            sizeContent.sync(); sizeContent.layoutSubtreeIfNeeded()
-            for (name, appearance) in ContrastProbe.appearances {
-                let reading = ContrastProbe.measure(sizeContent, appearance: appearance, plateAt: NSPoint(x: 3, y: 3),
-                                                    textFrames: [sizeContent.titleLabel.frame, sizeContent.readout.frame])
-                expect(reading.plateOpaque, "The Size popover draws an opaque plate (\(name))")
-                expect(reading.textRatios[0] >= 4.5 && reading.textRatios[1] >= 4.5, "The Size title and readout read at 4.5:1 (\(name): \(reading.textRatios))")
-            }
-        }
 
         // Semantics: a real slider to assistive technology, with the five original steps.
         expect(OriginalDrawingControls.sizeSteps == [1.5, 4.125, 6.75, 9.375, 12], "There are five steps")
@@ -498,38 +471,34 @@ private enum GlassChromeTests {
         expect(slider.doubleValue == 1.5, "Value changes behave")
         slider.doubleValue = 6.75
 
-        // The popover: opens below the pill, solid, with the readout, the track and five presets.
+        // The panel: opens below the pill as glass, with the readout, the track and five presets, and leaves the keyboard on the pill.
         begins = 0; ends = 0
-        expect(!slider.isPopoverShown, "The popover starts closed")
+        expect(!slider.isPopoverShown, "The panel starts closed")
         slider.keyDown(with: keyEvent(49, in: window))
-        guard slider.isPopoverShown, let popover = slider.popover as? TestPopover, let panel = slider.popoverContent else { expect(false, "Space opens the popover"); return }
-        expect(popover.edge == .minY && popover.anchor === slider && popover.behavior == .transient, "It opens below the pill and closes on an outside click")
-        expect(panel.frame.size == NSSize(width: 320, height: 156), "The popover is 320 x 156")
-        let (panelWindow, panelContent) = Self.window(NSSize(width: 320, height: 156))
-        panelContent.addSubview(panel)
-        panelContent.layoutSubtreeIfNeeded()
-        var glass = 0
-        func countGlass(_ view: NSView) { if view is NSGlassEffectView || view is NSGlassEffectContainerView { glass += 1 }; view.subviews.forEach(countGlass) }
-        countGlass(panel)
-        expect(glass == 0 && panel.wantsUpdateLayer, "The popover content is solid, never glass")
-        panel.appearance = NSAppearance(named: .aqua)
-        panel.updateLayer()
-        expect((panel.layer?.backgroundColor?.alpha ?? 0) == 1, "The popover surface is opaque")
-        let lightBackground = panel.layer?.backgroundColor
-        panel.appearance = NSAppearance(named: .darkAqua)
-        panel.updateLayer()
-        expect(panel.layer?.backgroundColor != lightBackground, "The popover surface follows light and dark")
-        panel.appearance = nil
+        guard slider.isPopoverShown, let host = slider.panel, let panel = slider.popoverContent else { expect(false, "Space opens the panel"); return }
+        expect(host.placement?.edge == .minY && host.anchor === slider && host.alignment == .center, "It opens below the pill, centred on it")
+        expect(!host.requestedKey, "Opening it does not take the keyboard from the pill")
+        expect(slider.panelWindow === host.window, "The panel has its own window")
+        host.window.contentView?.layoutSubtreeIfNeeded()
+        expect(panel.trackPlate.frame.width == 320 && panel.presetPlate.frame.width == 320 && panel.trackPlate.frame.height == 82 && panel.presetPlate.frame.height == 44,
+               "Two plates, 320 wide: the track plate 82 tall and the preset plate 44 (\(panel.trackPlate.frame.size), \(panel.presetPlate.frame.size))")
+        expect(host.contentSize == NSSize(width: 320, height: 134), "The panel is 320 x 134 (\(host.contentSize))")
+        let structure = glassStructure(host.container)
+        expect(structure.containers == 1 && structure.plates == 2 && structure.nested == 0, "One glass container holding two plates, and no glass inside glass (\(structure))")
+        expect(host.plates == panel.plates && panel.plates.allSatisfy { $0.axis == .vertical }, "The two plates are the panel's groups")
+        expect(textFonts(in: host.container).allSatisfy { $0 >= 18 } && !textFonts(in: host.container).isEmpty, "Every text is 18 pt or more (\(textFonts(in: host.container)))")
+        panel.sync()
         expect(panel.titleLabel.stringValue == "Size" && panel.titleLabel.font?.pointSize == 20 && panel.readout.font?.pointSize == 20, "Title and readout are 20 pt")
         expect(panel.readout.stringValue == "7", "The readout shows the rounded size")
         slider.doubleValue = 9.375
         expect(panel.readout.stringValue == "9", "The readout follows the value")
         slider.doubleValue = 6.75
-        let track = panel.trackView
-        expect(track.frame.size == NSSize(width: 288, height: 36) && panel.presetButtons.count == 5 && panel.presetButtons.allSatisfy { $0.frame.size == NSSize(width: 48, height: 36) },
-               "A 288 x 36 track and five 48 x 36 presets")
+        var track = panel.trackView
+        expect(track.frame.size == NSSize(width: 288, height: 36) && panel.presetButtons.count == 5 && panel.presetButtons.allSatisfy { $0.frame.height == 36 && $0.frame.width > 56 },
+               "A 288 x 36 track and five 36 pt tall presets sharing the row (\(panel.presetButtons.map { $0.frame.width }))")
         expect(panel.presetButtons.map { $0.accessibilityLabel() ?? "" } == ["Size 2", "Size 4", "Size 7", "Size 9", "Size 12"], "Presets are spoken Size 2/4/7/9/12")
         expect(panel.presetButtons.map(\.isSelectedPreset) == [false, false, true, false, false], "Only the current preset is selected")
+        let panelWindow = host.window
         func pointer(_ type: NSEvent.EventType, fraction: CGFloat, flags: NSEvent.ModifierFlags = [], clicks: Int = 1) -> NSEvent {
             let location = track.convert(NSPoint(x: track.x(forFraction: fraction), y: 18), to: nil)
             return NSEvent.mouseEvent(with: type, location: location, modifierFlags: flags, timestamp: 0, windowNumber: panelWindow.windowNumber,
@@ -557,37 +526,97 @@ private enum GlassChromeTests {
         begins = 0; ends = 0
         panel.presetButtons[3].performClick(nil)
         expect(slider.doubleValue == 9.375 && begins == 1 && ends == 1 && panel.presetButtons.map(\.isSelectedPreset) == [false, false, false, true, false], "A preset click is one group: \(groups())")
-        expect(!slider.isPopoverShown && slider.popoverContent == nil, "A preset pick closes the popover, as a colour pick closes the colour popover (F-J1-019)")
-        // Reopened, another preset is another group (the detached panel above keeps its track for the drag below).
+        expect(!slider.isPopoverShown && slider.popoverContent == nil && slider.panel == nil, "A preset pick closes the panel, as a colour pick closes the colour panel (F-J1-019)")
+        // Reopened, another preset is another group.
         slider.showPopover()
-        guard let reopened = slider.popoverContent else { expect(false, "The popover reopens"); return }
+        guard let reopened = slider.popoverContent else { expect(false, "The panel reopens"); return }
         reopened.presetButtons[0].performClick(nil)
         expect(slider.doubleValue == 1.5 && begins == 2 && ends == 2 && reopened.readout.stringValue == "2" && !slider.isPopoverShown, "Another preset: \(groups())")
+        // A preset that is already the value is still a group and still closes the panel.
         slider.showPopover()
+        slider.popoverContent?.presetButtons[0].performClick(nil)
+        expect(begins == 3 && ends == 3 && !slider.isPopoverShown, "Choosing the current preset again still closes the panel: \(groups())")
         // Dismissing mid-drag closes the group, and the late mouse-up cannot close it twice.
+        slider.showPopover()
+        guard let live = slider.popoverContent else { expect(false, "The panel reopens for the drag"); return }
+        slider.panel?.window.contentView?.layoutSubtreeIfNeeded()
+        track = live.trackView
         begins = 0; ends = 0
         track.mouseDown(with: pointer(.leftMouseDown, fraction: 1))
         track.mouseDragged(with: pointer(.leftMouseDragged, fraction: 0.5))
-        expect(begins == 1 && ends == 0, "A drag is open: \(groups())")
+        expect(begins == 1 && ends == 0 && slider.isPopoverShown, "A drag is open and keeps the panel open: \(groups())")
         slider.dismissPopover()
-        expect(ends == 1 && !slider.isPopoverShown && slider.popoverContent == nil, "Dismissing mid-drag ends the group and releases the popover: \(groups())")
+        expect(ends == 1 && !slider.isPopoverShown && slider.popoverContent == nil, "Dismissing mid-drag ends the group and releases the panel: \(groups())")
         track.mouseUp(with: pointer(.leftMouseUp, fraction: 0.5))
         expect(begins == 1 && ends == 1, "The stale mouse-up adds nothing: \(groups())")
-        // Escape closes the popover; leaving the window closes it too.
+        // The host closing the panel by any other route ends the group too (an outside click, the app resigning).
+        slider.showPopover()
+        slider.panel?.window.contentView?.layoutSubtreeIfNeeded()
+        track = slider.popoverContent!.trackView
+        begins = 0; ends = 0
+        track.mouseDown(with: pointer(.leftMouseDown, fraction: 1))
+        expect(begins == 1 && ends == 0, "Another drag is open: \(groups())")
+        slider.panel?.handleMouseDown(in: window, at: NSPoint(x: 2, y: 2))
+        expect(ends == 1 && !slider.isPopoverShown, "A click outside the panel ends the open group: \(groups())")
+        // Escape closes the panel from the pill; leaving the window closes it too.
         slider.doubleValue = 6.75
         slider.showPopover()
         expect(slider.isPopoverShown, "It opens again")
         slider.keyDown(with: keyEvent(53, in: window))
-        expect(!slider.isPopoverShown, "Escape closes the popover")
+        expect(!slider.isPopoverShown, "Escape on the pill closes the panel")
+        // A click on the pill while the panel is up only closes it: the host consumes the press, so the pill never reopens it.
+        slider.showPopover()
+        let onPill = slider.convert(NSPoint(x: 24, y: 18), to: nil)
+        expect(slider.panel?.handleMouseDown(in: window, at: onPill) == true && !slider.isPopoverShown, "A click on the pill closes the panel and is consumed")
+        // Should a press arrive anyway within the same click (a host that lets it through), the pill stays closed.
+        let stray = NSEvent.mouseEvent(with: .leftMouseDown, location: onPill, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
+                                       context: nil, eventNumber: 2, clickCount: 1, pressure: 1)!
+        slider.mouseDown(with: stray); slider.mouseUp(with: stray)
+        expect(!slider.isPopoverShown, "The same click cannot reopen the panel it just closed")
         slider.showPopover()
         slider.removeFromSuperview()
-        expect(!slider.isPopoverShown, "Leaving the window closes the popover")
+        expect(!slider.isPopoverShown, "Leaving the window closes the panel")
         content.addSubview(slider)
         slider.isEnabled = false
         slider.showPopover()
         expect(!slider.isPopoverShown && !slider.accessibilityPerformPress() && slider.beginGesture() == false, "A disabled pill neither opens nor tracks")
         slider.isEnabled = true
+
+        // Escape inside the panel closes it and gives the keyboard back to where it was.
+        window.makeFirstResponder(slider)
+        slider.showPopover()
+        guard let escapable = slider.panel else { expect(false, "The panel opens for Escape"); return }
+        escapable.keyStateProbe = { true }
+        window.makeFirstResponder(nil)
+        escapable.window.sendEvent(keyEvent(53, in: escapable.window))
+        expect(!slider.isPopoverShown && window.firstResponder === slider, "Escape in the panel closes it and the keyboard returns to the pill (\(String(describing: window.firstResponder)))")
         slider.removeFromSuperview()
+    }
+
+    /// The glass views under `root`: containers, plates, and how many plates or containers sit inside another glass view.
+    private static func glassStructure(_ root: NSView) -> (containers: Int, plates: Int, nested: Int) {
+        var containers = 0, plates = 0, nested = 0
+        func walk(_ view: NSView, insideGlass: Bool) {
+            let isContainer = view is NSGlassEffectContainerView, isPlate = view is NSGlassEffectView
+            if isContainer { containers += 1 }
+            if isPlate { plates += 1 }
+            if (isContainer || isPlate) && insideGlass { nested += 1 }
+            for child in view.subviews { walk(child, insideGlass: insideGlass || isPlate) }
+        }
+        walk(root, insideGlass: false)
+        return (containers, plates, nested)
+    }
+
+    /// The point size of every piece of text a view tree can draw.
+    private static func textFonts(in root: NSView) -> [CGFloat] {
+        var sizes: [CGFloat] = []
+        func walk(_ view: NSView) {
+            if let field = view as? NSTextField, !field.stringValue.isEmpty { sizes.append(field.font?.pointSize ?? 0) }
+            if let button = view as? NSButton, !button.title.isEmpty, button.imagePosition != .imageOnly, let font = button.font { sizes.append(font.pointSize) }
+            for child in view.subviews { walk(child) }
+        }
+        walk(root)
+        return sizes
     }
 
 
@@ -720,7 +749,7 @@ private enum GlassChromeTests {
         // MARK: the Size pill
         let slider = BezelSizeSlider(frame: NSRect(x: 16, y: 12, width: 48, height: 36))
         content.addSubview(slider)
-        slider.popoverProvider = { TestPopover() }
+        slider.panelSetup = offscreenPanel
         let cell = ChromeFillCell(BezelSizeSlider(frame: .zero), size: GlassChrome.Metrics.iconButton)
         let cellSlider = cell.control as! BezelSizeSlider
         cellSlider.onInteractionChange = { [weak cell, weak cellSlider] in
@@ -748,13 +777,12 @@ private enum GlassChromeTests {
         cellSlider.isEnabled = false
         expect(cell.plate.isDisabled && cell.plate.style.fill == nil, "The cell behind a disabled pill draws no fill")
 
-        // MARK: the popover track and the presets
+        // MARK: the panel track and the presets
         slider.showPopover()
-        guard let panel = slider.popoverContent else { expect(false, "The popover opens"); return }
-        let (panelWindow, panelContent) = Self.window(NSSize(width: 320, height: 156))
-        panelWindow.appearance = aqua
-        panelContent.addSubview(panel)
-        panelContent.layoutSubtreeIfNeeded()
+        guard let panel = slider.popoverContent, let host = slider.panel else { expect(false, "The panel opens"); return }
+        host.window.appearance = aqua
+        host.window.contentView?.layoutSubtreeIfNeeded()
+        let panelWindow = host.window
         let track = panel.trackView
         let rest = track.knobRect
         expect(abs(rest.width - 20) < 0.001 && track.controlState == .rest, "The knob rests at 20 pt")
@@ -780,14 +808,26 @@ private enum GlassChromeTests {
         expect(heldTrack > alphaAt(restRaster, x: 24, y: rest.midY) + 0.1, "A held knob washes the track with the accent (\(heldTrack) vs \(alphaAt(restRaster, x: 24, y: rest.midY)))")
         expect(track.trackStyle.highlight == nil && track.trackStyle.alpha == 1, "Released, the track is plain")
 
+        // Each preset is a glass choice: the same StatePlate fills as every other, and a chosen state that is more than colour.
         let presets = panel.presetButtons
         expect(presets[2].controlState == .selected && presets[0].controlState == .rest, "The current preset is selected, the others rest")
+        expect(presets[0].plate.style.fill == nil && presets[0].plate.style.borderWidth == 0, "A resting preset draws no fill and no border on its plate")
         presets[0].setHovered(true)
         expect(presets[0].controlState == .hover && abs((presets[0].commandStyle.fill?.alphaComponent ?? 0) - 0.08) < 0.004, "A hovered preset takes the command hover fill")
+        expect(abs((presets[0].plate.style.fill?.alphaComponent ?? 0) - 0.08) < 0.004 && presets[0].layer?.backgroundColor != nil, "...and its plate layer paints it")
         presets[0].highlight(true)
         expect(presets[0].controlState == .pressed && abs((presets[0].commandStyle.fill?.alphaComponent ?? 0) - 0.16) < 0.004, "A pressed preset takes the command pressed fill")
+        expect(abs((presets[0].plate.style.fill?.alphaComponent ?? 0) - 0.16) < 0.004, "...and its plate layer paints that")
         presets[0].highlight(false); presets[0].setHovered(false)
         expect(abs((presets[2].commandStyle.fill?.alphaComponent ?? 0) - 0.20) < 0.004 && presets[2].commandStyle.border != nil, "The selected preset takes the command selected fill and border")
+        expect(abs((presets[2].plate.style.fill?.alphaComponent ?? 0) - 0.20) < 0.004 && presets[2].plate.style.borderWidth == 1 && presets[2].layer?.borderWidth == 1,
+               "...painted on its own layer as a fill and a 1 pt border")
+        expect(presets[2].glyphLength == presets[0].glyphLength + SizePresetButton.chosenGlyphExtra, "The chosen preset also draws a longer stroke (\(presets[2].glyphLength) vs \(presets[0].glyphLength))")
+        DisplayOptions.override = DisplayOptions(differentiateWithoutColor: true)
+        presets[2].sync()
+        expect(presets[2].commandStyle.indicator && presets[2].plate.stateStyle.indicator, "Differentiate Without Color adds the capsule under the chosen preset")
+        DisplayOptions.override = .none
+        presets[2].sync()
         slider.dismissPopover()
 
         // A disabled slider's track is dimmed and ignores the pointer.
@@ -834,8 +874,15 @@ private enum GlassChromeTests {
         swatch.setHovered(true)
         expect(swatch.controlState == .hover && swatch.swatchStyle.outlineWidth == 1 && abs(swatch.swatchStyle.outline.alphaComponent - 0.5) < 0.004, "Hover outlines the swatch with label@0.5")
         expect(outlineAlpha(swatchRaster()) > outlineAlpha(restSwatch) + 0.1, "The hover outline paints stronger than the rest outline")
+        expect(abs((swatch.plateFill?.alphaComponent ?? 0) - 0.08) < 0.004, "A hovered swatch also takes the hover fill every glass choice has")
+        func halo(_ rep: NSBitmapImageRep) -> CGFloat {
+            let scale = CGFloat(rep.pixelsWide) / swatch.bounds.width
+            return rep.colorAt(x: Int(1.2 * scale), y: Int(16 * scale))?.alphaComponent ?? -1
+        }
+        expect(halo(restSwatch) < 0.01 && halo(swatchRaster()) > 0.04, "...painted in the 3 pt margin around the swatch (\(halo(restSwatch)) at rest, \(halo(swatchRaster())) hovered)")
         swatch.highlight(true)
         expect(swatch.controlState == .pressed && abs((swatch.swatchStyle.fill?.alphaComponent ?? 0) - 0.16) < 0.004, "A pressed swatch takes a label@0.16 fill")
+        expect(abs((swatch.plateFill?.alphaComponent ?? 0) - 0.16) < 0.004, "...and the pressed fill behind it")
         let pressedPixel = swatchRaster().colorAt(x: Int(21 * CGFloat(restSwatch.pixelsWide) / swatch.bounds.width), y: Int(5 * CGFloat(restSwatch.pixelsWide) / swatch.bounds.width))?.usingColorSpace(.deviceRGB)
         let restPixel = restSwatch.colorAt(x: Int(21 * CGFloat(restSwatch.pixelsWide) / swatch.bounds.width), y: Int(5 * CGFloat(restSwatch.pixelsWide) / swatch.bounds.width))?.usingColorSpace(.deviceRGB)
         expect((pressedPixel?.redComponent ?? 1) < (restPixel?.redComponent ?? 0) - 0.05, "The pressed fill darkens the swatch")
@@ -843,12 +890,13 @@ private enum GlassChromeTests {
         swatch.state = .on
         let selectedSwatch = swatchRaster()
         expect(swatch.controlState == .selected && swatch.swatchStyle.check && swatch.swatchStyle.outlineWidth == 3, "The selected swatch is a 3 pt accent outline plus a check")
+        expect(swatch.plateFill == nil, "...and nothing is filled behind it: selection is the outline and the check, never the selected fill")
         expect(darkPixels(selectedSwatch) >= 8, "The check glyph is drawn on the selected swatch (\(darkPixels(selectedSwatch)) glyph pixels)")
         expect(outlineAlpha(selectedSwatch) > 0.9, "The 3 pt accent outline is opaque")
         swatch.state = .off
         expect(darkPixels(swatchRaster()) == 0, "Deselecting removes the check")
         swatch.isEnabled = false
-        expect(swatch.swatchStyle.alpha == 0.38 && swatch.controlState == .disabled, "A disabled swatch dims to 0.38")
+        expect(swatch.swatchStyle.alpha == 0.38 && swatch.controlState == .disabled && swatch.plateFill == nil, "A disabled swatch dims to 0.38")
         swatch.isEnabled = true
         DisplayOptions.override = DisplayOptions(increaseContrast: true)
         expect(swatch.swatchStyle.outline.alphaComponent > StateStyles.swatch(.rest, highContrast: false, appearance: aqua).outline.alphaComponent, "Increase Contrast strengthens the rest outline")

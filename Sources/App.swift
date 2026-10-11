@@ -290,9 +290,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     /// Runs on every new colour panel before it is shown. A test gives it a presenter, so the panel never reaches the screen.
     var colorPanelSetup: (GlassPanelHost) -> Void = { _ in }
     var colorPanelWindow: NSWindow? { colorPanel?.isShown == true ? colorPanel?.window : nil }
+    /// The old popover's surface, for harness code that has not moved to `colorPanelWindow` yet.
+    var colorPopover: PanelPopoverFacade? { colorPanel.map(PanelPopoverFacade.init) }
     var colorControlHovered = false, colorPaletteHovered = false, colorOpenedByHover = false
     private var colorHoverDismissal: DispatchWorkItem?
-    private var colorHoverTracker: PaletteHoverTracker?
+    private(set) var colorHoverTracker: PaletteHoverTracker?
     /// A zero-size view at the bottom centre of the Color control. A hover-opened panel hangs from it instead of the control, so the
     /// host does not treat the click that pins the palette as a click on its anchor (which only closes).
     private var colorHoverAnchor: NSView?
@@ -1188,7 +1190,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         // swatch (else the first) is focused; closing hands the keyboard back to where it was.
         let byKeyboard = NSApp.currentEvent.map { $0.type == .keyDown || $0.type == .keyUp } ?? false
         let anchor = hover ? hoverAnchor() : paletteButton
-        host.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .minY, makeKey: !hover)
+        // A button is a flipped view, whose bottom edge is its maxY.
+        host.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: anchor.isFlipped ? .maxY : .minY, makeKey: !hover)
         if !hover, byKeyboard, host.isShown { host.window.makeFirstResponder(presetColorButtons.first { $0.state == .on } ?? presetColorButtons.first) }
         writeLayoutEvidence()
     }
@@ -1197,7 +1200,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         let anchor = colorHoverAnchor ?? NSView(frame: .zero)
         if anchor.superview !== paletteButton { paletteButton.addSubview(anchor) }
         anchor.setAccessibilityElement(false)
-        anchor.frame = NSRect(x: paletteButton.bounds.midX, y: 0, width: 0, height: 0)
+        anchor.frame = NSRect(x: paletteButton.bounds.midX, y: paletteButton.isFlipped ? paletteButton.bounds.maxY : paletteButton.bounds.minY, width: 0, height: 0)
         colorHoverAnchor = anchor
         return anchor
     }

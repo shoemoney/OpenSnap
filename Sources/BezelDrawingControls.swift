@@ -71,45 +71,36 @@ enum OriginalDrawingControls {
 
 /// A preset colour swatch in the Drawing colors panel. Rest is a 1 pt separator outline, hover strengthens it, a press fills it, and
 /// the selected swatch gets a 3 pt accent outline plus a check glyph, so the choice is never colour alone (`StateStyles.swatch`).
-/// Behind the swatch sits the same rounded hover and pressed fill every glass choice draws (`StatePlate`); selection stays the outline
-/// and check, so the plate never takes the selected fill.
+/// Behind the swatch sits the same rounded hover and pressed fill every glass choice draws (`StateStyles.command`); selection stays the
+/// outline and check, so that fill never takes the selected look. The fill is drawn, not put on a layer of its own: a layer would convert
+/// the swatch's device-RGB colour on its way to the window and the swatch would stop matching the toolbar's.
 @MainActor
 final class BezelColorButton: NSButton {
     static let checkPointSize: CGFloat = 16
     var drawingColor: NSColor = .red { didSet { needsDisplay = true } }
     private(set) var isHovered = false
     private var hoverArea: NSTrackingArea?
-    private(set) lazy var plate = StatePlate(view: self)
     private var primaryTracking = false
 
-    override init(frame frameRect: NSRect) {
-        super.init(frame: frameRect)
-        syncPlate()
+    /// The fill behind the swatch right now: the command hover or pressed fill, nil at rest, selected or disabled.
+    var plateFill: NSColor? {
+        guard isEnabled else { return nil }
+        let state: ControlState = primaryTracking || isHighlighted ? .pressed : (isHovered ? .hover : .rest)
+        let options = DisplayOptions.current
+        return StateStyles.command(state, primary: false, focused: false, highContrast: options.increaseContrast,
+                                   differentiate: options.differentiateWithoutColor, appearance: effectiveAppearance).fill
     }
-    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    private func syncPlate() {
-        plate.accessibility = DisplayOptions.current.chrome
-        plate.update(hovered: isHovered, pressed: primaryTracking || isHighlighted, selected: false, disabled: !isEnabled)
-    }
     override func highlight(_ flag: Bool) {
         super.highlight(flag)
-        syncPlate()
+        needsDisplay = true
     }
     // NSButton highlights its cell directly while tracking a primary click and never calls highlight(_:), so the press is bracketed here.
     override func mouseDown(with event: NSEvent) {
         guard isEnabled else { return }
-        primaryTracking = true; syncPlate()
+        primaryTracking = true; needsDisplay = true
         super.mouseDown(with: event)
-        primaryTracking = false; syncPlate()
-    }
-    override func viewDidChangeEffectiveAppearance() {
-        super.viewDidChangeEffectiveAppearance()
-        syncPlate()
-    }
-    override func viewDidMoveToWindow() {
-        super.viewDidMoveToWindow()
-        syncPlate()
+        primaryTracking = false; needsDisplay = true
     }
 
     var controlState: ControlState {
@@ -128,7 +119,6 @@ final class BezelColorButton: NSButton {
     func setHovered(_ hovered: Bool) {
         guard isHovered != hovered else { return }
         isHovered = hovered
-        syncPlate()
         needsDisplay = true
     }
 
@@ -146,13 +136,17 @@ final class BezelColorButton: NSButton {
         if newWindow == nil { setHovered(false) }
         super.viewWillMove(toWindow: newWindow)
     }
-    override var isEnabled: Bool { didSet { syncPlate(); needsDisplay = true } }
+    override var isEnabled: Bool { didSet { needsDisplay = true } }
     override var state: NSControl.StateValue { didSet { needsDisplay = true } }
 
     override func draw(_ dirtyRect: NSRect) {
         let style = swatchStyle
         let rect = bounds.insetBy(dx: 3, dy: 3)
         let shape = NSBezierPath(roundedRect: rect, xRadius: 5, yRadius: 5)
+        if let fill = plateFill {
+            fill.setFill()
+            NSBezierPath(roundedRect: bounds, xRadius: StatePlate.radius, yRadius: StatePlate.radius).fill()
+        }
         NSGraphicsContext.saveGraphicsState()
         if style.alpha < 1 { NSGraphicsContext.current?.cgContext.setAlpha(style.alpha) }
         NSGraphicsContext.saveGraphicsState()
@@ -241,6 +235,21 @@ enum BezelCustomColorButton {
     }
 }
 
+/// What the screenshot harness (`Sources/EyeDumpAudit*.swift`) still reads off the popovers these panels replaced: whether it is up, its
+/// content view and that view's window. Remove it once the harness reads `colorPanelWindow` and `BezelSizeSlider.panelWindow` instead.
+@MainActor
+struct PanelPopoverFacade {
+    struct Controller { let view: NSView }
+    let host: GlassPanelHost
+    var isShown: Bool { host.isShown }
+    var contentViewController: Controller? { Controller(view: host.container) }
+}
+
+extension GlassChoiceButton {
+    /// The Custom color… row reads "current" while it is the chosen option.
+    var isCurrentChoice: Bool { isChosen }
+}
+
 /// The Size control: a 48 x 36 pill that draws the current stroke thickness as a horizontal line and opens a glass panel
 /// (`GlassPanelHost`) with a track and five presets. The pill stays the one model object: the value, the target/action, the undo
 /// grouping and the "Size N" tooltip all live here, and the panel drives them through the same gesture API.
@@ -262,6 +271,8 @@ final class BezelSizeSlider: NSControl {
     var isPopoverShown: Bool { panel?.isShown == true }
     /// The panel's own window, while it is up (the screenshot harness orders it front).
     var panelWindow: NSWindow? { isPopoverShown ? panel?.window : nil }
+    /// The old popover's surface, for harness code that has not moved to `panelWindow` yet.
+    var popover: PanelPopoverFacade? { panel.map(PanelPopoverFacade.init) }
     private var tracking = false
     private var value = OriginalDrawingControls.initialSize
     private var lastPopoverClose: TimeInterval = -.infinity
@@ -416,7 +427,7 @@ final class BezelSizeSlider: NSControl {
         panel = host; popoverContent = content
         content.sync()
         AppToolTip.install(on: host.container)
-        host.show(relativeTo: bounds, of: self, preferredEdge: .minY, makeKey: false)
+        host.show(relativeTo: bounds, of: self, preferredEdge: isFlipped ? .maxY : .minY, makeKey: false)
     }
     /// Closes the panel and ends any gesture it still has open, so a dismissal mid-drag cannot leave an undo group behind.
     func dismissPopover() {
@@ -477,7 +488,8 @@ final class SizePopoverContent {
     let trackPlate: GlassSurfaceView, presetPlate: GlassSurfaceView
     var plates: [GlassSurfaceView] { [trackPlate, presetPlate] }
 
-    init(slider: BezelSizeSlider, accessibility: ChromeAccessibility = .live) {
+    init(slider: BezelSizeSlider, accessibility: ChromeAccessibility? = nil) {
+        let accessibility = accessibility ?? .live
         self.slider = slider
         trackView = SizeTrackView(slider: slider)
         presetButtons = OriginalDrawingControls.sizeSteps.map { SizePresetButton(size: $0, slider: slider) }
@@ -767,8 +779,18 @@ final class SizePresetButton: NSButton {
 }
 
 /// Original color-container/palette tracking is active without taking text focus.
+/// It acts on the press, not the release, as a pop-up does: a press on the Color control closes the hover-opened palette (the panel host
+/// closes on any outside press) and the same press must then open the pinned one, with no gap between the two.
 final class BezelHoverButton: NSButton {
     var onHover: ((Bool) -> Void)?
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        _ = sendAction(on: .leftMouseDown)
+    }
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        _ = sendAction(on: .leftMouseDown)
+    }
     override var canBecomeKeyView: Bool { KeyboardNavigation.reaches(self) }
     private var hoverTracking: NSTrackingArea?
     override func updateTrackingAreas() {
@@ -826,7 +848,8 @@ final class ColorPaletteContent {
     /// The swatches in reading order, then Custom color…: the loop Tab walks inside the panel.
     var keyLoop: [NSView] { swatches + [customButton] }
 
-    init(title: NSTextField, swatches: [BezelColorButton], custom: GlassChoiceButton, accessibility: ChromeAccessibility = .live) {
+    init(title: NSTextField, swatches: [BezelColorButton], custom: GlassChoiceButton, accessibility: ChromeAccessibility? = nil) {
+        let accessibility = accessibility ?? .live
         titleLabel = title; self.swatches = swatches; customButton = custom
         title.font = DesignTokens.Typography.font(.bodyStrong)
         title.textColor = DesignTokens.Palette.Text.primary

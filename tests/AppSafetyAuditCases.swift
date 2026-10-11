@@ -101,9 +101,12 @@ extension AppSafetyTests {
         }
         let drawn = try centre(swatch, 10, 10)
         app.choosePresetColor(swatch)
-        let image = try app.paletteButton.image.unwrapped("toolbar swatch image")
-        let holder = NSImageView(frame: NSRect(origin: .zero, size: image.size)); holder.image = image; holder.imageScaling = .scaleNone
-        let toolbar = try centre(holder, Int(image.size.width / 2), Int(image.size.height / 2))
+        // The swatch sits in the panel's glass, so it is layer-backed like everything in a window; the toolbar button is rendered the same way,
+        // live in the window, rather than as a loose image that would skip the conversion a layer applies.
+        _ = try app.paletteButton.image.unwrapped("toolbar swatch image")
+        guard let toolbarRep = app.paletteButton.bitmapImageRepForCachingDisplay(in: app.paletteButton.bounds) else { throw Failure(description: "bitmap") }
+        app.paletteButton.cacheDisplay(in: app.paletteButton.bounds, to: toolbarRep)
+        let toolbar = try (toolbarRep.colorAt(x: toolbarRep.pixelsWide / 2, y: toolbarRep.pixelsHigh / 2)?.usingColorSpace(.deviceRGB)).unwrapped("toolbar pixel")
         try expect(abs(drawn.redComponent - toolbar.redComponent) < 0.02 && abs(drawn.greenComponent - toolbar.greenComponent) < 0.02 && abs(drawn.blueComponent - toolbar.blueComponent) < 0.02,
                    "The Blue swatch pixel (\(drawn)) is the toolbar swatch's Blue pixel (\(toolbar))")
         // Reopening after the pick: Blue, and only Blue, is marked, with the check drawn.
