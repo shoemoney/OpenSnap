@@ -33,7 +33,7 @@
   "HARN": "Seen by the harness, not accounted for by a source table"
  },
  "counts": {
-  "total": 616,
+  "total": 626,
   "byArea": {
    "A11Y": 7,
    "ALERT": 7,
@@ -44,7 +44,7 @@
    "HARN": 2,
    "HIST": 44,
    "HOT": 44,
-   "ICON": 107,
+   "ICON": 117,
    "KEY": 38,
    "MENU": 87,
    "SET": 27,
@@ -58,7 +58,7 @@
    "alert": 7,
    "control": 158,
    "gesture": 29,
-   "icon": 107,
+   "icon": 117,
    "menu item": 129,
    "panel": 11,
    "popover": 1,
@@ -70,14 +70,14 @@
    "window": 3
   },
   "byExercise": {
-   "e2e": 511,
+   "e2e": 521,
    "e2e-partial": 53,
    "gap": 52
   },
   "byGap": {
    "display-hardware": 3,
    "global-hotkey-background": 6,
-   "none": 511,
+   "none": 521,
    "os-panel": 38,
    "photos-library": 1,
    "printer": 2,
@@ -88,7 +88,7 @@
    "voiceover": 1
   },
   "byOwner": {
-   "app": 598,
+   "app": 608,
    "os": 18
   }
  },
@@ -13227,13 +13227,13 @@
    "name": "crop-simple",
    "type": "icon",
    "icon": "crop-simple",
-   "entryPath": "Top bar › Crop tool",
+   "entryPath": "Top bar › Crop tool; Toolbox panel › Crop Snap at Current Edges",
    "prerequisite": "Control visible",
    "expected": "Renders as a Font Awesome glyph (0xF565) in release builds, or SF Symbol crop when no glyph resolves; centred, template-tinted, matches its meaning",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "case .cropSimple; Free codepoint 0xF565; SF fallback crop; used in ModernEditorChrome.swift",
+   "note": "case .cropSimple; Free codepoint 0xF565; SF fallback crop; used in GlassChoices.swift, ModernEditorChrome.swift",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -13251,13 +13251,13 @@
    "name": "crosshairs",
    "type": "icon",
    "icon": "crosshairs",
-   "entryPath": "Top bar › Snap; Settings › Capture tab",
+   "entryPath": "Top bar › Snap; Settings › Capture tab; Toolbox panel › Snap",
    "prerequisite": "Control visible",
    "expected": "Renders as a Font Awesome glyph (0xF05B) in release builds, or SF Symbol scope when no glyph resolves; centred, template-tinted, matches its meaning",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "case .crosshairs; Free codepoint 0xF05B; SF fallback scope; used in ModernEditorChrome.swift, SettingsWindow.swift",
+   "note": "case .crosshairs; Free codepoint 0xF05B; SF fallback scope; used in GlassChoices.swift, ModernEditorChrome.swift, SettingsWindow.swift",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -13275,13 +13275,13 @@
    "name": "camera-viewfinder",
    "type": "icon",
    "icon": "camera-viewfinder",
-   "entryPath": "Top bar › Snap Frame (Frame mode)",
+   "entryPath": "Top bar › Snap Frame (Frame mode); Toolbox panel › Frame Snapshot",
    "prerequisite": "Control visible",
    "expected": "Renders as a Font Awesome glyph (0xE0DA) in release builds, or SF Symbol viewfinder when no glyph resolves; centred, template-tinted, matches its meaning",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "case .frameViewfinder; Free codepoint 0xE0DA; SF fallback viewfinder; used in ModernEditorChrome.swift",
+   "note": "case .frameViewfinder; Free codepoint 0xE0DA; SF fallback viewfinder; used in GlassChoices.swift, ModernEditorChrome.swift",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -13323,7 +13323,7 @@
    "name": "font",
    "type": "icon",
    "icon": "font",
-   "entryPath": "Top bar › Font",
+   "entryPath": "Top bar › Font; Toolbox panel › Text Style…",
    "prerequisite": "Control visible",
    "expected": "Renders as a Font Awesome glyph (0xF031) in release builds, or SF Symbol textformat.size when no glyph resolves; centred, template-tinted, matches its meaning",
    "owner": "app",
@@ -13371,13 +13371,13 @@
    "name": "broom",
    "type": "icon",
    "icon": "broom",
-   "entryPath": "Bottom bar › Wipe",
+   "entryPath": "Bottom bar › Wipe; Toolbox panel › Remove Snap Picture",
    "prerequisite": "Control visible",
    "expected": "Renders as a Font Awesome glyph (0xF51A) in release builds, or SF Symbol clear when no glyph resolves; centred, template-tinted, matches its meaning",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "case .broom; Free codepoint 0xF51A; SF fallback clear; used in ModernEditorChrome.swift",
+   "note": "case .broom; Free codepoint 0xF51A; SF fallback clear; used in GlassChoices.swift, ModernEditorChrome.swift",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -13515,13 +13515,13 @@
    "name": "copy",
    "type": "icon",
    "icon": "copy",
-   "entryPath": "History › Copy",
+   "entryPath": "History › Copy; Toolbox panel › Copy",
    "prerequisite": "Control visible",
    "expected": "Renders as a Font Awesome glyph (0xF0C5) in release builds, or SF Symbol doc.on.doc when no glyph resolves; centred, template-tinted, matches its meaning",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "case .copy; Free codepoint 0xF0C5; SF fallback doc.on.doc; used in App.swift, Canvas.swift, EyeDumpAuditSurfaces.swift, HistoryBrowser.swift, OriginalHelpBevel.swift, UploadStatus.swift",
+   "note": "case .copy; Free codepoint 0xF0C5; SF fallback doc.on.doc; used in App.swift, Canvas.swift, EyeDumpAuditSurfaces.swift, GlassChoices.swift, HistoryBrowser.swift, OriginalHelpBevel.swift, UploadStatus.swift",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -13587,13 +13587,13 @@
    "name": "trash",
    "type": "icon",
    "icon": "trash",
-   "entryPath": "History › Move to Trash",
+   "entryPath": "History › Move to Trash; Toolbox panel › Delete",
    "prerequisite": "Control visible",
    "expected": "Renders as a Font Awesome glyph (0xF1F8) in release builds, or SF Symbol trash when no glyph resolves; centred, template-tinted, matches its meaning",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "case .trash; Free codepoint 0xF1F8; SF fallback trash; used in HistoryBrowser.swift",
+   "note": "case .trash; Free codepoint 0xF1F8; SF fallback trash; used in GlassChoices.swift, HistoryBrowser.swift",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -15796,13 +15796,13 @@
    "name": "arrow-rotate-right",
    "type": "icon",
    "icon": "arrow-rotate-right",
-   "entryPath": "see source",
+   "entryPath": "Toolbox panel › Rotate Clockwise",
    "prerequisite": "Control visible",
    "expected": "Renders as a Font Awesome glyph (0xF01E) in release builds, or SF Symbol arrow.clockwise when no glyph resolves; centred, template-tinted, matches its meaning",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "case .arrowRotateRight; Free codepoint 0xF01E; SF fallback arrow.clockwise; used in UploadStatus.swift",
+   "note": "case .arrowRotateRight; Free codepoint 0xF01E; SF fallback arrow.clockwise; used in GlassChoices.swift, UploadStatus.swift",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -15844,13 +15844,13 @@
    "name": "box-archive",
    "type": "icon",
    "icon": "box-archive",
-   "entryPath": "Bottom bar › Save",
+   "entryPath": "Bottom bar › Save; Toolbox panel › Save to History",
    "prerequisite": "Control visible",
    "expected": "Renders as a Font Awesome glyph (0xF187) in release builds, or SF Symbol archivebox when no glyph resolves; centred, template-tinted, matches its meaning",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "case .boxArchive; Free codepoint 0xF187; SF fallback archivebox; used in ModernEditorChrome.swift",
+   "note": "case .boxArchive; Free codepoint 0xF187; SF fallback archivebox; used in GlassChoices.swift, ModernEditorChrome.swift",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -16082,6 +16082,376 @@
     "source"
    ],
    "id": "E2E-ICON-115"
+  },
+  {
+   "area": "ICON",
+   "surface": "FAIcon",
+   "name": "file-export",
+   "type": "icon",
+   "icon": "file-export",
+   "entryPath": "Toolbox panel › Export…",
+   "prerequisite": "Control visible",
+   "expected": "Renders as a Font Awesome glyph (0xF56E) in release builds, or SF Symbol square.and.arrow.up when no glyph resolves; centred, template-tinted, matches its meaning",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": "case .fileExport; Free codepoint 0xF56E; SF fallback square.and.arrow.up; used in GlassChoices.swift",
+   "shortcut": null,
+   "proof": [
+    {
+     "file": "FontAwesomeIconsTests.swift",
+     "test": "Spot-checked codepoints match icons.yml"
+    },
+    {
+     "file": "IconCoverageTests.swift",
+     "test": " is a square template image sized to the point size"
+    },
+    {
+     "file": "GlassChoicesTests.swift",
+     "test": " draws the Free vector"
+    }
+   ],
+   "rendered": [
+    "S03",
+    "S04"
+   ],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-ICON-116"
+  },
+  {
+   "area": "ICON",
+   "surface": "FAIcon",
+   "name": "paste",
+   "type": "icon",
+   "icon": "paste",
+   "entryPath": "Toolbox panel › Paste",
+   "prerequisite": "Control visible",
+   "expected": "Renders as a Font Awesome glyph (0xF0EA) in release builds, or SF Symbol doc.on.clipboard when no glyph resolves; centred, template-tinted, matches its meaning",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": "case .paste; Free codepoint 0xF0EA; SF fallback doc.on.clipboard; used in GlassChoices.swift",
+   "shortcut": null,
+   "proof": [
+    {
+     "file": "FontAwesomeIconsTests.swift",
+     "test": "Spot-checked codepoints match icons.yml"
+    },
+    {
+     "file": "IconCoverageTests.swift",
+     "test": " is a square template image sized to the point size"
+    },
+    {
+     "file": "GlassChoicesTests.swift",
+     "test": " draws the Free vector"
+    }
+   ],
+   "rendered": [
+    "S03",
+    "S04"
+   ],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-ICON-117"
+  },
+  {
+   "area": "ICON",
+   "surface": "FAIcon",
+   "name": "clone",
+   "type": "icon",
+   "icon": "clone",
+   "entryPath": "Toolbox panel › Duplicate",
+   "prerequisite": "Control visible",
+   "expected": "Renders as a Font Awesome glyph (0xF24D) in release builds, or SF Symbol plus.square.on.square when no glyph resolves; centred, template-tinted, matches its meaning",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": "case .clone; Free codepoint 0xF24D; SF fallback plus.square.on.square; used in GlassChoices.swift",
+   "shortcut": null,
+   "proof": [
+    {
+     "file": "FontAwesomeIconsTests.swift",
+     "test": "Spot-checked codepoints match icons.yml"
+    },
+    {
+     "file": "IconCoverageTests.swift",
+     "test": " is a square template image sized to the point size"
+    },
+    {
+     "file": "GlassChoicesTests.swift",
+     "test": " draws the Free vector"
+    }
+   ],
+   "rendered": [
+    "S03",
+    "S04"
+   ],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-ICON-118"
+  },
+  {
+   "area": "ICON",
+   "surface": "FAIcon",
+   "name": "object-group",
+   "type": "icon",
+   "icon": "object-group",
+   "entryPath": "Toolbox panel › Select All",
+   "prerequisite": "Control visible",
+   "expected": "Renders as a Font Awesome glyph (0xF247) in release builds, or SF Symbol square.dashed when no glyph resolves; centred, template-tinted, matches its meaning",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": "case .objectGroup; Free codepoint 0xF247; SF fallback square.dashed; used in GlassChoices.swift",
+   "shortcut": null,
+   "proof": [
+    {
+     "file": "FontAwesomeIconsTests.swift",
+     "test": "Spot-checked codepoints match icons.yml"
+    },
+    {
+     "file": "IconCoverageTests.swift",
+     "test": " is a square template image sized to the point size"
+    },
+    {
+     "file": "GlassChoicesTests.swift",
+     "test": " draws the Free vector"
+    }
+   ],
+   "rendered": [
+    "S03",
+    "S04"
+   ],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-ICON-119"
+  },
+  {
+   "area": "ICON",
+   "surface": "FAIcon",
+   "name": "display",
+   "type": "icon",
+   "icon": "display",
+   "entryPath": "Toolbox panel › Fullscreen Snapshot",
+   "prerequisite": "Control visible",
+   "expected": "Renders as a Font Awesome glyph (0xE163) in release builds, or SF Symbol display when no glyph resolves; centred, template-tinted, matches its meaning",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": "case .display; Free codepoint 0xE163; SF fallback display; used in GlassChoices.swift",
+   "shortcut": null,
+   "proof": [
+    {
+     "file": "FontAwesomeIconsTests.swift",
+     "test": "Spot-checked codepoints match icons.yml"
+    },
+    {
+     "file": "IconCoverageTests.swift",
+     "test": " is a square template image sized to the point size"
+    },
+    {
+     "file": "GlassChoicesTests.swift",
+     "test": " draws the Free vector"
+    }
+   ],
+   "rendered": [
+    "S03",
+    "S04"
+   ],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-ICON-120"
+  },
+  {
+   "area": "ICON",
+   "surface": "FAIcon",
+   "name": "camera-rotate",
+   "type": "icon",
+   "icon": "camera-rotate",
+   "entryPath": "Toolbox panel › Re-snap",
+   "prerequisite": "Control visible",
+   "expected": "Renders as a Font Awesome glyph (0xE0D8) in release builds, or SF Symbol camera.rotate when no glyph resolves; centred, template-tinted, matches its meaning",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": "case .cameraRotate; Free codepoint 0xE0D8; SF fallback camera.rotate; used in GlassChoices.swift",
+   "shortcut": null,
+   "proof": [
+    {
+     "file": "FontAwesomeIconsTests.swift",
+     "test": "Spot-checked codepoints match icons.yml"
+    },
+    {
+     "file": "IconCoverageTests.swift",
+     "test": " is a square template image sized to the point size"
+    },
+    {
+     "file": "GlassChoicesTests.swift",
+     "test": " draws the Free vector"
+    }
+   ],
+   "rendered": [
+    "S03",
+    "S04"
+   ],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-ICON-121"
+  },
+  {
+   "area": "ICON",
+   "surface": "FAIcon",
+   "name": "left-right",
+   "type": "icon",
+   "icon": "left-right",
+   "entryPath": "Toolbox panel › Flip Horizontal",
+   "prerequisite": "Control visible",
+   "expected": "Renders as a Font Awesome glyph (0xF337) in release builds, or SF Symbol arrow.left.and.right when no glyph resolves; centred, template-tinted, matches its meaning",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": "case .leftRight; Free codepoint 0xF337; SF fallback arrow.left.and.right; used in GlassChoices.swift",
+   "shortcut": null,
+   "proof": [
+    {
+     "file": "FontAwesomeIconsTests.swift",
+     "test": "Spot-checked codepoints match icons.yml"
+    },
+    {
+     "file": "IconCoverageTests.swift",
+     "test": " is a square template image sized to the point size"
+    },
+    {
+     "file": "GlassChoicesTests.swift",
+     "test": " draws the Free vector"
+    }
+   ],
+   "rendered": [
+    "S03",
+    "S04"
+   ],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-ICON-122"
+  },
+  {
+   "area": "ICON",
+   "surface": "FAIcon",
+   "name": "shapes",
+   "type": "icon",
+   "icon": "shapes",
+   "entryPath": "Toolbox panel › Filled Shapes",
+   "prerequisite": "Control visible",
+   "expected": "Renders as a Font Awesome glyph (0xF61F) in release builds, or SF Symbol square.on.circle when no glyph resolves; centred, template-tinted, matches its meaning",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": "case .shapes; Free codepoint 0xF61F; SF fallback square.on.circle; used in GlassChoices.swift",
+   "shortcut": null,
+   "proof": [
+    {
+     "file": "FontAwesomeIconsTests.swift",
+     "test": "Spot-checked codepoints match icons.yml"
+    },
+    {
+     "file": "IconCoverageTests.swift",
+     "test": " is a square template image sized to the point size"
+    },
+    {
+     "file": "GlassChoicesTests.swift",
+     "test": " draws the Free vector"
+    }
+   ],
+   "rendered": [
+    "S03",
+    "S04"
+   ],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-ICON-123"
+  },
+  {
+   "area": "ICON",
+   "surface": "FAIcon",
+   "name": "layer-group",
+   "type": "icon",
+   "icon": "layer-group",
+   "entryPath": "Toolbox panel › Shadow",
+   "prerequisite": "Control visible",
+   "expected": "Renders as a Font Awesome glyph (0xF5FD) in release builds, or SF Symbol square.3.layers.3d when no glyph resolves; centred, template-tinted, matches its meaning",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": "case .layerGroup; Free codepoint 0xF5FD; SF fallback square.3.layers.3d; used in GlassChoices.swift",
+   "shortcut": null,
+   "proof": [
+    {
+     "file": "FontAwesomeIconsTests.swift",
+     "test": "Spot-checked codepoints match icons.yml"
+    },
+    {
+     "file": "IconCoverageTests.swift",
+     "test": " is a square template image sized to the point size"
+    },
+    {
+     "file": "GlassChoicesTests.swift",
+     "test": " draws the Free vector"
+    }
+   ],
+   "rendered": [
+    "S03",
+    "S04"
+   ],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-ICON-124"
+  },
+  {
+   "area": "ICON",
+   "surface": "FAIcon",
+   "name": "magnifying-glass",
+   "type": "icon",
+   "icon": "magnifying-glass",
+   "entryPath": "Zoom panel › Actual Size",
+   "prerequisite": "Control visible",
+   "expected": "Renders as a Font Awesome glyph (0xF002) in release builds, or SF Symbol magnifyingglass when no glyph resolves; centred, template-tinted, matches its meaning",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": "case .magnifyingGlass; Free codepoint 0xF002; SF fallback magnifyingglass; used in GlassChoices.swift",
+   "shortcut": null,
+   "proof": [
+    {
+     "file": "FontAwesomeIconsTests.swift",
+     "test": "Spot-checked codepoints match icons.yml"
+    },
+    {
+     "file": "IconCoverageTests.swift",
+     "test": " is a square template image sized to the point size"
+    },
+    {
+     "file": "GlassChoicesTests.swift",
+     "test": "The zoom's Actual Size row draws the Free magnifying-glass"
+    }
+   ],
+   "rendered": [
+    "S03",
+    "S04"
+   ],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-ICON-125"
   },
   {
    "area": "KEY",

@@ -18,7 +18,11 @@ enum FAIcon: String, CaseIterable, Sendable {
          upload = "cloud-arrow-up", dragHand = "hand", check, xmarkCircle = "circle-xmark",
          openExternal = "up-right-from-square", copy, link, globe, trash, linkSlash = "link-slash", circleCheck = "circle-check", gear,
          arrowRotateRight = "arrow-rotate-right", circleInfo = "circle-info", chevronDown = "chevron-down", folderMinus = "folder-minus",
-         chevronRight = "chevron-right", chevronLeft = "chevron-left"
+         chevronRight = "chevron-right", chevronLeft = "chevron-left",
+         fileExport = "file-export", paste, clone,
+         objectGroup = "object-group", display, cameraRotate = "camera-rotate",
+         leftRight = "left-right", shapes, layerGroup = "layer-group",
+         magnifyingGlass = "magnifying-glass"
 
     var codepoint: UInt32 {
         switch self {
@@ -61,6 +65,16 @@ enum FAIcon: String, CaseIterable, Sendable {
         case .folderMinus: return 0xF65D
         case .chevronRight: return 0xF054
         case .chevronLeft: return 0xF053
+        case .fileExport: return 0xF56E
+        case .paste: return 0xF0EA
+        case .clone: return 0xF24D
+        case .objectGroup: return 0xF247
+        case .display: return 0xE163
+        case .cameraRotate: return 0xE0D8
+        case .leftRight: return 0xF337
+        case .shapes: return 0xF61F
+        case .layerGroup: return 0xF5FD
+        case .magnifyingGlass: return 0xF002
         }
     }
 
@@ -105,6 +119,16 @@ enum FAIcon: String, CaseIterable, Sendable {
         case .folderMinus: return "folder.badge.minus"
         case .chevronRight: return "chevron.right"
         case .chevronLeft: return "chevron.left"
+        case .fileExport: return "square.and.arrow.up"
+        case .paste: return "doc.on.clipboard"
+        case .clone: return "plus.square.on.square"
+        case .objectGroup: return "square.dashed"
+        case .display: return "display"
+        case .cameraRotate: return "camera.rotate"
+        case .leftRight: return "arrow.left.and.right"
+        case .shapes: return "square.on.circle"
+        case .layerGroup: return "square.3.layers.3d"
+        case .magnifyingGlass: return "magnifyingglass"
         }
     }
 }

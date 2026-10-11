@@ -212,7 +212,7 @@ modern_suites = [
     ("menu-symbols-tests", [*ICONS, "MenuSymbols.swift"], "MenuSymbolsTests.swift", "MENU_SYMBOLS_TESTS", ()),
     ("icon-coverage-tests", [*ICONS], "IconCoverageTests.swift", "ICON_COVERAGE_TESTS", ()),
     # The shared glass choice primitives: button, group, panel host and the NSMenu adapter, on never-ordered windows.
-    ("glass-choices-tests", with_choices(["ContrastProbe.swift", "ViewTreeAudit.swift", "AccessibilityAudit.swift"]), "GlassChoicesTests.swift", "GLASS_CHOICES_TESTS", ()),
+    ("glass-choices-tests", with_choices(["ContrastProbe.swift", "ViewTreeAudit.swift", "AccessibilityAudit.swift", "MenuSymbols.swift"]), "GlassChoicesTests.swift", "GLASS_CHOICES_TESTS", ()),
     ("glass-chrome-tests", with_choices(["DisplayOptions.swift", "DisplayOptions+ChromeAccessibility.swift", "OriginalActionButton.swift", *ICONS, "BezelDrawingControls.swift", "DocumentModel.swift", "StateStyles.swift", "GlassChrome.swift", "UploadStatus.swift", "ModernEditorChrome.swift", "AppToolTip.swift", "ContrastProbe.swift"]), "GlassChromeTests.swift", "GLASS_CHROME_TESTS", ()),
 ]
 with ThreadPoolExecutor(max_workers=len(suites) + len(modern_suites)) as executor:

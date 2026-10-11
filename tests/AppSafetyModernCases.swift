@@ -1684,6 +1684,10 @@ extension AppSafetyTests {
         zoom.choicePanel.present(relativeTo: zoom, preferredEdge: ChoiceEdge.above, keyboard: false)
         try expect(zoom.isOpen && zoom.choicePanel.rows.last?.title == "Actual Size" && zoom.choicePanel.rows.last?.isChosen == true && zoom.choicePanel.rows.last?.isEnabled == true,
                    "Presented directly, the panel shows Actual Size chosen while it is up")
+        let actualGlyphRow = try zoom.choicePanel.rows.last.unwrap("Actual Size row"), actualItem = try zoom.choicePanel.item(for: actualGlyphRow).unwrap("Actual Size item")
+        try expect(actualGlyphRow.leadingIconSource == ChromeIconSource.fontAwesomeFree("magnifying-glass") && actualGlyphRow.icon == FAIcon.magnifyingGlass && actualGlyphRow.leadingImage == nil
+                   && actualItem.image != nil && actualGlyphRow.leadingIconImage !== actualItem.image,
+                   "The zoom's Actual Size row draws the Free magnifying-glass, not the menu bar's SF Symbol (\(actualGlyphRow.leadingIconSource))")
         zoom.choicePanel.host.close()
         app.leaveActualSize()
         zoom.performClick(nil)
