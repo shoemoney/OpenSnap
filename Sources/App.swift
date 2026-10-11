@@ -1170,6 +1170,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     func presentDrawingColors(hover: Bool) {
         guard !terminationStarted, !frameCaptureInProgress, window.isVisible,
               window.attachedSheet == nil, colorPanel?.isShown != true else { return }
+        // Passing the pointer over Color must not close the Toolbox, Zoom, Upload or Size panel the user has open (one panel at a time).
+        if hover, let other = GlassPanelHost.current, other.isShown { return }
         colorOpenedByHover = hover
         presetColorButtons.removeAll()
         for preset in OriginalDrawingControls.presets {

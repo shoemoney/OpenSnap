@@ -1963,8 +1963,13 @@ extension AppSafetyTests {
         try expect(rows.count == 2 && abs((rows.max() ?? 0) - (rows.min() ?? 0) - 34) < 0.5, "The two swatch rows are evenly stacked (\(rows.sorted()))")
     }
 
-    /// Audit fix 2: the glass panel has no pixel of its own to measure, so what is held is the text size, and the opaque fallback plates under
-    /// Reduce Transparency, whose pixels are measured per appearance.
+    /// Audit fix 2, for glass. What it measures, in each of light, dark and both Increase Contrast arms:
+    ///  * by default: the ink of "Drawing colors" and "Custom color…" (the pixels each label draws, as rendered) against the two solid surfaces the
+    ///    panel can hang over, the window colour and the canvas well, with the glass plate treated as clear. Both must reach 4.5:1 (WCAG AA).
+    ///    It does not see the glass material, nor a photograph under the panel: Liquid Glass cannot be rendered offscreen, so the screenshot
+    ///    harness covers those. A label that is too faint on the bare surface is too faint on glass, which only adds its own tint.
+    ///  * under Reduce Transparency: each plate shows its opaque fallback, and the same ink is measured on that plate's own pixels.
+    /// The text size (20 pt) is held in both.
     private static func modernPalettePopoverContrast() throws {
         let (fixture, _) = try modernFixture()
         let app = fixture.app
@@ -1979,6 +1984,19 @@ extension AppSafetyTests {
             let row = try (app.customColorButton).unwrap("Custom color… row")
             let sizes = textSizes(in: host.container)
             try expect(!sizes.isEmpty && sizes.allSatisfy { $0 >= 20 } && row.titleLabel.font?.pointSize ?? 0 >= 20, "All the panel's text is 20 pt or more (\(sizes))")
+            // By default: the labels' ink against the surfaces the panel can hang over, with the plate treated as clear.
+            let defaultTitle = try (host.plates[0].arrangedViews.first?.subviews.compactMap { $0 as? NSTextField }.first).unwrap("Drawing colors title")
+            for (surfaceName, surface) in [("window colour", DesignTokens.Palette.Surface.window), ("canvas well", DesignTokens.Palette.Surface.canvasWell)] {
+                for (name, appearance) in ContrastProbe.appearances {
+                    let label = "\(custom ? "custom" : "preset") colour, \(surfaceName), \(name)"
+                    let titleReading = ContrastProbe.measure(host.plates[0], appearance: appearance, plateAt: NSPoint(x: 20, y: 20),
+                                                             textFrames: [host.plates[0].convert(defaultTitle.bounds, from: defaultTitle)], plate: surface)
+                    try expect(titleReading.textRatios[0] >= 4.5, "\"Drawing colors\" reads at 4.5:1 over the \(surfaceName) (\(label): \(titleReading.textRatios[0]))")
+                    let rowReading = ContrastProbe.measure(host.plates[1], appearance: appearance, plateAt: NSPoint(x: 20, y: 20),
+                                                           textFrames: [host.plates[1].convert(row.titleLabel.bounds, from: row.titleLabel)], plate: surface)
+                    try expect(rowReading.textRatios[0] >= 4.5, "\"Custom color…\" reads at 4.5:1 over the \(surfaceName) (\(label): \(rowReading.textRatios[0]))")
+                }
+            }
             // Reduce Transparency: each plate shows its opaque fallback, and the title and the row's text read on it in every appearance.
             DisplayOptions.override = DisplayOptions(reduceTransparency: true)
             host.accessibility = DisplayOptions.current.chrome

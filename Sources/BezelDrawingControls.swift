@@ -95,6 +95,9 @@ final class BezelColorButton: NSButton {
         super.highlight(flag)
         needsDisplay = true
     }
+    /// The panel a swatch sits in is often not key (a hover-opened palette never is): the first press must pick the colour, not just make
+    /// the panel key.
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
     // NSButton highlights its cell directly while tracking a primary click and never calls highlight(_:), so the press is bracketed here.
     override func mouseDown(with event: NSEvent) {
         guard isEnabled else { return }
@@ -619,6 +622,8 @@ final class SizeTrackView: NSControl {
     private func track(_ event: NSEvent) {
         slider?.trackValue(fraction: fraction(forX: convert(event.locationInWindow, from: nil).x), modifiers: event.modifierFlags)
     }
+    /// The Size panel is not key until it is clicked: the first press must start the drag, not just make the panel key.
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
     override func mouseDown(with event: NSEvent) {
         guard let slider, slider.beginGesture() else { return }
         setPressed(true)
@@ -695,6 +700,8 @@ final class SizePresetButton: NSButton {
     override func mouseExited(with event: NSEvent) { setHovered(false) }
     override func viewDidHide() { super.viewDidHide(); setHovered(false) }
     override func highlight(_ flag: Bool) { super.highlight(flag); sync() }
+    /// The Size panel is not key until it is clicked: the first press must choose the size, not just make the panel key.
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
     // NSButton highlights its cell directly while tracking a primary click and never calls highlight(_:), so the press is bracketed here.
     override func mouseDown(with event: NSEvent) {
         guard slider?.isEnabled != false else { return }
