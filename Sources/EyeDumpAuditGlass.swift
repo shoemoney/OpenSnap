@@ -668,4 +668,44 @@ extension AuditRun {
                         variant: "chosen", identifier: "ResizePreset", context: script.context)
         dismissGlassPanel("S57", "resize-preset-dismissed", surface: script.surface, state: "Preset choices dismissed with Escape: gone, focus back on the preset face", script: script, opened: opened)
     }
+
+    // MARK: S55 History
+
+    /// History's category group on its plate, and the date filter and Drag as pop-up faces with the choice panels they open. Six synthetic
+    /// entries go into the harness's isolated archive, as S20 does.
+    func s55() {
+        defer { verifyGlassCaptures("S55") }
+        let refs = ["HistoryBrowser.swift|final class HistoryPopUpChoice", "HistoryBrowser.swift|HistoryCategory", "GlassChoices.swift|final class MenuChoicePanel"]
+        let calendar = Calendar.current
+        let names = ["Quarterly mockup", "Bug report screenshot", "Onboarding flow", "Pricing page", "Team photo wall", "Error dialog"]
+        let actions: [HistoryStore.Action] = [.archived, .exported, .shared, .archived, .shared, .exported]
+        for (index, name) in names.enumerated() {
+            let size = CGSize(width: 900 + CGFloat(index) * 40, height: 600)
+            canvas.newBlank(size: size); canvas.setBackground(AuditRun.syntheticImage(size: size))
+            if let snapshot = try? app.historySnapshot(), let store = try? app.archiveStore() {
+                let date = calendar.date(byAdding: .day, value: -(index / 3) * 3, to: Date())?.addingTimeInterval(-Double(index) * 600) ?? Date()
+                _ = try? store.archive(snapshot, name: name, action: actions[index], destination: actions[index] == .shared ? "Example S3" : nil,
+                                       remoteURL: actions[index] == .shared ? URL(string: "https://cdn.example.com/pics/\(index).png") : nil, date: date)
+            }
+        }
+        app.showHistory()
+        pump(1.2)
+        guard let history = app.historyWindow, let content = history.contentView else { gap("S55", "History", "the History window did not open"); return }
+        defer { history.orderOut(nil); window.makeKeyAndOrderFront(nil) }
+        history.makeKeyAndOrderFront(nil)
+        if let category = find("HistoryCategory", in: content) {
+            glassGroupStates("S55", base: "history-category", surface: "History glass choices", refs: refs, host: history, root: category,
+                             restState: "History: the All / Shared / Exported / Saved category group on one plate")
+        } else { gap("S55", "History / category", "the category group (HistoryCategory) was not found") }
+        for (faceID, panelID, base, label) in [("HistoryDateFilterFace", "HistoryDateFilter", "history-date", "Date filter"), ("HistoryDragFormatFace", "HistoryDragFormat", "history-dragas", "Drag as")] {
+            guard let face = find(faceID, in: content) as? GlassChoiceButton else { gap("S55", "History / \(base)", "the \(label) face (\(faceID)) was not found"); continue }
+            let script = GlassPanelScript(id: "S55", surface: "History glass choices", identifier: panelID, base: base, opener: face, refs: refs,
+                                          open: { face.performClick(nil) }, nativeMenu: nil, host: history, context: [history])
+            guard let opened = openGlassPanel(script) else { continue }
+            glassPanelStates(script, opened, restState: "History: the \(label) choices open")
+            shootGlassPanel("S55", base + "-chosen", surface: script.surface, state: "History: the \(label) panel with its chosen row", panel: opened.panel, opener: face, refs: refs,
+                            variant: "chosen", identifier: panelID, context: script.context)
+            dismissGlassPanel("S55", base + "-dismissed", surface: script.surface, state: "\(label) choices dismissed with Escape: gone, focus back on the face", script: script, opened: opened)
+        }
+    }
 }
