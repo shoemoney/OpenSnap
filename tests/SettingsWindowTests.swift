@@ -147,6 +147,18 @@ private enum SettingsWindowTests {
             expect(!all.contains { $0.localizedCaseInsensitiveContains(word) }, "no row or control mentions \(word)")
         }
         expect(controller.window.delegate === controller, "the controller is the window's delegate")
+        // Every control keeps the identifier it had, and each resolves to exactly one button in its own tab (or on the strip).
+        let identifiers: [(tab: Int, ids: [String])] = [
+            (0, ["presenceDock", "presenceMenuBar", "presenceBoth", "includeApp", "showToolTips", "showKeyboardTips"]),
+            (1, ["precisionPrecise", "precisionMedium", "precisionLoose", "arrowEnd", "arrowStart"]),
+            (2, ["showCaptureFlash"]),
+            (3, ["addDestination", "editDestination", "removeDestination", "makeDefaultDestination", "addFirstDestination"])]
+        for (index, group) in identifiers.enumerated() {
+            controller.select(index)
+            for id in group.ids { _ = button(id, in: controller.tabItems[index].viewController.view) }
+        }
+        for title in SettingsLayout.tabTitles { _ = button("settingsTab." + title, in: controller.strip) }
+        controller.select(0)
     }
 
     // MARK: The tab strip
