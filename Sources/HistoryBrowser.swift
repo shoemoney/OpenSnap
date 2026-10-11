@@ -174,6 +174,14 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
     private var besideConstraints: [NSLayoutConstraint] = [], belowConstraints: [NSLayoutConstraint] = [], fullWidthConstraints: [NSLayoutConstraint] = []
     /// With nothing in the grid there is nothing to show in the details panel, so the grid and its message take the whole width.
     private(set) var detailsCollapsed = false
+    /// The glass faces and choice panels of the date filter and Drag as, and the pop-ups that stay their models (never on screen).
+    var dateFilterFace: GlassChoiceButton? { dateChoice?.face }
+    var dateFilterChoices: MenuChoicePanel? { dateChoice?.panel }
+    var dateFilterModel: NSPopUpButton { datePopup }
+    var dragFormatFace: GlassChoiceButton? { formatChoice?.face }
+    var dragFormatChoices: MenuChoicePanel? { formatChoice?.panel }
+    var dragFormatModel: NSPopUpButton { formatPopup }
+    var categoryChoice: GlassChoiceGroup { categoryControl }
     /// The Save to History key equivalent as the empty state should show it, or nil when the menu has none. Tests replace it.
     var saveShortcut: () -> String? = { HistoryBrowser.liveSaveToHistoryShortcut(menu: NSApp?.mainMenu) }
     private var selectionChanging = false
