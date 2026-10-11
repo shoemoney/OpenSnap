@@ -590,12 +590,12 @@ extension AuditRun {
         view.protocolPopup.selectItem(withTitle: PublishingProtocol.s3.title)
         view.formChanged()
         pump(0.5)
-        func script(_ face: GlassChoiceButton, base: String, fallback: String) -> GlassPanelScript {
-            GlassPanelScript(id: "S58", surface: "Destination sheet", identifier: view.choicePanel(for: face)?.identifier ?? fallback, base: base, opener: face, refs: refs,
+        func script(_ face: GlassChoiceButton, base: String) -> GlassPanelScript {
+            GlassPanelScript(id: "S58", surface: "Destination sheet", identifier: view.choicePanel(for: face).identifier, base: base, opener: face, refs: refs,
                              open: { face.performClick(nil) }, nativeMenu: nil, host: sheet, context: [sheet, settings])
         }
-        for (face, base, fallback) in [(view.protocolFace, "destination-protocol", "DestinationProtocol"), (view.sourceFace, "destination-source", "DestinationSource")] {
-            let panelScript = script(face, base: base, fallback: fallback)
+        for (face, base) in [(view.protocolFace, "destination-protocol"), (view.sourceFace, "destination-source")] {
+            let panelScript = script(face, base: base)
             guard let opened = openGlassPanel(panelScript) else { continue }
             glassPanelStates(panelScript, opened, restState: "\(base == "destination-protocol" ? "Protocol" : "Key source") choices open on the destination sheet, S3-compatible selected")
             dismissGlassPanel("S58", base + "-dismissed", surface: "Destination sheet", state: "choices dismissed with Escape: gone, focus back on the face", script: panelScript, opened: opened)
