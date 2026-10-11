@@ -43,6 +43,7 @@ extension AppSafetyTests {
             ("--eye-dump-audit needs the throwaway harness bundle id, an isolated home and support folder, and no fixture", webpostEyeDumpAuditGate),
             ("The upload button is icon-only with the iCloud upload symbol and an explicit label", webpostModernIconOnly),
             ("The Upload button's choices open as a glass panel above it: destinations are options with the default chosen, rebuilt at every open; the empty and busy states; choosing persists the default", webpostChoicesPanel),
+            ("Rebuilding the Upload panel for a different menu closes the open one: no orphan child window and one shown host", webpostPanelRebuildClosesOld),
             ("From the Upload panel Cancel Upload cancels, Destination Settings… opens settings, Share with macOS… anchors the system picker to the button, and Escape returns the focus", webpostChoicesActions)
         ]
     }
@@ -316,6 +317,30 @@ extension AppSafetyTests {
         app.uploadChoices.panel?.host.close()
         try expect(button.accessibilityPerformShowMenu(), "The accessibility Show Menu action is offered")
         return try app.uploadChoices.panel.unwrap("the Upload panel")
+    }
+
+    private static func webpostPanelRebuildClosesOld() throws {
+        let fixture = try Fixture(), app = fixture.app
+        let button = try webpostButton(app)
+        try configureDestinations(app, [try fakeDestination(), s3Destination()], names: ["Home SFTP", "AWS cdn"])
+        // A real child window per panel (still off screen), so an orphan shows up in the parent's child list.
+        app.uploadChoices.panelSetup = { panel in
+            offScreen(panel)
+            panel.host.presenter = { window, parent in parent?.addChildWindow(window, ordered: .above) }
+        }
+        func glassChildren() -> Int { app.window.childWindows?.filter { $0 is GlassChoiceWindow }.count ?? 0 }
+        let old = try openUploadChoices(app)
+        try expect(app.uploadChoices.isOpen && glassChildren() == 1 && GlassPanelHost.current === old.host, "The Upload panel is open as one child window (\(glassChildren()))")
+        let other = NSMenu(title: "Other")
+        other.addItem(NSMenuItem(title: "Elsewhere", action: nil, keyEquivalent: ""))
+        let rebuilt = app.uploadChoices.panel(for: other)
+        try expect(rebuilt !== old && !old.host.isShown && glassChildren() == 0 && GlassPanelHost.current == nil,
+                   "A panel for a different menu closes the open one first (old shown: \(old.host.isShown), children: \(glassChildren()))")
+        rebuilt.present(relativeTo: button, preferredEdge: ChoiceEdge.above, keyboard: false)
+        try expect(rebuilt.host.isShown && !old.host.isShown && glassChildren() == 1 && GlassPanelHost.current === rebuilt.host && app.uploadChoices.panel === rebuilt,
+                   "After the rebuild exactly the current host is shown, with one child window (\(glassChildren()))")
+        rebuilt.host.close()
+        try expect(glassChildren() == 0, "Closing it leaves no child window")
     }
 
     private static func webpostChoicesPanel() throws {

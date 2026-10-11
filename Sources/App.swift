@@ -647,10 +647,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             return event
         }
     }
-    func applicationWillResignActive(_ notification: Notification) { helpBevel?.clear() }
+    func applicationWillResignActive(_ notification: Notification) { helpBevel?.clear(); KeyboardNavigation.toolbarFocusActive = false }
     func applicationDidHide(_ notification: Notification) { helpBevel?.clear() }
     func windowDidResignKey(_ notification: Notification) {
-        if (notification.object as? NSWindow) === window { helpBevel?.clear(); KeyboardNavigation.toolbarFocusActive = false }
+        guard (notification.object as? NSWindow) === window else { return }
+        helpBevel?.clear()
+        if glassPanelTakesKey() { return }
+        KeyboardNavigation.toolbarFocusActive = false
+    }
+    /// The editor resigns key when one of its own glass choice panels (Toolbox, Zoom, Upload, Color) takes the keyboard. The focus has not left the
+    /// bars, because closing the panel hands it back to the opener, so Window > Focus Toolbar stays on across the panel's life.
+    private func glassPanelTakesKey() -> Bool {
+        if let key = NSApp.keyWindow as? GlassChoiceWindow, key.parent === window { return true }
+        guard let host = GlassPanelHost.current, host.isShown else { return false }
+        return host.parent === window
     }
     func windowWillMiniaturize(_ notification: Notification) {
         if (notification.object as? NSWindow) === window { helpBevel?.clear() }

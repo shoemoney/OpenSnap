@@ -23,6 +23,7 @@ final class UploadChoices {
 
     func panel(for menu: NSMenu) -> MenuChoicePanel {
         if let panel, panel.menu === menu { return panel }
+        panel?.host.close()   // a rebuild must not leave the old panel's child window and monitors behind
         // Destinations are options (the default is the chosen one); Cancel Upload, Destination Settings… and Share with macOS… are commands.
         let made = MenuChoicePanel(menu: menu, identifier: "Upload", accessibilityLabel: "Upload destinations",
                                    kind: { $0.action == #selector(AppDelegate.chooseUploadDestination(_:)) ? .option : .command })

@@ -23,6 +23,7 @@ extension AppSafetyTests {
             ("The status menu's first row follows the editor and the app being in front", menuStatusDynamicTitle),
             ("The Toolbox opens a glass panel of its five groups: 18 rows with the menu's icons, shortcuts and validation, choosing runs the command, Escape returns the focus", menuToolboxPanel),
             ("Every route to the Toolbox, Zoom and Upload choices opens the glass panel and starts no native menu: click, right-click, Control-click, AX press and Show Menu, the context-menu key, Return, Space, Up and Down", menuNoNativeRoutes),
+            ("Focus Toolbar survives a keyboard-opened glass panel: the editor resigning key to it keeps the bars as tab stops, and a window that really takes the keyboard turns them off", menuToolboxPanelKeepsFocusToolbar),
         ]
     }
 
@@ -84,6 +85,38 @@ extension AppSafetyTests {
             token = nil
             for timer in timers { timer.invalidate() }
         }
+    }
+
+    private static func menuToolboxPanelKeepsFocusToolbar() throws {
+        let saved = KeyboardNavigation.fullKeyboardAccess
+        KeyboardNavigation.fullKeyboardAccess = { KeyboardNavigation.toolbarFocusActive }   // the system setting is off; Focus Toolbar still counts
+        defer { KeyboardNavigation.fullKeyboardAccess = saved; KeyboardNavigation.toolbarFocusActive = false }
+        let fixture = try Fixture(), app = fixture.app
+        let toolbox = try toolboxButton(app), panel = toolbox.choicePanel
+        offScreen(panel)
+        if let window = app.window as? AppSafetyWindow { window.simulatesVisibility = true; window.shown = true }
+        app.window.contentView?.layoutSubtreeIfNeeded(); app.window.recalculateKeyViewLoop()
+        app.focusToolbar()
+        app.window.makeFirstResponder(toolbox)
+        try expect(KeyboardNavigation.toolbarFocusActive && app.window.firstResponder === toolbox, "Focus Toolbar is on with the keyboard on the Toolbox")
+        toolbox.keyDown(with: panelKey(49, in: app.window))
+        try expect(toolbox.isOpen, "Space opens the Toolbox panel")
+        // The panel takes the keyboard, so the editor resigns key: the focus has not left the bars.
+        app.windowDidResignKey(Notification(name: NSWindow.didResignKeyNotification, object: app.window))
+        try expect(KeyboardNavigation.toolbarFocusActive, "The editor resigning key to its own open panel keeps Focus Toolbar on")
+        panel.host.window.sendEvent(panelKey(53, in: panel.host.window))
+        try expect(!toolbox.isOpen && app.window.firstResponder === toolbox, "Escape closes the panel and the Toolbox has the focus again")
+        try expect(KeyboardNavigation.toolbarFocusActive && toolbox.canBecomeKeyView && toolbox.nextValidKeyView != nil && toolbox.nextValidKeyView !== app.canvas,
+                   "Tab still stops on the bar controls (the Toolbox is followed by \(String(describing: toolbox.nextValidKeyView)))")
+        // With no panel open the editor resigning key is the focus genuinely leaving.
+        app.windowDidResignKey(Notification(name: NSWindow.didResignKeyNotification, object: app.window))
+        try expect(!KeyboardNavigation.toolbarFocusActive, "Another window taking the keyboard turns Focus Toolbar off")
+        // And the app going to the background turns it off even if a panel were the last thing key.
+        KeyboardNavigation.toolbarFocusActive = true
+        toolbox.keyDown(with: panelKey(49, in: app.window))
+        app.applicationWillResignActive(Notification(name: NSApplication.willResignActiveNotification))
+        try expect(!KeyboardNavigation.toolbarFocusActive, "The app resigning active turns Focus Toolbar off")
+        panel.host.close()
     }
 
     private static func toolboxButton(_ app: AppDelegate) throws -> ToolboxPopUpButton {
