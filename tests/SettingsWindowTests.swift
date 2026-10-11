@@ -31,6 +31,27 @@ private final class FakeHotkeyBackend: GlobalHotkeyBackend {
     func shutdown() throws { bindings = [:] }
 }
 
+/// A shortcut manager that only records: whether the editor is up (`setEditing`), and a rule that refuses a key with no Command or Control, so a
+/// rejected draft can be made. Re-registering on `setEditing(false)` clears a stale error, as the real manager does.
+@MainActor
+private final class RecordingHotkeys: GlobalHotkeyEditing {
+    var settings = GlobalHotkeySettings()
+    var lastError: Error?
+    var editingLog: [Bool] = []
+    var editing: Bool { editingLog.last ?? false }
+    func apply(_ candidate: GlobalHotkeySettings) throws {
+        for action in GlobalHotkeyAction.allCases {
+            let binding = candidate[action]
+            if binding.keyCode != nil, binding.modifiers.isDisjoint(with: [.command, .control]) {
+                let error = NSError(domain: "RecordingHotkeys", code: 1, userInfo: [NSLocalizedDescriptionKey: "A shortcut needs Command or Control."])
+                lastError = error; throw error
+            }
+        }
+        settings = candidate; lastError = nil
+    }
+    func setEditing(_ value: Bool) { editingLog.append(value); if !value { lastError = nil } }
+}
+
 @main
 @MainActor
 private enum SettingsWindowTests {
@@ -78,6 +99,8 @@ private enum SettingsWindowTests {
         let end = Date().addingTimeInterval(seconds)
         while !done() && Date() < end { _ = RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.02)) }
     }
+    /// What AppKit puts on every real arrow key: it reports the function and numeric-pad flags with no modifier held.
+    private static let realArrowFlags: NSEvent.ModifierFlags = [.numericPad, .function]
     private static func keyEvent(_ characters: String, code: UInt16, flags: NSEvent.ModifierFlags, window: NSWindow) -> NSEvent {
         NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: flags, timestamp: 0, windowNumber: window.windowNumber, context: nil,
                          characters: characters, charactersIgnoringModifiers: characters, isARepeat: false, keyCode: code)!
@@ -114,6 +137,8 @@ private enum SettingsWindowTests {
         modifierKeyboard()
         modifierGlyphs()
         modifierLabelsFit()
+        realKeyFlags()
+        keyPanelKeepsEditing()
         upload()
         uploadActionPlates()
         uploadWithPublishing()
@@ -344,7 +369,7 @@ private enum SettingsWindowTests {
         expect(window.makeFirstResponder(strip) && window.firstResponder === strip, "the strip can hold focus")
         expect(!strip.showsKeyboardFocus && strip.focusRingType == .none, "focus that arrives without a key press (the window opening) draws no ring")
         func arrow(_ code: UInt16, _ flags: NSEvent.ModifierFlags = []) {
-            strip.keyDown(with: keyEvent(code == 123 ? "\u{F702}" : "\u{F703}", code: code, flags: flags, window: window))
+            strip.keyDown(with: keyEvent(code == 123 ? "\u{F702}" : "\u{F703}", code: code, flags: flags.union(realArrowFlags), window: window))
         }
         arrow(124); expect(controller.selectedIndex == 1, "Right moves to Drawing")
         expect(strip.showsKeyboardFocus && strip.focusRingType == .exterior && strip.focusRingMaskBounds == strip.convert(strip.buttons[1].bounds, from: strip.buttons[1]),
@@ -745,7 +770,7 @@ private enum SettingsWindowTests {
     // MARK: Radio sets
 
     private static func arrowEvent(_ code: UInt16, window: NSWindow) -> NSEvent {
-        keyEvent(code == 123 ? "\u{F702}" : (code == 124 ? "\u{F703}" : (code == 125 ? "\u{F701}" : "\u{F700}")), code: code, flags: [], window: window)
+        keyEvent(code == 123 ? "\u{F702}" : (code == 124 ? "\u{F703}" : (code == 125 ? "\u{F701}" : "\u{F700}")), code: code, flags: realArrowFlags, window: window)
     }
     private static func chosen(_ group: GlassChoiceGroup) -> [Int] { group.buttons.filter { $0.state == .on }.map(\.tag) }
 
@@ -1322,6 +1347,117 @@ private enum SettingsWindowTests {
             }
         }
         print("  Modifier labels: \(judged) judged (24 toggles, chosen and unchosen), every fitting size within its frame")
+    }
+
+    // MARK: Real key flags
+
+    /// Only Command, Option, Control and Shift make a chord. The arrows carry the function and numeric-pad flags, and Caps Lock can be on for any
+    /// key, so none of them may turn an arrow, Escape or Command-W into "a modified key".
+    private static func realKeyFlags() {
+        let (controller, _, _, _, _, _) = makeController()
+        let window = controller.window
+        expect(keyEvent("\u{F703}", code: 124, flags: realArrowFlags, window: window).chordModifiers.isEmpty, "a real arrow key holds no modifier")
+        expect(keyEvent("a", code: 0, flags: [.capsLock, .function, .numericPad], window: window).chordModifiers.isEmpty, "Caps Lock, function and numeric pad are not chords")
+        expect(keyEvent("\u{F703}", code: 124, flags: [.shift, .function, .numericPad], window: window).chordModifiers == .shift, "Shift is, whatever else the arrow carries")
+        // The tab strip: arrows with the flags AppKit sends move between tabs, with Caps Lock too; a held modifier still does not.
+        controller.select(0)
+        let strip = controller.strip
+        strip.keyDown(with: keyEvent("\u{F703}", code: 124, flags: realArrowFlags, window: window))
+        expect(controller.selectedIndex == 1, "a real Right arrow moves to the next tab")
+        strip.keyDown(with: keyEvent("\u{F703}", code: 124, flags: realArrowFlags.union(.capsLock), window: window))
+        expect(controller.selectedIndex == 2, "and with Caps Lock on")
+        strip.keyDown(with: keyEvent("\u{F702}", code: 123, flags: realArrowFlags, window: window))
+        expect(controller.selectedIndex == 1, "a real Left arrow moves back")
+        strip.keyDown(with: keyEvent("\u{F703}", code: 124, flags: realArrowFlags.union(.option), window: window))
+        expect(controller.selectedIndex == 1, "Option with the arrow is not a tab move")
+        // Escape and Command-W with Caps Lock on still close the window.
+        var closes = 0
+        controller.onClose = { closes += 1 }
+        window.keyDown(with: keyEvent("\u{1b}", code: 53, flags: .capsLock, window: window))
+        expect(closes == 1, "Escape with Caps Lock on closes")
+        expect(window.performKeyEquivalent(with: keyEvent("w", code: 13, flags: [.command, .capsLock], window: window)) && closes == 2, "Command-W with Caps Lock on closes")
+        window.keyDown(with: keyEvent("\u{1b}", code: 53, flags: .shift, window: window))
+        expect(closes == 2, "Shift-Escape does not")
+        controller.onClose = nil
+        // The modifier toggles: a real Right arrow moves between Command, Option, Control and Shift (checked in modifierKeyboard with the same flags).
+        controller.select(2)
+        let form = controller.capture.hotkeyForm!
+        let toggles = form.modifierToggles(for: .screen)
+        let popup = form.keyPopup(for: .screen)
+        popup.selectItem(at: 1); _ = popup.target?.perform(popup.action, with: popup)
+        window.contentView?.layoutSubtreeIfNeeded()
+        _ = window.makeFirstResponder(toggles[0])
+        for index in 1...3 {
+            toggles[index - 1].keyDown(with: keyEvent("\u{F703}", code: 124, flags: realArrowFlags, window: window))
+            expect(window.firstResponder === toggles[index], "a real Right arrow reaches \(toggles[index].accessibilityLabel() ?? "") (Option, Control and Shift are reachable from the keyboard)")
+        }
+    }
+
+    // MARK: A key pop-up's panel does not end the editing
+
+    /// Opening a key pop-up's glass panel makes Settings resign key to its own child panel. That is still the window in use: the shortcuts stay
+    /// paused, the note and a rejected draft's error stay, and nothing is re-read when the key comes back. A different window taking the key
+    /// does end it.
+    private static func keyPanelKeepsEditing() {
+        let name = "OpenSnap.SettingsTests.panel." + UUID().uuidString
+        let defaults = TestDefaults(name: name)
+        defer { TestDefaults.dispose(defaults, name: name) }
+        let hotkeys = RecordingHotkeys()
+        let controller = SettingsWindowController(state: { initialState }, hotkeys: hotkeys, defaults: defaults, destinations: { PublishingDestinationList() })
+        controller.visibleFrame = { fakeVisible }
+        controller.applicationActivity = { true }
+        controller.show(tab: SettingsWindowController.captureTabIndex)
+        controller.activityChanged(key: true, appActive: true)
+        let window = controller.window, form = controller.capture.hotkeyForm!
+        window.contentView?.layoutSubtreeIfNeeded()
+        expect(hotkeys.editing && form.shortcutsPaused, "Settings key on Capture pauses the shortcuts")
+        let k = GlobalHotkeyKeys.choices.firstIndex { $0.name == "K" }! + 1
+        let popup = form.keyPopup(for: .screen)
+        popup.selectItem(at: k); _ = popup.target?.perform(popup.action, with: popup)
+        let rejected = form.statusField.stringValue
+        expect(rejected.hasPrefix("Error: ") && hotkeys.lastError != nil && popup.indexOfSelectedItem == k, "a key with no modifier is rejected and its draft stays on screen: '\(rejected)'")
+        defaults.set(false, forKey: OriginalCaptureFlashTiming.showFlashKey)   // changed behind the window's back: a re-read would show it
+        expect(controller.capture.flashCheckbox.state == .on, "(setup) the flash box still shows on")
+
+        // The panel opens as a child of Settings and takes the key.
+        let host = popup.choicePanel.host
+        host.visibleFrameOverride = NSRect(x: 0, y: 0, width: 1440, height: 900)
+        host.accessibility = .none
+        host.presenter = { panel, parent in parent?.addChildWindow(panel, ordered: .above) }
+        let logged = hotkeys.editingLog
+        popup.performClick(nil)
+        expect(host.isShown && window.childWindows?.contains { $0 is GlassChoiceWindow } == true, "the key panel is a child of the Settings window")
+        controller.windowDidResignKey(Notification(name: NSWindow.didResignKeyNotification, object: window))
+        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: host.window)
+        expect(!hotkeys.editingLog.dropFirst(logged.count).contains(false) && hotkeys.editing, "Settings resigning key to its own panel does not end the editing: nothing was re-registered (\(hotkeys.editingLog))")
+        expect(form.shortcutsPaused && form.statusField.stringValue == rejected && hotkeys.lastError != nil, "the note, the pause and the error are as they were: '\(form.statusField.stringValue)'")
+
+        // The panel closes and the key comes back: nothing is re-read, and the rejected draft and its error remain.
+        host.close()
+        controller.windowDidBecomeKey(Notification(name: NSWindow.didBecomeKeyNotification, object: window))
+        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: window)
+        expect(!hotkeys.editingLog.dropFirst(logged.count).contains(false) && hotkeys.editing && form.shortcutsPaused, "the shortcuts never went live during the whole choice (\(hotkeys.editingLog))")
+        expect(form.statusField.stringValue == rejected && popup.indexOfSelectedItem == k && form.draft().screen.keyCode == GlobalHotkeyKeys.choices[k - 1].code,
+               "the rejected draft and its error remain after the panel closes: '\(form.statusField.stringValue)'")
+        expect(controller.capture.flashCheckbox.state == .on, "and the key coming back from the panel re-read nothing")
+        // A real key change (not from the panel) does re-read, as before.
+        controller.windowDidResignKey(Notification(name: NSWindow.didResignKeyNotification, object: window))
+        controller.windowDidBecomeKey(Notification(name: NSWindow.didBecomeKeyNotification, object: window))
+        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: window)
+        expect(controller.capture.flashCheckbox.state == .off, "an ordinary key change still refreshes the window")
+
+        // Another window taking the key while the panel is open does end it.
+        controller.activityChanged(key: true, appActive: true)
+        popup.performClick(nil)
+        expect(host.isShown, "(setup) the panel is open again")
+        controller.windowDidResignKey(Notification(name: NSWindow.didResignKeyNotification, object: window))
+        let elsewhere = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 200, height: 100), styleMask: [.titled], backing: .buffered, defer: true)
+        elsewhere.isReleasedWhenClosed = false
+        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: elsewhere)
+        expect(!hotkeys.editing, "another window becoming key, with the panel open, puts the shortcuts back")
+        host.close()
+        controller.windowHidden()
+        window.orderOut(nil)
     }
 
     // MARK: Upload

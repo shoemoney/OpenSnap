@@ -624,6 +624,13 @@ final class SettingsActionButton: CommandButton {
     override var intrinsicContentSize: NSSize { NSSize(width: Self.width(for: visibleTitle), height: GlassChrome.Metrics.commandHeight) }
 }
 
+extension NSEvent {
+    /// The modifiers a person holds to make a chord: Command, Option, Control and Shift. Caps Lock and the function and numeric-pad flags are
+    /// not chords: every real arrow key carries `.numericPad` and `.function` (and Caps Lock can be on for any key), so
+    /// `modifierFlags.intersection(.deviceIndependentFlagsMask)` is the wrong test for "no modifier is held".
+    var chordModifiers: NSEvent.ModifierFlags { modifierFlags.intersection([.command, .option, .control, .shift]) }
+}
+
 /// A label cell that draws its text higher (positive) or lower (negative) than its frame centres it, and changes nothing about what the field
 /// needs: its cell size, and so the field's fitting size, are the plain text's. The modifier symbols use it to sit optically centred on a button.
 final class ShiftedLabelCell: NSTextFieldCell {
@@ -890,7 +897,7 @@ final class GlobalHotkeyForm: NSView {
     private func modifierKey(_ event: NSEvent, from toggle: GlassChoiceButton, action: GlobalHotkeyAction) -> Bool {
         guard let row = rows[action], let index = row.modifiers.firstIndex(where: { $0 === toggle }) else { return false }
         setStop(index, in: row)
-        guard event.modifierFlags.intersection(.deviceIndependentFlagsMask).isEmpty else { return false }
+        guard event.chordModifiers.isEmpty else { return false }
         switch event.keyCode {
         case 123, 124:
             let step = event.keyCode == 124 ? 1 : -1, count = row.modifiers.count

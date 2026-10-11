@@ -854,7 +854,7 @@ final class SettingsTabStrip: NSView {
         return super.resignFirstResponder()
     }
     override func keyDown(with event: NSEvent) {
-        guard event.modifierFlags.intersection(.deviceIndependentFlagsMask).isEmpty, selectedIndex >= 0 else { return super.keyDown(with: event) }
+        guard event.chordModifiers.isEmpty, selectedIndex >= 0 else { return super.keyDown(with: event) }
         switch event.keyCode {
         case 123: setKeyboardFocus(true); onSelect?(max(0, selectedIndex - 1))
         case 124: setKeyboardFocus(true); onSelect?(min(buttons.count - 1, selectedIndex + 1))
@@ -957,11 +957,11 @@ class SettingsWindow: NSWindow {
     override func cancelOperation(_ sender: Any?) { requestClose() }
     /// A key nothing in the chain wanted ends up here; Escape is the one this window does.
     override func keyDown(with event: NSEvent) {
-        if event.keyCode == 53, event.modifierFlags.intersection(.deviceIndependentFlagsMask).isEmpty { cancelOperation(nil) }
+        if event.keyCode == 53, event.chordModifiers.isEmpty { cancelOperation(nil) }
         else { super.keyDown(with: event) }
     }
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
-        if event.type == .keyDown, event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command {
+        if event.type == .keyDown, event.chordModifiers == .command {
             let key = event.charactersIgnoringModifiers?.lowercased()
             if key == "w" { requestClose(); return true }
             if let key, let number = Int(key), (1...SettingsLayout.tabTitles.count).contains(number), attachedSheet == nil {
@@ -1061,7 +1061,19 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
             MainActor.assumeIsolated { self?.upload.refresh() }
         })
         observers.append(NotificationCenter.default.addObserver(forName: NSWindow.didBecomeKeyNotification, object: window, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.refresh() }
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                // The key came back from this window's own choice panel: nothing outside changed, so nothing is re-read (a draft the manager rejected stays).
+                if self.choicePanelHasKey { self.choicePanelHasKey = false } else { self.refresh() }
+            }
+        })
+        // A window other than this one and its panel took the key while a panel held it: the panel's close did not bring the key back here.
+        observers.append(NotificationCenter.default.addObserver(forName: NSWindow.didBecomeKeyNotification, object: nil, queue: .main) { [weak self] note in
+            MainActor.assumeIsolated {
+                guard let self, self.choicePanelHasKey, let other = note.object as? NSWindow, other !== self.window, !(other is GlassChoiceWindow) else { return }
+                self.choicePanelHasKey = false
+                self.activityChanged(key: false)
+            }
         })
     }
 
@@ -1165,8 +1177,20 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         if let appActive { appIsActive = appActive }
         updateShortcutEditing()
     }
-    func windowDidBecomeKey(_ notification: Notification) { activityChanged(key: true, appActive: NSApp?.isActive ?? appIsActive) }
-    func windowDidResignKey(_ notification: Notification) { activityChanged(key: false) }
+    /// Whether the application is active, when a test needs to say so (a test application never is). Nil reads the real application.
+    var applicationActivity: (() -> Bool)?
+    func windowDidBecomeKey(_ notification: Notification) { activityChanged(key: true, appActive: applicationActivity?() ?? NSApp?.isActive ?? appIsActive) }
+
+    /// A choice panel that is a child of this window (a key pop-up's glass panel) takes the key while the user chooses. Settings is still the
+    /// window in use then: the shortcuts stay paused, the note stays as it is and a rejected draft keeps its error, so nothing is re-registered
+    /// or re-read under the panel.
+    private var choicePanelHasKey = false
+    private var hasChoicePanel: Bool { window.childWindows?.contains { $0 is GlassChoiceWindow } ?? false }
+
+    func windowDidResignKey(_ notification: Notification) {
+        if hasChoicePanel { choicePanelHasKey = true; return }
+        activityChanged(key: false)
+    }
 
     // MARK: Sizing
 
