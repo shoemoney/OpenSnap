@@ -376,6 +376,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     var statusNoticeDuration: TimeInterval = 8
     /// The zoom full screen replaced, put back when it ends (only while the document and the zoom are still the ones full screen set).
     var fullScreenZoom: (generation: UUID, before: CGFloat, applied: CGFloat)?
+    /// The picture size the window was sized for when full screen began: a different one on the way out means the window must follow (FS-B).
+    var fullScreenEntryOutput: CGSize?
+    /// The frame the window had before an Actual Size that was left inside full screen: AppKit's own pre-full-screen frame is the one the
+    /// navigator nudged, so the way out puts this one back (FS-C).
+    var fullScreenWindowedFrame: (generation: UUID, frame: CGRect)?
     /// The zoom a snap was last fitted to the window with because its own pixels are bigger than the window can hold (R3-001); it follows the size
     /// both ways, while a zoom the user chose is left alone.
     var pictureFitZoom: CGFloat?

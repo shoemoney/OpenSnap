@@ -8,6 +8,7 @@ extension AppDelegate {
     func fitDrawingForFullScreen() {
         guard !isActualSize, activeResizeSession == nil, windowGesture == nil else { return }
         let before = fullScreenZoom?.before ?? canvas.zoom
+        if fullScreenZoom?.generation != documentGeneration { fullScreenEntryOutput = canvas.outputSize }
         fitCanvasToWindow(maximumScale: Self.fullScreenMaximumScale)
         fullScreenZoom = (documentGeneration, before, canvas.zoom)
         updateViewportChrome()
@@ -34,10 +35,14 @@ extension AppDelegate {
     }
 
     func restoreZoomAfterFullScreen() {
-        // A size change made in full screen was not fitted to the window then; it is now, once the zoom the window had is back (R4-004).
+        // A size change made in full screen was not fitted to the window then; it is now, once the zoom the window had is back (R4-004),
+        // and the window follows the picture even when the zoom came back unchanged (FS-B).
+        let entryOutput = fullScreenEntryOutput, returnFrame = fullScreenWindowedFrame
         defer {
-            fullScreenZoom = nil
-            if refitPictureZoom() { sizeNormalWindowToCanvas(centered: false) }
+            fullScreenZoom = nil; fullScreenEntryOutput = nil; fullScreenWindowedFrame = nil
+            if let returnFrame, returnFrame.generation == documentGeneration { setWindowFrame(returnFrame.frame) }
+            let zoomMoved = refitPictureZoom()
+            if zoomMoved || entryOutput.map({ $0 != canvas.outputSize }) == true { sizeNormalWindowToCanvas(centered: false) }
         }
         guard let saved = fullScreenZoom, saved.generation == documentGeneration, !isActualSize,
               abs(canvas.zoom - saved.applied) < 0.0005 else { return }

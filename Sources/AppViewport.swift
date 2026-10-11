@@ -41,7 +41,7 @@ extension AppDelegate {
         guard !terminationStarted, !isActualSize, !frameMode, windowGesture == nil,
               window.attachedSheet == nil, activeResizeSession == nil else { return nil }
         let generation = documentGeneration
-        var baseline: (output: CGSize, source: CGSize, frame: CGRect, zoom: CGFloat, fit: CGFloat?, dirty: Bool, fullScreen: (generation: UUID, before: CGFloat, applied: CGFloat)?)?
+        var baseline: (output: CGSize, source: CGSize, frame: CGRect, zoom: CGFloat, fit: CGFloat?, dirty: Bool, fullScreen: (generation: UUID, before: CGFloat, applied: CGFloat)?, inFullScreen: Bool)?
         // The fields open at the size the title shows; the geometry maps what is typed back into output pixels. Apply moves the base:
         // the title shows the new size and the next edit is measured from it.
         var displayed = titlePixelSize
@@ -76,7 +76,7 @@ extension AppDelegate {
                 // the transient preview begins. Timer saves leave it intact.
                 self.saveRecovery()
                 let first = (output: self.canvas.outputSize, source: self.canvas.canvasSize,
-                             frame: self.window.frame, zoom: self.canvas.zoom, fit: self.pictureFitZoom, dirty: self.dirty, fullScreen: self.fullScreenZoom)
+                             frame: self.window.frame, zoom: self.canvas.zoom, fit: self.pictureFitZoom, dirty: self.dirty, fullScreen: self.fullScreenZoom, inFullScreen: self.isFullScreen)
                 guard self.canvas.beginViewportEdit(name: "Resize") else {
                     throw NSError(domain: "OpenSnap", code: 5, userInfo: [NSLocalizedDescriptionKey: "Finish the current edit before resizing."])
                 }
@@ -101,7 +101,18 @@ extension AppDelegate {
             guard self.documentGeneration == generation else { return }
             guard let baseline else { return }
             self.canvas.endViewportEdit(cancelled: cancelled)
-            if cancelled {
+            if cancelled, baseline.inFullScreen, !self.isFullScreen {
+                // Full screen ended while the sheet was up: the picture goes back, but the zoom and frame in the baseline are full screen's. The
+                // window gets the zoom it had before full screen (or a fit) and a size that holds the restored picture (FS-A).
+                if let before = baseline.fullScreen?.before { self.setCanvasDisplayZoom(before, label: baseline.fit == nil ? "Output" : "Fit") }
+                else { self.fitCanvasToWindow() }
+                self.pictureFitZoom = baseline.fit
+                self.fullScreenZoom = nil; self.fullScreenEntryOutput = nil
+                self.refitPictureZoom()
+                self.sizeNormalWindowToCanvas(centered: false)
+                self.dirty = baseline.dirty
+                self.window.isDocumentEdited = baseline.dirty
+            } else if cancelled {
                 if abs(self.canvas.zoom - baseline.zoom) >= 0.0005 {
                     self.setCanvasDisplayZoom(baseline.zoom, label: baseline.fit == nil ? "Output" : "Fit")
                 }
@@ -192,6 +203,7 @@ extension AppDelegate {
             if isFullScreen {
                 setCanvasDisplayZoom(state.zoom, label: "Normal")
                 pictureFitZoom = state.pictureFit
+                fullScreenWindowedFrame = (state.generation, state.windowFrame)
                 fitDrawingForFullScreen()
             } else {
                 setCanvasDisplayZoom(state.fullScreenZoom.flatMap { $0.generation == state.generation ? $0.before : nil } ?? state.zoom, label: "Normal")
