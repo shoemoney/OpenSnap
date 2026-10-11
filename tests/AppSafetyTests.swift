@@ -70,22 +70,12 @@ final class AppSafetyPopover: NSObject {
     func performClose(_ sender: Any?) { isShown = false }
 }
 
-/// The Size pill's popover, kept off the screen: it reports where it was asked to open and runs the real close delegate calls.
-final class AppSafetySizePopover: NSPopover {
-    var open = false
-    private(set) var edge: NSRectEdge?
-    private(set) weak var anchor: NSView?
-    override var isShown: Bool { open }
-    override func show(relativeTo positioningRect: NSRect, of positioningView: NSView, preferredEdge: NSRectEdge) {
-        open = true; edge = preferredEdge; anchor = positioningView
-    }
-    override func performClose(_ sender: Any?) { close() }
-    override func close() {
-        guard open else { return }
-        delegate?.popoverWillClose?(Notification(name: NSPopover.willCloseNotification, object: self))
-        open = false
-        delegate?.popoverDidClose?(Notification(name: NSPopover.didCloseNotification, object: self))
-    }
+/// A glass panel kept off the screen: it is placed, shown and closed with all its real behaviour (placement, dismissal, focus restore, the
+/// close callbacks) but ordered nowhere, on a screen big enough to sit below its anchor. The Size and Drawing colors panels use it.
+@MainActor
+func appSafetyPanelSetup(_ host: GlassPanelHost) {
+    host.presenter = { _, _ in }
+    host.visibleFrameOverride = NSRect(x: -4000, y: -4000, width: 8000, height: 8000)
 }
 
 final class AppSafetyColorPanel: NSColorPanel {
@@ -400,7 +390,8 @@ enum AppSafetyTests {
             app.timer?.invalidate(); app.timer = nil
             app.window.isReleasedWhenClosed = false
             try expect(app.window is AppSafetyWindow, "Window must never be ordered on screen")
-            app.widthControl.popoverProvider = { AppSafetySizePopover() }
+            app.widthControl.panelSetup = appSafetyPanelSetup
+            app.colorPanelSetup = appSafetyPanelSetup
             // No test may reach the network or the owner's real destination: a fake SFTP destination and an in-process transfer.
             // Destinations live in the isolated support folder with in-memory secrets; ~/.aws is never read.
             let support = app.support
@@ -3681,42 +3672,121 @@ enum AppSafetyTests {
                 window.simulatesVisibility = true; window.shown = true
                 let pending = try editor(app, text: "Hover pending")
                 app.drawingColorHover(true, palette: false)
-                try expect(app.colorPopover?.isShown == true && app.colorOpenedByHover && app.window.firstResponder === pending,
+                try expect(app.colorPanel?.isShown == true && app.colorOpenedByHover && app.window.firstResponder === pending,
                            "Original hover opens without taking annotation typing focus")
+                try expect(app.colorPanel?.requestedKey == false, "A hover-opened palette never asks for the keyboard")
+                let control = window.convertToScreen(app.paletteButton.convert(app.paletteButton.bounds, to: nil))
+                try expect(app.colorPanel?.placement.map { $0.frame.maxY <= control.minY && abs($0.frame.midX - control.midX) < 1 } == true,
+                           "...and hangs below the Color control, centred on it")
                 app.drawingColorHover(false, palette: false); app.drawingColorHover(true, palette: true)
                 RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.15))
-                try expect(app.colorPopover?.isShown == true && app.colorPaletteHovered,
-                           "Crossing the modern popover arrow gap must cancel dismissal")
+                try expect(app.colorPanel?.isShown == true && app.colorPaletteHovered,
+                           "Crossing the gap between the Color control and the panel must cancel dismissal")
                 app.drawingColorHover(false, palette: true)
-                try waitForMain("Leaving both original hover regions dismisses the palette", until: { app.colorPopover?.isShown == false })
+                try waitForMain("Leaving both original hover regions dismisses the palette", until: { app.colorPanel?.isShown != true })
+                try expect(app.colorPanel == nil && !app.colorOpenedByHover && !app.colorPaletteHovered, "The closed palette leaves no hover state behind")
                 app.drawingColorHover(true, palette: false); app.drawingColorHover(false, palette: false)
                 app.closeDrawingColors(); app.showDrawingColors(app.paletteButton)
                 RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.15))
-                try expect(app.colorPopover?.isShown == true && !app.colorOpenedByHover,
+                try expect(app.colorPanel?.isShown == true && !app.colorOpenedByHover,
                            "Cancelled hover dismissal cannot close a later keyboard/click palette")
+                try expect(app.colorPanel?.requestedKey == true && app.colorPanel?.anchor === app.paletteButton,
+                           "An explicit palette hangs from the Color control and takes the keyboard")
                 app.closeDrawingColors(); window.simulatedKey = false
                 app.showDrawingColors(app.paletteButton)
-                try expect(app.colorPopover?.isShown == true, "Explicit Color activation must work before the window becomes key")
+                try expect(app.colorPanel?.isShown == true, "Explicit Color activation must work before the window becomes key")
                 app.closeDrawingColors(); window.simulatedKey = true
                 app.drawingColorHover(true, palette: false)
-                let retired = app.colorPopover?.contentViewController?.view as? BezelHoverPaletteView
+                let retired = app.colorHoverTracker
+                try expect(retired != nil, "A hover-opened palette tracks the pointer")
                 app.showDrawingColors(app.paletteButton); app.drawingColorHover(false, palette: false)
                 RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.15))
-                try expect(app.colorPopover?.isShown == true && !app.colorOpenedByHover,
-                           "Explicit activation pins an already-hovered palette across pointer departure")
+                try expect(app.colorPanel?.isShown == true && !app.colorOpenedByHover && app.colorPanel?.requestedKey == true,
+                           "Explicit activation pins an already-hovered palette across pointer departure, and takes the keyboard")
                 app.closeDrawingColors(); app.showDrawingColors(app.paletteButton)
                 retired?.onHover?(true)
                 try expect(!app.colorPaletteHovered, "Retired palette tracking cannot alter a replacement palette")
                 app.closeDrawingColors(); app.frameCaptureInProgress = true
                 app.drawingColorHover(true, palette: false)
-                try expect(app.colorPopover?.isShown != true, "Capture blocks hover opening")
+                try expect(app.colorPanel?.isShown != true, "Capture blocks hover opening")
                 app.frameCaptureInProgress = false; app.closeDrawingColors()
                 let sheet = NSWindow(); window.simulatedSheet = sheet
                 app.drawingColorHover(true, palette: false)
-                try expect(app.colorPopover?.isShown != true, "Attached sheets block hover opening")
+                try expect(app.colorPanel?.isShown != true, "Attached sheets block hover opening")
                 window.simulatedSheet = nil; app.closeDrawingColors()
                 window.shown = false; app.drawingColorHover(true, palette: false)
-                try expect(app.colorPopover?.isShown != true, "Hidden windows cannot reopen hover palettes")
+                try expect(app.colorPanel?.isShown != true, "Hidden windows cannot reopen hover palettes")
+                window.shown = true
+                // The click that pins a hover-opened palette reaches the Color control (the host does not consume it) and opens the pinned one;
+                // a click on the Color control while a pinned palette is up only closes it.
+                let onColor = app.paletteButton.convert(NSPoint(x: app.paletteButton.bounds.midX, y: app.paletteButton.bounds.midY), to: nil)
+                app.drawingColorHover(true, palette: false)
+                try expect(app.colorPanel?.isShown == true && app.colorOpenedByHover, "Hovering the Color control opens the palette")
+                try expect(app.colorPanel?.handleMouseDown(in: window, at: onColor) == false && app.colorPanel?.isShown != true,
+                           "A press on the Color control closes a hover-opened palette without swallowing the click")
+                app.paletteButton.performClick(nil)
+                try expect(app.colorPanel?.isShown == true && !app.colorOpenedByHover && app.colorPanel?.anchor === app.paletteButton,
+                           "...and that click's action opens the pinned palette")
+                try expect(app.colorPanel?.handleMouseDown(in: window, at: onColor) == true && app.colorPanel?.isShown != true,
+                           "A press on the Color control while the pinned palette is up only closes it, and is consumed")
+            }),
+            ("Color panel opened from the keyboard focuses the chosen swatch and Escape hands the keyboard back; a pick changes the colour and closes; Shift picks the background; Custom color… opens the system panel", {
+                let fixture = try Fixture(), app = fixture.app
+                guard let window = app.window as? AppSafetyWindow else { throw Failure(description: "Isolated window") }
+                window.simulatesVisibility = true; window.shown = true
+                app.colorPanelSetup = { appSafetyPanelSetup($0); $0.keyStateProbe = { true } }
+                defer { AppSafetyEvents.current = nil }
+                func key(_ code: UInt16) throws -> NSEvent {
+                    guard let event = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0, windowNumber: window.windowNumber, context: nil,
+                                                       characters: " ", charactersIgnoringModifiers: " ", isARepeat: false, keyCode: code) else { throw Failure(description: "Key event") }
+                    return event
+                }
+                func click(_ flags: NSEvent.ModifierFlags) throws -> NSEvent {
+                    guard let event = NSEvent.mouseEvent(with: .leftMouseUp, location: .zero, modifierFlags: flags, timestamp: 0, windowNumber: window.windowNumber,
+                                                         context: nil, eventNumber: 1, clickCount: 1, pressure: 1) else { throw Failure(description: "Mouse event") }
+                    return event
+                }
+                app.applyChosenColor(OriginalDrawingControls.presets[3].color, modifiers: [])
+                // From the keyboard: the chosen swatch (Pink) takes the focus inside the panel.
+                try expect(window.makeFirstResponder(app.paletteButton) && window.firstResponder === app.paletteButton, "The Color control takes the keyboard")
+                AppSafetyEvents.current = try key(49)
+                app.showDrawingColors(app.paletteButton)
+                guard let opened = app.colorPanel, opened.isShown else { throw Failure(description: "The panel did not open") }
+                guard let pink = app.presetColorButtons.first(where: { $0.state == .on }) else { throw Failure(description: "No chosen swatch") }
+                try expect(opened.requestedKey && opened.window.firstResponder === pink && pink.accessibilityLabel() == OriginalDrawingControls.presets[3].name,
+                           "Opened from the keyboard, the panel takes it and focuses the chosen swatch (\(String(describing: opened.window.firstResponder)))")
+                opened.window.sendEvent(try key(53))
+                try expect(app.colorPanel == nil && window.firstResponder === app.paletteButton, "Escape closes the panel and the keyboard returns to the Color control (\(String(describing: window.firstResponder)))")
+                // From the pointer: the panel takes the keyboard but focuses nothing, and a pick closes it and changes the stroke colour.
+                AppSafetyEvents.current = try click([])
+                app.showDrawingColors(app.paletteButton)
+                guard let second = app.colorPanel, second.isShown else { throw Failure(description: "The panel did not open for the pointer") }
+                try expect(second.requestedKey && second.window.firstResponder === second.window, "Opened with the pointer, nothing in the panel is focused")
+                let blue = OriginalDrawingControls.presets[2]
+                guard let blueSwatch = app.presetColorButtons.first(where: { $0.tag == blue.tag }) else { throw Failure(description: "No Blue swatch") }
+                blueSwatch.performClick(nil)
+                try expect(SketchColor(app.canvas.strokeColor) == SketchColor(blue.color), "A pick changes the stroke colour")
+                try expect(app.colorPanel == nil && window.firstResponder === app.paletteButton, "...closes the panel and hands the keyboard back")
+                // Shift picks the background and leaves the stroke colour alone.
+                AppSafetyEvents.current = try click([.shift])
+                app.showDrawingColors(app.paletteButton)
+                let yellow = OriginalDrawingControls.presets[1]
+                guard let yellowSwatch = app.presetColorButtons.first(where: { $0.tag == yellow.tag }) else { throw Failure(description: "No Yellow swatch") }
+                app.choosePresetColor(yellowSwatch)
+                try expect(app.canvas.document.backgroundColor == SketchColor(yellow.color) && SketchColor(app.canvas.strokeColor) == SketchColor(blue.color) && app.colorPanel == nil,
+                           "Shift sets the background, keeps the stroke colour and closes the panel")
+                AppSafetyEvents.current = nil
+                // A press anywhere else closes it.
+                app.showDrawingColors(app.paletteButton)
+                try expect(app.colorPanel?.handleMouseDown(in: window, at: NSPoint(x: 1, y: 1)) == false && app.colorPanel == nil, "A click outside the panel closes it")
+                // Custom color… hands over to the system colour panel, which stays OS-owned.
+                let system = AppSafetyColorPanel(contentRect: .zero, styleMask: [.titled], backing: .buffered, defer: false)
+                app.colorPanelProvider = { system }
+                app.showDrawingColors(app.paletteButton)
+                guard let custom = app.customColorButton else { throw Failure(description: "No Custom color… row") }
+                custom.performClick(nil)
+                try expect(app.colorPanel == nil && system.shown && app.customColorPanelOpen,
+                           "Custom color… closes the panel and opens the system Colors panel wired to the editor")
             }),
             ("Drawing defaults round trip exact calibrated custom RGBA and restore native controls", {
                 let fixture = try Fixture(), app = fixture.app

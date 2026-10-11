@@ -3,7 +3,7 @@ import AppKit
 extension AppDelegate {
     /// The main window's Tab order: the top bar left to right, the canvas, then the bottom bar left to right.
     /// AppKit recalculates it from the controls' positions, which already runs in that order now the right rail is gone, so only the
-    /// two popovers (Size, Color) set `nextKeyView` by hand. The canvas is where the keyboard starts.
+    /// two floating glass panels (Size, Color), each a window of its own, set `nextKeyView` by hand. The canvas is where the keyboard starts.
     ///
     /// Tab moves the keyboard through that loop from the canvas as it does from any control, and Shift-Tab goes back, so the canvas is never a
     /// trap. The old "Tab = Pen" swap between the current tool and the pencil is Control-Tab now (the hint bar says so): where Tab moves focus,
