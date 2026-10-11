@@ -112,6 +112,13 @@ for name, (path, data) in snapshot.items():
         if re.search(r'\bGlobalHotkeyManager\b', text):
             raise SystemExit('Unrecognized live hotkey-manager construction; refusing to run.')
         target.write_text(text)
+    elif name == 'BezelDrawingControls.swift':
+        # Deferred Color activation captures the initiating event here, before
+        # App.swift receives the action. Both must read the same isolated event.
+        text = data.decode()
+        if 'NSApp.currentEvent' not in text:
+            raise SystemExit('Missing drawing-control event safety boundary.')
+        target.write_text(text.replace('NSApp.currentEvent', 'AppSafetyEvents.current'))
     elif name == 'WindowZoom.swift':
         text = data.decode()
         if 'NSPanel(' not in text:
