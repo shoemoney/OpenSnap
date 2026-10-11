@@ -34,6 +34,7 @@ least as good as the native control it replaces.
 | 4 Settings | Add…, Edit…, Remove, Make Default, empty-state Add… | native push buttons | titled `CommandButton`s on one action plate |
 | 4 Settings | destination list, shortcut recorders | content list / form fields | **kept solid / native** (readable content) |
 | 4 Settings › Destination sheet | Protocol (`protocolPopup`), key source (`sourcePopup`) | native pop-ups | `GlassChoiceGroup` when the set is small and fixed, else glass pop-up face + `MenuChoicePanel` |
+| 4 Settings › Destination sheet | "Make uploads public-read" (`aclCheckbox`) | native checkbox | `GlassChoiceButton` toggle on the related plate; default, visibility and save/test payload unchanged |
 | 4 Settings › Destination sheet | Test / Save / Cancel and other sheet buttons | native push buttons | titled `CommandButton`s on one action plate; default/cancel keys kept |
 | 4 Settings › Destination sheet | host, user, password, path, URL fields, status text | form fields / status | **kept native** |
 | 4 Resize | Resize / Crop / Limit | `NSSegmentedControl` | `GlassChoiceGroup` |
