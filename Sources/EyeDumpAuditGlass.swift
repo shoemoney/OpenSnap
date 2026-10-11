@@ -24,7 +24,7 @@ extension AuditRun {
         "S55": ["history-category-rest", "history-category-hover", "history-category-focus", "history-date-rest", "history-date-hover", "history-date-focus", "history-date-chosen", "history-date-dismissed", "history-dragas-rest", "history-dragas-hover", "history-dragas-focus", "history-dragas-chosen", "history-dragas-dismissed"],
         "S56": ["settings-tabs-rest", "settings-tabs-hover", "settings-tabs-focus", "settings-radios-rest", "settings-radios-hover", "settings-radios-focus", "settings-toggles-rest", "settings-toggles-hover", "settings-toggles-focus", "settings-actions-rest", "settings-actions-hover", "settings-actions-focus", "settings-actions-disabled"],
         "S57": ["resize-groups-rest", "resize-groups-hover", "resize-groups-focus", "resize-anchor-rest", "resize-anchor-hover", "resize-anchor-focus", "resize-preset-rest", "resize-preset-hover", "resize-preset-focus", "resize-preset-chosen", "resize-preset-dismissed"],
-        "S58": ["destination-protocol-rest", "destination-protocol-hover", "destination-protocol-focus", "destination-protocol-dismissed", "destination-source-rest", "destination-source-hover", "destination-source-focus", "destination-source-dismissed", "destination-acl-off", "destination-acl-on"],
+        "S58": ["destination-protocol-rest", "destination-protocol-hover", "destination-protocol-focus", "destination-protocol-dismissed", "destination-source-rest", "destination-source-hover", "destination-source-focus", "destination-source-dismissed", "destination-acl-off", "destination-acl-on", "destination-width-640", "destination-width-560"],
         "S59": ["footer-original-on", "footer-original-off", "footer-original-hidden"],
     ]
 
@@ -171,11 +171,53 @@ extension AuditRun {
 
     func minimumTextSize(in root: NSView) -> Double? { smallestText(in: root)?.size }
 
+    // MARK: truncation measurements
+
+    /// Custom-drawn or plain text the glass records do NOT measure for truncation (their font size is still read when an NSButton or NSTextField
+    /// carries them). Stated in every record so the no-truncation claim stays bounded to what is measured: GlassChoiceButton title and shortcut
+    /// labels, GlassPopUpButton faces, and the cell titles of other titled command buttons.
+    static let unmeasuredText = [
+        "SegmentedToggle segments (the footer PNG | JPG toggle)", "the Size panel readout and header", "colour swatch glyphs and the Custom colour chip image",
+        "ResizeAnchorGrid cell dots and ring (no text)", "plain NSTextField labels, captions, status and the Resize dimension fields",
+        "Size preset stroke glyphs (no text)", "the Toolbox face (icon and chevron, no title)", "menu-row header labels (GlassChoiceLabel)", "tooltips and VoiceOver text"
+    ]
+
+    func labelMetric(_ label: NSTextField, kind: String) -> [String: Any] {
+        label.layoutSubtreeIfNeeded()
+        let fitting = label.fittingSize, frame = label.frame.size
+        let wraps = label.maximumNumberOfLines != 1
+        let textWidth = label.attributedStringValue.size().width
+        let fits = frame.width > 0 && fitting.width <= frame.width + 0.5 && fitting.height <= frame.height + 0.5 && (wraps || textWidth <= frame.width + 0.5)
+        return ["title": label.stringValue, "kind": kind, "fittingSize": [Double(fitting.width), Double(fitting.height)], "frameSize": [Double(frame.width), Double(frame.height)],
+                "textWidth": Double(textWidth), "fits": fits]
+    }
+
+    /// The face of every GlassPopUpButton at or under `root`: the title it draws, what that needs, and the rectangle it is drawn in (the button's
+    /// width less its padding on both sides and the chevron column, as `GlassPopUpButton.draw` lays it out).
+    func popUpFaceMetrics(in root: NSView) -> [[String: Any]] {
+        var faces: [[String: Any]] = []
+        func walk(_ view: NSView) {
+            if view.isHidden || view.alphaValue <= 0.01 { return }
+            if let popup = view as? GlassPopUpButton {
+                let font = DesignTokens.Typography.font(.body)
+                let title = popup.faceTitle
+                let textWidth = ceil((title as NSString).size(withAttributes: [.font: font]).width)
+                let available = max(0, popup.bounds.width - 2 * GlassChoiceButton.padding - (GlassChoiceButton.gap + GlassChoiceButton.glyphSide))
+                let height = ceil(font.boundingRectForFont.height)
+                faces.append(["title": title, "kind": "pop-up face", "fittingSize": [Double(textWidth), Double(height)], "frameSize": [Double(available), Double(max(popup.bounds.height, height))],
+                              "textWidth": Double(textWidth), "fits": available > 0 && textWidth <= available + 0.5, "identifier": popup.panelIdentifier])
+            }
+            view.subviews.forEach(walk)
+        }
+        walk(root)
+        return faces
+    }
+
     // MARK: the record
 
     /// What the harness measured on a panel or group, for the checker. `rowsRoot` limits the rows to one group's plate; the glass counts
     /// always cover `host`'s whole content, so nested glass anywhere in the window is seen.
-    func glassRecord(kind: String, identifier: String, variant: String, host: NSWindow, rowsRoot: NSView? = nil, extra: [String: Any] = [:]) -> [String: Any] {
+    func glassRecord(kind: String, identifier: String, variant: String, host: NSWindow, rowsRoot: NSView? = nil, extraFaceRoots: [NSView] = [], extra: [String: Any] = [:]) -> [String: Any] {
         let content = host.contentView ?? NSView()
         let rows = glassRows(in: rowsRoot ?? content)
         let counts = glassCounts(in: content)
@@ -190,19 +232,28 @@ extension AuditRun {
             "isKey": host.isKeyWindow
         ]
         // No title may be cut: a label fits when what it needs (fittingSize, and the text's own width) is within the frame that draws it.
-        let labels: [[String: Any]] = rows.compactMap { row -> [String: Any]? in
-            guard let choice = row as? GlassChoiceButton, !choice.isHiddenOrHasHiddenAncestor else { return nil }
-            let label = choice.titleLabel
-            label.layoutSubtreeIfNeeded()
-            let fitting = label.fittingSize, frame = label.frame.size
-            let wraps = label.maximumNumberOfLines != 1
-            let textWidth = label.attributedStringValue.size().width
-            let fits = frame.width > 0 && fitting.width <= frame.width + 0.5 && fitting.height <= frame.height + 0.5 && (wraps || textWidth <= frame.width + 0.5)
-            return ["title": label.stringValue, "fittingSize": [Double(fitting.width), Double(fitting.height)], "frameSize": [Double(frame.width), Double(frame.height)],
-                    "textWidth": Double(textWidth), "fits": fits]
+        var labels: [[String: Any]] = []
+        for case let choice as GlassChoiceButton in rows where !choice.isHiddenOrHasHiddenAncestor {
+            labels.append(labelMetric(choice.titleLabel, kind: "choice title"))
+            if !choice.shortcutLabel.isHidden, !choice.shortcutLabel.stringValue.isEmpty { labels.append(labelMetric(choice.shortcutLabel, kind: "shortcut")) }
         }
-        record["labelMetrics"] = labels
-        record["truncatedRows"] = labels.filter { ($0["fits"] as? Bool) != true }.compactMap { $0["title"] as? String }
+        // A command button that is not a glass choice (an action plate, a tab) draws its title in the cell: measured against the cell's title rectangle.
+        for row in rows where !(row is GlassChoiceButton) && !(row is GlassPopUpButton) && !row.isHiddenOrHasHiddenAncestor && !row.title.isEmpty && row.imagePosition != .imageOnly {
+            guard let cell = row.cell else { continue }
+            let font = row.font ?? DesignTokens.Typography.font(.body)
+            let textWidth = ceil((row.title as NSString).size(withAttributes: [.font: font]).width)
+            let available = cell.titleRect(forBounds: row.bounds).width
+            labels.append(["title": row.title, "kind": "button title", "fittingSize": [Double(textWidth), Double(ceil(font.boundingRectForFont.height))],
+                           "frameSize": [Double(available), Double(row.bounds.height)], "textWidth": Double(textWidth), "fits": textWidth <= available + 0.5])
+        }
+        // Pop-up faces (a GlassPopUpButton draws its title in the width left by its padding and chevron) are labels too: the faces under the scope
+        // and the opener's own face, whose window the panel record does not cover.
+        var faces: [[String: Any]] = []
+        for scope in [rowsRoot ?? content] + extraFaceRoots { faces += popUpFaceMetrics(in: scope) }
+        record["labelMetrics"] = labels + faces
+        record["faceTitles"] = faces.compactMap { $0["title"] as? String }
+        record["truncatedRows"] = (labels + faces).filter { ($0["fits"] as? Bool) != true }.compactMap { $0["title"] as? String }
+        record["unmeasuredText"] = AuditRun.unmeasuredText
         if let hovered = index(where: { isHovered($0) }) { record["hoveredRow"] = hovered }
         if let focused = index(where: { host.firstResponder === $0 }) { record["focusedRow"] = focused }
         if let smallest = smallestText(in: rowsRoot ?? content) { record["minFontSize"] = smallest.size; record["minFontSource"] = smallest.source }
@@ -261,7 +312,8 @@ extension AuditRun {
     @discardableResult
     func shootGlassPanel(_ id: String, _ slug: String, surface: String, state: String, panel: NSWindow, opener: NSView?, refs: [String],
                          variant: String = "rest", identifier: String = "", extra: [String: Any] = [:], alsoPanelOnly: Bool = false, context: [NSWindow]? = nil) -> String? {
-        let record = glassRecord(kind: "panel", identifier: identifier.isEmpty ? (panel.identifier?.rawValue ?? "") : identifier, variant: variant, host: panel, extra: extra)
+        let record = glassRecord(kind: "panel", identifier: identifier.isEmpty ? (panel.identifier?.rawValue ?? "") : identifier, variant: variant, host: panel,
+                                 extraFaceRoots: opener.map { [$0] } ?? [], extra: extra)
         let stem = shoot(id, slug, surface: surface, state: state, windows: [panel] + (context ?? [window]), refs: refs, settle: 0.3, extra: ["glassPanel": record])
         if alsoPanelOnly {
             shoot(id, slug + "-only", surface: surface, state: state + " (the panel window alone)", windows: [panel], refs: refs, settle: 0.1, extra: ["glassPanel": record])
@@ -292,7 +344,7 @@ extension AuditRun {
         let owner = script.host ?? window
         let returned = owner.firstResponder === opened.responderBefore
         if capture {
-            let record = glassRecord(kind: "panel", identifier: script.identifier, variant: "dismissed", host: owner, rowsRoot: NSView(), extra: [
+            let record = glassRecord(kind: "panel", identifier: script.identifier, variant: "dismissed", host: owner, rowsRoot: NSView(), extraFaceRoots: [script.opener], extra: [
                 "panelGone": gone, "focusReturned": returned, "openerHadFocus": opened.openerHadFocus, "dismissedBy": route,
                 "hostRegistryClear": GlassPanelHost.current == nil, "openerClass": String(describing: type(of: script.opener)),
                 "glassContainerCount": 0, "plateCount": 0, "nestedGlassCount": 0])
@@ -641,7 +693,7 @@ extension AuditRun {
         let (sheet, view) = app.publishing.buildEditor(editing: nil, visibleFrame: nil, hostWidth: nil)
         settings.beginSheet(sheet)
         pump(0.8)
-        defer { closeHarnessSheet(sheet); app.closePreferences() }
+        defer { app.closePreferences() }
         view.protocolPopup.selectItem(withTitle: PublishingProtocol.s3.title)
         view.formChanged()
         pump(0.5)
@@ -656,7 +708,7 @@ extension AuditRun {
             dismissGlassPanel("S58", base + "-dismissed", surface: "Destination sheet", state: "choices dismissed with Escape: gone, focus back on the face", script: panelScript, opened: opened)
         }
         // The public-read toggle (visible for S3-compatible): off, then on. Its row is the only choice on its plate.
-        guard let plate = enclosingPlate(of: view.aclCheckbox) else { gap("S58", "Destination sheet / public-read", "no glass plate around the public-read toggle"); return }
+        guard let plate = enclosingPlate(of: view.aclCheckbox) else { gap("S58", "Destination sheet / public-read", "no glass plate around the public-read toggle"); closeHarnessSheet(sheet); return }
         for (slug, on) in [("destination-acl-off", false), ("destination-acl-on", true)] {
             view.aclCheckbox.isChosen = on
             pump(0.3)
@@ -664,6 +716,24 @@ extension AuditRun {
                                      extra: ["protocol": "S3", "aclChosen": view.aclCheckbox.isChosen])
             shoot("S58", slug, surface: "Destination sheet", state: "S3-compatible destination: Make uploads public-read \(on ? "on" : "off")", windows: [sheet, settings], refs: refs, settle: 0.3,
                   extra: ["glassPanel": record])
+        }
+        closeHarnessSheet(sheet)
+        // The sheet at the normal 640 width and at its supported minimum (sheetMinWidth, 560), S3-compatible with the Keychain key source: every
+        // face and choice label in it is measured, so a narrow sheet that cuts a title fails the run.
+        for (width, slug) in [(CGFloat(640), "destination-width-640"), (PublishingDestinationsView.sheetMinWidth, "destination-width-560")] {
+            let (narrow, form) = app.publishing.buildEditor(editing: nil, visibleFrame: nil, hostWidth: width)
+            settings.beginSheet(narrow)
+            pump(0.8)
+            form.protocolPopup.selectItem(withTitle: PublishingProtocol.s3.title)
+            form.formChanged()
+            form.sourcePopup.selectItem(withTitle: "Access key stored in Keychain")
+            form.formChanged()
+            pump(0.6)
+            let record = glassRecord(kind: "group", identifier: "DestinationSheetWidth", variant: "rest", host: narrow, rowsRoot: narrow.contentView,
+                                     extra: ["protocol": "S3", "sourceTitle": form.sourcePopup.titleOfSelectedItem ?? "", "requestedWidth": Double(width), "sheetWidth": Double(narrow.frame.width.rounded()),
+                                             "sheetMinWidth": Double(PublishingDestinationsView.sheetMinWidth)])
+            shoot("S58", slug, surface: "Destination sheet", state: "S3-compatible with the Keychain key source, sheet \(Int(width)) pt wide", windows: [narrow, settings], refs: refs, settle: 0.3, extra: ["glassPanel": record])
+            closeHarnessSheet(narrow)
         }
     }
 

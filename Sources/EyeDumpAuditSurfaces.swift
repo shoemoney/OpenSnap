@@ -772,7 +772,6 @@ extension AuditRun {
             app.widthControl.showPopover()
             pump(0.7)
             let popoverWindow = app.widthControl.panelWindow
-            popoverWindow?.orderFrontRegardless()
             if popoverWindow == nil { gap("S30", "Size popover", "the popover window did not appear at \(spec)") }
             shoot("S30", "size-popover-\(widthSlug(spec))", surface: "Size popover", state: "Size popover open below the pill at window width \(spec), value 6.75, Brush tool",
                   windows: popoverWindow.map { [window, $0] } ?? [window], refs: ["BezelDrawingControls.swift|func showPopover", "BezelDrawingControls.swift|final class SizePopoverContent"],
@@ -793,7 +792,6 @@ extension AuditRun {
                 app.presentDrawingColors(hover: false)
                 pump(0.7)
                 let popoverWindow = app.colorPanelWindow
-                popoverWindow?.orderFrontRegardless()
                 if popoverWindow == nil { gap("S31", "Colour popover", "the popover window did not appear") }
                 var extra = popoverMetrics(popoverWindow, anchor: app.paletteButton)
                 extra["customRowIsCurrent"] = app.customColorButton?.isChosen ?? false
@@ -826,7 +824,6 @@ extension AuditRun {
         app.presentDrawingColors(hover: false)
         pump(0.7)
         let popoverWindow = app.colorPanelWindow
-        popoverWindow?.orderFrontRegardless()
         if popoverWindow == nil { gap("S41", "Colour popover", "the popover window did not appear") }
         var extra = popoverMetrics(popoverWindow, anchor: app.paletteButton)
         extra["checkedPresets"] = app.presetColorButtons.filter { $0.state == .on }.map { $0.accessibilityLabel() ?? "" }
@@ -1086,7 +1083,6 @@ extension AuditRun {
         pill.showPopover()
         pump(0.6)
         if let popoverWindow = pill.panelWindow, let track = pill.popoverContent?.trackView {
-            popoverWindow.orderFrontRegardless()
             track.setHovered(true)
             shoot("S40", "size-track-hover", surface: "component states", state: "Size popover, pointer over the track: the knob grows to 1.15", windows: popoverWindow === window ? [window] : [window, popoverWindow],
                   refs: ["BezelDrawingControls.swift|var knobRect"], settle: 0.3, extra: popoverMetrics(popoverWindow, anchor: pill))
@@ -1108,7 +1104,6 @@ extension AuditRun {
         app.presentDrawingColors(hover: false)
         pump(0.7)
         if let popoverWindow = app.colorPanelWindow, app.presetColorButtons.count > 4 {
-            popoverWindow.orderFrontRegardless()
             let swatches = app.presetColorButtons
             swatches[2].setHovered(true)
             swatches[4].highlight(true)

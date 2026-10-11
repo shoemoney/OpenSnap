@@ -552,12 +552,12 @@ GLASS_SURFACES = {
             "resize-preset-rest", "resize-preset-hover", "resize-preset-focus", "resize-preset-chosen", "resize-preset-dismissed"],
     "S58": ["destination-protocol-rest", "destination-protocol-hover", "destination-protocol-focus", "destination-protocol-dismissed",
             "destination-source-rest", "destination-source-hover", "destination-source-focus", "destination-source-dismissed",
-            "destination-acl-off", "destination-acl-on"],
+            "destination-acl-off", "destination-acl-on", "destination-width-640", "destination-width-560"],
     "S59": ["footer-original-on", "footer-original-off", "footer-original-hidden"],
 }
 GLASS_VARIANTS = ("rest", "hover", "focus", "chosen", "disabled", "dismissed", "busy", "pressed", "hidden")
 # The variant a capture's slug promises; the record must say the same and carry that variant's own proof.
-SLUG_VARIANTS = {"acl-off": "rest", "acl-on": "chosen", "original-off": "rest", "original-on": "chosen", "original-hidden": "hidden", "actual-size": "chosen", "custom": "chosen", "empty": "disabled", "busy": "busy", "pressed": "pressed"}
+SLUG_VARIANTS = {"width-640": "rest", "width-560": "rest", "acl-off": "rest", "acl-on": "chosen", "original-off": "rest", "original-on": "chosen", "original-hidden": "hidden", "actual-size": "chosen", "custom": "chosen", "empty": "disabled", "busy": "busy", "pressed": "pressed"}
 
 
 def promised_variant(slug):
@@ -629,17 +629,31 @@ def check_glass_record(label, record):
         elif font < READABLE_MINIMUM:
             problems.append(f"glass: {label} has text at {font:g} pt, below the {READABLE_MINIMUM:g} pt floor")
     if variant not in ("dismissed", "hidden"):
-        # No truncation: each GlassChoiceButton title label needs no more room (fittingSize) than the frame it was given, and the harness's own verdict agrees.
+        # No truncation: every GlassChoiceButton title and every pop-up face needs no more room (fittingSize) than the frame it was given, and the
+        # harness's own verdict agrees. A record that has choices or faces and an empty (or short) metrics list measured nothing and fails.
         metrics = glass.get("labelMetrics")
+        classes = glass.get("rowClasses") or []
+        choices = sum(1 for name in classes if name == "GlassChoiceButton")
+        faces = glass.get("faceTitles") or []
         if not isinstance(metrics, list):
             problems.append(f"glass: {label} recorded no labelMetrics, so truncation was not measured")
         else:
+            titled = [m for m in metrics if m.get("kind") in ("choice title", None)]
+            measured_faces = [m for m in metrics if m.get("kind") == "pop-up face"]
+            if choices and len(titled) < choices:
+                problems.append(f"glass: {label} has {choices} glass choice rows but only {len(titled)} title measurements")
+            if faces and len(measured_faces) < len(faces):
+                problems.append(f"glass: {label} shows {len(faces)} pop-up faces but only {len(measured_faces)} face measurements")
             for item in metrics:
                 fitting, frame = item.get("fittingSize") or [0, 0], item.get("frameSize") or [0, 0]
+                name = item.get("kind") or "label"
                 if not (isinstance(fitting, list) and isinstance(frame, list) and len(fitting) == 2 and len(frame) == 2):
-                    problems.append(f"glass: {label} label {item.get('title')!r} has unreadable metrics")
+                    problems.append(f"glass: {label} {name} {item.get('title')!r} has unreadable metrics")
                 elif fitting[0] > frame[0] + 0.5 or fitting[1] > frame[1] + 0.5 or item.get("fits") is not True:
-                    problems.append(f"glass: {label} title {item.get('title')!r} is cut off (needs {fitting[0]:g} x {fitting[1]:g}, drawn in {frame[0]:g} x {frame[1]:g})")
+                    problems.append(f"glass: {label} {name} {item.get('title')!r} is cut off (needs {fitting[0]:g} x {fitting[1]:g}, drawn in {frame[0]:g} x {frame[1]:g})")
+        unmeasured = glass.get("unmeasuredText")
+        if not isinstance(unmeasured, list) or not unmeasured:
+            problems.append(f"glass: {label} does not list the text it leaves unmeasured, so the no-truncation claim is not bounded")
     if variant != "dismissed" and glass.get("truncatedRows"):
         problems.append(f"glass: {label} has choice titles cut off with an ellipsis: {glass['truncatedRows']}")
     if variant == "hover" and glass.get("hoveredRow") is None:
@@ -664,6 +678,18 @@ def check_glass_record(label, record):
         problems += toggle_problems(label, glass, rows, "original size", slug.endswith("-original-on"))
         if glass.get("originalSizeVisible") is not True or glass.get("largeShot") is not True:
             problems.append(f"glass: {label} must show the Original size toggle on a large shot (visible {glass.get('originalSizeVisible')!r}, largeShot {glass.get('largeShot')!r})")
+    if slug.endswith(("-width-640", "-width-560")):
+        # The destination sheet at its normal and its minimum width, S3-compatible with the Keychain key source; its faces were measured too.
+        expected = 560 if slug.endswith("-width-560") else 640
+        if not isinstance(glass.get("sheetWidth"), (int, float)) or abs(glass["sheetWidth"] - expected) > 1:
+            problems.append(f"glass: {label} sheet is {glass.get('sheetWidth')!r} pt wide, expected {expected}")
+        if glass.get("protocol") != "S3":
+            problems.append(f"glass: {label} was not taken with the S3-compatible protocol (protocol {glass.get('protocol')!r})")
+        faces = glass.get("faceTitles") or []
+        if "Access key stored in Keychain" not in faces:
+            problems.append(f"glass: {label} does not show the Keychain key source face (faces {faces})")
+        if not any(str(face).startswith("S3") for face in faces):
+            problems.append(f"glass: {label} does not show the S3-compatible protocol face (faces {faces})")
     if variant == "hidden":
         if glass.get("originalSizeVisible") is not False:
             problems.append(f"glass: {label} is the reflow capture but the Original size toggle is still visible")
@@ -926,8 +952,7 @@ def self_test():
         def glass_record(surface, slug, appearance="light"):
             variant = promised_variant(slug)
             panel = {"kind": "panel", "variant": variant, "rowTitles": ["Alpha", "Beta", "Gamma"], "glassContainerCount": 1, "plateCount": 2,
-                     "nestedGlassCount": 0, "minFontSize": 20.0,
-                     "labelMetrics": [{"title": "Alpha", "fittingSize": [60, 24], "frameSize": [80, 24], "textWidth": 60, "fits": True}]}
+                     "nestedGlassCount": 0, "minFontSize": 20.0, "faceTitles": [], "unmeasuredText": ["SegmentedToggle segments"]}
             if variant == "hover":
                 panel["hoveredRow"] = 1
             if variant == "focus":
@@ -942,12 +967,18 @@ def self_test():
                 panel["trackPressed"] = True
             if slug.endswith(("-acl-off", "-acl-on")):
                 panel.update(rowTitles=["Make uploads public-read"], protocol="S3", chosenIndexes=[0] if slug.endswith("-acl-on") else [])
+            if slug.endswith(("-width-640", "-width-560")):
+                panel.update(protocol="S3", sheetWidth=560 if slug.endswith("-560") else 640, faceTitles=["S3-compatible", "Access key stored in Keychain"])
             if slug.endswith(("-original-off", "-original-on")):
                 panel.update(rowTitles=["Original size"], chosenIndexes=[0] if slug.endswith("-original-on") else [], originalSizeVisible=True, largeShot=True)
             if variant == "hidden":
                 panel.update(rowTitles=[], originalSizeVisible=False, uploadActive=True, windowWidth=980)
             if variant == "dismissed":
                 panel.update(panelGone=True, focusReturned=True, openerHadFocus=True, rowTitles=[], plateCount=0, glassContainerCount=0)
+            # One measured title per glass choice row, and one measured face per face title: what the harness records when it measured everything.
+            panel["rowClasses"] = ["GlassChoiceButton"] * len(panel["rowTitles"])
+            panel["labelMetrics"] = ([{"title": t, "kind": "choice title", "fittingSize": [60, 24], "frameSize": [80, 24], "textWidth": 60, "fits": True} for t in panel["rowTitles"]]
+                                     + [{"title": t, "kind": "pop-up face", "fittingSize": [100, 24], "frameSize": [200, 24], "textWidth": 100, "fits": True} for t in panel["faceTitles"]])
             return {"id": surface, "slug": slug, "appearance": appearance, "iconMode": "sf", "state": "x", "glassPanel": panel}
 
         def glass_folder(label, edit=lambda records, gaps: None, surfaces=("S50",), appearances=("light",), requested=None):
@@ -975,6 +1006,9 @@ def self_test():
         def drop_field(sid, slug, field):
             return lambda records, gaps: records[("light", sid, slug)]["glassPanel"].pop(field)
 
+        def tweak_metric(sid, slug, index=0, **fields):
+            return lambda records, gaps: records[("light", sid, slug)]["glassPanel"]["labelMetrics"][index].update(fields)
+
         for label, edit, kwargs, expected in [
             ("sound glass run", lambda r, g: None, {}, 0),
             ("sound glass run, light and dark", lambda r, g: None, {"appearances": ("light", "dark")}, 0),
@@ -988,11 +1022,18 @@ def self_test():
             ("text at exactly 18 pt", tweak("S50", "toolbox-rest", minFontSize=18.0), {}, 0),
             ("text size unrecorded", drop_field("S50", "toolbox-rest", "minFontSize"), {}, 1),
             ("two glass containers", tweak("S50", "toolbox-rest", glassContainerCount=2), {}, 1),
-            ("a title needs more width than its label has", tweak("S50", "toolbox-rest", labelMetrics=[{"title": "Export…", "fittingSize": [200, 24], "frameSize": [120, 24], "textWidth": 200, "fits": False}]), {}, 1),
-            ("a title needs more height than its label has", tweak("S50", "toolbox-rest", labelMetrics=[{"title": "Export…", "fittingSize": [60, 48], "frameSize": [80, 24], "textWidth": 60, "fits": True}]), {}, 1),
-            ("a title that fits exactly", tweak("S50", "toolbox-rest", labelMetrics=[{"title": "Export…", "fittingSize": [80, 24], "frameSize": [80, 24], "textWidth": 80, "fits": True}]), {}, 0),
-            ("the harness says a title is cut though the sizes agree", tweak("S50", "toolbox-rest", labelMetrics=[{"title": "Export…", "fittingSize": [60, 24], "frameSize": [80, 24], "textWidth": 60, "fits": False}]), {}, 1),
+            ("a title needs more width than its label has", tweak_metric("S50", "toolbox-rest", fittingSize=[200, 24], frameSize=[120, 24], textWidth=200, fits=False), {}, 1),
+            ("a title needs more height than its label has", tweak_metric("S50", "toolbox-rest", fittingSize=[60, 48], frameSize=[80, 24]), {}, 1),
+            ("a title that fits exactly", tweak_metric("S50", "toolbox-rest", fittingSize=[80, 24], frameSize=[80, 24], textWidth=80), {}, 0),
+            ("the harness says a title is cut though the sizes agree", tweak_metric("S50", "toolbox-rest", fits=False), {}, 1),
             ("labelMetrics not recorded", drop_field("S50", "toolbox-rest", "labelMetrics"), {}, 1),
+            ("labelMetrics empty where glass choices were recorded", tweak("S50", "toolbox-rest", labelMetrics=[]), {}, 1),
+            ("one title measurement short", lambda r, g: r[("light", "S50", "toolbox-rest")]["glassPanel"]["labelMetrics"].pop(), {}, 1),
+            ("a custom pop-up face that clips", tweak_metric("S58", "destination-width-560", 4, fittingSize=[260, 24], frameSize=[220, 24], textWidth=260, fits=False), {"surfaces": ("S58",)}, 1),
+            ("a custom pop-up face measured and fitting", tweak_metric("S58", "destination-width-560", 4, fittingSize=[220, 24], frameSize=[220, 24], textWidth=220), {"surfaces": ("S58",)}, 0),
+            ("pop-up faces shown but not measured", lambda r, g: r[("light", "S58", "destination-width-560")]["glassPanel"].update(labelMetrics=[m for m in r[("light", "S58", "destination-width-560")]["glassPanel"]["labelMetrics"] if m["kind"] != "pop-up face"]), {"surfaces": ("S58",)}, 1),
+            ("unmeasured text not listed", drop_field("S50", "toolbox-rest", "unmeasuredText"), {}, 1),
+            ("unmeasured text list empty", tweak("S50", "toolbox-rest", unmeasuredText=[]), {}, 1),
             ("a choice title truncated", tweak("S50", "toolbox-rest", truncatedRows=["Export…"]), {}, 1),
             ("no truncated titles recorded", tweak("S50", "toolbox-rest", truncatedRows=[]), {}, 0),
             ("no choice rows", tweak("S50", "toolbox-rest", rowTitles=[]), {}, 1),
