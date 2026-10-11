@@ -11092,7 +11092,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "case .copy; Free codepoint 0xF0C5; SF fallback doc.on.doc; used in App.swift, Canvas.swift, HistoryBrowser.swift, OriginalHelpBevel.swift, UploadStatus.swift",
+   "note": "case .copy; Free codepoint 0xF0C5; SF fallback doc.on.doc; used in App.swift, Canvas.swift, EyeDumpAuditSurfaces.swift, HistoryBrowser.swift, OriginalHelpBevel.swift, UploadStatus.swift",
    "shortcut": null,
    "proof": [],
    "rendered": [

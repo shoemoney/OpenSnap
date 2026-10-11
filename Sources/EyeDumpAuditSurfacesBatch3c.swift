@@ -114,7 +114,13 @@ extension AuditRun {
             app.refreshHistory(); pump(0.6)
             if let legacy {
                 browser.select(ids: [legacy]); pump(0.5)
-                let button = browser.actionRow.arrangedSubviews.compactMap { $0 as? NSButton }.first { $0.accessibilityLabel() == HistoryBrowser.Action.deleteRemote.title }
+                // The actions sit on glass plates inside the row, so find the button through the plates.
+                func actionButton(in view: NSView) -> NSButton? {
+                    if let found = view as? HistoryActionButton, found.accessibilityLabel() == HistoryBrowser.Action.deleteRemote.title { return found }
+                    for sub in view.subviews { if let found = actionButton(in: sub) { return found } }
+                    return nil
+                }
+                let button = actionButton(in: browser.actionRow)
                 let tip = AppToolTip.shared
                 tip.dismiss(); tip.reduceMotion = { true }; tip.dismissesOnWindowChanges = false
                 if let button, AppToolTip.text(for: button) != nil {
