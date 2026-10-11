@@ -92,7 +92,7 @@ Shared-file rule: two workers touching the same file stay in their named hunks. 
 - [ ] Toolbox, Zoom, Upload, History format and Resize preset open app-owned glass panels; no `NSMenu.popUp` / `popUpContextMenu` remains on those paths.
 - [ ] One `NSGlassEffectContainerView` per panel, one plate per menu group; no `NSGlassEffectView` inside another.
 - [ ] Selected/on state = accent fill + border + bodyStrong + glyph; Differentiate Without Color adds the indicator; disabled rows dim and skip focus.
-- [ ] Keyboard: open with Return/Space/Down; Up/Down/Tab/Home/End; Return/Space choose; Escape closes; focus returns to the opener.
+- [ ] Keyboard: in the editor bars (no default button) a focused opener opens with Return, Space or Down; inside a sheet or dialog with a default button (Resize, destination sheet) Return and keypad Enter stay with the default button (OK / Save) and Space or Down opens the focused choice face. In an open panel: Up/Down/Tab/Home/End move, Return/Space choose, Escape closes the panel FIRST (the sheet's Cancel only runs on a second Escape) and focus returns to the opener. Tests drive the real window event paths (synthesized NSEvents through the window), not only `openChoices()` / `activate()`.
 - [ ] Mouse: hover fills, click chooses, click outside or on the opener closes, a second click on the opener does not reopen.
 - [ ] Toolbox validation (enabled/disabled, Fill/Shadow/Font state), long-list scrolling and small-screen height cap.
 - [ ] Zoom: percentage choice, computed Fit row, Actual Size toggle state and its refusal path unchanged.
