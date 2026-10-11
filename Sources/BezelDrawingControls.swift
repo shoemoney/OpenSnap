@@ -792,6 +792,10 @@ final class BezelHoverButton: NSButton {
         guard isEnabled, let action else { return false }
         return sendAction(action, to: target)
     }
+    override func accessibilityPerformAction(_ action: NSAccessibility.Action) {
+        if action == .press { _ = accessibilityPerformPress() }
+        else { super.accessibilityPerformAction(action) }
+    }
     override var canBecomeKeyView: Bool { KeyboardNavigation.reaches(self) }
     private var hoverTracking: NSTrackingArea?
     override func updateTrackingAreas() {
