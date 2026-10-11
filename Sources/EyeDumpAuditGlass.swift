@@ -78,6 +78,14 @@ extension AuditRun {
         return readingOrder(found) as! [NSButton]
     }
 
+    /// Whether the row lies wholly inside its window's content (a row scrolled out of a panel's clip lies outside it).
+    func isWhollyInView(_ row: NSButton) -> Bool {
+        guard let content = row.window?.contentView else { return false }
+        let inWindow = row.convert(row.bounds, to: nil)
+        let visible = content.convert(content.bounds, to: nil)
+        return visible.insetBy(dx: -0.5, dy: -0.5).contains(inWindow)
+    }
+
     func isChosen(_ row: NSButton) -> Bool {
         if let choice = row as? GlassChoiceButton { return choice.isChosen }
         if let value = row.accessibilityValue() as? NSNumber, value.intValue == 1 { return true }
@@ -258,7 +266,7 @@ extension AuditRun {
         if kind == "panel", variant != "dismissed" {
             // Height cap: how many rows the panel has, how many are wholly in view, and whether the host scrolls them.
             record["totalRows"] = rows.count
-            record["visibleRows"] = rows.filter { $0.visibleRect.height >= $0.bounds.height - 1 }.count
+            record["visibleRows"] = rows.filter { isWhollyInView($0) }.count
             record["hostScrolls"] = GlassPanelHost.current?.window === host ? (GlassPanelHost.current?.scrolls ?? false) : false
         }
         if let hovered = index(where: { isHovered($0) }) { record["hoveredRow"] = hovered }
@@ -463,12 +471,17 @@ extension AuditRun {
         app.toggleActualSize()
         pump(0.6)
         guard app.isActualSize else { gap("S51", "Zoom panel / actual size", "Actual Size refused on a large shot (canToggleActualSize was false)"); return }
+        // The app disables the zoom pop-up while Actual Size is on (AppViewport: zoomControl.isEnabled = !isActualSize), so its choices cannot be opened by a
+        // user then. To draw the toggle row's chosen state the harness enables the control for this one capture and says so in the record.
+        let enabledByApp = zoom.isEnabled
+        zoom.isEnabled = true
+        defer { zoom.isEnabled = enabledByApp }
         if let again = openGlassPanel(script) {
             let face = zoom.faceTitle
             let percent = face.range(of: #"^\d+%$"#, options: .regularExpression) != nil
             shootGlassPanel("S51", "zoom-actual-size", surface: script.surface, state: "Zoom panel while Actual Size is on: the Actual Size toggle row is chosen and the face shows \(face)", panel: again.panel,
                             opener: zoom, refs: script.refs, variant: "chosen", identifier: zoom.panelIdentifier,
-                            extra: ["actualSizeOn": app.isActualSize, "faceTitleNow": face, "faceShowsPercentage": percent])
+                            extra: ["actualSizeOn": app.isActualSize, "faceTitleNow": face, "faceShowsPercentage": percent, "zoomEnabledByApp": enabledByApp, "harnessForcedEnable": !enabledByApp])
             dismissGlassPanel("S51", "zoom-dismissed-2", surface: script.surface, state: "", script: script, opened: again, capture: false)
         }
         app.leaveActualSize()
@@ -766,7 +779,7 @@ extension AuditRun {
             form.formChanged()
             pump(0.6)
             let record = glassRecord(kind: "group", identifier: "DestinationSheetWidth", variant: "rest", host: narrow, rowsRoot: narrow.contentView,
-                                     extra: ["protocol": "S3", "sourceTitle": form.sourcePopup.titleOfSelectedItem ?? "", "requestedWidth": Double(width), "sheetWidth": Double((narrow.contentView?.frame.width ?? narrow.frame.width).rounded()), "sheetFrameWidth": Double(narrow.frame.width.rounded()),
+                                     extra: ["protocol": "S3", "sourceTitle": form.sourcePopup.titleOfSelectedItem ?? "", "requestedWidth": Double(width), "sheetWidth": Double((narrow.contentView?.frame.width ?? narrow.frame.width).rounded()), "sheetFrameWidth": Double(narrow.frame.width.rounded()), "formWidth": Double(form.frame.width.rounded()),
                                              "sheetMinWidth": Double(PublishingDestinationsView.sheetMinWidth)])
             shoot("S58", slug, surface: "Destination sheet", state: "S3-compatible with the Keychain key source, sheet \(Int(width)) pt wide", windows: [narrow, settings], refs: refs, settle: 0.3, extra: ["glassPanel": record])
             closeHarnessSheet(narrow)
@@ -952,9 +965,9 @@ extension AuditRun {
         let rows = glassRows(in: scrolling.panel.contentView ?? NSView())
         if let last = rows.last { GlassPanelHost.current?.reveal(last) }
         pump(0.4)
-        let visible = rows.filter { $0.visibleRect.height >= $0.bounds.height - 1 }.count
+        let visible = rows.filter { isWhollyInView($0) }.count
         shootGlassPanel("S60", "capture-key-scroll", surface: surface, state: "Capture tab: the long key list scrolled to its last row inside the height cap", panel: scrolling.panel, opener: key, refs: refs,
-                        variant: "scroll", identifier: key.panelIdentifier, extra: ["scrolledToEnd": rows.last.map { $0.visibleRect.height >= $0.bounds.height - 1 } ?? false,
+                        variant: "scroll", identifier: key.panelIdentifier, extra: ["scrolledToEnd": rows.last.map { isWhollyInView($0) } ?? false,
                                                                                   "capOverride": capOverride, "visibleRowsAtScroll": visible, "totalRowsAtScroll": rows.count,
                                                                                   "hostScrollsAtScroll": GlassPanelHost.current?.scrolls ?? false], context: script.context)
         dismissGlassPanel("S60", "capture-key-dismissed-2", surface: surface, state: "", script: script, opened: scrolling, capture: false)
