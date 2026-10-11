@@ -3,7 +3,9 @@
 //
 // What it asserts (each is a `Kind`)
 //   missingLabel        an interactive control with no visible title has no AX label (explicit label, title, the image description
-//                       AppKit reads from an icon, or the text of its accessibilityTitleUIElement)
+//                       AppKit reads from an icon, or the text of its accessibilityTitleUIElement); so does an accessibility-element
+//                       CONTAINER that is not a control (a radio group such as GlassChoiceGroup, or a group of choice buttons),
+//                       which the native NSSegmentedControl it replaces was judged as
 //   missingRole         a control reports no AX role: standard controls get theirs from their cell, a custom control or a custom
 //                       focusable view must call setAccessibilityRole itself
 //   unlabelledSegment   a segmented control has a segment with neither text nor an image description
@@ -158,6 +160,26 @@ enum AccessibilityAudit {
 
         private static func isAppKit(_ view: NSView) -> Bool { Bundle(for: Swift.type(of: view)) === Bundle(for: NSView.self) }
 
+        /// An accessibility element that groups choices without being a control or taking focus itself: a radio group (the inline
+        /// GlassChoiceGroup), or a group whose accessibility children are choice buttons. VoiceOver announces its label before the choices,
+        /// so it needs one, and a role.
+        private static func isChoiceContainer(_ view: NSView) -> Bool {
+            guard !(view is NSControl), !isAppKit(view), view.isAccessibilityElement() else { return false }
+            let role = view.accessibilityRole()
+            if role == .radioGroup { return true }
+            return role == .group && hasChoiceButton(below: view)
+        }
+
+        /// Whether a choice button (radio button, checkbox, button, menu button) is among the descendants, looking through plain layout views.
+        private static func hasChoiceButton(below view: NSView) -> Bool {
+            let choices: [NSAccessibility.Role] = [.radioButton, .checkBox, .button, .menuButton]
+            for sub in view.subviews {
+                if let role = sub.accessibilityRole(), choices.contains(role) { return true }   // a button reports element-ness only once hosted
+                if hasChoiceButton(below: sub) { return true }
+            }
+            return false
+        }
+
         /// Standard AppKit furniture that is an NSControl but not an element the audit holds to a label.
         private static func isFurniture(_ view: NSView) -> Bool {
             if view is NSScroller { return true }
@@ -177,6 +199,9 @@ enum AccessibilityAudit {
             if let image = view as? NSImageView { judgeImage(image, path: path, hidden: hidden) }
             else if let control = view as? NSControl, !Self.isFurniture(control) { judgeControl(control, path: path, hidden: hidden, repeating: repeating) }
             else if !(view is NSControl), !Self.isAppKit(view), view.acceptsFirstResponder, !(view is NSTextView), !(view is NSClipView), !(view is NSScrollView) {
+                judgeCustomFocusable(view, path: path, hidden: hidden, repeating: repeating)
+            }
+            else if Self.isChoiceContainer(view) {
                 judgeCustomFocusable(view, path: path, hidden: hidden, repeating: repeating)
             }
 
