@@ -94,6 +94,14 @@ private func key(_ code: UInt16, chars: String = "", modifiers: NSEvent.Modifier
                      characters: chars, charactersIgnoringModifiers: chars, isARepeat: false, keyCode: code)!
 }
 
+/// Records the key-downs that reach it: what the pop-up did not take.
+@MainActor
+private final class KeyProbeView: NSView {
+    var keys: [UInt16] = []
+    override var acceptsFirstResponder: Bool { false }
+    override func keyDown(with event: NSEvent) { keys.append(event.keyCode) }
+}
+
 private enum Keys {
     static let left: UInt16 = 123, right: UInt16 = 124, down: UInt16 = 125, up: UInt16 = 126, tab: UInt16 = 48, space: UInt16 = 49
     static let enter: UInt16 = 36, keypadEnter: UInt16 = 76, escape: UInt16 = 53, home: UInt16 = 115, end: UInt16 = 119
@@ -141,6 +149,7 @@ private enum GlassChoicesTests {
         menuKeyboardTests()
         submenuTests()
         displayOptionTests()
+        popUpButtonTests()
         print("PASS glass-choices-tests (\(checks) checks)")
     }
 
@@ -1501,6 +1510,213 @@ private enum GlassChoicesTests {
         panel.present(relativeTo: rig.anchor, preferredEdge: .minY, keyboard: false)
         expect(panel.path.count == 1 && panel.rows.map(\.title) == ["Plain", "More"], "A fresh open starts at the top level")
         panel.host.close()
+    }
+
+
+    // MARK: glass pop-up button
+
+    private static func mouse(_ type: NSEvent.EventType, on view: NSView, modifiers: NSEvent.ModifierFlags = []) -> NSEvent {
+        let point = view.convert(NSPoint(x: min(20, view.bounds.midX), y: view.bounds.midY), to: nil)
+        return NSEvent.mouseEvent(with: type, location: point, modifierFlags: modifiers, timestamp: ProcessInfo.processInfo.systemUptime,
+                                  windowNumber: view.window?.windowNumber ?? -1, context: nil, eventNumber: 1, clickCount: 1, pressure: 1)!
+    }
+
+    private static func popUpButtonTests() {
+        let rig = Rig()
+        let log = Log()
+        let fixture = MenuFixture(log: log)
+        let probe = KeyProbeView(frame: NSRect(x: 300, y: 400, width: 200, height: 60))
+        let pop = GlassPopUpButton(frame: NSRect(x: 10, y: 10, width: 170, height: 36), pullsDown: false)
+        pop.addItems(withTitles: ["25%", "50%", "100%"])
+        pop.target = fixture
+        pop.action = #selector(MenuFixture.popChanged(_:))
+        pop.selectItem(at: 2)
+        pop.menu!.delegate = fixture
+        pop.panelIdentifier = "Zoom"
+        pop.panelLabel = "Zoom"
+        probe.addSubview(pop)
+        rig.window.contentView?.addSubview(probe)
+        rig.attach(pop.choicePanel.host)
+        expect(pop.preferredEdge == .minY && pop.choicePanel.host.window.identifier?.rawValue == "GlassChoicePanel.Zoom", "A glass pop-up opens below by default, into its own identified panel")
+
+        // Every opening route presents the glass panel, once, and never starts AppKit's own pop-up tracking (the menu's willOpen would
+        // fire a second time, and a click would block in the tracking loop).
+        let routes: [(String, Bool, () -> Void)] = [
+            ("click", false, { pop.mouseDown(with: mouse(.leftMouseDown, on: pop)) }),
+            ("Control-click", false, { pop.mouseDown(with: mouse(.leftMouseDown, on: pop, modifiers: .control)) }),
+            ("right click", false, { pop.rightMouseDown(with: mouse(.rightMouseDown, on: pop)) }),
+            ("other button", false, { pop.otherMouseDown(with: mouse(.otherMouseDown, on: pop)) }),
+            ("performClick", true, { pop.performClick(nil) }),
+            ("Space", true, { pop.keyDown(with: key(Keys.space, chars: " ")) }),
+            ("Return", true, { pop.keyDown(with: key(Keys.enter, chars: "\r")) }),
+            ("keypad Enter", true, { pop.keyDown(with: key(Keys.keypadEnter, chars: "\r")) }),
+            ("Down", true, { pop.keyDown(with: key(Keys.down)) }),
+            ("Up", true, { pop.keyDown(with: key(Keys.up)) }),
+            ("Down sent to the window", true, { _ = rig.window.makeFirstResponder(pop); rig.window.sendEvent(key(Keys.down)) }),
+            ("accessibility press", true, { expect(pop.accessibilityPerformPress(), "AXPress is performed") }),
+            ("accessibility Show Menu", true, { expect(pop.accessibilityPerformShowMenu(), "AXShowMenu is performed") }),
+            ("keyboard context-menu command", true, { pop.showContextMenuForSelection(nil) }),
+        ]
+        for (name, keyboard, open) in routes {
+            log.lines = []
+            rig.presented = []
+            open()
+            let panel = pop.choicePanel
+            expect(panel.host.isShown && rig.presented.count == 1 && rig.presented[0].0 === panel.host.window, "\(name) presents the glass panel (\(rig.presented.count) presents)")
+            expect(log.count("needsUpdate") == 1 && log.count("willOpen") == 1, "\(name) runs the menu's open hooks once, so AppKit's own tracking never started: \(log.lines)")
+            expect((panel.focusedRow != nil) == keyboard, "\(name) \(keyboard ? "focuses a row" : "leaves the rows unfocused")")
+            if keyboard { expect(panel.focusedRow?.title == "100%", "\(name) lands on the selected choice") }
+            panel.host.close()
+        }
+        expect(probe.keys.isEmpty, "None of the opening keys went on up the responder chain")
+        expect(pop.menu(for: mouse(.rightMouseDown, on: pop)) == nil, "The pop-up has no context menu of its own")
+
+        // A second click on the face while the panel is shown dismisses it and does not reopen it (the event monitor consumes the click).
+        log.lines = []
+        rig.presented = []
+        pop.mouseDown(with: mouse(.leftMouseDown, on: pop))
+        expect(pop.choicePanel.host.isShown && rig.presented.count == 1, "(setup) the panel is open")
+        // What the app's event loop does with a press: the panel's local monitor first (a press it consumes is never dispatched), then
+        // the window. (A manual NSApp.sendEvent runs monitors only as observers, so the two steps are spelled out.)
+        func dispatch(_ event: NSEvent) {
+            let host = pop.choicePanel.host
+            if host.isShown, host.handleMouseDown(in: event.window, at: event.locationInWindow) { return }
+            pop.mouseDown(with: event)   // the window would hit-test the face and send it the press
+        }
+        dispatch(mouse(.leftMouseDown, on: pop))
+        expect(!pop.choicePanel.host.isShown && rig.presented.count == 1 && log.count("willOpen") == 1,
+               "A second click on the face dismisses the panel and does not reopen it: \(log.lines) presents=\(rig.presented.count)")
+        dispatch(mouse(.leftMouseDown, on: pop))
+        expect(pop.choicePanel.host.isShown && rig.presented.count == 2, "The next click opens it again")
+        pop.choicePanel.host.close()
+        // Asking to open while it is open (VoiceOver pressing again) closes it.
+        pop.performClick(nil)
+        pop.performClick(nil)
+        expect(!pop.choicePanel.host.isShown, "Opening an open pop-up closes it")
+
+        // Return and keypad Enter belong to a default button; Space, Down and Up still open.
+        let okTarget = ClickTarget()
+        let ok = NSButton(title: "OK", target: okTarget, action: #selector(ClickTarget.clicked(_:)))
+        ok.keyEquivalent = "\r"
+        ok.frame = NSRect(x: 500, y: 100, width: 80, height: 30)
+        rig.window.contentView?.addSubview(ok)
+        rig.window.defaultButtonCell = ok.cell as? NSButtonCell
+        _ = rig.window.makeFirstResponder(pop)
+        for (name, code) in [("Return", Keys.enter), ("keypad Enter", Keys.keypadEnter)] {
+            log.lines = []
+            rig.presented = []
+            probe.keys = []
+            rig.window.sendEvent(key(code, chars: "\r"))
+            expect(!pop.choicePanel.host.isShown && rig.presented.isEmpty && log.count("willOpen") == 0, "\(name) does not open the panel in a window with a default button")
+            expect(probe.keys == [code], "\(name) is left for the default button: it went up the responder chain (\(probe.keys))")
+        }
+        for (name, code) in [("Space", Keys.space), ("Down", Keys.down), ("Up", Keys.up)] {
+            rig.presented = []
+            rig.window.sendEvent(key(code, chars: code == Keys.space ? " " : ""))
+            expect(pop.choicePanel.host.isShown && rig.presented.count == 1, "\(name) still opens the panel next to a default button")
+            pop.choicePanel.host.close()
+        }
+        rig.window.defaultButtonCell = nil
+        probe.keys = []
+        rig.presented = []
+        rig.window.sendEvent(key(Keys.enter, chars: "\r"))
+        expect(pop.choicePanel.host.isShown && probe.keys.isEmpty, "With no default button Return opens the panel")
+        pop.choicePanel.host.close()
+        // Other keys are not the pop-up's: they go up the chain (AppKit's type-ahead would open its native menu).
+        probe.keys = []
+        rig.window.sendEvent(key(0, chars: "a"))
+        expect(probe.keys == [0] && !pop.choicePanel.host.isShown, "Other keys go up the responder chain and open nothing")
+        ok.removeFromSuperview()
+
+        // Not enabled, no window, nothing to choose: nothing opens.
+        pop.isEnabled = false
+        rig.presented = []
+        pop.performClick(nil); pop.mouseDown(with: mouse(.leftMouseDown, on: pop)); _ = pop.accessibilityPerformPress(); _ = pop.accessibilityPerformShowMenu()
+        expect(rig.presented.isEmpty && !pop.accessibilityPerformShowMenu() && !pop.isAccessibilitySelectorAllowed(#selector(NSAccessibilityProtocol.accessibilityPerformPress)), "A disabled pop-up opens nothing and refuses the accessibility actions")
+        expect(!pop.acceptsFirstResponder && !pop.canBecomeKeyView, "...and takes no focus")
+        pop.isEnabled = true
+        let empty = GlassPopUpButton(frame: NSRect(x: 0, y: 0, width: 100, height: 36), pullsDown: false)
+        rig.window.contentView?.addSubview(empty)
+        rig.attach(empty.choicePanel.host)
+        empty.performClick(nil)
+        expect(!empty.choicePanel.host.isShown, "A pop-up with no items opens nothing")
+        empty.removeFromSuperview()
+        let loose = GlassPopUpButton(frame: NSRect(x: 0, y: 0, width: 100, height: 36), pullsDown: false)
+        loose.addItem(withTitle: "One")
+        loose.performClick(nil)
+        expect(!loose.choicePanel.host.isShown, "A pop-up not in a window opens nothing")
+
+        // The presentation seam replaces presenting.
+        var handled: [(MenuChoicePanel, Bool)] = []
+        pop.presentHandler = { handled.append(($0, $1)) }
+        pop.performClick(nil)
+        pop.mouseDown(with: mouse(.leftMouseDown, on: pop))
+        expect(handled.count == 2 && handled[0].1 && !handled[1].1 && handled[0].0 === pop.choicePanel && !pop.choicePanel.host.isShown, "presentHandler gets the panel and whether the keyboard opened it")
+        pop.presentHandler = nil
+
+        // Roles: plain items are options (radio buttons, value 0 / 1), the selected one chosen; items with their own action keep the default.
+        let own = NSMenuItem(title: "Actual Size", action: #selector(MenuFixture.act(_:)), keyEquivalent: "")
+        own.target = fixture
+        pop.menu!.addItem(own)
+        let withSubmenu = NSMenuItem(title: "More", action: nil, keyEquivalent: "")
+        withSubmenu.submenu = NSMenu(title: "More")
+        withSubmenu.submenu!.addItem(NSMenuItem(title: "Inner", action: nil, keyEquivalent: ""))
+        pop.menu!.addItem(withSubmenu)
+        pop.performClick(nil)
+        let panel = pop.choicePanel
+        expect(panel.rows.map(\.kind) == [.option, .option, .option, .command, .submenu], "Plain items are options, an own-action item a command, a submenu item a submenu row: \(panel.rows.map(\.kind))")
+        expect(panel.rows.prefix(3).map { $0.accessibilityRole() } == [.radioButton, .radioButton, .radioButton], "Plain items read as radio buttons")
+        expect(panel.rows.prefix(3).map { ($0.accessibilityValue() as? NSNumber)?.intValue } == [0, 0, 1], "...with value 1 on the selected item")
+        panel.host.close()
+        pop.selectItem(at: 0)
+        pop.performClick(nil)
+        expect(pop.choicePanel.rows.prefix(3).map(\.isChosen) == [true, false, false], "The chosen row follows the pop-up's selection")
+        pop.choicePanel.activate(pop.choicePanel.rows[1])
+        expect(pop.indexOfSelectedItem == 1 && !pop.choicePanel.host.isShown, "Choosing a plain item selects it and closes")
+        expect(log.lines.last == "popAction:1", "...and sends the pop-up's own action")
+        pop.kind = { _ in .toggle }
+        rig.attach(pop.choicePanel.host)
+        pop.performClick(nil)
+        expect(pop.choicePanel.rows.allSatisfy { $0.kind == .toggle }, "A kind closure overrides the defaults")
+        pop.choicePanel.host.close()
+        pop.kind = nil
+        rig.attach(pop.choicePanel.host)
+
+        // The menu is the source of truth: a new menu gets a new panel, and the old one is closed.
+        pop.performClick(nil)
+        let before = pop.choicePanel
+        let replacement = NSMenu()
+        replacement.addItem(NSMenuItem(title: "Solo", action: nil, keyEquivalent: ""))
+        pop.menu = replacement
+        expect(!before.host.isShown && pop.choicePanel !== before && pop.choicePanel.menu === replacement, "Replacing the menu closes the old panel and builds a new one")
+        pop.menu = before.menu
+        rig.attach(pop.choicePanel.host)
+
+        // Accessibility.
+        expect(pop.accessibilityRole() == .popUpButton && (pop.accessibilityValue() as? String) == pop.titleOfSelectedItem && pop.accessibilityLabel() != nil, "A pop-up button with its selected title as the value, and a name")
+        KeyboardNavigation.fullKeyboardAccess = { false }
+        expect(!pop.canBecomeKeyView, "Tab reaches the pop-up only with Full Keyboard Access, like every chrome control")
+        KeyboardNavigation.fullKeyboardAccess = { true }
+        expect(pop.canBecomeKeyView, "...and does with it")
+
+        // The face: the selected title at 20 pt and a chevron, drawn without a bezel.
+        pop.selectItem(at: 1)
+        expect(pop.faceTitle == "50%" && pop.intrinsicContentSize.height == 36, "The face shows the selected title in a 36 pt control")
+        let titleWidth = ceil(("Actual Size" as NSString).size(withAttributes: [.font: DesignTokens.Typography.font(.body)]).width)
+        expect(pop.intrinsicContentSize.width >= titleWidth + 2 * 12 + 8 + GlassChoiceButton.glyphSide, "...wide enough for its longest title and the chevron (\(pop.intrinsicContentSize.width))")
+        pop.frame = NSRect(x: 10, y: 10, width: 170, height: 36)
+        pop.layoutSubtreeIfNeeded()
+        guard let rep = pop.bitmapImageRepForCachingDisplay(in: pop.bounds) else { return expect(false, "The face renders") }
+        pop.cacheDisplay(in: pop.bounds, to: rep)
+        func ink(_ x0: Double, _ x1: Double) -> Int {
+            var count = 0
+            for y in 0..<rep.pixelsHigh { for x in Int(x0 * Double(rep.pixelsWide))..<Int(x1 * Double(rep.pixelsWide)) {
+                if (rep.colorAt(x: x, y: y)?.alphaComponent ?? 0) > 0.5 { count += 1 }
+            } }
+            return count
+        }
+        expect(ink(0.05, 0.45) > 40, "The title is drawn on the left of the face")
+        expect(ink(0.85, 1.0) > 20, "The chevron is drawn on the right of the face")
     }
 
     // MARK: display options
