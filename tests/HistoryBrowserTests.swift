@@ -787,6 +787,10 @@ struct HistoryBrowserTests {
                     browser.update(items:[shared,item("Other",-1)]); laidOut(browser,width:1000,height:720)
                     let texts = descendants(browser.window!.contentView!).compactMap { $0 as? NSTextField }
                     try expect(texts.contains { !$0.isHidden && $0.stringValue == "2 snaps in this view" },"No summary with nothing selected")
+                    let summaryTree = AXTree.walk(browser.window!)
+                    for summary in texts.filter({ !$0.isHidden && ($0.stringValue == "2 snaps in this view" || $0.stringValue == "Shared: 1\nSaved: 1") }) {
+                        try expect(summaryTree.nodes.contains { $0.object === summary && $0.role == .staticText }, "History summary text is reached as static text, not AXUnknown")
+                    }
                     try expect(texts.contains { !$0.isHidden && $0.stringValue == "Select a snap to see its details." },"The hint went missing")
                     browser.select(ids:[shared.id])
                     let value = try texts.first { $0.stringValue == link }.unwrap("destination value")

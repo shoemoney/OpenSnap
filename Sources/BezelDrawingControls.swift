@@ -82,6 +82,30 @@ final class BezelColorButton: NSButton {
     private var hoverArea: NSTrackingArea?
     private var primaryTracking = false
 
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        setAccessibilityElement(true)
+    }
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setAccessibilityElement(true)
+    }
+    override func accessibilityRole() -> NSAccessibility.Role? { .radioButton }
+    override func accessibilityValue() -> Any? { NSNumber(value: state == .on ? 1 : 0) }
+    override func isAccessibilitySelected() -> Bool { state == .on }
+    override func isAccessibilityEnabled() -> Bool { isEnabled }
+    override func accessibilityChildren() -> [Any]? { [] }
+    override func accessibilityPerformPress() -> Bool {
+        guard isEnabled, action != nil else { return false }
+        performClick(nil)
+        return true
+    }
+    /// Dispatch directly; native button-cell tracking can report an attribute error after the panel closes itself.
+    override func performClick(_ sender: Any?) {
+        guard isEnabled, let action else { return }
+        _ = sendAction(action, to: target)
+    }
+
     /// The fill behind the swatch right now: the command hover or pressed fill, nil at rest, selected or disabled.
     var plateFill: NSColor? {
         guard isEnabled else { return nil }
@@ -728,6 +752,7 @@ final class SizePresetButton: NSButton {
         presetSize = size
         self.slider = slider
         super.init(frame: NSRect(origin: .zero, size: Self.size))
+        setAccessibilityElement(true)
         isBordered = false
         title = ""
         font = DesignTokens.Typography.font(.body)
@@ -741,6 +766,17 @@ final class SizePresetButton: NSButton {
 
     /// A preset is a discrete pick, so it closes the panel as a colour pick does; dragging the track is continuous and keeps it open.
     @objc private func choose() { slider?.performValueChange(presetSize, continuous: false); slider?.dismissPopover() }
+    override func accessibilityChildren() -> [Any]? { [] }
+    override func isAccessibilityEnabled() -> Bool { isEnabled && slider?.isEnabled == true }
+    override func accessibilityPerformPress() -> Bool {
+        guard isAccessibilityEnabled() else { return false }
+        performClick(nil)
+        return true
+    }
+    override func performClick(_ sender: Any?) {
+        guard isAccessibilityEnabled() else { return }
+        choose()
+    }
     override func isAccessibilitySelected() -> Bool { isSelectedPreset }
     override func accessibilityRole() -> NSAccessibility.Role? { .radioButton }
     override func accessibilityValue() -> Any? { NSNumber(value: isSelectedPreset ? 1 : 0) }

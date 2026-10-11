@@ -921,7 +921,7 @@ private enum GlassChromeTests {
         // MARK: the colour swatch
         let swatch = BezelColorButton(frame: NSRect(x: 100, y: 100, width: 42, height: 32))
         expect(swatch.acceptsFirstMouse(for: nil), "A swatch acts on the press that makes its panel key")
-        swatch.title = ""; swatch.isBordered = false; swatch.setButtonType(.toggle)
+        swatch.title = ""; swatch.isBordered = false
         swatch.drawingColor = NSColor(deviceRed: 1, green: 0, blue: 0, alpha: 1) // token-exempt: a test swatch colour
         content.addSubview(swatch)
         func swatchRaster() -> NSBitmapImageRep {
@@ -1344,7 +1344,7 @@ private enum GlassChromeTests {
         var picked: [Int] = []
         let swatches = (0..<10).map { index -> BezelColorButton in
             let swatch = BezelColorButton(frame: NSRect(x: 0, y: 0, width: 42, height: 32))
-            swatch.title = ""; swatch.isBordered = false; swatch.setButtonType(.toggle)
+            swatch.title = ""; swatch.isBordered = false
             swatch.setAccessibilityLabel("Color \(index + 1)")
             swatch.tag = index
             return swatch
@@ -1361,9 +1361,12 @@ private enum GlassChromeTests {
         if let group = reach(tree, .group, "Drawing colors", "Color panel") {
             let kids = tree.children(of: group).filter { $0.role != .staticText }
             expect(kids.map { $0.label ?? "" } == (1...10).map { "Color \($0)" } + ["Custom color…"], "Color panel: ten swatches and Custom color… in reading order: \(kids.map { $0.label ?? "" })")
-            expect(kids.dropLast().allSatisfy { $0.role == .checkBox } && kids.last?.role == .button, "Color panel: the swatches are check boxes and Custom is a button")
+            expect(kids.dropLast().allSatisfy { $0.role == .radioButton } && kids.last?.role == .button, "Color panel: the swatches are radio choices and Custom is a button")
         }
-        if let third = tree.find(.checkBox, "Color 3") { expect(AXTree.press(third) && picked == [2], "Color panel: AXPress on a reached swatch chooses it (\(picked))") }
+        expect(tree.find(.radioButton, "Color 1")?.value as? NSNumber == 0, "Unchosen production-style Color presets expose value zero")
+        swatches[0].state = .on
+        expect(AXTree.walk(host.window).find(.radioButton, "Color 1")?.value as? NSNumber == 1, "Chosen Color presets expose value one")
+        if let third = tree.find(.radioButton, "Color 3") { expect(AXTree.press(third) && picked == [2], "Color panel: AXPress on a reached swatch chooses it (\(picked))") }
         expect(tree.parentProblems().isEmpty, "Color panel: every parent agrees with the tree: \(tree.parentProblems().prefix(3))")
         expect(tree.shapeProblems().isEmpty, "Color panel: no AXUnknown wrapper, role-less node (\(tree.shapeProblems().count)): \(tree.shapeProblems().prefix(3))")
         host.close()
@@ -1372,22 +1375,28 @@ private enum GlassChromeTests {
         let target = PalettePressTarget()
         opener.target = target; opener.action = #selector(PalettePressTarget.press(_:))
         content.addSubview(opener)
-        target.onPress = { host.show(relativeTo: opener.bounds, of: opener, preferredEdge: .minY, makeKey: true) }
+        target.onPress = { host.show(relativeTo: opener.bounds, of: opener, preferredEdge: .minY, makeKey: false) }
+        func awaitPress(_ hits: Int) {
+            let deadline = Date(timeIntervalSinceNow: 1)
+            while target.hits < hits, Date() < deadline {
+                _ = RunLoop.current.run(mode: .default, before: Date(timeIntervalSinceNow: 0.01))
+            }
+        }
         let accepted = opener.accessibilityPerformPress()
         expect(accepted && !host.isShown && target.hits == 0, "Color accepts AXPress before refreshing its button representation")
-        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.02))
-        expect(host.isShown && target.hits == 1, "The accepted Color press opens its panel exactly once")
+        awaitPress(1)
+        expect(host.isShown && target.hits == 1, "The accepted Color press opens its panel exactly once (shown=\(host.isShown), hits=\(target.hits))")
         host.close()
         opener.performClick(nil)
         expect(!host.isShown && target.hits == 1, "The button-cell click route also waits for the accessibility reply")
-        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.02))
+        awaitPress(2)
         expect(host.isShown && target.hits == 2, "The button-cell click route opens Color exactly once")
         host.close()
         let openerTree = AXTree.walk(window)
         if let reached = reach(openerTree, .button, "Drawing colors", "Color opener") {
             expect(reached.object === opener, "The Color opener publishes its own accessibility action")
             expect(AXTree.press(reached) && !host.isShown && target.hits == 2, "Reached AXPress succeeds before dispatch")
-            RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.02))
+            awaitPress(3)
             expect(host.isShown && target.hits == 3, "Reached AXPress opens Color and dispatches exactly once")
             host.close()
             opener.isEnabled = false

@@ -573,6 +573,7 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         detailsSummary.font = Typography.font(.body); detailsSummary.textColor = Palette.Text.secondary
         detailsSummary.maximumNumberOfLines = 0; detailsSummary.preferredMaxLayoutWidth = Self.detailsWidth
         detailsSummaryTitle.setAccessibilityElement(true); detailsSummary.setAccessibilityElement(true)
+        detailsSummaryTitle.setAccessibilityRole(.staticText); detailsSummary.setAccessibilityRole(.staticText)
         detailsPanel.addArrangedSubview(detailsSummaryTitle); detailsPanel.addArrangedSubview(detailsSummary)
         detailsPanel.setCustomSpacing(Space.s5,after:detailsSummary)
         detailsPanel.addArrangedSubview(detailsHint)
