@@ -323,6 +323,7 @@ extension AppSafetyTests {
         try expect(app.widthControl.isPopoverShown, "The Size panel is open")
         let content = try app.widthControl.popoverContent.b3cUnwrap("popover content")
         content.presetButtons[2].performClick(nil)
+        try waitForMain("Deferred Size preset activation", until: { !app.widthControl.isPopoverShown })
         try expect(!app.widthControl.isPopoverShown, "Picking a size preset closes the panel, as picking a colour closes the colour panel")
         try expect(abs(app.widthControl.doubleValue - content.presetButtons[2].presetSize) < 0.01, "…and the preset was applied")
         app.widthControl.showPopover()
