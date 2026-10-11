@@ -152,7 +152,7 @@ suites = [
     ("stroke-fitting-tests", ["SVGPath.swift", "StrokeFitting.swift"], "StrokeFittingTests.swift", "STROKE_FITTING_TESTS", ()),
     ("canvas-tests", ["SVGPath.swift", "DocumentModel.swift", "VectorGeometry.swift", "StrokeFitting.swift", "ImageExport.swift", "Canvas.swift"], "CanvasTests.swift", "CANVAS_TESTS", ()),
     ("history-store-tests", ["SVGPath.swift", "DocumentModel.swift", "VectorGeometry.swift", "StrokeFitting.swift", "ImageExport.swift", "Canvas.swift", "OpenSnapFile.swift", "HistoryStore.swift"], "HistoryStoreTests.swift", "HISTORY_STORE_TESTS", ()),
-    ("history-browser-tests", ["HistoryBrowser.swift", "TestDefaults.swift", "AppToolTip.swift", *ICONS], "HistoryBrowserTests.swift", "HISTORY_BROWSER_TESTS", ()),
+    ("history-browser-tests", ["HistoryBrowser.swift", "TestDefaults.swift", "AppToolTip.swift", "DisplayOptions.swift", "DisplayOptions+ChromeAccessibility.swift", "OriginalActionButton.swift", "StateStyles.swift", "GlassChrome.swift", *ICONS], "HistoryBrowserTests.swift", "HISTORY_BROWSER_TESTS", ()),
     ("history-remote-deletion-tests", ["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift", "AppAlert.swift", "HistoryRemoteDeletion.swift", *ICONS], "HistoryRemoteDeletionTests.swift", None, ("--test",)),
     ("publishing-tests", ["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift", "AppAlert.swift", *ICONS], "PublishingTests.swift", None, ("--test",)),
     ("publishing-shutdown-tests", ["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift", "AppAlert.swift", *ICONS], "PublishingShutdownTests.swift", None, ("--test",)),
@@ -179,7 +179,8 @@ suites = [
     ("view-tree-audit-tests", ["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift", "AppAlert.swift",
                                "AboutWindow.swift", "HistoryBrowser.swift", "ResizePresets.swift", "ResizePanel.swift", *ICONS, "StrokeFitting.swift",
                                "GeneralPreferencesState.swift", "TextStyleForm.swift", "ExportAccessory.swift", "TestDefaults.swift", "ViewTreeAudit.swift",
-                               "SettingsWindow.swift", "GlobalHotkeys.swift", "AppToolTip.swift", "DisplayOptions.swift", "OriginalCaptureFlash.swift"],
+                               "SettingsWindow.swift", "GlobalHotkeys.swift", "AppToolTip.swift", "DisplayOptions.swift", "OriginalCaptureFlash.swift",
+                               "DisplayOptions+ChromeAccessibility.swift", "OriginalActionButton.swift", "StateStyles.swift", "GlassChrome.swift"],
      "ViewTreeAuditTests.swift", "VIEW_TREE_AUDIT_TESTS", ()),
     # G10: the accessibility walker over every surface whose sources compile in isolation, plus Return and Escape in each sheet outside
     # the editor. The main window joins via app-safety (it needs App.swift). VoiceOver speech itself is a manual pass.
@@ -187,7 +188,8 @@ suites = [
                                    "AboutWindow.swift", "HistoryBrowser.swift", "ResizePresets.swift", "ResizePanel.swift", *ICONS, "StrokeFitting.swift",
                                    "GeneralPreferencesState.swift", "TextStyleForm.swift", "ExportAccessory.swift", "TestDefaults.swift", "AccessibilityAudit.swift",
                                    "SettingsWindow.swift", "GlobalHotkeys.swift", "AppToolTip.swift", "DisplayOptions.swift", "OriginalCaptureFlash.swift",
-                                   "PhotoBrowser.swift", "AppAlert.swift"],
+                                   "PhotoBrowser.swift", "AppAlert.swift",
+                                   "DisplayOptions+ChromeAccessibility.swift", "OriginalActionButton.swift", "StateStyles.swift", "GlassChrome.swift"],
      "AccessibilityAuditTests.swift", "ACCESSIBILITY_AUDIT_TESTS", ()),
     # OSN-062: the VoiceOver announcement helper with an injected poster.
     ("announcer-tests", ["Announcer.swift"], "AnnouncerTests.swift", "ANNOUNCER_TESTS", ()),

@@ -141,7 +141,12 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
     private let detailsHint = NSTextField(wrappingLabelWithString:"Select a snap to see its details.")
     /// What the details column shows with nothing selected: how many snaps the grid holds, by kind, so the column is never blank.
     private let detailsSummaryTitle = NSTextField(labelWithString:""), detailsSummary = NSTextField(wrappingLabelWithString:"")
-    private var buttons: [Action: NSButton] = [:]
+    private var buttons: [Action: HistoryActionButton] = [:]
+    /// The three glass plates of the action bar (open and copy, links, removal) and the container that renders them together.
+    private(set) var actionPlates: [GlassSurfaceView] = []
+    let actionBar = NSView()
+    private(set) var actionContainer: NSGlassEffectContainerView?
+    private var displayOptionsObservation: DisplayOptions.Observation?
     private(set) var actionLabels: ActionLabels = .all
     private var contextItems: [Action: NSMenuItem] = [:]
     /// The grid's scroll view. Horizontal scrolling is off: the grid reflows instead.
@@ -150,10 +155,11 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
     let emptyState = NSStackView()
     let emptyTitle = NSTextField(labelWithString: ""), emptyHint = NSTextField(wrappingLabelWithString: "")
     /// Shown with "No history items match these filters", so a dead end is one click from the full list.
-    private(set) lazy var clearFiltersButton: NSButton = {
-        let button = NSButton(title:"Clear filters",target:self,action:#selector(clearFilters))
-        button.bezelStyle = .rounded; Typography.apply(.body,to:button)
-        button.heightAnchor.constraint(greaterThanOrEqualToConstant:DesignTokens.Size.control).isActive = true
+    private(set) lazy var clearFiltersButton: HistoryActionButton = {
+        let button = HistoryActionButton(title:"Clear filters",target:self,action:#selector(clearFilters))
+        button.configure(icon:.xmarkCircle,name:"Clear filters")
+        // On the content layer, not on a glass plate, and the only thing to do in the no-match state: it takes the accent, which marks the primary action.
+        button.isPrimary = true; button.accessibility = .live
         return button
     }()
     let filterRow = NSStackView(), actionRow = NSStackView(), footerRow = NSStackView()
@@ -177,6 +183,8 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         window.setFrame(NSRect(origin:.zero,size:Self.defaultSize),display:false)
         window.title = "History"; window.minSize = Self.minimumSize
         window.isReleasedWhenClosed = false
+        // Tab walks the filters, the action plates and the grid in reading order, and follows a label collapse or a detail column move.
+        window.autorecalculatesKeyViewLoop = true
         super.init(window:window)
         window.delegate = self
         thumbnails.countLimit = 256; thumbnails.totalCostLimit = 64*1024*1024
@@ -377,29 +385,21 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         datePopup.target = self; datePopup.action = #selector(filtersChanged); datePopup.setAccessibilityLabel("History date filter")
         configure(filterRow,[categoryControl,search,datePopup]); root.addArrangedSubview(filterRow)
 
-        // Action row: the seven actions as a toolbar, plus the drag format. Disabled ones stay in place so the row does not jump.
-        let actions = Action.allCases.map { action -> NSButton in
-            let button = NSButton(title:"",target:self,action:#selector(actionInvoked(_:)))
-            button.tag = action.rawValue; button.bezelStyle = .rounded; Typography.apply(.body,to:button)
-            if let symbol = ChromeIcons.resolve(action.icon,pointSize:Typography.iconInline).image {
-                button.image = symbol; button.imagePosition = .imageLeading; button.imageHugsTitle = true
-            } else { button.title = action.title }
-            button.toolTip = action.title; button.setAccessibilityLabel(action.title)
-            button.widthAnchor.constraint(greaterThanOrEqualToConstant:DesignTokens.Size.tool.width).isActive = true
-            button.heightAnchor.constraint(greaterThanOrEqualToConstant:DesignTokens.Size.control).isActive = true
-            buttons[action] = button; return button
+        // Action bar: the seven actions on three glass plates inside one container. The plates are the only glass; each button draws its own
+        // rest, hover, pressed, focus and disabled fill on its plate. Disabled ones stay in place so the row does not jump.
+        for action in Action.allCases {
+            let button = HistoryActionButton(title:"",target:self,action:#selector(actionInvoked(_:)))
+            button.tag = action.rawValue; button.configure(icon:action.icon,name:action.title)
+            button.toolTip = action.title
+            buttons[action] = button
         }
         let formatLabel = NSTextField(labelWithString:"Drag as"); Typography.apply(.body,to:formatLabel)
         formatPopup.addItems(withTitles:Self.dragFormats.map(Self.dragFormatTitle)); Typography.apply(.body,to:formatPopup)
         formatPopup.selectItem(at:Self.dragFormats.firstIndex(of:dragFormat) ?? 0)
         formatPopup.widthAnchor.constraint(lessThanOrEqualToConstant:Self.formatPopupMaximumWidth).isActive = true   // R2-015: a pop-up, not a column
         formatPopup.target = self; formatPopup.action = #selector(formatChanged); formatPopup.setAccessibilityLabel("History drag export format")
-        let flexible = NSView(); flexible.setContentHuggingPriority(.init(1),for:.horizontal)
-        configure(actionRow,actions+[flexible]); actionRow.spacing = Space.s2
-        // The row is measured (`updateActionLabels`), never allowed to hold the window open: with every label showing it needs 945 pt, and
-        // it would otherwise be the reason the window stopped there instead of reaching its 880 minimum, where the labels collapse (F-J6-006).
-        actionRow.setClippingResistancePriority(.init(1),for:.horizontal)
-        root.addArrangedSubview(actionRow)
+        buildActionBar()
+        root.addArrangedSubview(actionContainer!)
         // "Drag as" sits at the end of the footer line, not in the action row: with it the row held no labels at 1000 wide, and
         // the three commands that take something away must keep theirs at the 880 minimum.
         let spring = NSView(); spring.setContentHuggingPriority(.init(1),for:.horizontal)
@@ -458,23 +458,65 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         layoutDetails(forContentWidth:content.bounds.width)
         updateActionLabels(forContentWidth:content.bounds.width)
     }
-    /// Shows as many labels as the row holds: all seven, else the three destructive ones, else icons. Measured from
+    /// The groups in reading order: what opens or copies the snap, what works with its web link, and what takes something away.
+    /// The removal group sits alone at the far end, so a destructive command is never next to a harmless one.
+    static let actionGroups: [(identifier: String, label: String, actions: [Action])] = [
+        ("HistoryOpenCopyGroup","Open and copy",[.open,.copy]),
+        ("HistoryLinkGroup","Web link",[.copyLink,.openLink]),
+        ("HistoryRemoveGroup","Remove",[.remove,.deleteFiles,.deleteRemote])]
+
+    private func buildActionBar() {
+        let options = ChromeAccessibility.live
+        actionPlates = Self.actionGroups.map { group in
+            let plate = GlassChrome.plate(group.actions.compactMap { buttons[$0] },identifier:group.identifier,accessibility:options)
+            plate.setAccessibilityLabel(group.label); plate.setAccessibilityRole(.group)
+            return plate
+        }
+        for button in buttons.values { button.accessibility = options }
+        let spring = NSView(); spring.setContentHuggingPriority(.init(1),for:.horizontal)
+        // Open and copy, links, then a flexible gap, then removal at the trailing edge.
+        actionRow.orientation = .horizontal; actionRow.alignment = .centerY; actionRow.spacing = GlassChrome.Metrics.groupGap
+        actionRow.translatesAutoresizingMaskIntoConstraints = false
+        for view in [actionPlates[0],actionPlates[1],spring,actionPlates[2]] { actionRow.addArrangedSubview(view) }
+        // The row is measured (`updateActionLabels`), never allowed to hold the window open: with every label showing it needs more than the
+        // 880 minimum, and it would otherwise be the reason the window stopped there instead of collapsing its labels (F-J6-006).
+        actionRow.setClippingResistancePriority(.init(1),for:.horizontal)
+        actionBar.translatesAutoresizingMaskIntoConstraints = false; actionBar.addSubview(actionRow)
+        let trailing = actionRow.trailingAnchor.constraint(equalTo:actionBar.trailingAnchor); trailing.priority = .init(250)
+        NSLayoutConstraint.activate([actionRow.leadingAnchor.constraint(equalTo:actionBar.leadingAnchor),trailing,
+                                     actionRow.topAnchor.constraint(equalTo:actionBar.topAnchor),actionRow.bottomAnchor.constraint(equalTo:actionBar.bottomAnchor)])
+        let container = GlassChrome.container(around:actionBar,identifier:"HistoryActionBar")
+        container.heightAnchor.constraint(equalToConstant:GlassChrome.Metrics.headerHeight).isActive = true
+        actionContainer = container
+        displayOptionsObservation = DisplayOptions.observe { [weak self] _ in
+            guard let self else { return }
+            let options = ChromeAccessibility.live
+            for plate in self.actionPlates { plate.accessibility = options }
+            for button in self.buttons.values { button.accessibility = options }
+            self.clearFiltersButton.accessibility = options
+        }
+    }
+    /// Shows as many labels as the bar holds: all seven, else the three destructive ones, else icons. Measured from
     /// the live buttons at the live font, so a wider system font or a longer label moves the threshold by itself.
     func updateActionLabels(forContentWidth width: CGFloat) {
-        let gap = actionRow.spacing, available = width - 2 * Space.s4
+        let available = width - 2 * Space.s4
         var chosen = ActionLabels.none
-        for mode in [ActionLabels.all,.destructiveOnly] {
-            let total = Action.allCases.reduce(CGFloat(0)) { $0 + labelledWidth(of:$1,mode:mode) } + gap * CGFloat(Action.allCases.count - 1)
-            if total <= available { chosen = mode; break }
-        }
+        for mode in [ActionLabels.all,.destructiveOnly] where actionBarWidth(mode:mode) <= available { chosen = mode; break }
         applyActionLabels(chosen)
+    }
+    /// The plates' inset and spacing, the buttons at their width for the mode, and the gaps between plates and the flexible gap.
+    private func actionBarWidth(mode: ActionLabels) -> CGFloat {
+        let metrics = GlassChrome.Metrics.self
+        let plates = Self.actionGroups.reduce(CGFloat(0)) { total,group in
+            total + 2 * metrics.groupInset + metrics.groupSpacing * CGFloat(group.actions.count - 1)
+                + group.actions.reduce(CGFloat(0)) { $0 + labelledWidth(of:$1,mode:mode) }
+        }
+        return plates + actionRow.spacing * 3
     }
     private func labelledWidth(of action: Action,mode: ActionLabels) -> CGFloat {
         guard let button = buttons[action] else { return 0 }
         let shows = mode == .all || (mode == .destructiveOnly && action.removesSomething)
-        let probe = NSButton(title:shows ? action.shortTitle : "",target:nil,action:nil)
-        probe.bezelStyle = .rounded; Typography.apply(.body,to:probe); probe.image = button.image; probe.imagePosition = shows ? .imageLeading : .imageOnly
-        return max(probe.fittingSize.width,DesignTokens.Size.tool.width)
+        return HistoryActionButton.width(title:shows ? action.shortTitle : "",glyph:button.image)
     }
     private func applyActionLabels(_ mode: ActionLabels) {
         actionLabels = mode
@@ -482,7 +524,6 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
             guard let button = buttons[action], button.image != nil else { continue }
             let shows = mode == .all || (mode == .destructiveOnly && action.removesSomething)
             button.title = shows ? action.shortTitle : ""
-            button.imagePosition = shows ? .imageLeading : .imageOnly
         }
     }
     static let detailsWidth: CGFloat = 248, detailsBelowHeight: CGFloat = 176, dayHeaderHeight: CGFloat = 44
@@ -500,8 +541,8 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         detailsImage.setContentHuggingPriority(.defaultLow,for:.horizontal)
         let fields = NSStackView(); fields.orientation = .vertical; fields.alignment = .leading; fields.spacing = Space.s2
         for name in ["Name","Date","Size","Action","Destination"] {
-            let label = NSTextField(labelWithString:name+":"); label.font = Typography.font(.bodyStrong)
-            let value = NSTextField(wrappingLabelWithString:"—"); value.font = Typography.font(.body); value.isSelectable = true
+            let label = NSTextField(labelWithString:name+":"); label.font = Typography.font(.bodyStrong); label.textColor = Palette.Text.secondary
+            let value = NSTextField(wrappingLabelWithString:"—"); value.font = Typography.font(.body); value.textColor = Palette.Text.primary; value.isSelectable = true
             // A link or a long file name never wraps into a clipped second line: it keeps its two ends and the tooltip carries the rest.
             let isLink = name == "Destination"
             value.maximumNumberOfLines = isLink ? 1 : 2; value.lineBreakMode = isLink ? .byTruncatingMiddle : .byTruncatingTail
@@ -517,7 +558,8 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         detailsFields = fields
         detailsHint.font = Typography.font(.body); detailsHint.textColor = Palette.Text.secondary; detailsHint.maximumNumberOfLines = 0
         detailsHint.preferredMaxLayoutWidth = Self.detailsWidth
-        detailsSummaryTitle.font = Typography.font(.bodyStrong); detailsSummary.font = Typography.font(.body)
+        detailsSummaryTitle.font = Typography.font(.bodyStrong); detailsSummaryTitle.textColor = Palette.Text.primary
+        detailsSummary.font = Typography.font(.body); detailsSummary.textColor = Palette.Text.secondary
         detailsSummary.maximumNumberOfLines = 0; detailsSummary.preferredMaxLayoutWidth = Self.detailsWidth
         detailsSummaryTitle.setAccessibilityElement(true); detailsSummary.setAccessibilityElement(true)
         detailsPanel.addArrangedSubview(detailsSummaryTitle); detailsPanel.addArrangedSubview(detailsSummary)
@@ -582,8 +624,8 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         let nothingSaved = items.isEmpty
         emptyState.isHidden = !visibleItems.isEmpty
         emptyTitle.stringValue = nothingSaved ? "No history yet" : "No history items match these filters"
-        emptyHint.stringValue = nothingSaved ? Self.emptyHint(shortcut:saveShortcut()) : ""
-        emptyHint.isHidden = !nothingSaved
+        emptyHint.stringValue = nothingSaved ? Self.emptyHint(shortcut:saveShortcut()) : "Try a different search, tab or date."
+        emptyHint.isHidden = false
         clearFiltersButton.isHidden = nothingSaved || !filtersAreActive
         emptyState.setAccessibilityLabel([emptyTitle.stringValue,emptyHint.stringValue].filter { !$0.isEmpty }.joined(separator:" "))
     }
@@ -751,6 +793,49 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
     }
 }
 
+/// One History command: the chrome's `CommandButton` (borderless, a Font Awesome glyph beside a 20 pt label, its own rest, hover, pressed,
+/// focus and disabled fills) sized to its label, so it reads as a button on a glass plate. Nothing here is a second glass surface.
+@MainActor
+final class HistoryActionButton: CommandButton {
+    private typealias Typography = DesignTokens.Typography
+    static let padding = DesignTokens.Space.s3, glyphGap = DesignTokens.Space.s1
+
+    /// The width a button takes with this label beside this glyph: the label and glyph and the padding either side, never less than a tool button.
+    static func width(title: String,glyph: NSImage?) -> CGFloat {
+        let text = title.isEmpty ? 0 : ceil((title as NSString).size(withAttributes:[NSAttributedString.Key.font:Typography.font(.body)]).width)
+        let icon = glyph?.size.width ?? 0
+        guard text > 0 else { return max(DesignTokens.Size.tool.width,icon + 2 * DesignTokens.Space.s2) }
+        return icon + (icon > 0 ? glyphGap : 0) + text + 2 * padding
+    }
+
+    func configure(icon glyph: FAIcon,name: String) {
+        GlassChrome.useExtraLarge(self)
+        Typography.apply(.body,to:self)
+        iconPointSize = Typography.iconInline
+        icon = glyph
+        // No glyph (a build with no icon family at all) falls back to the label so the command is never blank.
+        if image == nil { title = name }
+        setAccessibilityLabel(name)
+        setContentCompressionResistancePriority(.defaultHigh,for:.horizontal)
+        // The label is drawn from an attributed string: the button's own title field would keep the system's 13 pt and take no state colour.
+        plate.onApply = { [weak self] _ in self?.styleTitle() }
+        styleTitle()
+    }
+
+    /// The label at body size in the colour the state resolved (primary, disabled and Increase Contrast included).
+    private func styleTitle() {
+        let text = visibleTitle
+        guard !text.isEmpty else { return }
+        attributedTitle = NSAttributedString(string:text,attributes:[NSAttributedString.Key.font:Typography.font(.body),NSAttributedString.Key.foregroundColor:plate.stateStyle.content])
+    }
+    override var title: String {
+        didSet { invalidateIntrinsicContentSize(); styleTitle() }
+    }
+    override var intrinsicContentSize: NSSize {
+        NSSize(width:Self.width(title:visibleTitle,glyph:image),height:GlassChrome.Metrics.commandHeight)
+    }
+}
+
 @MainActor
 private final class HistoryGrid: NSCollectionView {
     weak var browser: HistoryBrowser?
@@ -893,7 +978,7 @@ private final class HistoryDayHeader: NSView {
     static let identifier = NSUserInterfaceItemIdentifier("HistoryDayHeader")
     let label = NSTextField(labelWithString:"")
     override init(frame: NSRect) {
-        super.init(frame:frame); label.font = DesignTokens.Typography.font(.headline)
+        super.init(frame:frame); label.font = DesignTokens.Typography.font(.headline); label.textColor = DesignTokens.Palette.Text.primary
         label.translatesAutoresizingMaskIntoConstraints = false; addSubview(label)
         NSLayoutConstraint.activate([label.leadingAnchor.constraint(equalTo:leadingAnchor,constant:DesignTokens.Space.s3),label.trailingAnchor.constraint(equalTo:trailingAnchor,constant:-DesignTokens.Space.s3),label.centerYAnchor.constraint(equalTo:centerYAnchor)])
     }
