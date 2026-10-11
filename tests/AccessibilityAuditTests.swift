@@ -47,11 +47,20 @@ private enum AccessibilityAuditTests {
         seededViolations()
         cleanTreeIsClean()
         menus()
+        UserStrings.reset()  // the seeded violations above name the retired product on purpose
         realSurfaces()
         sheetKeyboard()
         customViewFocus()
         labelsAndStatus()
+        userStringsAreClean()
         print("AccessibilityAuditTests: \(checks) checks passed (windows never ordered on screen)")
+    }
+
+    /// G3 (dynamic): nothing the real surfaces above can show names the retired product, and the walk can see a seeded violation of every kind.
+    private static func userStringsAreClean() {
+        expect(UserStrings.entries.count > 200, "the string walk visited the real surfaces (\(UserStrings.entries.count) distinct strings)")
+        expect(UserStrings.hits.isEmpty, "no user-visible string names the retired product: \(UserStrings.hits.map { "\($0.surface) \($0.kind) '\($0.text)'" })")
+        expect(UserStrings.writeDump(name: "accessibility-audit-tests") || ProcessInfo.processInfo.environment["OPENSNAP_USER_STRINGS_DIR"] == nil, "the string dump was written")
     }
 
     // MARK: Builders
@@ -409,6 +418,7 @@ private enum AccessibilityAuditTests {
         }
         about.versionLabel.setAccessibilityLabel("Version 1.2.3 of " + Audit.retiredName)
         expect(kinds(Audit.audit(about, surface: "About (seeded)")).contains(.retiredName), "About: the retired name in a label is caught on the real window")
+        UserStrings.removeSeeded(surface: "About (seeded)")  // the seeded name is on purpose; the string walk must judge only what ships
 
     }
 

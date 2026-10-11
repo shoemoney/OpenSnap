@@ -79,7 +79,7 @@ Todos in progress, partly landed, or landed since `658a16f`:
 | OSN-060 | done | `7c8bdb1`; sheet Return and Escape in `4fca729` | `AccessibilityAuditTests` key-loop and Escape and Return cases (T7 tests 3 and 4) | J1 real-click Tab walk (F-J1-007 PASS) |
 | OSN-062 | in-progress | `7c8bdb1` (labels, announcements); `4fca729` (G10 walker, 32 surfaces, 0 violations) | walker: 0 violations; manual VoiceOver pass not recorded | none for the manual pass |
 | OSN-061 | done | part 1 `accfedd` (`de21b6e`, `d0f8013`, `2dc613e`, `eaab72f`, `f975dfa`); part 2 `3ee9503` | DisplayOptionsTests: 92 checks (part 1) | J3 rendered positive controls for all four options (`e2e-2026-10-10/j3`, rendered only) |
-| OSN-070 | in-progress (partial) | `0996da5` (`90f70bc`, `2cbf59c`, `bb0659a`); wired into `tools/test.py` by `efe2f68` (`b6658d2`) | can-fail self-tests for G6 and G11 (`90f70bc`); seeded can-fail cases for G4 (`bb0659a`) | none |
+| OSN-070 | done on `impl/osn-070-gates` (not merged to main) | gates G1 to G12 audited, G3 (`tools/check-user-strings.py`, `tests/UserStringWalk.swift`) and the layout-fit gate (`tools/check-layout-fit.py`, `tests/AppSafetyLayoutFitCases.swift`) added, G9 strict; earlier work in `0996da5` (`90f70bc`, `2cbf59c`, `bb0659a`), wired by `efe2f68` (`b6658d2`) | can-fail self-tests for G3 (python and Swift), layout fit (python and live), G6, G9, G11; seeded can-fail cases for G4 | none; see the gate table under the OSN-070 note below |
 | OSN-072 | in-progress (partial) | `0996da5` (`56393f8`, `8cdebcb`); release dry run in a temp clone | synthetic dry run: 58 documents, 2 destinations; a re-run is a no-op | none |
 
 ## Decisions in this period
@@ -677,7 +677,24 @@ App-specific alerts are no longer NSAlert: they are app-owned sheets at 20 pt (O
 - **OSN-044:** merged in `3ee9503`, with OSN-061 part 2.
 - **OSN-061:** parts 1 and 2 are on main (`accfedd`, `3ee9503`); done.
 - **OSN-062:** labels, announcements and the audit walker are on main; the recorded manual VoiceOver pass is not done, so the todo is in-progress.
-- **OSN-070:** not recorded as landed: G3 (`check-user-strings.py`), the dynamic Skitch-string check, and a layout-fit-at-980 gate beyond the measured-width test in `658a16f`. G5 and G9 are not further recorded in this pass.
+- **OSN-070 (branch `impl/osn-070-gates`, not merged):** the gates the earlier pass left open are in. Gate table (strict means the run fails on a hit):
+
+  | Gate | Check | Wired in `tools/test.py` | Mode | Can-fail self-test |
+  |---|---|---|---|---|
+  | G1 clean clone | `tools/check-clean-clone.sh` | no (it runs `test.py` itself); run by hand, passed on `dbf7461` | strict | none (exception: it is the whole build in a fresh clone) |
+  | G2 no original assets | `tools/check-no-original.py` (`--sources`, built bundle) | yes | strict | none (exception: static name and hash lists; not seeded) |
+  | G3 user-visible name | `tools/check-user-strings.py` (static literals and Info.plist; dynamic dumps) with `tests/UserStringWalk.swift` | yes, static before the suites, dynamic after app-safety | strict | yes: 13 python seeds, plus `user-string-walk-tests` (15 kinds of seeded text) |
+  | G4 font floor | `view-tree-audit-tests`, main window via app-safety | yes | strict | yes (seeded violation per control class) |
+  | G5 glass depth and budget | `glass-chrome-tests` and the real-window case in app-safety | yes | strict | yes (a seeded plate inside a plate is counted; the eye-dump record is seeded in G7) |
+  | G6 decorative glyphs | `tools/check-glyphs.py --strict` | yes | strict | yes |
+  | G7 eye-dump evidence | `tools/check-eye-dump.py` over each committed evidence set | yes | strict | yes |
+  | G8 migration | `migration-tests`, `tools/migration-dry-run.py`, real-store guard | yes | strict | yes (crash injection) |
+  | G9 token literals | `tools/check-tokens.py --strict` | yes (was report mode) | strict | yes |
+  | G10 accessibility | `accessibility-audit-tests` | yes | strict | yes |
+  | G11 skip budget | `tools/check-skip-budget.py` | yes | strict | yes |
+  | G12 layout fit at 980 | `tools/check-layout-fit.py` over every committed `layout.json`; live window in `AppSafetyLayoutFitCases` | yes | strict | yes (python seeds; live squeeze case) |
+
+  Exceptions, with reasons. G1 and G2 have no seeded self-test. G9 scans font, colour and radius literals only: the spec's roughly 100 constraint constants are not scanned, and the harness fixture literals in `EyeDumpAuditSurfaces.swift` carry a `token-exempt:` reason. The layout-fit gate treats the status line and the bar row as elastic (they truncate), so their fitting size is not a minimum. G7's contrast check runs on committed evidence, not on a fresh capture. The Swift string walk covers the windows, menus, alerts and tooltips that the app-safety and accessibility-audit suites build; text drawn by custom `draw(_:)` and system-owned panels are outside it, as for G4.
 - **OSN-072:** migration on a copy of the owner's real store is not authorized in this run. Synthetic temp stores only. The release work is a dry run only: no tag, push, upload or release.
 - **OSN-054:** the upload UX is merged (`7c8bdb1`). The AWS run on 2026-10-09 is validation evidence; the E2E audit added a live upload (J2) and a live delete through the app (J4).
 - **Not run:** live screen capture; real popover translucency; VoiceOver speech (OSN-062 manual pass); Reduce Transparency alone and Increase Contrast alone captures (both together are in `m4-glass`); FA Pro icon mode; the OSN-071 visual gallery and independent visual sign-off.

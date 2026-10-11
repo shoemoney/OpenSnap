@@ -123,7 +123,7 @@ extension AppSafetyTests {
         try (firstView(NSPopUpButton.self, label: "Toolbox", in: app.window.contentView) as? ToolboxPopUpButton).unwrap("Toolbox button")
     }
 
-    private static func toolboxMenu(_ app: AppDelegate) throws -> NSMenu {
+    static func toolboxMenu(_ app: AppDelegate) throws -> NSMenu {
         try firstView(NSPopUpButton.self, label: "Toolbox", in: app.window.contentView).unwrap("Toolbox popup").menu.unwrap("Toolbox")
     }
 

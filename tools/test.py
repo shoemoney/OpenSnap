@@ -63,9 +63,15 @@ subprocess.run([sys.executable, "-I", str(root / "tools" / "test-eye-dump-audit-
 subprocess.run([sys.executable, "-I", str(root / "tools" / "test-e2e-session-guard.py")], cwd=root, check=True)
 # The startup smoke runs a re-identified temp copy and compares the real stores; its protections must be able to fail too.
 subprocess.run([sys.executable, "-I", str(root / "tools" / "test-native-startup-guard.py")], cwd=root, check=True)
-# G9: literal fonts, colours and radii outside the tokens. Report mode until the token sweeps land; the self-test proves --strict can fail.
-subprocess.run([sys.executable, str(root / "tools" / "check-tokens.py")], cwd=root, check=True)
+# G9: literal fonts, colours and radii outside the tokens. Strict: Sources are clean (fixture literals carry a token-exempt reason); the self-test proves --strict can fail.
+subprocess.run([sys.executable, str(root / "tools" / "check-tokens.py"), "--strict"], cwd=root, check=True)
 subprocess.run([sys.executable, str(root / "tools" / "check-tokens.py"), "--self-test"], cwd=root, check=True)
+# G3: no user-visible string names the retired product. Static: Sources string literals and Info.plist. Dynamic: the dumps the native suites write (checked after app-safety).
+subprocess.run([sys.executable, str(root / "tools" / "check-user-strings.py")], cwd=root, check=True)
+subprocess.run([sys.executable, str(root / "tools" / "check-user-strings.py"), "--self-test"], cwd=root, check=True)
+# G12 / OSN-070: layout fit at the 980 pt minimum from the committed layout.json evidence (normal + Frame, light + dark); the live window is checked in app-safety.
+subprocess.run([sys.executable, str(root / "tools" / "check-layout-fit.py")], cwd=root, check=True)
+subprocess.run([sys.executable, str(root / "tools" / "check-layout-fit.py"), "--self-test"], cwd=root, check=True)
 # D-TEXT: chrome tooltips are app-owned (20 pt); a direct system `toolTip` write fails this gate, and the self-test proves it can.
 subprocess.run([sys.executable, str(root / "tools" / "check-tooltips.py")], cwd=root, check=True)
 subprocess.run([sys.executable, str(root / "tools" / "check-tooltips.py"), "--self-test"], cwd=root, check=True)
@@ -97,6 +103,9 @@ else:
     raise SystemExit("Sources changed while taking the snapshot; rerun after edits finish.")
 for path, data in contents.items():
     (snapshot / path.name).write_bytes(data)
+# G3 (dynamic): suites that walk real windows and menus leave the strings they saw here.
+USER_STRINGS = snapshot / "user-strings"
+os.environ["OPENSNAP_USER_STRINGS_DIR"] = str(USER_STRINGS)
 manifest = {str(path.relative_to(root)): hashlib.sha256(data).hexdigest() for path, data in contents.items()}
 (snapshot / "source-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
 
@@ -200,10 +209,12 @@ suites = [
                                    "AboutWindow.swift", "HistoryBrowser.swift", "ResizePresets.swift", "ResizePanel.swift", *ICONS, "StrokeFitting.swift",
                                    "GeneralPreferencesState.swift", "TextStyleForm.swift", "ExportAccessory.swift", "TestDefaults.swift", "AccessibilityAudit.swift",
                                    "SettingsWindow.swift", "GlobalHotkeys.swift", "AppToolTip.swift", "DisplayOptions.swift", "OriginalCaptureFlash.swift",
-                                   "PhotoBrowser.swift", "AppAlert.swift",
+                                   "PhotoBrowser.swift", "AppAlert.swift", "UserStringWalk.swift",
                                    "DisplayOptions+ChromeAccessibility.swift", "OriginalActionButton.swift", "StateStyles.swift", "GlassChrome.swift"]),
      "AccessibilityAuditTests.swift", "ACCESSIBILITY_AUDIT_TESTS", ()),
     # OSN-062: the VoiceOver announcement helper with an injected poster.
+    # G3 (dynamic): the retired-name string walker can catch a seeded violation in every kind of text it reads.
+    ("user-string-walk-tests", ["AppToolTip.swift", "ContrastProbe.swift", "UserStringWalk.swift"], "UserStringWalkTests.swift", "USER_STRING_WALK_TESTS", ()),
     ("announcer-tests", ["Announcer.swift"], "AnnouncerTests.swift", "ANNOUNCER_TESTS", ()),
     # F-R-005: the screenshot harness's input fence counts real events per kind; only typing and button presses flag a run.
     ("eye-dump-input-guard-tests", ["EyeDumpAuditInputGuard.swift"], "EyeDumpInputGuardTests.swift", "EYE_DUMP_INPUT_GUARD_TESTS", ()),
@@ -215,7 +226,7 @@ modern_suites = [
     ("menu-symbols-tests", [*ICONS, "MenuSymbols.swift"], "MenuSymbolsTests.swift", "MENU_SYMBOLS_TESTS", ()),
     ("icon-coverage-tests", [*ICONS], "IconCoverageTests.swift", "ICON_COVERAGE_TESTS", ()),
     # The shared glass choice primitives: button, group, panel host and the NSMenu adapter, on never-ordered windows.
-    ("glass-choices-tests", with_choices(["ContrastProbe.swift", "ViewTreeAudit.swift", "AccessibilityAudit.swift", "MenuSymbols.swift", "AccessibilityTreeWalk.swift"]), "GlassChoicesTests.swift", "GLASS_CHOICES_TESTS", ()),
+    ("glass-choices-tests", with_choices(["ContrastProbe.swift", "ViewTreeAudit.swift", "AccessibilityAudit.swift", "UserStringWalk.swift", "MenuSymbols.swift", "AccessibilityTreeWalk.swift"]), "GlassChoicesTests.swift", "GLASS_CHOICES_TESTS", ()),
     ("glass-chrome-tests", with_choices(["DisplayOptions.swift", "DisplayOptions+ChromeAccessibility.swift", "OriginalActionButton.swift", *ICONS, "BezelDrawingControls.swift", "DocumentModel.swift", "StateStyles.swift", "GlassChrome.swift", "UploadStatus.swift", "ModernEditorChrome.swift", "AppToolTip.swift", "ContrastProbe.swift", "AccessibilityTreeWalk.swift"]), "GlassChromeTests.swift", "GLASS_CHROME_TESTS", ()),
 ]
 with ThreadPoolExecutor(max_workers=len(suites) + len(modern_suites)) as executor:
@@ -242,6 +253,9 @@ if skips.returncode:
     raise SystemExit("FAIL skip-budget: an unexplained SKIP in the suite output")
 print("== app-safety", flush=True)
 subprocess.run([str(root / "tools" / "test-app-safety.sh"), "--arch", options.arch], cwd=root, check=True)
+# G3 (dynamic): every string the walked windows, menus, alerts and tooltips showed, none naming the retired product; both walkers must have written a dump.
+subprocess.run([sys.executable, str(root / "tools" / "check-user-strings.py"), "--dynamic", str(USER_STRINGS), "--require", "app-safety",
+                "--require", "accessibility-audit-tests", "--min", "300"], cwd=root, check=True)
 check_real_store(real_store_before)
 if current_inputs() != inputs or not all(path.read_bytes() == data for path, data in contents.items()):
     raise SystemExit("Sources changed during verification; rerun before treating this result as current.")

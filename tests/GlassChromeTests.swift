@@ -566,6 +566,10 @@ private enum GlassChromeTests {
         expect(host.contentSize == NSSize(width: 320, height: 134), "The panel is 320 x 134 (\(host.contentSize))")
         let structure = glassStructure(host.container)
         expect(structure.containers == 1 && structure.plates == 2 && structure.nested == 0, "One glass container holding two plates, and no glass inside glass (\(structure))")
+        // G5 can fail: glass seeded inside glass is counted, and the same walk still reports clean glass as clean.
+        let outer = NSGlassEffectView(), inner = NSGlassEffectView(), seeded = NSView()
+        outer.contentView = seeded; seeded.addSubview(inner)
+        expect(glassStructure(outer).nested == 1 && glassStructure(inner).nested == 0, "The glass-depth walk finds a seeded plate inside a plate (\(glassStructure(outer)))")
         expect(host.plates == panel.plates && panel.plates.allSatisfy { $0.axis == .vertical }, "The two plates are the panel's groups")
         expect(textFonts(in: host.container).allSatisfy { $0 >= 18 } && !textFonts(in: host.container).isEmpty, "Every text is 18 pt or more (\(textFonts(in: host.container)))")
         panel.sync()
