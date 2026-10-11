@@ -1504,9 +1504,8 @@ extension AuditRun {
             pump(0.8)
             shoot("S21", "publish-progress-\(width)", surface: "publish progress", state: "Uploading <name>\u{2026}: 20 pt spinner, truncating status, Cancel on its plate; the Original size checkbox only where the slot holds it, at \(width)", refs: refs, extra: ["status": app.status.stringValue, "uploadState": String(describing: app.uploadState), "originalSizeCheckboxHidden": app.dragOriginalControl.isHidden])
             shoot("S21", "publish-progress-footer-\(width)", surface: "publish progress", state: "footer crop during the upload, at \(width)", crop: footerCrop(), refs: refs, settle: 0.1)
-            if width == "w980", let share = app.webpostButton, let menu = share.menu {
-                captureTrackedMenu("S21", "upload-menu-busy", surface: "publish progress", state: "destination menu while an upload runs (Cancel Upload offered)", refs: ["App.swift|Cancel Upload"],
-                                   dismiss: { menu.cancelTracking() }, trigger: { menu.popUp(positioning: nil, at: NSPoint(x: 0, y: share.bounds.height + 4), in: share) })
+            if width == "w980", let share = app.webpostButton {
+                captureUploadChoices("S21", "upload-menu-busy", surface: "publish progress", state: "destination choices while an upload runs (Cancel Upload offered)", refs: ["App.swift|Cancel Upload"], share: share)
             }
             gate.release.signal()
             pump(1.5)
@@ -1593,9 +1592,7 @@ extension AuditRun {
                                "iconIsTemplate": StatusIcon.image()?.isTemplate as Any,
                                "note": "Clicking the icon opens statusItemMenu; the first row follows the editor's visibility. The menu-bar strip titles are system-owned."]
         write(menus, to: "menus" + stemSuffix + ".json")
-        guard let toolbox = firstView(of: NSPopUpButton.self, label: "Toolbox") else { gap("S23", "Toolbox menu open", "toolbox popup not found"); return }
-        captureTrackedMenu("S23", "toolbox-menu-open", surface: "menus", state: "Toolbox menu open (a menu button; rows open below it, each with its icon)", refs: ["App.swift|func bezelToolbox()"],
-                           dismiss: { toolbox.menu?.cancelTracking() }, trigger: { toolbox.performClick(nil) })
+        captureToolboxChoices("S23", "toolbox-menu-open", surface: "menus", state: "Toolbox choices open (a glass panel; rows open below its button, each with its icon)", refs: ["App.swift|func bezelToolbox()"])
         pump(0.4)
         if let text = named["text"], let event = mouse(.rightMouseDown, docPoint: CGPoint(x: text.rect.minX + 20, y: text.rect.minY + 20)), let menu = canvas.menu(for: event) {
             let location = canvas.convert(event.locationInWindow, from: nil)

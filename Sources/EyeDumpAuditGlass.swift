@@ -471,18 +471,19 @@ extension AuditRun {
         app.toggleActualSize()
         pump(0.6)
         guard app.isActualSize else { gap("S51", "Zoom panel / actual size", "Actual Size refused on a large shot (canToggleActualSize was false)"); return }
-        // The app disables the zoom pop-up while Actual Size is on (AppViewport: zoomControl.isEnabled = !isActualSize), so its choices cannot be opened by a
-        // user then. To draw the toggle row's chosen state the harness enables the control for this one capture and says so in the record.
+        // The app disables the zoom pop-up while Actual Size is on (AppViewport: zoomControl.isEnabled = !isActualSize), so `openChoices` refuses and a user
+        // cannot open its choices then. To draw the toggle row's chosen state the panel is presented directly from the pop-up's own `choicePanel`
+        // (above the footer, `.maxY`), and the record says the app had the control disabled. The control itself is never re-enabled.
         let enabledByApp = zoom.isEnabled
-        zoom.isEnabled = true
-        defer { zoom.isEnabled = enabledByApp }
-        if let again = openGlassPanel(script) {
+        let direct = GlassPanelScript(id: script.id, surface: script.surface, identifier: script.identifier, base: script.base, opener: zoom, refs: script.refs,
+                                  open: { zoom.choicePanel.present(relativeTo: zoom, preferredEdge: .maxY, keyboard: false) }, nativeMenu: nil)
+        if let again = openGlassPanel(direct) {
             let face = zoom.faceTitle
             let percent = face.range(of: #"^\d+%$"#, options: .regularExpression) != nil
             shootGlassPanel("S51", "zoom-actual-size", surface: script.surface, state: "Zoom panel while Actual Size is on: the Actual Size toggle row is chosen and the face shows \(face)", panel: again.panel,
                             opener: zoom, refs: script.refs, variant: "chosen", identifier: zoom.panelIdentifier,
-                            extra: ["actualSizeOn": app.isActualSize, "faceTitleNow": face, "faceShowsPercentage": percent, "zoomEnabledByApp": enabledByApp, "harnessForcedEnable": !enabledByApp])
-            dismissGlassPanel("S51", "zoom-dismissed-2", surface: script.surface, state: "", script: script, opened: again, capture: false)
+                            extra: ["actualSizeOn": app.isActualSize, "faceTitleNow": face, "faceShowsPercentage": percent, "zoomEnabledByApp": enabledByApp, "openedDirectly": true])
+            dismissGlassPanel("S51", "zoom-dismissed-2", surface: script.surface, state: "", script: direct, opened: again, capture: false)
         }
         app.leaveActualSize()
     }
@@ -973,5 +974,20 @@ extension AuditRun {
         dismissGlassPanel("S60", "capture-key-dismissed-2", surface: surface, state: "", script: script, opened: scrolling, capture: false)
         key.choicePanel.host.visibleFrameOverride = nil
         key.selectItem(at: 0); _ = key.target?.perform(key.action, with: key)
+    }
+
+    /// The Toolbox choices as the older surfaces (S23, S42, S44) show them: the glass panel the Toolbox button opens, imaged over the editor and
+    /// dismissed with Escape through the panel; a build without the panel falls back to the native menu it replaced.
+    func captureToolboxChoices(_ id: String, _ slug: String, surface: String, state: String, refs: [String]) {
+        guard let toolbox = firstView(of: ToolboxPopUpButton.self) else { gap(id, surface + " / " + state, "the Toolbox button was not found"); return }
+        let script = GlassPanelScript(id: id, surface: surface, identifier: "Toolbox", base: "toolbox", opener: toolbox, refs: refs, open: { toolbox.openMenu() }, nativeMenu: toolbox.menu)
+        if let opened = openGlassPanel(script, recordGap: false) {
+            shootGlassPanel(id, slug, surface: surface, state: state, panel: opened.panel, opener: toolbox, refs: refs, identifier: "Toolbox")
+            dismissGlassPanel(id, slug + "-dismissed", surface: surface, state: "Toolbox panel dismissed with Escape", script: script, opened: opened, capture: false)
+        } else if let menu = toolbox.menu {
+            captureTrackedMenu(id, slug, surface: surface, state: state, refs: refs, dismiss: { menu.cancelTracking() }, trigger: { toolbox.performClick(nil) })
+        } else {
+            gap(id, surface + " / " + state, "the Toolbox opened neither a glass panel nor a menu")
+        }
     }
 }

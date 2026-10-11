@@ -725,8 +725,8 @@ def check_glass_record(label, record):
     if slug.endswith("zoom-actual-size"):
         if glass.get("actualSizeOn") is not True or glass.get("faceShowsPercentage") is not True:
             problems.append(f"glass: {label} must show Actual Size on with the face still a percentage (on {glass.get('actualSizeOn')!r}, face {glass.get('faceTitleNow')!r})")
-        if glass.get("zoomEnabledByApp") is None or glass.get("harnessForcedEnable") != (not glass.get("zoomEnabledByApp")):
-            problems.append(f"glass: {label} must state whether the app or the harness enabled the zoom pop-up while Actual Size was on")
+        if glass.get("zoomEnabledByApp") is None or (glass.get("zoomEnabledByApp") is False and glass.get("openedDirectly") is not True):
+            problems.append(f"glass: {label} must state whether the app left the zoom pop-up enabled in Actual Size, and if not that the panel was presented directly")
         actual_row = next((i for i, title in enumerate(rows) if "actual size" in str(title).lower()), None)
         if actual_row is None or actual_row not in (glass.get("chosenIndexes") or []):
             problems.append(f"glass: {label} must show the Actual Size toggle row chosen (rows {rows}, chosen {glass.get('chosenIndexes')})")
@@ -1022,7 +1022,7 @@ def self_test():
             if slug == "capture-key-dismissed":
                 panel.update(firstResponderIsOpener=True, firstResponderIdentifier="GlobalHotkeyKey.screen")
             if slug.endswith("zoom-actual-size"):
-                panel.update(actualSizeOn=True, faceShowsPercentage=True, faceTitleNow="100%", zoomEnabledByApp=False, harnessForcedEnable=True,
+                panel.update(actualSizeOn=True, faceShowsPercentage=True, faceTitleNow="100%", zoomEnabledByApp=False, openedDirectly=True,
                              rowTitles=["100%", "Actual Size"], chosenIndexes=[1])
             if slug.endswith(("-width-640", "-width-560")):
                 panel.update(protocol="S3", sheetWidth=560 if slug.endswith("-560") else 640, formWidth=560 if slug.endswith("-560") else 640, sourceTitle="Access key stored in Keychain", faceTitles=["S3-compatible", "Keychain"])
@@ -1132,7 +1132,8 @@ def self_test():
             ("sound Capture tab surface", lambda r, g: None, {"surfaces": ("S60",)}, 0),
             ("Actual Size capture with the face not a percentage", tweak("S51", "zoom-actual-size", faceShowsPercentage=False), {"surfaces": ("S51",)}, 1),
             ("Actual Size capture with Actual Size off", tweak("S51", "zoom-actual-size", actualSizeOn=False), {"surfaces": ("S51",)}, 1),
-            ("Actual Size capture without saying who enabled the zoom", drop_field("S51", "zoom-actual-size", "zoomEnabledByApp"), {"surfaces": ("S51",)}, 1),
+            ("Actual Size capture without saying whether the zoom was enabled", drop_field("S51", "zoom-actual-size", "zoomEnabledByApp"), {"surfaces": ("S51",)}, 1),
+            ("Actual Size capture opened without saying it was presented directly", tweak("S51", "zoom-actual-size", openedDirectly=False), {"surfaces": ("S51",)}, 1),
             ("Actual Size capture with the Actual Size row not chosen", tweak("S51", "zoom-actual-size", chosenIndexes=[0]), {"surfaces": ("S51",)}, 1),
             ("sound Zoom surface", lambda r, g: None, {"surfaces": ("S51",)}, 0),
             ("sound destination surface", lambda r, g: None, {"surfaces": ("S58",)}, 0),
