@@ -57,7 +57,7 @@ final class OriginalHelpBevelView: NSView {
         paragraph.lineBreakMode = .byWordWrapping
         paragraph.lineHeightMultiple = 1.5
         attributedMessage = NSAttributedString(string: message, attributes: [
-            .font: Self.font, .foregroundColor: DesignTokens.Palette.Overlay.hudText,
+            .font: Self.font, .foregroundColor: DesignTokens.Palette.Text.primary,
             .paragraphStyle: paragraph
         ])
         let textWidth = max(1, width - 2 * Self.horizontalInset)
@@ -91,11 +91,15 @@ final class OriginalHelpBevelView: NSView {
         NSColor.clear.setFill()
         bounds.fill(using: .copy)
         let path = backgroundPath
-        DesignTokens.Palette.Overlay.hudFill.setFill()
-        path.fill()
-        DesignTokens.Palette.Overlay.hudStroke.setStroke()
-        path.stroke()
-        attributedMessage.draw(with: textRect, options: [.usesLineFragmentOrigin, .usesFontLeading])
+        // The app's own hint plate: the menu base tint with a hairline separator, never a black bar with a white border.
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            DesignTokens.Palette.menuBase.setFill()
+            path.fill()
+            DesignTokens.Palette.separator.setStroke()
+            path.lineWidth = 1
+            path.stroke()
+            attributedMessage.draw(with: textRect, options: [.usesLineFragmentOrigin, .usesFontLeading])
+        }
     }
 }
 

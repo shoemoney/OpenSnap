@@ -35,6 +35,11 @@ final class StatePlate {
     private(set) var style = Style.none
     private(set) var stateStyle = StateStyles.command(.rest, primary: false, focused: false, highContrast: false, differentiate: false)
     private(set) var lastAnimationDuration: TimeInterval = 0
+    /// The keyboard focus ring: its own layer standing `StateStyles.focusRingOutset` off the control, so it is never mistaken for the
+    /// selected fill and border, which sit on the control itself. Hidden unless the state asks for it.
+    let ringLayer = CAShapeLayer()
+    /// The control's outline the ring follows; the owner sets it when the control is not the plate's 12 pt rounded rectangle.
+    var focusShape: GlassShape = .rounded(StatePlate.radius) { didSet { layoutRing() } }
     /// Called after every repaint; lets a test watch the press bracket without a real event loop.
     var onApply: ((StatePlate) -> Void)?
     private var batching = false
@@ -44,6 +49,22 @@ final class StatePlate {
         view.wantsLayer = true
         view.layer?.cornerRadius = Self.radius
         view.layer?.masksToBounds = false
+        ringLayer.fillColor = nil
+        ringLayer.isHidden = true
+        ringLayer.zPosition = 10
+        view.layer?.addSublayer(ringLayer)
+    }
+
+    /// Fits the ring around the control's current bounds; the owner calls it from `layout()`.
+    func layoutRing() {
+        guard let view else { return }
+        let rect = view.bounds.insetBy(dx: -StateStyles.focusRingOutset - StateStyles.focusRingWidth / 2, dy: -StateStyles.focusRingOutset - StateStyles.focusRingWidth / 2)
+        guard !rect.isEmpty else { return }
+        let radius = focusShape.radius(for: view.bounds.size) + StateStyles.focusRingOutset + StateStyles.focusRingWidth / 2
+        ringLayer.frame = view.bounds
+        CATransaction.begin(); CATransaction.setDisableActions(true)
+        ringLayer.path = CGPath(roundedRect: rect, cornerWidth: min(radius, rect.width / 2), cornerHeight: min(radius, rect.height / 2), transform: nil)
+        CATransaction.commit()
     }
 
     /// The state to resolve: disabled beats everything, a press beats a hover, and a selected control keeps its selection under both.
@@ -89,6 +110,14 @@ final class StatePlate {
         layer.backgroundColor = next.fill?.cgColor
         layer.borderWidth = next.borderWidth
         layer.borderColor = next.border?.cgColor
+        CATransaction.begin(); CATransaction.setDisableActions(true)
+        ringLayer.isHidden = !resolved.focusRing
+        if resolved.focusRing {
+            ringLayer.strokeColor = StateStyles.focusRingColor(highContrast: accessibility.increaseContrast, appearance: view.effectiveAppearance).cgColor
+            ringLayer.lineWidth = StateStyles.focusRingWidth
+            layoutRing()
+        }
+        CATransaction.commit()
         onApply?(self)
     }
 }
@@ -139,7 +168,7 @@ class CommandButton: OriginalActionButton, ChromeFillable {
     /// False for toggles that only change glyph (Actual Size): `.on` neither fills the button nor flips the label color.
     var selectionTints = true { didSet { syncPlate() } }
     /// The focus ring follows the state fill's rounded rectangle.
-    var focusShape: GlassShape = .rounded(StatePlate.radius) { didSet { noteFocusRingMaskChanged() } }
+    var focusShape: GlassShape = .rounded(StatePlate.radius) { didSet { plate.focusShape = focusShape; noteFocusRingMaskChanged() } }
     private(set) lazy var plate = StatePlate(view: self)
     var accessibility: ChromeAccessibility {
         get { plate.accessibility }
@@ -183,7 +212,8 @@ class CommandButton: OriginalActionButton, ChromeFillable {
 
     private func configureAppearance() {
         isBordered = false
-        focusRingType = .exterior
+        // The ring is drawn by the state plate (`StatePlate.ringLayer`) in the focus token, not by AppKit in the system colour.
+        focusRingType = .none
         imageHugsTitle = true
         imageScaling = .scaleProportionallyDown
         stopCellDimming()
@@ -305,7 +335,7 @@ class CommandButton: OriginalActionButton, ChromeFillable {
     }
 
     /// Pushes this button's own state into its fill, glyph colour, glyph size, alpha and indicator; the group plate behind it never changes.
-    private func syncPlate() {
+    func syncPlate() {
         plate.update(hovered: isHovered, pressed: isPressing, selected: isShownSelected, primary: isPrimary, disabled: !isEnabled, focused: hasKeyboardFocus)
         let style = plate.stateStyle
         if contentTintColor != style.content { contentTintColor = style.content }
@@ -343,6 +373,7 @@ class CommandButton: OriginalActionButton, ChromeFillable {
 
     override func layout() {
         super.layout()
+        if plate.stateStyle.focusRing { plate.layoutRing() }
         if showsIndicator { showIndicator(plate.stateStyle) }
     }
 
@@ -543,9 +574,18 @@ final class GlassSurfaceView: NSGlassEffectView {
     private let stack = NSStackView()
     private let host = NSView()
     private let solidPlate = NSView()
+    private let baseTintPlate = NSView()
 
     /// The opaque fallback plate; nil while the glass material is in use.
     var transparencyPlate: NSView? { accessibility.reduceTransparency ? solidPlate : nil }
+    /// A menu or popover plate (vertical) keeps a neutral base tint behind its rows so a saturated canvas cannot wash out the text or tint the
+    /// glass; it is opaque under Increase Contrast and gives way to the solid plate under Reduce Transparency. Bar plates carry none.
+    var baseTintColor: NSColor? {
+        guard axis == .vertical, !accessibility.reduceTransparency else { return nil }
+        return DesignTokens.Palette.resolve(DesignTokens.Palette.menuBase, arm: StateStyles.arm(for: effectiveAppearance, highContrast: accessibility.increaseContrast))
+    }
+    /// What the base tint layer paints now; nil while it is hidden.
+    var baseTintLayerColor: NSColor? { baseTintPlate.isHidden ? nil : baseTintPlate.layer?.backgroundColor.flatMap(NSColor.init(cgColor:)) }
     var showsContrastBorder: Bool { accessibility.increaseContrast }
 
     init(views: [NSView], shape: GlassShape = .rounded(DesignTokens.Radius.xl), accessibility: ChromeAccessibility, spacing: CGFloat = GlassChrome.Metrics.groupSpacing,
@@ -564,6 +604,9 @@ final class GlassSurfaceView: NSGlassEffectView {
         solidPlate.wantsLayer = true
         solidPlate.translatesAutoresizingMaskIntoConstraints = false
         solidPlate.isHidden = true
+        baseTintPlate.wantsLayer = true
+        baseTintPlate.translatesAutoresizingMaskIntoConstraints = false
+        baseTintPlate.isHidden = true
         stack.orientation = axis
         stack.spacing = spacing
         stack.alignment = axis == .horizontal ? .centerY : .leading
@@ -582,8 +625,11 @@ final class GlassSurfaceView: NSGlassEffectView {
             }
         }
         host.addSubview(solidPlate)
+        host.addSubview(baseTintPlate)
         host.addSubview(stack)
         NSLayoutConstraint.activate([
+            baseTintPlate.leadingAnchor.constraint(equalTo: host.leadingAnchor), baseTintPlate.trailingAnchor.constraint(equalTo: host.trailingAnchor),
+            baseTintPlate.topAnchor.constraint(equalTo: host.topAnchor), baseTintPlate.bottomAnchor.constraint(equalTo: host.bottomAnchor),
             solidPlate.leadingAnchor.constraint(equalTo: host.leadingAnchor), solidPlate.trailingAnchor.constraint(equalTo: host.trailingAnchor),
             solidPlate.topAnchor.constraint(equalTo: host.topAnchor), solidPlate.bottomAnchor.constraint(equalTo: host.bottomAnchor),
             stack.leadingAnchor.constraint(equalTo: host.leadingAnchor), stack.trailingAnchor.constraint(equalTo: host.trailingAnchor),
@@ -617,6 +663,10 @@ final class GlassSurfaceView: NSGlassEffectView {
         }
         solidPlate.layer?.borderWidth = 1
         solidPlate.layer?.cornerRadius = radius
+        let tint = baseTintColor
+        baseTintPlate.isHidden = tint == nil
+        baseTintPlate.layer?.cornerRadius = radius
+        baseTintPlate.layer?.backgroundColor = tint?.cgColor
         layer?.borderWidth = accessibility.increaseContrast ? 1 : 0
     }
 
@@ -625,6 +675,7 @@ final class GlassSurfaceView: NSGlassEffectView {
         if cornerRadius != radius { cornerRadius = radius }
         layer?.cornerRadius = radius
         solidPlate.layer?.cornerRadius = radius
+        baseTintPlate.layer?.cornerRadius = radius
     }
 
     override func layout() {

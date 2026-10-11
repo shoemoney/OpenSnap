@@ -62,9 +62,16 @@ enum StateStyles {
     static let selectedPressedBoost: CGFloat = 0.12
     static let hoverKnobScale: CGFloat = 1.15, pressedKnobScale: CGFloat = 1.25
     static let selectedSwatchOutlineWidth: CGFloat = 3
+    /// The focus ring stands off the control: 3 pt of stroke starting 1 pt outside its edge, so it reads as a ring around the selected
+    /// fill and its 1 pt inside border rather than another version of them.
+    static let focusRingWidth: CGFloat = 3, focusRingOutset: CGFloat = 1
     /// The selected-command capsule: 2 x 16 pt, 3 pt tall under Increase Contrast, sitting this far above the control's bottom edge.
     static func indicatorSize(highContrast: Bool) -> NSSize { NSSize(width: 16, height: highContrast ? 3 : 2) }
     static let indicatorInset: CGFloat = 3
+    /// The ring's colour for the arm the control is drawn under.
+    static func focusRingColor(highContrast: Bool, appearance: NSAppearance) -> NSColor {
+        resolve(Palette.focusRing, arm(for: appearance, highContrast: highContrast))
+    }
 
     /// The arm each role resolves under. Increase Contrast can be injected, so the appearance alone cannot be trusted to carry it.
     static func arm(for appearance: NSAppearance, highContrast: Bool) -> Palette.Arm {

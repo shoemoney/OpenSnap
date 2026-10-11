@@ -1005,7 +1005,7 @@ struct HistoryBrowserTests {
                     open.setHovered(true)
                     try expect(open.plate.style.fill != nil && open.isHovered,"Hover draws a fill on the button, not another glass surface")
                     open.setHovered(false)
-                    try expect(browser.window!.makeFirstResponder(open) && open.plate.stateStyle.focusRing && open.focusRingType == .exterior,"Keyboard focus draws the focus ring on the focused action")
+                    try expect(browser.window!.makeFirstResponder(open) && open.plate.stateStyle.focusRing && !open.plate.ringLayer.isHidden,"Keyboard focus draws the focus ring on the focused action")
                     _ = browser.window!.makeFirstResponder(nil)
                     try expect(!open.plate.stateStyle.focusRing,"The ring goes when focus moves on")
                     open.isEnabled = false

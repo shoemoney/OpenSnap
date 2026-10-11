@@ -193,7 +193,7 @@ suites = [
     ("state-styles-tests", ["StateStyles.swift"], "StateStylesTests.swift", "STATE_STYLES_TESTS", ()),
     ("status-item-tests", ["StatusItemSupport.swift"], "StatusItemSupportTests.swift", "STATUS_ITEM_TESTS", ()),
     ("about-window-tests", ["AboutWindow.swift"], "AboutWindowTests.swift", "ABOUT_WINDOW_TESTS", ()),
-    ("app-alert-tests", ["AppAlert.swift", "ContrastProbe.swift"], "AppAlertTests.swift", "APP_ALERT_TESTS", ()),
+    ("app-alert-tests", with_choices(["AppAlert.swift", "ContrastProbe.swift"]), "AppAlertTests.swift", "APP_ALERT_TESTS", ()),
     ("metrics-tests", [], "MetricsTests.swift", "METRICS_TESTS", ()),
     ("app-tooltip-tests", ["AppToolTip.swift", "ContrastProbe.swift"], "AppToolTipTests.swift", "APP_TOOLTIP_TESTS", ()),
     # G4: the font-floor walker over every surface whose sources compile in isolation. The full main window joins via app-safety.

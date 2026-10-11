@@ -166,7 +166,22 @@ enum DesignTokens {
             static let primaryFill = system("state.primary.fill", NSColor.controlAccentColor.withAlphaComponent(1))
         }
 
-        static let focusRing = system("focus.ring", .keyboardFocusIndicatorColor)
+        /// The keyboard focus ring: dark amber on the light bar, bright amber on the dark one, so it clears 3:1 against the window, the plate
+        /// and the selected fill in every arm (the system ring was 1.36:1 in light and a muddy olive in dark). The shape, not only the tone,
+        /// separates it from "selected": `StateStyles.focusRingWidth` / `focusRingOutset`.
+        static let focusRing = role("focus.ring",
+                                    aqua: NSColor(srgbRed: 140 / 255, green: 80 / 255, blue: 0, alpha: 1),
+                                    darkAqua: NSColor(srgbRed: 255 / 255, green: 214 / 255, blue: 102 / 255, alpha: 1),
+                                    highContrastAqua: NSColor(srgbRed: 105 / 255, green: 58 / 255, blue: 0, alpha: 1),
+                                    highContrastDarkAqua: NSColor(srgbRed: 255 / 255, green: 230 / 255, blue: 150 / 255, alpha: 1))
+
+        /// The base tint under every menu and popover plate and under the hint plate. Glass alone lets a saturated canvas through, so the
+        /// text over an orange shape fell to 2.2:1; this keeps every label above 4.5:1 over the worst case, and Increase Contrast makes it opaque.
+        static let menuBase = role("menu.base",
+                                   aqua: NSColor(srgbRed: 250 / 255, green: 250 / 255, blue: 250 / 255, alpha: 0.88),
+                                   darkAqua: NSColor(srgbRed: 30 / 255, green: 30 / 255, blue: 32 / 255, alpha: 0.90),
+                                   highContrastAqua: NSColor(srgbRed: 250 / 255, green: 250 / 255, blue: 250 / 255, alpha: 1),
+                                   highContrastDarkAqua: NSColor(srgbRed: 30 / 255, green: 30 / 255, blue: 32 / 255, alpha: 1))
         static let separator = system("separator", .separatorColor)
         /// Always paired with an "Error"-prefixed string or an icon (Differentiate Without Color).
         /// Deviates from `systemRed`, which is 3.3:1 on the light canvas well and 4.3:1 on the dark one; it is used as text, so each arm clears 4.5:1.

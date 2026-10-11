@@ -324,11 +324,12 @@ private enum OriginalHelpBevelTests {
         view.draw(view.bounds)
         NSGraphicsContext.restoreGraphicsState()
         let color = raster.colorAt(x: Int(view.bounds.midX), y: 2)!.usingColorSpace(.deviceRGB)!
-        expect(abs(color.alphaComponent - 0.85) < 0.03 && color.redComponent < 0.1,
-               "Offscreen production renderer uses recovered translucent black background")
+        let base = DesignTokens.Palette.resolve(DesignTokens.Palette.menuBase, for: view.effectiveAppearance).usingColorSpace(.deviceRGB)!
+        expect(abs(color.alphaComponent - base.alphaComponent) < 0.03 && abs(color.redComponent - base.redComponent) < 0.05,
+               "Offscreen production renderer uses the app's menu base tint, not the old black bar (\(color) vs \(base))")
         let stroke = raster.colorAt(x: 1, y: Int(view.bounds.midY))!.usingColorSpace(.deviceRGB)!
-        expect(abs(stroke.redComponent - 0.95) < 0.03 && stroke.alphaComponent > 0.99,
-               "Offscreen production renderer uses recovered opaque 0.95 gray stroke")
+        expect(stroke.alphaComponent >= base.alphaComponent - 0.03 && !(stroke.redComponent > 0.97 && stroke.greenComponent > 0.97 && stroke.blueComponent > 0.97 && base.redComponent < 0.5),
+               "Offscreen production renderer draws a quiet hairline, not the old white 0.95 border (\(stroke))")
         expect(raster.bitmapData!.withMemoryRebound(to: UInt8.self, capacity: raster.bytesPerRow * raster.pixelsHigh) {
             buffer in (0..<(raster.bytesPerRow * raster.pixelsHigh)).contains { buffer[$0] > 220 }
         }, "Production raster includes visible light text/stroke")
@@ -457,9 +458,10 @@ private enum OriginalHelpBevelTests {
             NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: raster)
             view.draw(view.bounds)
             NSGraphicsContext.restoreGraphicsState()
+            let plateRed = DesignTokens.Palette.resolve(DesignTokens.Palette.menuBase, for: view.effectiveAppearance).usingColorSpace(.deviceRGB)!.redComponent
             var firstRow = Int.max, lastRow = -1
             for y in 0..<raster.pixelsHigh { for x in 20..<(raster.pixelsWide - 20) {
-                guard let c = raster.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB), c.alphaComponent > 0.9, c.redComponent > 0.9 else { continue }
+                guard let c = raster.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB), c.alphaComponent > 0.9, abs(c.redComponent - plateRed) > 0.4 else { continue }
                 // Skip the 2 pt outline: only rows inside the plate by more than the stroke count as text.
                 if y > 3 && y < raster.pixelsHigh - 3 { firstRow = min(firstRow, y); lastRow = max(lastRow, y) }
             } }
@@ -479,7 +481,7 @@ private enum OriginalHelpBevelTests {
         expect(OriginalHelpBevelView.font == T.Typography.font(.hud), "Hint type is the HUD token (20 pt medium)")
         let attributes = view.attributedMessage.attributes(at: 0, effectiveRange: nil)
         expect((attributes[.font] as! NSFont) == T.Typography.font(.hud), "Message drawn in the HUD font")
-        expect((attributes[.foregroundColor] as! NSColor) == T.Palette.Overlay.hudText, "Message drawn in the HUD text colour")
+        expect((attributes[.foregroundColor] as! NSColor) == T.Palette.Text.primary, "Message drawn in the primary text colour (the plate is the app's menu tint, not a black bar)")
         expect(attributes[.shadow] == nil, "No text shadow on a solid plate")
         // The outline's corner is the lg radius: a point on the 12 pt arc is on the path, one outside it is not.
         view.joinsHost = false
@@ -489,9 +491,11 @@ private enum OriginalHelpBevelTests {
         expect(lg == 12 && !path.contains(NSPoint(x: inset.minX + 0.5, y: inset.minY + 0.5)), "Plate corner is cut with the lg radius (12)")
         expect(path.contains(NSPoint(x: inset.minX + lg, y: inset.minY + lg)), "Plate is solid just inside the corner arc")
         view.joinsHost = true
-        let fill = T.Palette.resolve(T.Palette.Overlay.hudFill, arm: .aqua), stroke = T.Palette.resolve(T.Palette.Overlay.hudStroke, arm: .aqua)
-        expect(abs(fill.alphaComponent - 0.85) < 0.001 && fill.redComponent == 0, "Fill token is black at 0.85")
-        expect(abs(stroke.alphaComponent - 0.95) < 0.001 && stroke.redComponent == 1, "Stroke token is white at 0.95")
+        for (arm, name) in [(T.Palette.Arm.aqua, "light"), (.darkAqua, "dark")] {
+            let fill = T.Palette.resolve(T.Palette.menuBase, arm: arm)
+            let ratio = T.Palette.contrastRatio(T.Palette.resolve(T.Palette.Text.primary, arm: arm), T.Palette.blend(fill, alpha: 1, over: arm == .aqua ? .white : .black))
+            expect(fill.alphaComponent >= 0.85 && ratio >= 4.5, "Hint plate is the menu base tint and its text clears 4.5:1 in \(name) (\(ratio))")
+        }
     }
 
     /// A host at the very top of the screen leaves no room above it: the plate then sits inside the host's top edge, in front of
