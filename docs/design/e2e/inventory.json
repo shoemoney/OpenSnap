@@ -14,7 +14,7 @@
  },
  "areas": {
   "MENU": "Menu bar",
-  "TOOLBOX": "Toolbox pop-up",
+  "TOOLBOX": "Toolbox panel",
   "STAT": "Status item",
   "BAR": "Editor chrome (top and bottom bars)",
   "TOOL": "Tools and drawing options",
@@ -33,50 +33,51 @@
   "HARN": "Seen by the harness, not accounted for by a source table"
  },
  "counts": {
-  "total": 597,
+  "total": 616,
   "byArea": {
-   "A11Y": 6,
+   "A11Y": 7,
    "ALERT": 7,
-   "BAR": 51,
+   "BAR": 53,
    "CANVAS": 14,
    "CAP": 11,
-   "DEST": 39,
+   "DEST": 41,
    "HARN": 2,
-   "HIST": 42,
-   "HOT": 43,
-   "ICON": 105,
-   "KEY": 35,
+   "HIST": 44,
+   "HOT": 44,
+   "ICON": 107,
+   "KEY": 38,
    "MENU": 87,
    "SET": 27,
-   "SHEET": 52,
+   "SHEET": 54,
    "STAT": 5,
    "STATE": 23,
-   "TOOL": 29,
-   "TOOLBOX": 19
+   "TOOL": 32,
+   "TOOLBOX": 20
   },
   "byType": {
    "alert": 7,
-   "control": 155,
-   "gesture": 28,
-   "icon": 105,
+   "control": 158,
+   "gesture": 29,
+   "icon": 107,
    "menu item": 129,
-   "popover": 2,
+   "panel": 11,
+   "popover": 1,
    "preference": 18,
    "sheet": 16,
-   "shortcut": 42,
-   "state": 61,
+   "shortcut": 44,
+   "state": 62,
    "toolbar button": 31,
    "window": 3
   },
   "byExercise": {
-   "e2e": 492,
+   "e2e": 511,
    "e2e-partial": 53,
    "gap": 52
   },
   "byGap": {
    "display-hardware": 3,
    "global-hotkey-background": 6,
-   "none": 492,
+   "none": 511,
    "os-panel": 38,
    "photos-library": 1,
    "printer": 2,
@@ -87,7 +88,7 @@
    "voiceover": 1
   },
   "byOwner": {
-   "app": 579,
+   "app": 598,
    "os": 18
   }
  },
@@ -2487,13 +2488,22 @@
    "icon": "toolbox",
    "entryPath": "Top bar › Toolbox (icon and chevron)",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Menu opens (a menu button; rows open below it, each with its icon): five groups of drawing-session commands (keep, edit, capture, adjust the picture, pen settings); no app or file plumbing",
+   "expected": "Opens the Toolbox glass panel below the button (a menu button; a click, Control-click, Space, Return, Down or Up, or the VoiceOver press): five group plates of drawing-session commands (keep, edit, capture, adjust the picture, pen settings), each row with its icon, title and shortcut and the toggles showing on or off; no app or file plumbing",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "AppSafetyMenuCases.swift",
+     "test": "The Toolbox opens a glass panel of its five groups: 18 rows with the menu's icons, shortcuts and validation, choosing runs the command, Escape returns the focus"
+    },
+    {
+     "file": "AppSafetyMenuCases.swift",
+     "test": "Every route to the Toolbox, Zoom and Upload choices opens the glass panel and starts no native menu"
+    }
+   ],
    "rendered": [
     "S04",
     "S12"
@@ -2511,7 +2521,7 @@
    "icon": "tray.and.arrow.down",
    "entryPath": "Top bar › Toolbox › Save to History",
    "prerequisite": "A drawing on the canvas",
-   "expected": "Runs the same command as the menu-bar item Save to History (the Toolbox row is a copy: title, key and symbol match)",
+   "expected": "Runs the same command as the menu-bar item Save to History (the Toolbox row is a copy in the Toolbox glass panel: title, key and symbol match)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
@@ -2539,7 +2549,7 @@
    "icon": "square.and.arrow.up",
    "entryPath": "Top bar › Toolbox › Export…",
    "prerequisite": "A drawing on the canvas",
-   "expected": "Runs the same command as the menu-bar item Export… (the Toolbox row is a copy: title, key and symbol match)",
+   "expected": "Runs the same command as the menu-bar item Export… (the Toolbox row is a copy in the Toolbox glass panel: title, key and symbol match)",
    "owner": "app",
    "exercise": "e2e-partial",
    "gap": "os-panel",
@@ -2567,7 +2577,7 @@
    "icon": "doc.on.doc",
    "entryPath": "Top bar › Toolbox › Copy",
    "prerequisite": "A selected element, or nothing selected",
-   "expected": "Runs the same command as the menu-bar item Copy (the Toolbox row is a copy: title, key and symbol match)",
+   "expected": "Runs the same command as the menu-bar item Copy (the Toolbox row is a copy in the Toolbox glass panel: title, key and symbol match)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
@@ -2595,7 +2605,7 @@
    "icon": "clipboard",
    "entryPath": "Top bar › Toolbox › Paste",
    "prerequisite": "Copied artwork or image on the pasteboard",
-   "expected": "Runs the same command as the menu-bar item Paste (the Toolbox row is a copy: title, key and symbol match)",
+   "expected": "Runs the same command as the menu-bar item Paste (the Toolbox row is a copy in the Toolbox glass panel: title, key and symbol match)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
@@ -2623,7 +2633,7 @@
    "icon": "plus.square.on.square",
    "entryPath": "Top bar › Toolbox › Duplicate",
    "prerequisite": "A selected element",
-   "expected": "Runs the same command as the menu-bar item Duplicate (the Toolbox row is a copy: title, key and symbol match)",
+   "expected": "Runs the same command as the menu-bar item Duplicate (the Toolbox row is a copy in the Toolbox glass panel: title, key and symbol match)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
@@ -2651,7 +2661,7 @@
    "icon": "trash",
    "entryPath": "Top bar › Toolbox › Delete",
    "prerequisite": "A selected element",
-   "expected": "Runs the same command as the menu-bar item Delete (the Toolbox row is a copy: title, key and symbol match)",
+   "expected": "Runs the same command as the menu-bar item Delete (the Toolbox row is a copy in the Toolbox glass panel: title, key and symbol match)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
@@ -2679,7 +2689,7 @@
    "icon": "square.dashed",
    "entryPath": "Top bar › Toolbox › Select All",
    "prerequisite": "Elements on the canvas",
-   "expected": "Runs the same command as the menu-bar item Select All (the Toolbox row is a copy: title, key and symbol match)",
+   "expected": "Runs the same command as the menu-bar item Select All (the Toolbox row is a copy in the Toolbox glass panel: title, key and symbol match)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
@@ -2707,7 +2717,7 @@
    "icon": "scope",
    "entryPath": "Top bar › Toolbox › Crosshair Snapshot",
    "prerequisite": "Screen Recording not granted (refusal path)",
-   "expected": "Runs the same command as the menu-bar item Crosshair Snapshot (the Toolbox row is a copy: title, key and symbol match)",
+   "expected": "Runs the same command as the menu-bar item Crosshair Snapshot (the Toolbox row is a copy in the Toolbox glass panel: title, key and symbol match)",
    "owner": "app",
    "exercise": "e2e-partial",
    "gap": "screen-recording",
@@ -2735,7 +2745,7 @@
    "icon": "rectangle.inset.filled",
    "entryPath": "Top bar › Toolbox › Fullscreen Snapshot",
    "prerequisite": "Screen Recording not granted (refusal path)",
-   "expected": "Runs the same command as the menu-bar item Fullscreen Snapshot (the Toolbox row is a copy: title, key and symbol match)",
+   "expected": "Runs the same command as the menu-bar item Fullscreen Snapshot (the Toolbox row is a copy in the Toolbox glass panel: title, key and symbol match)",
    "owner": "app",
    "exercise": "e2e-partial",
    "gap": "screen-recording",
@@ -2763,7 +2773,7 @@
    "icon": "viewfinder",
    "entryPath": "Top bar › Toolbox › Frame Snapshot",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Runs the same command as the menu-bar item Frame Snapshot (the Toolbox row is a copy: title, key and symbol match)",
+   "expected": "Runs the same command as the menu-bar item Frame Snapshot (the Toolbox row is a copy in the Toolbox glass panel: title, key and symbol match)",
    "owner": "app",
    "exercise": "e2e-partial",
    "gap": "screen-recording",
@@ -2791,7 +2801,7 @@
    "icon": "arrow.triangle.2.circlepath",
    "entryPath": "Top bar › Toolbox › Re-snap (Keep Pen)",
    "prerequisite": "A previous snap",
-   "expected": "Runs the same command as the menu-bar item Re-snap (Keep Pen) (the Toolbox row is a copy: title, key and symbol match)",
+   "expected": "Runs the same command as the menu-bar item Re-snap (Keep Pen) (the Toolbox row is a copy in the Toolbox glass panel: title, key and symbol match)",
    "owner": "app",
    "exercise": "e2e-partial",
    "gap": "screen-recording",
@@ -2819,7 +2829,7 @@
    "icon": "rotate.right",
    "entryPath": "Top bar › Toolbox › Rotate Clockwise",
    "prerequisite": "A drawing",
-   "expected": "Runs the same command as the menu-bar item Rotate Clockwise (the Toolbox row is a copy: title, key and symbol match)",
+   "expected": "Runs the same command as the menu-bar item Rotate Clockwise (the Toolbox row is a copy in the Toolbox glass panel: title, key and symbol match)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
@@ -2847,7 +2857,7 @@
    "icon": "arrow.left.and.right.righttriangle.left.righttriangle.right",
    "entryPath": "Top bar › Toolbox › Flip Horizontal",
    "prerequisite": "A drawing",
-   "expected": "Runs the same command as the menu-bar item Flip Horizontal (the Toolbox row is a copy: title, key and symbol match)",
+   "expected": "Runs the same command as the menu-bar item Flip Horizontal (the Toolbox row is a copy in the Toolbox glass panel: title, key and symbol match)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
@@ -2875,7 +2885,7 @@
    "icon": "rectangle.compress.vertical",
    "entryPath": "Top bar › Toolbox › Crop Snap at Current Edges",
    "prerequisite": "A snap picture on the canvas",
-   "expected": "Runs the same command as the menu-bar item Crop Snap at Current Edges (the Toolbox row is a copy: title, key and symbol match)",
+   "expected": "Runs the same command as the menu-bar item Crop Snap at Current Edges (the Toolbox row is a copy in the Toolbox glass panel: title, key and symbol match)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
@@ -2903,7 +2913,7 @@
    "icon": "rectangle.slash",
    "entryPath": "Top bar › Toolbox › Remove Snap Picture",
    "prerequisite": "A drawing with a background picture",
-   "expected": "Runs the same command as the menu-bar item Remove Snap Picture (the Toolbox row is a copy: title, key and symbol match)",
+   "expected": "Runs the same command as the menu-bar item Remove Snap Picture (the Toolbox row is a copy in the Toolbox glass panel: title, key and symbol match)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
@@ -2931,7 +2941,7 @@
    "icon": null,
    "entryPath": "Top bar › Toolbox › Filled Shapes",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Runs the same command as the menu-bar item Filled Shapes (the Toolbox row is a copy: title, key and symbol match)",
+   "expected": "Runs the same command as the menu-bar item Filled Shapes (the Toolbox row is a copy in the Toolbox glass panel: title, key and symbol match)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
@@ -2959,7 +2969,7 @@
    "icon": null,
    "entryPath": "Top bar › Toolbox › Shadow",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Runs the same command as the menu-bar item Shadow (the Toolbox row is a copy: title, key and symbol match)",
+   "expected": "Runs the same command as the menu-bar item Shadow (the Toolbox row is a copy in the Toolbox glass panel: title, key and symbol match)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
@@ -2987,7 +2997,7 @@
    "icon": "textformat",
    "entryPath": "Top bar › Toolbox › Text Style…",
    "prerequisite": "None, or a selected text element",
-   "expected": "Runs the same command as the menu-bar item Text Style… (the Toolbox row is a copy: title, key and symbol match)",
+   "expected": "Runs the same command as the menu-bar item Text Style… (the Toolbox row is a copy in the Toolbox glass panel: title, key and symbol match)",
    "owner": "app",
    "exercise": "e2e-partial",
    "gap": "os-panel",
@@ -3006,6 +3016,48 @@
     "source"
    ],
    "id": "E2E-TOOLBOX-056"
+  },
+  {
+   "area": "TOOLBOX",
+   "surface": "Toolbar › Toolbox",
+   "name": "Toolbox panel",
+   "type": "panel",
+   "icon": null,
+   "entryPath": "Top bar › Toolbox (open)",
+   "prerequisite": "A drawing on the canvas for the editing rows",
+   "expected": "A floating glass panel below the Toolbox: one plate per group (2, 5, 4, 4, 3 rows, 18 in all), rows copied from the menu at every open so validation and toggle state are current; Escape, a click elsewhere or on the Toolbox again, or the window changing closes it and the keyboard goes back to the Toolbox; a long list scrolls inside the screen's height",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": null,
+   "shortcut": null,
+   "proof": [
+    {
+     "file": "AppSafetyMenuCases.swift",
+     "test": "The Toolbox opens a glass panel of its five groups: 18 rows with the menu's icons, shortcuts and validation, choosing runs the command, Escape returns the focus"
+    },
+    {
+     "file": "GlassChromeTests.swift",
+     "test": "toolbox: a second press closes the panel"
+    },
+    {
+     "file": "GlassChromeTests.swift",
+     "test": "toolbox: a click elsewhere closes it and passes through"
+    },
+    {
+     "file": "GlassChromeTests.swift",
+     "test": "toolbox: the panel opens below the button, not over it"
+    },
+    {
+     "file": "GlassChromeTests.swift",
+     "test": "toolbox: a disabled row does nothing and the panel stays open"
+    }
+   ],
+   "rendered": [],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-TOOLBOX-057"
   },
   {
    "area": "STAT",
@@ -3159,13 +3211,18 @@
    "icon": "toolbox",
    "entryPath": "Top bar › Toolbox",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Menu opens, rows with icons (see Toolbox entries)",
+   "expected": "Glass panel opens below the button, rows with icons (see Toolbox entries)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "AppSafetyMenuCases.swift",
+     "test": "The Toolbox opens a glass panel of its five groups: 18 rows with the menu's icons, shortcuts and validation, choosing runs the command, Escape returns the focus"
+    }
+   ],
    "rendered": [
     "S03",
     "S04"
@@ -3300,13 +3357,22 @@
    "icon": null,
    "entryPath": "Top bar › Color swatch",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Drawing colors popover opens (see TOOL)",
+   "expected": "Hovering opens the Drawing colors glass panel without taking the keyboard; a click or the keyboard pins it open (see TOOL)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a solid popover); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "AppSafetyTests.swift",
+     "test": "Hovering the Color control opens the palette"
+    },
+    {
+     "file": "AppSafetyTests.swift",
+     "test": "A hover-opened palette never asks for the keyboard"
+    }
+   ],
    "rendered": [
     "S06"
    ],
@@ -3323,13 +3389,18 @@
    "icon": null,
    "entryPath": "Top bar › Size slider",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Slider changes stroke size 1-… ; tooltip and accessibilityValue carry Size N; undo groups one drag",
+   "expected": "A 48 x 36 pill drawing the current stroke thickness: arrows step it, Shift gives continuous values, a click, Space or Return opens the Size glass panel (see TOOL); tooltip and accessibilityValue carry Size N; undo groups one drag, preset, key or assistive step",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a solid popover); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "AppSafetyModernCases.swift",
+     "test": "The Size pill opens its panel below and every gesture, preset, key and assistive step is exactly one undo step, even when the panel is dismissed mid-drag"
+    }
+   ],
    "rendered": [
     "S06"
    ],
@@ -3647,13 +3718,22 @@
    "icon": null,
    "entryPath": "Bottom bar › Canvas zoom",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Pop-up: 25, 50, 75, 100, 150, 200 %, Actual Size; face shows the percentage; Fit adds a computed entry",
+   "expected": "Glass pop-up face (percentage and chevron) that opens the Zoom glass panel: 25, 50, 75, 100, 150, 200 %, Actual Size; the face shows the percentage; Fit adds a computed entry",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "AppSafetyModernCases.swift",
+     "test": "The zoom opens a glass panel above the footer: percentages and the computed row are options, Actual Size is a toggle that keeps the percentage face and its refusal path"
+    },
+    {
+     "file": "AppSafetyMenuCases.swift",
+     "test": "Every route to the Toolbox, Zoom and Upload choices opens the glass panel and starts no native menu"
+    }
+   ],
    "rendered": [
     "S03",
     "S07"
@@ -3791,13 +3871,22 @@
    "icon": null,
    "entryPath": "Bottom bar › Original size",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Checkbox: drag out at original size; stored as DragOriginalSize",
+   "expected": "Glass checkbox toggle on the footer's View plate: drag out, copy, export and upload at the picture's own pixels; stored as DragOriginalSize; shown only for a large shot",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native checkbox); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "AppSafetyModernCases.swift",
+     "test": "Original size is a glass checkbox toggle on the View plate: it persists DragOriginalSize, shows only for a large shot, and gives the status slot its room back"
+    },
+    {
+     "file": "GlassChromeTests.swift",
+     "test": "original size: a checkbox-role toggle titled Original size"
+    }
+   ],
    "rendered": [
     "S03",
     "S09"
@@ -3815,13 +3904,22 @@
    "icon": "cloud-arrow-up",
    "entryPath": "Bottom bar › Upload",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Left-click uploads to the default destination and copies the link; right-click or Control-click opens the destination menu",
+   "expected": "Left-click uploads to the default destination and copies the link; right-click, Control-click, the context-menu key or the VoiceOver Show Menu action opens the Upload destinations glass panel",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native contextual menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "AppSafetyWebpostCases.swift",
+     "test": "The Upload button's choices open as a glass panel above it: destinations are options with the default chosen, rebuilt at every open; the empty and busy states; choosing persists the default"
+    },
+    {
+     "file": "AppSafetyMenuCases.swift",
+     "test": "Upload: a click starts the upload and opens no menu"
+    }
+   ],
    "rendered": [
     "S03",
     "S09"
@@ -3833,7 +3931,7 @@
   },
   {
    "area": "BAR",
-   "surface": "Bottom bar › zoom pop-up",
+   "surface": "Bottom bar › zoom panel",
    "name": "Zoom entry 25%",
    "type": "menu item",
    "icon": null,
@@ -3843,7 +3941,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native zoom pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -3856,7 +3954,7 @@
   },
   {
    "area": "BAR",
-   "surface": "Bottom bar › zoom pop-up",
+   "surface": "Bottom bar › zoom panel",
    "name": "Zoom entry 50%",
    "type": "menu item",
    "icon": null,
@@ -3866,7 +3964,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native zoom pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -3879,7 +3977,7 @@
   },
   {
    "area": "BAR",
-   "surface": "Bottom bar › zoom pop-up",
+   "surface": "Bottom bar › zoom panel",
    "name": "Zoom entry 75%",
    "type": "menu item",
    "icon": null,
@@ -3889,7 +3987,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native zoom pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -3902,7 +4000,7 @@
   },
   {
    "area": "BAR",
-   "surface": "Bottom bar › zoom pop-up",
+   "surface": "Bottom bar › zoom panel",
    "name": "Zoom entry 100%",
    "type": "menu item",
    "icon": null,
@@ -3912,7 +4010,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native zoom pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -3925,7 +4023,7 @@
   },
   {
    "area": "BAR",
-   "surface": "Bottom bar › zoom pop-up",
+   "surface": "Bottom bar › zoom panel",
    "name": "Zoom entry 150%",
    "type": "menu item",
    "icon": null,
@@ -3935,7 +4033,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native zoom pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -3948,7 +4046,7 @@
   },
   {
    "area": "BAR",
-   "surface": "Bottom bar › zoom pop-up",
+   "surface": "Bottom bar › zoom panel",
    "name": "Zoom entry 200%",
    "type": "menu item",
    "icon": null,
@@ -3958,7 +4056,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native zoom pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -3971,7 +4069,7 @@
   },
   {
    "area": "BAR",
-   "surface": "Bottom bar › zoom pop-up",
+   "surface": "Bottom bar › zoom panel",
    "name": "Zoom entry Actual Size",
    "type": "menu item",
    "icon": null,
@@ -3981,7 +4079,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native zoom pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -3994,7 +4092,7 @@
   },
   {
    "area": "BAR",
-   "surface": "Bottom bar › Upload menu",
+   "surface": "Bottom bar › Upload panel",
    "name": "Cancel Upload",
    "type": "menu item",
    "icon": null,
@@ -4004,9 +4102,14 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native Upload menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "AppSafetyWebpostCases.swift",
+     "test": "From the Upload panel Cancel Upload cancels, Destination Settings… opens settings, Share with macOS… anchors the system picker to the button, and Escape returns the focus"
+    }
+   ],
    "rendered": [
     "S09",
     "S21"
@@ -4018,7 +4121,7 @@
   },
   {
    "area": "BAR",
-   "surface": "Bottom bar › Upload menu",
+   "surface": "Bottom bar › Upload panel",
    "name": "Destination row",
    "type": "menu item",
    "icon": null,
@@ -4028,9 +4131,14 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native Upload menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "AppSafetyWebpostCases.swift",
+     "test": "The Upload button's choices open as a glass panel above it: destinations are options with the default chosen, rebuilt at every open; the empty and busy states; choosing persists the default"
+    }
+   ],
    "rendered": [
     "S09",
     "S21"
@@ -4042,7 +4150,7 @@
   },
   {
    "area": "BAR",
-   "surface": "Bottom bar › Upload menu",
+   "surface": "Bottom bar › Upload panel",
    "name": "No destination configured",
    "type": "menu item",
    "icon": null,
@@ -4052,9 +4160,14 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native Upload menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "AppSafetyWebpostCases.swift",
+     "test": "The Upload button's choices open as a glass panel above it: destinations are options with the default chosen, rebuilt at every open; the empty and busy states; choosing persists the default"
+    }
+   ],
    "rendered": [
     "S09",
     "S21"
@@ -4066,7 +4179,7 @@
   },
   {
    "area": "BAR",
-   "surface": "Bottom bar › Upload menu",
+   "surface": "Bottom bar › Upload panel",
    "name": "Destination Settings…",
    "type": "menu item",
    "icon": null,
@@ -4076,9 +4189,14 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native Upload menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "AppSafetyWebpostCases.swift",
+     "test": "From the Upload panel Cancel Upload cancels, Destination Settings… opens settings, Share with macOS… anchors the system picker to the button, and Escape returns the focus"
+    }
+   ],
    "rendered": [
     "S09",
     "S21"
@@ -4090,7 +4208,7 @@
   },
   {
    "area": "BAR",
-   "surface": "Bottom bar › Upload menu",
+   "surface": "Bottom bar › Upload panel",
    "name": "Share with macOS…",
    "type": "menu item",
    "icon": null,
@@ -4100,9 +4218,14 @@
    "owner": "os",
    "exercise": "e2e-partial",
    "gap": "os-panel",
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of the native Upload menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "AppSafetyWebpostCases.swift",
+     "test": "From the Upload panel Cancel Upload cancels, Destination Settings… opens settings, Share with macOS… anchors the system picker to the button, and Escape returns the focus"
+    }
+   ],
    "rendered": [
     "S09",
     "S21"
@@ -4325,6 +4448,82 @@
     "source"
    ],
    "id": "E2E-BAR-052"
+  },
+  {
+   "area": "BAR",
+   "surface": "Bottom bar",
+   "name": "Zoom panel",
+   "type": "panel",
+   "icon": null,
+   "entryPath": "Bottom bar › Canvas zoom (open)",
+   "prerequisite": "A drawing on the canvas",
+   "expected": "A floating glass panel above the zoom face: the percentages and the computed Fit or Frame row are options on one plate (the computed row chosen while it is current), Actual Size is a toggle on the next plate with its main-menu shortcut; choosing closes the panel first, then zooms; a dimmed zoom opens nothing; Escape returns the keyboard to the zoom",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": null,
+   "shortcut": null,
+   "proof": [
+    {
+     "file": "GlassChromeTests.swift",
+     "test": "zoom: percentages and the computed row on one plate, Actual Size on the next"
+    },
+    {
+     "file": "GlassChromeTests.swift",
+     "test": "zoom: the percentages are options and Actual Size is a toggle"
+    },
+    {
+     "file": "GlassChromeTests.swift",
+     "test": "zoom: the panel opens above the footer button"
+    },
+    {
+     "file": "GlassChromeTests.swift",
+     "test": "zoom: Escape closes it and the focus returns to the zoom"
+    },
+    {
+     "file": "GlassChromeTests.swift",
+     "test": "zoom: a disabled zoom does not open"
+    }
+   ],
+   "rendered": [],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-BAR-053"
+  },
+  {
+   "area": "BAR",
+   "surface": "Bottom bar",
+   "name": "Upload destinations panel",
+   "type": "panel",
+   "icon": null,
+   "entryPath": "Bottom bar › Upload (right-click, Control-click, context-menu key or Show Menu) (open)",
+   "prerequisite": "Destinations seeded",
+   "expected": "A floating glass panel above the Upload button, rebuilt on every open: Cancel Upload on its own plate while an upload runs, the destinations as options with the default chosen, then Destination Settings… and Share with macOS…; with no destination a disabled No destination configured row; a pointer open focuses no row, a keyboard open focuses the default destination; Escape returns the keyboard to Upload",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": null,
+   "shortcut": null,
+   "proof": [
+    {
+     "file": "AppSafetyWebpostCases.swift",
+     "test": "The Upload button's choices open as a glass panel above it: destinations are options with the default chosen, rebuilt at every open; the empty and busy states; choosing persists the default"
+    },
+    {
+     "file": "AppSafetyWebpostCases.swift",
+     "test": "From the Upload panel Cancel Upload cancels, Destination Settings… opens settings, Share with macOS… anchors the system picker to the button, and Escape returns the focus"
+    },
+    {
+     "file": "AppSafetyMenuCases.swift",
+     "test": "Every route to the Toolbox, Zoom and Upload choices opens the glass panel and starts no native menu"
+    }
+   ],
+   "rendered": [],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-BAR-054"
   },
   {
    "area": "TOOL",
@@ -4568,19 +4767,32 @@
   },
   {
    "area": "TOOL",
-   "surface": "Drawing colors popover",
-   "name": "Drawing colors popover",
-   "type": "popover",
+   "surface": "Drawing colors panel",
+   "name": "Drawing colors panel",
+   "type": "panel",
    "icon": null,
    "entryPath": "Top bar › Color",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Popover with a 5 x 2 grid of preset swatches, Custom color…; transient",
+   "expected": "Glass panel below the Color control with two plates: the title and a 5 x 2 grid of preset swatches, and Custom color… on a plate of its own; hover opens it without the keyboard, a click or the keyboard pins it; the chosen swatch carries an outline and a check; Escape closes it and the keyboard returns to Color; a click outside closes it",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a solid popover); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "AppSafetyModernCases.swift",
+     "test": "Color panel hangs below the Color control, off the system appearance, as one glass container of two plates"
+    },
+    {
+     "file": "AppSafetyModernCases.swift",
+     "test": "Color panel always shows the active colour: a checked preset, or the Custom color… row chosen with the colour's chip, a check, the selected fill and border; the plates are even"
+    },
+    {
+     "file": "AppSafetyTests.swift",
+     "test": "A click outside the panel closes it"
+    }
+   ],
    "rendered": [
     "S06"
    ],
@@ -4591,19 +4803,24 @@
   },
   {
    "area": "TOOL",
-   "surface": "Drawing colors popover",
+   "surface": "Drawing colors panel",
    "name": "Preset: Red",
    "type": "control",
    "icon": null,
    "entryPath": "Top bar › Color › Red",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Sets the drawing colour to Red (Shift sets the canvas background); swatch updates",
+   "expected": "Sets the drawing colour to Red (Shift sets the canvas background); the panel closes and swatch updates",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a swatch in a solid popover); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "AppSafetyTests.swift",
+     "test": "Color panel opened from the keyboard focuses the chosen swatch and Escape hands the keyboard back; a pick changes the colour and closes; Shift picks the background; Custom color… opens the system panel"
+    }
+   ],
    "rendered": [
     "S06"
    ],
@@ -4614,19 +4831,24 @@
   },
   {
    "area": "TOOL",
-   "surface": "Drawing colors popover",
+   "surface": "Drawing colors panel",
    "name": "Preset: Yellow",
    "type": "control",
    "icon": null,
    "entryPath": "Top bar › Color › Yellow",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Sets the drawing colour to Yellow (Shift sets the canvas background); swatch updates",
+   "expected": "Sets the drawing colour to Yellow (Shift sets the canvas background); the panel closes and swatch updates",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a swatch in a solid popover); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "AppSafetyTests.swift",
+     "test": "Color panel opened from the keyboard focuses the chosen swatch and Escape hands the keyboard back; a pick changes the colour and closes; Shift picks the background; Custom color… opens the system panel"
+    }
+   ],
    "rendered": [
     "S06"
    ],
@@ -4637,19 +4859,24 @@
   },
   {
    "area": "TOOL",
-   "surface": "Drawing colors popover",
+   "surface": "Drawing colors panel",
    "name": "Preset: Blue",
    "type": "control",
    "icon": null,
    "entryPath": "Top bar › Color › Blue",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Sets the drawing colour to Blue (Shift sets the canvas background); swatch updates",
+   "expected": "Sets the drawing colour to Blue (Shift sets the canvas background); the panel closes and swatch updates",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a swatch in a solid popover); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "AppSafetyTests.swift",
+     "test": "Color panel opened from the keyboard focuses the chosen swatch and Escape hands the keyboard back; a pick changes the colour and closes; Shift picks the background; Custom color… opens the system panel"
+    }
+   ],
    "rendered": [
     "S06"
    ],
@@ -4660,19 +4887,24 @@
   },
   {
    "area": "TOOL",
-   "surface": "Drawing colors popover",
+   "surface": "Drawing colors panel",
    "name": "Preset: Pink",
    "type": "control",
    "icon": null,
    "entryPath": "Top bar › Color › Pink",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Sets the drawing colour to Pink (Shift sets the canvas background); swatch updates",
+   "expected": "Sets the drawing colour to Pink (Shift sets the canvas background); the panel closes and swatch updates",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a swatch in a solid popover); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "AppSafetyTests.swift",
+     "test": "Color panel opened from the keyboard focuses the chosen swatch and Escape hands the keyboard back; a pick changes the colour and closes; Shift picks the background; Custom color… opens the system panel"
+    }
+   ],
    "rendered": [
     "S06"
    ],
@@ -4683,19 +4915,24 @@
   },
   {
    "area": "TOOL",
-   "surface": "Drawing colors popover",
+   "surface": "Drawing colors panel",
    "name": "Preset: Translucent gray",
    "type": "control",
    "icon": null,
    "entryPath": "Top bar › Color › Translucent gray",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Sets the drawing colour to Translucent gray (Shift sets the canvas background); swatch updates",
+   "expected": "Sets the drawing colour to Translucent gray (Shift sets the canvas background); the panel closes and swatch updates",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a swatch in a solid popover); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "AppSafetyTests.swift",
+     "test": "Color panel opened from the keyboard focuses the chosen swatch and Escape hands the keyboard back; a pick changes the colour and closes; Shift picks the background; Custom color… opens the system panel"
+    }
+   ],
    "rendered": [
     "S06"
    ],
@@ -4706,19 +4943,24 @@
   },
   {
    "area": "TOOL",
-   "surface": "Drawing colors popover",
+   "surface": "Drawing colors panel",
    "name": "Preset: Orange",
    "type": "control",
    "icon": null,
    "entryPath": "Top bar › Color › Orange",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Sets the drawing colour to Orange (Shift sets the canvas background); swatch updates",
+   "expected": "Sets the drawing colour to Orange (Shift sets the canvas background); the panel closes and swatch updates",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a swatch in a solid popover); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "AppSafetyTests.swift",
+     "test": "Color panel opened from the keyboard focuses the chosen swatch and Escape hands the keyboard back; a pick changes the colour and closes; Shift picks the background; Custom color… opens the system panel"
+    }
+   ],
    "rendered": [
     "S06"
    ],
@@ -4729,19 +4971,24 @@
   },
   {
    "area": "TOOL",
-   "surface": "Drawing colors popover",
+   "surface": "Drawing colors panel",
    "name": "Preset: Green",
    "type": "control",
    "icon": null,
    "entryPath": "Top bar › Color › Green",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Sets the drawing colour to Green (Shift sets the canvas background); swatch updates",
+   "expected": "Sets the drawing colour to Green (Shift sets the canvas background); the panel closes and swatch updates",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a swatch in a solid popover); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "AppSafetyTests.swift",
+     "test": "Color panel opened from the keyboard focuses the chosen swatch and Escape hands the keyboard back; a pick changes the colour and closes; Shift picks the background; Custom color… opens the system panel"
+    }
+   ],
    "rendered": [
     "S06"
    ],
@@ -4752,19 +4999,24 @@
   },
   {
    "area": "TOOL",
-   "surface": "Drawing colors popover",
+   "surface": "Drawing colors panel",
    "name": "Preset: White",
    "type": "control",
    "icon": null,
    "entryPath": "Top bar › Color › White",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Sets the drawing colour to White (Shift sets the canvas background); swatch updates",
+   "expected": "Sets the drawing colour to White (Shift sets the canvas background); the panel closes and swatch updates",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a swatch in a solid popover); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "AppSafetyTests.swift",
+     "test": "Color panel opened from the keyboard focuses the chosen swatch and Escape hands the keyboard back; a pick changes the colour and closes; Shift picks the background; Custom color… opens the system panel"
+    }
+   ],
    "rendered": [
     "S06"
    ],
@@ -4775,19 +5027,24 @@
   },
   {
    "area": "TOOL",
-   "surface": "Drawing colors popover",
+   "surface": "Drawing colors panel",
    "name": "Preset: Black",
    "type": "control",
    "icon": null,
    "entryPath": "Top bar › Color › Black",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Sets the drawing colour to Black (Shift sets the canvas background); swatch updates",
+   "expected": "Sets the drawing colour to Black (Shift sets the canvas background); the panel closes and swatch updates",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a swatch in a solid popover); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "AppSafetyTests.swift",
+     "test": "Color panel opened from the keyboard focuses the chosen swatch and Escape hands the keyboard back; a pick changes the colour and closes; Shift picks the background; Custom color… opens the system panel"
+    }
+   ],
    "rendered": [
     "S06"
    ],
@@ -4798,19 +5055,24 @@
   },
   {
    "area": "TOOL",
-   "surface": "Drawing colors popover",
+   "surface": "Drawing colors panel",
    "name": "Preset: Highlighter",
    "type": "control",
    "icon": null,
    "entryPath": "Top bar › Color › Highlighter",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Sets the drawing colour to Highlighter (Shift sets the canvas background); swatch updates",
+   "expected": "Sets the drawing colour to Highlighter (Shift sets the canvas background); the panel closes and swatch updates",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a swatch in a solid popover); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "AppSafetyTests.swift",
+     "test": "Color panel opened from the keyboard focuses the chosen swatch and Escape hands the keyboard back; a pick changes the colour and closes; Shift picks the background; Custom color… opens the system panel"
+    }
+   ],
    "rendered": [
     "S06"
    ],
@@ -4821,19 +5083,28 @@
   },
   {
    "area": "TOOL",
-   "surface": "Drawing colors popover",
+   "surface": "Drawing colors panel",
    "name": "Custom color…",
    "type": "control",
    "icon": null,
    "entryPath": "Top bar › Color › Custom color…",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Closes the popover and opens the system colour panel (alpha enabled); changes apply live",
+   "expected": "A glass row on its own plate: closes the panel and opens the system colour panel (alpha enabled); changes apply live; while the stroke colour is none of the presets the row is the chosen option and carries the colour's chip and a check",
    "owner": "app",
    "exercise": "e2e-partial",
    "gap": "os-panel",
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a button in a solid popover); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "AppSafetyTests.swift",
+     "test": "Color panel opened from the keyboard focuses the chosen swatch and Escape hands the keyboard back; a pick changes the colour and closes; Shift picks the background; Custom color… opens the system panel"
+    },
+    {
+     "file": "AppSafetyModernCases.swift",
+     "test": "Color panel always shows the active colour: a checked preset, or the Custom color… row chosen with the colour's chip, a check, the selected fill and border; the plates are even"
+    }
+   ],
    "rendered": [
     "S06"
    ],
@@ -5002,6 +5273,108 @@
     "source"
    ],
    "id": "E2E-TOOL-029"
+  },
+  {
+   "area": "TOOL",
+   "surface": "Size panel",
+   "name": "Size panel",
+   "type": "panel",
+   "icon": null,
+   "entryPath": "Top bar › Size (open)",
+   "prerequisite": "Fresh launch, empty document",
+   "expected": "Glass panel below the Size pill with two plates, 320 x 134: the title with its numeric readout and the drag track, and the five presets; it does not take the keyboard (the pill keeps it); a preset pick closes it; Escape, a click on the pill or outside, or leaving the window closes it and ends any open drag",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": null,
+   "shortcut": null,
+   "proof": [
+    {
+     "file": "GlassChromeTests.swift",
+     "test": "The panel is 320 x 134"
+    },
+    {
+     "file": "GlassChromeTests.swift",
+     "test": "The two plates are the panel's groups"
+    },
+    {
+     "file": "GlassChromeTests.swift",
+     "test": "Escape in the panel closes it and the keyboard returns to the pill"
+    },
+    {
+     "file": "GlassChromeTests.swift",
+     "test": "A click on the pill closes the panel and is consumed"
+    },
+    {
+     "file": "GlassChromeTests.swift",
+     "test": "Leaving the window closes the panel"
+    }
+   ],
+   "rendered": [],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-TOOL-030"
+  },
+  {
+   "area": "TOOL",
+   "surface": "Size panel",
+   "name": "Size presets (five steps)",
+   "type": "control",
+   "icon": null,
+   "entryPath": "Top bar › Size › preset",
+   "prerequisite": "Fresh launch, empty document",
+   "expected": "Five preset buttons (the ordinary steps from 1.5 to 12) in a radio group named Size presets; the current one is selected; a pick sets the size as one undo step and closes the panel, also when it is the current one",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": null,
+   "shortcut": null,
+   "proof": [
+    {
+     "file": "GlassChromeTests.swift",
+     "test": "A preset pick closes the panel, as a colour pick closes the colour panel"
+    },
+    {
+     "file": "GlassChromeTests.swift",
+     "test": "Choosing the current preset again still closes the panel"
+    }
+   ],
+   "rendered": [],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-TOOL-031"
+  },
+  {
+   "area": "TOOL",
+   "surface": "Size panel",
+   "name": "Size track (drag)",
+   "type": "control",
+   "icon": null,
+   "entryPath": "Top bar › Size › track",
+   "prerequisite": "Fresh launch, empty document",
+   "expected": "Drag anywhere on the 288 x 36 track: a plain drag snaps to the five sizes, Shift keeps it continuous; the whole drag is one undo group and the panel stays open while it runs; dismissing the panel mid-drag ends the group",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": null,
+   "shortcut": null,
+   "proof": [
+    {
+     "file": "GlassChromeTests.swift",
+     "test": "A drag is open and keeps the panel open"
+    },
+    {
+     "file": "GlassChromeTests.swift",
+     "test": "Dismissing mid-drag ends the group and releases the panel"
+    }
+   ],
+   "rendered": [],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-TOOL-032"
   },
   {
    "area": "CANVAS",
@@ -5576,16 +5949,20 @@
    "icon": null,
    "entryPath": "Menu bar › OpenSnap › Settings… (⌘,) or status item › Settings…",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Window with a solid (not glass) 20 pt tab strip (General, Drawing, Capture, Upload), centred forms, remembers the last tab",
+   "expected": "Window with a 20 pt tab strip (General, Drawing, Capture, Upload) whose four tabs share one glass plate over the window's solid surface, centred forms, remembers the last tab",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a solid, non-glass tab strip); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
    "proof": [
     {
      "file": "SettingsWindowTests.swift",
-     "test": "the strip is solid, not glass"
+     "test": "the four tabs sit on one plate, in order"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the strip fills with the opaque window surface"
     }
    ],
    "rendered": [
@@ -5604,13 +5981,26 @@
    "icon": "gear",
    "entryPath": "Settings › General (or ⌘1)",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Shows the General form; selected tab has an accent border and accent icon, not colour alone",
+   "expected": "Shows the General form; a button on the strip's glass plate, and the selected tab has a fill, a border, a semibold label and a solid glyph, not colour alone (Differentiate Without Color adds a capsule)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a solid tab strip); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": "⌘1",
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the strip has the four tab buttons"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "only the selected tab reports 1"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the current tab gains the capsule under Differentiate Without Color and the others stay bare"
+    }
+   ],
    "rendered": [
     "S12"
    ],
@@ -5627,13 +6017,26 @@
    "icon": "paintbrush",
    "entryPath": "Settings › Drawing (or ⌘2)",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Shows the Drawing form; selected tab has an accent border and accent icon, not colour alone",
+   "expected": "Shows the Drawing form; a button on the strip's glass plate, and the selected tab has a fill, a border, a semibold label and a solid glyph, not colour alone (Differentiate Without Color adds a capsule)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a solid tab strip); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": "⌘2",
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the strip has the four tab buttons"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "only the selected tab reports 1"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the current tab gains the capsule under Differentiate Without Color and the others stay bare"
+    }
+   ],
    "rendered": [
     "S12"
    ],
@@ -5650,13 +6053,26 @@
    "icon": "crosshairs",
    "entryPath": "Settings › Capture (or ⌘3)",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Shows the Capture form; selected tab has an accent border and accent icon, not colour alone",
+   "expected": "Shows the Capture form; a button on the strip's glass plate, and the selected tab has a fill, a border, a semibold label and a solid glyph, not colour alone (Differentiate Without Color adds a capsule)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a solid tab strip); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": "⌘3",
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the strip has the four tab buttons"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "only the selected tab reports 1"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the current tab gains the capsule under Differentiate Without Color and the others stay bare"
+    }
+   ],
    "rendered": [
     "S12"
    ],
@@ -5673,13 +6089,26 @@
    "icon": "cloud-arrow-up",
    "entryPath": "Settings › Upload (or ⌘4)",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Shows the Upload form; selected tab has an accent border and accent icon, not colour alone",
+   "expected": "Shows the Upload form; a button on the strip's glass plate, and the selected tab has a fill, a border, a semibold label and a solid glyph, not colour alone (Differentiate Without Color adds a capsule)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a solid tab strip); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": "⌘4",
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the strip has the four tab buttons"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "only the selected tab reports 1"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the current tab gains the capsule under Differentiate Without Color and the others stay bare"
+    }
+   ],
    "rendered": [
     "S12"
    ],
@@ -5696,13 +6125,26 @@
    "icon": null,
    "entryPath": "Settings › General › Show in",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Dock only: the app shows in the Dock, no status item (Menu bar > none; Dock presence changes without restart)",
+   "expected": "Glass radio choice (one Tab stop for the group, arrows move the choice): Dock only: the app shows in the Dock, no status item (Menu bar > none; Dock presence changes without restart)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a radio button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "clicking Dock stores Dock once"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "every choice is an option with a radio glyph"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "exactly one radio reports 1, and the group's value is its name"
+    }
+   ],
    "rendered": [
     "S12"
    ],
@@ -5719,13 +6161,26 @@
    "icon": null,
    "entryPath": "Settings › General › Show in",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Menu bar only: accessory policy, status item present (Dock icon goes away)",
+   "expected": "Glass radio choice (one Tab stop for the group, arrows move the choice): Menu bar only: accessory policy, status item present (Dock icon goes away)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a radio button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "Tab passes through the Show in set once"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "every choice is an option with a radio glyph"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "exactly one radio reports 1, and the group's value is its name"
+    }
+   ],
    "rendered": [
     "S12"
    ],
@@ -5742,13 +6197,26 @@
    "icon": null,
    "entryPath": "Settings › General › Show in",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Dock and status item",
+   "expected": "Glass radio choice (one Tab stop for the group, arrows move the choice): Dock and status item",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a radio button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "a synchronize moves the sets and sends nothing"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "every choice is an option with a radio glyph"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "exactly one radio reports 1, and the group's value is its name"
+    }
+   ],
    "rendered": [
     "S12"
    ],
@@ -5765,16 +6233,24 @@
    "icon": null,
    "entryPath": "Settings › General › Snapping",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Checkbox persists includeApp",
+   "expected": "Glass check box (a toggle with a box glyph): persists includeApp",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a checkbox); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
    "proof": [
     {
      "file": "SettingsWindowTests.swift",
      "test": "initial checkboxes mirror the stored state"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "a checkbox toggle that keeps its identifier"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "VoiceOver gets a named check box and the label is 20 pt"
     }
    ],
    "rendered": [
@@ -5793,13 +6269,26 @@
    "icon": null,
    "entryPath": "Settings › General › Hints",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Checkbox persists showToolTips",
+   "expected": "Glass check box (a toggle with a box glyph): persists showToolTips",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a checkbox); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "an unchecked box stays bare"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "a checkbox toggle that keeps its identifier"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "VoiceOver gets a named check box and the label is 20 pt"
+    }
+   ],
    "rendered": [
     "S12"
    ],
@@ -5816,13 +6305,26 @@
    "icon": null,
    "entryPath": "Settings › General › Hints",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Checkbox persists showKeyboardTips; the help bevel appears on hover",
+   "expected": "Glass check box (a toggle with a box glyph): persists showKeyboardTips; the help bevel appears on hover",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a checkbox); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the plate is a named group"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "a checkbox toggle that keeps its identifier"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "VoiceOver gets a named check box and the label is 20 pt"
+    }
+   ],
    "rendered": [
     "S12"
    ],
@@ -5839,13 +6341,26 @@
    "icon": null,
    "entryPath": "Settings › Drawing › Drawing precision",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Pencil smoothing precise; mirrors Drawing › Pencil Smoothing",
+   "expected": "Glass radio choice (one Tab stop for the group, arrows move the choice): Pencil smoothing precise; mirrors Drawing › Pencil Smoothing",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a radio button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the tab stop follows the choice"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "every choice is an option with a radio glyph"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "exactly one radio reports 1, and the group's value is its name"
+    }
+   ],
    "rendered": [
     "S12"
    ],
@@ -5862,13 +6377,26 @@
    "icon": null,
    "entryPath": "Settings › Drawing › Drawing precision",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Pencil smoothing medium",
+   "expected": "Glass radio choice (one Tab stop for the group, arrows move the choice): Pencil smoothing medium",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a radio button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "Down moves on like Right"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "every choice is an option with a radio glyph"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "exactly one radio reports 1, and the group's value is its name"
+    }
+   ],
    "rendered": [
     "S12"
    ],
@@ -5885,13 +6413,26 @@
    "icon": null,
    "entryPath": "Settings › Drawing › Drawing precision",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Pencil smoothing loose",
+   "expected": "Glass radio choice (one Tab stop for the group, arrows move the choice): Pencil smoothing loose",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a radio button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "Right stops at the last choice and stores nothing"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "every choice is an option with a radio glyph"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "exactly one radio reports 1, and the group's value is its name"
+    }
+   ],
    "rendered": [
     "S12"
    ],
@@ -5908,13 +6449,26 @@
    "icon": null,
    "entryPath": "Settings › Drawing › Arrow head",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Arrow head at the end; mirrors Drawing › Arrow Head",
+   "expected": "Glass radio choice (one Tab stop for the group, arrows move the choice): Arrow head at the end; mirrors Drawing › Arrow Head",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a radio button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the chosen arrow head can take the keyboard"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "every choice is an option with a radio glyph"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "exactly one radio reports 1, and the group's value is its name"
+    }
+   ],
    "rendered": [
     "S12"
    ],
@@ -5931,13 +6485,26 @@
    "icon": null,
    "entryPath": "Settings › Drawing › Arrow head",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Arrow head at the start",
+   "expected": "Glass radio choice (one Tab stop for the group, arrows move the choice): Arrow head at the start",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a radio button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "Right chooses Start"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "every choice is an option with a radio glyph"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "exactly one radio reports 1, and the group's value is its name"
+    }
+   ],
    "rendered": [
     "S12"
    ],
@@ -5977,13 +6544,26 @@
    "icon": null,
    "entryPath": "Settings › Capture › Flash",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Checkbox persists showCaptureFlash",
+   "expected": "Glass check box (a toggle with a box glyph): persists showCaptureFlash",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a checkbox); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the flash option is a checkbox toggle"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "clicking it stores false and it reads off"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "clicking again stores true and it reads on"
+    }
+   ],
    "rendered": [
     "S12"
    ],
@@ -6000,13 +6580,18 @@
    "icon": null,
    "entryPath": "Settings › Upload › Destinations list",
    "prerequisite": "Destinations seeded",
-   "expected": "Every destination as a selectable row with name, transport and a Default pill; the list scrolls past what the screen leaves",
+   "expected": "Every destination as a selectable row with name, transport and a Default pill; the list scrolls past what the screen leaves; solid content, not glass",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
    "note": null,
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the destination list is solid content"
+    }
+   ],
    "rendered": [
     "S12"
    ],
@@ -6070,13 +6655,18 @@
    "icon": null,
    "entryPath": "Settings › Upload › Empty state",
    "prerequisite": "No destinations (--seed empty)",
-   "expected": "Shown when no destination exists, with Add… inside the list",
+   "expected": "Shown when no destination exists, with Add… inside the list (a titled glass command button on a plate of its own)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
    "note": null,
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the four-command plate is out of the layout while the list is empty, and nothing nests"
+    }
+   ],
    "rendered": [
     "S12"
    ],
@@ -6093,13 +6683,26 @@
    "icon": null,
    "entryPath": "Settings › Upload › Add…",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Opens the destination editor sheet on the Settings window",
+   "expected": "Titled glass command button on the destination actions plate: opens the destination editor sheet on the Settings window",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "Add… opens the editor on the Settings window with no destination"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the four commands share one plate, in reading order"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the in-list Add… keeps its title and identifier"
+    }
+   ],
    "rendered": [
     "S12"
    ],
@@ -6116,13 +6719,22 @@
    "icon": null,
    "entryPath": "Settings › Upload › Edit…",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Opens the selected destination in the editor sheet (double-click a row does the same)",
+   "expected": "Titled glass command button on the destination actions plate: opens the selected destination in the editor sheet (double-click a row does the same)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "Edit… opens the selected destination on the Settings window"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "a double click edits that row"
+    }
+   ],
    "rendered": [
     "S12"
    ],
@@ -6139,13 +6751,22 @@
    "icon": null,
    "entryPath": "Settings › Upload › Remove",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Asks Remove “name”? (Cancel first, Remove destructive) as a sheet on Settings, then removes it and its stored secret",
+   "expected": "Titled glass command button on the destination actions plate: asks Remove “name”? (Cancel first, Remove destructive) as a sheet on Settings, then removes it and its stored secret",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "Remove opens one app-owned alert hanging from the Settings window"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "each command is a CommandButton with a 20 pt label"
+    }
+   ],
    "rendered": [
     "S12"
    ],
@@ -6162,13 +6783,26 @@
    "icon": null,
    "entryPath": "Settings › Upload › Make Default",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Marks the selected destination as the one Upload uses; the Default pill moves",
+   "expected": "Titled glass command button on the destination actions plate: marks the selected destination as the one Upload uses; the Default pill moves; dimmed for the default destination",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "Make Default hands the selected destination to the owner"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "Make Default is off for the default destination"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "choosing another row turns Make Default on at full strength"
+    }
+   ],
    "rendered": [
     "S12"
    ],
@@ -6622,13 +7256,22 @@
    "icon": null,
    "entryPath": "Settings › Capture › shortcut rows › Enable",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Checkbox enables or disables all bindings",
+   "expected": "Glass check box (a toggle on a plate of its own) enables or disables all bindings; unticking it turns every shortcut off",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native checkbox); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the enable box is a labelled check box, on"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the enable box turns every shortcut off"
+    }
+   ],
    "rendered": [
     "S18"
    ],
@@ -6645,13 +7288,26 @@
    "icon": null,
    "entryPath": "Settings › Capture › shortcut rows › Screen region key",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Pop-up: None plus the key choices; choosing a key enables its modifier segments",
+   "expected": "Glass pop-up (a face with a chevron that opens a glass panel): None plus the key choices; choosing a key enables its modifier toggles",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "an action with no key starts at None with its modifiers off"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "choosing a key enables its modifiers"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the key pop-up is on the Tab loop"
+    }
+   ],
    "rendered": [
     "S18"
    ],
@@ -6668,13 +7324,30 @@
    "icon": null,
    "entryPath": "Settings › Capture › shortcut rows › Screen region modifiers",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Four selectAny segments ⌘ ⌥ ⌃ ⇧; disabled until a key is chosen",
+   "expected": "Four glass toggles ⌘ ⌥ ⌃ ⇧ on one plate, each flips on its own; disabled and dimmed until a key is chosen; one Tab stop for the row and the arrows move within it",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native multi-select segmented control); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the four modifiers are drawn as their symbols, Command first"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "with no key the modifiers dim and take no focus"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "its four modifiers add ONE Tab stop, the first toggle"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "chosen modifiers are the fill, the border, the semibold symbol and the capsule"
+    }
+   ],
    "rendered": [
     "S18"
    ],
@@ -6691,13 +7364,26 @@
    "icon": null,
    "entryPath": "Settings › Capture › shortcut rows › Window key",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Pop-up: None plus the key choices; choosing a key enables its modifier segments",
+   "expected": "Glass pop-up (a face with a chevron that opens a glass panel): None plus the key choices; choosing a key enables its modifier toggles",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "an action with no key starts at None with its modifiers off"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "choosing a key enables its modifiers"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the key pop-up is on the Tab loop"
+    }
+   ],
    "rendered": [
     "S18"
    ],
@@ -6714,13 +7400,30 @@
    "icon": null,
    "entryPath": "Settings › Capture › shortcut rows › Window modifiers",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Four selectAny segments ⌘ ⌥ ⌃ ⇧; disabled until a key is chosen",
+   "expected": "Four glass toggles ⌘ ⌥ ⌃ ⇧ on one plate, each flips on its own; disabled and dimmed until a key is chosen; one Tab stop for the row and the arrows move within it",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native multi-select segmented control); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the four modifiers are drawn as their symbols, Command first"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "with no key the modifiers dim and take no focus"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "its four modifiers add ONE Tab stop, the first toggle"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "chosen modifiers are the fill, the border, the semibold symbol and the capsule"
+    }
+   ],
    "rendered": [
     "S18"
    ],
@@ -6737,13 +7440,26 @@
    "icon": null,
    "entryPath": "Settings › Capture › shortcut rows › Full screen key",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Pop-up: None plus the key choices; choosing a key enables its modifier segments",
+   "expected": "Glass pop-up (a face with a chevron that opens a glass panel): None plus the key choices; choosing a key enables its modifier toggles",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "an action with no key starts at None with its modifiers off"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "choosing a key enables its modifiers"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the key pop-up is on the Tab loop"
+    }
+   ],
    "rendered": [
     "S18"
    ],
@@ -6760,13 +7476,30 @@
    "icon": null,
    "entryPath": "Settings › Capture › shortcut rows › Full screen modifiers",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Four selectAny segments ⌘ ⌥ ⌃ ⇧; disabled until a key is chosen",
+   "expected": "Four glass toggles ⌘ ⌥ ⌃ ⇧ on one plate, each flips on its own; disabled and dimmed until a key is chosen; one Tab stop for the row and the arrows move within it",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native multi-select segmented control); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the four modifiers are drawn as their symbols, Command first"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "with no key the modifiers dim and take no focus"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "its four modifiers add ONE Tab stop, the first toggle"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "chosen modifiers are the fill, the border, the semibold symbol and the capsule"
+    }
+   ],
    "rendered": [
     "S18"
    ],
@@ -6783,13 +7516,26 @@
    "icon": null,
    "entryPath": "Settings › Capture › shortcut rows › Frame key",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Pop-up: None plus the key choices; choosing a key enables its modifier segments",
+   "expected": "Glass pop-up (a face with a chevron that opens a glass panel): None plus the key choices; choosing a key enables its modifier toggles",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "an action with no key starts at None with its modifiers off"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "choosing a key enables its modifiers"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the key pop-up is on the Tab loop"
+    }
+   ],
    "rendered": [
     "S18"
    ],
@@ -6806,13 +7552,30 @@
    "icon": null,
    "entryPath": "Settings › Capture › shortcut rows › Frame modifiers",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Four selectAny segments ⌘ ⌥ ⌃ ⇧; disabled until a key is chosen",
+   "expected": "Four glass toggles ⌘ ⌥ ⌃ ⇧ on one plate, each flips on its own; disabled and dimmed until a key is chosen; one Tab stop for the row and the arrows move within it",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native multi-select segmented control); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the four modifiers are drawn as their symbols, Command first"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "with no key the modifiers dim and take no focus"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "its four modifiers add ONE Tab stop, the first toggle"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "chosen modifiers are the fill, the border, the semibold symbol and the capsule"
+    }
+   ],
    "rendered": [
     "S18"
    ],
@@ -6829,13 +7592,26 @@
    "icon": null,
    "entryPath": "Settings › Capture › shortcut rows › Upload key",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Pop-up: None plus the key choices; choosing a key enables its modifier segments",
+   "expected": "Glass pop-up (a face with a chevron that opens a glass panel): None plus the key choices; choosing a key enables its modifier toggles",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "an action with no key starts at None with its modifiers off"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "choosing a key enables its modifiers"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the key pop-up is on the Tab loop"
+    }
+   ],
    "rendered": [
     "S18"
    ],
@@ -6852,13 +7628,30 @@
    "icon": null,
    "entryPath": "Settings › Capture › shortcut rows › Upload modifiers",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Four selectAny segments ⌘ ⌥ ⌃ ⇧; disabled until a key is chosen",
+   "expected": "Four glass toggles ⌘ ⌥ ⌃ ⇧ on one plate, each flips on its own; disabled and dimmed until a key is chosen; one Tab stop for the row and the arrows move within it",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native multi-select segmented control); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the four modifiers are drawn as their symbols, Command first"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "with no key the modifiers dim and take no focus"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "its four modifiers add ONE Tab stop, the first toggle"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "chosen modifiers are the fill, the border, the semibold symbol and the capsule"
+    }
+   ],
    "rendered": [
     "S18"
    ],
@@ -6875,13 +7668,26 @@
    "icon": null,
    "entryPath": "Settings › Capture › shortcut rows › Show OpenSnap key",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Pop-up: None plus the key choices; choosing a key enables its modifier segments",
+   "expected": "Glass pop-up (a face with a chevron that opens a glass panel): None plus the key choices; choosing a key enables its modifier toggles",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "an action with no key starts at None with its modifiers off"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "choosing a key enables its modifiers"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the key pop-up is on the Tab loop"
+    }
+   ],
    "rendered": [
     "S18"
    ],
@@ -6898,13 +7704,30 @@
    "icon": null,
    "entryPath": "Settings › Capture › shortcut rows › Show OpenSnap modifiers",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Four selectAny segments ⌘ ⌥ ⌃ ⇧; disabled until a key is chosen",
+   "expected": "Four glass toggles ⌘ ⌥ ⌃ ⇧ on one plate, each flips on its own; disabled and dimmed until a key is chosen; one Tab stop for the row and the arrows move within it",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native multi-select segmented control); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the four modifiers are drawn as their symbols, Command first"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "with no key the modifiers dim and take no focus"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "its four modifiers add ONE Tab stop, the first toggle"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "chosen modifiers are the fill, the border, the semibold symbol and the capsule"
+    }
+   ],
    "rendered": [
     "S18"
    ],
@@ -7139,13 +7962,22 @@
    "icon": null,
    "entryPath": "Settings › Capture › shortcut rows › Clear All",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Sets every key to None (first launch claims no shortcut) and applies at once",
+   "expected": "A titled glass command button on an action plate of its own: sets every key to None (first launch claims no shortcut) and applies at once",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "Clear All is a titled command button at 20 pt"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "Clear All holds its label"
+    }
+   ],
    "rendered": [
     "S18"
    ],
@@ -7179,6 +8011,44 @@
     "source"
    ],
    "id": "E2E-HOT-044"
+  },
+  {
+   "area": "HOT",
+   "surface": "Capture shortcuts (live)",
+   "name": "Key panel",
+   "type": "panel",
+   "icon": null,
+   "entryPath": "Settings › Capture › a shortcut's key pop-up (open)",
+   "prerequisite": "Fresh launch, empty document",
+   "expected": "A glass panel under the key face holding None and every key (a long list that caps at the screen's height and scrolls), the current key marked; choosing a row closes the panel and sets the key once",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": null,
+   "shortcut": null,
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the key pop-up opens a glass panel of None and every key"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the long list is taller than the screen, so the panel caps and scrolls"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "choosing a row closes the panel and sets the pop-up to K"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "the panel marks the current key"
+    }
+   ],
+   "rendered": [],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-HOT-045"
   },
   {
    "area": "HIST",
@@ -7216,16 +8086,24 @@
    "icon": null,
    "entryPath": "History › All",
    "prerequisite": "History seeded",
-   "expected": "Filters the grid (every entry; tab names are the tile labels)",
+   "expected": "A choice in the category's glass radio group on one plate (one Tab stop, arrows move it): filters the grid (every entry; names are the tile labels)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native segmented control); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
    "proof": [
     {
      "file": "HistoryBrowserTests.swift",
      "test": "Original action filters use exact supplied core strings"
+    },
+    {
+     "file": "HistoryBrowserTests.swift",
+     "test": "and the radio values read 1 on the chosen button, 0 elsewhere"
+    },
+    {
+     "file": "HistoryBrowserTests.swift",
+     "test": "The group is one tab stop, on the chosen button"
     }
    ],
    "rendered": [
@@ -7244,16 +8122,24 @@
    "icon": null,
    "entryPath": "History › Shared",
    "prerequisite": "History seeded",
-   "expected": "Filters the grid (entries labelled Shared; tab names are the tile labels)",
+   "expected": "A choice in the category's glass radio group on one plate (one Tab stop, arrows move it): filters the grid (entries labelled Shared; names are the tile labels)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native segmented control); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
    "proof": [
     {
      "file": "HistoryBrowserTests.swift",
      "test": "Original action filters use exact supplied core strings"
+    },
+    {
+     "file": "HistoryBrowserTests.swift",
+     "test": "and the radio values read 1 on the chosen button, 0 elsewhere"
+    },
+    {
+     "file": "HistoryBrowserTests.swift",
+     "test": "The group is one tab stop, on the chosen button"
     }
    ],
    "rendered": [
@@ -7272,16 +8158,24 @@
    "icon": null,
    "entryPath": "History › Exported",
    "prerequisite": "History seeded",
-   "expected": "Filters the grid (entries labelled Exported; tab names are the tile labels)",
+   "expected": "A choice in the category's glass radio group on one plate (one Tab stop, arrows move it): filters the grid (entries labelled Exported; names are the tile labels)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native segmented control); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
    "proof": [
     {
      "file": "HistoryBrowserTests.swift",
      "test": "Original action filters use exact supplied core strings"
+    },
+    {
+     "file": "HistoryBrowserTests.swift",
+     "test": "and the radio values read 1 on the chosen button, 0 elsewhere"
+    },
+    {
+     "file": "HistoryBrowserTests.swift",
+     "test": "The group is one tab stop, on the chosen button"
     }
    ],
    "rendered": [
@@ -7300,16 +8194,24 @@
    "icon": null,
    "entryPath": "History › Saved",
    "prerequisite": "History seeded",
-   "expected": "Filters the grid (entries labelled Saved; tab names are the tile labels)",
+   "expected": "A choice in the category's glass radio group on one plate (one Tab stop, arrows move it): filters the grid (entries labelled Saved; names are the tile labels)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native segmented control); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
    "proof": [
     {
      "file": "HistoryBrowserTests.swift",
      "test": "Original action filters use exact supplied core strings"
+    },
+    {
+     "file": "HistoryBrowserTests.swift",
+     "test": "and the radio values read 1 on the chosen button, 0 elsewhere"
+    },
+    {
+     "file": "HistoryBrowserTests.swift",
+     "test": "The group is one tab stop, on the chosen button"
     }
    ],
    "rendered": [
@@ -7322,22 +8224,30 @@
   },
   {
    "area": "HIST",
-   "surface": "History › date pop-up",
+   "surface": "History › date filter panel",
    "name": "All dates",
    "type": "control",
    "icon": null,
    "entryPath": "History › date filter › All dates",
    "prerequisite": "History seeded",
-   "expected": "Filters by all dates using the strict bounds",
+   "expected": "A radio row in the date filter's glass panel: no date limit; the face then reads All dates",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of a native pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
    "proof": [
     {
      "file": "HistoryBrowserTests.swift",
      "test": "Recovered date predicates use strict hour 48hour and yesterday bounds"
+    },
+    {
+     "file": "HistoryBrowserTests.swift",
+     "test": "Rows are enabled radio buttons, 1 on All dates and 0 elsewhere"
+    },
+    {
+     "file": "HistoryBrowserTests.swift",
+     "test": "Choosing Last 48 hours sets the filter"
     }
    ],
    "rendered": [
@@ -7350,22 +8260,30 @@
   },
   {
    "area": "HIST",
-   "surface": "History › date pop-up",
+   "surface": "History › date filter panel",
    "name": "Last hour",
    "type": "control",
    "icon": null,
    "entryPath": "History › date filter › Last hour",
    "prerequisite": "History seeded",
-   "expected": "Filters by last hour using the strict bounds",
+   "expected": "A radio row in the date filter's glass panel: filters by last hour using the strict bounds; the face then reads Last hour",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of a native pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
    "proof": [
     {
      "file": "HistoryBrowserTests.swift",
      "test": "Recovered date predicates use strict hour 48hour and yesterday bounds"
+    },
+    {
+     "file": "HistoryBrowserTests.swift",
+     "test": "Rows are enabled radio buttons, 1 on All dates and 0 elsewhere"
+    },
+    {
+     "file": "HistoryBrowserTests.swift",
+     "test": "Choosing Last 48 hours sets the filter"
     }
    ],
    "rendered": [
@@ -7378,22 +8296,30 @@
   },
   {
    "area": "HIST",
-   "surface": "History › date pop-up",
+   "surface": "History › date filter panel",
    "name": "Yesterday",
    "type": "control",
    "icon": null,
    "entryPath": "History › date filter › Yesterday",
    "prerequisite": "History seeded",
-   "expected": "Filters by yesterday using the strict bounds",
+   "expected": "A radio row in the date filter's glass panel: filters by yesterday using the strict bounds; the face then reads Yesterday",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of a native pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
    "proof": [
     {
      "file": "HistoryBrowserTests.swift",
      "test": "Recovered date predicates use strict hour 48hour and yesterday bounds"
+    },
+    {
+     "file": "HistoryBrowserTests.swift",
+     "test": "Rows are enabled radio buttons, 1 on All dates and 0 elsewhere"
+    },
+    {
+     "file": "HistoryBrowserTests.swift",
+     "test": "Choosing Last 48 hours sets the filter"
     }
    ],
    "rendered": [
@@ -7406,22 +8332,30 @@
   },
   {
    "area": "HIST",
-   "surface": "History › date pop-up",
+   "surface": "History › date filter panel",
    "name": "Last 48 hours",
    "type": "control",
    "icon": null,
    "entryPath": "History › date filter › Last 48 hours",
    "prerequisite": "History seeded",
-   "expected": "Filters by last 48 hours using the strict bounds",
+   "expected": "A radio row in the date filter's glass panel: filters by last 48 hours using the strict bounds; the face then reads Last 48 hours",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of a native pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
    "proof": [
     {
      "file": "HistoryBrowserTests.swift",
      "test": "Recovered date predicates use strict hour 48hour and yesterday bounds"
+    },
+    {
+     "file": "HistoryBrowserTests.swift",
+     "test": "Rows are enabled radio buttons, 1 on All dates and 0 elsewhere"
+    },
+    {
+     "file": "HistoryBrowserTests.swift",
+     "test": "Choosing Last 48 hours sets the filter"
     }
    ],
    "rendered": [
@@ -7784,22 +8718,26 @@
   },
   {
    "area": "HIST",
-   "surface": "History › Drag as pop-up",
+   "surface": "History › Drag as panel",
    "name": "PNG",
    "type": "control",
    "icon": null,
    "entryPath": "History › Drag as › PNG",
    "prerequisite": "History seeded",
-   "expected": "The pop-up (end of the footer line) offers PNG; tiles then drag out as PNG and the choice persists independently of the editor",
+   "expected": "A radio row in the Drag as glass panel: offers PNG; tiles then drag out as PNG and the choice persists independently of the editor",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of a native pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
    "proof": [
     {
      "file": "HistoryBrowserTests.swift",
      "test": "Drag formats are PNG JPG PDF TIFF SVG and the .opensnap document"
+    },
+    {
+     "file": "HistoryBrowserTests.swift",
+     "test": "Six radio rows, PNG chosen"
     }
    ],
    "rendered": [
@@ -7812,22 +8750,26 @@
   },
   {
    "area": "HIST",
-   "surface": "History › Drag as pop-up",
+   "surface": "History › Drag as panel",
    "name": "JPG",
    "type": "control",
    "icon": null,
    "entryPath": "History › Drag as › JPG",
    "prerequisite": "History seeded",
-   "expected": "The pop-up (end of the footer line) offers JPG; tiles then drag out as JPG and the choice persists independently of the editor",
+   "expected": "A radio row in the Drag as glass panel: offers JPG; tiles then drag out as JPG and the choice persists independently of the editor",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of a native pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
    "proof": [
     {
      "file": "HistoryBrowserTests.swift",
      "test": "Drag formats are PNG JPG PDF TIFF SVG and the .opensnap document"
+    },
+    {
+     "file": "HistoryBrowserTests.swift",
+     "test": "Six radio rows, PNG chosen"
     }
    ],
    "rendered": [
@@ -7840,22 +8782,26 @@
   },
   {
    "area": "HIST",
-   "surface": "History › Drag as pop-up",
+   "surface": "History › Drag as panel",
    "name": "PDF",
    "type": "control",
    "icon": null,
    "entryPath": "History › Drag as › PDF",
    "prerequisite": "History seeded",
-   "expected": "The pop-up (end of the footer line) offers PDF; tiles then drag out as PDF and the choice persists independently of the editor",
+   "expected": "A radio row in the Drag as glass panel: offers PDF; tiles then drag out as PDF and the choice persists independently of the editor",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of a native pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
    "proof": [
     {
      "file": "HistoryBrowserTests.swift",
      "test": "Drag formats are PNG JPG PDF TIFF SVG and the .opensnap document"
+    },
+    {
+     "file": "HistoryBrowserTests.swift",
+     "test": "Six radio rows, PNG chosen"
     }
    ],
    "rendered": [
@@ -7868,22 +8814,26 @@
   },
   {
    "area": "HIST",
-   "surface": "History › Drag as pop-up",
+   "surface": "History › Drag as panel",
    "name": "TIFF",
    "type": "control",
    "icon": null,
    "entryPath": "History › Drag as › TIFF",
    "prerequisite": "History seeded",
-   "expected": "The pop-up (end of the footer line) offers TIFF; tiles then drag out as TIFF and the choice persists independently of the editor",
+   "expected": "A radio row in the Drag as glass panel: offers TIFF; tiles then drag out as TIFF and the choice persists independently of the editor",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of a native pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
    "proof": [
     {
      "file": "HistoryBrowserTests.swift",
      "test": "Drag formats are PNG JPG PDF TIFF SVG and the .opensnap document"
+    },
+    {
+     "file": "HistoryBrowserTests.swift",
+     "test": "Six radio rows, PNG chosen"
     }
    ],
    "rendered": [
@@ -7896,22 +8846,26 @@
   },
   {
    "area": "HIST",
-   "surface": "History › Drag as pop-up",
+   "surface": "History › Drag as panel",
    "name": "SVG",
    "type": "control",
    "icon": null,
    "entryPath": "History › Drag as › SVG",
    "prerequisite": "History seeded",
-   "expected": "The pop-up (end of the footer line) offers SVG; tiles then drag out as SVG and the choice persists independently of the editor",
+   "expected": "A radio row in the Drag as glass panel: offers SVG; tiles then drag out as SVG and the choice persists independently of the editor",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of a native pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
    "proof": [
     {
      "file": "HistoryBrowserTests.swift",
      "test": "Drag formats are PNG JPG PDF TIFF SVG and the .opensnap document"
+    },
+    {
+     "file": "HistoryBrowserTests.swift",
+     "test": "Six radio rows, PNG chosen"
     }
    ],
    "rendered": [
@@ -7924,22 +8878,26 @@
   },
   {
    "area": "HIST",
-   "surface": "History › Drag as pop-up",
+   "surface": "History › Drag as panel",
    "name": ".opensnap document",
    "type": "control",
    "icon": null,
    "entryPath": "History › Drag as › .opensnap document",
    "prerequisite": "History seeded",
-   "expected": "The pop-up (end of the footer line) offers .opensnap document; tiles then drag out as .opensnap document and the choice persists independently of the editor",
+   "expected": "A radio row in the Drag as glass panel: offers .opensnap document; tiles then drag out as .opensnap document and the choice persists independently of the editor",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a row of a native pop-up menu); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
    "proof": [
     {
      "file": "HistoryBrowserTests.swift",
      "test": "Drag formats are PNG JPG PDF TIFF SVG and the .opensnap document"
+    },
+    {
+     "file": "HistoryBrowserTests.swift",
+     "test": "Six radio rows, PNG chosen"
     }
    ],
    "rendered": [
@@ -8235,6 +9193,82 @@
    "id": "E2E-HIST-044"
   },
   {
+   "area": "HIST",
+   "surface": "History",
+   "name": "Date filter panel",
+   "type": "panel",
+   "icon": null,
+   "entryPath": "History › date filter (open)",
+   "prerequisite": "History seeded",
+   "expected": "A glass pop-up face on its own plate reading the chosen filter (All dates at first) with a chevron; every way of opening it (click, Control-click, Space, Down, Up, VoiceOver press or Show Menu) opens a glass panel of the four choices as radio rows, 1 on the chosen one; choosing closes the panel and filters the grid; no native menu starts",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": null,
+   "shortcut": null,
+   "proof": [
+    {
+     "file": "HistoryBrowserTests.swift",
+     "test": "The panel lists"
+    },
+    {
+     "file": "HistoryBrowserTests.swift",
+     "test": "Rows are enabled radio buttons, 1 on All dates and 0 elsewhere"
+    },
+    {
+     "file": "HistoryBrowserTests.swift",
+     "test": "AXPress and AXShowMenu are both offered, and both open the glass panel"
+    },
+    {
+     "file": "HistoryBrowserTests.swift",
+     "test": "a keyboard open focuses the chosen row"
+    }
+   ],
+   "rendered": [],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-HIST-045"
+  },
+  {
+   "area": "HIST",
+   "surface": "History",
+   "name": "Drag as panel",
+   "type": "panel",
+   "icon": null,
+   "entryPath": "History › Drag as (open)",
+   "prerequisite": "History seeded",
+   "expected": "A glass pop-up face on its own plate at the end of the footer line, named History drag export format, reading the chosen format with a chevron; it opens a glass panel of six radio rows, the chosen format 1; choosing persists the format, updates the face and closes the panel; no native menu starts on any route",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": null,
+   "shortcut": null,
+   "proof": [
+    {
+     "file": "HistoryBrowserTests.swift",
+     "test": "Six radio rows, PNG chosen"
+    },
+    {
+     "file": "HistoryBrowserTests.swift",
+     "test": "Choosing PDF persists pdf and updates the face"
+    },
+    {
+     "file": "HistoryBrowserTests.swift",
+     "test": "AXPress and AXShowMenu are both offered, and both open the glass panel"
+    },
+    {
+     "file": "HistoryBrowserTests.swift",
+     "test": "The choice panel lists"
+    }
+   ],
+   "rendered": [],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-HIST-046"
+  },
+  {
    "area": "DEST",
    "surface": "Destinations sheet",
    "name": "Destinations sheet",
@@ -8380,13 +9414,22 @@
    "icon": null,
    "entryPath": "Settings › Upload › Add… › Protocol › WebDAV",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Form shows the WebDAV field set and help",
+   "expected": "A radio row in the Protocol glass panel: the form shows the WebDAV field set and help",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up menu item); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "PublishingDestinationsTests.swift",
+     "test": "the Protocol panel lists every protocol"
+    },
+    {
+     "file": "PublishingDestinationsTests.swift",
+     "test": "the chosen protocol is marked in the panel"
+    }
+   ],
    "rendered": [
     "S19",
     "S21"
@@ -8404,13 +9447,22 @@
    "icon": null,
    "entryPath": "Settings › Upload › Add… › Protocol › FTP",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Form shows the FTP field set and help",
+   "expected": "A radio row in the Protocol glass panel: the form shows the FTP field set and help",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up menu item); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "PublishingDestinationsTests.swift",
+     "test": "the Protocol panel lists every protocol"
+    },
+    {
+     "file": "PublishingDestinationsTests.swift",
+     "test": "the chosen protocol is marked in the panel"
+    }
+   ],
    "rendered": [
     "S19",
     "S21"
@@ -8428,13 +9480,22 @@
    "icon": null,
    "entryPath": "Settings › Upload › Add… › Protocol › FTPS",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Form shows the FTPS field set and help",
+   "expected": "A radio row in the Protocol glass panel: the form shows the FTPS field set and help",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up menu item); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "PublishingDestinationsTests.swift",
+     "test": "the Protocol panel lists every protocol"
+    },
+    {
+     "file": "PublishingDestinationsTests.swift",
+     "test": "the chosen protocol is marked in the panel"
+    }
+   ],
    "rendered": [
     "S19",
     "S21"
@@ -8452,13 +9513,22 @@
    "icon": null,
    "entryPath": "Settings › Upload › Add… › Protocol › SFTP",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Form shows the SFTP field set and help",
+   "expected": "A radio row in the Protocol glass panel: the form shows the SFTP field set and help",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up menu item); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "PublishingDestinationsTests.swift",
+     "test": "the Protocol panel lists every protocol"
+    },
+    {
+     "file": "PublishingDestinationsTests.swift",
+     "test": "the chosen protocol is marked in the panel"
+    }
+   ],
    "rendered": [
     "S19",
     "S21"
@@ -8476,13 +9546,22 @@
    "icon": null,
    "entryPath": "Settings › Upload › Add… › Protocol › S3-compatible",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Form shows the S3-compatible field set and help",
+   "expected": "A radio row in the Protocol glass panel: the form shows the S3-compatible field set and help",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up menu item); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "PublishingDestinationsTests.swift",
+     "test": "the Protocol panel lists every protocol"
+    },
+    {
+     "file": "PublishingDestinationsTests.swift",
+     "test": "the chosen protocol is marked in the panel"
+    }
+   ],
    "rendered": [
     "S19",
     "S21"
@@ -8716,13 +9795,26 @@
    "icon": null,
    "entryPath": "Settings › Upload › Add…/Edit… › Source (AWS credentials profile | Access key stored in Keychain)",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Chooses the credential source (shown for: S3)",
+   "expected": "Chooses the credential source (a glass pop-up named Source: the face reads AWS profile or Keychain, its panel keeps the full titles) (shown for: S3)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "PublishingDestinationsTests.swift",
+     "test": "the Source face follows its choice"
+    },
+    {
+     "file": "PublishingDestinationsTests.swift",
+     "test": "the Keychain face is the Keychain source"
+    },
+    {
+     "file": "PublishingDestinationsTests.swift",
+     "test": "the accessibility value of the Source pop-up is the full"
+    }
+   ],
    "rendered": [
     "S19",
     "S21"
@@ -8812,13 +9904,18 @@
    "icon": null,
    "entryPath": "Settings › Upload › Add…/Edit… › Make uploads public-read",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Checkbox; off by default (ACLs-off buckets) (shown for: S3)",
+   "expected": "Glass check box (a toggle on its plate); off by default (ACLs-off buckets) (shown for: S3)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native checkbox); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "PublishingDestinationsTests.swift",
+     "test": "public-read is a checkbox-style toggle"
+    }
+   ],
    "rendered": [
     "S19",
     "S21"
@@ -8836,13 +9933,18 @@
    "icon": null,
    "entryPath": "Settings › Upload › Add…/Edit… › Test",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Tries the destination; result line shows Connected + detail or Error: …",
+   "expected": "A titled glass command button on the sheet's action plate: tries the destination; result line shows Connected + detail or Error: …",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "PublishingDestinationsTests.swift",
+     "test": "every button on the sheet is a glass button"
+    }
+   ],
    "rendered": [
     "S19",
     "S21"
@@ -8860,13 +9962,22 @@
    "icon": null,
    "entryPath": "Settings › Upload › Add…/Edit… › Save",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Validates and stores; secret goes to the secret store (Return)",
+   "expected": "A titled glass command button on the sheet's action plate, the sheet's default button: validates and stores; secret goes to the secret store (Return)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "PublishingDestinationsTests.swift",
+     "test": "every button on the sheet is a glass button"
+    },
+    {
+     "file": "PublishingDestinationsTests.swift",
+     "test": "Save is the window's default button"
+    }
+   ],
    "rendered": [
     "S19",
     "S21"
@@ -8884,13 +9995,22 @@
    "icon": null,
    "entryPath": "Settings › Upload › Add…/Edit… › Cancel",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Closes the editor sheet (Esc)",
+   "expected": "A titled glass command button on the sheet's action plate: closes the editor sheet (Esc; with a choice panel open the first Esc closes only the panel)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "PublishingDestinationsTests.swift",
+     "test": "every button on the sheet is a glass button"
+    },
+    {
+     "file": "PublishingDestinationsTests.swift",
+     "test": "the second Escape cancels the sheet"
+    }
+   ],
    "rendered": [
     "S19",
     "S21"
@@ -9146,6 +10266,82 @@
    "id": "E2E-DEST-039"
   },
   {
+   "area": "DEST",
+   "surface": "Destination form",
+   "name": "Protocol panel",
+   "type": "panel",
+   "icon": null,
+   "entryPath": "Settings › Upload › Add…/Edit… › Protocol (open)",
+   "prerequisite": "Destination editor open",
+   "expected": "A glass pop-up named Protocol on its own plate (the face reads the chosen protocol, with a chevron) that opens a glass panel of every protocol as radio rows, the chosen one marked and an unavailable protocol a disabled row; a click, Space or Down opens it, Return and keypad Enter stay with Save, and the first Esc closes only the panel (the second cancels the sheet)",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": null,
+   "shortcut": null,
+   "proof": [
+    {
+     "file": "PublishingDestinationsTests.swift",
+     "test": "the Protocol panel lists every protocol"
+    },
+    {
+     "file": "PublishingDestinationsTests.swift",
+     "test": "Down opens the Protocol panel"
+    },
+    {
+     "file": "PublishingDestinationsTests.swift",
+     "test": "an unavailable protocol is a disabled row"
+    },
+    {
+     "file": "PublishingDestinationsTests.swift",
+     "test": "Escape in the open panel closes only the panel"
+    },
+    {
+     "file": "PublishingDestinationsTests.swift",
+     "test": "Return with a face focused and no panel up runs Save"
+    }
+   ],
+   "rendered": [],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-DEST-042"
+  },
+  {
+   "area": "DEST",
+   "surface": "Destination form",
+   "name": "Source panel",
+   "type": "panel",
+   "icon": null,
+   "entryPath": "Settings › Upload › Add…/Edit… › Source (open)",
+   "prerequisite": "Destination editor open, S3-compatible",
+   "expected": "A glass pop-up named Source on its own plate (the face reads AWS profile or Keychain so it is whole at 560 pt) that opens a glass panel with the full titles as radio rows, the chosen one marked; opening it closes any other open panel, so one is up at a time",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": null,
+   "shortcut": null,
+   "proof": [
+    {
+     "file": "PublishingDestinationsTests.swift",
+     "test": "the panel rows keep the full titles and mark"
+    },
+    {
+     "file": "PublishingDestinationsTests.swift",
+     "test": "opening another face closes the first panel: only one is up at a time"
+    },
+    {
+     "file": "PublishingDestinationsTests.swift",
+     "test": "the face shows a shorter title than"
+    }
+   ],
+   "rendered": [],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-DEST-043"
+  },
+  {
    "area": "SHEET",
    "surface": "Resize or Crop",
    "name": "Resize or Crop sheet",
@@ -9153,13 +10349,26 @@
    "icon": null,
    "entryPath": "Menu bar › Image › Resize…, bottom bar › Resize…",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Sheet with heading, preset pop-up, mode control, dimension fields, buttons; Return = OK, Esc = Cancel",
+   "expected": "Sheet with heading, a glass preset pop-up, a glass mode group (Resize, Crop, Limit), native dimension fields and titled glass buttons; no native pop-up or segmented control is left; Return = OK, Esc = Cancel (with the preset panel open the first Esc closes only the panel)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up, segmented control, checkbox and push buttons); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "no native pop-up or segmented control anywhere on the sheet"
+    },
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "OK is the default button; Escape is Cancel"
+    },
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "Each mode sizes the sheet to what it shows"
+    }
+   ],
    "rendered": [
     "S08"
    ],
@@ -9176,13 +10385,30 @@
    "icon": null,
    "entryPath": "Resize or Crop › Size preset pop-up",
    "prerequisite": "Not in Actual Size or Frame mode",
-   "expected": "Custom size plus saved presets",
+   "expected": "A glass pop-up named Size preset on its own plate (the face reads the chosen preset, Custom size at first) that opens a glass panel of Custom size plus the saved presets as radio rows",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "The preset is a glass pop-up button named Size preset whose value is the selection"
+    },
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "Pressing the pop-up opens the preset panel"
+    },
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "Choosing a row closes the panel"
+    },
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "The sheet shows the preset and the pop-up names it"
+    }
+   ],
    "rendered": [
     "S08"
    ],
@@ -9222,13 +10448,18 @@
    "icon": null,
    "entryPath": "Resize or Crop › Add Preset",
    "prerequisite": "Not in Actual Size or Frame mode",
-   "expected": "Saves the current dimensions as a new preset",
+   "expected": "Titled glass command button on the preset plate: saves the current dimensions as a new preset",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "Adding from a built-in makes an editable copy"
+    }
+   ],
    "rendered": [
     "S08"
    ],
@@ -9245,13 +10476,22 @@
    "icon": null,
    "entryPath": "Resize or Crop › Save Preset",
    "prerequisite": "Not in Actual Size or Frame mode",
-   "expected": "Updates the selected preset",
+   "expected": "Titled glass command button on the preset plate: updates the selected preset; off for Custom size and the built-in presets",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "Custom size: Save and Remove are off"
+    },
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "A built-in preset is read-only"
+    }
+   ],
    "rendered": [
     "S08"
    ],
@@ -9268,13 +10508,18 @@
    "icon": null,
    "entryPath": "Resize or Crop › Remove (preset)",
    "prerequisite": "Not in Actual Size or Frame mode",
-   "expected": "Removes the selected preset",
+   "expected": "Titled glass command button on the preset plate: removes the selected preset and returns to Custom size",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "Remove returns to Custom size with Save and Remove off"
+    }
+   ],
    "rendered": [
     "S08"
    ],
@@ -9291,13 +10536,26 @@
    "icon": null,
    "entryPath": "Resize or Crop › Mode: Resize",
    "prerequisite": "Not in Actual Size or Frame mode",
-   "expected": "Resizes the canvas by pixels",
+   "expected": "A choice in the glass mode group (a radio group named Size operation): resizes the canvas by pixels",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native segmented control); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "The mode is a glass choice group named Size operation"
+    },
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "a radio group of radio buttons"
+    },
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "The mode group is one tab stop"
+    }
+   ],
    "rendered": [
     "S08"
    ],
@@ -9314,13 +10572,26 @@
    "icon": null,
    "entryPath": "Resize or Crop › Mode: Crop",
    "prerequisite": "Not in Actual Size or Frame mode",
-   "expected": "Crops with an anchor",
+   "expected": "A choice in the glass mode group: crops with an anchor",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native segmented control); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "The mode is a glass choice group named Size operation"
+    },
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "a radio group of radio buttons"
+    },
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "The mode group is one tab stop"
+    }
+   ],
    "rendered": [
     "S08"
    ],
@@ -9337,13 +10608,26 @@
    "icon": null,
    "entryPath": "Resize or Crop › Mode: Limit",
    "prerequisite": "Not in Actual Size or Frame mode",
-   "expected": "Limits the longest side, width or height",
+   "expected": "A choice in the glass mode group: limits the longest side, width or height",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native segmented control); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "The mode is a glass choice group named Size operation"
+    },
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "a radio group of radio buttons"
+    },
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "The mode group is one tab stop"
+    }
+   ],
    "rendered": [
     "S08"
    ],
@@ -9406,13 +10690,22 @@
    "icon": null,
    "entryPath": "Resize or Crop › Lock proportions",
    "prerequisite": "Not in Actual Size or Frame mode",
-   "expected": "Keeps the aspect ratio while editing",
+   "expected": "A glass checkbox toggle, on by default: keeps the aspect ratio while editing",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native checkbox); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "Lock proportions is a checkbox-role toggle"
+    },
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "A click turns it off in the session"
+    }
+   ],
    "rendered": [
     "S08"
    ],
@@ -9429,13 +10722,18 @@
    "icon": null,
    "entryPath": "Resize or Crop › Limit by: Longest side / Width / Height",
    "prerequisite": "Not in Actual Size or Frame mode",
-   "expected": "Chooses what the limit applies to",
+   "expected": "A glass radio group named Limit by: chooses what the limit applies to",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native pop-up); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "Limit by lists Longest side, Width and Height and starts on the first"
+    }
+   ],
    "rendered": [
     "S08"
    ],
@@ -9475,13 +10773,26 @@
    "icon": null,
    "entryPath": "Resize or Crop › Crop anchor (9 positions)",
    "prerequisite": "Not in Actual Size or Frame mode",
-   "expected": "Top/Middle/Bottom x Left/Center/Right",
+   "expected": "Nine cells on one glass plate (a radio group named Crop anchor; arrows move it), the chosen cell filled and bordered: Top/Middle/Bottom x Left/Center/Right",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was an app-owned anchor view); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "The anchor grid sits on one glass plate"
+    },
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "The chosen cell is the command selected style"
+    },
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "The grid stays a named radio group of nine cells"
+    }
+   ],
    "rendered": [
     "S08"
    ],
@@ -9521,13 +10832,22 @@
    "icon": null,
    "entryPath": "Resize or Crop › Cancel",
    "prerequisite": "Not in Actual Size or Frame mode",
-   "expected": "Closes without change (Esc)",
+   "expected": "Titled glass command button on the sheet's button plate: closes without change (Esc)",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "Cancel, Apply and OK share one glass plate"
+    },
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "OK is the default button; Escape is Cancel"
+    }
+   ],
    "rendered": [
     "S08"
    ],
@@ -9544,13 +10864,18 @@
    "icon": null,
    "entryPath": "Resize or Crop › Apply",
    "prerequisite": "Not in Actual Size or Frame mode",
-   "expected": "Keeps the change and the sheet; Cancel then undoes only later edits",
+   "expected": "Titled glass command button on the sheet's button plate: keeps the change and the sheet; Cancel then undoes only later edits",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "Cancel, Apply and OK share one glass plate"
+    }
+   ],
    "rendered": [
     "S08"
    ],
@@ -9567,13 +10892,22 @@
    "icon": null,
    "entryPath": "Resize or Crop › OK",
    "prerequisite": "Not in Actual Size or Frame mode",
-   "expected": "Applies and closes (Return)",
+   "expected": "Titled glass command button on the sheet's button plate: applies and closes (Return); the only primary control",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": null,
+   "note": "Glass choice since impl/glass-pickers-20261010 (was a native push button); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA",
    "shortcut": null,
-   "proof": [],
+   "proof": [
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "OK is the only primary"
+    },
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "OK is the default button; Escape is Cancel"
+    }
+   ],
    "rendered": [
     "S08"
    ],
@@ -10322,6 +11656,78 @@
    "id": "E2E-SHEET-052"
   },
   {
+   "area": "SHEET",
+   "surface": "Resize or Crop",
+   "name": "Manage presets (disclosure)",
+   "type": "control",
+   "icon": null,
+   "entryPath": "Resize or Crop › Manage",
+   "prerequisite": "Not in Actual Size or Frame mode",
+   "expected": "A glass toggle with a chevron named Manage presets, collapsed at first: a click expands the preset name field and the Add Preset, Save Preset and Remove row and the sheet grows to hold them; a second click folds it back to the same height",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": null,
+   "shortcut": null,
+   "proof": [
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "Manage is a collapsed chevron toggle"
+    },
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "A click expands it and the sheet grows"
+    },
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "A second click folds it back to the same height"
+    }
+   ],
+   "rendered": [],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-SHEET-053"
+  },
+  {
+   "area": "SHEET",
+   "surface": "Resize or Crop",
+   "name": "Preset panel",
+   "type": "panel",
+   "icon": null,
+   "entryPath": "Resize or Crop › Size preset (open)",
+   "prerequisite": "Not in Actual Size or Frame mode",
+   "expected": "The glass panel under the preset pop-up: one plate of radio rows, the chosen one marked and its value 1; click, Control-click, Space, Down, Up, VoiceOver press or Show Menu open it with no native menu; a second press closes it; Return and keypad Enter stay with OK and the first Esc closes only the panel (the second cancels the sheet)",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": null,
+   "shortcut": null,
+   "proof": [
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "Pressing the pop-up opens the preset panel"
+    },
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "A second press on the pop-up while its panel is shown closes it instead of reopening"
+    },
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "Down on the pop-up opens the panel with the chosen row focused"
+    },
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "A second Escape (panel closed) runs Cancel and ends the sheet"
+    }
+   ],
+   "rendered": [],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-SHEET-054"
+  },
+  {
    "area": "ALERT",
    "surface": "App alerts (AppAlert)",
    "name": "Save your drawing?",
@@ -10654,13 +12060,13 @@
    "name": "circle",
    "type": "icon",
    "icon": "circle",
-   "entryPath": "Top bar › Ellipse tool",
+   "entryPath": "Top bar › Ellipse tool; unchosen radio glyph of glass options",
    "prerequisite": "Control visible",
    "expected": "Renders as a Font Awesome glyph (0xF111) in release builds, or SF Symbol circle when no glyph resolves; centred, template-tinted, matches its meaning",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "case .circle; Free codepoint 0xF111; SF fallback circle; used in ModernEditorChrome.swift",
+   "note": "case .circle; Free codepoint 0xF111; SF fallback circle; used in GlassChoices.swift, ModernEditorChrome.swift",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -10678,13 +12084,13 @@
    "name": "square",
    "type": "icon",
    "icon": "square",
-   "entryPath": "Top bar › Rectangle tool",
+   "entryPath": "Top bar › Rectangle tool; unchecked box glyph of glass toggles",
    "prerequisite": "Control visible",
    "expected": "Renders as a Font Awesome glyph (0xF0C8) in release builds, or SF Symbol square when no glyph resolves; centred, template-tinted, matches its meaning",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "case .square; Free codepoint 0xF0C8; SF fallback square; used in ModernEditorChrome.swift",
+   "note": "case .square; Free codepoint 0xF0C8; SF fallback square; used in GlassChoices.swift, ModernEditorChrome.swift",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -10900,7 +12306,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "case .font; Free codepoint 0xF031; SF fallback textformat.size; used in AboutWindow.swift, AppAlert.swift, Canvas.swift, DesignTokens.swift, DocumentModel.swift, ExportAccessory.swift, EyeDumpAudit.swift, EyeDumpAuditSurfaces.swift, GlassChrome.swift, LegacyReader.swift, ModernEditorChrome.swift, OriginalCaptureCountdown.swift, OriginalHelpBevel.swift, ResizePanel.swift, SVGExport.swift, SettingsWindow.swift, StatusItemSupport.swift, TextStyleForm.swift",
+   "note": "case .font; Free codepoint 0xF031; SF fallback textformat.size; used in AboutWindow.swift, AppAlert.swift, Canvas.swift, DesignTokens.swift, DocumentModel.swift, ExportAccessory.swift, EyeDumpAudit.swift, EyeDumpAuditSurfaces.swift, GlassChoices.swift, GlassChrome.swift, GlobalHotkeys.swift, LegacyReader.swift, ModernEditorChrome.swift, OriginalCaptureCountdown.swift, OriginalHelpBevel.swift, PublishingDestinationsView.swift, SVGExport.swift, SettingsWindow.swift, StatusItemSupport.swift, TextStyleForm.swift",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -11014,13 +12420,13 @@
    "name": "check",
    "type": "icon",
    "icon": "check",
-   "entryPath": "Default pill; success results",
+   "entryPath": "Default pill; success results; chosen glass row and swatch; checked box mark",
    "prerequisite": "Control visible",
    "expected": "Renders as a Font Awesome glyph (0xF00C) in release builds, or SF Symbol checkmark when no glyph resolves; centred, template-tinted, matches its meaning",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "case .check; Free codepoint 0xF00C; SF fallback checkmark; used in BezelDrawingControls.swift, PublishingDestinationsView.swift",
+   "note": "case .check; Free codepoint 0xF00C; SF fallback checkmark; used in BezelDrawingControls.swift, GlassChoices.swift, PublishingDestinationsView.swift",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -11068,7 +12474,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "case .openExternal; Free codepoint 0xF35D; SF fallback arrow.up.right.square; used in UploadStatus.swift",
+   "note": "case .openExternal; Free codepoint 0xF35D; SF fallback arrow.up.right.square; used in HistoryBrowser.swift, UploadStatus.swift",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -11206,13 +12612,13 @@
    "name": "circle-check",
    "type": "icon",
    "icon": "circle-check",
-   "entryPath": "Connected result; selected tile badge",
+   "entryPath": "Connected result; selected tile badge; chosen radio glyph of glass options",
    "prerequisite": "Control visible",
    "expected": "Renders as a Font Awesome glyph (0xF058) in release builds, or SF Symbol checkmark.circle.fill when no glyph resolves; centred, template-tinted, matches its meaning",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "case .circleCheck; Free codepoint 0xF058; SF fallback checkmark.circle.fill; used in HistoryBrowser.swift, PublishingDestinationsView.swift",
+   "note": "case .circleCheck; Free codepoint 0xF058; SF fallback checkmark.circle.fill; used in GlassChoices.swift, HistoryBrowser.swift, PublishingDestinationsView.swift",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -13439,13 +14845,13 @@
    "name": "chevron-down",
    "type": "icon",
    "icon": "chevron-down",
-   "entryPath": "Top bar › Toolbox (face)",
+   "entryPath": "Top bar › Toolbox (face); every glass pop-up face (Zoom, History, Resize preset, destination form, Capture key)",
    "prerequisite": "Control visible",
    "expected": "Renders as a Font Awesome glyph (0xF078) in release builds, or SF Symbol chevron.down when no glyph resolves; centred, template-tinted, matches its meaning",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "case .chevronDown; Free codepoint 0xF078; SF fallback chevron.down; used in ModernEditorChrome.swift",
+   "note": "case .chevronDown; Free codepoint 0xF078; SF fallback chevron.down; used in GlassChoices.swift, ModernEditorChrome.swift",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -13579,6 +14985,80 @@
     "source"
    ],
    "id": "E2E-ICON-113"
+  },
+  {
+   "area": "ICON",
+   "surface": "FAIcon",
+   "name": "chevron-right",
+   "type": "icon",
+   "icon": "chevron-right",
+   "entryPath": "Glass choice panel › submenu row; Resize › Manage presets (trailing chevron)",
+   "prerequisite": "Control visible",
+   "expected": "Renders as a Font Awesome glyph (0xF054) in release builds, or SF Symbol chevron.right when no glyph resolves; centred, template-tinted, matches its meaning",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": "case .chevronRight; Free codepoint 0xF054; SF fallback chevron.right; used in GlassChoices.swift",
+   "shortcut": null,
+   "proof": [
+    {
+     "file": "FontAwesomeIconsTests.swift",
+     "test": "Spot-checked codepoints match icons.yml"
+    },
+    {
+     "file": "IconCoverageTests.swift",
+     "test": " is the embedded chevron-down turned a quarter"
+    },
+    {
+     "file": "GlassChoicesTests.swift",
+     "test": "The chevron points right"
+    }
+   ],
+   "rendered": [
+    "S03",
+    "S04"
+   ],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-ICON-114"
+  },
+  {
+   "area": "ICON",
+   "surface": "FAIcon",
+   "name": "chevron-left",
+   "type": "icon",
+   "icon": "chevron-left",
+   "entryPath": "Glass choice panel › Back row (leaving a submenu)",
+   "prerequisite": "Control visible",
+   "expected": "Renders as a Font Awesome glyph (0xF053) in release builds, or SF Symbol chevron.left when no glyph resolves; centred, template-tinted, matches its meaning",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": "case .chevronLeft; Free codepoint 0xF053; SF fallback chevron.left; used in GlassChoices.swift",
+   "shortcut": null,
+   "proof": [
+    {
+     "file": "FontAwesomeIconsTests.swift",
+     "test": "Spot-checked codepoints match icons.yml"
+    },
+    {
+     "file": "IconCoverageTests.swift",
+     "test": " is the embedded chevron-down turned a quarter"
+    },
+    {
+     "file": "GlassChoicesTests.swift",
+     "test": "The Back row carries the left chevron"
+    }
+   ],
+   "rendered": [
+    "S03",
+    "S04"
+   ],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-ICON-115"
   },
   {
    "area": "KEY",
@@ -14386,6 +15866,128 @@
    "id": "E2E-KEY-035"
   },
   {
+   "area": "KEY",
+   "surface": "Glass choice panels",
+   "name": "Return, Space, Down or Up on a focused glass choice",
+   "type": "shortcut",
+   "icon": null,
+   "entryPath": "A focused Toolbox, zoom, Upload, History filter, Resize preset or destination-form pop-up, then the key",
+   "prerequisite": "A glass choice focused",
+   "expected": "Opens its glass panel, a keyboard open focusing the chosen row (else the first enabled one) and a pointer open focusing none; in a sheet with a default button (Resize, destination editor) Return and keypad Enter stay with OK or Save and Space or Down opens the choice; a letter key opens nothing, so no type-ahead reaches a native menu",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": null,
+   "shortcut": null,
+   "proof": [
+    {
+     "file": "AppSafetyMenuCases.swift",
+     "test": "Every route to the Toolbox, Zoom and Upload choices opens the glass panel and starts no native menu"
+    },
+    {
+     "file": "GlassChromeTests.swift",
+     "test": "a letter key opens nothing"
+    },
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "Space on the focused face opens the preset panel"
+    },
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "Down on the focused face opens the panel on the chosen row"
+    },
+    {
+     "file": "PublishingDestinationsTests.swift",
+     "test": "Return with a face focused and no panel up runs Save"
+    }
+   ],
+   "rendered": [],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-KEY-036"
+  },
+  {
+   "area": "KEY",
+   "surface": "Glass choice panels",
+   "name": "Keys inside an open glass panel",
+   "type": "shortcut",
+   "icon": null,
+   "entryPath": "An open glass choice panel, then the key",
+   "prerequisite": "A glass choice panel open",
+   "expected": "Up, Down, Tab and Shift-Tab move through the enabled rows (disabled rows are skipped and the ends wrap), Home and End jump to the first and last, Return and Space choose and close; Escape closes the panel first, so a sheet's Cancel only runs on a second Escape, and the keyboard returns to the control that had it",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": null,
+   "shortcut": null,
+   "proof": [
+    {
+     "file": "GlassChoicesTests.swift",
+     "test": "Down from the last row wraps to the first"
+    },
+    {
+     "file": "GlassChoicesTests.swift",
+     "test": "Shift-Tab moves up"
+    },
+    {
+     "file": "GlassChoicesTests.swift",
+     "test": "Home focuses the first enabled row"
+    },
+    {
+     "file": "GlassChoicesTests.swift",
+     "test": "Escape restores the responder that had focus when the panel opened"
+    },
+    {
+     "file": "PublishingDestinationsTests.swift",
+     "test": "the second Escape cancels the sheet"
+    },
+    {
+     "file": "ResizePanelLayoutTests.swift",
+     "test": "A second Escape (panel closed) runs Cancel and ends the sheet"
+    }
+   ],
+   "rendered": [],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-KEY-037"
+  },
+  {
+   "area": "KEY",
+   "surface": "Glass choice panels",
+   "name": "Click away from an open glass panel",
+   "type": "gesture",
+   "icon": null,
+   "entryPath": "An open glass choice panel, then a click",
+   "prerequisite": "A glass choice panel open",
+   "expected": "A click elsewhere in the window or in another window closes the panel and passes through; a click on its opener only closes it and is consumed, so the opener's own action cannot reopen it; opening another glass panel closes the first, so one is up at a time",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": null,
+   "shortcut": null,
+   "proof": [
+    {
+     "file": "GlassChoicesTests.swift",
+     "test": "A click in another window closes it and lets the click through"
+    },
+    {
+     "file": "GlassChoicesTests.swift",
+     "test": "A click on the anchor closes the panel and is consumed"
+    },
+    {
+     "file": "GlassChoicesTests.swift",
+     "test": "Showing a second host closes the first: only one is ever shown"
+    }
+   ],
+   "rendered": [],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-KEY-038"
+  },
+  {
    "area": "STATE",
    "surface": "Window and display states",
    "name": "Window default size 1120 x 812",
@@ -14609,7 +16211,7 @@
    "icon": null,
    "entryPath": "Large picture fit",
    "prerequisite": "Fresh launch, empty document",
-   "expected": "Fit computed zoom entry appears in the pop-up",
+   "expected": "Fit computed zoom entry appears in the zoom panel",
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
@@ -15062,6 +16664,52 @@
     "source"
    ],
    "id": "E2E-A11Y-006"
+  },
+  {
+   "area": "A11Y",
+   "surface": "Accessibility",
+   "name": "Glass choices keep native roles and values",
+   "type": "state",
+   "icon": null,
+   "entryPath": "Settings, History, Resize, destination form, Toolbox and the other glass choices",
+   "prerequisite": "Each surface open",
+   "expected": "A glass radio set speaks as a named radio group of radio buttons with one selected, a glass toggle as a check box with value 0 or 1, a glass pop-up as a pop-up button whose value is the chosen title, the Toolbox as a menu button, and the rows of an open panel as radio buttons or check boxes with their value",
+   "owner": "app",
+   "exercise": "e2e",
+   "gap": null,
+   "note": null,
+   "shortcut": null,
+   "proof": [
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "VoiceOver gets a radio group named"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "every choice is a radio button with its own name"
+    },
+    {
+     "file": "SettingsWindowTests.swift",
+     "test": "VoiceOver gets a named check box and the label is 20 pt"
+    },
+    {
+     "file": "AccessibilityAuditTests.swift",
+     "test": "Resize: the mode group is a named radio group of radio buttons"
+    },
+    {
+     "file": "GlassChromeTests.swift",
+     "test": "toolbox: a toggle row speaks as a checkbox with value 1"
+    },
+    {
+     "file": "GlassChromeTests.swift",
+     "test": "toolbox: still a menu button named Toolbox with no value"
+    }
+   ],
+   "rendered": [],
+   "sources": [
+    "source"
+   ],
+   "id": "E2E-A11Y-007"
   },
   {
    "area": "HARN",
