@@ -250,6 +250,7 @@ enum AppSafetyAlert {
     @MainActor static func install() {
         AppAlert.presenter = { alert, host, reply in
             seen.append(alert.title); hosts.append(host)
+            UserStrings.observe(alert.panel, surface: "alert: \(alert.title)")
             if holdAnswers { pending.append(Pending(alert: alert, host: host, reply: reply)); return }
             guard !answers.isEmpty else {
                 unexpected.append(alert.title)
@@ -4083,7 +4084,7 @@ enum AppSafetyTests {
         ]
         // Development aid: APP_SAFETY_FILTER=<text> runs only the cases whose title contains it. Unset, every case runs.
         let filter = ProcessInfo.processInfo.environment["APP_SAFETY_FILTER"]
-        let tests = (sharedCases + Self.modernCases + Self.webpostCases + Self.retiredFormatCases + Self.menuCases + Self.windowChromeCases + Self.uploadCases + Self.accessibilityCases + Self.auditCases + Self.batch3cCases + Self.batch4Cases + Self.batch6Cases + Self.batch10Cases + Self.batch11Cases + Self.followupCases + Self.s3EndToEndCases).filter { filter.map($0.0.contains) ?? true }
+        let tests = (sharedCases + Self.modernCases + Self.webpostCases + Self.retiredFormatCases + Self.menuCases + Self.windowChromeCases + Self.uploadCases + Self.accessibilityCases + Self.auditCases + Self.batch3cCases + Self.batch4Cases + Self.batch6Cases + Self.batch10Cases + Self.batch11Cases + Self.followupCases + Self.s3EndToEndCases + Self.userStringCases + Self.layoutFitCases).filter { filter.map($0.0.contains) ?? true }
         var results: [[String: Any]] = [], failures = 0
         for (name, test) in tests {
             AppSafetyAlert.reset(); AppSafetyAlert.install(); AppSafetyEvents.current = nil
@@ -4105,6 +4106,7 @@ enum AppSafetyTests {
             do {
                 try autoreleasepool {
                     try test()
+                    UserStrings.observeOpenWindows(surface: name)
                     try expect(AppSafetyAlert.unexpected.isEmpty, "Unexpected alerts: \(AppSafetyAlert.unexpected)")
                     try expect(AppSafetyAlert.answers.isEmpty, "An expected alert did not run")
                     try expect(AppSafetyFilePanel.answers.isEmpty, "An expected file panel did not run")
@@ -4115,6 +4117,15 @@ enum AppSafetyTests {
                 results.append(["name": name, "passed": false, "error": String(describing: error)])
             }
         }
+        // G3 (dynamic): every window left open by a case and every alert the app raised, observed once each.
+        let stringHits = UserStrings.hits
+        if !stringHits.isEmpty {
+            failures += 1
+            results.append(["name": "Dynamic G3: strings seen across the whole run", "passed": false, "error": stringHits.map { "\($0.surface) \($0.kind) '\($0.text)'" }.joined(separator: "; ")])
+            print("FAIL Dynamic G3: user-visible strings naming the retired product: \(stringHits.map { "\($0.surface) \($0.kind) '\($0.text)'" })")
+        }
+        print("Dynamic G3: \(UserStrings.entries.count) distinct user-visible strings walked, \(stringHits.count) naming the retired product")
+        UserStrings.writeDump(name: "app-safety")
         let report: [String: Any] = ["tests": results, "passed": tests.count - failures, "total": tests.count,
             "architecture": ProcessInfo.processInfo.environment["APP_SAFETY_ARCH"] ?? "unknown",
             "hotkeyAdapterInstallations": AppSafetyHotkeyManager.installations,

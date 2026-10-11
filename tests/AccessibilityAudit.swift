@@ -65,6 +65,7 @@ enum AccessibilityAudit {
     // MARK: Entry points
 
     static func audit(_ window: NSWindow, surface: String, allowedDuplicates: [String: String] = [:]) -> Report {
+        UserStrings.observe(window, surface: surface)
         var run = Run(surface: surface, allowed: allowedDuplicates.merging(deliberateDuplicates) { first, _ in first })
         if let content = window.contentView { run.walk(content, path: "window", hidden: false, repeating: false) }
         for (index, accessory) in window.titlebarAccessoryViewControllers.enumerated() {
@@ -76,12 +77,14 @@ enum AccessibilityAudit {
     }
 
     static func audit(_ view: NSView, surface: String, allowedDuplicates: [String: String] = [:]) -> Report {
+        UserStrings.observe(view, surface: surface)
         var run = Run(surface: surface, allowed: allowedDuplicates.merging(deliberateDuplicates) { first, _ in first })
         run.walk(view, path: "view", hidden: view.isHidden, repeating: false)
         return run.finish()
     }
 
     static func audit(_ menu: NSMenu, surface: String, allowedDuplicates: [String: String] = [:]) -> Report {
+        UserStrings.observe(menu, surface: surface)
         var run = Run(surface: surface, allowed: allowedDuplicates.merging(deliberateDuplicates) { first, _ in first })
         run.walkMenu(menu, path: "menu")
         return run.finish()

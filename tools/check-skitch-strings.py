@@ -5,7 +5,7 @@ The shipped product is OpenSnap. The previous name may appear (case-insensitivel
 only in the places that deliberately deal with the old data and old assets:
   - the one-time migration and the only reader of the retired formats,
   - the migration and retired-format tests and the fixtures built for them,
-  - this gate, and the original-asset name list and hash list that keep original art out of the bundle.
+  - this gate, the dynamic user-string gate and its walker, and the original-asset name list and hash list that keep original art out of the bundle.
 Scanned: Sources/, tools/, tests/, Info.plist, Resources/. A second check keeps the retired-format reader
 reachable only from Migration: no other source file may mention its symbols.
 Usage: check-skitch-strings.py   (from anywhere; paths are relative to the repository root)
@@ -29,6 +29,8 @@ ALLOWED = [
     "tests/AppSafetyRetiredFormatCases.swift",
     "tests/fixtures/legacy-sample*",
     "tools/check-skitch-strings.py",
+    "tools/check-user-strings.py",
+    "tests/UserStringWalk.swift",
     "tools/check-no-original.py",
     "tools/original-resource-hashes.txt",
 ]

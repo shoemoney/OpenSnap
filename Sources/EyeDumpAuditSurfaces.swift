@@ -204,20 +204,20 @@ extension AuditRun {
                 NSGraphicsContext.saveGraphicsState()
                 let shadow = NSShadow(); shadow.shadowBlurRadius = 18; shadow.shadowOffset = NSSize(width: 0, height: -6)
                 shadow.shadowColor = NSColor.black.withAlphaComponent(0.35); shadow.set()
-                NSColor(white: tone, alpha: 1).setFill(); body.fill()
+                NSColor(white: tone, alpha: 1).setFill(); body.fill() // token-exempt: synthetic wallpaper fixture drawn behind a screenshot, not chrome
                 NSGraphicsContext.restoreGraphicsState()
-                NSColor(white: tone - 0.08, alpha: 1).setFill()
+                NSColor(white: tone - 0.08, alpha: 1).setFill() // token-exempt: synthetic wallpaper fixture drawn behind a screenshot, not chrome
                 NSBezierPath(roundedRect: CGRect(x: frame.minX, y: frame.minY, width: frame.width, height: 30), xRadius: 10, yRadius: 10).fill()
                 for (index, color) in [NSColor.systemRed, .systemYellow, .systemGreen].enumerated() {
                     color.setFill(); NSBezierPath(ovalIn: CGRect(x: frame.minX + 12 + CGFloat(index) * 20, y: frame.minY + 9, width: 12, height: 12)).fill()
                 }
                 (title as NSString).draw(at: CGPoint(x: frame.minX + 82, y: frame.minY + 6),
-                                         withAttributes: [.font: NSFont.systemFont(ofSize: 13, weight: .semibold), .foregroundColor: NSColor(white: 0.25, alpha: 1)])
+                                         withAttributes: [.font: NSFont.systemFont(ofSize: 13, weight: .semibold), .foregroundColor: NSColor(white: 0.25, alpha: 1)]) // token-exempt: fake window text in a screenshot fixture
                 for (index, line) in lorem.enumerated() {
                     (line as NSString).draw(at: CGPoint(x: frame.minX + 20, y: frame.minY + 50 + CGFloat(index) * 26),
-                                            withAttributes: [.font: NSFont.systemFont(ofSize: 16), .foregroundColor: NSColor(white: 0.30, alpha: 1)])
+                                            withAttributes: [.font: NSFont.systemFont(ofSize: 16), .foregroundColor: NSColor(white: 0.30, alpha: 1)]) // token-exempt: fake window text in a screenshot fixture
                 }
-                NSColor(white: 0.82, alpha: 1).setFill()
+                NSColor(white: 0.82, alpha: 1).setFill() // token-exempt: synthetic wallpaper fixture drawn behind a screenshot, not chrome
                 NSBezierPath(roundedRect: CGRect(x: frame.minX + 20, y: frame.minY + 168, width: min(220, frame.width - 40), height: 72), xRadius: 6, yRadius: 6).fill()
             }
             let w = rect.width, h = rect.height
@@ -256,7 +256,7 @@ extension AuditRun {
         named["brush"] = element(.brush, .black) {
             $0.points = stride(from: CGFloat(700), through: 1060, by: 12).map { x in p(x, 420 + 36 * sin(x / 28)) }
         }
-        named["highlighter"] = element(.brush, NSColor(deviceRed: 1, green: 1, blue: 0, alpha: 0.35), width: 26) { $0.points = [p(110, 322), p(560, 322)] }
+        named["highlighter"] = element(.brush, NSColor(deviceRed: 1, green: 1, blue: 0, alpha: 0.35), width: 26) { $0.points = [p(110, 322), p(560, 322)] } // token-exempt: fixture annotation colour (document data)
         named["text"] = element(.text, .systemRed, width: 6) {
             $0.text = "Ship it today!"; $0.fontName = "Helvetica-Bold"; $0.fontSize = 44; $0.outlined = true; $0.shadowed = true
             $0.rect = r(110, 360, 520, 70)
@@ -837,7 +837,7 @@ extension AuditRun {
         app.closeDrawingColors(); pump(0.3)
         // 2. The Colors panel opens on the colour in use, whatever it showed last, and applying nothing (F-J1-003).
         app.applyChosenColor(OriginalDrawingControls.presets[8].color, modifiers: [])
-        NSColorPanel.shared.color = NSColor(calibratedRed: 0, green: 0, blue: 1, alpha: 1)
+        NSColorPanel.shared.color = NSColor(calibratedRed: 0, green: 0, blue: 1, alpha: 1) // token-exempt: fixture colour handed to the colour panel
         let before = SketchColor(canvas.strokeColor)
         app.chooseCustomColor(app.paletteButton)
         pump(0.8)
