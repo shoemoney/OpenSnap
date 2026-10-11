@@ -299,17 +299,27 @@ def check_layout(layout, min_width):
                 if visible(control) and not inside(rect(control["frame"]), box):
                     label = control.get("contentLabel") or control.get("content") or index
                     problems.append(f"clip: {bar_name}.{group_name}[{label}] {control['frame']} leaves its group {group['frame']}")
+        checkbox_parent = None
         for key in ("statusRow", "status", "originalSizeCheckbox"):
             node = bar.get(key)
             if visible(node):
                 box = rect(node["frame"])
                 if not inside(box, bounds):
                     problems.append(f"clip: {bar_name}.{key} {node['frame']} leaves its row")
+                if key == "originalSizeCheckbox":
+                    # The Original size toggle is a glass choice on a footer plate: when its centre sits in a group it belongs to that group, must lie
+                    # inside it, and may overlap it. Otherwise (the older checkbox beside the status text) it belongs to the status row.
+                    centre = ((box[0] + box[2]) / 2, (box[1] + box[3]) / 2)
+                    checkbox_parent = next((name for name, group in placed_groups if group[0] <= centre[0] <= group[2] and group[1] <= centre[1] <= group[3]), None)
+                    if checkbox_parent is not None and not inside(box, dict(placed_groups)[checkbox_parent], ALIGNMENT_SLACK):
+                        problems.append(f"clip: {bar_name}.originalSizeCheckbox {node['frame']} leaves its group {checkbox_parent} by more than {ALIGNMENT_SLACK:g} pt")
                 placed.append((key, box))
         status_row = bar.get("statusRow")
         if visible(status_row):
             for key in ("status", "originalSizeCheckbox"):
                 node = bar.get(key)
+                if key == "originalSizeCheckbox" and checkbox_parent is not None:
+                    continue
                 if visible(node) and not inside(rect(node["frame"]), rect(status_row["frame"]), ALIGNMENT_SLACK):
                     problems.append(f"clip: {bar_name}.{key} {node['frame']} leaves the status row {status_row['frame']} by more than {ALIGNMENT_SLACK:g} pt")
         popup = bar.get("zoomPopup")
@@ -333,6 +343,8 @@ def check_layout(layout, min_width):
                 if "statusRow" in (first, second) and {first, second} <= {"statusRow", "status", "originalSizeCheckbox"}:
                     continue
                 if "zoomPopup" in (first, second) and parent in (first, second):
+                    continue
+                if "originalSizeCheckbox" in (first, second) and checkbox_parent is not None and checkbox_parent in (first, second):
                     continue
                 if overlap(a, b):
                     problems.append(f"clip: {bar_name}.{first} overlaps {bar_name}.{second}")
@@ -836,6 +848,10 @@ def self_test():
         ("zoom popup in no group", good, mutate(sample_layout(), "bottomBar", "zoomPopup", "frame", value=[400, 599, 79, 21]), 1),
         ("status 1.5 pt wider than its row", good, mutate(sample_layout(), "bottomBar", "status", "frame", value=[128.5, 599, 203, 21]), 0),
         ("status 3 pt wider than its row", good, mutate(sample_layout(), "bottomBar", "status", "frame", value=[127, 599, 200, 21]), 1),
+        ("Original size toggle inside its footer plate", good, mutate(mutate(sample_layout(), "bottomBar", "originalSizeCheckbox", value={"frame": [450, 596, 100, 28]}), "bottomBar", "groups", "C", value={"frame": [440, 592, 150, 36]}), 0),
+        ("Original size toggle straddling its footer plate", good, mutate(mutate(sample_layout(), "bottomBar", "originalSizeCheckbox", value={"frame": [520, 596, 100, 28]}), "bottomBar", "groups", "C", value={"frame": [440, 592, 150, 36]}), 1),
+        ("Original size checkbox beside the status text, outside every group", good, mutate(sample_layout(), "bottomBar", "originalSizeCheckbox", value={"frame": [335, 599, 90, 21]}), 0),
+        ("Original size checkbox past the status row, outside every group", good, mutate(sample_layout(), "bottomBar", "originalSizeCheckbox", value={"frame": [420, 599, 100, 21]}), 1),
         ("groups overlap", good, mutate(sample_layout(), "bottomBar", "statusRow", "frame", value=[100, 596, 300, 28]), 1),
         ("window narrower than 980", good, mutate(sample_layout(), "windowSize", value=[900, 640]), 1),
         ("window shorter than 640", good, mutate(sample_layout(), "windowSize", value=[980, 600]), 1),

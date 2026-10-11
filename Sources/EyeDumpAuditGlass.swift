@@ -92,14 +92,32 @@ extension AuditRun {
         }
     }
 
-    /// Offers keyboard focus to `row` and reports what happened: whether AppKit accepted it, whether the row really is the first responder
-    /// afterwards, and who held the keyboard before (a disabled row that already holds it was handed focus by the panel itself).
+    /// Offers keyboard focus to `row` and reports what happened. `NSWindow.makeFirstResponder` cannot be the judge: on this macOS it hands the keyboard to
+    /// a disabled button although `acceptsFirstResponder` is false (measured with a bare NSButton subclass), so the row's own `acceptsFirstResponder` is
+    /// the eligibility answer and the forced focus is recorded as a fact. The previous responder is put back afterwards.
     func offerFocus(in host: NSWindow, to row: NSButton) -> (took: Bool, facts: [String: Any]) {
         let before = host.firstResponder
         let accepted = host.makeFirstResponder(row)
-        let took = accepted && host.firstResponder === row
-        return (took, ["makeFirstResponderReturned": accepted, "rowWasAlreadyFirstResponder": before === row, "rowIsEnabled": row.isEnabled,
-                       "rowAcceptsFirstResponder": row.acceptsFirstResponder, "firstResponderBefore": before.map { String(describing: type(of: $0)) } ?? "none"])
+        let forced = accepted && host.firstResponder === row
+        if forced { host.makeFirstResponder(before) }
+        return (row.acceptsFirstResponder, ["makeFirstResponderReturned": accepted, "makeFirstResponderForcedFocus": forced, "rowIsEnabled": row.isEnabled,
+                                            "rowAcceptsFirstResponder": row.acceptsFirstResponder, "firstResponderBefore": before.map { String(describing: type(of: $0)) } ?? "none"])
+    }
+
+    /// Walks the panel with synthesized Down-arrow key events handed to its own `sendEvent` and returns the row indexes the keyboard visited,
+    /// so a disabled row that the panel's own navigation lands on shows up. Restores the first responder it found.
+    func keyboardWalk(_ panel: NSWindow, rows: [NSButton]) -> [Int] {
+        let start = panel.firstResponder
+        var visited: [Int] = []
+        for _ in 0...rows.count {
+            guard let event = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: panel.windowNumber,
+                                               context: nil, characters: String(UnicodeScalar(NSDownArrowFunctionKey)!), charactersIgnoringModifiers: String(UnicodeScalar(NSDownArrowFunctionKey)!),
+                                               isARepeat: false, keyCode: 125) else { break }
+            panel.sendEvent(event)
+            if let index = rows.firstIndex(where: { panel.firstResponder === $0 }) { visited.append(index) }
+        }
+        panel.makeFirstResponder(start)
+        return visited
     }
 
     /// Hover as the app sees it: each kind of row has its own `setHovered(_:)` test seam; nothing here moves a real pointer.
@@ -292,9 +310,11 @@ extension AuditRun {
         if let off = rows.indices.first(where: { !rows[$0].isEnabled }) {
             setHovered(rows[off], true)
             let offer = offerFocus(in: panel, to: rows[off])
-            shootGlassPanel(script.id, script.base + "-disabled", surface: script.surface, state: "\(restState); disabled row \(off) (\(visibleTitle(rows[off]))) hovered and offered focus",
+            let walked = keyboardWalk(panel, rows: rows)
+            let disabled = Set(rows.indices.filter { !rows[$0].isEnabled })
+            shootGlassPanel(script.id, script.base + "-disabled", surface: script.surface, state: "\(restState); disabled row \(off) (\(visibleTitle(rows[off]))) hovered and offered focus; the arrow keys walked past it",
                             panel: panel, opener: script.opener, refs: script.refs, variant: "disabled", identifier: script.identifier,
-                            extra: offer.facts.merging(["disabledTookFocus": offer.took]) { $1 }, context: script.context)
+                            extra: offer.facts.merging(["disabledTookFocus": offer.took || !disabled.isDisjoint(with: walked), "keyboardWalk": walked]) { $1 }, context: script.context)
             setHovered(rows[off], false)
         }
     }
@@ -366,9 +386,11 @@ extension AuditRun {
             let off = rows.firstIndex { !$0.isEnabled }
             if let off { setHovered(rows[off], true) }
             let offer = off.map { offerFocus(in: opened.panel, to: rows[$0]) }
+            let walked = keyboardWalk(opened.panel, rows: rows)
+            let walkedOntoDisabled = walked.contains { !rows[$0].isEnabled }
             shootGlassPanel("S52", "upload-empty", surface: script.surface, state: "Upload panel with no destination saved: the disabled No destination configured row, Destination Settings… and Share with macOS…",
                             panel: opened.panel, opener: share, refs: refs, variant: "disabled", identifier: "Upload",
-                            extra: (offer?.facts ?? [:]).merging(["disabledTookFocus": offer?.took ?? false]) { $1 })
+                            extra: (offer?.facts ?? [:]).merging(["disabledTookFocus": (offer?.took ?? false) || walkedOntoDisabled, "keyboardWalk": walked]) { $1 })
             dismissGlassPanel("S52", "upload-dismissed-empty", surface: script.surface, state: "", script: script, opened: opened, capture: false)
         }
         // Three fake destinations, Example S3 the default (checked): rest, hover, focus, then a different default for the chosen capture.
