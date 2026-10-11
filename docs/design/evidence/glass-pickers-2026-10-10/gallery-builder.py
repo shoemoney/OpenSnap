@@ -24,6 +24,6 @@ for embed, path in [(True, repo / 'docs/design/glass-pickers-gallery.html'), (Fa
     for shot in data['shots']:
         image = repo / shot['path']
         assert image.exists(), image
-        shot['src'] = ('data:image/png;base64,'+base64.b64encode(image.read_bytes()).decode()) if embed else shot['path']
+        shot['src'] = ('data:image/png;base64,'+base64.b64encode(image.read_bytes()).decode()) if embed else str(image)
     path.write_text(template.replace('__DATA__',json.dumps(data,separators=(',',':'),ensure_ascii=False)))
 print('Gallery built with explicit source and phase labels')

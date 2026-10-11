@@ -67,4 +67,3 @@ Pre-change twins are referenced from `/Users/shoemoney/Projects/OpenSkitch/docs/
 | `S60-capture-modifiers-chosen-light-rt-ic-dwc-rm@21b8d68e10543b097cb6a902103e9c56eeb76be5.png` | light | 1488×1179 | Capture tab: K with Option and Control chosen on the Screen region row | `—` | — |
 | `S60-capture-modifiers-disabled-dark-rt-ic-dwc-rm@21b8d68e10543b097cb6a902103e9c56eeb76be5.png` | dark | 1488×1179 | Capture tab: no key set for Screen region, so its four modifier toggles are disabled | `—` | — |
 | `S60-capture-modifiers-disabled-light-rt-ic-dwc-rm@21b8d68e10543b097cb6a902103e9c56eeb76be5.png` | light | 1488×1179 | Capture tab: no key set for Screen region, so its four modifier toggles are disabled | `—` | — |
-

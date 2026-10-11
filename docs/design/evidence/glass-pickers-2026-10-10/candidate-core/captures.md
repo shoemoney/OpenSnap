@@ -185,4 +185,3 @@ Pre-change twins are referenced from `/Users/shoemoney/Projects/OpenSkitch/docs/
 | `S31-color-popover-w1440-light@21b8d68e10543b097cb6a902103e9c56eeb76be5.png` | light | 1440×900 | Drawing colours popover open below the top-bar swatch at window width 1440, a preset colour current | `layout/S31-color-popover-w1440-light@21b8d68e10543b097cb6a902103e9c56eeb76be5.json` | — |
 | `S31-color-popover-w980-dark@21b8d68e10543b097cb6a902103e9c56eeb76be5.png` | dark | 980×640 | Drawing colours popover open below the top-bar swatch at window width 980, a preset colour current | `layout/S31-color-popover-w980-dark@21b8d68e10543b097cb6a902103e9c56eeb76be5.json` | — |
 | `S31-color-popover-w980-light@21b8d68e10543b097cb6a902103e9c56eeb76be5.png` | light | 980×640 | Drawing colours popover open below the top-bar swatch at window width 980, a preset colour current | `layout/S31-color-popover-w980-light@21b8d68e10543b097cb6a902103e9c56eeb76be5.json` | — |
-
