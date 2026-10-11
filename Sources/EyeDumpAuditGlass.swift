@@ -189,11 +189,20 @@ extension AuditRun {
             "panelFrame": rectJSON(host.frame), "firstResponder": host.firstResponder.map { String(describing: type(of: $0)) } ?? "none",
             "isKey": host.isKeyWindow
         ]
-        // A title whose text is wider than the label that draws it is cut with an ellipsis: unreadable, so the checker fails it.
-        record["truncatedRows"] = rows.compactMap { row -> String? in
-            guard let choice = row as? GlassChoiceButton, !choice.isHiddenOrHasHiddenAncestor, choice.titleLabel.maximumNumberOfLines == 1, choice.titleLabel.bounds.width > 0 else { return nil }
-            return choice.titleLabel.attributedStringValue.size().width > choice.titleLabel.bounds.width + 0.5 ? choice.titleLabel.stringValue : nil
+        // No title may be cut: a label fits when what it needs (fittingSize, and the text's own width) is within the frame that draws it.
+        let labels: [[String: Any]] = rows.compactMap { row -> [String: Any]? in
+            guard let choice = row as? GlassChoiceButton, !choice.isHiddenOrHasHiddenAncestor else { return nil }
+            let label = choice.titleLabel
+            label.layoutSubtreeIfNeeded()
+            let fitting = label.fittingSize, frame = label.frame.size
+            let wraps = label.maximumNumberOfLines != 1
+            let textWidth = label.attributedStringValue.size().width
+            let fits = frame.width > 0 && fitting.width <= frame.width + 0.5 && fitting.height <= frame.height + 0.5 && (wraps || textWidth <= frame.width + 0.5)
+            return ["title": label.stringValue, "fittingSize": [Double(fitting.width), Double(fitting.height)], "frameSize": [Double(frame.width), Double(frame.height)],
+                    "textWidth": Double(textWidth), "fits": fits]
         }
+        record["labelMetrics"] = labels
+        record["truncatedRows"] = labels.filter { ($0["fits"] as? Bool) != true }.compactMap { $0["title"] as? String }
         if let hovered = index(where: { isHovered($0) }) { record["hoveredRow"] = hovered }
         if let focused = index(where: { host.firstResponder === $0 }) { record["focusedRow"] = focused }
         if let smallest = smallestText(in: rowsRoot ?? content) { record["minFontSize"] = smallest.size; record["minFontSource"] = smallest.source }

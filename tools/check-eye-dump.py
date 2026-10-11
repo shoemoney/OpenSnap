@@ -628,6 +628,18 @@ def check_glass_record(label, record):
             problems.append(f"glass: {label} recorded no minFontSize for its {len(rows)} row(s)")
         elif font < READABLE_MINIMUM:
             problems.append(f"glass: {label} has text at {font:g} pt, below the {READABLE_MINIMUM:g} pt floor")
+    if variant not in ("dismissed", "hidden"):
+        # No truncation: each GlassChoiceButton title label needs no more room (fittingSize) than the frame it was given, and the harness's own verdict agrees.
+        metrics = glass.get("labelMetrics")
+        if not isinstance(metrics, list):
+            problems.append(f"glass: {label} recorded no labelMetrics, so truncation was not measured")
+        else:
+            for item in metrics:
+                fitting, frame = item.get("fittingSize") or [0, 0], item.get("frameSize") or [0, 0]
+                if not (isinstance(fitting, list) and isinstance(frame, list) and len(fitting) == 2 and len(frame) == 2):
+                    problems.append(f"glass: {label} label {item.get('title')!r} has unreadable metrics")
+                elif fitting[0] > frame[0] + 0.5 or fitting[1] > frame[1] + 0.5 or item.get("fits") is not True:
+                    problems.append(f"glass: {label} title {item.get('title')!r} is cut off (needs {fitting[0]:g} x {fitting[1]:g}, drawn in {frame[0]:g} x {frame[1]:g})")
     if variant != "dismissed" and glass.get("truncatedRows"):
         problems.append(f"glass: {label} has choice titles cut off with an ellipsis: {glass['truncatedRows']}")
     if variant == "hover" and glass.get("hoveredRow") is None:
@@ -914,7 +926,8 @@ def self_test():
         def glass_record(surface, slug, appearance="light"):
             variant = promised_variant(slug)
             panel = {"kind": "panel", "variant": variant, "rowTitles": ["Alpha", "Beta", "Gamma"], "glassContainerCount": 1, "plateCount": 2,
-                     "nestedGlassCount": 0, "minFontSize": 20.0}
+                     "nestedGlassCount": 0, "minFontSize": 20.0,
+                     "labelMetrics": [{"title": "Alpha", "fittingSize": [60, 24], "frameSize": [80, 24], "textWidth": 60, "fits": True}]}
             if variant == "hover":
                 panel["hoveredRow"] = 1
             if variant == "focus":
@@ -975,6 +988,11 @@ def self_test():
             ("text at exactly 18 pt", tweak("S50", "toolbox-rest", minFontSize=18.0), {}, 0),
             ("text size unrecorded", drop_field("S50", "toolbox-rest", "minFontSize"), {}, 1),
             ("two glass containers", tweak("S50", "toolbox-rest", glassContainerCount=2), {}, 1),
+            ("a title needs more width than its label has", tweak("S50", "toolbox-rest", labelMetrics=[{"title": "Export…", "fittingSize": [200, 24], "frameSize": [120, 24], "textWidth": 200, "fits": False}]), {}, 1),
+            ("a title needs more height than its label has", tweak("S50", "toolbox-rest", labelMetrics=[{"title": "Export…", "fittingSize": [60, 48], "frameSize": [80, 24], "textWidth": 60, "fits": True}]), {}, 1),
+            ("a title that fits exactly", tweak("S50", "toolbox-rest", labelMetrics=[{"title": "Export…", "fittingSize": [80, 24], "frameSize": [80, 24], "textWidth": 80, "fits": True}]), {}, 0),
+            ("the harness says a title is cut though the sizes agree", tweak("S50", "toolbox-rest", labelMetrics=[{"title": "Export…", "fittingSize": [60, 24], "frameSize": [80, 24], "textWidth": 60, "fits": False}]), {}, 1),
+            ("labelMetrics not recorded", drop_field("S50", "toolbox-rest", "labelMetrics"), {}, 1),
             ("a choice title truncated", tweak("S50", "toolbox-rest", truncatedRows=["Export…"]), {}, 1),
             ("no truncated titles recorded", tweak("S50", "toolbox-rest", truncatedRows=[]), {}, 0),
             ("no choice rows", tweak("S50", "toolbox-rest", rowTitles=[]), {}, 1),
