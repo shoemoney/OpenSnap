@@ -130,12 +130,12 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
     private let collection = HistoryGrid()
     /// The category filter: one glass plate of four options.
     private let categoryControl = GlassChoiceGroup(titles:Category.allCases.map(\.title),accessibilityLabel:"History category",identifier:"HistoryCategory")
-    /// The date filter and the drag format keep an `NSPopUpButton` as their model (its menu, its selection, its action); a glass face and a
-    /// choice panel stand in for it on screen.
-    private let datePopup = NSPopUpButton()
-    private let formatPopup = NSPopUpButton()
-    private var dateChoice: HistoryPopUpChoice?
-    private var formatChoice: HistoryPopUpChoice?
+    /// The date filter and Drag as are glass pop-ups: an `NSPopUpButton` model (its menu, its selection, its action) whose every way of
+    /// opening goes to a glass choice panel, on a plate of its own.
+    private let datePopup = GlassPopUpButton(frame:.zero,pullsDown:false)
+    private let formatPopup = GlassPopUpButton(frame:.zero,pullsDown:false)
+    private var datePlate: GlassSurfaceView?
+    private var formatPlate: GlassSurfaceView?
     private let search = NSSearchField()
     private let status = NSTextField(labelWithString: "")
     private let warning = NSTextField(wrappingLabelWithString: "")
@@ -174,13 +174,9 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
     private var besideConstraints: [NSLayoutConstraint] = [], belowConstraints: [NSLayoutConstraint] = [], fullWidthConstraints: [NSLayoutConstraint] = []
     /// With nothing in the grid there is nothing to show in the details panel, so the grid and its message take the whole width.
     private(set) var detailsCollapsed = false
-    /// The glass faces and choice panels of the date filter and Drag as, and the pop-ups that stay their models (never on screen).
-    var dateFilterFace: GlassChoiceButton? { dateChoice?.face }
-    var dateFilterChoices: MenuChoicePanel? { dateChoice?.panel }
-    var dateFilterModel: NSPopUpButton { datePopup }
-    var dragFormatFace: GlassChoiceButton? { formatChoice?.face }
-    var dragFormatChoices: MenuChoicePanel? { formatChoice?.panel }
-    var dragFormatModel: NSPopUpButton { formatPopup }
+    /// The glass pop-ups of the date filter and Drag as (each its own model, face and choice panel).
+    var dateFilterPopUp: GlassPopUpButton { datePopup }
+    var dragFormatPopUp: GlassPopUpButton { formatPopup }
     var categoryChoice: GlassChoiceGroup { categoryControl }
     /// The Save to History key equivalent as the empty state should show it, or nil when the menu has none. Tests replace it.
     var saveShortcut: () -> String? = { HistoryBrowser.liveSaveToHistoryShortcut(menu: NSApp?.mainMenu) }
@@ -227,7 +223,7 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         let selected = Set(selectedIDs)
         self.category = category; dateFilter = date; self.query = query
         categoryControl.selectedIndex = category.rawValue
-        datePopup.selectItem(at:date.rawValue); dateChoice?.sync(); search.stringValue = query
+        datePopup.selectItem(at:date.rawValue); datePopup.needsDisplay = true; search.stringValue = query
         rebuild(keeping:selected)
     }
     func select(ids: [UUID]) {
@@ -241,7 +237,7 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
     }
     func setDragFormat(_ format: String) {
         guard let index = Self.dragFormats.firstIndex(of:format) else { return }
-        defaults.set(format,forKey:Self.dragFormatDefaultsKey); formatPopup.selectItem(at:index); formatChoice?.sync()
+        defaults.set(format,forKey:Self.dragFormatDefaultsKey); formatPopup.selectItem(at:index); formatPopup.needsDisplay = true
     }
     func canPerform(_ action: Action) -> Bool {
         let selected = selectedItems
@@ -393,8 +389,8 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         search.setContentHuggingPriority(.defaultLow,for:.horizontal)
         datePopup.addItems(withTitles:DateFilter.allCases.map(\.title))
         datePopup.target = self; datePopup.action = #selector(filtersChanged); datePopup.setAccessibilityLabel("History date filter")
-        let dateChoice = HistoryPopUpChoice(popUp:datePopup,identifier:"HistoryDateFilter",label:"History date filter"); self.dateChoice = dateChoice
-        configure(filterRow,[categoryControl,search,dateChoice.plate]); root.addArrangedSubview(filterRow)
+        let datePlate = historyPopUpPlate(datePopup,identifier:"HistoryDateFilter",label:"History date filter"); self.datePlate = datePlate
+        configure(filterRow,[categoryControl,search,datePlate]); root.addArrangedSubview(filterRow)
 
         // Action bar: the seven actions on three glass plates inside one container. The plates are the only glass; each button draws its own
         // rest, hover, pressed, focus and disabled fill on its plate. Disabled ones stay in place so the row does not jump.
@@ -408,14 +404,14 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         formatPopup.addItems(withTitles:Self.dragFormats.map(Self.dragFormatTitle))
         formatPopup.selectItem(at:Self.dragFormats.firstIndex(of:dragFormat) ?? 0)
         formatPopup.target = self; formatPopup.action = #selector(formatChanged); formatPopup.setAccessibilityLabel("History drag export format")
-        let formatChoice = HistoryPopUpChoice(popUp:formatPopup,identifier:"HistoryDragFormat",label:"History drag export format"); self.formatChoice = formatChoice
-        formatChoice.plate.widthAnchor.constraint(lessThanOrEqualToConstant:Self.formatPopupMaximumWidth).isActive = true   // R2-015: a pop-up, not a column
+        let formatPlate = historyPopUpPlate(formatPopup,identifier:"HistoryDragFormat",label:"History drag export format"); self.formatPlate = formatPlate
+        formatPlate.widthAnchor.constraint(lessThanOrEqualToConstant:Self.formatPopupMaximumWidth).isActive = true   // R2-015: a pop-up, not a column
         buildActionBar()
         root.addArrangedSubview(actionContainer!)
         // "Drag as" sits at the end of the footer line, not in the action row: with it the row held no labels at 1000 wide, and
         // the three commands that take something away must keep theirs at the 880 minimum.
         let spring = NSView(); spring.setContentHuggingPriority(.init(1),for:.horizontal)
-        configure(footerRow,[status,spring,formatLabel,formatChoice.plate])
+        configure(footerRow,[status,spring,formatLabel,formatPlate])
 
         // Body: the grid, with the details panel beside it (or under it when narrow).
         let body = NSView(); body.translatesAutoresizingMaskIntoConstraints = false; root.addArrangedSubview(body)
@@ -507,7 +503,8 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
             for plate in self.actionPlates { plate.accessibility = options }
             for button in self.buttons.values { button.accessibility = options }
             self.clearFiltersButton.accessibility = options
-            self.categoryControl.accessibility = options; self.dateChoice?.apply(options); self.formatChoice?.apply(options)
+            self.categoryControl.accessibility = options
+            for plate in [self.datePlate,self.formatPlate] { plate?.accessibility = options; (plate?.arrangedViews.first as? ChromeFillable)?.accessibility = options }
         }
     }
     /// Shows as many labels as the bar holds: all seven, else the three destructive ones, else icons. Measured from
@@ -1040,55 +1037,14 @@ final class HistoryFilePromise: NSFilePromiseProvider {
     required init?(coder: NSCoder) { return nil }
 }
 
-/// A pop-up choice on screen as a glass face: a titled chevron button on its own plate over an `NSPopUpButton` that stays the model. The
-/// face opens a `MenuChoicePanel` of the pop-up's menu; choosing a row selects it in the pop-up and sends the pop-up's action, exactly as
-/// the native menu did. The face is as wide as the longest item, so choosing one never moves its neighbours.
+/// A glass pop-up as it sits in History: the `GlassPopUpButton` (model, face and every way of opening it) on its own plate, in a fill cell
+/// that supplies the hover fill. The face is as wide as its longest choice, so choosing one never moves its neighbours.
 @MainActor
-private final class HistoryPopUpChoice: NSObject {
-    let popUp: NSPopUpButton
-    let face: GlassChoiceButton
-    let plate: GlassSurfaceView
-    let panel: MenuChoicePanel
-
-    init(popUp: NSPopUpButton,identifier: String,label: String) {
-        self.popUp = popUp
-        face = GlassChoiceButton(title:popUp.titleOfSelectedItem ?? "",kind:.submenu,indicator:.chevron,layout:.row)
-        face.identifier = NSUserInterfaceItemIdentifier(identifier+"Face")
-        face.setAccessibilityLabel(label)
-        face.accessibility = .live
-        let strong = DesignTokens.Typography.font(.bodyStrong)
-        let widest = popUp.itemTitles.map { ceil(($0 as NSString).size(withAttributes:[.font:strong]).width) }.max() ?? 0
-        face.minimumWidth = 2*GlassChoiceButton.padding + 2*GlassChoiceButton.gap + widest + GlassChoiceButton.glyphSide
-        plate = GlassChrome.plate([face],identifier:identifier+"Plate",accessibility:.live)
-        panel = MenuChoicePanel(menu:popUp.menu ?? NSMenu(),identifier:identifier,accessibilityLabel:label,kind:{ _ in .option },popUp:popUp,minimumWidth:face.minimumWidth)
-        super.init()
-        face.target = self; face.action = #selector(open(_:))
-        face.keyHandler = { [weak self] event in
-            guard event.keyCode == 125 || event.keyCode == 126 else { return false }
-            self?.show(keyboard:true); return true
-        }
-        sync()
-    }
-
-    /// The face shows the pop-up's selection and the panel marks it chosen; call after the selection changes by any other route.
-    func sync() {
-        for item in popUp.itemArray { item.state = item === popUp.selectedItem ? .on : .off }
-        let current = popUp.titleOfSelectedItem ?? ""
-        face.title = current
-        face.setAccessibilityHelp("Current choice: \(current). Opens the list of choices.")
-    }
-
-    func apply(_ options: ChromeAccessibility) { plate.accessibility = options; face.accessibility = options }
-
-    /// A pointer press leaves the keyboard where it was; Space, Return, Down and Up (and VoiceOver) put it on the chosen row.
-    @objc private func open(_ sender: Any?) {
-        let pointer: [NSEvent.EventType] = [.leftMouseDown,.leftMouseUp,.rightMouseDown,.rightMouseUp,.otherMouseDown,.otherMouseUp]
-        show(keyboard:!(NSApp?.currentEvent.map { pointer.contains($0.type) } ?? false))
-    }
-
-    func show(keyboard: Bool) {
-        if panel.host.isShown { panel.host.close(); return }
-        sync()
-        panel.present(relativeTo:face,preferredEdge:.minY,keyboard:keyboard)
-    }
+private func historyPopUpPlate(_ popUp: GlassPopUpButton,identifier: String,label: String) -> GlassSurfaceView {
+    popUp.panelIdentifier = identifier; popUp.panelLabel = label
+    popUp.setAccessibilityLabel(label); popUp.identifier = NSUserInterfaceItemIdentifier(identifier+"Face")
+    popUp.minimumPanelWidth = max(popUp.intrinsicContentSize.width,200)
+    let cell = ChromeFillCell(popUp,size:NSSize(width:popUp.intrinsicContentSize.width,height:GlassChoiceButton.height))
+    cell.accessibility = .live
+    return GlassChrome.plate([cell],identifier:identifier+"Plate",accessibility:.live)
 }

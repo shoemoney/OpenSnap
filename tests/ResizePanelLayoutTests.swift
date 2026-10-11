@@ -41,7 +41,7 @@ private enum ResizePanelLayoutTests {
         resize.show(attachedTo: parent)
         guard let panel: NSPanel = private_(resize, "panel"), let content = panel.contentView,
               let mode: GlassChoiceGroup = private_(resize, "modeControl"), let width: NSTextField = private_(resize, "widthField"),
-              let grid: ResizeAnchorGrid = private_(resize, "anchorGrid"), let presetFace: GlassChoiceButton = private_(resize, "presetFace") else {
+              let grid: ResizeAnchorGrid = private_(resize, "anchorGrid"), let presetFace: GlassPopUpButton = private_(resize, "presetPopup") else {
             throw Failure(description: "the sheet and its controls exist")
         }
         func button(_ title: String) -> NSButton? { find(NSButton.self, in: content) { $0.title == title } }
@@ -76,7 +76,7 @@ private enum ResizePanelLayoutTests {
         // Crop: a 3 x 3 grid, the centre by default, picked by the pointer's cell and the arrow keys.
         select(1)
         try expect(!grid.isHidden && grid.anchor == .center && ResizePanelAnchor.allCases.count == 9, "Crop shows a 3 x 3 anchor grid on the centre")
-        try expect(find(NSPopUpButton.self, in: content) == nil, "…and no native pop-up anywhere on the sheet")
+        try expect(find(NSPopUpButton.self, in: content) { !($0 is GlassPopUpButton) } == nil && find(NSSegmentedControl.self, in: content) == nil, "…and no native pop-up or segmented control anywhere on the sheet")
         grid.select(.bottomRight)
         try expect(resize_state(resize).anchor == .bottomRight, "Picking the bottom-right cell sets the anchor")
         func arrow(_ code: UInt16) throws {
@@ -240,26 +240,28 @@ private enum ResizePanelLayoutTests {
             try expect(grid.accessibilityRole() == .radioGroup && grid.accessibilityLabel() == "Crop anchor" && grid.accessibilityChildren()?.count == 9, "The grid stays a named radio group of nine cells")
         }
 
-        // Preset: the glass face opens a choice panel over the pop-up model; choosing a row applies the preset.
+        // Preset: the glass pop-up opens a choice panel over its own menu; choosing a row applies the preset.
         do {
             let rig = Rig(); defer { rig.close() }
-            guard let face: GlassChoiceButton = private_(rig.resize, "presetFace"), let choices: MenuChoicePanel = private_(rig.resize, "presetChoices"),
-                  let popup: NSPopUpButton = private_(rig.resize, "presetPopup"), let width: NSTextField = private_(rig.resize, "widthField"),
+            guard let face: GlassPopUpButton = private_(rig.resize, "presetPopup"), let width: NSTextField = private_(rig.resize, "widthField"),
                   let save: GlassChoiceButton = private_(rig.resize, "savePresetButton"), let remove: GlassChoiceButton = private_(rig.resize, "removePresetButton"),
                   let name: NSTextField = private_(rig.resize, "presetName") else { throw Failure(description: "preset controls") }
+            let choices = face.choicePanel
             choices.host.presenter = { _, _ in }
-            try expect(face.title == "Custom size" && face.accessibilityLabel() == "Size preset" && face.kind == .submenu && face.indicator == .chevron && !face.isHiddenOrHasHiddenAncestor,
-                       "The preset is a glass face with a chevron, named Size preset, showing the pop-up's selection")
-            try expect(popup.menu?.items.count == 1 + ResizePreset.builtins.count && popup.superview == nil, "The pop-up stays the model and is not on screen")
+            try expect(face.faceTitle == "Custom size" && face.accessibilityLabel() == "Size preset" && face.accessibilityRole() == .popUpButton && face.accessibilityValue() as? String == "Custom size" && !face.isHiddenOrHasHiddenAncestor,
+                       "The preset is a glass pop-up button named Size preset whose value is the selection")
+            try expect(face.menu?.items.count == 1 + ResizePreset.builtins.count && face.superview is ChromeFillCell && plate(of: face) != nil && !(face.menu is NSMenu && face.menu(for: try key(0)) != nil), "It sits on a glass plate and has no contextual menu")
             try expect(!save.isEnabled && !remove.isEnabled && name.isEnabled, "Custom size: Save and Remove are off")
             // Pointer open: the panel lists Custom size and every built-in, Custom size chosen.
             face.performClick(nil)
-            try expect(choices.host.isShown && choices.rows.count == 1 + ResizePreset.builtins.count, "Pressing the face opens the preset panel (\(choices.rows.count) rows)")
-            try expect(choices.rows.first?.isChosen == true && choices.rows.filter(\.isChosen).count == 1 && choices.rows.allSatisfy { $0.kind == .option }, "…with the current preset the one chosen option")
+            try expect(choices.host.isShown && choices.rows.count == 1 + ResizePreset.builtins.count, "Pressing the pop-up opens the preset panel (\(choices.rows.count) rows)")
+            try expect(choices.rows.first?.isChosen == true && choices.rows.filter(\.isChosen).count == 1 && choices.rows.allSatisfy { $0.kind == .option && $0.accessibilityRole() == .radioButton },
+                       "…with the current preset the one chosen option, every row a radio button")
+            try expect(choices.rows.map { ($0.accessibilityValue() as? NSNumber)?.intValue ?? -1 } == [1] + Array(repeating: 0, count: ResizePreset.builtins.count), "…value 1 on the chosen row and 0 on the others")
             try expect(choices.host.plates.count == 1 && choices.host.container.identifier?.rawValue.hasPrefix("GlassChoicePanel") == true, "…on one plate in one glass container")
             face.performClick(nil)
-            try expect(!choices.host.isShown, "A second press on the face while its panel is shown closes it instead of reopening")
-            // A real pointer press on the face while open: the host swallows it (so the face cannot reopen the panel) and closes.
+            try expect(!choices.host.isShown, "A second press on the pop-up while its panel is shown closes it instead of reopening")
+            // A real pointer press on the opener while open: the host swallows it (so it cannot reopen the panel) and closes.
             face.performClick(nil)
             let centre = face.convert(NSPoint(x: face.bounds.midX, y: face.bounds.midY), to: nil)
             try expect(choices.host.isShown && choices.host.handleMouseDown(in: face.window, at: centre) && !choices.host.isShown,
@@ -272,23 +274,65 @@ private enum ResizePanelLayoutTests {
             try expect(!choices.host.isShown, "Choosing a row closes the panel")
             try expect(rig.state().widthText == "728" && rig.state().heightText == "90" && (try rig.state().submission().size) == preset.size,
                        "Choosing Ad: Leaderboard applies it to the session: \(rig.state().widthText) x \(rig.state().heightText)")
-            try expect(width.stringValue == "728" && face.title == preset.name && popup.titleOfSelectedItem == preset.name, "The sheet shows the preset and the face names it")
+            try expect(width.stringValue == "728" && face.faceTitle == preset.name, "The sheet shows the preset and the pop-up names it")
             try expect(!save.isEnabled && !remove.isEnabled && !name.isEnabled, "A built-in preset is read-only: Save, Remove and the name field are off")
             // Keyboard: Down opens with the chosen row focused; Down then Return picks the next row.
-            let consumed = face.keyHandler?(try key(125)) ?? false
-            try expect(consumed && choices.host.isShown && choices.focusedRow?.title == preset.name, "Down on the face opens the panel with the chosen row focused")
+            face.keyDown(with: try key(125))
+            try expect(choices.host.isShown && choices.focusedRow?.title == preset.name, "Down on the pop-up opens the panel with the chosen row focused")
             _ = choices.handleKey(try key(125))
             _ = choices.handleKey(try key(36, "\r"))
-            try expect(!choices.host.isShown && face.title == "Ad: Banner (Full)", "Down, Return chooses the row after the chosen one: \(face.title)")
+            try expect(!choices.host.isShown && face.faceTitle == "Ad: Banner (Full)", "Down, Return chooses the row after the chosen one: \(face.faceTitle)")
             // Add a custom preset: it is editable, Save and Remove come on, and removing returns to Custom size.
             guard let addButton = descendants(rig.content).compactMap({ $0 as? GlassChoiceButton }).first(where: { $0.title == "Add Preset" }) else { throw Failure(description: "add") }
             addButton.performClick(nil)
-            try expect(face.title == "Ad: Banner (Full) Copy" && save.isEnabled && remove.isEnabled && name.isEnabled, "Adding from a built-in makes an editable copy: Save and Remove on (\(face.title))")
+            try expect(face.faceTitle == "Ad: Banner (Full) Copy" && save.isEnabled && remove.isEnabled && name.isEnabled, "Adding from a built-in makes an editable copy: Save and Remove on (\(face.faceTitle))")
             remove.performClick(nil)
-            try expect(face.title == "Custom size" && !save.isEnabled && !remove.isEnabled, "Remove returns to Custom size with Save and Remove off")
+            try expect(face.faceTitle == "Custom size" && !save.isEnabled && !remove.isEnabled, "Remove returns to Custom size with Save and Remove off")
             // VoiceOver press opens it too.
-            try expect(face.accessibilityPerformPress() && choices.host.isShown, "VoiceOver pressing the face opens the panel")
+            try expect(face.accessibilityPerformPress() && choices.host.isShown, "VoiceOver pressing the pop-up opens the panel")
             choices.host.close()
+        }
+
+        // No route to the preset pop-up reaches the native dropdown. In a sheet with a default button, Return and Enter are left for OK.
+        do {
+            let rig = Rig(); defer { rig.close() }
+            guard let popup: GlassPopUpButton = private_(rig.resize, "presetPopup") else { throw Failure(description: "popup") }
+            let choices = popup.choicePanel
+            choices.host.presenter = { _, _ in }
+            var tracking = 0
+            let token = NotificationCenter.default.addObserver(forName: NSMenu.didBeginTrackingNotification, object: nil, queue: nil) { _ in tracking += 1 }
+            defer { NotificationCenter.default.removeObserver(token); choices.host.close() }
+            func mouse(_ type: NSEvent.EventType, _ flags: NSEvent.ModifierFlags = []) throws -> NSEvent {
+                guard let event = NSEvent.mouseEvent(with: type, location: popup.convert(NSPoint(x: 5, y: 5), to: nil), modifierFlags: flags, timestamp: 0, windowNumber: rig.panel.windowNumber,
+                                                     context: nil, eventNumber: 0, clickCount: 1, pressure: 1) else { throw Failure(description: "mouse event") }
+                return event
+            }
+            func opens(_ route: String, _ act: () throws -> Void) throws {
+                try act()
+                try expect(choices.host.isShown, "Preset pop-up: \(route) opens the glass panel")
+                choices.host.close()
+            }
+            try expect(popup.menu(for: try mouse(.rightMouseDown)) == nil && popup.isAccessibilitySelectorAllowed(#selector(NSAccessibilityProtocol.accessibilityPerformShowMenu)),
+                       "There is no contextual menu to pop up, and Show Menu is offered")
+            try opens("mouse down") { popup.mouseDown(with: try mouse(.leftMouseDown)) }
+            try opens("right mouse down") { popup.rightMouseDown(with: try mouse(.rightMouseDown)) }
+            try opens("Control-click") { popup.mouseDown(with: try mouse(.leftMouseDown, .control)) }
+            try opens("other mouse down") { popup.otherMouseDown(with: try mouse(.otherMouseDown)) }
+            try opens("performClick") { popup.performClick(nil) }
+            try opens("AXPress") { try expect(popup.accessibilityPerformPress(), "AXPress succeeds") }
+            try opens("AXShowMenu") { try expect(popup.accessibilityPerformShowMenu(), "AXShowMenu succeeds") }
+            try opens("the context-menu command") { popup.showContextMenuForSelection(nil) }
+            _ = rig.panel.makeFirstResponder(popup)
+            for (code, text, label) in [(UInt16(49), " ", "Space"), (125, "", "Down"), (126, "", "Up")] {
+                try opens(label) { rig.panel.sendEvent(try key(code, text, window: rig.panel)) }
+            }
+            // Return and keypad Enter belong to the default button (OK) while the sheet has one, as with a native pop-up.
+            for (code, text, label) in [(UInt16(36), "\r", "Return"), (76, "\u{3}", "Enter")] {
+                popup.keyDown(with: try key(code, text, window: rig.panel))
+                try expect(!choices.host.isShown, "\(label) on the focused pop-up does not open the panel: it is left for OK")
+            }
+            popup.keyDown(with: try key(0, "a"))
+            try expect(!choices.host.isShown && tracking == 0, "Type-ahead opens nothing and no native menu tracking began on any route (\(tracking))")
         }
 
         // A malformed saved-presets blob still shows its error, and Save and Remove stay off.
@@ -316,7 +360,8 @@ private enum ResizePanelLayoutTests {
             let rig = Rig(); defer { rig.close() }
             let buttons = descendants(rig.content).compactMap { $0 as? GlassChoiceButton }
             guard let cancel = buttons.first(where: { $0.title == "Cancel" }), let apply = buttons.first(where: { $0.title == "Apply" }), let ok = buttons.first(where: { $0.title == "OK" }),
-                  let face: GlassChoiceButton = private_(rig.resize, "presetFace"), let choices: MenuChoicePanel = private_(rig.resize, "presetChoices") else { throw Failure(description: "buttons") }
+                  let face: GlassPopUpButton = private_(rig.resize, "presetPopup") else { throw Failure(description: "buttons") }
+            let choices = face.choicePanel
             try expect(plate(of: cancel) === plate(of: apply) && plate(of: apply) === plate(of: ok), "Cancel, Apply and OK share one glass plate")
             try expect(ok.isPrimary && !cancel.isPrimary && !apply.isPrimary && buttons.filter(\.isPrimary).count == 1, "OK is the only primary (tinted) control")
             try expect(rig.panel.defaultButtonCell === ok.cell && cancel.keyEquivalent == "\u{1b}", "OK is the default button; Escape is Cancel")
@@ -342,7 +387,8 @@ private enum ResizePanelLayoutTests {
         // Escape with the preset panel open closes only the panel; a second Escape is Cancel. Space and Down open a focused face.
         do {
             let rig = Rig(); defer { rig.close() }
-            guard let face: GlassChoiceButton = private_(rig.resize, "presetFace"), let choices: MenuChoicePanel = private_(rig.resize, "presetChoices") else { throw Failure(description: "face") }
+            guard let face: GlassPopUpButton = private_(rig.resize, "presetPopup") else { throw Failure(description: "face") }
+            let choices = face.choicePanel
             choices.host.presenter = { _, _ in }
             _ = rig.panel.makeFirstResponder(face)
             rig.panel.sendEvent(try key(49, " ", window: rig.panel))
@@ -375,7 +421,7 @@ private enum ResizePanelLayoutTests {
             let panel = rig.panel
             panel.recalculateKeyViewLoop()
             guard let width: NSTextField = private_(rig.resize, "widthField"), let ratio: GlassChoiceButton = private_(rig.resize, "ratioButton"),
-                  let face: GlassChoiceButton = private_(rig.resize, "presetFace"), let manage: GlassChoiceButton = private_(rig.resize, "presetDisclosure"),
+                  let face: GlassPopUpButton = private_(rig.resize, "presetPopup"), let manage: GlassChoiceButton = private_(rig.resize, "presetDisclosure"),
                   let limitField: NSTextField = private_(rig.resize, "limitField") else { throw Failure(description: "loop controls") }
             try expect(panel.initialFirstResponder === width && panel.firstResponder === width.currentEditor() || panel.firstResponder === width || panel.initialFirstResponder === width, "Focus starts in Width")
             var visited: [NSView] = [], next: NSView? = width

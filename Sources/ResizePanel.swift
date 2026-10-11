@@ -568,11 +568,9 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate, NSMenu
     private var previewTimer: Timer?
     private let presets: ResizePresetStore
     private var selectedPresetID: String?
-    /// The preset choice's model: its menu is what the preset panel lists and selecting an item in it is what applies a preset. It is never
-    /// put on screen; the glass face and the choice panel stand in for it.
-    private var presetPopup: NSPopUpButton?
-    private var presetFace: GlassChoiceButton?
-    private var presetChoices: MenuChoicePanel?
+    /// The preset choice: an `NSPopUpButton` model whose menu is what the glass preset panel lists and whose action applies the preset. Every
+    /// way of opening it (click, keys, VoiceOver, context menu) goes to that panel, never to the native dropdown.
+    private var presetPopup: GlassPopUpButton?
     private var presetName: NSTextField?
     private var savePresetButton: GlassChoiceButton?
     private var removePresetButton: GlassChoiceButton?
@@ -689,25 +687,19 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate, NSMenu
         anchor.orientation = .horizontal; anchor.alignment = .centerY; anchor.spacing = DesignTokens.Space.s4
         anchorRow = anchor
 
-        // Presets: the choice is one glass face over a pop-up model; naming, saving and removing are behind the disclosure.
-        let presetChoice = NSPopUpButton(frame: .zero, pullsDown: false)
+        // Presets: the choice is one glass pop-up; naming, saving and removing are behind the disclosure.
+        let presetChoice = GlassPopUpButton(frame: .zero, pullsDown: false)
+        presetChoice.panelIdentifier = "ResizePreset"; presetChoice.panelLabel = "Size preset"
+        presetChoice.minimumPanelWidth = Self.presetFaceWidth
         presetChoice.target = self; presetChoice.action = #selector(selectPreset(_:))
         presetChoice.setAccessibilityLabel("Size preset")
         presetChoice.menu?.delegate = self
+        presetChoice.identifier = NSUserInterfaceItemIdentifier("ResizePresetFace")
         presetPopup = presetChoice
-        let face = choiceButton("Custom size", kind: .submenu, indicator: .chevron, layout: .row, identifier: "ResizePresetFace", action: #selector(openPresetChoices(_:)))
-        face.setAccessibilityLabel("Size preset")
-        face.minimumWidth = Self.presetFaceWidth
-        face.keyHandler = { [weak self] event in
-            guard event.keyCode == 125 || event.keyCode == 126 else { return false }
-            self?.showPresetChoices(keyboard: true)
-            return true
-        }
-        presetFace = face
-        let panelOfChoices = MenuChoicePanel(menu: presetChoice.menu ?? NSMenu(), identifier: "ResizePreset", accessibilityLabel: "Size preset",
-                                             kind: { _ in .option }, popUp: presetChoice, minimumWidth: Self.presetFaceWidth)
-        presetChoices = panelOfChoices
-        let facePlate = plate([face], identifier: "ResizePresetPlate", label: "Size preset")
+        let faceCell = ChromeFillCell(presetChoice, size: NSSize(width: Self.presetFaceWidth, height: GlassChoiceButton.height))
+        faceCell.accessibility = options
+        fillables.append(faceCell)
+        let facePlate = plate([faceCell], identifier: "ResizePresetPlate", label: "Size preset")
         let disclosure = choiceButton("Manage", kind: .toggle, indicator: .chevron, layout: .row, identifier: "ResizeManagePresets", action: #selector(togglePresetManagement(_:)))
         disclosure.setAccessibilityLabel("Manage presets")
         disclosure.setAccessibilityExpanded(false)
@@ -960,9 +952,7 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate, NSMenu
         if let id = selectedPresetID, let item = popup.itemArray.first(where: { ($0.representedObject as? String) == id }) { popup.select(item) }
         else { popup.selectItem(at: 0) }
         markChosenPreset()
-        let current = popup.titleOfSelectedItem ?? "Custom size"
-        presetFace?.title = current
-        presetFace?.setAccessibilityHelp("Current preset: \(current). Opens the list of size presets.")
+        popup.needsDisplay = true
         let selected = presets.presets.first(where: { $0.id == selectedPresetID })
         presetName?.stringValue = selected?.name ?? "New Size"
         presetName?.isEnabled = selected == nil || selected?.editable == true
@@ -978,18 +968,8 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate, NSMenu
 
     func menuNeedsUpdate(_ menu: NSMenu) { markChosenPreset() }
 
-    /// Opens the preset panel under the face. A pointer press leaves the keyboard where it was; Space, Return, Down and Up (and VoiceOver)
-    /// put it on the chosen row.
-    @objc private func openPresetChoices(_ sender: Any?) {
-        let pointer: [NSEvent.EventType] = [.leftMouseDown, .leftMouseUp, .rightMouseDown, .rightMouseUp, .otherMouseDown, .otherMouseUp]
-        showPresetChoices(keyboard: !(NSApp?.currentEvent.map { pointer.contains($0.type) } ?? false))
-    }
-
-    func showPresetChoices(keyboard: Bool) {
-        guard let face = presetFace, let choices = presetChoices else { return }
-        if choices.host.isShown { choices.host.close(); return }
-        choices.present(relativeTo: face, preferredEdge: .minY, keyboard: keyboard)
-    }
+    /// Test seam and keyboard path: opens (or closes) the preset panel under the pop-up.
+    func showPresetChoices(keyboard: Bool) { presetPopup?.openChoices(keyboard: keyboard) }
 
     @objc private func selectPreset(_ sender: NSPopUpButton) {
         persistSelectedPreset()
@@ -1062,7 +1042,7 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate, NSMenu
     private func endSheet(_ response: NSApplication.ModalResponse) {
         guard let panel else { return }
         // The preset panel is a child of the sheet and goes with it.
-        presetChoices?.host.close(restoreFocus: false)
+        presetPopup?.choicePanel.host.close(restoreFocus: false)
         displayObservation?.invalidate(); displayObservation = nil
         panel.sheetParent?.endSheet(panel, returnCode: response)
         panel.orderOut(nil)

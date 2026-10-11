@@ -459,10 +459,10 @@ struct HistoryBrowserTests {
                 try browser { browser,_ in
                     let content = try browser.window?.contentView.unwrap("content view") ?? NSView()
                     browser.update(items:[item("Local",0)]); browser.select(ids:[browser.visibleItems[0].id]); laidOut(browser,width:1000,height:720)
-                    let pop = try browser.dragFormatFace.unwrap("format face")
+                    let pop = browser.dragFormatPopUp
                     let plate = try glassPlate(of:pop).unwrap("format plate")
                     try expect(plate.frame.width <= HistoryBrowser.formatPopupMaximumWidth + 0.5,"the format face is \(plate.frame.width) wide")
-                    let longest = HistoryBrowser.dragFormats.map { ceil((HistoryBrowser.dragFormatTitle($0) as NSString).size(withAttributes:[.font:DesignTokens.Typography.font(.bodyStrong)]).width) }.max() ?? 0
+                    let longest = HistoryBrowser.dragFormats.map { ceil((HistoryBrowser.dragFormatTitle($0) as NSString).size(withAttributes:[.font:DesignTokens.Typography.font(.body)]).width) }.max() ?? 0
                     try expect(pop.frame.width >= longest + GlassChoiceButton.glyphSide,"the format face holds its longest name whole (\(pop.frame.width) for \(longest))")
                     let destination = try descendants(content).compactMap { $0 as? NSTextField }.first { $0.accessibilityLabel() == "Destination" }.unwrap("Destination value")
                     try expect(destination.superview?.isHidden == true,"a snap that was never shared has no Destination row")
@@ -605,11 +605,11 @@ struct HistoryBrowserTests {
                 try browser { browser,_ in
                     let titles = HistoryBrowser.dragFormats.map(HistoryBrowser.dragFormatTitle)
                     try expect(titles == ["PNG","JPG","PDF","TIFF","SVG",".opensnap document"],"Drag format titles are \(titles)")
-                    let popup = browser.dragFormatModel
+                    let popup = browser.dragFormatPopUp
                     try expect(popup.itemTitles == titles && popup.accessibilityLabel() == "History drag export format","The popup model holds \(popup.itemTitles)")
-                    let choices = try browser.dragFormatChoices.unwrap("format choices")
+                    let choices = popup.choicePanel
                     choices.host.presenter = { _,_ in }; browser.window?.contentView?.layoutSubtreeIfNeeded()
-                    try browser.dragFormatFace.unwrap("format face").performClick(nil)
+                    popup.performClick(nil)
                     try expect(choices.rows.map(\.title) == titles && !choices.rows.contains { $0.title.lowercased().contains(["ski","tch"].joined()) },"The choice panel lists \(choices.rows.map(\.title))")
                     choices.host.close()
                     try expect(!popup.itemTitles.joined().lowercased().contains(["ski","tch"].joined()),"The format popup names the retired product")
@@ -653,7 +653,7 @@ struct HistoryBrowserTests {
                     for width in [HistoryBrowser.minimumSize.width,1000,1400] as [CGFloat] {
                         let buttons = try show(width:width)
                         labels[width] = browser.actionLabels
-                        let rowBox = browser.actionRow.convert(browser.actionRow.bounds,to:content), formatBox = try glassPlate(of:browser.dragFormatFace.unwrap("format face")).unwrap("format plate")
+                        let rowBox = browser.actionRow.convert(browser.actionRow.bounds,to:content), formatBox = try glassPlate(of:browser.dragFormatPopUp).unwrap("format plate")
                         for (action,button) in buttons {
                             let shown = !button.title.isEmpty
                             try expect(shown == (browser.actionLabels == .all || (browser.actionLabels == .destructiveOnly && destructive.contains(action))), "\(Int(width)): \(action) label follows the mode \(browser.actionLabels)")
@@ -898,7 +898,7 @@ struct HistoryBrowserTests {
                     let content = browser.window!.contentView!
                     let glass = descendants(content).filter { $0 is NSGlassEffectView }
                     // Three action plates, plus one plate each for the category choice, the date filter and Drag as: every choice is a plate, nothing else is glass.
-                    let filterPlates = [browser.categoryChoice.plate,browser.dateFilterFace.flatMap { glassPlate(of:$0) },browser.dragFormatFace.flatMap { glassPlate(of:$0) }].compactMap { $0 as NSView? }
+                    let filterPlates = [browser.categoryChoice.plate,glassPlate(of:browser.dateFilterPopUp),glassPlate(of:browser.dragFormatPopUp)].compactMap { $0 as NSView? }
                     try expect(glass.count == 6 && glass.allSatisfy { $0 is GlassSurfaceView } && filterPlates.count == 3 && filterPlates.allSatisfy { plate in glass.contains { $0 === plate } } && browser.actionPlates.allSatisfy { plate in glass.contains { $0 === plate } },
                                "History draws exactly its three action plates and its three choice plates as glass (found \(glass.count))")
                     for plate in glass {
@@ -1054,82 +1054,82 @@ struct HistoryBrowserTests {
                     try expect(group.buttons.allSatisfy { ($0.titleLabel.font?.pointSize ?? 0) >= 20 },"Category titles are 20 pt")
                 }
             }),
-            ("Date filter is a glass face over its pop-up model; choosing a row filters exactly as before", {
+            ("Date filter is a glass pop-up; choosing a row in its panel filters exactly as before", {
                 try browser { browser,_ in
-                    let face = try browser.dateFilterFace.unwrap("date face"), choices = try browser.dateFilterChoices.unwrap("date choices")
+                    let popup = browser.dateFilterPopUp, choices = popup.choicePanel
                     choices.host.presenter = { _,_ in }
-                    try expect(face.accessibilityLabel() == "History date filter" && face.title == "All dates" && face.kind == .submenu && face.indicator == .chevron,"The face is named History date filter and shows All dates")
-                    try expect(browser.dateFilterModel.itemTitles == HistoryBrowser.DateFilter.allCases.map(\.title) && browser.dateFilterModel.window == nil,"The pop-up stays the model, off screen")
+                    try expect(popup.accessibilityLabel() == "History date filter" && popup.accessibilityRole() == .popUpButton && popup.titleOfSelectedItem == "All dates" && popup.faceTitle == "All dates",
+                               "The pop-up is named History date filter, a pop-up button showing All dates")
+                    try expect(popup.itemTitles == HistoryBrowser.DateFilter.allCases.map(\.title) && glassPlate(of:popup) != nil && popup.superview is ChromeFillCell,"…on a glass plate in a fill cell, with the same four choices")
                     let all = [item("Now",0),item("Old",-5)]
                     browser.update(items:all)
-                    face.performClick(nil)
+                    popup.performClick(nil)
                     try expect(choices.host.isShown && choices.rows.map(\.title) == HistoryBrowser.DateFilter.allCases.map(\.title),"The panel lists \(choices.rows.map(\.title))")
-                    try expect(choices.rows.allSatisfy { $0.accessibilityRole() == .radioButton && $0.isEnabled } && choices.rows.map { ($0.accessibilityValue() as? NSNumber)?.intValue ?? -1 } == [1,0,0,0],"Rows are radio buttons enabled, 1 on All dates and 0 elsewhere")
-                    let yesterday = try choices.rows.first { $0.title == "Last 48 hours" }.unwrap("row")
-                    choices.activate(yesterday)
-                    try expect(!choices.host.isShown && browser.dateFilter == .last48 && face.title == "Last 48 hours" && browser.dateFilterModel.indexOfSelectedItem == 3,"Choosing Last 48 hours sets the filter (\(browser.dateFilter)) and the face")
+                    try expect(choices.rows.allSatisfy { $0.accessibilityRole() == .radioButton && $0.isEnabled } && choices.rows.map { ($0.accessibilityValue() as? NSNumber)?.intValue ?? -1 } == [1,0,0,0],"Rows are enabled radio buttons, 1 on All dates and 0 elsewhere")
+                    let last48 = try choices.rows.first { $0.title == "Last 48 hours" }.unwrap("row")
+                    choices.activate(last48)
+                    try expect(!choices.host.isShown && browser.dateFilter == .last48 && popup.faceTitle == "Last 48 hours" && popup.indexOfSelectedItem == 3,"Choosing Last 48 hours sets the filter (\(browser.dateFilter)) and the face")
                     try expect(browser.visibleItems.map(\.name) == ["Now"],"…and filters the grid: \(browser.visibleItems.map(\.name))")
                     browser.setFilters(category:.all,date:.all)
-                    try expect(face.title == "All dates" && browser.visibleItems.count == 2,"setFilters moves the face back")
-                    try expect(face.minimumWidth >= ceil(("Last 48 hours" as NSString).size(withAttributes:[.font:DesignTokens.Typography.font(.bodyStrong)]).width),"The face is as wide as its longest choice")
+                    try expect(popup.faceTitle == "All dates" && browser.visibleItems.count == 2,"setFilters moves the face back")
+                    try expect(popup.frame.width >= ceil(("Last 48 hours" as NSString).size(withAttributes:[.font:DesignTokens.Typography.font(.body)]).width) + GlassChoiceButton.glyphSide,"The face is as wide as its longest choice")
                 }
             }),
-            ("Drag as is a glass face over its pop-up model; choosing a row persists the format exactly as before", {
+            ("Drag as is a glass pop-up; choosing a row persists the format exactly as before", {
                 try browser { browser,defaults in
-                    let face = try browser.dragFormatFace.unwrap("format face"), choices = try browser.dragFormatChoices.unwrap("format choices")
+                    let popup = browser.dragFormatPopUp, choices = popup.choicePanel
                     choices.host.presenter = { _,_ in }
-                    try expect(face.accessibilityLabel() == "History drag export format" && face.title == "PNG" && browser.dragFormat == "png","The face is named and shows PNG")
-                    face.performClick(nil)
+                    try expect(popup.accessibilityLabel() == "History drag export format" && popup.faceTitle == "PNG" && browser.dragFormat == "png","The pop-up is named and shows PNG")
+                    popup.performClick(nil)
                     try expect(choices.rows.map { ($0.accessibilityValue() as? NSNumber)?.intValue ?? -1 } == [1,0,0,0,0,0] && choices.rows.allSatisfy { $0.accessibilityRole() == .radioButton },"Six radio rows, PNG chosen")
                     choices.activate(try choices.rows.first { $0.title == "PDF" }.unwrap("PDF row"))
-                    try expect(browser.dragFormat == "pdf" && defaults.string(forKey:HistoryBrowser.dragFormatDefaultsKey) == "pdf" && face.title == "PDF","Choosing PDF persists pdf and updates the face")
+                    try expect(browser.dragFormat == "pdf" && defaults.string(forKey:HistoryBrowser.dragFormatDefaultsKey) == "pdf" && popup.faceTitle == "PDF","Choosing PDF persists pdf and updates the face")
                     browser.setDragFormat("opensnap")
-                    try expect(face.title == ".opensnap document" && browser.dragFormatModel.indexOfSelectedItem == 5,"setDragFormat moves the face to the document format")
+                    try expect(popup.faceTitle == ".opensnap document" && popup.indexOfSelectedItem == 5,"setDragFormat moves the face to the document format")
                     browser.setDragFormat("nonsense")
                     try expect(browser.dragFormat == "opensnap","An unknown format changes nothing")
                 }
             }),
-            ("No route to a glass pop-up face reaches the native dropdown: click, keys, AXPress, AXShowMenu, context menu, right and Control click", {
+            ("No route to a glass pop-up reaches the native dropdown: mouse, keys, performClick, AXPress, AXShowMenu, context menu, right and Control click", {
                 try browser { browser,_ in
                     browser.update(items:[item("A")])
                     let window = try browser.window.unwrap("window")
-                    for (name,faceOrNil,choicesOrNil,model) in [("Date filter",browser.dateFilterFace,browser.dateFilterChoices,browser.dateFilterModel),
-                                                              ("Drag as",browser.dragFormatFace,browser.dragFormatChoices,browser.dragFormatModel)] {
-                        let face = try faceOrNil.unwrap(name), choices = try choicesOrNil.unwrap(name)
+                    for (name,popup) in [("Date filter",browser.dateFilterPopUp),("Drag as",browser.dragFormatPopUp)] {
+                        let choices = popup.choicePanel
                         choices.host.presenter = { _,_ in }
                         var tracking = 0
                         let token = NotificationCenter.default.addObserver(forName:NSMenu.didBeginTrackingNotification,object:nil,queue:nil) { _ in tracking += 1 }
                         defer { NotificationCenter.default.removeObserver(token); choices.host.close() }
                         func event(_ type: NSEvent.EventType,_ flags: NSEvent.ModifierFlags = []) throws -> NSEvent {
-                            try NSEvent.mouseEvent(with:type,location:face.convert(NSPoint(x:5,y:5),to:nil),modifierFlags:flags,timestamp:0,windowNumber:window.windowNumber,context:nil,eventNumber:0,clickCount:1,pressure:1).unwrap("event")
+                            try NSEvent.mouseEvent(with:type,location:popup.convert(NSPoint(x:5,y:5),to:nil),modifierFlags:flags,timestamp:0,windowNumber:window.windowNumber,context:nil,eventNumber:0,clickCount:1,pressure:1).unwrap("event")
                         }
                         func key(_ code: UInt16,_ text: String) throws -> NSEvent {
                             try NSEvent.keyEvent(with:.keyDown,location:.zero,modifierFlags:[],timestamp:0,windowNumber:window.windowNumber,context:nil,characters:text,charactersIgnoringModifiers:text,isARepeat:false,keyCode:code).unwrap("key")
                         }
-                        // The model is never on screen and the face carries no native menu of its own.
-                        try expect(model.window == nil && model.superview == nil && face.menu == nil && face.menu(for:try event(.rightMouseDown)) == nil && !(face is NSPopUpButton),"\(name): nothing native is on screen to track")
-                        // Pointer press: the action opens the panel; a second press closes it.
-                        face.performClick(nil)
-                        try expect(choices.host.isShown,"\(name): pressing the face opens the glass panel")
-                        face.performClick(nil)
-                        try expect(!choices.host.isShown,"\(name): a second press closes it instead of reopening")
-                        // Keyboard: Space, Down and Up open it, with the chosen row focused.
-                        for (code,text,label) in [(UInt16(49)," ","Space"),(125,"","Down"),(126,"","Up")] {
-                            if label == "Space" { face.keyDown(with:try key(code,text)) } else { _ = face.keyHandler?(try key(code,text)) }
-                            try expect(choices.host.isShown && (label == "Space" || choices.focusedRow?.isChosen == true),"\(name): \(label) opens the glass panel")
+                        @MainActor func opens(_ route: String,_ act: @MainActor () throws -> Void) throws {
+                            try act()
+                            try expect(choices.host.isShown,"\(name): \(route) opens the glass panel")
                             choices.host.close()
                         }
-                        // VoiceOver press opens it; Show Menu is not offered and is refused; the context-menu command is refused.
-                        try expect(face.accessibilityPerformPress() && choices.host.isShown,"\(name): AXPress opens the glass panel")
+                        try expect(popup.menu(for:try event(.rightMouseDown)) == nil,"\(name): there is no contextual menu to pop up")
+                        try opens("mouse down") { popup.mouseDown(with:try event(.leftMouseDown)) }
+                        try opens("right mouse down") { popup.rightMouseDown(with:try event(.rightMouseDown)) }
+                        try opens("Control-click") { popup.mouseDown(with:try event(.leftMouseDown,.control)) }
+                        try opens("other mouse down") { popup.otherMouseDown(with:try event(.otherMouseDown)) }
+                        try opens("performClick") { popup.performClick(nil) }
+                        for (code,text,label) in [(UInt16(49)," ","Space"),(125,"","Down"),(126,"","Up"),(36,"\r","Return"),(76,"\u{3}","Enter")] {
+                            try opens(label) { popup.keyDown(with:try key(code,text)) }
+                        }
+                        try opens("AXPress") { try expect(popup.accessibilityPerformPress(),"") }
+                        try opens("AXShowMenu") { try expect(popup.accessibilityPerformShowMenu(),"") }
+                        try opens("the context-menu command") { popup.showContextMenuForSelection(nil) }
+                        try expect(popup.isAccessibilitySelectorAllowed(#selector(NSAccessibilityProtocol.accessibilityPerformShowMenu)) && popup.isAccessibilitySelectorAllowed(#selector(NSAccessibilityProtocol.accessibilityPerformPress)),"\(name): AXPress and AXShowMenu are both offered, and both open the glass panel")
+                        // Keyboard opens focus the chosen row; a type-ahead letter never starts AppKit's own pop-up handling.
+                        popup.keyDown(with:try key(125,""))
+                        try expect(choices.focusedRow?.isChosen == true,"\(name): a keyboard open focuses the chosen row")
                         choices.host.close()
-                        try expect(!face.accessibilityPerformShowMenu() && !choices.host.isShown,"\(name): AXShowMenu is refused and opens nothing")
-                        try expect(!face.isAccessibilitySelectorAllowed(#selector(NSAccessibilityProtocol.accessibilityPerformShowMenu)),"\(name): AXShowMenu is not offered")
-                        face.showContextMenuForSelection(nil)
-                        try expect(!choices.host.isShown,"\(name): the context-menu command opens nothing")
-                        // Right-click and Control-click: no native menu, no panel.
-                        face.rightMouseDown(with:try event(.rightMouseDown)); face.rightMouseUp(with:try event(.rightMouseUp))
-                        face.mouseDown(with:try event(.leftMouseDown,.control)); face.mouseUp(with:try event(.leftMouseUp,.control))
-                        try expect(!choices.host.isShown,"\(name): right-click and Control-click open nothing")
+                        popup.keyDown(with:try key(0,"a"))
+                        try expect(!choices.host.isShown,"\(name): type-ahead does not open a native menu")
                         try expect(tracking == 0,"\(name): no native menu tracking began on any route (\(tracking))")
                     }
                     let grid = try descendants(browser.window!.contentView!).first { $0 is NSCollectionView }.unwrap("grid")
