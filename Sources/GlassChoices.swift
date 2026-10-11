@@ -163,11 +163,16 @@ final class GlassChoiceButton: CommandButton {
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    /// Same as `state == .on`; assigning it moves the selected look.
+    /// Same as `state == .on`; assigning it moves the selected look and never sends the action.
     var isChosen: Bool {
         get { state == .on }
         set { state = newValue ? .on : .off }
     }
+
+    /// The value this button owns. AppKit also flips a button's cell state on every click and does it behind the `state` property, so
+    /// the cell's value cannot be trusted at click time; `chosen` only follows writes made through `state` / `isChosen` and the click
+    /// rules in `sendAction`, which is how one click moves a toggle exactly once.
+    private var chosen = false
 
     // MARK: title
 
@@ -360,7 +365,7 @@ final class GlassChoiceButton: CommandButton {
         } else {
             available = max(0, bounds.width - Self.padding - x - shortcutBlock - trailingBlock)
         }
-        titleLabel.frame = NSRect(x: x, y: centred(textHeight), width: min(available, max(parts.text.width, available)), height: textHeight)
+        titleLabel.frame = NSRect(x: x, y: centred(textHeight), width: available, height: textHeight)
         x += choiceLayout == .segment ? parts.text.width : available
         if parts.shortcut > 0 {
             let origin = choiceLayout == .segment ? x + Self.shortcutGap : bounds.width - Self.padding - trailingBlock - parts.shortcut
@@ -382,20 +387,31 @@ final class GlassChoiceButton: CommandButton {
     override var acceptsFirstResponder: Bool { isEnabled }
     override var canBecomeKeyView: Bool { participatesInKeyLoop && super.canBecomeKeyView }
 
-    /// A toggle flips, an option becomes chosen (and never un-chooses), a command and a submenu row leave their state alone; then the
-    /// action goes out. Every click path (mouse, Space, VoiceOver press, `performClick`) ends here.
+    /// A toggle flips once, an option becomes chosen (and never un-chooses), a command and a submenu row keep their state; then the
+    /// action goes out and the handler already sees the new `state`. Every click path (mouse, Space, VoiceOver press, `performClick`)
+    /// ends here, and the value is written explicitly, so whatever AppKit did to the cell on the way is overwritten, not added to.
     override func sendAction(_ action: Selector?, to target: Any?) -> Bool {
         guard isEnabled else { return false }
+        let next: Bool
         switch kind {
-        case .toggle: isChosen.toggle()
-        case .option: isChosen = true
-        case .command, .submenu: break
+        case .toggle: next = !chosen
+        case .option: next = true
+        case .command, .submenu: next = chosen
         }
-        return super.sendAction(action, to: target)
+        state = next ? .on : .off
+        let sent = super.sendAction(action, to: target)
+        // Should AppKit touch the cell after the action, the owned value wins.
+        if (state == .on) != chosen { state = chosen ? .on : .off }
+        return sent
     }
 
     override func keyDown(with event: NSEvent) {
         if let keyHandler, keyHandler(event) { return }
+        // Space is a click on the focused button, handled here (not left to AppKit) so it is the same path in a key or a background window.
+        if event.keyCode == 49, isEnabled, event.modifierFlags.intersection([.command, .control, .option]).isEmpty {
+            performClick(nil)
+            return
+        }
         super.keyDown(with: event)
     }
 
@@ -423,13 +439,22 @@ final class GlassChoiceButton: CommandButton {
         }
     }
 
+    /// VoiceOver's press is a click: it moves the state and sends the action through the same path as the mouse.
+    override func accessibilityPerformPress() -> Bool {
+        guard isEnabled else { return false }
+        performClick(nil)
+        return true
+    }
+
     override func isAccessibilitySelected() -> Bool { kind == .option && isChosen }
     override func isAccessibilityEnabled() -> Bool { isEnabled }
     override func accessibilityChildren() -> [Any]? { [] }
 
     override var state: NSControl.StateValue {
         didSet {
-            if state != oldValue, kind == .option || kind == .toggle { NSAccessibility.post(element: self, notification: .valueChanged) }
+            let was = chosen
+            chosen = state == .on
+            if was != chosen, kind == .option || kind == .toggle { NSAccessibility.post(element: self, notification: .valueChanged) }
         }
     }
 }
@@ -688,6 +713,11 @@ final class GlassChoiceWindow: NSPanel {
 
 // MARK: - Panel host
 
+/// The scrolling panel's document: flipped, so a panel taller than its window starts at its first row instead of its last.
+private final class FlippedDocumentView: NSView {
+    override var isFlipped: Bool { true }
+}
+
 /// The floating, transparent child panel that holds ONE `NSGlassEffectContainerView` with a vertical stack of group plates.
 /// It is a child of the anchor's window while shown (so it moves with it), is placed by the pure `frame(contentSize:anchor:preferredEdge:visible:)`
 /// (preferred edge, flips when there is no room, clamps into the visible screen, caps its height and scrolls), and goes away on Escape,
@@ -705,7 +735,7 @@ final class GlassPanelHost: NSObject {
     }
 
     /// The panel that is shown now; showing another closes it.
-    nonisolated(unsafe) static weak var current: GlassPanelHost?
+    static weak var current: GlassPanelHost?
     static let gap: CGFloat = 6
     static let screenMargin: CGFloat = DesignTokens.Space.s2
     /// When the room on a side is smaller than this the panel keeps this much (or its own height) and overlaps the anchor.
@@ -801,7 +831,8 @@ final class GlassPanelHost: NSObject {
 
     private let stack = NSStackView()
     private let root = NSView()
-    private var scrollView: NSScrollView?
+    private(set) var scrollView: NSScrollView?
+    private var document: FlippedDocumentView?
     private var layoutConstraints: [NSLayoutConstraint] = []
     private var plateConstraints: [NSLayoutConstraint] = []
     private let minimumWidthConstraint: NSLayoutConstraint
@@ -897,6 +928,7 @@ final class GlassPanelHost: NSObject {
         container.removeFromSuperview()
         scrollView?.removeFromSuperview()
         scrollView = nil
+        document = nil
         if wanted {
             let scroll = NSScrollView()
             scroll.translatesAutoresizingMaskIntoConstraints = false
@@ -908,12 +940,13 @@ final class GlassPanelHost: NSObject {
             scroll.autohidesScrollers = true
             scroll.verticalScrollElasticity = .allowed
             root.addSubview(scroll)
-            scroll.documentView = container
-            let clip = scroll.contentView
-            layoutConstraints = pin(scroll, to: root) + [container.leadingAnchor.constraint(equalTo: clip.leadingAnchor),
-                                                         container.trailingAnchor.constraint(equalTo: clip.trailingAnchor),
-                                                         container.topAnchor.constraint(equalTo: clip.topAnchor)]
+            let document = FlippedDocumentView(frame: NSRect(origin: .zero, size: contentSize))
+            document.autoresizingMask = [.width]
+            document.addSubview(container)
+            scroll.documentView = document
+            layoutConstraints = pin(scroll, to: root) + pin(container, to: document)
             scrollView = scroll
+            self.document = document
         } else {
             root.addSubview(container)
             layoutConstraints = pin(container, to: root)
@@ -935,14 +968,15 @@ final class GlassPanelHost: NSObject {
         parent.convertToScreen(view.convert(anchorRect, to: nil))
     }
 
-    /// `preferredEdge` is in the anchor view's own coordinates, like `NSPopover`: `.minY` of an unflipped view is below the rect, of a flipped view above it.
+    /// `preferredEdge` is in screen terms whatever the anchor view's flippedness (NSPopover reads it in view coordinates, where an NSButton may or may not
+    /// be flipped): `.minY` is below the anchor, `.maxY` above it, `.minX` left, `.maxX` right. The panel flips when the preferred side lacks room.
     func show(relativeTo rect: NSRect, of view: NSView, preferredEdge edge: NSRectEdge, makeKey: Bool) {
         guard let parent = view.window else { return }
         if isShown { close(restoreFocus: false) }
         if let other = Self.current, other !== self { other.close() }
         anchor = view
         anchorRect = rect
-        preferredEdge = view.isFlipped ? Self.opposite(edge) : edge
+        preferredEdge = edge
         self.parent = parent
         savedResponder = parent.firstResponder
         requestedKey = makeKey
@@ -969,6 +1003,7 @@ final class GlassPanelHost: NSObject {
         placement = next
         applyScroll(next.scrolls)
         if window.frame != next.frame { window.setFrame(next.frame, display: false) }
+        document?.setFrameSize(NSSize(width: next.frame.width, height: contentSize.height))
     }
 
     /// Closes when the anchor has left its window or is hidden; follows it when it moved. Runs on every update of the parent window.
@@ -999,8 +1034,9 @@ final class GlassPanelHost: NSObject {
     private func installObservers(on parent: NSWindow) {
         removeObservers()
         let center = NotificationCenter.default
-        func observe(_ name: Notification.Name, object: Any?, restoresFocus: Bool = false, _ body: @escaping @MainActor (GlassPanelHost) -> Void) {
-            tokens.append(center.addObserver(forName: name, object: object, queue: .main) { [weak self] _ in
+        // Posted on the main thread and handled on it, synchronously: the panel is gone before the window that triggered it moves on.
+        func observe(_ name: Notification.Name, object: Any?, _ body: @escaping @MainActor (GlassPanelHost) -> Void) {
+            tokens.append(center.addObserver(forName: name, object: object, queue: nil) { [weak self] _ in
                 MainActor.assumeIsolated { if let self { body(self) } }
             })
         }
@@ -1045,12 +1081,6 @@ final class GlassPanelHost: NSObject {
         savedResponder = nil
         didClose?()
     }
-
-    deinit {
-        MainActor.assumeIsolated {
-            displayObservation?.invalidate()
-        }
-    }
 }
 
 // MARK: - Menu adapter
@@ -1066,7 +1096,7 @@ final class MenuChoicePanel: NSObject {
     let menu: NSMenu
     let host: GlassPanelHost
     let identifier: String
-    var popUp: NSPopUpButton?
+    weak var popUp: NSPopUpButton?
     var minimumWidth: CGFloat { didSet { host.minimumWidth = minimumWidth } }
     private let kindFor: @MainActor (NSMenuItem) -> GlassChoiceButton.Kind
     /// The rows on screen now, top to bottom (the Back row first while inside a submenu).
@@ -1107,6 +1137,7 @@ final class MenuChoicePanel: NSObject {
     /// Rebuilds the rows from the menu's current state and shows the panel next to `view`. `keyboard: true` focuses the chosen row, else the
     /// first enabled one; `false` takes the keyboard with no row focused (the first arrow key focuses the chosen / first row).
     func present(relativeTo view: NSView, preferredEdge: NSRectEdge, keyboard: Bool) {
+        guard view.window != nil else { return }
         if host.isShown { host.close(restoreFocus: false) }
         path = [menu]
         refresh(menu)
@@ -1199,7 +1230,8 @@ final class MenuChoicePanel: NSObject {
 
     // MARK: choosing
 
-    private func hasOwnAction(_ item: NSMenuItem) -> Bool {
+    /// Whether the item has an action of its own, as opposed to the internal one a pop-up gives every plain item.
+    func hasOwnAction(_ item: NSMenuItem) -> Bool {
         guard let action = item.action else { return false }
         if let popUp, item.target === popUp || item.target === popUp.cell || NSStringFromSelector(action) == "_popUpItemAction:" { return false }
         return true
@@ -1217,9 +1249,15 @@ final class MenuChoicePanel: NSObject {
         let owner = item.menu ?? menu
         let index = owner.index(of: item)
         host.close()
-        if let popUp, owner === popUp.menu, !hasOwnAction(item) {
-            popUp.select(item)
-            _ = popUp.sendAction(popUp.action, to: popUp.target)
+        if let popUp, owner === popUp.menu {
+            if let action = item.action, hasOwnAction(item) {
+                // Not performActionForItem: on a pop-up's menu AppKit also selects the item in the pop-up, and an item with its own
+                // action (Actual Size) must leave the selection alone.
+                _ = NSApplication.shared.sendAction(action, to: item.target, from: item)
+            } else {
+                popUp.select(item)
+                _ = popUp.sendAction(popUp.action, to: popUp.target)
+            }
         } else if index >= 0 {
             owner.performActionForItem(at: index)
         }
@@ -1288,5 +1326,184 @@ final class MenuChoicePanel: NSObject {
         default: return false
         }
         return true
+    }
+}
+
+// MARK: - Pop-up
+
+/// A pop-up button whose choices are a glass `MenuChoicePanel`. It keeps `NSPopUpButton` as the model (items, selection, target and
+/// action, the menu as the source of truth) and sends EVERY way of opening it to one panel: a click or Control-click, a right or other
+/// button, Space, Return, Enter, Down and Up, `performClick`, VoiceOver's press and Show Menu, and the keyboard context-menu command.
+/// None of them reaches AppKit's own pop-up tracking or `NSMenu.popUp`; `menu(for:)` is nil.
+/// The face is the selected item's title (`faceTitle`) at 20 pt with a trailing chevron, drawn here, with no bezel of its own: it sits on a
+/// plate or in a `ChromeFillCell`, which supply the hover and press fills.
+@MainActor
+class GlassPopUpButton: NSPopUpButton {
+    var panelIdentifier = "Choices" { didSet { discardPanel() } }
+    var panelLabel = "Choices" { didSet { discardPanel() } }
+    private var choiceEdge = NSRectEdge.minY
+    /// The edge of the button the panel prefers (below, by default); the host flips it when there is no room.
+    override var preferredEdge: NSRectEdge {
+        get { choiceEdge }
+        set { choiceEdge = newValue }
+    }
+    var minimumPanelWidth: CGFloat = 240 { didSet { cachedPanel?.minimumWidth = minimumPanelWidth } }
+    /// Overrides the default roles: a plain item is an option (the selected one is chosen), a submenu item a submenu row, and an item with
+    /// its own action keeps `MenuChoicePanel.defaultKind`.
+    var kind: (@MainActor (NSMenuItem) -> GlassChoiceButton.Kind)? { didSet { discardPanel() } }
+    /// Test seam: replaces presenting the panel. It receives the panel and whether the keyboard opened it.
+    var presentHandler: ((MenuChoicePanel, Bool) -> Void)?
+
+    private var cachedPanel: MenuChoicePanel?
+    private let chevronView = RowGlyphView(frame: .zero)
+
+    override init(frame frameRect: NSRect, pullsDown flag: Bool) {
+        super.init(frame: frameRect, pullsDown: flag)
+        configure()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        configure()
+    }
+
+    private func configure() {
+        isBordered = false
+        focusRingType = .exterior
+        DesignTokens.Typography.apply(.body, to: self)
+        chevronView.image = ChromeIcons.resolve(.chevronDown, family: .solid, pointSize: GlassChoiceButton.glyphPointSize * 0.8).image
+        chevronView.isHidden = false
+        chevronView.contentTintColor = DesignTokens.Palette.Text.primary
+        addSubview(chevronView)
+        setAccessibilityRole(.popUpButton)
+    }
+
+    // MARK: the panel
+
+    /// The panel for the current menu, rebuilt when the menu, the identifier or the label changes.
+    var choicePanel: MenuChoicePanel {
+        if let cachedPanel, cachedPanel.menu === menu { return cachedPanel }
+        cachedPanel?.host.close(restoreFocus: false)
+        let panel = MenuChoicePanel(menu: menu ?? NSMenu(), identifier: panelIdentifier, accessibilityLabel: panelLabel, kind: { [weak self] item in
+            guard let self else { return MenuChoicePanel.defaultKind(item) }
+            if let kind = self.kind { return kind(item) }
+            if item.submenu != nil { return .submenu }
+            return self.choicePanel.hasOwnAction(item) ? MenuChoicePanel.defaultKind(item) : .option
+        }, popUp: self, minimumWidth: minimumPanelWidth)
+        cachedPanel = panel
+        return panel
+    }
+
+    // A different menu is a different panel: the old one goes away with it, not on the next open.
+    override var menu: NSMenu? {
+        didSet { menu?.font = DesignTokens.Typography.font(.body); if cachedPanel != nil, cachedPanel?.menu !== menu { discardPanel() } }
+    }
+
+    private func discardPanel() {
+        cachedPanel?.host.close(restoreFocus: false)
+        cachedPanel = nil
+    }
+
+    /// Opens the choices next to this button (or closes them when they are open). `keyboard: true` focuses the selected choice.
+    func openChoices(keyboard: Bool) {
+        guard isEnabled, window != nil, (menu?.numberOfItems ?? 0) > 0 else { return }
+        let panel = choicePanel
+        if panel.host.isShown, presentHandler == nil {
+            panel.host.close()
+            return
+        }
+        if let presentHandler { presentHandler(panel, keyboard) } else { panel.present(relativeTo: self, preferredEdge: preferredEdge, keyboard: keyboard) }
+    }
+
+    // MARK: every opening route
+
+    override func mouseDown(with event: NSEvent) { openChoices(keyboard: false) }
+    override func rightMouseDown(with event: NSEvent) { openChoices(keyboard: false) }
+    override func otherMouseDown(with event: NSEvent) { openChoices(keyboard: false) }
+    override func performClick(_ sender: Any?) { openChoices(keyboard: true) }
+    override func menu(for event: NSEvent) -> NSMenu? { nil }
+
+    /// Space, Down and Up open the choices. Return and keypad Enter do too, unless the window has a default button (a sheet, a dialog):
+    /// then they are left for it, as a native pop-up leaves them.
+    override func keyDown(with event: NSEvent) {
+        switch event.keyCode {
+        case 49, 125, 126: openChoices(keyboard: true)
+        case 36, 76:
+            if window?.defaultButtonCell != nil { nextResponder?.keyDown(with: event) } else { openChoices(keyboard: true) }
+        // Never AppKit's own pop-up key handling (type-ahead opens its native menu): the key goes up the responder chain.
+        default: nextResponder?.keyDown(with: event)
+        }
+    }
+
+    override func accessibilityPerformPress() -> Bool {
+        guard isEnabled else { return false }
+        openChoices(keyboard: true)
+        return true
+    }
+
+    override func accessibilityPerformShowMenu() -> Bool {
+        guard isEnabled else { return false }
+        openChoices(keyboard: true)
+        return true
+    }
+
+    override func isAccessibilitySelectorAllowed(_ selector: Selector) -> Bool {
+        if selector == #selector(accessibilityPerformShowMenu) || selector == #selector(accessibilityPerformPress) { return isEnabled }
+        return super.isAccessibilitySelectorAllowed(selector)
+    }
+
+    @available(macOS 15.0, *)
+    override func showContextMenuForSelection(_ sender: Any?) { openChoices(keyboard: true) }
+
+    // MARK: face
+
+    /// What the face shows; a subclass shortens or rewords it (the zoom pop-up shows only the percentage).
+    var faceTitle: String { titleOfSelectedItem ?? "" }
+
+    override var canBecomeKeyView: Bool { KeyboardNavigation.reaches(self) }
+    override var acceptsFirstResponder: Bool { isEnabled }
+    override func accessibilityRole() -> NSAccessibility.Role? { .popUpButton }
+    override func accessibilityValue() -> Any? { titleOfSelectedItem }
+    override func accessibilityLabel() -> String? { super.accessibilityLabel() ?? panelLabel }
+
+    override var alignmentRectInsets: NSEdgeInsets { NSEdgeInsets() }
+
+    override var isEnabled: Bool {
+        didSet { chevronView.alphaValue = isEnabled ? 1 : StateStyles.disabledAlpha; needsDisplay = true; noteFocusRingMaskChanged() }
+    }
+
+    private var chevronColumn: CGFloat { GlassChoiceButton.gap + GlassChoiceButton.glyphSide }
+
+    override var intrinsicContentSize: NSSize {
+        let attributes: [NSAttributedString.Key: Any] = [.font: DesignTokens.Typography.font(.body)]
+        let titles = (menu?.items.map(\.title) ?? []) + [faceTitle]
+        let widest = titles.map { ceil(($0 as NSString).size(withAttributes: attributes).width) }.max() ?? 0
+        return NSSize(width: 2 * GlassChoiceButton.padding + widest + chevronColumn, height: GlassChoiceButton.height)
+    }
+
+    override func layout() {
+        super.layout()
+        let side = GlassChoiceButton.glyphSide
+        chevronView.frame = NSRect(x: bounds.width - GlassChoiceButton.padding - side, y: ((bounds.height - side) / 2).rounded(), width: side, height: side)
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.lineBreakMode = .byTruncatingTail
+        let font = DesignTokens.Typography.font(.body)
+        let color = isEnabled ? DesignTokens.Palette.Text.primary : DesignTokens.Palette.Text.disabled
+        let height = ceil(font.boundingRectForFont.height)
+        let width = max(0, bounds.width - 2 * GlassChoiceButton.padding - chevronColumn)
+        let rect = NSRect(x: GlassChoiceButton.padding, y: ((bounds.height - height) / 2).rounded(), width: width, height: height)
+        (faceTitle as NSString).draw(in: rect, withAttributes: [.font: font, .foregroundColor: color, .paragraphStyle: paragraph])
+    }
+
+    private var focusBounds: NSRect { bounds.insetBy(dx: 1, dy: 1) }
+    override var focusRingMaskBounds: NSRect { isEnabled && !focusBounds.isEmpty ? focusBounds : .zero }
+
+    override func drawFocusRingMask() {
+        guard isEnabled, !focusBounds.isEmpty else { return }
+        NSColor.black.setFill()
+        NSBezierPath(roundedRect: focusBounds, xRadius: StatePlate.radius, yRadius: StatePlate.radius).fill()
     }
 }
