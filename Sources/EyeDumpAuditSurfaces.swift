@@ -677,9 +677,11 @@ extension AuditRun {
     /// Opens the Upload choices the way a user does (the button's own show-menu request) and captures what really appeared: the app-owned
     /// glass panel when the build has one, else the native menu (tracked) it replaced. Never skipped for lack of a menu.
     func captureUploadChoices(_ id: String, _ slug: String, surface: String, state: String, refs: [String], share: NSButton) {
-        if let panel = openGlassPanel(identifier: "Upload", opener: share, open: { _ = share.accessibilityPerformShowMenu() }) {
-            shootGlassPanel(id, slug, surface: surface, state: state + " (glass panel)", panel: panel, opener: share, refs: refs)
-            dismissGlassPanel(id, slug + "-dismissed", surface: surface, state: "Upload panel dismissed with Escape", panel: panel, opener: share, refs: refs)
+        let script = GlassPanelScript(id: id, surface: surface, identifier: "Upload", base: "upload", opener: share, refs: refs,
+                                      open: { _ = share.accessibilityPerformShowMenu() }, nativeMenu: share.menu)
+        if let opened = openGlassPanel(script, recordGap: false) {
+            shootGlassPanel(id, slug, surface: surface, state: state + " (glass panel)", panel: opened.panel, opener: share, refs: refs, identifier: "Upload")
+            dismissGlassPanel(id, slug + "-dismissed", surface: surface, state: "Upload panel dismissed with Escape", script: script, opened: opened)
         } else if let menu = share.menu {
             captureTrackedMenu(id, slug, surface: surface, state: state, refs: refs,
                                dismiss: { menu.cancelTracking() }, trigger: { menu.popUp(positioning: nil, at: NSPoint(x: 0, y: share.bounds.height + 4), in: share) })

@@ -62,21 +62,37 @@ extension AuditRun {
         return button.accessibilityLabel() ?? ""
     }
 
-    /// The choice rows under `root`: glass choice buttons, and any other command button that carries a visible title (an action plate).
-    func glassRows(in root: NSView) -> [CommandButton] {
-        var found: [CommandButton] = []
+    /// The choice rows under `root`, in reading order: glass choice buttons, any other command button that carries a visible title (an action
+    /// plate), and any other button the panel's own plates hold (a colour swatch, a size preset) that names itself for VoiceOver.
+    func glassRows(in root: NSView) -> [NSButton] {
+        var found: [NSButton] = []
         func walk(_ view: NSView) {
             if view.isHidden || view.alphaValue <= 0.01 { return }
-            if let button = view as? CommandButton, button is GlassChoiceButton || !visibleTitle(button).isEmpty { found.append(button) }
+            if let button = view as? NSButton, !(view is NSPopUpButton) {
+                if button is GlassChoiceButton || !visibleTitle(button).isEmpty { found.append(button) }
+            }
             view.subviews.forEach(walk)
         }
         walk(root)
-        return readingOrder(found) as! [CommandButton]
+        return readingOrder(found) as! [NSButton]
     }
 
-    func isChosen(_ row: CommandButton) -> Bool {
+    func isChosen(_ row: NSButton) -> Bool {
         if let choice = row as? GlassChoiceButton { return choice.isChosen }
+        if let value = row.accessibilityValue() as? NSNumber, value.intValue == 1 { return true }
         return row.state == .on
+    }
+
+    func isHovered(_ row: NSButton) -> Bool { (row as? CommandButton)?.isHovered ?? false }
+
+    /// Hover as the app sees it: the shared seam when the row is a command button, else a synthesized mouse-entered event handed to the row.
+    func setHovered(_ row: NSButton, _ hovered: Bool) {
+        if let command = row as? CommandButton { command.setHovered(hovered); return }
+        guard let window = row.window,
+              let event = NSEvent.enterExitEvent(with: hovered ? .mouseEntered : .mouseExited, location: row.convert(NSPoint(x: row.bounds.midX, y: row.bounds.midY), to: nil),
+                                                 modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber, context: nil,
+                                                 eventNumber: 0, trackingNumber: 0, userData: nil) else { return }
+        if hovered { row.mouseEntered(with: event) } else { row.mouseExited(with: event) }
     }
 
     /// (containers, plates, nested) of the glass views under `root`. Nested counts a glass view or container that has a glass plate above it.
@@ -122,7 +138,7 @@ extension AuditRun {
         let content = host.contentView ?? NSView()
         let rows = glassRows(in: rowsRoot ?? content)
         let counts = glassCounts(in: content)
-        func index(where test: (CommandButton) -> Bool) -> Int? { rows.firstIndex(where: test) }
+        func index(where test: (NSButton) -> Bool) -> Int? { rows.firstIndex(where: test) }
         var record: [String: Any] = [
             "kind": kind, "identifier": identifier, "variant": variant, "windowIdentifier": host.identifier?.rawValue ?? "",
             "rowTitles": rows.map { visibleTitle($0) }, "rowClasses": rows.map { String(describing: type(of: $0)) },
@@ -132,7 +148,7 @@ extension AuditRun {
             "panelFrame": rectJSON(host.frame), "firstResponder": host.firstResponder.map { String(describing: type(of: $0)) } ?? "none",
             "isKey": host.isKeyWindow
         ]
-        if let hovered = index(where: { $0.isHovered }) { record["hoveredRow"] = hovered }
+        if let hovered = index(where: { isHovered($0) }) { record["hoveredRow"] = hovered }
         if let focused = index(where: { host.firstResponder === $0 }) { record["focusedRow"] = focused }
         if let font = minimumTextSize(in: rowsRoot ?? content) { record["minFontSize"] = font }
         for (key, value) in extra { record[key] = value }
@@ -159,7 +175,7 @@ extension AuditRun {
 
     /// Puts the keyboard on the opener, opens the panel, and returns it, or nil (with a gap) when no glass panel appeared. A build that still
     /// opens a native menu would block here, so a watchdog cancels menu tracking after 1.5 s and the caller records the gap.
-    func openGlassPanel(_ script: GlassPanelScript) -> OpenedGlassPanel? {
+    func openGlassPanel(_ script: GlassPanelScript, recordGap: Bool = true) -> OpenedGlassPanel? {
         window.makeKeyAndOrderFront(nil)
         let accepted = window.makeFirstResponder(script.opener)
         let before = window.firstResponder
@@ -174,7 +190,7 @@ extension AuditRun {
         watchdog.invalidate()
         pump(0.5)
         guard let panel = glassPanelWindow(script.identifier) else {
-            gap(script.id, script.surface + " / " + script.base, "the glass panel \(script.identifier) did not appear (a native menu or nothing opened instead)")
+            if recordGap { gap(script.id, script.surface + " / " + script.base, "the glass panel \(script.identifier) did not appear (a native menu or nothing opened instead)") }
             return nil
         }
         return OpenedGlassPanel(panel: panel, responderBefore: before, openerHadFocus: hadFocus)
@@ -232,10 +248,10 @@ extension AuditRun {
         let enabled = rows.indices.filter { rows[$0].isEnabled }
         // Hover a row that is neither the first nor chosen, so the fill is visibly the hover's.
         if let target = enabled.first(where: { !isChosen(rows[$0]) && $0 > 0 }) ?? enabled.first {
-            rows[target].setHovered(true)
+            setHovered(rows[target], true)
             shootGlassPanel(script.id, script.base + "-hover", surface: script.surface, state: "\(restState); row \(target) (\(visibleTitle(rows[target]))) hovered", panel: panel,
                             opener: script.opener, refs: script.refs, variant: "hover", identifier: script.identifier)
-            rows[target].setHovered(false)
+            setHovered(rows[target], false)
         }
         if let first = enabled.first {
             panel.makeKeyAndOrderFront(nil)
@@ -244,12 +260,12 @@ extension AuditRun {
                             opener: script.opener, refs: script.refs, variant: "focus", identifier: script.identifier, extra: ["focusAccepted": took])
         }
         if let off = rows.indices.first(where: { !rows[$0].isEnabled }) {
-            rows[off].setHovered(true)
+            setHovered(rows[off], true)
             let took = panel.makeFirstResponder(rows[off])
             let tookFocus = took && panel.firstResponder === rows[off]
             shootGlassPanel(script.id, script.base + "-disabled", surface: script.surface, state: "\(restState); disabled row \(off) (\(visibleTitle(rows[off]))) hovered and offered focus",
                             panel: panel, opener: script.opener, refs: script.refs, variant: "disabled", identifier: script.identifier, extra: ["disabledTookFocus": tookFocus])
-            rows[off].setHovered(false)
+            setHovered(rows[off], false)
         }
     }
 
@@ -318,7 +334,7 @@ extension AuditRun {
         if let opened = openGlassPanel(script) {
             let rows = glassRows(in: opened.panel.contentView ?? NSView())
             let off = rows.firstIndex { !$0.isEnabled }
-            if let off { rows[off].setHovered(true) }
+            if let off { setHovered(rows[off], true) }
             let took = off.map { opened.panel.makeFirstResponder(rows[$0]) && opened.panel.firstResponder === rows[$0] } ?? false
             shootGlassPanel("S52", "upload-empty", surface: script.surface, state: "Upload panel with no destination saved: the disabled No destination configured row, Destination Settings… and Share with macOS…",
                             panel: opened.panel, opener: share, refs: refs, variant: "disabled", identifier: "Upload", extra: ["disabledTookFocus": took])
