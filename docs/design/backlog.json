@@ -3,7 +3,7 @@
     "project": "OpenSnap",
     "round": 2,
     "generated": "2026-10-09",
-    "statusNote": "Local candidate 41700b3 has the exact tested tree of 1ea366c. Cold build, two full suites and clean-clone build/test passed. Audit fixes through batch 13 and reviews through round 6 are integrated. 29 done, 2 verified, 1 not-a-bug, 4 in-progress of 36 todos; OSN-071 is partial with a representative final gallery and explicit hardware/permission/manual gaps. See e2e/final-verification.md for the current result; prior capture labels retain pre-rewrite provenance.",
+    "statusNote": "Follow-up integrated locally at b6b6b2e. Application source matches tested 1ac6674: full suite and cold build passed, including 263 app-safety checks and unchanged real stores. History glass controls and full-screen restoration fixes are implemented. 29 done, 2 verified, 1 not-a-bug, 4 in-progress of 36 todos; remaining manual/hardware/migration/release acceptance is explicit. See e2e/followup-root-verification.md. Historical capture labels retain provenance.",
     "auditedShas": {
       "briefed": "b9319c4",
       "drift": [
@@ -156,10 +156,12 @@
       "OSN-070"
     ],
     "implementationBaseline": "bad6617",
-    "implementationMainSha": "41700b3",
+    "implementationMainSha": "b6b6b2e4ac1537207e5916e0dfefe82f5105ff0c",
     "candidateBeforePrivacyRewrite": "1ea366c2db089069c7e5443bdc2800929ca53895",
     "candidateAfterPrivacyRewrite": "41700b3cba3453e928a065fa013fb6b93d833e70",
-    "verificationReport": "docs/design/e2e/final-verification.md"
+    "verificationReport": "docs/design/e2e/followup-root-verification.md",
+    "followupTestedSource": "1ac66740bb976a9c00e2540839fbbdea63eec6b7",
+    "followupIntegration": "b6b6b2e4ac1537207e5916e0dfefe82f5105ff0c"
   },
   "decisions": [
     {

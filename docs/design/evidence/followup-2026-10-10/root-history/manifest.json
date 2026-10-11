@@ -1,0 +1,1499 @@
+{
+ "sourceSha": "718f601",
+ "bundleId": "com.shoemoney.opensnap.eyedump-69400",
+ "iconMode": "sf",
+ "faMode": "FA unavailable: no FontAwesome7Pro subset fonts are bundled in this build, so every capture uses SF Symbols (nothing was faked)",
+ "captureCount": 48,
+ "unavailable": [],
+ "gaps": [],
+ "captures": [
+  {
+   "id": "S20",
+   "slug": "history-1120x850-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 1120 x 850: grid reflow, check badge, details beside the grid",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1700
+   ],
+   "pointSize": [
+    1120,
+    850
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-1120x850-selected-darkfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    911
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-1120x850-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 1120 x 850: grid reflow, check badge, details beside the grid",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1700
+   ],
+   "pointSize": [
+    1120,
+    850
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-1120x850-selected-lightfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    911
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-1280x800-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 1280 x 800: grid reflow, check badge, details beside the grid",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-1280x800-selected-darkfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-1280x800-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 1280 x 800: grid reflow, check badge, details beside the grid",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-1280x800-selected-lightfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-880x600-none",
+   "surface": "History browser",
+   "state": "880 x 600, nothing selected: the details column shows the summary instead of a blank hint; tiles sized to their preview",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1760,
+    1200
+   ],
+   "pointSize": [
+    880,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-880x600-none-darkfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-880x600-none",
+   "surface": "History browser",
+   "state": "880 x 600, nothing selected: the details column shows the summary instead of a blank hint; tiles sized to their preview",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1760,
+    1200
+   ],
+   "pointSize": [
+    880,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-880x600-none-lightfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-880x600-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 880 x 600: grid reflow, check badge, details beside the grid",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1760,
+    1200
+   ],
+   "pointSize": [
+    880,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-880x600-selected-darkfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-880x600-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 880 x 600: grid reflow, check badge, details beside the grid",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1760,
+    1200
+   ],
+   "pointSize": [
+    880,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-880x600-selected-lightfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-action-focus",
+   "surface": "History browser",
+   "state": "keyboard focus on the Open action: the focus ring around its rounded fill (made first responder directly; real Tab reaches it only with Full Keyboard Access or Window > Focus Toolbar)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-action-focus-darkfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-action-focus",
+   "surface": "History browser",
+   "state": "keyboard focus on the Open action: the focus ring around its rounded fill (made first responder directly; real Tab reaches it only with Full Keyboard Access or Window > Focus Toolbar)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-action-focus-lightfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-action-hover",
+   "surface": "History browser",
+   "state": "one entry selected and the Copy action hovered: its own label 0.08 fill on the glass plate, the other actions at rest",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-action-hover-darkfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-action-hover",
+   "surface": "History browser",
+   "state": "one entry selected and the Copy action hovered: its own label 0.08 fill on the glass plate, the other actions at rest",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-action-hover-lightfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-action-pressed",
+   "surface": "History browser",
+   "state": "one entry selected and the Copy action held down (press bracket driven directly, not a real click): the pressed fill and glyph scale on its plate",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-action-pressed-darkfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-action-pressed",
+   "surface": "History browser",
+   "state": "one entry selected and the Copy action held down (press bracket driven directly, not a real click): the pressed fill and glyph scale on its plate",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-action-pressed-lightfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-empty",
+   "surface": "History browser",
+   "state": "History window with no entries",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-empty-darkfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-empty",
+   "surface": "History browser",
+   "state": "History window with no entries",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-empty-lightfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-link-copied",
+   "surface": "History browser",
+   "state": "a Shared entry selected after Copy Link: the footer confirms, and the destination link is cut in its middle with the full text in its tooltip",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1760,
+    1314
+   ],
+   "pointSize": [
+    880,
+    657
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-link-copied-darkfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    896
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-link-copied",
+   "surface": "History browser",
+   "state": "a Shared entry selected after Copy Link: the footer confirms, and the destination link is cut in its middle with the full text in its tooltip",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1760,
+    1314
+   ],
+   "pointSize": [
+    880,
+    657
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-link-copied-lightfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    896
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-no-match",
+   "surface": "History browser",
+   "state": "filters that match nothing at 880 x 600: centred message, no save hint",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1760,
+    1200
+   ],
+   "pointSize": [
+    880,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-no-match-darkfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-no-match",
+   "surface": "History browser",
+   "state": "filters that match nothing at 880 x 600: centred message, no save hint",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1760,
+    1200
+   ],
+   "pointSize": [
+    880,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-no-match-lightfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-no-match-footer",
+   "surface": "History browser",
+   "state": "filters that match nothing: the footer stays (0 of 6 items) and Clear filters offers the way out",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1760,
+    1314
+   ],
+   "pointSize": [
+    880,
+    657
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-no-match-footer-darkfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    896
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-no-match-footer",
+   "surface": "History browser",
+   "state": "filters that match nothing: the footer stays (0 of 6 items) and Clear filters offers the way out",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1760,
+    1314
+   ],
+   "pointSize": [
+    880,
+    657
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-no-match-footer-lightfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    896
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-populated",
+   "surface": "History browser",
+   "state": "six synthetic entries across dates and actions (Saved/Exported/Shared)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-populated-darkfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-populated",
+   "surface": "History browser",
+   "state": "six synthetic entries across dates and actions (Saved/Exported/Shared)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-populated-lightfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-selected",
+   "surface": "History browser",
+   "state": "one entry selected (action buttons enabled)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-selected-darkfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-selected",
+   "surface": "History browser",
+   "state": "one entry selected (action buttons enabled)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-selected-lightfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-tile-hover",
+   "surface": "History browser",
+   "state": "one entry selected (accent fill, border, check badge) and another tile hovered (label 0.08 fill)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-tile-hover-darkfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-tile-hover",
+   "surface": "History browser",
+   "state": "one entry selected (accent fill, border, check badge) and another tile hovered (label 0.08 fill)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-tile-hover-lightfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S43",
+   "slug": "history-delete-web-disabled",
+   "surface": "History browser",
+   "state": "Delete from Web dimmed for an upload with no recorded destination, its reason on the tooltip plate (F-J2-002)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1932,
+    1398
+   ],
+   "pointSize": [
+    966,
+    699
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S43-history-delete-web-disabled-darkfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    868
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S43",
+   "slug": "history-delete-web-disabled",
+   "surface": "History browser",
+   "state": "Delete from Web dimmed for an upload with no recorded destination, its reason on the tooltip plate (F-J2-002)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1932,
+    1398
+   ],
+   "pointSize": [
+    966,
+    699
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S43-history-delete-web-disabled-lightfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    868
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S43",
+   "slug": "w980-photos-empty",
+   "surface": "Sheet at the minimum window",
+   "state": "Photos sheet with nothing chosen over the 980 x minimum-height window: the grid, then the buttons with no blank band between",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1800,
+    1184
+   ],
+   "pointSize": [
+    900,
+    592
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S43-w980-photos-empty-darkfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    789
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S43",
+   "slug": "w980-photos-empty",
+   "surface": "Sheet at the minimum window",
+   "state": "Photos sheet with nothing chosen over the 980 x minimum-height window: the grid, then the buttons with no blank band between",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1800,
+    1184
+   ],
+   "pointSize": [
+    900,
+    592
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S43-w980-photos-empty-lightfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    789
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S43",
+   "slug": "w980-photos-empty-in-context",
+   "surface": "Sheet at the minimum window",
+   "state": "Photos sheet with nothing chosen over the 980 x minimum-height window: the grid, then the buttons with no blank band between (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S43-w980-photos-empty-in-context-darkfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S43",
+   "slug": "w980-photos-empty-in-context",
+   "surface": "Sheet at the minimum window",
+   "state": "Photos sheet with nothing chosen over the 980 x minimum-height window: the grid, then the buttons with no blank band between (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S43-w980-photos-empty-in-context-lightfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S43",
+   "slug": "w980-resize-crop",
+   "surface": "Sheet at the minimum window",
+   "state": "Resize or Crop sheet, crop mode, over the 980 x minimum-height window: whole sheet inside the parent, no clipped row",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    1240,
+    1014
+   ],
+   "pointSize": [
+    620,
+    507
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S43-w980-resize-crop-darkfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    981
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S43",
+   "slug": "w980-resize-crop",
+   "surface": "Sheet at the minimum window",
+   "state": "Resize or Crop sheet, crop mode, over the 980 x minimum-height window: whole sheet inside the parent, no clipped row",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    1240,
+    1014
+   ],
+   "pointSize": [
+    620,
+    507
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S43-w980-resize-crop-lightfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    981
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S43",
+   "slug": "w980-resize-crop-in-context",
+   "surface": "Sheet at the minimum window",
+   "state": "Resize or Crop sheet, crop mode, over the 980 x minimum-height window: whole sheet inside the parent, no clipped row (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    2358
+   ],
+   "pointSize": [
+    1561,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S43-w980-resize-crop-in-context-darkfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    906
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S43",
+   "slug": "w980-resize-crop-in-context",
+   "surface": "Sheet at the minimum window",
+   "state": "Resize or Crop sheet, crop mode, over the 980 x minimum-height window: whole sheet inside the parent, no clipped row (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    2358
+   ],
+   "pointSize": [
+    1561,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S43-w980-resize-crop-in-context-lightfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    906
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S43",
+   "slug": "w980-resize-limit",
+   "surface": "Sheet at the minimum window",
+   "state": "Resize or Crop sheet, limit mode, over the 980 x minimum-height window: whole sheet inside the parent, no clipped row",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1240,
+    794
+   ],
+   "pointSize": [
+    620,
+    397
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S43-w980-resize-limit-darkfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    768
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S43",
+   "slug": "w980-resize-limit",
+   "surface": "Sheet at the minimum window",
+   "state": "Resize or Crop sheet, limit mode, over the 980 x minimum-height window: whole sheet inside the parent, no clipped row",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1240,
+    794
+   ],
+   "pointSize": [
+    620,
+    397
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S43-w980-resize-limit-lightfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    768
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S43",
+   "slug": "w980-resize-limit-in-context",
+   "surface": "Sheet at the minimum window",
+   "state": "Resize or Crop sheet, limit mode, over the 980 x minimum-height window: whole sheet inside the parent, no clipped row (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S43-w980-resize-limit-in-context-darkfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S43",
+   "slug": "w980-resize-limit-in-context",
+   "surface": "Sheet at the minimum window",
+   "state": "Resize or Crop sheet, limit mode, over the 980 x minimum-height window: whole sheet inside the parent, no clipped row (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S43-w980-resize-limit-in-context-lightfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S43",
+   "slug": "w980-resize-resize",
+   "surface": "Sheet at the minimum window",
+   "state": "Resize or Crop sheet, resize mode, over the 980 x minimum-height window: whole sheet inside the parent, no clipped row",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1240,
+    862
+   ],
+   "pointSize": [
+    620,
+    431
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S43-w980-resize-resize-darkfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    834
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S43",
+   "slug": "w980-resize-resize",
+   "surface": "Sheet at the minimum window",
+   "state": "Resize or Crop sheet, resize mode, over the 980 x minimum-height window: whole sheet inside the parent, no clipped row",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1240,
+    862
+   ],
+   "pointSize": [
+    620,
+    431
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S43-w980-resize-resize-lightfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    834
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S43",
+   "slug": "w980-resize-resize-in-context",
+   "surface": "Sheet at the minimum window",
+   "state": "Resize or Crop sheet, resize mode, over the 980 x minimum-height window: whole sheet inside the parent, no clipped row (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S43-w980-resize-resize-in-context-darkfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S43",
+   "slug": "w980-resize-resize-in-context",
+   "surface": "Sheet at the minimum window",
+   "state": "Resize or Crop sheet, resize mode, over the 980 x minimum-height window: whole sheet inside the parent, no clipped row (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S43-w980-resize-resize-in-context-lightfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S43",
+   "slug": "zoom25-selection-handles",
+   "surface": "Selection",
+   "state": "rectangle selected at 25% zoom: handles stay a usable size and do not bury the selection (F-J1-016)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S43-zoom25-selection-handles-darkfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": "layout/S43-zoom25-selection-handles-darkfollowup-root@718f601.json",
+   "before": null
+  },
+  {
+   "id": "S43",
+   "slug": "zoom25-selection-handles",
+   "surface": "Selection",
+   "state": "rectangle selected at 25% zoom: handles stay a usable size and do not bury the selection (F-J1-016)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S43-zoom25-selection-handles-lightfollowup-root@718f601.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": "layout/S43-zoom25-selection-handles-lightfollowup-root@718f601.json",
+   "before": null
+  }
+ ]
+}

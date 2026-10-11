@@ -1,0 +1,879 @@
+{
+ "sourceSha": "718f601",
+ "bundleId": "com.shoemoney.opensnap.eyedump-76763",
+ "iconMode": "sf",
+ "faMode": "FA unavailable: no FontAwesome7Pro subset fonts are bundled in this build, so every capture uses SF Symbols (nothing was faked)",
+ "captureCount": 28,
+ "unavailable": [],
+ "gaps": [],
+ "captures": [
+  {
+   "id": "S20",
+   "slug": "history-1120x850-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 1120 x 850: grid reflow, check badge, details beside the grid",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1700
+   ],
+   "pointSize": [
+    1120,
+    850
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-1120x850-selected-darkfollowup-root-rt-ic-dwc@718f601.png",
+   "storedPixelSize": [
+    1200,
+    911
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-1120x850-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 1120 x 850: grid reflow, check badge, details beside the grid",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2240,
+    1700
+   ],
+   "pointSize": [
+    1120,
+    850
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-1120x850-selected-lightfollowup-root-rt-ic-dwc@718f601.png",
+   "storedPixelSize": [
+    1200,
+    911
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-1280x800-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 1280 x 800: grid reflow, check badge, details beside the grid",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-1280x800-selected-darkfollowup-root-rt-ic-dwc@718f601.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-1280x800-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 1280 x 800: grid reflow, check badge, details beside the grid",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-1280x800-selected-lightfollowup-root-rt-ic-dwc@718f601.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-880x600-none",
+   "surface": "History browser",
+   "state": "880 x 600, nothing selected: the details column shows the summary instead of a blank hint; tiles sized to their preview",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1760,
+    1200
+   ],
+   "pointSize": [
+    880,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-880x600-none-darkfollowup-root-rt-ic-dwc@718f601.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-880x600-none",
+   "surface": "History browser",
+   "state": "880 x 600, nothing selected: the details column shows the summary instead of a blank hint; tiles sized to their preview",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1760,
+    1200
+   ],
+   "pointSize": [
+    880,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-880x600-none-lightfollowup-root-rt-ic-dwc@718f601.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-880x600-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 880 x 600: grid reflow, check badge, details beside the grid",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1760,
+    1200
+   ],
+   "pointSize": [
+    880,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-880x600-selected-darkfollowup-root-rt-ic-dwc@718f601.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-880x600-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 880 x 600: grid reflow, check badge, details beside the grid",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1760,
+    1200
+   ],
+   "pointSize": [
+    880,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-880x600-selected-lightfollowup-root-rt-ic-dwc@718f601.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-action-focus",
+   "surface": "History browser",
+   "state": "keyboard focus on the Open action: the focus ring around its rounded fill (made first responder directly; real Tab reaches it only with Full Keyboard Access or Window > Focus Toolbar)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-action-focus-darkfollowup-root-rt-ic-dwc@718f601.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-action-focus",
+   "surface": "History browser",
+   "state": "keyboard focus on the Open action: the focus ring around its rounded fill (made first responder directly; real Tab reaches it only with Full Keyboard Access or Window > Focus Toolbar)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-action-focus-lightfollowup-root-rt-ic-dwc@718f601.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-action-hover",
+   "surface": "History browser",
+   "state": "one entry selected and the Copy action hovered: its own label 0.08 fill on the glass plate, the other actions at rest",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-action-hover-darkfollowup-root-rt-ic-dwc@718f601.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-action-hover",
+   "surface": "History browser",
+   "state": "one entry selected and the Copy action hovered: its own label 0.08 fill on the glass plate, the other actions at rest",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-action-hover-lightfollowup-root-rt-ic-dwc@718f601.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-action-pressed",
+   "surface": "History browser",
+   "state": "one entry selected and the Copy action held down (press bracket driven directly, not a real click): the pressed fill and glyph scale on its plate",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-action-pressed-darkfollowup-root-rt-ic-dwc@718f601.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-action-pressed",
+   "surface": "History browser",
+   "state": "one entry selected and the Copy action held down (press bracket driven directly, not a real click): the pressed fill and glyph scale on its plate",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-action-pressed-lightfollowup-root-rt-ic-dwc@718f601.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-empty",
+   "surface": "History browser",
+   "state": "History window with no entries",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-empty-darkfollowup-root-rt-ic-dwc@718f601.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-empty",
+   "surface": "History browser",
+   "state": "History window with no entries",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-empty-lightfollowup-root-rt-ic-dwc@718f601.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-link-copied",
+   "surface": "History browser",
+   "state": "a Shared entry selected after Copy Link: the footer confirms, and the destination link is cut in its middle with the full text in its tooltip",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1760,
+    1314
+   ],
+   "pointSize": [
+    880,
+    657
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-link-copied-darkfollowup-root-rt-ic-dwc@718f601.png",
+   "storedPixelSize": [
+    1200,
+    896
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-link-copied",
+   "surface": "History browser",
+   "state": "a Shared entry selected after Copy Link: the footer confirms, and the destination link is cut in its middle with the full text in its tooltip",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1760,
+    1314
+   ],
+   "pointSize": [
+    880,
+    657
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-link-copied-lightfollowup-root-rt-ic-dwc@718f601.png",
+   "storedPixelSize": [
+    1200,
+    896
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-no-match",
+   "surface": "History browser",
+   "state": "filters that match nothing at 880 x 600: centred message, no save hint",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1760,
+    1200
+   ],
+   "pointSize": [
+    880,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-no-match-darkfollowup-root-rt-ic-dwc@718f601.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-no-match",
+   "surface": "History browser",
+   "state": "filters that match nothing at 880 x 600: centred message, no save hint",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1760,
+    1200
+   ],
+   "pointSize": [
+    880,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-no-match-lightfollowup-root-rt-ic-dwc@718f601.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-no-match-footer",
+   "surface": "History browser",
+   "state": "filters that match nothing: the footer stays (0 of 6 items) and Clear filters offers the way out",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1760,
+    1314
+   ],
+   "pointSize": [
+    880,
+    657
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-no-match-footer-darkfollowup-root-rt-ic-dwc@718f601.png",
+   "storedPixelSize": [
+    1200,
+    896
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-no-match-footer",
+   "surface": "History browser",
+   "state": "filters that match nothing: the footer stays (0 of 6 items) and Clear filters offers the way out",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    1760,
+    1314
+   ],
+   "pointSize": [
+    880,
+    657
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-no-match-footer-lightfollowup-root-rt-ic-dwc@718f601.png",
+   "storedPixelSize": [
+    1200,
+    896
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-populated",
+   "surface": "History browser",
+   "state": "six synthetic entries across dates and actions (Saved/Exported/Shared)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-populated-darkfollowup-root-rt-ic-dwc@718f601.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-populated",
+   "surface": "History browser",
+   "state": "six synthetic entries across dates and actions (Saved/Exported/Shared)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-populated-lightfollowup-root-rt-ic-dwc@718f601.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-selected",
+   "surface": "History browser",
+   "state": "one entry selected (action buttons enabled)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-selected-darkfollowup-root-rt-ic-dwc@718f601.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-selected",
+   "surface": "History browser",
+   "state": "one entry selected (action buttons enabled)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-selected-lightfollowup-root-rt-ic-dwc@718f601.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-tile-hover",
+   "surface": "History browser",
+   "state": "one entry selected (accent fill, border, check badge) and another tile hovered (label 0.08 fill)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-tile-hover-darkfollowup-root-rt-ic-dwc@718f601.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S20",
+   "slug": "history-tile-hover",
+   "surface": "History browser",
+   "state": "one entry selected (accent fill, border, check badge) and another tile hovered (label 0.08 fill)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1120,
+    812
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "718f601",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-tile-hover-lightfollowup-root-rt-ic-dwc@718f601.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  }
+ ]
+}

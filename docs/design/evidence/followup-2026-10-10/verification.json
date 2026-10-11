@@ -1,0 +1,60 @@
+{
+  "integrationCommit": "b6b6b2e4ac1537207e5916e0dfefe82f5105ff0c",
+  "testedSourceCommit": "1ac66740bb976a9c00e2540839fbbdea63eec6b7",
+  "sourceTestsToolsIdentity": "git diff --quiet 1ac6674 HEAD -- Sources tests tools passed before root docs commit",
+  "fullSuite": {
+    "result": "PASS",
+    "arch": "arm64",
+    "sourceDrift": false,
+    "appSafety": {
+      "passed": 263,
+      "total": 263
+    },
+    "nativeIdleTermination": "PASS",
+    "realStoreGuard": "unchanged; 122 files, 2 defaults, throwaway plists 0/0",
+    "log": "/tmp/fu-int-test3.log"
+  },
+  "rootBuild": {
+    "result": "PASS",
+    "log": "/tmp/followup-root-build.log"
+  },
+  "captures": [
+    {
+      "pack": "root-history",
+      "source": "718f601",
+      "captures": 48,
+      "gaps": 0
+    },
+    {
+      "pack": "root-history-accessible",
+      "source": "718f601",
+      "captures": 28,
+      "gaps": 0
+    },
+    {
+      "pack": "root-viewport",
+      "source": "b6b6b2e",
+      "captures": 12,
+      "gaps": 0
+    }
+  ],
+  "allCaptureRuns": {
+    "realStores": "unchanged",
+    "realInputEvents": 0,
+    "checkerHardFailures": 0
+  },
+  "gallery": {
+    "widths": [
+      728,
+      360
+    ],
+    "readableMinimumCSSpx": 18,
+    "horizontalOverflow": false,
+    "historyShots": 12
+  },
+  "limitations": [
+    "Real History hover/Tab and VoiceOver speech remain unverified",
+    "Full-screen Cancel regression uses simulated event ordering; layout captures do not establish transition behaviour",
+    "Hardware, display permission and owner-store migration/release acceptance remain open"
+  ]
+}

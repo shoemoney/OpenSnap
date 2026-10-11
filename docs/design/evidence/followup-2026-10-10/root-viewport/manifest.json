@@ -1,0 +1,383 @@
+{
+ "sourceSha": "b6b6b2e",
+ "bundleId": "com.shoemoney.opensnap.eyedump-82897",
+ "iconMode": "sf",
+ "faMode": "FA unavailable: no FontAwesome7Pro subset fonts are bundled in this build, so every capture uses SF Symbols (nothing was faked)",
+ "captureCount": 12,
+ "unavailable": [],
+ "gaps": [],
+ "captures": [
+  {
+   "id": "S02",
+   "slug": "populated",
+   "surface": "editor, populated",
+   "state": "synthetic 1200x800 background + arrow, line, rectangle (open+filled), ellipse, brush, highlighter, fill, text (outline+shadow, plain), SVG path, raster",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    2358
+   ],
+   "pointSize": [
+    1561,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "b6b6b2e",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S02-populated-darkfollowup-final@b6b6b2e.png",
+   "storedPixelSize": [
+    1200,
+    906
+   ],
+   "downscaled": true,
+   "layout": "layout/S02-populated-darkfollowup-final@b6b6b2e.json",
+   "before": null
+  },
+  {
+   "id": "S02",
+   "slug": "populated",
+   "surface": "editor, populated",
+   "state": "synthetic 1200x800 background + arrow, line, rectangle (open+filled), ellipse, brush, highlighter, fill, text (outline+shadow, plain), SVG path, raster",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    2358
+   ],
+   "pointSize": [
+    1561,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "b6b6b2e",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S02-populated-lightfollowup-final@b6b6b2e.png",
+   "storedPixelSize": [
+    1200,
+    906
+   ],
+   "downscaled": true,
+   "layout": "layout/S02-populated-lightfollowup-final@b6b6b2e.json",
+   "before": null
+  },
+  {
+   "id": "S08",
+   "slug": "crop-mode",
+   "surface": "crop mode",
+   "state": "crop tool with a 640x420 crop rectangle",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    2358
+   ],
+   "pointSize": [
+    1561,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "b6b6b2e",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S08-crop-mode-darkfollowup-final@b6b6b2e.png",
+   "storedPixelSize": [
+    1200,
+    906
+   ],
+   "downscaled": true,
+   "layout": "layout/S08-crop-mode-darkfollowup-final@b6b6b2e.json",
+   "before": null
+  },
+  {
+   "id": "S08",
+   "slug": "crop-mode",
+   "surface": "crop mode",
+   "state": "crop tool with a 640x420 crop rectangle",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    2358
+   ],
+   "pointSize": [
+    1561,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "b6b6b2e",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S08-crop-mode-lightfollowup-final@b6b6b2e.png",
+   "storedPixelSize": [
+    1200,
+    906
+   ],
+   "downscaled": true,
+   "layout": "layout/S08-crop-mode-lightfollowup-final@b6b6b2e.json",
+   "before": null
+  },
+  {
+   "id": "S08",
+   "slug": "resize-panel",
+   "surface": "Resize panel",
+   "state": "Resize sheet with built-in + two synthetic presets",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    1240,
+    862
+   ],
+   "pointSize": [
+    620,
+    431
+   ],
+   "scale": 2,
+   "sourceSha": "b6b6b2e",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S08-resize-panel-darkfollowup-final@b6b6b2e.png",
+   "storedPixelSize": [
+    1200,
+    834
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S08",
+   "slug": "resize-panel",
+   "surface": "Resize panel",
+   "state": "Resize sheet with built-in + two synthetic presets",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    1240,
+    862
+   ],
+   "pointSize": [
+    620,
+    431
+   ],
+   "scale": 2,
+   "sourceSha": "b6b6b2e",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S08-resize-panel-lightfollowup-final@b6b6b2e.png",
+   "storedPixelSize": [
+    1200,
+    834
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S08",
+   "slug": "resize-panel-in-context",
+   "surface": "Resize panel",
+   "state": "Resize sheet with built-in + two synthetic presets (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    2358
+   ],
+   "pointSize": [
+    1561,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "b6b6b2e",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S08-resize-panel-in-context-darkfollowup-final@b6b6b2e.png",
+   "storedPixelSize": [
+    1200,
+    906
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S08",
+   "slug": "resize-panel-in-context",
+   "surface": "Resize panel",
+   "state": "Resize sheet with built-in + two synthetic presets (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1561,
+    1179
+   ],
+   "pixelSize": [
+    3122,
+    2358
+   ],
+   "pointSize": [
+    1561,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "b6b6b2e",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S08-resize-panel-in-context-lightfollowup-final@b6b6b2e.png",
+   "storedPixelSize": [
+    1200,
+    906
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null
+  },
+  {
+   "id": "S11F",
+   "slug": "size-fullscreen",
+   "surface": "window sizes",
+   "state": "true full screen (styleMask.fullScreen)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    2056,
+    1290
+   ],
+   "pixelSize": [
+    4112,
+    2580
+   ],
+   "pointSize": [
+    2056,
+    1290
+   ],
+   "scale": 2,
+   "sourceSha": "b6b6b2e",
+   "method": "cacheDisplay (CGWindowList image was blank)",
+   "file": "S11F-size-fullscreen-darkfollowup-final@b6b6b2e.png",
+   "storedPixelSize": [
+    1200,
+    753
+   ],
+   "downscaled": true,
+   "layout": "layout/S11F-size-fullscreen-darkfollowup-final@b6b6b2e.json",
+   "before": null
+  },
+  {
+   "id": "S11F",
+   "slug": "size-fullscreen",
+   "surface": "window sizes",
+   "state": "true full screen (styleMask.fullScreen)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    2056,
+    1290
+   ],
+   "pixelSize": [
+    4112,
+    2580
+   ],
+   "pointSize": [
+    2056,
+    1290
+   ],
+   "scale": 2,
+   "sourceSha": "b6b6b2e",
+   "method": "cacheDisplay (CGWindowList image was blank)",
+   "file": "S11F-size-fullscreen-lightfollowup-final@b6b6b2e.png",
+   "storedPixelSize": [
+    1200,
+    753
+   ],
+   "downscaled": true,
+   "layout": "layout/S11F-size-fullscreen-lightfollowup-final@b6b6b2e.json",
+   "before": null
+  },
+  {
+   "id": "S11FP",
+   "slug": "size-fullscreen-populated",
+   "surface": "window sizes, populated",
+   "state": "true full screen (styleMask.fullScreen)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    2056,
+    1290
+   ],
+   "pixelSize": [
+    4112,
+    2580
+   ],
+   "pointSize": [
+    2056,
+    1290
+   ],
+   "scale": 2,
+   "sourceSha": "b6b6b2e",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11FP-size-fullscreen-populated-darkfollowup-final@b6b6b2e.png",
+   "storedPixelSize": [
+    1200,
+    753
+   ],
+   "downscaled": true,
+   "layout": "layout/S11FP-size-fullscreen-populated-darkfollowup-final@b6b6b2e.json",
+   "before": null
+  },
+  {
+   "id": "S11FP",
+   "slug": "size-fullscreen-populated",
+   "surface": "window sizes, populated",
+   "state": "true full screen (styleMask.fullScreen)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    2056,
+    1290
+   ],
+   "pixelSize": [
+    4112,
+    2580
+   ],
+   "pointSize": [
+    2056,
+    1290
+   ],
+   "scale": 2,
+   "sourceSha": "b6b6b2e",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S11FP-size-fullscreen-populated-lightfollowup-final@b6b6b2e.png",
+   "storedPixelSize": [
+    1200,
+    753
+   ],
+   "downscaled": true,
+   "layout": "layout/S11FP-size-fullscreen-populated-lightfollowup-final@b6b6b2e.json",
+   "before": null
+  }
+ ]
+}
