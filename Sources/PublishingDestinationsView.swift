@@ -57,27 +57,14 @@ final class PublishingDestinationsView: NSView {
     let passwordField = NSSecureTextField(), folderField = NSTextField(), publicField = NSTextField()
     let aliasField = NSTextField(), remoteRootField = NSTextField(), portField = NSTextField()
     let regionField = NSTextField(), bucketField = NSTextField(), profileField = NSTextField()
-    /// The Protocol and Source choices live in these pop-ups, which are the model and never sit in the view tree: the sheet shows a glass
-    /// face (`protocolFace`, `sourceFace`) that opens the pop-up's own menu as a glass panel, and a choice there selects the item here and
-    /// sends the pop-up's action, so every caller that selects an item and calls `formChanged()` still drives the form.
-    let protocolPopup = NSPopUpButton(frame: .zero, pullsDown: false)
-    let sourcePopup = NSPopUpButton(frame: .zero, pullsDown: false)
+    /// The Protocol and Source choices: glass pop-ups. Each keeps `NSPopUpButton` as the model (items, selection, the action `formChanged`)
+    /// and opens every way, mouse, keys and VoiceOver included, as one glass panel; they sit on plates in a hover-fill cell.
+    let protocolPopup = GlassPopUpButton(frame: .zero, pullsDown: false)
+    let sourcePopup = GlassPopUpButton(frame: .zero, pullsDown: false)
     /// The "Make uploads public-read" switch: a checkbox-style glass toggle; `state` is `.on` while chosen.
     let aclCheckbox = GlassChoiceButton(title: "Make uploads public-read", kind: .toggle, indicator: .checkbox, layout: .row)
-    private(set) lazy var protocolFace = makeFace(popup: protocolPopup, caption: "Protocol", identifier: "DestinationProtocol")
-    private(set) lazy var sourceFace = makeFace(popup: sourcePopup, caption: "Source", identifier: "DestinationSource")
-    private var facePanels: [ObjectIdentifier: MenuChoicePanel] = [:]
-    /// The glass panel that lists a face's choices, made on first use from the pop-up's own menu (tests reach its host for their seams).
-    func choicePanel(for face: GlassChoiceButton) -> MenuChoicePanel {
-        let key = ObjectIdentifier(face), model = face === protocolFace ? protocolPopup : sourcePopup
-        if let panel = facePanels[key] { return panel }
-        // Every row is one of an exclusive set (a radio button reading 0 or 1), whether or not it is the chosen one; the chosen one is marked.
-        let panel = MenuChoicePanel(menu: model.menu ?? NSMenu(), identifier: (face.identifier?.rawValue ?? "DestinationFace") + ".panel",
-                                    accessibilityLabel: face.accessibilityLabel() ?? "Choices", kind: { _ in .option }, popUp: model)
-        facePanels[key] = panel
-        return panel
-    }
     private var glassPlates: [GlassSurfaceView] = []
+    private var fillCells: [ChromeFillCell] = []
     private var displayOptionsObservation: DisplayOptions.Observation?
     private(set) var sectionHeaders: [NSTextField] = []
     /// The caption of every visible form row, so tests can check each fits its column on one line.
@@ -160,7 +147,7 @@ final class PublishingDestinationsView: NSView {
     private func buildFooters() {
         formFooter.orientation = .horizontal; formFooter.alignment = .centerY; formFooter.spacing = Space.s4; formFooter.distribution = .fill
         let options = ChromeAccessibility.live
-        for button in [testButton, cancelButton, saveButton, aclCheckbox, protocolFace, sourceFace] { button.accessibility = options }
+        for button in [testButton, cancelButton, saveButton, aclCheckbox] { button.accessibility = options }
         let testPlate = glassPlate([testButton], identifier: "DestinationTestGroup", label: "Test connection")
         let actionPlate = glassPlate([cancelButton, saveButton], identifier: "DestinationActionGroup", label: "Cancel or save")
         self.testPlate = testPlate; self.actionPlate = actionPlate
@@ -194,7 +181,8 @@ final class PublishingDestinationsView: NSView {
     private func applyDisplayOptions() {
         let options = ChromeAccessibility.live
         for plate in glassPlates { plate.accessibility = options }
-        for button in [testButton, cancelButton, saveButton, aclCheckbox, protocolFace, sourceFace] { button.accessibility = options }
+        for cell in fillCells { cell.accessibility = options }
+        for button in [testButton, cancelButton, saveButton, aclCheckbox] { button.accessibility = options }
     }
 
     /// A failure from storage or a worker: the form's result band says "Error:" and carries a glyph, so it never relies on colour.
@@ -302,7 +290,7 @@ final class PublishingDestinationsView: NSView {
         let all: (PublishingProtocol, Bool) -> Bool = { _, _ in true }
         formPage.addArrangedSubview(sectionHeader("Connection"))
         addRow("name", "Name", styled(nameField, "Shown in the Upload right-click menu"), visible: all)
-        addRow("protocol", "Protocol", glassPlate([protocolFace], identifier: "DestinationProtocolGroup"), visible: all)
+        addRow("protocol", "Protocol", choicePlate(protocolPopup, caption: "Protocol", identifier: "DestinationProtocol"), visible: all)
         addRow("endpoint", "Endpoint URL", styled(endpointField, ""), visible: { [unowned self] p, _ in p != .sftp || self.showsLegacySFTPEndpoint })
         addRow("region", "Region", styled(regionField, "us-east-1, or auto for R2"), visible: { p, _ in p == .s3 })
         addRow("bucket", "Bucket", styled(bucketField, "my-bucket"), visible: { p, _ in p == .s3 })
@@ -314,7 +302,7 @@ final class PublishingDestinationsView: NSView {
         addRow("acl", "", glassPlate([aclCheckbox], identifier: "DestinationPublicReadGroup"), stretches: false, visible: { p, _ in p == .s3 })
         if let last = rows["acl"]?.stack { formPage.setCustomSpacing(Space.s5, after: last) }
         formPage.addArrangedSubview(sectionHeader("Credentials"))
-        addRow("source", "Source", glassPlate([sourceFace], identifier: "DestinationSourceGroup"), visible: { p, _ in p == .s3 })
+        addRow("source", "Source", choicePlate(sourcePopup, caption: "Source", identifier: "DestinationSource"), visible: { p, _ in p == .s3 })
         addRow("profile", "AWS profile", styled(profileField, "default (~/.aws/credentials)"), visible: { p, keychain in p == .s3 && !keychain })
         addRow("username", "Username", styled(usernameField, ""),
                visible: { p, keychain in p == .s3 ? keychain : true })
@@ -347,7 +335,7 @@ final class PublishingDestinationsView: NSView {
         endpointField.placeholderString = copy.endpointPlaceholder; folderField.placeholderString = copy.folderPlaceholder
         usernameField.placeholderString = copy.usernamePlaceholder; passwordField.placeholderString = copy.passwordPlaceholder
         formHelp.stringValue = copy.help
-        syncFaces()
+        syncProtocolHelp()
         if formResult.kind == .idle || formResult.kind == .hint { formResult.show(.hint, copy.testNote) }
         notifyPreferredHeight()
     }
@@ -357,55 +345,36 @@ final class PublishingDestinationsView: NSView {
         notifyPreferredHeight()
     }
 
-    // MARK: Glass pop-up faces
+    // MARK: Glass pop-ups
 
-    private func makeFace(popup: NSPopUpButton, caption: String, identifier: String) -> GlassChoiceButton {
-        let face = GlassChoiceButton(title: popup.titleOfSelectedItem ?? popup.itemTitles.first ?? "", kind: .submenu, layout: .row)
-        face.identifier = NSUserInterfaceItemIdentifier(identifier + "Face")
-        face.target = self; face.action = #selector(faceTapped(_:))
-        face.setAccessibilityLabel(caption)
-        // The face is the widest title's width, so choosing a shorter one never moves the chevron.
-        let widest = popup.itemTitles.map { ceil(($0 as NSString).size(withAttributes: [.font: Typography.font(.bodyStrong)]).width) }.max() ?? 0
-        face.minimumWidth = 2 * GlassChoiceButton.padding + widest + GlassChoiceButton.gap + GlassChoiceButton.glyphSide
-        face.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        // Space, Down and Up open the choices from the keyboard, as they do on the pop-up this replaces. Return is not here: in a sheet it is
-        // the default button (Save), and the window handles it before the face sees it.
-        face.keyHandler = { [weak self, weak face] event in
-            guard let self, let face, [49, 125, 126].contains(event.keyCode) else { return false }
-            self.openChoices(from: face, keyboard: true)
-            return true
-        }
-        return face
+    /// A pop-up on its own plate: the pop-up draws its face (title and chevron) and opens one glass panel; the cell behind it draws the hover
+    /// fill. It is as wide as its widest title, and never wider than the room the row leaves.
+    private func choicePlate(_ popup: GlassPopUpButton, caption: String, identifier: String) -> GlassSurfaceView {
+        popup.panelIdentifier = identifier + ".panel"; popup.panelLabel = caption
+        popup.identifier = NSUserInterfaceItemIdentifier(identifier + "Popup")
+        popup.setAccessibilityLabel(caption)
+        let room = contentWidth - Self.captionWidth - Space.s4
+        let width = min(ceil(popup.intrinsicContentSize.width), room)
+        let cell = ChromeFillCell(popup, size: NSSize(width: width, height: GlassChoiceButton.height))
+        cell.focusTarget = popup; cell.accessibility = .live
+        popup.minimumPanelWidth = max(240, width)
+        fillCells.append(cell)
+        return glassPlate([cell], identifier: identifier + "Group")
     }
 
-    private func popup(for face: GlassChoiceButton) -> NSPopUpButton { face === protocolFace ? protocolPopup : sourcePopup }
+    /// The protocol pop-up says what the chosen protocol is.
+    private func syncProtocolHelp() { AppToolTip.setText(selectedProtocol.detail, for: protocolPopup) }
 
-    /// The face shows the pop-up's selected title and, for the protocol, what that protocol is; VoiceOver hears the caption, then the choice.
-    private func syncFaces() {
-        for face in [protocolFace, sourceFace] {
-            let popup = popup(for: face), title = popup.titleOfSelectedItem ?? ""
-            if face.title != title { face.title = title }
-            face.setAccessibilityValueDescription(title)
-            let detail = face === protocolFace ? selectedProtocol.detail : nil
-            AppToolTip.setText(detail, for: face)
-        }
-    }
-
-    @objc private func faceTapped(_ sender: GlassChoiceButton) {
-        openChoices(from: sender, keyboard: NSApp.currentEvent?.type == .keyDown)
-    }
-
-    /// Opens the pop-up's own menu as a glass panel under its face. The menu stays the source of truth: a choice selects its item in the
-    /// pop-up and sends the pop-up's action, which is `formChanged`.
-    func openChoices(from face: GlassChoiceButton, keyboard: Bool) {
-        guard face.isEnabled, !face.isHiddenOrHasHiddenAncestor else { return }
-        let panel = choicePanel(for: face)
-        panel.minimumWidth = max(240, face.bounds.width)
-        panel.present(relativeTo: face, preferredEdge: .minY, keyboard: keyboard)
+    /// Closes any choice panel that is up and says whether there was one. Escape with a panel open dismisses only the panel; the sheet stays.
+    @discardableResult
+    private func closeOpenChoicePanels() -> Bool {
+        let open = [protocolPopup, sourcePopup].map(\.choicePanel).filter { $0.host.isShown }
+        for panel in open { panel.host.close() }
+        return !open.isEmpty
     }
 
     override func viewWillMove(toWindow newWindow: NSWindow?) {
-        if newWindow == nil { for panel in facePanels.values { panel.host.close(restoreFocus: false) } }
+        if newWindow == nil { for popup in [protocolPopup, sourcePopup] { popup.choicePanel.host.close(restoreFocus: false) } }
         super.viewWillMove(toWindow: newWindow)
     }
 
@@ -511,13 +480,6 @@ final class PublishingDestinationsView: NSView {
             MainActor.assumeIsolated { field?.layer?.borderWidth = 0; field?.setAccessibilityHelp(nil) }
             if let token { NotificationCenter.default.removeObserver(token) }
         }
-    }
-    /// Closes any choice panel that is up and says whether there was one. Escape with a panel open dismisses only the panel; the sheet stays.
-    @discardableResult
-    private func closeOpenChoicePanels() -> Bool {
-        let open = facePanels.values.filter { $0.host.isShown }
-        for panel in open { panel.host.close() }
-        return !open.isEmpty
     }
     @objc func cancelFormTapped() {
         if closeOpenChoicePanels() { return }
