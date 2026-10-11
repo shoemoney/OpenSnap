@@ -893,6 +893,60 @@ def check_glass(folder):
     return problems
 
 
+OVERLAY_CLASSES = ("Popover", "GlassChoiceWindow")
+PAINT_FLOOR = 0.05
+PANEL_INK_FLOOR = 0.02
+
+
+def overlay_problems(record):
+    """Problems with one capture's claim to show a popover or a panel (F-S-popover, F-S10-blank). The claim comes from the capture's own slug;
+    the proof comes from the harness's measurements: the popover window in the capture's window list AND painted into its pixels, or the
+    export panel's image carrying real content. A record without the measurements fails, so the harness cannot stop recording them."""
+    slug, windows = record.get("slug", ""), record.get("windows")
+    if not slug or not isinstance(windows, list):
+        return []
+    label = f"{record.get('id', '?')}/{slug} ({record.get('appearance', '?')})"
+    classes = [str(w.get("class", "")) for w in windows if isinstance(w, dict)]
+    problems = []
+    if "popover" in slug or "palette" in slug:
+        is_overlay = lambda name: any(token in name for token in OVERLAY_CLASSES)
+        if not classes or not any(is_overlay(name) for name in classes):
+            problems.append(f"{label}: claims a popover but no popover window is in its window list {classes}")
+        elif not is_overlay(classes[0]):
+            painted = record.get("overlayPainted")
+            if not isinstance(painted, list) or not painted:
+                problems.append(f"{label}: a popover over its window with no overlayPainted measurement")
+            elif min(float(item.get("paintedFraction", 0)) for item in painted if isinstance(item, dict)) < PAINT_FLOOR:
+                problems.append(f"{label}: the popover window is listed but is not painted into the image (painted {painted})")
+    if slug.startswith("export-panel"):
+        wait = record.get("panelContentWait")
+        if not isinstance(wait, dict) or not wait.get("reachedContent") or float(wait.get("inkFraction", 0)) < PANEL_INK_FLOOR:
+            problems.append(f"{label}: claims the export panel but its image never carried content (panelContentWait {wait})")
+        elif float(record.get("inkFraction", 0)) < PANEL_INK_FLOOR:
+            problems.append(f"{label}: the export panel image is blank (inkFraction {record.get('inkFraction')})")
+    return problems
+
+
+def check_overlays(folder):
+    problems = []
+    for record in load_captures(folder):
+        problems += overlay_problems(record)
+    # S24: the status-item states are rendered, so each state and each appearance must be a different picture.
+    seen = {}
+    for path in sorted(folder.glob("raw-*/S24-*.png")) + sorted(folder.glob("S24-*.png")):
+        seen[path.name] = path.read_bytes()
+    groups = {}
+    for name, data in seen.items():
+        match = re.match(r"S24-statusitem-(normal|highlighted)-(light|dark)", name)
+        if match:
+            groups.setdefault(match.group(1), {})[match.group(2)] = data
+            groups.setdefault(match.group(2), {})[match.group(1)] = data
+    for key, pair in groups.items():
+        if len(pair) == 2 and len(set(pair.values())) == 1:
+            problems.append(f"S24: the two {'appearances' if key in ('normal', 'highlighted') else 'states'} of status item '{key}' are pixel-identical")
+    return problems
+
+
 def run(folder, jobs, strict, strict_contrast):
     folder = folder.resolve()
     pairs, orphans = pair_layouts(folder)
@@ -912,6 +966,7 @@ def run(folder, jobs, strict, strict_contrast):
     problems += check_manifest(folder, results)
     problems += check_menu_gaps(folder)
     problems += check_glass(folder)
+    problems += check_overlays(folder)
     problems += [f"layout: {path.relative_to(folder)} has no PNG" for path in orphans]
     laid_out = sum(1 for layout in pairs.values() if layout)
     for line in problems:
@@ -1057,6 +1112,40 @@ def self_test():
             (folder / "case.png").write_bytes(good)
             (folder / "raw-sf" / "gapsraw" / "gaps.json").write_text(json.dumps(gaps))
             (folder / "raw-sf" / "meta" / "S42.json").write_text(json.dumps(captures[0] if captures else {}))
+            got = subprocess.run([sys.executable, script, str(folder), "--jobs", "1"], capture_output=True).returncode
+            print(f"  self-test {label}: exit {got} (expected {expected})")
+            failed |= got != expected
+        # popovers and panels: a capture that claims one must really contain it (S30/S31/S06 popover, S10 export panel, S24 distinct states)
+        popover = {"id": "S30", "slug": "size-popover-w980", "appearance": "dark", "windows": [{"class": "NSWindow"}, {"class": "GlassChoiceWindow"}],
+                   "overlayPainted": [{"class": "GlassChoiceWindow", "paintedFraction": 0.94}]}
+        panel = {"id": "S10", "slug": "export-panel", "appearance": "light", "windows": [{"class": "NSSavePanel"}], "inkFraction": 0.07,
+                 "panelContentWait": {"reachedContent": True, "inkFraction": 0.07}}
+        for label, records, expected in [
+            ("popover capture with the popover painted", [popover], 0),
+            ("popover claimed but only the editor window listed", [dict(popover, windows=[{"class": "NSWindow"}], overlayPainted=None)], 1),
+            ("popover listed but not painted into the pixels", [dict(popover, overlayPainted=[{"class": "GlassChoiceWindow", "paintedFraction": 0.0}])], 1),
+            ("popover over its window without the paint measurement", [{k: v for k, v in popover.items() if k != "overlayPainted"}], 1),
+            ("popover window shot alone", [dict(popover, slug="color-popover-only-w980", windows=[{"class": "GlassChoiceWindow"}], overlayPainted=None)], 0),
+            ("export panel with content", [panel], 0),
+            ("export panel that never reached content", [dict(panel, panelContentWait={"reachedContent": False, "inkFraction": 0.002}, inkFraction=0.002)], 1),
+            ("export panel record without the wait", [{k: v for k, v in panel.items() if k != "panelContentWait"}], 1),
+        ]:
+            folder = Path(workdir) / re.sub(r"\W+", "-", "overlay " + label)
+            (folder / "raw-sf" / "meta").mkdir(parents=True)
+            (folder / "case.png").write_bytes(good)
+            for index, record in enumerate(records):
+                (folder / "raw-sf" / "meta" / f"{index}.json").write_text(json.dumps(record))
+            got = subprocess.run([sys.executable, script, str(folder), "--jobs", "1"], capture_output=True).returncode
+            print(f"  self-test {label}: exit {got} (expected {expected})")
+            failed |= got != expected
+        for label, same, expected in [("S24 states all different", False, 0), ("S24 light and dark pixel-identical", True, 1)]:
+            folder = Path(workdir) / re.sub(r"\W+", "-", "s24 " + label)
+            (folder / "raw-sf").mkdir(parents=True)
+            (folder / "case.png").write_bytes(good)
+            for state in ("normal", "highlighted"):
+                for appearance in ("light", "dark"):
+                    other = png_bytes(8, 8, lambda x, y, seed=(state, appearance): (10 if seed[0] == "normal" else 200, 10 if (seed[1] == "light" or same) else 120, 30 + 40 * ((x + y) % 2)))
+                    (folder / "raw-sf" / f"S24-statusitem-{state}-{appearance}.png").write_bytes(other)
             got = subprocess.run([sys.executable, script, str(folder), "--jobs", "1"], capture_output=True).returncode
             print(f"  self-test {label}: exit {got} (expected {expected})")
             failed |= got != expected

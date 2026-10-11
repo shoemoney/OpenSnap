@@ -8,7 +8,9 @@ from pathlib import Path
 import hashlib
 import json
 import os
+import re
 import sys
+import time
 
 HOME = SUPPORT = OLD_FOLDER = OPENSNAP_FOLDER = PREFERENCES = None
 REAL_STORE_FOLDERS = []
@@ -34,12 +36,48 @@ THROWAWAY_PREFIXES = ["SkitchRedux.ResizePresetsTests.", "SkitchHistoryTests.", 
                       "OpenSnap.ResizePresetsTests.", "OpenSnapHistoryTests.", "OpenSnap.preferences.tests.",
                       "OpenSnap.magnifier.", "OpenSnap.GlobalHotkeys.Tests.", "openskitch-hotkey-probe",
                       "com.test.opensnap.", "com.shoemoney.opensnap.eyedump-", "com.shoemoney.opensnap.startup-",
-                      "com.shoemoney.opensnap.e2e-"]
+                      "com.shoemoney.opensnap.e2e-", "AppSafetyTests-"]
 
 
 def throwaway_plists():
     """Names of every plist in ~/Library/Preferences that matches a throwaway test prefix."""
     return {path.name for path in PREFERENCES.glob("*.plist") if path.name.startswith(tuple(THROWAWAY_PREFIXES))}
+
+
+PID_NAMED = re.compile(r"^(?:AppSafetyTests-|com\.shoemoney\.opensnap\.eyedump-)(\d+)(?:[-.]|$)")
+GRACE_SECONDS = 3.0
+
+
+def _pid_alive(pid):
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def leftovers(new_names):
+    """Of the plists that are new since the snapshot, those that are genuinely left behind.
+
+    A plist named for a PID (AppSafetyTests-<pid>-..., eyedump-<pid>) whose process is still alive belongs to a
+    run in flight (another worktree's, or ours); it is not a leftover, and this never deletes it. A dead PID's file
+    is re-checked after a short grace, since a finishing run removes its own plist just after its process exits.
+    Names without a PID are always leftovers.
+    """
+    suspects = set(new_names)
+    deadline = time.monotonic() + GRACE_SECONDS
+    while True:
+        suspects = {n for n in suspects if (PREFERENCES / n).exists()}
+        dead = set()
+        for name in suspects:
+            match = PID_NAMED.match(name)
+            if not match or not _pid_alive(int(match.group(1))):
+                dead.add(name)
+        if not dead or time.monotonic() >= deadline:
+            return dead
+        time.sleep(0.5)
 
 
 def describe():
@@ -73,7 +111,7 @@ def compare(before, opensnap_folder_existed, plists_before=None):
     # No test may write preferences for any OpenSnap-named domain: CFFIXED_USER_HOME does not redirect the
     # preferences daemon, so a defaults suite used by a test lands in the real ~/Library/Preferences.
     if plists_before is not None:
-        problems += [f"left behind {PREFERENCES / name}" for name in sorted(throwaway_plists() - plists_before)]
+        problems += [f"left behind {PREFERENCES / name}" for name in sorted(leftovers(throwaway_plists() - plists_before))]
     if not opensnap_folder_existed and OPENSNAP_FOLDER.exists():
         problems.append(f"created {OPENSNAP_FOLDER}")
     return problems

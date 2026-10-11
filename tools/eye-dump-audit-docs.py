@@ -33,7 +33,7 @@ STATIC_GAPS = [
     ("Live screen capture / real crosshair over real pixels", "No Screen Recording grant and capturing the screen is forbidden for this audit. The picker lens is shown grey (what renders without a grant) and with synthetic pixels."),
     ("Native tooltips / hover-only affordances", "AppKit tooltips are window-server drawn on real pointer dwell; they cannot be forced. Tooltip strings are recorded in metrics/*.json (toolTip). Hover/pressed states were forced through CommandButton.setHovered/highlight only."),
     ("NSSharingServicePicker / system share sheet", "Out-of-process and lists the user's real accounts; not opened."),
-    ("Photo browser (S22)", "Reads the user's Photos library and Desktop with no synthetic-content seam; not opened (privacy)."),
+    ("Photo browser (S22)", "Captured over five synthetic fixture images in a throwaway folder, loaded through the browser's own loadFolder path; the real Photos library and Pictures folder are never read."),
     ("Real drag-and-drop to Finder", "A real drag session needs a real pointer and writes files; only the drag thumbnail panel states were driven."),
     ("Real uploads (S3/SFTP/WebDAV)", "Forbidden; the publish progress/success/error states were driven through a stubbed uploader on an isolated destination store with in-memory secrets."),
 ]

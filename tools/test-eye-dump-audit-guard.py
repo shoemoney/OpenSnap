@@ -101,9 +101,17 @@ def test_guard(base):
     check(result.returncode == 1 and "created" in result.stdout, "guard: merely creating the OpenSnap support folder fails the guard")
     shutil.rmtree(guard.OPENSNAP_FOLDER)
 
-    result = snapshot_then(home, state, lambda: (guard.PREFERENCES / "com.shoemoney.opensnap.eyedump-1.plist").write_bytes(b"leftover"))
+    result = snapshot_then(home, state, lambda: (guard.PREFERENCES / "com.shoemoney.opensnap.eyedump-99999999.plist").write_bytes(b"leftover"))
     check(result.returncode == 1 and "left behind" in result.stdout, "guard: a throwaway harness defaults plist left behind fails the guard")
-    (guard.PREFERENCES / "com.shoemoney.opensnap.eyedump-1.plist").unlink()
+    (guard.PREFERENCES / "com.shoemoney.opensnap.eyedump-99999999.plist").unlink()
+    dead = guard.PREFERENCES / "AppSafetyTests-99999999-opensnap-app-safety-abc-.plist"
+    result = snapshot_then(home, state, lambda: dead.write_bytes(b"leftover"))
+    check(result.returncode == 1 and "left behind" in result.stdout, "guard: an AppSafetyTests plist of a dead run left behind fails the guard")
+    dead.unlink()
+    live = guard.PREFERENCES / f"AppSafetyTests-{os.getpid()}-opensnap-app-safety-abc-.plist"
+    result = snapshot_then(home, state, lambda: live.write_bytes(b"in flight"))
+    check(result.returncode == 0 and live.exists(), "guard: a plist of a still-running (foreign) run is not flagged and is never deleted")
+    live.unlink()
     return home
 
 
