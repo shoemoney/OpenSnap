@@ -39,6 +39,7 @@ private enum AppAlertTests {
     static func main() {
         _ = NSApplication.shared
         typeAndGeometry()
+        buttonsAreSheetCapsules()
         keys()
         sheetPresentation()
         answering()
@@ -91,6 +92,25 @@ private enum AppAlertTests {
 
     // MARK: type and geometry
 
+    /// Sign-off P1: alert buttons were flat 22 pt bezels. They are now the Resize and Destination sheets' commands: a `GlassChoiceButton`
+    /// 36 pt tall at the concentric 12 pt radius, on a glass action plate with the same 4 pt inset.
+    private static func buttonsAreSheetCapsules() {
+        let alert = AppAlert(title: "Save your drawing?", message: "Unsaved.", buttons: discardButtons)
+        let content = alert.panel.contentView!
+        expect(!alert.actionPlates.isEmpty && alert.actionPlates.allSatisfy { $0.superview === content }, "The buttons sit on glass action plates in the sheet")
+        for button in alert.buttonViews {
+            expect(alert.actionPlates.contains { button.isDescendant(of: $0) }, "\(button.title) is on a plate")
+            expect(button.frame.height == GlassChoiceButton.height && GlassChoiceButton.height == DesignTokens.Size.control, "\(button.title) is \(GlassChoiceButton.height) pt tall like the sheet commands (\(button.frame.height))")
+            expect(button.layer?.cornerRadius == StatePlate.radius, "\(button.title) has the sheet command radius \(StatePlate.radius) (\(button.layer?.cornerRadius ?? -1))")
+            expect(!button.isBordered, "\(button.title) draws no system bezel")
+        }
+        for plate in alert.actionPlates {
+            expect(abs(plate.frame.height - (GlassChoiceButton.height + 2 * GlassChrome.Metrics.groupInset)) < 0.5, "An action plate is one command plus the 4 pt inset (\(plate.frame.height))")
+            expect(plate.cornerRadius == DesignTokens.Radius.xl, "An action plate is rounded like the sheets' (\(plate.cornerRadius))")
+        }
+        expect(alert.buttonViews[0].isPrimary && !alert.buttonViews[2].isPrimary, "The default button is the tinted one")
+    }
+
     private static func typeAndGeometry() {
         let field = NSTextField(string: "6"); field.font = DesignTokens.Typography.font(.body); field.frame = NSRect(x: 0, y: 0, width: 512, height: 40)
         let alert = AppAlert(title: "Save your drawing?", message: "This document has changes that have not been saved.", buttons: discardButtons, accessoryView: field)
@@ -100,7 +120,7 @@ private enum AppAlertTests {
             expect(button.font?.pointSize == 20, "Button \(button.title) is 20 pt (\(button.font?.pointSize ?? 0))")
             expect(button.frame.height >= DesignTokens.Size.control, "Button \(button.title) is at least 36 pt tall (\(button.frame.height))")
             expect(button.frame.width >= AppAlert.minimumButtonWidth, "Button \(button.title) is wide enough to hit (\(button.frame.width))")
-            let wanted = button.cell?.cellSize.width ?? .greatestFiniteMagnitude
+            let wanted = ceil(button.titleLabel.attributedStringValue.size().width)
             expect(button.frame.width >= wanted, "Button \(button.title) shows its whole title (\(button.frame.width) of \(wanted))")
         }
         for view in allViews(alert.panel.contentView!) {
@@ -110,7 +130,7 @@ private enum AppAlertTests {
         let content = alert.panel.contentView!.bounds
         let frames = allViews(alert.panel.contentView!).dropFirst().map(\.frame)
         for frame in frames { expect(content.insetBy(dx: -0.5, dy: -0.5).contains(frame), "\(frame) lies inside the panel \(content)") }
-        let b = alert.buttonViews.map(\.frame)
+        let b = alert.buttonViews.map { alert.panel.contentView!.convert($0.bounds, from: $0) }
         expect(b[0].maxX < content.maxX && b[1].maxX <= b[0].minX && b[2].minX < b[1].minX, "Save is rightmost, Cancel to its left, Don't Save at the leading edge")
         expect(Set(b.map(\.minY)).count == 1, "The buttons share one baseline")
         expect(alert.messageLabel.frame.minY >= b[0].maxY && field.frame.minY >= b[0].maxY && alert.titleLabel.frame.minY >= field.frame.maxY, "Title, message and field stack above the buttons")

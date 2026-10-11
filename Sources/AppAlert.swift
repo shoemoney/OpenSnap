@@ -38,7 +38,9 @@ final class AppAlert: NSObject {
     let panel: AppAlertPanel
     let titleLabel: NSTextField
     let messageLabel: NSTextField
-    private(set) var buttonViews: [NSButton] = []
+    private(set) var buttonViews: [GlassChoiceButton] = []
+    /// The glass plates the buttons sit on: the trailing pair, then a lone third button at the leading edge.
+    private(set) var actionPlates: [GlassSurfaceView] = []
     /// Asked when a button is pressed (not for Escape or a dismissal): a message keeps the sheet open and shows it under the accessory
     /// as "Error: …"; nil lets the answer through. A prompt uses it so a wrong entry is explained instead of closing the sheet.
     var validator: ((_ buttonIndex: Int) -> String?)?
@@ -77,36 +79,43 @@ final class AppAlert: NSObject {
         panel = AppAlertPanel(contentRect: .zero, styleMask: [.titled], backing: .buffered, defer: true)
         super.init()
 
+        // The sheet's buttons are the same capsule commands as the Resize and Destination sheets: a 36 pt glass choice button on an action plate.
         for (index, spec) in buttons.enumerated() {
-            let button = NSButton(title: spec.title, target: self, action: #selector(pressed(_:)))
-            button.bezelStyle = .push
+            let button = GlassChoiceButton(title: spec.title, kind: .command, layout: .segment)
+            button.target = self
+            button.action = #selector(pressed(_:))
             button.tag = index
-            Typography.apply(.body, to: button)
-            button.sizeToFit()
-            button.frame.size = NSSize(width: max(Self.minimumButtonWidth, button.frame.width + 2 * DesignTokens.Space.s2),
-                                       height: max(button.frame.height, DesignTokens.Size.control))
+            button.accessibility = .live
+            button.minimumWidth = Self.minimumButtonWidth
+            // The first button is the default and the only tinted one, unless it is the destructive choice.
+            button.isPrimary = index == 0 && spec.role != .destructive
             button.hasDestructiveAction = spec.role == .destructive
-            // The system does not paint a destructive push button in this build, so the label carries the warning colour (with its words).
-            if spec.role == .destructive {
-                button.contentTintColor = DesignTokens.Palette.feedbackError
-                button.attributedTitle = NSAttributedString(string: spec.title, attributes: [.font: Typography.font(.body), .foregroundColor: DesignTokens.Palette.feedbackError])
-            }
+            // The system does not paint a destructive control, so the label carries the warning colour (with its words).
+            if spec.role == .destructive { button.titleColorOverride = DesignTokens.Palette.feedbackError }
             button.setAccessibilityLabel(spec.title)
             if index == 0 { button.keyEquivalent = "\r" }
             else if spec.answersEscape { button.keyEquivalent = "\u{1b}" }
             else if spec.answersCommandD { button.keyEquivalent = "d"; button.keyEquivalentModifierMask = .command }
+            button.frame.size = button.intrinsicContentSize
             buttonViews.append(button)
         }
+        // One action plate on the trailing edge (first button rightmost); a third button stands apart on a plate of its own at the leading edge.
+        let trailingPlate = GlassChrome.plate(Array(buttonViews.prefix(2).reversed()), identifier: "AppAlertActionsPlate", accessibility: .live)
+        actionPlates = [trailingPlate]
+        if buttonViews.count > 2 {
+            actionPlates.append(GlassChrome.plate([buttonViews[2]], identifier: "AppAlertLeadingPlate", accessibility: .live))
+        }
+        for plate in actionPlates { plate.layoutSubtreeIfNeeded(); plate.frame.size = plate.fittingSize }
 
         // The sheet is as wide as its buttons need, never narrower than the standard width.
-        let buttonRow = buttonViews.reduce(0) { $0 + $1.frame.width } + CGFloat(buttons.count - 1) * spacing
+        let buttonRow = actionPlates.reduce(0) { $0 + $1.frame.width } + CGFloat(actionPlates.count - 1) * spacing
         let width = max(Self.width, buttonRow + 2 * inset)
         let inner = width - 2 * inset
         for field in [titleLabel, messageLabel] { field.preferredMaxLayoutWidth = inner }
         func height(_ field: NSTextField) -> CGFloat {
             field.stringValue.isEmpty ? 0 : ceil(field.cell?.cellSize(forBounds: NSRect(x: 0, y: 0, width: inner, height: .greatestFiniteMagnitude)).height ?? 0)
         }
-        let buttonHeight = buttonViews.map(\.frame.height).max() ?? DesignTokens.Size.control
+        let buttonHeight = actionPlates.map(\.frame.height).max() ?? DesignTokens.Size.control
         let accessoryHeight = accessoryView?.frame.height ?? 0
         var stack: [CGFloat] = [height(titleLabel)]
         if height(messageLabel) > 0 { stack.append(height(messageLabel)) }
@@ -126,13 +135,10 @@ final class AppAlert: NSObject {
             accessoryView.frame = NSRect(x: inset, y: y, width: min(accessoryView.frame.width, inner), height: accessoryHeight); y -= gap
             content.addSubview(accessoryView)
         }
-        // First button rightmost, the second to its left; a third stands apart at the leading edge, as in NSAlert.
-        var x = width - inset
-        for (index, button) in buttonViews.enumerated() {
-            if index == 2 { button.frame.origin = NSPoint(x: inset, y: inset) }
-            else { x -= button.frame.width; button.frame.origin = NSPoint(x: x, y: inset); x -= spacing }
-            content.addSubview(button)
-        }
+        // The trailing plate holds the first two buttons; a third stands apart at the leading edge, as in NSAlert.
+        actionPlates[0].frame.origin = NSPoint(x: width - inset - actionPlates[0].frame.width, y: inset)
+        if actionPlates.count > 1 { actionPlates[1].frame.origin = NSPoint(x: inset, y: inset) }
+        for plate in actionPlates { content.addSubview(plate) }
         panel.isReleasedWhenClosed = false
         panel.title = DesignTokens.Brand.name
         let size = content.frame.size // Assigning the content view resizes it to the (still empty) window.
@@ -230,7 +236,7 @@ final class AppAlert: NSObject {
         // A new line sits where the accessory's bottom edge was; a taller or shorter one keeps its bottom edge.
         let y = isNew ? (accessoryView ?? messageLabel).frame.minY : field.frame.minY
         if growth != 0 {
-            let buttonIDs = Set(buttonViews.map(ObjectIdentifier.init))
+            let buttonIDs = Set(actionPlates.map(ObjectIdentifier.init))
             for view in content.subviews where view !== field && !buttonIDs.contains(ObjectIdentifier(view)) { view.frame.origin.y += growth }
             let top = panel.frame.maxY
             content.frame.size.height += growth

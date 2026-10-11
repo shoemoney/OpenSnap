@@ -42,6 +42,7 @@ private enum StateStylesTests {
         try trackTests()
         try swatchTests()
         try restPlateTests()
+        try focusRingTests()
         print("PASS state-styles-tests (\(checks) checks)")
     }
 
@@ -149,6 +150,29 @@ private enum StateStylesTests {
         // the flag, not the appearance, picks the high-contrast arm (the harness injects it under plain aqua)
         try expect(StateStyles.arm(for: aqua, highContrast: true) == .highContrastAqua && StateStyles.arm(for: dark, highContrast: true) == .highContrastDarkAqua
                    && StateStyles.arm(for: aqua, highContrast: false) == .aqua && StateStyles.arm(for: dark, highContrast: false) == .darkAqua, "highContrast selects the HC arm of either appearance")
+    }
+
+    // MARK: keyboard focus ring
+
+    /// The ring is at least 3:1 against the surface it sits on (WCAG 1.4.11) in every arm, and is a different SHAPE from "selected":
+    /// stroked wider than the selected 1 pt border and standing off the control, never the accent fill's tone alone.
+    private static func focusRingTests() throws {
+        for (name, appearance) in appearances {
+            for hc in flags {
+                let arm = StateStyles.arm(for: appearance, highContrast: hc)
+                let ring = StateStyles.focusRingColor(highContrast: hc, appearance: appearance)
+                let window = P.resolve(P.Surface.window, arm: arm), content = P.resolve(P.Surface.content, arm: arm)
+                for (surface, color) in [("window", window), ("content", content)] {
+                    let ratio = P.contrastRatio(ring, P.rgb(color).rgb)
+                    try expect(ratio >= 3, "focus ring on the \(surface) in \(name) hc=\(hc) is \(String(format: "%.2f", ratio)):1, needs 3:1")
+                }
+                let selected = StateStyles.command(.selected, primary: false, focused: true, highContrast: hc, differentiate: false, appearance: appearance)
+                try expect(selected.focusRing && selected.borderWidth == 1, "a focused selected control shows both its 1 pt border and the ring (\(name) hc=\(hc))")
+                try expect(StateStyles.focusRingWidth > selected.borderWidth && StateStyles.focusRingOutset > 0,
+                           "the ring is stroked wider than the selected border and stands off the control (\(StateStyles.focusRingWidth) pt at +\(StateStyles.focusRingOutset))")
+                try expect(!same(ring, accent(appearance, highContrast: hc)), "the ring is not the selected accent colour (\(name) hc=\(hc))")
+            }
+        }
     }
 
     // MARK: Snap

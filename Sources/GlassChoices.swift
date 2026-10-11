@@ -161,6 +161,8 @@ final class GlassChoiceButton: CommandButton {
     /// Offered every key before the button's own handling; returning true consumes it. The inline group and the panel navigate with it.
     var keyHandler: ((NSEvent) -> Bool)?
 
+    /// Replaces the title's colour in every state (a destructive alert button carries the error colour with its words).
+    var titleColorOverride: NSColor? { didSet { syncPlate() } }
     let titleLabel = makeRowLabel(.body)
     let shortcutLabel = makeRowLabel(.body)
     private let iconView = RowGlyphView(frame: .zero)
@@ -338,7 +340,7 @@ final class GlassChoiceButton: CommandButton {
         if appliedIndicatorKey != IndicatorKey(indicator: indicator, chosen: isChosen) { refreshIndicatorImages() }
         let font = DesignTokens.Typography.font(isChosen ? .bodyStrong : .body)
         if titleLabel.font != font { titleLabel.font = font }
-        titleLabel.textColor = style.content
+        titleLabel.textColor = titleColorOverride ?? style.content
         shortcutLabel.textColor = isChosen && selectionTints ? style.content : DesignTokens.Palette.Text.secondary
         for view in [iconView, markView, trailingView] where view.contentTintColor != style.content { view.contentTintColor = style.content }
     }

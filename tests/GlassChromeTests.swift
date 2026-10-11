@@ -181,6 +181,7 @@ private enum GlassChromeTests {
         DisplayOptions.override = nil
         do {
             surfaceTests()
+            menuLegibilityTests()
             let fonts = fontDirectory()
             chromeTests(glyphs: false)
             uploadVariantChecks()
@@ -259,7 +260,7 @@ private enum GlassChromeTests {
         expect(titled.font?.pointSize == 20, "Clearing the font restores 20 pt")
         titled.font = .systemFont(ofSize: 24)
         expect(titled.font?.pointSize == 24, "Larger fonts are kept")
-        expect(!titled.isBordered && titled.focusRingType == .exterior, "The glass is the bezel; the focus ring stays AppKit's exterior ring")
+        expect(!titled.isBordered && titled.focusRingType == .none, "The glass is the bezel; the ring is the state plate's own layer, not AppKit's")
         expect(titled.alignmentRectInsets.top == 0 && titled.alignmentRectInsets.left == 0 && titled.alignmentRectInsets.bottom == 0 && titled.alignmentRectInsets.right == 0,
                "No alignment insets, so the frame equals what the surface constrains")
 
@@ -821,7 +822,7 @@ private enum GlassChromeTests {
         focus.frame = NSRect(x: 10, y: 10, width: 48, height: 36)
         focusContent.addSubview(focus)
         expect(!focus.plate.stateStyle.focusRing, "No ring while unfocused")
-        expect(focusWindow.makeFirstResponder(focus) && focus.plate.stateStyle.focusRing && focus.focusRingType == .exterior && !focus.focusRingMaskBounds.isEmpty, "Focus puts the ring in the style and keeps the mask")
+        expect(focusWindow.makeFirstResponder(focus) && focus.plate.stateStyle.focusRing && !focus.plate.ringLayer.isHidden && focus.focusRingType == .none && !focus.focusRingMaskBounds.isEmpty, "Focus puts the ring in the style and shows the plate's ring layer")
         focus.isEnabled = false
         expect(!focus.plate.stateStyle.focusRing && focus.focusRingMaskBounds.isEmpty, "A disabled button shows no ring")
         focus.isEnabled = true
@@ -1200,6 +1201,41 @@ private enum GlassChromeTests {
 
     private static func borderAlpha(_ layer: CALayer?) -> CGFloat {
         layer?.borderColor.flatMap { NSColor(cgColor: $0)?.alphaComponent } ?? -1
+    }
+
+    /// A menu or popover plate keeps its text readable over the worst canvas under it: the plate's real base tint (read from its layer) is
+    /// composited over saturated orange, amber and magenta fixtures, with the glass material itself counted as fully see-through, and the
+    /// row's real title and shortcut colours are measured against the result. Increase Contrast goes opaque; Reduce Transparency uses the solid plate.
+    private static func menuLegibilityTests() {
+        typealias P = DesignTokens.Palette
+        let fixtures: [(String, NSColor)] = [("orange", NSColor(srgbRed: 1, green: 0.55, blue: 0.12, alpha: 1)), ("amber", NSColor(srgbRed: 1, green: 0.75, blue: 0, alpha: 1)),
+                                             ("magenta", NSColor(srgbRed: 0.85, green: 0.1, blue: 0.75, alpha: 1)), ("white", .white), ("black", .black)]
+        let arms: [(String, NSAppearance, ChromeAccessibility)] = [
+            ("light", NSAppearance(named: .aqua)!, plain), ("dark", NSAppearance(named: .darkAqua)!, plain),
+            ("light+IC", NSAppearance(named: .aqua)!, contrast), ("dark+IC", NSAppearance(named: .darkAqua)!, contrast)]
+        for (name, appearance, options) in arms {
+            let row = GlassChoiceButton(title: "Copy", kind: .command)
+            row.shortcutText = "\u{2318}C"
+            let plate = GlassChrome.plate([row], identifier: "LegibilityMenu", accessibility: options, axis: .vertical)
+            plate.appearance = appearance
+            let (_, content) = window(NSSize(width: 400, height: 200))
+            content.addSubview(plate); content.layoutSubtreeIfNeeded()
+            plate.viewDidChangeEffectiveAppearance()
+            guard let tint = plate.baseTintLayerColor else { expect(false, "\(name): a menu plate carries a base tint behind its rows"); continue }
+            expect(!options.increaseContrast || tint.alphaComponent == 1, "\(name): Increase Contrast makes the menu opaque (\(tint.alphaComponent))")
+            let primary = P.resolve(row.titleLabel.textColor ?? .labelColor, for: appearance), secondary = P.resolve(row.shortcutLabel.textColor ?? .secondaryLabelColor, for: appearance)
+            for (fixtureName, fixture) in fixtures {
+                let shown = P.blend(tint, alpha: 1, over: fixture)
+                for (role, text) in [("title", primary), ("shortcut", secondary)] {
+                    let ratio = P.contrastRatio(text, shown)
+                    expect(ratio >= 4.5, "\(name): \(role) text over a \(fixtureName) canvas is \(String(format: "%.2f", ratio)):1, needs 4.5:1")
+                }
+            }
+        }
+        let bar = GlassChrome.plate([button()], identifier: "LegibilityBar", accessibility: plain)
+        expect(bar.baseTintLayerColor == nil, "A bar plate carries no base tint")
+        let solid = GlassChrome.plate([GlassChoiceButton(title: "Copy")], identifier: "LegibilitySolid", accessibility: ChromeAccessibility(reduceTransparency: true, increaseContrast: false, reduceMotion: false), axis: .vertical)
+        expect(solid.baseTintLayerColor == nil && solid.transparencyPlate != nil, "Reduce Transparency keeps the solid plate and no tint")
     }
 
     private static func surfaceTests() {
