@@ -59,8 +59,8 @@ final class PublishingDestinationsView: NSView {
     let regionField = NSTextField(), bucketField = NSTextField(), profileField = NSTextField()
     /// The Protocol and Source choices: glass pop-ups. Each keeps `NSPopUpButton` as the model (items, selection, the action `formChanged`)
     /// and opens every way, mouse, keys and VoiceOver included, as one glass panel; they sit on plates in a hover-fill cell.
-    let protocolPopup = GlassPopUpButton(frame: .zero, pullsDown: false)
-    let sourcePopup = GlassPopUpButton(frame: .zero, pullsDown: false)
+    let protocolPopup = DestinationChoicePopUp(frame: .zero, pullsDown: false)
+    let sourcePopup = DestinationChoicePopUp(frame: .zero, pullsDown: false)
     /// The "Make uploads public-read" switch: a checkbox-style glass toggle; `state` is `.on` while chosen.
     let aclCheckbox = GlassChoiceButton(title: "Make uploads public-read", kind: .toggle, indicator: .checkbox, layout: .row)
     private var glassPlates: [GlassSurfaceView] = []
@@ -202,7 +202,7 @@ final class PublishingDestinationsView: NSView {
 
     private let formHelp = NSTextField(wrappingLabelWithString: "")
 
-    private static let captionWidth: CGFloat = 190
+    private static let captionWidth: CGFloat = 180
 
     private func styled(_ field: NSTextField, _ placeholder: String) -> NSTextField {
         Typography.apply(.body, to: field); field.placeholderString = placeholder
@@ -283,7 +283,8 @@ final class PublishingDestinationsView: NSView {
         protocolPopup.addItems(withTitles: PublishingProtocol.allCases.map(\.title))
         for (index, transport) in PublishingProtocol.allCases.enumerated() { protocolPopup.item(at: index)?.toolTip = transport.detail }
         protocolPopup.target = self; protocolPopup.action = #selector(formChanged)
-        sourcePopup.addItems(withTitles: ["AWS credentials profile", "Access key stored in Keychain"])
+        sourcePopup.addItems(withTitles: [Self.sourceTitles.profile, Self.sourceTitles.keychain])
+        sourcePopup.faceTitles = Self.sourceFaceTitles
         sourcePopup.target = self; sourcePopup.action = #selector(formChanged)
         aclCheckbox.target = self; aclCheckbox.action = #selector(formChanged)
         Typography.apply(.body, to: passwordField)
@@ -362,8 +363,15 @@ final class PublishingDestinationsView: NSView {
         return glassPlate([cell], identifier: identifier + "Group")
     }
 
-    /// The protocol pop-up says what the chosen protocol is.
-    private func syncProtocolHelp() { AppToolTip.setText(selectedProtocol.detail, for: protocolPopup) }
+    /// The two credential sources, in menu order, with the full title the menu, the accessibility value and the tooltip keep and the short one the face shows.
+    static let sourceTitles = (profile: "AWS credentials profile", keychain: "Access key stored in Keychain")
+    static let sourceFaceTitles = [sourceTitles.profile: "AWS profile", sourceTitles.keychain: "Keychain"]
+
+    /// The protocol pop-up says what the chosen protocol is; the source pop-up's tooltip is the full title its face shortens.
+    private func syncProtocolHelp() {
+        AppToolTip.setText(selectedProtocol.detail, for: protocolPopup)
+        AppToolTip.setText(sourcePopup.titleOfSelectedItem, for: sourcePopup)
+    }
 
     /// Closes any choice panel that is up and says whether there was one. Escape with a panel open dismisses only the panel; the sheet stays.
     @discardableResult
@@ -502,6 +510,21 @@ extension PublishingProtocol {
 private extension NSStackView {
     func setViews(_ views: [NSView], in gravity: NSStackView.Gravity) {
         views.forEach { addArrangedSubview($0) }
+    }
+}
+
+/// A glass pop-up whose face may show a shorter title than the item it stands for: the menu rows, the accessibility value and the tooltip
+/// keep the full text, and the face is only as wide as its (short) titles, so it never truncates in the narrowest sheet.
+final class DestinationChoicePopUp: GlassPopUpButton {
+    /// Full item title to the title the face shows; an item with no entry shows its own title.
+    var faceTitles: [String: String] = [:] { didSet { invalidateIntrinsicContentSize(); needsDisplay = true } }
+    override var faceTitle: String { let full = titleOfSelectedItem ?? ""; return faceTitles[full] ?? full }
+
+    override var intrinsicContentSize: NSSize {
+        let attributes: [NSAttributedString.Key: Any] = [.font: DesignTokens.Typography.font(.body)]
+        let titles = (menu?.items.map { faceTitles[$0.title] ?? $0.title } ?? []) + [faceTitle]
+        let widest = titles.map { ceil(($0 as NSString).size(withAttributes: attributes).width) }.max() ?? 0
+        return NSSize(width: 2 * GlassChoiceButton.padding + widest + GlassChoiceButton.gap + GlassChoiceButton.glyphSide, height: GlassChoiceButton.height)
     }
 }
 

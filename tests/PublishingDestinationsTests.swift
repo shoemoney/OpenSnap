@@ -38,6 +38,7 @@ enum PublishingDestinationsTests {
         try MainActor.assumeIsolated { try glassChoiceSheet() }
         try MainActor.assumeIsolated { try publicReadToggle() }
         try MainActor.assumeIsolated { try glassFaceEvents() }
+        try MainActor.assumeIsolated { try glassFaceWidths() }
         try MainActor.assumeIsolated { try resultBandAndSheetWidth() }
         try connectionTests()
         print("Destination and S3 self-checks passed: \(checks). No uploads were executed.")
@@ -745,11 +746,11 @@ enum PublishingDestinationsTests {
     // MARK: Glass choices on the destination sheet (Protocol, Source, the action buttons, public-read)
 
     /// A sheet in a window that is never shown, with its glass panels' presentation replaced so nothing reaches the screen.
-    @MainActor static func glassSheet(editing: PublishingDestination? = nil) -> (NSWindow, PublishingDestinationsView) {
+    @MainActor static func glassSheet(editing: PublishingDestination? = nil, width: CGFloat = PublishingDestinationsView.sheetWidth) -> (NSWindow, PublishingDestinationsView) {
         _ = NSApplication.shared
         NSApp.setActivationPolicy(.prohibited)
-        let view = PublishingDestinationsView(editing: editing)
-        view.frame = NSRect(x: 0, y: 0, width: PublishingDestinationsView.sheetWidth, height: 760)
+        let view = PublishingDestinationsView(editing: editing, width: width)
+        view.frame = NSRect(x: 0, y: 0, width: width, height: 760)
         let window = NSWindow(contentRect: view.frame, styleMask: [.titled], backing: .buffered, defer: true)
         window.isReleasedWhenClosed = false; window.contentView = view
         for face in [view.protocolPopup, view.sourcePopup] {
@@ -1038,6 +1039,65 @@ enum PublishingDestinationsTests {
             try expect(!panel.host.isShown, "\(name): Return does not open the panel")
         }
         try expect(view.protocolPopup.window === window && view.sourcePopup.window === window, "both pop-ups are in the sheet's window")
+    }
+
+    /// Every glass choice in the sheet reads whole at the narrowest supported sheet (560), at Settings' 640 and at the full 900-wide host:
+    /// for every protocol and key source, no label is cut, nothing needs more room than it has, and the full titles stay exposed.
+    @MainActor static func glassFaceWidths() throws {
+        let sourceFull = [PublishingDestinationsView.sourceTitles.profile, PublishingDestinationsView.sourceTitles.keychain]
+        try expect(PublishingDestinationsView.sheetMinWidth == 560, "the narrowest supported sheet is 560 wide")
+        for width in [CGFloat(560), 640, 900] {
+            let sheetWidth = PublishingDestinationsView.sheetWidth(forHostWidth: width)
+            let (window, view) = glassSheet(width: sheetWidth)
+            defer { window.orderOut(nil) }
+            for transport in PublishingProtocol.allCases {
+                for source in 0...1 {
+                    view.protocolPopup.selectItem(withTitle: transport.title); view.sourcePopup.selectItem(at: source); view.formChanged()
+                    view.layoutSubtreeIfNeeded()
+                    let tag = "\(Int(sheetWidth)) pt / \(transport.title) / \(sourceFull[source])"
+                    let tree = descendants(view).filter { !$0.isHiddenOrHasHiddenAncestor }
+                    let right = view.bounds.width - DesignTokens.Space.s5 + 0.5
+                    for popup in tree.compactMap({ $0 as? GlassPopUpButton }) {
+                        let natural = ceil((popup.faceTitle as NSString).size(withAttributes: [.font: DesignTokens.Typography.font(.body)]).width)
+                        let needed = natural + 2 * GlassChoiceButton.padding + GlassChoiceButton.gap + GlassChoiceButton.glyphSide
+                        try expect(needed <= popup.frame.width + 0.5, "\(tag): the “\(popup.faceTitle)” face needs \(needed) pt but is \(popup.frame.width) pt")
+                        try expect(popup.intrinsicContentSize.width <= popup.frame.width + 0.5, "\(tag): the \(popup.accessibilityLabel() ?? "") pop-up wants \(popup.intrinsicContentSize.width) pt, has \(popup.frame.width)")
+                        try expect(popup.convert(popup.bounds, to: view).maxX <= right, "\(tag): the \(popup.accessibilityLabel() ?? "") pop-up overhangs the form")
+                    }
+                    for button in tree.compactMap({ $0 as? GlassChoiceButton }) {
+                        let natural = ceil((button.title as NSString).size(withAttributes: [.font: DesignTokens.Typography.font(.bodyStrong)]).width)
+                        try expect(button.titleLabel.frame.width + 0.5 >= natural, "\(tag): “\(button.title)” is cut: \(natural) pt of text in a \(button.titleLabel.frame.width) pt label")
+                        try expect(button.fittingSize.width <= button.frame.width + 0.5, "\(tag): “\(button.title)” wants \(button.fittingSize.width) pt, has \(button.frame.width)")
+                        try expect(button.convert(button.bounds, to: view).maxX <= right + DesignTokens.Space.s1, "\(tag): “\(button.title)” overhangs the sheet")
+                    }
+                }
+            }
+            // The full titles are still what is exposed: items, accessibility value, panel rows and tooltip; only the face is short.
+            for (index, full) in sourceFull.enumerated() {
+                view.protocolPopup.selectItem(withTitle: PublishingProtocol.s3.title); view.sourcePopup.selectItem(at: index); view.formChanged()
+                let popup = view.sourcePopup
+                try expect(popup.itemTitles == sourceFull, "the menu items keep their full titles: \(popup.itemTitles)")
+                try expect(popup.accessibilityValue() as? String == full && popup.titleOfSelectedItem == full, "the accessibility value of the Source pop-up is the full “\(full)”, got \(String(describing: popup.accessibilityValue()))")
+                try expect(popup.accessibilityLabel() == "Source", "the Source pop-up is still named Source")
+                try expect(AppToolTip.text(for: popup) == full, "the Source tooltip is the full “\(full)”")
+                try expect(popup.faceTitle == PublishingDestinationsView.sourceFaceTitles[full] && popup.faceTitle.count < full.count, "the face shows a shorter title than “\(full)”: “\(popup.faceTitle)”")
+                popup.presentHandler = nil
+                let host = popup.choicePanel.host
+                host.presenter = { _, _ in }; host.visibleFrameOverride = NSRect(x: 0, y: 0, width: 1440, height: 1000); host.keyStateProbe = { false }
+                popup.openChoices(keyboard: false)
+                try expect(popup.choicePanel.rows.map(\.title) == sourceFull && popup.choicePanel.rows.filter(\.isChosen).map(\.title) == [full], "the panel rows keep the full titles and mark “\(full)”")
+                host.close()
+            }
+            // The chosen source is what the draft is made from, whatever the face says.
+            view.protocolPopup.selectItem(withTitle: PublishingProtocol.s3.title); view.formChanged()
+            view.bucketField.stringValue = "pics"; view.usernameField.stringValue = "AKIAEXAMPLE"; view.passwordField.stringValue = "not-a-real-secret"; view.profileField.stringValue = "default"
+            view.sourcePopup.selectItem(at: 1); view.formChanged()
+            var draft = try view.makeDraft()
+            try expect(draft.destination.settings.username == "AKIAEXAMPLE" && draft.password == "not-a-real-secret" && draft.destination.settings.s3?.credentialsProfile == "", "the Keychain face is the Keychain source")
+            view.sourcePopup.selectItem(at: 0); view.formChanged()
+            draft = try view.makeDraft()
+            try expect(draft.destination.settings.username == "" && draft.password == "" && draft.destination.settings.s3?.credentialsProfile == "default", "the AWS profile face is the profile source")
+        }
     }
 
     @MainActor static func publicReadToggle() throws {
