@@ -26,6 +26,21 @@ public struct NavigatorGeometry {
         return valid(result) ? result : nil
     }
 
+    /// Longest side, in pixels, the overview image is ever rendered at, however large the slot or the backing scale.
+    public static let maxRenderPixels: CGFloat = 1024
+
+    /// Pixel size to render the overview image at so the thumbnail slot is filled one image pixel per backing pixel: the slot in points times
+    /// the backing scale, never above the source (no upscale) and never above `maxRenderPixels` on the longest side.
+    public static func renderPixelSize(source: CGSize, thumbnail: CGSize, backingScale: CGFloat) -> CGSize? {
+        guard valid(source), valid(thumbnail), backingScale.isFinite, backingScale > 0 else { return nil }
+        // The slot is aspect-fitted to the source, so both ratios agree; the larger one keeps a rounding mismatch from under-filling an axis.
+        let wanted = max(thumbnail.width / source.width, thumbnail.height / source.height) * backingScale
+        let scale = min(1, wanted, maxRenderPixels / max(source.width, source.height))
+        // The epsilon keeps 196 * 2 = 392.00000000000006 from rounding up to a whole extra pixel.
+        func pixels(_ value: CGFloat) -> CGFloat { max(1, ceil(value * scale - 0.000_001)) }
+        return CGSize(width: pixels(source.width), height: pixels(source.height))
+    }
+
     /// Clips the visible document region before mapping it into the thumbnail.
     public static func viewportRect(viewport: CGRect, documentSize: CGSize,
                                     imageRect: CGRect) -> CGRect? {
@@ -83,6 +98,11 @@ public final class CanvasNavigator: NSView {
     public var viewport: CGRect = .zero { didSet { invalidateOverview() } }
     /// Receives a viewport origin; the parent remains the owner of viewport state.
     public var onNavigate: ((CGPoint) -> Void)?
+    /// The source size and pixel size `image` was last rendered at, so the parent can tell when the slot or the display wants a different one.
+    public var imageSourceSize: CGSize = .zero
+    public var imagePixelSize: CGSize = .zero
+    /// Fired when the panel moves to a display with another backing scale.
+    public var onBackingChange: (() -> Void)?
 
     private var isDragging = false
     private lazy var navigationActions: [NSAccessibilityCustomAction] = [
@@ -114,8 +134,14 @@ public final class CanvasNavigator: NSView {
         self.viewport = viewport
     }
 
-    private var thumbnailRect: CGRect? {
+    /// Where the image is drawn: the slot the render resolution is sized for.
+    public var thumbnailRect: CGRect? {
         NavigatorGeometry.imageRect(documentSize: documentSize, bounds: bounds)
+    }
+
+    public override func viewDidChangeBackingProperties() {
+        super.viewDidChangeBackingProperties()
+        onBackingChange?()
     }
 
     private func configureAccessibility() {

@@ -158,6 +158,44 @@ private enum CanvasNavigatorTests {
         }
     }
 
+    static func renderResolution() throws {
+        func render(_ source: CGSize, slot: CGSize, scale: CGFloat) -> CGSize? {
+            NavigatorGeometry.renderPixelSize(source: source, thumbnail: slot, backingScale: scale)
+        }
+        // A 156 pt slot on a 2x display wants 312 pixels, not the old fixed 160.
+        try expect(render(CGSize(width: 2000, height: 1000), slot: CGSize(width: 156, height: 78), scale: 2) == CGSize(width: 312, height: 156),
+                   "Wide source on a 2x slot renders 312 x 156")
+        try expect(render(CGSize(width: 2000, height: 1000), slot: CGSize(width: 156, height: 78), scale: 1) == CGSize(width: 156, height: 78),
+                   "Wide source on a 1x slot renders one pixel per point")
+        // A tall slot is bounded by its height, so its longest side is the one that used to be starved.
+        try expect(render(CGSize(width: 1000, height: 3000), slot: CGSize(width: 100, height: 300), scale: 2) == CGSize(width: 200, height: 600),
+                   "Tall source on a 2x slot renders 200 x 600")
+        // Never upscale: a source smaller than the slot keeps its own pixels.
+        try expect(render(CGSize(width: 90, height: 60), slot: CGSize(width: 156, height: 104), scale: 2) == CGSize(width: 90, height: 60),
+                   "Small source is never upscaled")
+        // The cap bounds a very large slot or scale.
+        try expect(render(CGSize(width: 8000, height: 4000), slot: CGSize(width: 900, height: 450), scale: 3) == CGSize(width: 1024, height: 512),
+                   "Large slot is capped at 1024 on the longest side")
+        try expect(render(CGSize(width: 4000, height: 12000), slot: CGSize(width: 400, height: 1200), scale: 2) == CGSize(width: 342, height: 1024),
+                   "Tall cap bounds the height and keeps the aspect")
+        try expect(render(CGSize(width: 1000, height: 500), slot: CGSize(width: 196, height: 98), scale: 2) == CGSize(width: 392, height: 196),
+                   "Exact products do not round up a spare pixel")
+        try expect(render(CGSize(width: 100_000, height: 1), slot: CGSize(width: 156, height: 1), scale: 2)?.height == 1,
+                   "Extreme aspect keeps at least one pixel")
+        // The result agrees with the slot the layout and drawing code compute from the same inputs.
+        let bounds = CGRect(x: 0, y: 0, width: 180, height: 170)
+        let doc = CGSize(width: 2000, height: 1500)
+        guard let slot = NavigatorGeometry.imageRect(documentSize: doc, bounds: bounds),
+              let pixels = render(doc, slot: slot.size, scale: 2) else { throw Failure(description: "Slot and render size for a real panel") }
+        try expect(pixels.width >= slot.width * 2 - 1 && pixels.width <= slot.width * 2 + 1, "Render size follows the real drawable slot")
+        for bad in [CGSize.zero, CGSize(width: CGFloat.nan, height: 10), CGSize(width: -1, height: 10)] {
+            try expect(render(bad, slot: slot.size, scale: 2) == nil && render(doc, slot: bad, scale: 2) == nil, "Invalid sizes are rejected")
+        }
+        for scale: CGFloat in [0, -1, .nan, .infinity] {
+            try expect(render(doc, slot: slot.size, scale: scale) == nil, "Invalid backing scale is rejected: \(scale)")
+        }
+    }
+
     static func interaction() throws {
         let view = CanvasNavigator(frame: CGRect(x: 40, y: 30, width: 220, height: 190))
         let preview = NSImage(size: CGSize(width: 100, height: 50))
@@ -320,6 +358,7 @@ private enum CanvasNavigatorTests {
 
     static func main() throws {
         try geometry()
+        try renderResolution()
         try interaction()
         try offscreenDrawing()
         try headerTypeToken()

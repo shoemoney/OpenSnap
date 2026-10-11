@@ -3173,6 +3173,29 @@ enum AppSafetyTests {
               let navigate = app.navigator.onNavigate else { throw Failure(description: "Actual navigator launch wiring") }
         try expect(!panel.isVisible && panel.frame.minX == app.window.frame.minX - panel.frame.width + 5 &&
                    panel.frame.minY == app.window.frame.minY + 30, "Hidden child navigator stays beside the parent's left edge")
+        // The overview image is rendered for the slot it fills at this display's backing scale, not at a fixed 160 pixels (wide, then tall).
+        func overviewResolution(_ shape: String) throws {
+            guard let slot = app.navigator.thumbnailRect,
+                  let rep = app.navigator.image?.representations.compactMap({ $0 as? NSBitmapImageRep }).first,
+                  let wanted = NavigatorGeometry.renderPixelSize(source: app.navigator.imageSourceSize, thumbnail: slot.size,
+                                                                 backingScale: app.navigatorBackingScale) else {
+                throw Failure(description: "\(shape) overview has a slot and a bitmap")
+            }
+            try expect(CGFloat(rep.pixelsWide) == wanted.width && CGFloat(rep.pixelsHigh) == wanted.height &&
+                       app.navigator.imagePixelSize == wanted,
+                       "\(shape) overview renders \(wanted) pixels for the \(slot.size) slot, not \(rep.pixelsWide)x\(rep.pixelsHigh)")
+            let filled = min(app.navigator.imageSourceSize.width, slot.width * app.navigatorBackingScale)
+            try expect(CGFloat(rep.pixelsWide) >= filled.rounded(.down) - 1,
+                       "\(shape) overview has a pixel per backing pixel of its slot: \(rep.pixelsWide) wide for \(filled)")
+            try expect(max(rep.pixelsWide, rep.pixelsHigh) <= Int(NavigatorGeometry.maxRenderPixels), "\(shape) overview stays under the pixel cap")
+        }
+        try overviewResolution("Wide")
+        app.navigator.imagePixelSize = CGSize(width: 1, height: 1)
+        app.updateViewportChrome()
+        try expect(app.navigatorTimer != nil, "A slot or display that wants another resolution schedules a refresh")
+        app.refreshNavigatorImage()
+        try expect(app.navigatorTimer == nil, "The refresh settles on the wanted resolution without rescheduling")
+        try overviewResolution("Refreshed wide")
         let before = try app.canvas.snapshotDocumentData()
         func dragNavigator(to point: CGPoint) throws {
             guard let rect = NavigatorGeometry.imageRect(documentSize: app.navigator.documentSize, bounds: app.navigator.bounds) else {
@@ -3205,6 +3228,12 @@ enum AppSafetyTests {
         app.leaveActualSize(); let origin = scroll.contentView.bounds.origin
         navigate(CGPoint(x: 500, y: 500))
         try expect(scroll.contentView.bounds.origin == origin, "Stale navigator callback cannot move the normal viewport")
+        app.canvas.document.size = CGSize(width: 1000, height: 3000)
+        try expect(app.canvas.setPresentationOutputSize(CGSize(width: 250, height: 750)), "Tall navigator fixture")
+        app.updateViewportChrome(); app.toggleActualSize()
+        try expect(app.isActualSize, "Tall fixture enters Actual Size")
+        try overviewResolution("Tall")
+        app.leaveActualSize()
     }
     static func main() {
         guard let evidence = ProcessInfo.processInfo.environment["APP_SAFETY_EVIDENCE"],

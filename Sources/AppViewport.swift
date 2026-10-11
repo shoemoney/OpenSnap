@@ -261,18 +261,26 @@ extension AppDelegate {
                 setWindowFrame(frame)
             }
         }
+        navigator.onBackingChange = { [weak self] in
+            MainActor.assumeIsolated { self?.scheduleNavigatorImage() }
+        }
         positionActualNavigator()
         if window.isVisible, let panel = navigatorWindow { window.addChildWindow(panel, ordered: .above) }
+    }
+
+    /// The overview panel's size: the one source of the thumbnail slot that layout, drawing and the render resolution all derive from.
+    func actualNavigatorSize() -> CGSize {
+        let source = canvas.fullResolutionOutputSize
+        let maxHeight = max(100, (canvas.enclosingScrollView?.frame.height ?? 400) + 30)
+        let previewHeight = min(maxHeight - 64, 156 * source.height / source.width)
+        return CGSize(width: 180, height: max(100, previewHeight + 64))
     }
 
     func positionActualNavigator() {
         guard isActualSize, let window, let panel = navigatorWindow else { return }
         // Original navigator is a non-key child along the parent's left edge.
         // Extra header room preserves the user's 20-point readable-text preference.
-        let source = canvas.fullResolutionOutputSize
-        let maxHeight = max(100, (canvas.enclosingScrollView?.frame.height ?? 400) + 30)
-        let previewHeight = min(maxHeight - 64, 156 * source.height / source.width)
-        let size = CGSize(width: 180, height: max(100, previewHeight + 64))
+        let size = actualNavigatorSize()
         panel.setFrame(CGRect(x: window.frame.minX - size.width + 5,
                               y: window.frame.minY + 30, width: size.width, height: size.height), display: true)
     }
@@ -281,12 +289,28 @@ extension AppDelegate {
         navigatorTimer?.invalidate(); navigatorTimer = nil
         guard isActualSize, let raw = try? canvas.snapshotDocumentData(),
               let document = try? CanvasView.validatedDocumentData(raw) else { return }
-        let scale = min(1, 160 / max(document.size.width, document.size.height))
-        navigator.image = ImageExport.image(document: document,
-            size: CGSize(width: max(1, ceil(document.size.width * scale)),
-                         height: max(1, ceil(document.size.height * scale))))
+        // Size the panel and the drawable slot first: the image is rendered for the slot it will actually fill.
+        navigator.documentSize = canvas.bounds.size
+        positionActualNavigator()
+        let size = navigatorRenderSize(source: document.size)
+            ?? NavigatorGeometry.renderPixelSize(source: document.size, thumbnail: CGSize(width: 156, height: 156),
+                                                 backingScale: navigatorBackingScale) ?? document.size
+        navigator.image = ImageExport.image(document: document, size: size)
+        navigator.imageSourceSize = document.size
+        navigator.imagePixelSize = size
         updateViewportChrome()
         helpBevel?.reposition()
+    }
+
+    /// Backing scale of the display the overview panel is on, falling back to the editor window's, then the main screen's.
+    var navigatorBackingScale: CGFloat {
+        navigatorWindow?.backingScaleFactor ?? window?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 1
+    }
+
+    /// Pixels to render the overview image at for the thumbnail slot as it is now, at this display's backing scale.
+    func navigatorRenderSize(source: CGSize) -> CGSize? {
+        guard let slot = navigator.thumbnailRect else { return nil }
+        return NavigatorGeometry.renderPixelSize(source: source, thumbnail: slot.size, backingScale: navigatorBackingScale)
     }
 
     func scheduleNavigatorImage() {
@@ -316,6 +340,9 @@ extension AppDelegate {
             navigator.documentSize = canvas.bounds.size
             navigator.viewport = canvas.visibleRect
             positionActualNavigator()
+            // A resize or another display changed the slot: the image is redrawn at the resolution it now wants.
+            if navigator.imageSourceSize.width > 0, let wanted = navigatorRenderSize(source: navigator.imageSourceSize),
+               wanted != navigator.imagePixelSize { scheduleNavigatorImage() }
         }
     }
 
