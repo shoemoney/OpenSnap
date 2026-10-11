@@ -5,8 +5,8 @@
 // xcrun swiftc -swift-version 5 -target arm64-apple-macosx26.0 -D GLASS_CHOICES_TESTS \
 //   Sources/DesignTokens.swift Sources/DisplayOptions.swift Sources/DisplayOptions+ChromeAccessibility.swift Sources/OriginalActionButton.swift \
 //   Sources/FontAwesomeIcons.swift Sources/ChromeIcons.swift Sources/FontAwesomeFree.swift Sources/SVGPath.swift Sources/AppToolTip.swift \
-//   Sources/StateStyles.swift Sources/GlassChrome.swift Sources/GlassChoices.swift tests/ContrastProbe.swift tests/GlassChoicesTests.swift \
-//   -o build/glass-choices-tests
+//   Sources/StateStyles.swift Sources/GlassChrome.swift Sources/GlassChoices.swift \
+//   tests/ContrastProbe.swift tests/ViewTreeAudit.swift tests/AccessibilityAudit.swift tests/GlassChoicesTests.swift -o build/glass-choices-tests
 #if GLASS_CHOICES_TESTS
 import AppKit
 
@@ -150,6 +150,7 @@ private enum GlassChoicesTests {
         submenuTests()
         displayOptionTests()
         popUpButtonTests()
+        auditTests()
         print("PASS glass-choices-tests (\(checks) checks)")
     }
 
@@ -870,12 +871,15 @@ private enum GlassChoicesTests {
         expect(host.isShown && !host.requestedKey, "makeKey: false (hover open) never asks for the keyboard")
         host.close()
 
-        // A flipped anchor view reads the edge in its own coordinates: .minY is its top, so the panel opens above it.
+        // The preferred edge is in screen terms: a flipped anchor view opens below on .minY just like an unflipped one.
         let flipped = FlippedAnchor(frame: NSRect(x: 300, y: 300, width: 80, height: 36))
         rig.window.contentView?.addSubview(flipped)
         host.show(relativeTo: flipped.bounds, of: flipped, preferredEdge: .minY, makeKey: true)
         let flippedFrame = rig.window.convertToScreen(flipped.convert(flipped.bounds, to: nil))
-        expect(host.placement?.edge == .maxY && abs(panel.frame.minY - (flippedFrame.maxY + 6)) < 0.5, "In a flipped view .minY is the top edge, so the panel sits above (\(panel.frame) vs \(flippedFrame))")
+        expect(host.placement?.edge == .minY && abs(panel.frame.maxY - (flippedFrame.minY - 6)) < 0.5, "A flipped anchor view still opens below on .minY (\(panel.frame) vs \(flippedFrame))")
+        host.close()
+        host.show(relativeTo: flipped.bounds, of: flipped, preferredEdge: .maxY, makeKey: true)
+        expect(host.placement?.edge == .maxY && abs(panel.frame.minY - (flippedFrame.maxY + 6)) < 0.5, "...and above on .maxY")
         host.close()
 
         // An anchor with no window cannot show a panel.
@@ -1717,6 +1721,38 @@ private enum GlassChoicesTests {
         }
         expect(ink(0.05, 0.45) > 40, "The title is drawn on the left of the face")
         expect(ink(0.85, 1.0) > 20, "The chevron is drawn on the right of the face")
+    }
+
+
+    // MARK: the shared audits
+
+    /// The same walkers the settings, history and resize suites run: type floor and accessibility, over every primitive on screen.
+    private static func auditTests() {
+        let rig = Rig()
+        let log = Log()
+        let fixture = MenuFixture(log: log)
+        let group = GlassChoiceGroup(titles: ["Resize", "Crop", "Limit"], accessibilityLabel: "Mode", identifier: "mode", accessibility: plain)
+        let radios = GlassChoiceGroup(titles: ["Always", "Never"], layout: .row, axis: .vertical, indicator: .radio, accessibilityLabel: "Presence", identifier: "presence", accessibility: plain)
+        let box = makeButton("Lock proportions", .toggle, indicator: .checkbox)
+        let pop = GlassPopUpButton(frame: NSRect(x: 0, y: 0, width: 200, height: 36), pullsDown: false)
+        pop.addItems(withTitles: ["25%", "50%"])
+        pop.setAccessibilityLabel("Zoom")
+        let panel = MenuChoicePanel(menu: standardMenu(fixture), identifier: "Audit", accessibilityLabel: "Audit choices")
+        rig.attach(panel.host)
+        panel.present(relativeTo: rig.anchor, preferredEdge: .minY, keyboard: false)
+        let views: [(String, NSView)] = [("group", group), ("vertical group", radios), ("toggle", box), ("pop-up", pop), ("panel", panel.host.window.contentView!)]
+        for (name, view) in views {
+            if name != "panel" {
+                view.frame = NSRect(x: 0, y: 0, width: 300, height: 120)
+                rig.window.contentView?.addSubview(view)
+                view.layoutSubtreeIfNeeded()
+            }
+            let type = ViewTreeAudit.audit(view, surface: name)
+            expect(type.violations.isEmpty && type.smallest != nil, "The type-floor audit is clean for the \(name): \(type.description)")
+            let access = AccessibilityAudit.audit(view, surface: name)
+            expect(access.violations.isEmpty && access.controls > 0, "The accessibility audit is clean for the \(name): \(access.description)")
+        }
+        panel.host.close()
     }
 
     // MARK: display options
