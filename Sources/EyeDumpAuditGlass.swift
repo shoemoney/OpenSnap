@@ -189,6 +189,11 @@ extension AuditRun {
             "panelFrame": rectJSON(host.frame), "firstResponder": host.firstResponder.map { String(describing: type(of: $0)) } ?? "none",
             "isKey": host.isKeyWindow
         ]
+        // A title whose text is wider than the label that draws it is cut with an ellipsis: unreadable, so the checker fails it.
+        record["truncatedRows"] = rows.compactMap { row -> String? in
+            guard let choice = row as? GlassChoiceButton, !choice.isHiddenOrHasHiddenAncestor, choice.titleLabel.maximumNumberOfLines == 1, choice.titleLabel.bounds.width > 0 else { return nil }
+            return choice.titleLabel.attributedStringValue.size().width > choice.titleLabel.bounds.width + 0.5 ? choice.titleLabel.stringValue : nil
+        }
         if let hovered = index(where: { isHovered($0) }) { record["hoveredRow"] = hovered }
         if let focused = index(where: { host.firstResponder === $0 }) { record["focusedRow"] = focused }
         if let smallest = smallestText(in: rowsRoot ?? content) { record["minFontSize"] = smallest.size; record["minFontSource"] = smallest.source }

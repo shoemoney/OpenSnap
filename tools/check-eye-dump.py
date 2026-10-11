@@ -628,6 +628,8 @@ def check_glass_record(label, record):
             problems.append(f"glass: {label} recorded no minFontSize for its {len(rows)} row(s)")
         elif font < READABLE_MINIMUM:
             problems.append(f"glass: {label} has text at {font:g} pt, below the {READABLE_MINIMUM:g} pt floor")
+    if variant != "dismissed" and glass.get("truncatedRows"):
+        problems.append(f"glass: {label} has choice titles cut off with an ellipsis: {glass['truncatedRows']}")
     if variant == "hover" and glass.get("hoveredRow") is None:
         problems.append(f"glass: {label} is a hover capture but no row is hovered")
     if variant == "focus" and glass.get("focusedRow") is None:
@@ -973,6 +975,8 @@ def self_test():
             ("text at exactly 18 pt", tweak("S50", "toolbox-rest", minFontSize=18.0), {}, 0),
             ("text size unrecorded", drop_field("S50", "toolbox-rest", "minFontSize"), {}, 1),
             ("two glass containers", tweak("S50", "toolbox-rest", glassContainerCount=2), {}, 1),
+            ("a choice title truncated", tweak("S50", "toolbox-rest", truncatedRows=["Export…"]), {}, 1),
+            ("no truncated titles recorded", tweak("S50", "toolbox-rest", truncatedRows=[]), {}, 0),
             ("no choice rows", tweak("S50", "toolbox-rest", rowTitles=[]), {}, 1),
             ("hover names no row", tweak("S50", "toolbox-hover", hoveredRow=None), {}, 1),
             ("focus names no row", tweak("S50", "toolbox-focus", focusedRow=None), {}, 1),
