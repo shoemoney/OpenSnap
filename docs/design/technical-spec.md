@@ -52,6 +52,8 @@ for double edits).
 * Sheets and dialogs with a default button (Resize, destination sheet): Return and keypad Enter stay with the default button (OK or Save); Space or Down opens a focused choice face.
 * Open panel: Up, Down, Tab, Home and End move; Return and Space choose; Right and Left enter and leave a submenu. The first Escape closes the panel, so a sheet's Cancel runs only on a second Escape. Focus then returns to the opener.
 
+**Unchanged app-owned choice.** The footer PNG | JPG toggle was already the app-owned `SegmentedToggle` drawn from `StateStyles.toggleSegment` on the footer plate (not an `NSSegmentedControl`); it is not part of this change.
+
 **What stays native.** The menu bar; the system Font, Color, Save, Open, Export and Print panels; the share picker; contextual menus (canvas and History grid); the History search field, thumbnail grid and details; text, password and other form fields; the destination list.
 
 ## 0. Decisions that gate the plan (ask the owner once, up front)
