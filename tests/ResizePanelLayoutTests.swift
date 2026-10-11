@@ -408,6 +408,18 @@ private enum ResizePanelLayoutTests {
             }
         }
 
+        // A glass group in a sheet with a default button does not take Return or Enter for itself, even if a key reaches it directly.
+        do {
+            let rig = Rig(); defer { rig.close() }
+            guard let mode: GlassChoiceGroup = private_(rig.resize, "modeControl") else { throw Failure(description: "mode") }
+            let chosen = mode.buttons[mode.selectedIndex]
+            _ = rig.panel.makeFirstResponder(chosen)
+            for (code, text) in [(UInt16(36), "\r"), (76, "\u{3}")] {
+                try expect(chosen.keyHandler?(try key(code, text, window: rig.panel)) == false && mode.selectedIndex == 0, "Key \(code) in the mode group is left for OK")
+            }
+            try expect(chosen.keyHandler?(try key(49, " ", window: rig.panel)) == true, "…while Space still chooses in the group")
+        }
+
         // Arrow keys in a glass group move the choice and the keyboard goes with it: the next arrow moves again. Real arrow events carry the
         // numeric-pad and function flags.
         do {
