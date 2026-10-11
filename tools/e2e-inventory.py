@@ -8,7 +8,9 @@ Two sources are merged:
   (b) the sources: FAIcon cases, MenuSymbols, the menu-bar and Toolbox menus (parsed from Sources/App.swift), and curated tables
       for everything the harness does not enumerate (Settings, History, destinations, sheets, alerts, shortcuts, states).
 Audit IDs are stable: a regenerate reuses the ID of every entry already in inventory.json (keyed by area, surface, name and type)
-and only appends new numbers. `proof` names an existing test; each proof is verified to exist in tests/ at generation time.
+and only appends new numbers. A row whose control changed its surface, name or type (the glass-choices change set) says what it was
+with `was=` so its ID, and the evidence row that hangs on it, follows it. `proof` names an existing test; each proof is verified to
+exist in tests/ at generation time.
 
   python3 -I tools/e2e-inventory.py [--harness DIR] [--check]
 --check regenerates in memory and fails when inventory.json or the matrix would change (used by the guard in tools/test.py).
@@ -46,9 +48,9 @@ RETIRED_GAPS = ("replaced", "removed")   # a row whose surface no longer exists:
 # reachability from the source, this is an audit finding and is only ever set on rows whose evidence class is `unverified`.
 GAP_REASONS = ("permission", "hardware", "OS-owned", "harness", "unsafe", "AX presence only", "AX value only", "text readout only")
 EXERCISE = ("e2e", "e2e-partial", "gap")   # e2e-partial: the app-owned part is real-click, the named gap is the rest
-TYPES = ("menu item", "toolbar button", "control", "icon", "preference", "popover", "sheet", "window", "alert", "shortcut", "state", "gesture")
+TYPES = ("menu item", "toolbar button", "control", "icon", "preference", "popover", "panel", "sheet", "window", "alert", "shortcut", "state", "gesture")
 AREAS = {
-    "MENU": "Menu bar", "TOOLBOX": "Toolbox pop-up", "STAT": "Status item", "BAR": "Editor chrome (top and bottom bars)",
+    "MENU": "Menu bar", "TOOLBOX": "Toolbox panel", "STAT": "Status item", "BAR": "Editor chrome (top and bottom bars)",
     "TOOL": "Tools and drawing options", "CANVAS": "Canvas interactions", "CAP": "Capture", "SET": "Settings window",
     "HOT": "Capture shortcuts (global hotkeys)", "HIST": "History window", "DEST": "Destinations and upload",
     "SHEET": "Sheets, panels and secondary windows", "ALERT": "Alerts", "ICON": "Icons", "KEY": "Keyboard shortcuts and modifiers",
@@ -56,13 +58,21 @@ AREAS = {
 }
 
 entries = []
+WAS = {}   # new (area, surface, name, type) -> the key the row had before its control became a glass choice
+
+
+def glass(was):
+    """The note a converted row carries: what the control was before the glass-choices change set. The matrix keeps the evidence it already had."""
+    return f"Glass choice since impl/glass-pickers-20261010 (was {was}); E2E or rendered evidence recorded before then is for the earlier control, at its own source SHA"
 
 
 def add(area, surface, name, kind, path, expected, prereq="Fresh launch, empty document", icon=None, ex="e2e", gap=None, owner="app",
-        note=None, proof=None, shortcut=None, rendered=None, src="source"):
+        note=None, proof=None, shortcut=None, rendered=None, src="source", was=None):
     assert area in AREAS and kind in TYPES and ex in EXERCISE and owner in ("app", "os"), (area, name, kind, ex, owner)
     assert (ex == "e2e") == (gap is None), f"{name}: gap reason iff not fully e2e"
     assert gap is None or gap in GAPS, gap
+    if was:
+        WAS[(area, surface, name, kind)] = (area, was.get("surface", surface), was.get("name", name), was.get("kind", kind))
     entries.append(dict(area=area, surface=surface, name=name, type=kind, icon=icon, entryPath=path, prerequisite=prereq, expected=expected, owner=owner,
                         exercise=ex, gap=gap, note=note, shortcut=shortcut, proof=proof or [], rendered=rendered or [], sources=[src]))
 
@@ -88,12 +98,12 @@ def parse_faicons():
 
 
 def icon_users(case):
-    """Source files (other than the icon tables) that name the case, e.g. `.eyeSlash`."""
+    """Source files (other than the icon tables) that name the case, e.g. `.eyeSlash` or `FAIcon.eyeSlash`."""
     users = []
     for path in sorted(SRC.glob("*.swift")):
         if path.name in ("FontAwesomeIcons.swift", "FontAwesomeFree.swift", "ChromeIcons.swift"):
             continue
-        if re.search(rf"[\s\[(,:]\.{case}\b", path.read_text()):
+        if re.search(rf"(?:[\s\[(,:]|FAIcon)\.{case}\b", path.read_text()):
             users.append(path.name)
     return users
 
@@ -144,9 +154,10 @@ def verify_proofs():
     return corpus
 
 
-def proof(file, test):
+def proof(file, test, *more):
+    """One proof, or several as (file, test) pairs after the first; each is a message a test in tests/ really contains."""
     assert test.strip(), "a proof must name a real test message"
-    return [{"file": file, "test": test}]
+    return [{"file": file, "test": test}] + [{"file": f, "test": t} for f, t in more]
 
 
 # --------------------------------------------------------------------------------------------------------------- menu semantics
@@ -274,13 +285,22 @@ def build_toolbox(parsed):
     titles = {sel: name for _, name, sel, _ in parsed if sel}
     titles.update({"toggleVisible": "Hide OpenSnap"})
     symbols = dict(parse_menu_symbols())
-    add("TOOLBOX", "Toolbar › Toolbox", "Toolbox", "toolbar button", "Top bar › Toolbox (icon and chevron)", "Menu opens (a menu button; rows open below it, each with its icon): five groups of drawing-session commands (keep, edit, capture, adjust the picture, pen settings); no app or file plumbing",
-        icon="toolbox", rendered=["S04", "S12"])
+    add("TOOLBOX", "Toolbar › Toolbox", "Toolbox", "toolbar button", "Top bar › Toolbox (icon and chevron)",
+        "Opens the Toolbox glass panel below the button (a menu button; a click, Control-click, Space, Return, Down or Up, or the VoiceOver press): five group plates of drawing-session commands (keep, edit, capture, adjust the picture, pen settings), each row with its icon, title and shortcut and the toggles showing on or off; no app or file plumbing",
+        icon="toolbox", rendered=["S04", "S12"], note=glass("a native menu"),
+        proof=proof("AppSafetyMenuCases.swift", "The Toolbox opens a glass panel of its five groups: 18 rows with the menu's icons, shortcuts and validation, choosing runs the command, Escape returns the focus",
+                    ("AppSafetyMenuCases.swift", "Every route to the Toolbox, Zoom and Upload choices opens the glass panel and starts no native menu")))
+    add("TOOLBOX", "Toolbar › Toolbox", "Toolbox panel", "panel", "Top bar › Toolbox (open)",
+        "A floating glass panel below the Toolbox: one plate per group (2, 5, 4, 4, 3 rows, 18 in all), rows copied from the menu at every open so validation and toggle state are current; Escape, a click elsewhere or on the Toolbox again, or the window changing closes it and the keyboard goes back to the Toolbox; a long list scrolls inside the screen's height",
+        prereq="A drawing on the canvas for the editing rows", rendered=[],
+        proof=proof("AppSafetyMenuCases.swift", "The Toolbox opens a glass panel of its five groups: 18 rows with the menu's icons, shortcuts and validation, choosing runs the command, Escape returns the focus",
+                    ("GlassChromeTests.swift", "toolbox: a second press closes the panel"), ("GlassChromeTests.swift", "toolbox: a click elsewhere closes it and passes through"),
+                    ("GlassChromeTests.swift", "toolbox: the panel opens below the button, not over it"), ("GlassChromeTests.swift", "toolbox: a disabled row does nothing and the panel stays open")))
     for index, group in enumerate(parse_toolbox_groups(), start=1):
         for selector in group:
             name = titles.get(selector, selector)
             add("TOOLBOX", f"Toolbar › Toolbox › group {index}", name, "menu item", f"Top bar › Toolbox › {name}",
-                f"Runs the same command as the menu-bar item {name} (the Toolbox row is a copy: title, key and symbol match)", icon=symbols.get(selector),
+                f"Runs the same command as the menu-bar item {name} (the Toolbox row is a copy in the Toolbox glass panel: title, key and symbol match)", icon=symbols.get(selector),
                 prereq=SEM.get(selector, (D,))[0], ex=SEM[selector][2] if selector in SEM else "e2e", gap=SEM[selector][3] if selector in SEM else None,
                 owner=SEM[selector][4] if selector in SEM else "app", rendered=["S12"],
                 proof=proof("AppSafetyMenuCases.swift", "Toolbox rows are copies of main-menu rows: subset by action, same titles"))
@@ -288,16 +308,23 @@ def build_toolbox(parsed):
 
 # ------------------------------------------------------------------------------------------------------------------- icons
 FA_WHERE = {  # entry path for each icon, kept beside the source-derived "used in" list
-    "eyeSlash": "Top bar › Hide", "folderMinus": "History › Hide (list-only removal)", "chevronDown": "Top bar › Toolbox (face)", "toolbox": "Top bar › Toolbox", "images": "Top bar › Photos", "boxArchive": "Bottom bar › Save",
+    "eyeSlash": "Top bar › Hide", "folderMinus": "History › Hide (list-only removal)", "chevronDown": "Top bar › Toolbox (face); every glass pop-up face (Zoom, History, Resize preset, destination form, Capture key)", "toolbox": "Top bar › Toolbox", "images": "Top bar › Photos", "boxArchive": "Bottom bar › Save",
     "clockRotateLeft": "Bottom bar › History", "arrowPointer": "Top bar › Select tool", "paintbrush": "Top bar › Brush tool; Settings › Drawing tab",
-    "slashForward": "Top bar › Line tool", "circle": "Top bar › Ellipse tool", "square": "Top bar › Rectangle tool", "fillDrip": "Top bar › Fill tool",
+    "slashForward": "Top bar › Line tool", "circle": "Top bar › Ellipse tool; unchosen radio glyph of glass options", "square": "Top bar › Rectangle tool; unchecked box glyph of glass toggles", "fillDrip": "Top bar › Fill tool",
     "eraser": "Top bar › Eraser tool", "text": "Top bar › Text tool", "arrowUpRight": "Top bar › Arrow tool", "cropSimple": "Top bar › Crop tool",
     "crosshairs": "Top bar › Snap; Settings › Capture tab", "frameViewfinder": "Top bar › Snap Frame (Frame mode)", "xmark": "Top bar › Cancel (Frame mode)",
     "font": "Top bar › Font", "arrowRotateLeft": "Bottom bar › Undo", "broom": "Bottom bar › Wipe",
-    "upload": "Bottom bar › Upload; Settings › Upload tab", "dragHand": "Bottom bar › Drag Me", "check": "Default pill; success results",
+    "upload": "Bottom bar › Upload; Settings › Upload tab", "dragHand": "Bottom bar › Drag Me", "check": "Default pill; success results; chosen glass row and swatch; checked box mark",
     "xmarkCircle": "Failure results", "openExternal": "History › Open", "copy": "History › Copy", "link": "History › Copy Link",
-    "globe": "History › Open Link", "trash": "History › Move to Trash", "linkSlash": "History › Delete from Web", "circleCheck": "Connected result; selected tile badge",
+    "globe": "History › Open Link", "trash": "History › Move to Trash", "linkSlash": "History › Delete from Web", "circleCheck": "Connected result; selected tile badge; chosen radio glyph of glass options",
     "gear": "Settings › General tab",
+    "chevronRight": "Glass choice panel › submenu row; Resize › Manage presets (trailing chevron)", "chevronLeft": "Glass choice panel › Back row (leaving a submenu)",
+}
+
+# Icons that came with the glass choices carry the tests that draw them: the codepoint table, the quarter turn of the embedded chevron-down and the row that shows each.
+FA_PROOF = {
+    "chevronRight": proof("FontAwesomeIconsTests.swift", "Spot-checked codepoints match icons.yml", ("IconCoverageTests.swift", " is the embedded chevron-down turned a quarter"), ("GlassChoicesTests.swift", "The chevron points right")),
+    "chevronLeft": proof("FontAwesomeIconsTests.swift", "Spot-checked codepoints match icons.yml", ("IconCoverageTests.swift", " is the embedded chevron-down turned a quarter"), ("GlassChoicesTests.swift", "The Back row carries the left chevron")),
 }
 
 
@@ -307,7 +334,7 @@ def build_icons():
         add("ICON", "FAIcon", f"{fa}", "icon", FA_WHERE.get(case, "see source"),
             f"Renders as a Font Awesome glyph ({codepoint}) in release builds, or SF Symbol {sf} when no glyph resolves; centred, template-tinted, matches its meaning",
             prereq="Control visible", icon=fa, note=f"case .{case}; Free codepoint {codepoint}; SF fallback {sf}; used in {', '.join(users) or 'icon tables only'}",
-            rendered=["S03", "S04"])
+            rendered=["S03", "S04"], proof=FA_PROOF.get(case))
     seen = set()
     for selector, symbol in parse_menu_symbols():
         if (selector, symbol) in seen:
@@ -328,21 +355,26 @@ def build_icons():
 def build_chrome():
     top = [
         ("Hide", "Hide the editor (⌘M behaviour via vanish)", "eyeSlash", "Editor minimizes; tooltip Hide (⌘M)"),
-        ("Toolbox", "Common commands menu", "toolbox", "Menu opens, rows with icons (see Toolbox entries)"),
+        ("Toolbox", "Common commands", "toolbox", "Glass panel opens below the button, rows with icons (see Toolbox entries)"),
         ("Photos", "Open the Photos sheet", "images", "Photos sheet opens"),
         ("Snap", "Primary capture control", "crosshairs", "Starts a crosshair snap (right-click or Control-click for Fullscreen); refusal sheet without Screen Recording"),
     ]
     for name, what, icon, expected in top:
         add("BAR", "Top bar", name, "toolbar button" if name != "Toolbox" else "control", f"Top bar › {name}", expected, icon=icon, rendered=["S03", "S04"],
-            ex="e2e-partial" if name == "Snap" else "e2e", gap="screen-recording" if name == "Snap" else None)
+            ex="e2e-partial" if name == "Snap" else "e2e", gap="screen-recording" if name == "Snap" else None, note=glass("a native menu") if name == "Toolbox" else None,
+            proof=proof("AppSafetyMenuCases.swift", "The Toolbox opens a glass panel of its five groups: 18 rows with the menu's icons, shortcuts and validation, choosing runs the command, Escape returns the focus") if name == "Toolbox" else None)
     add("BAR", "Top bar", "Snap (right-click / Control-click)", "gesture", "Top bar › Snap, right-click or Control-click", "Fullscreen capture; refusal sheet without Screen Recording",
         icon="crosshairs", ex="e2e-partial", gap="screen-recording")
     add("BAR", "Top bar", "Cancel (Frame mode)", "toolbar button", "Frame mode › top bar › Cancel", "Leaves Frame mode; the Cancel button disappears", icon="xmark",
         prereq="Frame mode entered via Capture › Frame Snapshot", rendered=["S32", "S33"])
     add("BAR", "Top bar", "Snap Frame", "toolbar button", "Frame mode › top bar › Snap Frame", "Captures inside the Frame (Shift: six-second timer); refusal sheet without Screen Recording",
         icon="camera-viewfinder", prereq="Frame mode", ex="e2e-partial", gap="screen-recording", rendered=["S32", "S33"])
-    add("BAR", "Top bar", "Color", "toolbar button", "Top bar › Color swatch", "Drawing colors popover opens (see TOOL)", rendered=["S06"])
-    add("BAR", "Top bar", "Size", "control", "Top bar › Size slider", "Slider changes stroke size 1-… ; tooltip and accessibilityValue carry Size N; undo groups one drag", rendered=["S06"])
+    add("BAR", "Top bar", "Color", "toolbar button", "Top bar › Color swatch", "Hovering opens the Drawing colors glass panel without taking the keyboard; a click or the keyboard pins it open (see TOOL)", rendered=["S06"], note=glass("a solid popover"),
+        proof=proof("AppSafetyTests.swift", "Hovering the Color control opens the palette", ("AppSafetyTests.swift", "A hover-opened palette never asks for the keyboard")))
+    add("BAR", "Top bar", "Size", "control", "Top bar › Size slider",
+        "A 48 x 36 pill drawing the current stroke thickness: arrows step it, Shift gives continuous values, a click, Space or Return opens the Size glass panel (see TOOL); tooltip and accessibilityValue carry Size N; undo groups one drag, preset, key or assistive step",
+        rendered=["S06"], note=glass("a solid popover"),
+        proof=proof("AppSafetyModernCases.swift", "The Size pill opens its panel below and every gesture, preset, key and assistive step is exactly one undo step, even when the panel is dismissed mid-drag"))
     add("BAR", "Top bar", "Font", "toolbar button", "Top bar › Font", "Toggles the Font panel", icon="font", ex="e2e-partial", gap="os-panel", rendered=["S06"])
     for tool, label in [("select", "Select"), ("brush", "Brush"), ("line", "Line"), ("ellipse", "Ellipse"), ("rectangle", "Rectangle"), ("fill", "Fill"),
                         ("eraser", "Eraser"), ("text", "Text"), ("arrow", "Arrow"), ("crop", "Crop")]:
@@ -352,28 +384,59 @@ def build_chrome():
     bottom = [
         ("Undo", "toolbar button", "arrow-rotate-left", "Reverts the last edit; disabled with nothing to undo", "S09"),
         ("Wipe", "toolbar button", "broom", "First click clears the drawing; a second erases the background; disabled when empty", "S09"),
-        ("Canvas zoom", "control", None, "Pop-up: 25, 50, 75, 100, 150, 200 %, Actual Size; face shows the percentage; Fit adds a computed entry", "S07"),
+        ("Canvas zoom", "control", None, "Glass pop-up face (percentage and chevron) that opens the Zoom glass panel: 25, 50, 75, 100, 150, 200 %, Actual Size; the face shows the percentage; Fit adds a computed entry", "S07"),
         ("Resize…", "toolbar button", None, "Text button (20 pt, no glyph); Resize or Crop sheet opens at the size the title shows; disabled in Actual Size and Frame mode", "S08"),
         ("Status line", "control", None, "Names the tool, saved state and size; truncates in the middle only at the minimum width", "S09"),
         ("Save", "toolbar button", "box-archive", "Saves to History (tooltip Save to History); status confirms", "S09"),
         ("History", "toolbar button", "clock-rotate-left", "Opens the History window", "S09"),
         ("Image format (PNG | JPG)", "control", None, "Two-segment capsule; choice persists and drives drag, export and upload format", "S09"),
         ("Drag image to another app", "control", "hand", "The Drag Me well (accessibility label Drag image to another app): drag the drawing to Finder or another app; the file is frozen at drag start", "S09"),
-        ("Original size", "control", None, "Checkbox: drag out at original size; stored as DragOriginalSize", "S09"),
-        ("Upload", "toolbar button", "cloud-arrow-up", "Left-click uploads to the default destination and copies the link; right-click or Control-click opens the destination menu", "S09"),
+        ("Original size", "control", None, "Glass checkbox toggle on the footer's View plate: drag out, copy, export and upload at the picture's own pixels; stored as DragOriginalSize; shown only for a large shot", "S09"),
+        ("Upload", "toolbar button", "cloud-arrow-up", "Left-click uploads to the default destination and copies the link; right-click, Control-click, the context-menu key or the VoiceOver Show Menu action opens the Upload destinations glass panel", "S09"),
     ]
+    footer_proofs = {
+        "Canvas zoom": proof("AppSafetyModernCases.swift", "The zoom opens a glass panel above the footer: percentages and the computed row are options, Actual Size is a toggle that keeps the percentage face and its refusal path",
+                             ("AppSafetyMenuCases.swift", "Every route to the Toolbox, Zoom and Upload choices opens the glass panel and starts no native menu")),
+        "Original size": proof("AppSafetyModernCases.swift", "Original size is a glass checkbox toggle on the View plate: it persists DragOriginalSize, shows only for a large shot, and gives the status slot its room back",
+                               ("GlassChromeTests.swift", "original size: a checkbox-role toggle titled Original size")),
+        "Upload": proof("AppSafetyWebpostCases.swift", "The Upload button's choices open as a glass panel above it: destinations are options with the default chosen, rebuilt at every open; the empty and busy states; choosing persists the default",
+                        ("AppSafetyMenuCases.swift", "Upload: a click starts the upload and opens no menu")),
+    }
+    footer_was = {"Canvas zoom": "a native pop-up menu", "Original size": "a native checkbox", "Upload": "a native contextual menu"}
     for name, kind, icon, expected, surface in bottom:
         add("BAR", "Bottom bar", name, kind, f"Bottom bar › {name}", expected, icon=icon, rendered=[surface, "S03"],
-            prereq="A drawing on the canvas" if name in ("Undo", "Wipe", "Save") else D)
+            prereq="A drawing on the canvas" if name in ("Undo", "Wipe", "Save") else D,
+            note=glass(footer_was[name]) if name in footer_was else None, proof=footer_proofs.get(name))
+    add("BAR", "Bottom bar", "Zoom panel", "panel", "Bottom bar › Canvas zoom (open)",
+        "A floating glass panel above the zoom face: the percentages and the computed Fit or Frame row are options on one plate (the computed row chosen while it is current), Actual Size is a toggle on the next plate with its main-menu shortcut; choosing closes the panel first, then zooms; a dimmed zoom opens nothing; Escape returns the keyboard to the zoom",
+        prereq="A drawing on the canvas", rendered=[],
+        proof=proof("GlassChromeTests.swift", "zoom: percentages and the computed row on one plate, Actual Size on the next",
+                    ("GlassChromeTests.swift", "zoom: the percentages are options and Actual Size is a toggle"), ("GlassChromeTests.swift", "zoom: the panel opens above the footer button"),
+                    ("GlassChromeTests.swift", "zoom: Escape closes it and the focus returns to the zoom"), ("GlassChromeTests.swift", "zoom: a disabled zoom does not open")))
     for name, expected in [("Zoom entry 25%", "Canvas shows at 25%"), ("Zoom entry 50%", "50%"), ("Zoom entry 75%", "75%"), ("Zoom entry 100%", "100%"),
                            ("Zoom entry 150%", "150%"), ("Zoom entry 200%", "200%"), ("Zoom entry Actual Size", "Toggles Actual Size (same as Image › Actual Size)")]:
-        add("BAR", "Bottom bar › zoom pop-up", name, "menu item", f"Bottom bar › Canvas zoom › {name.replace('Zoom entry ', '')}", expected + "; face updates", rendered=["S07"])
+        add("BAR", "Bottom bar › zoom panel", name, "menu item", f"Bottom bar › Canvas zoom › {name.replace('Zoom entry ', '')}", expected + "; face updates", rendered=["S07"],
+            was=dict(surface="Bottom bar › zoom pop-up"), note=glass("a row of the native zoom pop-up menu"))
+    upload_proofs = {
+        "Cancel Upload": proof("AppSafetyWebpostCases.swift", "From the Upload panel Cancel Upload cancels, Destination Settings… opens settings, Share with macOS… anchors the system picker to the button, and Escape returns the focus"),
+        "Destination Settings…": proof("AppSafetyWebpostCases.swift", "From the Upload panel Cancel Upload cancels, Destination Settings… opens settings, Share with macOS… anchors the system picker to the button, and Escape returns the focus"),
+        "Share with macOS…": proof("AppSafetyWebpostCases.swift", "From the Upload panel Cancel Upload cancels, Destination Settings… opens settings, Share with macOS… anchors the system picker to the button, and Escape returns the focus"),
+        "Destination row": proof("AppSafetyWebpostCases.swift", "The Upload button's choices open as a glass panel above it: destinations are options with the default chosen, rebuilt at every open; the empty and busy states; choosing persists the default"),
+        "No destination configured": proof("AppSafetyWebpostCases.swift", "The Upload button's choices open as a glass panel above it: destinations are options with the default chosen, rebuilt at every open; the empty and busy states; choosing persists the default"),
+    }
+    add("BAR", "Bottom bar", "Upload destinations panel", "panel", "Bottom bar › Upload (right-click, Control-click, context-menu key or Show Menu) (open)",
+        "A floating glass panel above the Upload button, rebuilt on every open: Cancel Upload on its own plate while an upload runs, the destinations as options with the default chosen, then Destination Settings… and Share with macOS…; with no destination a disabled No destination configured row; a pointer open focuses no row, a keyboard open focuses the default destination; Escape returns the keyboard to Upload",
+        prereq="Destinations seeded", rendered=[],
+        proof=proof("AppSafetyWebpostCases.swift", "The Upload button's choices open as a glass panel above it: destinations are options with the default chosen, rebuilt at every open; the empty and busy states; choosing persists the default",
+                    ("AppSafetyWebpostCases.swift", "From the Upload panel Cancel Upload cancels, Destination Settings… opens settings, Share with macOS… anchors the system picker to the button, and Escape returns the focus"),
+                    ("AppSafetyMenuCases.swift", "Every route to the Toolbox, Zoom and Upload choices opens the glass panel and starts no native menu")))
     for name, expected in [("Cancel Upload", "Cancels a running upload; shown only while publishing"), ("Destination row", "Chooses the default destination; checkmark moves"),
                            ("No destination configured", "Disabled row shown when no destination exists"), ("Destination Settings…", "Opens Settings on the Upload tab"),
                            ("Share with macOS…", "Opens the macOS sharing picker (OS-owned)")]:
-        add("BAR", "Bottom bar › Upload menu", name, "menu item", f"Bottom bar › Upload (right-click) › {name}", expected,
+        add("BAR", "Bottom bar › Upload panel", name, "menu item", f"Bottom bar › Upload (right-click) › {name}", expected,
             prereq="Destinations seeded" if name == "Destination row" else D, ex="e2e-partial" if name.startswith("Share") else "e2e", gap="os-panel" if name.startswith("Share") else None,
-            owner="os" if name.startswith("Share") else "app", rendered=["S21", "S09"])
+            owner="os" if name.startswith("Share") else "app", rendered=["S21", "S09"], was=dict(surface="Bottom bar › Upload menu"), proof=upload_proofs[name],
+            note=glass("a row of the native Upload menu"))
     add("BAR", "Bottom bar", "Blank (the Wipe button's accessible name on an empty canvas)", "state", "Bottom bar › Wipe with an empty document",
         "The control beside Undo is named Blank and disabled on an empty canvas; becomes Wipe once there is something to clear (audit the name: a user hears 'Blank')",
         icon="broom", rendered=["S01", "S11"])
@@ -403,11 +466,33 @@ def build_tools():
             ("Crop: drag a region, Return", "Draws a crop selection; Return crops, Esc cancels", D)]:
         add("TOOL", "Tools", name, "gesture", f"Pick the tool, then {name.split(':')[1].strip()} on the canvas", expected, prereq=prereq, rendered=["S05", "S08"])
     colors = ["Red", "Yellow", "Blue", "Pink", "Translucent gray", "Orange", "Green", "White", "Black", "Highlighter"]
-    add("TOOL", "Drawing colors popover", "Drawing colors popover", "popover", "Top bar › Color", "Popover with a 5 x 2 grid of preset swatches, Custom color…; transient", rendered=["S06"])
+    keyboard_case = "Color panel opened from the keyboard focuses the chosen swatch and Escape hands the keyboard back; a pick changes the colour and closes; Shift picks the background; Custom color… opens the system panel"
+    old_popover = dict(surface="Drawing colors popover")
+    add("TOOL", "Drawing colors panel", "Drawing colors panel", "panel", "Top bar › Color",
+        "Glass panel below the Color control with two plates: the title and a 5 x 2 grid of preset swatches, and Custom color… on a plate of its own; hover opens it without the keyboard, a click or the keyboard pins it; the chosen swatch carries an outline and a check; Escape closes it and the keyboard returns to Color; a click outside closes it",
+        rendered=["S06"], was=dict(surface="Drawing colors popover", name="Drawing colors popover", kind="popover"), note=glass("a solid popover"),
+        proof=proof("AppSafetyModernCases.swift", "Color panel hangs below the Color control, off the system appearance, as one glass container of two plates",
+                    ("AppSafetyModernCases.swift", "Color panel always shows the active colour: a checked preset, or the Custom color… row chosen with the colour's chip, a check, the selected fill and border; the plates are even"),
+                    ("AppSafetyTests.swift", "A click outside the panel closes it")))
     for color in colors:
-        add("TOOL", "Drawing colors popover", f"Preset: {color}", "control", f"Top bar › Color › {color}", f"Sets the drawing colour to {color} (Shift sets the canvas background); swatch updates",
-            rendered=["S06"])
-    add("TOOL", "Drawing colors popover", "Custom color…", "control", "Top bar › Color › Custom color…", "Closes the popover and opens the system colour panel (alpha enabled); changes apply live", ex="e2e-partial", gap="os-panel", rendered=["S06"])
+        add("TOOL", "Drawing colors panel", f"Preset: {color}", "control", f"Top bar › Color › {color}", f"Sets the drawing colour to {color} (Shift sets the canvas background); the panel closes and swatch updates",
+            rendered=["S06"], was=old_popover, note=glass("a swatch in a solid popover"), proof=proof("AppSafetyTests.swift", keyboard_case))
+    add("TOOL", "Drawing colors panel", "Custom color…", "control", "Top bar › Color › Custom color…",
+        "A glass row on its own plate: closes the panel and opens the system colour panel (alpha enabled); changes apply live; while the stroke colour is none of the presets the row is the chosen option and carries the colour's chip and a check", ex="e2e-partial", gap="os-panel",
+        rendered=["S06"], was=old_popover, note=glass("a button in a solid popover"),
+        proof=proof("AppSafetyTests.swift", keyboard_case, ("AppSafetyModernCases.swift", "Color panel always shows the active colour: a checked preset, or the Custom color… row chosen with the colour's chip, a check, the selected fill and border; the plates are even")))
+    add("TOOL", "Size panel", "Size panel", "panel", "Top bar › Size (open)",
+        "Glass panel below the Size pill with two plates, 320 x 134: the title with its numeric readout and the drag track, and the five presets; it does not take the keyboard (the pill keeps it); a preset pick closes it; Escape, a click on the pill or outside, or leaving the window closes it and ends any open drag",
+        rendered=[],
+        proof=proof("GlassChromeTests.swift", "The panel is 320 x 134", ("GlassChromeTests.swift", "The two plates are the panel's groups"),
+                    ("GlassChromeTests.swift", "Escape in the panel closes it and the keyboard returns to the pill"), ("GlassChromeTests.swift", "A click on the pill closes the panel and is consumed"),
+                    ("GlassChromeTests.swift", "Leaving the window closes the panel")))
+    add("TOOL", "Size panel", "Size presets (five steps)", "control", "Top bar › Size › preset",
+        "Five preset buttons (the ordinary steps from 1.5 to 12) in a radio group named Size presets; the current one is selected; a pick sets the size as one undo step and closes the panel, also when it is the current one", rendered=[],
+        proof=proof("GlassChromeTests.swift", "A preset pick closes the panel, as a colour pick closes the colour panel", ("GlassChromeTests.swift", "Choosing the current preset again still closes the panel")))
+    add("TOOL", "Size panel", "Size track (drag)", "control", "Top bar › Size › track",
+        "Drag anywhere on the 288 x 36 track: a plain drag snaps to the five sizes, Shift keeps it continuous; the whole drag is one undo group and the panel stays open while it runs; dismissing the panel mid-drag ends the group", rendered=[],
+        proof=proof("GlassChromeTests.swift", "A drag is open and keeps the panel open", ("GlassChromeTests.swift", "Dismissing mid-drag ends the group and releases the panel")))
     add("TOOL", "Drawing options", "Size slider range", "control", "Top bar › Size", "Minimum, middle and maximum sizes are legible; readable text size floor of 18 pt for text", rendered=["S06"])
     add("TOOL", "Drawing options", "Filled Shapes", "preference", "Menu bar › Drawing › Filled Shapes", "Ellipse and Rectangle draw filled; checkmark shows", rendered=["S12"])
     add("TOOL", "Drawing options", "Shadow", "preference", "Menu bar › Drawing › Shadow", "Shapes draw with a shadow; checkmark shows", rendered=["S12"])
@@ -458,37 +543,62 @@ def build_capture():
 
 # ---------------------------------------------------------------------------------------------------------------------- settings
 def build_settings():
-    add("SET", "Settings window", "Settings window", "window", "Menu bar › OpenSnap › Settings… (⌘,) or status item › Settings…", "Window with a solid (not glass) 20 pt tab strip (General, Drawing, Capture, Upload), centred forms, remembers the last tab",
-        rendered=["S12"], proof=proof("SettingsWindowTests.swift", "the strip is solid, not glass"))
+    add("SET", "Settings window", "Settings window", "window", "Menu bar › OpenSnap › Settings… (⌘,) or status item › Settings…",
+        "Window with a 20 pt tab strip (General, Drawing, Capture, Upload) whose four tabs share one glass plate over the window's solid surface, centred forms, remembers the last tab",
+        rendered=["S12"], note=glass("a solid, non-glass tab strip"),
+        proof=proof("SettingsWindowTests.swift", "the four tabs sit on one plate, in order", ("SettingsWindowTests.swift", "the strip fills with the opaque window surface")))
     for index, (tab, icon) in enumerate([("General", "gear"), ("Drawing", "paintbrush"), ("Capture", "crosshairs"), ("Upload", "cloud-arrow-up")], start=1):
-        add("SET", "Settings › tab strip", f"{tab} tab", "control", f"Settings › {tab} (or ⌘{index})", f"Shows the {tab} form; selected tab has an accent border and accent icon, not colour alone",
-            icon=icon, shortcut=f"⌘{index}", rendered=["S12"])
+        add("SET", "Settings › tab strip", f"{tab} tab", "control", f"Settings › {tab} (or ⌘{index})",
+            f"Shows the {tab} form; a button on the strip's glass plate, and the selected tab has a fill, a border, a semibold label and a solid glyph, not colour alone (Differentiate Without Color adds a capsule)",
+            icon=icon, shortcut=f"⌘{index}", rendered=["S12"], note=glass("a solid tab strip"),
+            proof=proof("SettingsWindowTests.swift", "the strip has the four tab buttons", ("SettingsWindowTests.swift", "only the selected tab reports 1"),
+                        ("SettingsWindowTests.swift", "the current tab gains the capsule under Differentiate Without Color and the others stay bare")))
+    radio = lambda text: f"Glass radio choice (one Tab stop for the group, arrows move the choice): {text}"
+    check = lambda text: f"Glass check box (a toggle with a box glyph): {text}"
+    command = lambda text: f"Titled glass command button on the destination actions plate: {text}"
+    radio_proofs = (("SettingsWindowTests.swift", "every choice is an option with a radio glyph"), ("SettingsWindowTests.swift", "exactly one radio reports 1, and the group's value is its name"))
+    check_proofs = (("SettingsWindowTests.swift", "a checkbox toggle that keeps its identifier"), ("SettingsWindowTests.swift", "VoiceOver gets a named check box and the label is 20 pt"))
+    upload_plate = "the four-command plate is out of the layout while the list is empty, and nothing nests"
     rows = [
-        ("General", "Show in: Dock", "preference", "Dock only: the app shows in the Dock, no status item", "Menu bar > none; Dock presence changes without restart"),
-        ("General", "Show in: Menu bar", "preference", "Menu bar only: accessory policy, status item present", "Dock icon goes away"),
-        ("General", "Show in: Both", "preference", "Dock and status item", ""),
-        ("General", "Snapping: Show OpenSnap window in fullscreen and crosshair snaps", "preference", "Checkbox persists includeApp", ""),
-        ("General", "Hints: Show hover hints for tools", "preference", "Checkbox persists showToolTips", ""),
-        ("General", "Hints: Show keyboard tip overlay", "preference", "Checkbox persists showKeyboardTips; the help bevel appears on hover", ""),
-        ("Drawing", "Drawing precision: Precise", "preference", "Pencil smoothing precise; mirrors Drawing › Pencil Smoothing", ""),
-        ("Drawing", "Drawing precision: Medium", "preference", "Pencil smoothing medium", ""),
-        ("Drawing", "Drawing precision: Loose", "preference", "Pencil smoothing loose", ""),
-        ("Drawing", "Arrow head: End", "preference", "Arrow head at the end; mirrors Drawing › Arrow Head", ""),
-        ("Drawing", "Arrow head: Start", "preference", "Arrow head at the start", ""),
-        ("Drawing", "Caption: Holding Option reverses the setting.", "control", "Static caption, 20 pt, wraps within the control column", ""),
-        ("Capture", "Flash: Show capture flash", "preference", "Checkbox persists showCaptureFlash", ""),
-        ("Upload", "Destinations list", "control", "Every destination as a selectable row with name, transport and a Default pill; the list scrolls past what the screen leaves", ""),
-        ("Upload", "Empty state: No destinations yet", "state", "Shown when no destination exists, with Add… inside the list", ""),
-        ("Upload", "Add…", "control", "Opens the destination editor sheet on the Settings window", ""),
-        ("Upload", "Edit…", "control", "Opens the selected destination in the editor sheet (double-click a row does the same)", ""),
-        ("Upload", "Remove", "control", "Asks Remove “name”? (Cancel first, Remove destructive) as a sheet on Settings, then removes it and its stored secret", ""),
-        ("Upload", "Make Default", "control", "Marks the selected destination as the one Upload uses; the Default pill moves", ""),
-        ("Upload", "Caption: Uploads go to the default destination. Right-click Upload to switch.", "control", "Static caption", ""),
+        ("General", "Show in: Dock", "preference", radio("Dock only: the app shows in the Dock, no status item"), "Menu bar > none; Dock presence changes without restart",
+         "a radio button", proof("SettingsWindowTests.swift", "clicking Dock stores Dock once", *radio_proofs)),
+        ("General", "Show in: Menu bar", "preference", radio("Menu bar only: accessory policy, status item present"), "Dock icon goes away", "a radio button",
+         proof("SettingsWindowTests.swift", "Tab passes through the Show in set once", *radio_proofs)),
+        ("General", "Show in: Both", "preference", radio("Dock and status item"), "", "a radio button", proof("SettingsWindowTests.swift", "a synchronize moves the sets and sends nothing", *radio_proofs)),
+        ("General", "Snapping: Show OpenSnap window in fullscreen and crosshair snaps", "preference", check("persists includeApp"), "", "a checkbox",
+         proof("SettingsWindowTests.swift", "initial checkboxes mirror the stored state", *check_proofs)),
+        ("General", "Hints: Show hover hints for tools", "preference", check("persists showToolTips"), "", "a checkbox", proof("SettingsWindowTests.swift", "an unchecked box stays bare", *check_proofs)),
+        ("General", "Hints: Show keyboard tip overlay", "preference", check("persists showKeyboardTips; the help bevel appears on hover"), "", "a checkbox",
+         proof("SettingsWindowTests.swift", "the plate is a named group", *check_proofs)),
+        ("Drawing", "Drawing precision: Precise", "preference", radio("Pencil smoothing precise; mirrors Drawing › Pencil Smoothing"), "", "a radio button",
+         proof("SettingsWindowTests.swift", "the tab stop follows the choice", *radio_proofs)),
+        ("Drawing", "Drawing precision: Medium", "preference", radio("Pencil smoothing medium"), "", "a radio button", proof("SettingsWindowTests.swift", "Down moves on like Right", *radio_proofs)),
+        ("Drawing", "Drawing precision: Loose", "preference", radio("Pencil smoothing loose"), "", "a radio button", proof("SettingsWindowTests.swift", "Right stops at the last choice and stores nothing", *radio_proofs)),
+        ("Drawing", "Arrow head: End", "preference", radio("Arrow head at the end; mirrors Drawing › Arrow Head"), "", "a radio button",
+         proof("SettingsWindowTests.swift", "the chosen arrow head can take the keyboard", *radio_proofs)),
+        ("Drawing", "Arrow head: Start", "preference", radio("Arrow head at the start"), "", "a radio button", proof("SettingsWindowTests.swift", "Right chooses Start", *radio_proofs)),
+        ("Drawing", "Caption: Holding Option reverses the setting.", "control", "Static caption, 20 pt, wraps within the control column", "", None, None),
+        ("Capture", "Flash: Show capture flash", "preference", check("persists showCaptureFlash"), "", "a checkbox",
+         proof("SettingsWindowTests.swift", "the flash option is a checkbox toggle", ("SettingsWindowTests.swift", "clicking it stores false and it reads off"), ("SettingsWindowTests.swift", "clicking again stores true and it reads on"))),
+        ("Upload", "Destinations list", "control", "Every destination as a selectable row with name, transport and a Default pill; the list scrolls past what the screen leaves; solid content, not glass", "", None,
+         proof("SettingsWindowTests.swift", "the destination list is solid content")),
+        ("Upload", "Empty state: No destinations yet", "state", "Shown when no destination exists, with Add… inside the list (a titled glass command button on a plate of its own)", "", None, proof("SettingsWindowTests.swift", upload_plate)),
+        ("Upload", "Add…", "control", command("opens the destination editor sheet on the Settings window"), "", "a native push button",
+         proof("SettingsWindowTests.swift", "Add… opens the editor on the Settings window with no destination", ("SettingsWindowTests.swift", "the four commands share one plate, in reading order"),
+               ("SettingsWindowTests.swift", "the in-list Add… keeps its title and identifier"))),
+        ("Upload", "Edit…", "control", command("opens the selected destination in the editor sheet (double-click a row does the same)"), "", "a native push button",
+         proof("SettingsWindowTests.swift", "Edit… opens the selected destination on the Settings window", ("SettingsWindowTests.swift", "a double click edits that row"))),
+        ("Upload", "Remove", "control", command("asks Remove “name”? (Cancel first, Remove destructive) as a sheet on Settings, then removes it and its stored secret"), "", "a native push button",
+         proof("SettingsWindowTests.swift", "Remove opens one app-owned alert hanging from the Settings window", ("SettingsWindowTests.swift", "each command is a CommandButton with a 20 pt label"))),
+        ("Upload", "Make Default", "control", command("marks the selected destination as the one Upload uses; the Default pill moves; dimmed for the default destination"), "", "a native push button",
+         proof("SettingsWindowTests.swift", "Make Default hands the selected destination to the owner", ("SettingsWindowTests.swift", "Make Default is off for the default destination"),
+               ("SettingsWindowTests.swift", "choosing another row turns Make Default on at full strength"))),
+        ("Upload", "Caption: Uploads go to the default destination. Right-click Upload to switch.", "control", "Static caption", "", None, None),
     ]
-    for tab, name, kind, expected, extra in rows:
+    for tab, name, kind, expected, extra, was, proofs in rows:
         add("SET", f"Settings › {tab}", name, kind, f"Settings › {tab} › {name.split(':')[0]}", expected + (f" ({extra})" if extra else ""),
             prereq="Destinations seeded" if "Destinations list" in name else (D if "Empty" not in name else "No destinations (--seed empty)"), rendered=["S12"],
-            proof=proof("SettingsWindowTests.swift", "initial checkboxes mirror the stored state") if kind == "preference" and tab == "General" and "Snapping" in name else None)
+            note=glass(was) if was else None, proof=proofs)
     add("SET", "Settings window", "Settings window Esc / ⌘W", "shortcut", "Settings frontmost › Esc or ⌘W", "Closes Settings (a sheet attached blocks the tab shortcuts)", shortcut="Esc, ⌘W",
         proof=proof("SettingsWindowTests.swift", "Command-W is handled by the window"))
     add("SET", "Settings window", "Persisted settings across relaunch", "state", "Change a setting, stop and start a new session", "Each setting returns (in a throwaway domain); the real domain is never touched", prereq="Isolated session twice",
@@ -500,21 +610,37 @@ def build_hotkeys():
     for mode, where in (("sheet", "Menu bar › OpenSnap › Capture Shortcuts…"), ("live", "Settings › Capture › shortcut rows")):
         s = f"Capture shortcuts ({mode})"
         retired = {"ex": "gap", "gap": "removed"} if mode == "sheet" else {}
-        what = (lambda text: f"RETIRED, removed in d9ed8b7 (the sheet no longer exists): {text}") if mode == "sheet" else (lambda text: text)
-        add("HOT", s, "Enable global capture shortcuts", "preference", f"{where} › Enable", what("Checkbox enables or disables all bindings"),
-            rendered=["S18"], **retired)
+        # The retired sheet rows keep the sheet's own words (a native checkbox, pop-up and segmented control); the live rows say what the Capture tab draws now.
+        what = (lambda text, live=None: f"RETIRED, removed in d9ed8b7 (the sheet no longer exists): {text}") if mode == "sheet" else (lambda text, live=None: live or text)
+        extra = (lambda was, *proofs: {}) if mode == "sheet" else (lambda was, *proofs: dict(note=glass(was), proof=proof(*proofs[0], *proofs[1:])))
+        add("HOT", s, "Enable global capture shortcuts", "preference", f"{where} › Enable",
+            what("Checkbox enables or disables all bindings", "Glass check box (a toggle on a plate of its own) enables or disables all bindings; unticking it turns every shortcut off"),
+            rendered=["S18"], **retired, **extra("a native checkbox", ("SettingsWindowTests.swift", "the enable box is a labelled check box, on"), ("SettingsWindowTests.swift", "the enable box turns every shortcut off")))
         for action in ("Screen region", "Window", "Full screen", "Frame", "Upload", "Show OpenSnap"):
-            add("HOT", s, f"{action}: key", "control", f"{where} › {action} key", what("Pop-up: None plus the key choices; choosing a key enables its modifier segments"), rendered=["S18"], **retired)
-            add("HOT", s, f"{action}: modifiers", "control", f"{where} › {action} modifiers", what("Four selectAny segments ⌘ ⌥ ⌃ ⇧; disabled until a key is chosen"), rendered=["S18"], **retired)
+            add("HOT", s, f"{action}: key", "control", f"{where} › {action} key",
+                what("Pop-up: None plus the key choices; choosing a key enables its modifier segments",
+                     "Glass pop-up (a face with a chevron that opens a glass panel): None plus the key choices; choosing a key enables its modifier toggles"), rendered=["S18"], **retired,
+                **extra("a native pop-up", ("SettingsWindowTests.swift", "an action with no key starts at None with its modifiers off"), ("SettingsWindowTests.swift", "choosing a key enables its modifiers"),
+                        ("SettingsWindowTests.swift", "the key pop-up is on the Tab loop")))
+            add("HOT", s, f"{action}: modifiers", "control", f"{where} › {action} modifiers",
+                what("Four selectAny segments ⌘ ⌥ ⌃ ⇧; disabled until a key is chosen",
+                     "Four glass toggles ⌘ ⌥ ⌃ ⇧ on one plate, each flips on its own; disabled and dimmed until a key is chosen; one Tab stop for the row and the arrows move within it"), rendered=["S18"], **retired,
+                **extra("a native multi-select segmented control", ("SettingsWindowTests.swift", "the four modifiers are drawn as their symbols, Command first"), ("SettingsWindowTests.swift", "with no key the modifiers dim and take no focus"),
+                        ("SettingsWindowTests.swift", "its four modifiers add ONE Tab stop, the first toggle"), ("SettingsWindowTests.swift", "chosen modifiers are the fill, the border, the semibold symbol and the capsule")))
         replaced = {"ex": "gap", "gap": "replaced"}
         add("HOT", s, "Reset Defaults", "control", f"{where} › Reset Defaults", "RETIRED, renamed Clear All in audit batch 5 (it clears every key, it never restored defaults)", rendered=["S18"], **(retired or replaced))
         add("HOT", s, "Disable All", "control", f"{where} › Disable All", "RETIRED, removed in audit batch 5: unticking Enable global capture shortcuts does the same", rendered=["S18"], **(retired or replaced))
         if mode == "live":
-            add("HOT", s, "Clear All", "control", f"{where} › Clear All", "Sets every key to None (first launch claims no shortcut) and applies at once", rendered=["S18"])
+            add("HOT", s, "Clear All", "control", f"{where} › Clear All", "A titled glass command button on an action plate of its own: sets every key to None (first launch claims no shortcut) and applies at once", rendered=["S18"],
+                note=glass("a native push button"), proof=proof("SettingsWindowTests.swift", "Clear All is a titled command button at 20 pt", ("SettingsWindowTests.swift", "Clear All holds its label")))
         add("HOT", s, "Status line", "state", f"{where} › status", what("Idle text, or Error: … beside a rejected draft (conflict with an internal or system binding)"), rendered=["S18"], **retired)
         if mode == "sheet":
             add("HOT", s, "Cancel", "control", f"{where} › Cancel", what("Closes the sheet leaving settings unchanged (Esc)"), shortcut="Esc", rendered=["S18"], **retired)
             add("HOT", s, "Save", "control", f"{where} › Save", what("Applies the draft and closes (Return)"), shortcut="Return", rendered=["S18"], **retired)
+    add("HOT", "Capture shortcuts (live)", "Key panel", "panel", "Settings › Capture › a shortcut's key pop-up (open)",
+        "A glass panel under the key face holding None and every key (a long list that caps at the screen's height and scrolls), the current key marked; choosing a row closes the panel and sets the key once",
+        rendered=[], proof=proof("SettingsWindowTests.swift", "the key pop-up opens a glass panel of None and every key", ("SettingsWindowTests.swift", "the long list is taller than the screen, so the panel caps and scrolls"),
+                                 ("SettingsWindowTests.swift", "choosing a row closes the panel and sets the pop-up to K"), ("SettingsWindowTests.swift", "the panel marks the current key")))
     add("HOT", "Capture shortcuts (live)", "Menu entry: Capture Shortcuts…", "menu item", "Menu bar › OpenSnap › Capture Shortcuts…", "Opens the Settings window on the Capture tab (no separate sheet since d9ed8b7)",
         shortcut=None, rendered=["S18"])
     add("HOT", "Capture shortcuts (live)", "Shortcuts pause while the Capture tab is in front", "state", "Settings › Capture", "Saved shortcuts are unregistered only while Settings is the key window on the Capture tab and the app is active; another window or app in front, another tab, hiding or closing Settings registers them again, so a half-entered chord never goes live",
@@ -529,11 +655,21 @@ def build_history():
     add("HIST", "History window", "History window", "window", "Menu bar › File › History, or bottom bar › History", "Opens 1000 x 720 (min 880 x 600); grid with day sections, details panel beside the grid",
         rendered=["S20"], proof=proof("HistoryBrowserTests.swift", "Window opens 1000 x 720 with an 880 x 600 minimum"))
     for cat in ("All", "Shared", "Exported", "Saved"):
-        add("HIST", "History › category control", cat, "control", f"History › {cat}", f"Filters the grid ({'every entry' if cat == 'All' else f'entries labelled {cat}'}; tab names are the tile labels)",
-            prereq="History seeded", rendered=["S20"], proof=proof("HistoryBrowserTests.swift", "Original action filters use exact supplied core strings"))
+        add("HIST", "History › category control", cat, "control", f"History › {cat}",
+            f"A choice in the category's glass radio group on one plate (one Tab stop, arrows move it): filters the grid ({'every entry' if cat == 'All' else f'entries labelled {cat}'}; names are the tile labels)",
+            prereq="History seeded", rendered=["S20"], note=glass("a native segmented control"),
+            proof=proof("HistoryBrowserTests.swift", "Original action filters use exact supplied core strings", ("HistoryBrowserTests.swift", "and the radio values read 1 on the chosen button, 0 elsewhere"),
+                        ("HistoryBrowserTests.swift", "The group is one tab stop, on the chosen button")))
+    add("HIST", "History", "Date filter panel", "panel", "History › date filter (open)",
+        "A glass pop-up face on its own plate reading the chosen filter (All dates at first) with a chevron; every way of opening it (click, Control-click, Space, Down, Up, VoiceOver press or Show Menu) opens a glass panel of the four choices as radio rows, 1 on the chosen one; choosing closes the panel and filters the grid; no native menu starts",
+        prereq="History seeded", rendered=[],
+        proof=proof("HistoryBrowserTests.swift", "The panel lists", ("HistoryBrowserTests.swift", "Rows are enabled radio buttons, 1 on All dates and 0 elsewhere"),
+                    ("HistoryBrowserTests.swift", "AXPress and AXShowMenu are both offered, and both open the glass panel"), ("HistoryBrowserTests.swift", "a keyboard open focuses the chosen row")))
     for date in ("All dates", "Last hour", "Yesterday", "Last 48 hours"):
-        add("HIST", "History › date pop-up", date, "control", f"History › date filter › {date}", f"Filters by {date.lower()} using the strict bounds", prereq="History seeded", rendered=["S20"],
-            proof=proof("HistoryBrowserTests.swift", "Recovered date predicates use strict hour 48hour and yesterday bounds"))
+        add("HIST", "History › date filter panel", date, "control", f"History › date filter › {date}", f"A radio row in the date filter's glass panel: {'no date limit' if date == 'All dates' else 'filters by ' + date.lower() + ' using the strict bounds'}; the face then reads {date}", prereq="History seeded", rendered=["S20"],
+            was=dict(surface="History › date pop-up"), note=glass("a row of a native pop-up menu"),
+            proof=proof("HistoryBrowserTests.swift", "Recovered date predicates use strict hour 48hour and yesterday bounds", ("HistoryBrowserTests.swift", "Rows are enabled radio buttons, 1 on All dates and 0 elsewhere"),
+                        ("HistoryBrowserTests.swift", "Choosing Last 48 hours sets the filter")))
     add("HIST", "History", "Search history", "control", "History › search field", "One literal case-insensitive OR over name, link and text; filters live", prereq="History seeded",
         rendered=["S20"], proof=proof("HistoryBrowserTests.swift", "Original search is one literal case insensitive OR over name link text"))
     actions = [("Open", "openExternal", "Opens the entry's editable document in the editor"), ("Copy", "copy", "Copies the picture to the pasteboard"), ("Copy Link", "link", "Copies the published URL (Posted entries only)"),
@@ -545,9 +681,15 @@ def build_history():
             ex="e2e-partial" if name in ("Open Link",) else "e2e", gap="os-panel" if name == "Open Link" else None, note="Opens the default browser (OS-owned)" if name == "Open Link" else None)
         add("HIST", "History › context menu", name, "menu item", f"History › right-click a tile › {name}", expected, prereq="An entry selected", rendered=["S20"],
             ex="e2e-partial" if name == "Open Link" else "e2e", gap="os-panel" if name == "Open Link" else None)
+    add("HIST", "History", "Drag as panel", "panel", "History › Drag as (open)",
+        "A glass pop-up face on its own plate at the end of the footer line, named History drag export format, reading the chosen format with a chevron; it opens a glass panel of six radio rows, the chosen format 1; choosing persists the format, updates the face and closes the panel; no native menu starts on any route",
+        prereq="History seeded", rendered=[],
+        proof=proof("HistoryBrowserTests.swift", "Six radio rows, PNG chosen", ("HistoryBrowserTests.swift", "Choosing PDF persists pdf and updates the face"),
+                    ("HistoryBrowserTests.swift", "AXPress and AXShowMenu are both offered, and both open the glass panel"), ("HistoryBrowserTests.swift", "The choice panel lists")))
     for fmt in ("PNG", "JPG", "PDF", "TIFF", "SVG", ".opensnap document"):
-        add("HIST", "History › Drag as pop-up", fmt, "control", f"History › Drag as › {fmt}", f"The pop-up (end of the footer line) offers {fmt}; tiles then drag out as {fmt} and the choice persists independently of the editor", prereq="History seeded", rendered=["S20"],
-            proof=proof("HistoryBrowserTests.swift", "Drag formats are PNG JPG PDF TIFF SVG and the .opensnap document"))
+        add("HIST", "History › Drag as panel", fmt, "control", f"History › Drag as › {fmt}", f"A radio row in the Drag as glass panel: offers {fmt}; tiles then drag out as {fmt} and the choice persists independently of the editor", prereq="History seeded", rendered=["S20"],
+            was=dict(surface="History › Drag as pop-up"), note=glass("a row of a native pop-up menu"),
+            proof=proof("HistoryBrowserTests.swift", "Drag formats are PNG JPG PDF TIFF SVG and the .opensnap document", ("HistoryBrowserTests.swift", "Six radio rows, PNG chosen")))
     for name, expected in [("Tile: select / multi-select", "Click selects with an accent border and check badge; ⌘/⇧-click extends"), ("Tile: double-click", "Opens the entry"),
                            ("Tile: drag out", "Promised file with the frozen format and a sanitised name"), ("Details: Name, Date, Size, Action, Destination", "Shows metadata; multi-selection aggregates"),
                            ("Details preview", "Bounded local preview image of the selection"), ("Day section headings", "Today, Yesterday, then dated headings"),
@@ -573,18 +715,41 @@ def build_destinations():
     add("DEST", "Destination editor", "Destination editor sheet", "sheet", "Settings › Upload › Add… / Edit… (double-click a row)",
         "Sheet on the Settings window holding one destination's form; sized to its protocol, scrolls on a short screen, Return saves and Esc cancels", rendered=["S19"])
     for protocol in ("WebDAV", "FTP", "FTPS", "SFTP", "S3-compatible"):
-        add("DEST", "Destination form › Protocol", protocol, "control", f"Settings › Upload › Add… › Protocol › {protocol}", f"Form shows the {protocol} field set and help", rendered=["S19", "S21"])
+        add("DEST", "Destination form › Protocol", protocol, "control", f"Settings › Upload › Add… › Protocol › {protocol}", f"A radio row in the Protocol glass panel: the form shows the {protocol} field set and help", rendered=["S19", "S21"],
+            note=glass("a native pop-up menu item"), proof=proof("PublishingDestinationsTests.swift", "the Protocol panel lists every protocol", ("PublishingDestinationsTests.swift", "the chosen protocol is marked in the panel")))
     fields = [("Name", "all", "Required, up to 80 characters, unique"), ("Endpoint URL", "all", "Validated scheme per protocol (https for S3 unless a private host)"),
               ("Region", "S3", "e.g. us-east-1"), ("Bucket", "S3", "Valid bucket name; dotted buckets use path-style"), ("Remote folder / Key prefix", "all", "Letters, digits, . _ - only for S3"),
               ("Public base URL", "all", "Optional; builds the copied link"), ("SSH host alias", "SFTP", "From ~/.ssh/config"), ("SFTP remote root", "SFTP", "Absolute path"),
-              ("SFTP port", "SFTP", "Number or empty"), ("Source (AWS credentials profile | Access key stored in Keychain)", "S3", "Chooses the credential source"),
+              ("SFTP port", "SFTP", "Number or empty"), ("Source (AWS credentials profile | Access key stored in Keychain)", "S3", "Chooses the credential source (a glass pop-up named Source: the face reads AWS profile or Keychain, its panel keeps the full titles)"),
               ("AWS profile", "S3 + profile", "Reads the shared credentials file in place"), ("Username / Access key ID", "non-SFTP", "Optional for anonymous"),
-              ("Password / Secret access key", "non-SFTP", "Secure field; stored in the Keychain (in memory in an isolated session)"), ("Make uploads public-read", "S3", "Checkbox; off by default (ACLs-off buckets)")]
+              ("Password / Secret access key", "non-SFTP", "Secure field; stored in the Keychain (in memory in an isolated session)"), ("Make uploads public-read", "S3", "Glass check box (a toggle on its plate); off by default (ACLs-off buckets)")]
+    glass_fields = {"Source": ("a native pop-up", proof("PublishingDestinationsTests.swift", "the Source face follows its choice", ("PublishingDestinationsTests.swift", "the Keychain face is the Keychain source"),
+                                                          ("PublishingDestinationsTests.swift", "the accessibility value of the Source pop-up is the full"))),
+                    "Make": ("a native checkbox", proof("PublishingDestinationsTests.swift", "public-read is a checkbox-style toggle"))}
     for name, scope, expected in fields:
-        add("DEST", "Destination form", name, "control", f"Settings › Upload › Add…/Edit… › {name}", f"{expected} (shown for: {scope})", rendered=["S19", "S21"])
-    for name, expected in [("Test", "Tries the destination; result line shows Connected + detail or Error: …"), ("Save", "Validates and stores; secret goes to the secret store (Return)"), ("Cancel", "Closes the editor sheet (Esc)"),
+        was, proofs = glass_fields.get(name.split(" ")[0], (None, None))
+        add("DEST", "Destination form", name, "control", f"Settings › Upload › Add…/Edit… › {name}", f"{expected} (shown for: {scope})", rendered=["S19", "S21"],
+            note=glass(was) if was else None, proof=proofs)
+    sheet_buttons = proof("PublishingDestinationsTests.swift", "every button on the sheet is a glass button")
+    for name, expected in [("Test", "A titled glass command button on the sheet's action plate: tries the destination; result line shows Connected + detail or Error: …"),
+                           ("Save", "A titled glass command button on the sheet's action plate, the sheet's default button: validates and stores; secret goes to the secret store (Return)"),
+                           ("Cancel", "A titled glass command button on the sheet's action plate: closes the editor sheet (Esc; with a choice panel open the first Esc closes only the panel)"),
                            ("Result line: working / success / failure", "Glyph plus words (Saving…, Testing…, Connected, Error: …), never colour alone")]:
-        add("DEST", "Destination form", name, "control", f"Settings › Upload › Add…/Edit… › {name}", expected, rendered=["S19", "S21"])
+        extra_proof = proof("PublishingDestinationsTests.swift", "Save is the window's default button") if name == "Save" else (
+            proof("PublishingDestinationsTests.swift", "the second Escape cancels the sheet") if name == "Cancel" else [])
+        add("DEST", "Destination form", name, "control", f"Settings › Upload › Add…/Edit… › {name}", expected, rendered=["S19", "S21"],
+            note=None if name.startswith("Result") else glass("a native push button"), proof=None if name.startswith("Result") else sheet_buttons + extra_proof)
+    add("DEST", "Destination form", "Protocol panel", "panel", "Settings › Upload › Add…/Edit… › Protocol (open)",
+        "A glass pop-up named Protocol on its own plate (the face reads the chosen protocol, with a chevron) that opens a glass panel of every protocol as radio rows, the chosen one marked and an unavailable protocol a disabled row; a click, Space or Down opens it, Return and keypad Enter stay with Save, and the first Esc closes only the panel (the second cancels the sheet)",
+        prereq="Destination editor open", rendered=[],
+        proof=proof("PublishingDestinationsTests.swift", "the Protocol panel lists every protocol", ("PublishingDestinationsTests.swift", "Down opens the Protocol panel"),
+                    ("PublishingDestinationsTests.swift", "an unavailable protocol is a disabled row"), ("PublishingDestinationsTests.swift", "Escape in the open panel closes only the panel"),
+                    ("PublishingDestinationsTests.swift", "Return with a face focused and no panel up runs Save")))
+    add("DEST", "Destination form", "Source panel", "panel", "Settings › Upload › Add…/Edit… › Source (open)",
+        "A glass pop-up named Source on its own plate (the face reads AWS profile or Keychain so it is whole at 560 pt) that opens a glass panel with the full titles as radio rows, the chosen one marked; opening it closes any other open panel, so one is up at a time",
+        prereq="Destination editor open, S3-compatible", rendered=[],
+        proof=proof("PublishingDestinationsTests.swift", "the panel rows keep the full titles and mark", ("PublishingDestinationsTests.swift", "opening another face closes the first panel: only one is up at a time"),
+                    ("PublishingDestinationsTests.swift", "the face shows a shorter title than")))
     add("DEST", "Destinations sheet", "Remove confirmation (NSAlert)", "alert", "Destinations › Remove", old("Alert: Remove “name”? with Remove / Cancel; drawn by NSAlert, not AppAlert"),
         prereq="Destinations seeded", note="Superseded: the question is an AppAlert sheet on Settings (Settings › Upload › Remove)", rendered=["S26"], **gone)
     add("DEST", "Destination editor", "Remove confirmation (AppAlert)", "alert", "Settings › Upload › Remove", "AppAlert sheet on the Settings window: Remove “name”? with Cancel first and default, Remove destructive; names who becomes the default",
@@ -602,14 +767,53 @@ def build_destinations():
 
 # --------------------------------------------------------------------------------------------------------------------- sheets etc.
 def build_sheets():
-    add("SHEET", "Resize or Crop", "Resize or Crop sheet", "sheet", "Menu bar › Image › Resize…, bottom bar › Resize…", "Sheet with heading, preset pop-up, mode control, dimension fields, buttons; Return = OK, Esc = Cancel", rendered=["S08"])
-    for name, expected in [("Size preset pop-up", "Custom size plus saved presets"), ("Preset name field", "Names a new or edited preset"), ("Add Preset", "Saves the current dimensions as a new preset"),
-                           ("Save Preset", "Updates the selected preset"), ("Remove (preset)", "Removes the selected preset"), ("Mode: Resize", "Resizes the canvas by pixels"), ("Mode: Crop", "Crops with an anchor"),
-                           ("Mode: Limit", "Limits the longest side, width or height"), ("Width (pixels)", "Validated integer field"), ("Height (pixels)", "Validated integer field"),
-                           ("Lock proportions", "Keeps the aspect ratio while editing"), ("Limit by: Longest side / Width / Height", "Chooses what the limit applies to"), ("Size limit field", "Validated integer"),
-                           ("Crop anchor (9 positions)", "Top/Middle/Bottom x Left/Center/Right"), ("Validation message", "Error text with the field name, never colour alone"),
-                           ("Cancel", "Closes without change (Esc)"), ("Apply", "Keeps the change and the sheet; Cancel then undoes only later edits"), ("OK", "Applies and closes (Return)")]:
-        add("SHEET", "Resize or Crop", name, "control", f"Resize or Crop › {name}", expected, prereq="Not in Actual Size or Frame mode", rendered=["S08"])
+    add("SHEET", "Resize or Crop", "Resize or Crop sheet", "sheet", "Menu bar › Image › Resize…, bottom bar › Resize…",
+        "Sheet with heading, a glass preset pop-up, a glass mode group (Resize, Crop, Limit), native dimension fields and titled glass buttons; no native pop-up or segmented control is left; Return = OK, Esc = Cancel (with the preset panel open the first Esc closes only the panel)",
+        rendered=["S08"], note=glass("a native pop-up, segmented control, checkbox and push buttons"),
+        proof=proof("ResizePanelLayoutTests.swift", "no native pop-up or segmented control anywhere on the sheet", ("ResizePanelLayoutTests.swift", "OK is the default button; Escape is Cancel"),
+                    ("ResizePanelLayoutTests.swift", "Each mode sizes the sheet to what it shows")))
+    mode_proofs = proof("ResizePanelLayoutTests.swift", "The mode is a glass choice group named Size operation", ("ResizePanelLayoutTests.swift", "a radio group of radio buttons"),
+                        ("ResizePanelLayoutTests.swift", "The mode group is one tab stop"))
+    preset_commands = lambda text: f"Titled glass command button on the preset plate: {text}"
+    sheet_buttons = lambda text: f"Titled glass command button on the sheet's button plate: {text}"
+    for name, expected, was, proofs in [
+            ("Size preset pop-up", "A glass pop-up named Size preset on its own plate (the face reads the chosen preset, Custom size at first) that opens a glass panel of Custom size plus the saved presets as radio rows", "a native pop-up",
+             proof("ResizePanelLayoutTests.swift", "The preset is a glass pop-up button named Size preset whose value is the selection", ("ResizePanelLayoutTests.swift", "Pressing the pop-up opens the preset panel"),
+                   ("ResizePanelLayoutTests.swift", "Choosing a row closes the panel"), ("ResizePanelLayoutTests.swift", "The sheet shows the preset and the pop-up names it"))),
+            ("Preset name field", "Names a new or edited preset", None, None),
+            ("Add Preset", preset_commands("saves the current dimensions as a new preset"), "a native push button",
+             proof("ResizePanelLayoutTests.swift", "Adding from a built-in makes an editable copy")),
+            ("Save Preset", preset_commands("updates the selected preset; off for Custom size and the built-in presets"), "a native push button",
+             proof("ResizePanelLayoutTests.swift", "Custom size: Save and Remove are off", ("ResizePanelLayoutTests.swift", "A built-in preset is read-only"))),
+            ("Remove (preset)", preset_commands("removes the selected preset and returns to Custom size"), "a native push button",
+             proof("ResizePanelLayoutTests.swift", "Remove returns to Custom size with Save and Remove off")),
+            ("Mode: Resize", "A choice in the glass mode group (a radio group named Size operation): resizes the canvas by pixels", "a native segmented control", mode_proofs),
+            ("Mode: Crop", "A choice in the glass mode group: crops with an anchor", "a native segmented control", mode_proofs),
+            ("Mode: Limit", "A choice in the glass mode group: limits the longest side, width or height", "a native segmented control", mode_proofs),
+            ("Width (pixels)", "Validated integer field", None, None), ("Height (pixels)", "Validated integer field", None, None),
+            ("Lock proportions", "A glass checkbox toggle, on by default: keeps the aspect ratio while editing", "a native checkbox",
+             proof("ResizePanelLayoutTests.swift", "Lock proportions is a checkbox-role toggle", ("ResizePanelLayoutTests.swift", "A click turns it off in the session"))),
+            ("Limit by: Longest side / Width / Height", "A glass radio group named Limit by: chooses what the limit applies to", "a native pop-up",
+             proof("ResizePanelLayoutTests.swift", "Limit by lists Longest side, Width and Height and starts on the first")),
+            ("Size limit field", "Validated integer", None, None),
+            ("Crop anchor (9 positions)", "Nine cells on one glass plate (a radio group named Crop anchor; arrows move it), the chosen cell filled and bordered: Top/Middle/Bottom x Left/Center/Right", "an app-owned anchor view",
+             proof("ResizePanelLayoutTests.swift", "The anchor grid sits on one glass plate", ("ResizePanelLayoutTests.swift", "The chosen cell is the command selected style"),
+                   ("ResizePanelLayoutTests.swift", "The grid stays a named radio group of nine cells"))),
+            ("Validation message", "Error text with the field name, never colour alone", None, None),
+            ("Cancel", sheet_buttons("closes without change (Esc)"), "a native push button", proof("ResizePanelLayoutTests.swift", "Cancel, Apply and OK share one glass plate", ("ResizePanelLayoutTests.swift", "OK is the default button; Escape is Cancel"))),
+            ("Apply", sheet_buttons("keeps the change and the sheet; Cancel then undoes only later edits"), "a native push button", proof("ResizePanelLayoutTests.swift", "Cancel, Apply and OK share one glass plate")),
+            ("OK", sheet_buttons("applies and closes (Return); the only primary control"), "a native push button",
+             proof("ResizePanelLayoutTests.swift", "OK is the only primary", ("ResizePanelLayoutTests.swift", "OK is the default button; Escape is Cancel")))]:
+        add("SHEET", "Resize or Crop", name, "control", f"Resize or Crop › {name}", expected, prereq="Not in Actual Size or Frame mode", rendered=["S08"], note=glass(was) if was else None, proof=proofs)
+    add("SHEET", "Resize or Crop", "Manage presets (disclosure)", "control", "Resize or Crop › Manage",
+        "A glass toggle with a chevron named Manage presets, collapsed at first: a click expands the preset name field and the Add Preset, Save Preset and Remove row and the sheet grows to hold them; a second click folds it back to the same height",
+        prereq="Not in Actual Size or Frame mode", rendered=[],
+        proof=proof("ResizePanelLayoutTests.swift", "Manage is a collapsed chevron toggle", ("ResizePanelLayoutTests.swift", "A click expands it and the sheet grows"), ("ResizePanelLayoutTests.swift", "A second click folds it back to the same height")))
+    add("SHEET", "Resize or Crop", "Preset panel", "panel", "Resize or Crop › Size preset (open)",
+        "The glass panel under the preset pop-up: one plate of radio rows, the chosen one marked and its value 1; click, Control-click, Space, Down, Up, VoiceOver press or Show Menu open it with no native menu; a second press closes it; Return and keypad Enter stay with OK and the first Esc closes only the panel (the second cancels the sheet)",
+        prereq="Not in Actual Size or Frame mode", rendered=[],
+        proof=proof("ResizePanelLayoutTests.swift", "Pressing the pop-up opens the preset panel", ("ResizePanelLayoutTests.swift", "A second press on the pop-up while its panel is shown closes it instead of reopening"),
+                    ("ResizePanelLayoutTests.swift", "Down on the pop-up opens the panel with the chosen row focused"), ("ResizePanelLayoutTests.swift", "A second Escape (panel closed) runs Cancel and ends the sheet")))
     add("SHEET", "Photos", "Photos sheet", "sheet", "Menu bar › File › Photos…, top bar › Photos", "Sheet titled Photos: Open a photo, Pictures / image folder chooser, grid, Close", rendered=["S12"])
     for name, expected, ex, gap, owner in [("Pictures folder", "Browses the Pictures folder (only the chosen folder)", "e2e", None, "app"),
                                            ("Choose image folder…", "Open panel titled Choose an image folder", "e2e-partial", "os-panel", "app"),
@@ -676,6 +880,24 @@ def build_keys(parsed):
             ("Tab / ⇧Tab through the chrome", "Visits every enabled control in a sensible order with a visible focus ring", "shortcut"),
             ("Space on a focused button", "Presses it", "shortcut")]:
         add("KEY", "Modifiers and navigation", chord, kind, chord, expected, prereq=D, rendered=["S04"])
+    # The glass choice panels (Toolbox, zoom, Upload, History, Resize preset, destination form, Capture keys) share one keyboard and pointer contract.
+    add("KEY", "Glass choice panels", "Return, Space, Down or Up on a focused glass choice", "shortcut", "A focused Toolbox, zoom, Upload, History filter, Resize preset or destination-form pop-up, then the key",
+        "Opens its glass panel, a keyboard open focusing the chosen row (else the first enabled one) and a pointer open focusing none; in a sheet with a default button (Resize, destination editor) Return and keypad Enter stay with OK or Save and Space or Down opens the choice; a letter key opens nothing, so no type-ahead reaches a native menu",
+        prereq="A glass choice focused", rendered=[],
+        proof=proof("AppSafetyMenuCases.swift", "Every route to the Toolbox, Zoom and Upload choices opens the glass panel and starts no native menu",
+                    ("GlassChromeTests.swift", "a letter key opens nothing"), ("ResizePanelLayoutTests.swift", "Space on the focused face opens the preset panel"),
+                    ("ResizePanelLayoutTests.swift", "Down on the focused face opens the panel on the chosen row"), ("PublishingDestinationsTests.swift", "Return with a face focused and no panel up runs Save")))
+    add("KEY", "Glass choice panels", "Keys inside an open glass panel", "shortcut", "An open glass choice panel, then the key",
+        "Up, Down, Tab and Shift-Tab move through the enabled rows (disabled rows are skipped and the ends wrap), Home and End jump to the first and last, Return and Space choose and close; Escape closes the panel first, so a sheet's Cancel only runs on a second Escape, and the keyboard returns to the control that had it",
+        prereq="A glass choice panel open", rendered=[],
+        proof=proof("GlassChoicesTests.swift", "Down from the last row wraps to the first", ("GlassChoicesTests.swift", "Shift-Tab moves up"), ("GlassChoicesTests.swift", "Home focuses the first enabled row"),
+                    ("GlassChoicesTests.swift", "Escape restores the responder that had focus when the panel opened"), ("PublishingDestinationsTests.swift", "the second Escape cancels the sheet"),
+                    ("ResizePanelLayoutTests.swift", "A second Escape (panel closed) runs Cancel and ends the sheet")))
+    add("KEY", "Glass choice panels", "Click away from an open glass panel", "gesture", "An open glass choice panel, then a click",
+        "A click elsewhere in the window or in another window closes the panel and passes through; a click on its opener only closes it and is consumed, so the opener's own action cannot reopen it; opening another glass panel closes the first, so one is up at a time",
+        prereq="A glass choice panel open", rendered=[],
+        proof=proof("GlassChoicesTests.swift", "A click in another window closes it and lets the click through", ("GlassChoicesTests.swift", "A click on the anchor closes the panel and is consumed"),
+                    ("GlassChoicesTests.swift", "Showing a second host closes the first: only one is ever shown")))
 
 
 def build_states():
@@ -685,7 +907,7 @@ def build_states():
             ("Frame mode at 980 and 1280", "Hole punched through the well; Snap becomes Snap Frame; Cancel visible; no full-screen entry while framing", "e2e", None),
             ("Empty document", "800 x 600 white canvas, Undo/Wipe disabled", "e2e", None), ("Populated document", "Elements drawn; Undo enabled; edited dot", "e2e", None),
             ("Dirty then Save", "Edited dot clears after Save to History / Save", "e2e", None), ("Actual Size mode", "Navigator shown, Resize disabled", "e2e", None),
-            ("Large picture fit", "Fit computed zoom entry appears in the pop-up", "e2e", None), ("Small picture centred", "Centred, not stretched", "e2e", None),
+            ("Large picture fit", "Fit computed zoom entry appears in the zoom panel", "e2e", None), ("Small picture centred", "Centred, not stretched", "e2e", None),
             ("Long status text", "Truncates at the tail without pushing controls", "e2e", None), ("PNG | JPG toggle states", "Selected segment distinguishable without colour alone", "e2e", None),
             ("Control states: rest, hover, pressed, focus, selected, disabled", "Each distinguishable; hover/pressed are real pointer states", "e2e", None),
             ("Light appearance", "Whole app legible in light", "gap", "system-setting"), ("Dark appearance", "Whole app legible in dark (the machine's current style)", "e2e", None),
@@ -706,6 +928,12 @@ def build_a11y():
             ("Announcements (Announcer)", "Status changes are posted as announcements", "e2e", None),
             ("VoiceOver speech", "Spoken labels match the visual meaning", "gap", "voiceover")]:
         add("A11Y", "Accessibility", name, "state", name, expected, ex=ex, gap=gap)
+    add("A11Y", "Accessibility", "Glass choices keep native roles and values", "state", "Settings, History, Resize, destination form, Toolbox and the other glass choices",
+        "A glass radio set speaks as a named radio group of radio buttons with one selected, a glass toggle as a check box with value 0 or 1, a glass pop-up as a pop-up button whose value is the chosen title, the Toolbox as a menu button, and the rows of an open panel as radio buttons or check boxes with their value",
+        prereq="Each surface open", rendered=[],
+        proof=proof("SettingsWindowTests.swift", "VoiceOver gets a radio group named", ("SettingsWindowTests.swift", "every choice is a radio button with its own name"), ("SettingsWindowTests.swift", "VoiceOver gets a named check box and the label is 20 pt"),
+                    ("AccessibilityAuditTests.swift", "Resize: the mode group is a named radio group of radio buttons"), ("GlassChromeTests.swift", "toolbox: a toggle row speaks as a checkbox with value 1"),
+                    ("GlassChromeTests.swift", "toolbox: still a menu button named Toolbox with no value")))
 
 
 # ----------------------------------------------------------------------------------------------------------------------- harness
@@ -784,6 +1012,8 @@ def assign_ids():
             entry["name"] += f" ({entry['entryPath']})"
             key = (entry["area"], entry["surface"], entry["name"], entry["type"])
         seen.add(key)
+        if key not in previous and WAS.get(key) in previous:   # the control moved: the old row's ID follows it
+            previous[key] = previous.pop(WAS[key])
         if key in previous:
             entry["id"] = previous[key]
         else:
@@ -891,6 +1121,7 @@ def matrix():
 
 def build(args):
     entries.clear()
+    WAS.clear()
     parsed = build_menus()
     build_toolbox(parsed)
     build_icons()
