@@ -165,27 +165,37 @@ private enum SettingsWindowTests {
         return out
     }
 
-    /// Audit fix 2: the strip's tabs read on its plate in light, dark and both Increase Contrast arms; the selected tab is held on its own fill too.
+    /// The tabs read on their plate in light, dark and both Increase Contrast arms. Glass is a live material an offscreen render cannot
+    /// sample, so a resting label is judged against the two surfaces the plate can be: the window surface it floats over and the opaque
+    /// plate Reduce Transparency draws; the current tab's label is judged against its own accent fill, blended over the window.
     private static func tabStripContrast() {
         typealias Palette = DesignTokens.Palette
-        let (controller, _, _, _, _, _) = makeController(destinations: sampleDestinations(count: 2))
+        for (name, appearance) in ContrastProbe.appearances {
+            let highContrast = name.contains("Contrast")
+            appearance.performAsCurrentDrawingAppearance {
+                let window = Palette.resolve(Palette.Surface.window, for: appearance)
+                let plate = Palette.resolve(Palette.Surface.content, for: appearance)
+                let rest = StateStyles.command(.rest, primary: false, focused: false, highContrast: highContrast, differentiate: false, appearance: appearance)
+                for (surfaceName, surface) in [("window", window), ("opaque plate", plate)] {
+                    let ratio = Palette.contrastRatio(rest.content, Palette.rgb(surface).rgb)
+                    expect(ratio >= 4.5, "a resting tab label reads at 4.5:1 on the \(surfaceName) (\(name): \(ratio))")
+                }
+                let selected = StateStyles.command(.selected, primary: false, focused: false, highContrast: highContrast, differentiate: false, appearance: appearance)
+                let fill = selected.fill ?? .clear
+                let backdrop = Palette.blend(fill, alpha: fill.alphaComponent, over: window)
+                let ratio = Palette.contrastRatio(selected.content, backdrop)
+                expect(selected.strongText && ratio >= 4.5, "the current tab's label is semibold and reads on its own fill (\(name): \(ratio))")
+            }
+        }
+        // The same through the strip a user sees: Reduce Transparency draws an opaque plate under the tabs, so the drawn pixels can be judged.
+        defer { DisplayOptions.override = nil }
+        DisplayOptions.override = DisplayOptions(reduceTransparency: true)
+        let (controller, _, _, _, _, _) = makeController()
         let strip = controller.strip
         controller.select(1)
         strip.frame = NSRect(x: 0, y: 0, width: SettingsLayout.contentWidth, height: SettingsTabStrip.height)
         strip.layoutSubtreeIfNeeded()
-        for (name, appearance) in ContrastProbe.appearances {
-            let reading = ContrastProbe.measure(strip, appearance: appearance, plateAt: NSPoint(x: 3, y: strip.bounds.midY),
-                                                textFrames: strip.buttons.map { strip.convert($0.bounds, from: $0) })
-            expect(reading.plateOpaque, "the strip draws an opaque plate (\(name))")
-            for (button, ratio) in zip(strip.buttons, reading.textRatios) { expect(ratio >= 4.5, "\(button.title) reads at 4.5:1 on the strip (\(name): \(ratio))") }
-            appearance.performAsCurrentDrawingAppearance {
-                let window = Palette.resolve(Palette.Surface.window, for: appearance)
-                let selected = Palette.blend(Palette.State.selectedFill, alpha: 1, over: window)
-                let backdrop = NSColor(srgbRed: selected.red, green: selected.green, blue: selected.blue, alpha: 1)
-                let ratio = Palette.contrastRatio(Palette.resolve(Palette.Text.primary, for: appearance), Palette.rgb(backdrop).rgb)
-                expect(ratio >= 4.5, "the selected tab's title reads on its own fill (\(name): \(ratio))")
-            }
-        }
+        expect(strip.plate.transparencyPlate != nil, "Reduce Transparency puts the opaque plate behind the tabs")
     }
 
     private static func tabStrip() {
@@ -203,26 +213,32 @@ private enum SettingsWindowTests {
             expect(button.imagePosition == .imageLeading && button.image != nil, "\(button.title): an icon beside the label")
             expect(button.frame.height >= DesignTokens.Size.hitMin, "\(button.title): the tab is at least \(DesignTokens.Size.hitMin) pt tall (\(button.frame.height))")
         }
-        // Differentiate Without Color: the current tab is also a 2 pt outline in the text colour, not only an accent tint.
-        func currentBorder(_ options: DisplayOptions?) -> (CGFloat, Bool) {
+        // Differentiate Without Color: the current tab also carries the capsule under its glyph, a shape and not a tint alone.
+        func capsules(_ options: DisplayOptions?) -> [Bool] {
             DisplayOptions.override = options
-            strip.select(0); strip.select(1); strip.select(0)
-            let layer = strip.buttons[0].layer
-            let accent = DesignTokens.Palette.resolve(DesignTokens.Palette.accent, for: strip.effectiveAppearance).cgColor
-            return (layer?.borderWidth ?? 0, layer?.borderColor != nil && layer?.borderColor != accent && strip.buttons[1].layer?.borderWidth == 0)
+            NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
+            strip.select(0); strip.select(1)
+            return strip.buttons.map { $0.showsIndicator && !$0.indicatorLayer.isHidden }
         }
-        let plainTab = currentBorder(.none), outlinedTab = currentBorder(DisplayOptions(differentiateWithoutColor: true))
+        let plainTabs = capsules(.none), outlinedTabs = capsules(DisplayOptions(differentiateWithoutColor: true))
         DisplayOptions.override = nil
-        expect(plainTab.0 == 1 && outlinedTab.0 == 2 && outlinedTab.1 && !plainTab.1, "the current tab gains a 2 pt outline under Differentiate Without Color and the others stay bare (\(plainTab.0) -> \(outlinedTab.0))")
+        NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
+        expect(plainTabs == [false, false, false, false] && outlinedTabs == [false, true, false, false],
+               "the current tab gains the capsule under Differentiate Without Color and the others stay bare (\(plainTabs) -> \(outlinedTabs))")
+        strip.select(0)
         expect(strip.contentWidth + 2 * DesignTokens.Space.s3 <= SettingsLayout.contentWidth, "the four tabs fit the 640 pt window: \(strip.contentWidth)")
         let stripBox = strip.convert(strip.bounds, to: window.contentView), rowBox = strip.buttons.map { $0.convert($0.bounds, to: window.contentView) }.reduce(NSRect.null) { $0.union($1) }
         expect(abs((rowBox.midX) - stripBox.midX) < 1, "the tabs are centred across the window")
         expect(abs(window.contentLayoutRect.maxY - strip.convert(strip.bounds, to: nil).maxY) < 1.5 || strip.frame.maxY >= (window.contentView?.bounds.maxY ?? 0) - 0.5,
                "the strip is at the top of the content")
 
-        // A solid surface with a separator below, and no glass anywhere in it.
-        let kinds = descendants(strip).map { String(describing: type(of: $0)) }
-        expect(!kinds.contains { $0.contains("Glass") || $0.contains("VisualEffect") } && !(strip is NSVisualEffectView), "the strip is solid, not glass: \(Set(kinds))")
+        // The four tabs share ONE glass plate in the bar's container, over a solid window surface with a separator below; no glass nests.
+        expect(strip.plate.arrangedViews.count == 4 && zip(strip.plate.arrangedViews, strip.buttons).allSatisfy { $0 === $1 } && strip.buttons.allSatisfy { $0.isDescendant(of: strip.plate) },
+               "the four tabs sit on one plate, in order")
+        expect(plates(in: strip).count == 1 && strip.plate.superview != nil && strip.plate.isDescendant(of: strip.container) && strip.container.superview === strip,
+               "that is the strip's only plate, held in its glass container")
+        expect(nestedGlass(in: strip).isEmpty && strip.plate.tintColor == nil && strip.plate.identifier?.rawValue == "SettingsTabBar", "no glass inside the plate, and the plate carries no tint")
+        expect(!strip.buttons.contains { $0.superview is NSVisualEffectView } && !(strip is NSVisualEffectView) && !(strip is NSGlassEffectView), "the strip itself is a plain view; the plate is its glass")
         var surface: [CGFloat] = []
         strip.effectiveAppearance.performAsCurrentDrawingAppearance { strip.updateLayer(); surface = rgb(strip.layer?.backgroundColor, in: strip) }
         expect(surface == resolved(Palette.Surface.window, in: strip) && surface.last == 1, "the strip fills with the opaque window surface: \(surface)")
@@ -234,37 +250,46 @@ private enum SettingsWindowTests {
             expect(abs(line.maxY - strip.frame.minY) < 0.5, "the separator sits directly under the strip (\(line) vs \(strip.frame))")
         }
 
-        // States: rest, hover, pressed and selected are fills; selected adds a border and an accent icon (not colour alone).
+        // States: rest, hover, pressed and selected are fills StatePlate draws from StateStyles; selected adds a border, a semibold label and a solid glyph (not colour alone).
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
             window.appearance = NSAppearance(named: appearance)
             controller.select(1)
+            // The glass hands its content its own appearance (the material decides), so each tab is judged under the appearance it really has.
+            func expected(_ state: ControlState, _ button: NSView) -> StateStyle {
+                StateStyles.command(state, primary: false, focused: false, highContrast: false, differentiate: false, appearance: button.effectiveAppearance)
+            }
             for (index, button) in strip.buttons.enumerated() {
                 let layer = button.layer!
                 let fill = rgb(layer.backgroundColor, in: button)
+                let runFont = button.attributedTitle.attribute(.font, at: 0, effectiveRange: nil) as? NSFont
                 if index == 1 {
                     expect(layer.borderWidth == 1 && rgb(layer.borderColor, in: button) == resolved(Palette.accent, in: button), "\(appearance.rawValue): the selected tab has a 1 pt accent border")
-                    expect(fill == resolved(Palette.State.selectedFill, in: button), "\(appearance.rawValue): the selected tab has the selected fill: \(fill)")
-                    expect(button.contentTintColor.map { resolved($0, in: button) } == resolved(Palette.accent, in: button), "\(appearance.rawValue): the selected icon is accent")
-                    expect(button.accessibilityValue() as? Int == 1, "the selected tab reports value 1")
+                    expect(fill == resolved(expected(.selected, button).fill!, in: button) && abs(fill.last! - 0.20) < 0.001, "\(appearance.rawValue): the selected tab has the selected fill: \(fill)")
+                    expect(button.plate.stateStyle.strongText && runFont == DesignTokens.Typography.font(.bodyStrong), "\(appearance.rawValue): the selected label is semibold, not colour alone")
+                    expect(button.contentTintColor.map { resolved($0, in: button) } == resolved(expected(.selected, button).content, in: button), "\(appearance.rawValue): the selected glyph takes the state's content colour")
+                    expect(button.iconSource != .none && button.activeFamily == .solid, "\(appearance.rawValue): the selected glyph is the solid one")
+                    expect(button.accessibilityValue() as? Int == 1 && button.isCurrent, "the selected tab reports value 1")
                 } else {
-                    expect(layer.borderWidth == 0 && fill.last == 0, "\(appearance.rawValue): \(button.title) rests with no fill and no border (\(fill))")
-                    expect(button.contentTintColor.map { resolved($0, in: button) } == resolved(Palette.Text.secondary, in: button), "\(appearance.rawValue): a resting icon is secondary")
-                    expect(button.accessibilityValue() as? Int == 0, "an unselected tab reports value 0")
+                    expect(layer.borderWidth == 0 && (fill.last ?? 0) == 0, "\(appearance.rawValue): \(button.title) rests with no fill and no border (\(fill))")
+                    expect(runFont == DesignTokens.Typography.font(.body) && !button.plate.stateStyle.strongText, "\(appearance.rawValue): a resting label is regular weight")
+                    expect(button.contentTintColor.map { resolved($0, in: button) } == resolved(expected(.rest, button).content, in: button), "\(appearance.rawValue): a resting glyph takes the rest content colour")
+                    expect(button.accessibilityValue() as? Int == 0 && !button.isCurrent, "an unselected tab reports value 0")
                 }
             }
             let rest = strip.buttons[2]
             rest.setHovered(true)
             expect(rgb(rest.layer?.backgroundColor, in: rest) == resolved(Palette.State.hover, in: rest), "\(appearance.rawValue): hover fills with the hover colour")
-            rest.setPressed(true)
+            rest.highlight(true)
             expect(rgb(rest.layer?.backgroundColor, in: rest) == resolved(Palette.State.pressed, in: rest), "\(appearance.rawValue): pressed fills with the pressed colour")
-            rest.setPressed(false); rest.setHovered(false)
-            expect(rgb(rest.layer?.backgroundColor, in: rest).last == 0, "\(appearance.rawValue): the fill clears when the pointer leaves")
+            rest.highlight(false); rest.setHovered(false)
+            expect((rgb(rest.layer?.backgroundColor, in: rest).last ?? 0) == 0, "\(appearance.rawValue): the fill clears when the pointer leaves")
             let current = strip.buttons[1]
             current.setHovered(true)
-            expect(rgb(current.layer?.backgroundColor, in: current) == resolved(Palette.State.selectedFill, in: current), "\(appearance.rawValue): hover never washes out the selected tab")
-            current.setPressed(true)
+            expect(rgb(current.layer?.backgroundColor, in: current) == resolved(expected(.selected, current).fill!, in: current) && current.layer?.borderWidth == 1,
+                   "\(appearance.rawValue): hover never washes out the selected tab")
+            current.highlight(true)
             expect((rgb(current.layer?.backgroundColor, in: current).last ?? 0) >= 0.32 - 0.001, "\(appearance.rawValue): pressing the selected tab deepens its fill")
-            current.setPressed(false); current.setHovered(false)
+            current.highlight(false); current.setHovered(false)
         }
         window.appearance = nil
         controller.select(0)
@@ -1146,20 +1171,21 @@ private enum SettingsWindowTests {
         controller.window.orderOut(nil)
     }
 
-    /// R1-018: the current tab's outline follows Differentiate Without Color while the window is up, not only when the tab is next selected.
+    /// R1-018: the current tab's non-colour cue follows Differentiate Without Color while the window is up, not only when the tab is next selected.
     private static func liveDifferentiateOutline() {
         let (controller, _, _, _, _, _) = makeController()
         let tab = controller.strip.buttons[0]
         DisplayOptions.override = DisplayOptions.none
         defer { DisplayOptions.override = nil }
+        NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
         tab.setCurrent(true)
-        expect(tab.layer?.borderWidth == 1, "the current tab has a 1 pt accent edge by default (\(tab.layer?.borderWidth ?? -1))")
+        expect(tab.layer?.borderWidth == 1 && !tab.showsIndicator, "the current tab has a 1 pt accent edge and no capsule by default (\(tab.layer?.borderWidth ?? -1))")
         DisplayOptions.override = DisplayOptions(differentiateWithoutColor: true)
         NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
-        expect(tab.layer?.borderWidth == 2, "turning Differentiate Without Color on redraws the outline at once, with no tab change (\(tab.layer?.borderWidth ?? -1))")
+        expect(tab.showsIndicator && !tab.indicatorLayer.isHidden, "turning Differentiate Without Color on adds the capsule at once, with no tab change")
         DisplayOptions.override = DisplayOptions.none
         NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
-        expect(tab.layer?.borderWidth == 1, "and turning it off puts the thin edge back")
+        expect(!tab.showsIndicator && tab.indicatorLayer.isHidden, "and turning it off takes the capsule away")
     }
 
     /// F-R-003: the selected destination row has a cue that is not hue under Differentiate Without Color (a 2 pt edge in the text colour and

@@ -694,138 +694,107 @@ final class UploadSettingsTab: SettingsTabViewController {
     @objc private func makeDefaultTapped() { if let selected = selectedDestination { onMakeDefault(selected) } }
 }
 
-/// One tab on the strip: an icon and a 20 pt label. It is a real NSButton with a title, so the G4 walker judges its text.
-/// Rest, hover, pressed and selected are drawn as fills; selected adds a 1 pt accent border and an accent icon, the same cues
-/// as the selected tool in the main chrome, so the state is never colour alone.
+/// One tab on the strip: an icon and a 20 pt label on the strip's glass plate. It is the chrome's `CommandButton`, so it is a real
+/// NSButton with a title (the G4 walker judges its text) and its rest, hover, pressed and selected states are the fills `StatePlate` draws
+/// from `StateStyles.command`: selected is the accent fill, a 1 pt accent border, a semibold label and a solid glyph, and Differentiate
+/// Without Color adds the capsule under the glyph, so the current tab is never colour alone.
 @MainActor
-final class SettingsTabButton: NSButton {
-    static let height = DesignTokens.Size.row
+final class SettingsTabButton: CommandButton {
+    static let height = GlassChrome.Metrics.commandHeight
     static let horizontalPadding = DesignTokens.Space.s3
-    private typealias Palette = DesignTokens.Palette
-
-    let icon: FAIcon
-    private(set) var isCurrent = false
-    private(set) var isHovered = false
-    private(set) var isPressed = false
-    private var trackingArea: NSTrackingArea?
-    /// The outline for Differentiate Without Color follows the system setting as it changes, not only when the tab is next selected.
-    private var displayObservation: DisplayOptions.Observation?
+    private typealias Typography = DesignTokens.Typography
 
     init(title: String, icon: FAIcon) {
-        self.icon = icon
         super.init(frame: .zero)
+        GlassChrome.useExtraLarge(self)
+        Typography.apply(.body, to: self)
+        iconPointSize = Typography.iconInline
+        iconFamily = .solid; selectedFamily = .solid
+        self.icon = icon
         self.title = title
-        isBordered = false; setButtonType(.momentaryChange); imagePosition = .imageLeading; imageHugsTitle = true
-        image = ChromeIcons.resolve(icon, family: .solid, pointSize: DesignTokens.Typography.iconRegular).image
-        refusesFirstResponder = true; focusRingType = .none
-        wantsLayer = true; layer?.cornerRadius = DesignTokens.Radius.md
+        refusesFirstResponder = true
         identifier = NSUserInterfaceItemIdentifier("settingsTab." + title)
         setAccessibilityElement(true); setAccessibilityRole(.radioButton); setAccessibilityLabel(title)
-        applyTitle()
-        applyState()
-        displayObservation = DisplayOptions.observe { [weak self] _ in self?.applyState() }
+        // The label is drawn from an attributed string: the button's own title field would keep the system's 13 pt and take no state colour.
+        plate.onApply = { [weak self] _ in self?.styleTitle() }
+        styleTitle()
+        translatesAutoresizingMaskIntoConstraints = false
+        widthAnchor.constraint(equalToConstant: Self.width(for: title)).isActive = true
+        heightAnchor.constraint(equalToConstant: Self.height).isActive = true
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
 
-    override var intrinsicContentSize: NSSize {
-        let size = super.intrinsicContentSize
-        return NSSize(width: size.width + 2 * Self.horizontalPadding, height: Self.height)
+    /// The width of a tab: its glyph, the gap, the label in the strong weight (so choosing a tab never moves its neighbours) and the padding.
+    static func width(for title: String) -> CGFloat {
+        let label = ceil((title as NSString).size(withAttributes: [.font: Typography.font(.bodyStrong)]).width)
+        return label + Typography.iconInline + DesignTokens.Space.s2 + 2 * horizontalPadding
     }
 
-    /// The title is attributed so its size and colour are ours and not the button style's.
-    private func applyTitle() {
-        let font = DesignTokens.Typography.font(.body)
-        self.font = font; cell?.font = font
-        attributedTitle = NSAttributedString(string: title, attributes: [.font: font, .foregroundColor: Palette.Text.primary])
+    /// The label in the weight and colour the state resolved: semibold while this is the current tab.
+    private func styleTitle() {
+        let text = visibleTitle
+        guard !text.isEmpty else { return }
+        let style = plate.stateStyle
+        attributedTitle = NSAttributedString(string: text, attributes: [.font: Typography.font(style.strongText ? .bodyStrong : .body), .foregroundColor: style.content])
     }
 
-    func setCurrent(_ current: Bool) {
-        isCurrent = current
-        applyState()
+    var isCurrent: Bool { state == .on }
+    func setCurrent(_ current: Bool) { state = current ? .on : .off }
+
+    override var title: String {
+        didSet { styleTitle() }
     }
+    override var intrinsicContentSize: NSSize { NSSize(width: Self.width(for: visibleTitle), height: Self.height) }
 
     override func accessibilityValue() -> Any? { isCurrent ? 1 : 0 }
     override func accessibilityPerformPress() -> Bool { performClick(nil); return true }
-
-    // MARK: State
-
-    override func viewDidChangeEffectiveAppearance() {
-        super.viewDidChangeEffectiveAppearance()
-        applyState()
-    }
-
-    private func applyState() {
-        effectiveAppearance.performAsCurrentDrawingAppearance {
-            let accent = Palette.accent
-            contentTintColor = isCurrent ? accent : Palette.Text.secondary
-            guard let layer else { return }
-            if isCurrent {
-                layer.backgroundColor = (isPressed ? accent.withAlphaComponent(0.32) : Palette.State.selectedFill).cgColor
-                // Differentiate Without Color: the current tab is also a 2 pt outline in the text colour, a shape and not a tint alone.
-                let outline = DisplayOptions.current.differentiateWithoutColor
-                layer.borderColor = (outline ? Palette.Text.primary : accent).cgColor; layer.borderWidth = outline ? 2 : 1
-            } else {
-                layer.borderWidth = 0; layer.borderColor = nil
-                layer.backgroundColor = (isPressed ? Palette.State.pressed : (isHovered ? Palette.State.hover : NSColor.clear)).cgColor
-            }
-        }
-    }
-
-    override func updateTrackingAreas() {
-        super.updateTrackingAreas()
-        if let trackingArea { removeTrackingArea(trackingArea) }
-        let area = NSTrackingArea(rect: bounds, options: [.mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect], owner: self, userInfo: nil)
-        addTrackingArea(area); trackingArea = area
-    }
-    func setHovered(_ hovered: Bool) { isHovered = hovered; applyState() }
-    func setPressed(_ pressed: Bool) { isPressed = pressed; applyState() }
-    override func mouseEntered(with event: NSEvent) { setHovered(true) }
-    override func mouseExited(with event: NSEvent) { setHovered(false) }
-    /// `super.mouseDown` tracks the whole click, so the pressed fill is on for exactly as long as the mouse is down.
-    override func mouseDown(with event: NSEvent) {
-        setPressed(true)
-        super.mouseDown(with: event)
-        setPressed(false)
-    }
 }
 
-/// The strip of tabs: a solid surface (Settings is a content window, and glass is for navigation), one key-view stop, the
-/// Left and Right arrows move between tabs while it has focus, and it presents itself as a tab group.
+/// The strip of tabs: the four tabs share ONE glass plate (the only glass in it; the tabs draw their own state fills) in the bar's glass
+/// container, over the window surface. It is one key-view stop, the Left and Right arrows move between tabs while it has focus, and it
+/// presents itself as a tab group.
 @MainActor
 final class SettingsTabStrip: NSView {
     static let verticalPadding = DesignTokens.Space.s2
-    static let height = SettingsTabButton.height + 2 * verticalPadding
+    static let height = GlassChrome.Metrics.headerHeight + 2 * verticalPadding
 
     let buttons: [SettingsTabButton]
+    /// The one glass plate the tabs sit on, and the container that shares its render pass.
+    let plate: GlassSurfaceView
+    let container: NSGlassEffectContainerView
     private(set) var selectedIndex = -1
     /// Called with the index the user asked for, by click or arrow key.
     var onSelect: ((Int) -> Void)?
-    private let row: NSStackView
+    private var displayObservation: DisplayOptions.Observation?
 
     init(items: [(title: String, icon: FAIcon)]) {
         buttons = items.map { SettingsTabButton(title: $0.title, icon: $0.icon) }
-        row = NSStackView(views: buttons)
+        plate = GlassChrome.plate(buttons, identifier: "SettingsTabBar", accessibility: ChromeAccessibility.live)
+        container = GlassChrome.container(around: plate, identifier: "SettingsTabs")
         super.init(frame: .zero)
         wantsLayer = true
         focusRingType = .none
-        row.orientation = .horizontal; row.alignment = .centerY; row.spacing = DesignTokens.Space.s1
-        row.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(row)
+        addSubview(container)
         NSLayoutConstraint.activate([
-            row.centerXAnchor.constraint(equalTo: centerXAnchor), row.centerYAnchor.constraint(equalTo: centerYAnchor),
-            row.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: DesignTokens.Space.s3),
+            container.centerXAnchor.constraint(equalTo: centerXAnchor), container.centerYAnchor.constraint(equalTo: centerYAnchor),
+            container.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: DesignTokens.Space.s3),
             heightAnchor.constraint(equalToConstant: Self.height)])
         for (index, button) in buttons.enumerated() {
             button.tag = index; button.target = self; button.action = #selector(tabClicked(_:))
-            button.translatesAutoresizingMaskIntoConstraints = false
-            button.heightAnchor.constraint(equalToConstant: SettingsTabButton.height).isActive = true
+            button.accessibility = ChromeAccessibility.live
+        }
+        displayObservation = DisplayOptions.observe { [weak self] _ in
+            guard let self else { return }
+            let options = ChromeAccessibility.live
+            self.plate.accessibility = options
+            for button in self.buttons { button.accessibility = options }
         }
         setAccessibilityElement(true); setAccessibilityRole(.tabGroup); setAccessibilityLabel("Settings sections")
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
 
     /// The width the four tabs take side by side, so a test can hold it against the window width.
-    var contentWidth: CGFloat { row.fittingSize.width }
+    var contentWidth: CGFloat { plate.fittingSize.width }
 
     func select(_ index: Int) {
         guard buttons.indices.contains(index) else { return }
@@ -879,7 +848,7 @@ final class SettingsTabStrip: NSView {
     }
     override var focusRingMaskBounds: NSRect { focusRect }
     override func drawFocusRingMask() {
-        NSBezierPath(roundedRect: focusRect, xRadius: DesignTokens.Radius.md, yRadius: DesignTokens.Radius.md).fill()
+        NSBezierPath(roundedRect: focusRect, xRadius: StatePlate.radius, yRadius: StatePlate.radius).fill()
     }
 
     // MARK: Accessibility
