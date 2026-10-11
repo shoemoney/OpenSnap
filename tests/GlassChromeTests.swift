@@ -67,6 +67,69 @@ private final class AccessibilityBox {
     var value = ChromeAccessibility.none
 }
 
+/// Target of the menu rows in the choice-panel checks: records what ran (and whether the panel was still open when it did), disables rows by
+/// selector name, and reports Actual Size as on or off through `validateMenuItem`, the way the app's validation does.
+@MainActor
+private final class MenuTarget: NSObject, NSMenuItemValidation {
+    var hits: [String] = []
+    var openWhenPerformed: [Bool] = []
+    var disabled: Set<String> = []
+    var actualSizeOn = false
+    var fillOn = true
+    var isOpen: () -> Bool = { false }
+    private func note(_ name: String) { hits.append(name); openWhenPerformed.append(isOpen()) }
+    @objc func save(_ sender: Any?) { note("save") }
+    @objc func export(_ sender: Any?) { note("export") }
+    @objc func copyIt(_ sender: Any?) { note("copy") }
+    @objc func paste(_ sender: Any?) { note("paste") }
+    @objc func fill(_ sender: Any?) { note("fill") }
+    @objc func shadow(_ sender: Any?) { note("shadow") }
+    @objc func font(_ sender: Any?) { note("font") }
+    @objc func actualSize(_ sender: Any?) { note("actualSize") }
+    @objc func zoomChanged(_ sender: Any?) { note("zoom") }
+    @objc func originalChanged(_ sender: Any?) { note("original:" + String((sender as? NSButton)?.state.rawValue ?? -1)) }
+    @objc func upload(_ sender: Any?) { note("upload") }
+    func validateMenuItem(_ item: NSMenuItem) -> Bool {
+        guard let action = item.action else { return true }
+        if action == #selector(actualSize(_:)) { item.state = actualSizeOn ? .on : .off }
+        if action == #selector(fill(_:)) { item.state = fillOn ? .on : .off }
+        return !disabled.contains(NSStringFromSelector(action))
+    }
+}
+
+/// Counts native menu tracking (a dropdown, a pop-up or a context menu) so a test can prove the glass panel was used instead.
+/// `NSMenu.didBeginTrackingNotification` is posted by AppKit when a menu starts tracking and by nothing else, so the glass panel
+/// (which runs a menu's delegate hooks but never tracks it) cannot trip it.
+@MainActor
+private final class NativeMenuProbe {
+    private(set) var began = 0
+    private var token: NSObjectProtocol?
+    private var guardTimers: [Timer] = []
+    init() {
+        token = NotificationCenter.default.addObserver(forName: NSMenu.didBeginTrackingNotification, object: nil, queue: nil) { [weak self] _ in
+            MainActor.assumeIsolated { self?.began += 1 }
+        }
+    }
+    /// A route that wrongly falls back to the native menu would track until the user answers; this lets the run end instead of hanging.
+    func guardAgainstHang(_ menu: NSMenu?) {
+        let timer = Timer(timeInterval: 0.5, repeats: false) { _ in MainActor.assumeIsolated { menu?.cancelTracking() } }
+        for mode in [RunLoop.Mode.common, .eventTracking] { RunLoop.main.add(timer, forMode: mode) }
+        guardTimers.append(timer)
+    }
+    func stop() {
+        if let token { NotificationCenter.default.removeObserver(token) }
+        token = nil
+        for timer in guardTimers { timer.invalidate() }
+    }
+}
+
+/// The two pop-ups whose choices are a glass panel: the panel they open, and whether it is open.
+@MainActor
+private protocol PanelOwner: NSPopUpButton { var choicePanel: MenuChoicePanel { get } }
+extension PanelOwner { var isOpen: Bool { choicePanel.host.isShown } }
+extension ToolboxPopUpButton: PanelOwner {}
+extension ZoomPopUpButton: PanelOwner {}
+
 @MainActor
 private final class NonorderingWindow: NSWindow {
     override func orderFront(_ sender: Any?) { preconditionFailure("No desktop windows") }
@@ -120,6 +183,8 @@ private enum GlassChromeTests {
             uploadVariantChecks()
             uploadOutcomeChecks()
             formatCompactionChecks()
+            menuChoiceChecks()
+            originalSizeChecks()
             if let fonts {
                 for family in FAFamily.allCases {
                     expect(FontAwesomeFont.register(url: fonts.appendingPathComponent(family.resourceName + ".ttf"), family: family), "Subset font \(family) registers")
@@ -1196,8 +1261,9 @@ private enum GlassChromeTests {
         palette.font = DesignTokens.Typography.font(.body)
         palette.setAccessibilityLabel("Drawing colors")
         palette.image = NSImage(size: NSSize(width: 22, height: 18), flipped: false) { rect in NSColor.red.setFill(); rect.fill(); return true }
-        let original = NSButton(checkboxWithTitle: "Original size", target: nil, action: nil)
+        let original = GlassChoiceButton(title: "Original size", kind: .toggle, indicator: .checkbox, layout: .row)
         original.font = DesignTokens.Typography.font(.body)
+        original.setAccessibilityLabel("Export at original size")
         let controls = ModernEditorChrome.SharedControls(
             canvas: NSView(frame: NSRect(x: 0, y: 0, width: 1000, height: 700)), canvasBorder: NSView(),
             status: label(status ?? longStatus, .caption), sizeLabel: label("Size · 6.75", .body),
@@ -1422,11 +1488,13 @@ private enum GlassChromeTests {
                 rig.content.layoutSubtreeIfNeeded()
                 let status = rect(shared.status, in: rig), box = rect(shared.dragOriginalControl, in: rig)
                 if width == 980 && state.isFailure {
-                    // F-J7-006: an error gives up its words, not the checkbox. Its narrowest form is "Failed", and the slot holds that beside the box and both commands.
+                    // F-J7-006 held on the floor while the box was a 129 pt native checkbox. The glass toggle is wider (41 pt), so on the floor
+                    // the slot is 13 pt short of the toggle, the error at its narrowest ("Failed") and both commands: the toggle steps
+                    // aside, as it does for every other upload state, and the error is whole. The error keeps the toggle from a few points up
+                    // (checked from 1000 below), so only the last few points of the floor differ.
                     let narrowest = try! unwrapState(state.statusVariants.last)
-                    expect(fits, "\(label): at 980 the \(Int(chrome.statusSlotWidth())) pt slot holds the checkbox (\(Int(checkbox)) pt) with the error at its narrowest and the commands (\(Int(chrome.slotNeed(for: state))) pt)")
-                    expect(narrowest == "Failed" && chrome.statusCellWidth(of: narrowest) <= status.width + 0.5, "\(label): the status (\(Int(status.width)) pt) holds \"\(narrowest)\" whole (\(Int(chrome.statusCellWidth(of: narrowest))) pt)")
-                    expect(box.intersection(status).width <= 0.5 && box.maxX <= status.minX + 0.5 && box.width >= checkbox - 0.5, "\(label): the checkbox stands whole and clear of the status (\(box) vs \(status))")
+                    expect(!fits, "\(label): on the 980 floor the \(Int(chrome.statusSlotWidth())) pt slot is short of the toggle (\(Int(checkbox)) pt) with the error at its narrowest and the commands (\(Int(chrome.slotNeed(for: state))) pt)")
+                    expect(narrowest == "Failed" && status.width < chrome.statusCellWidth(of: narrowest), "\(label): the rule is not vacuous, with the toggle forced on the status (\(Int(status.width)) pt) could not hold \"\(narrowest)\" (\(Int(chrome.statusCellWidth(of: narrowest))) pt)")
                 } else if width == 980 {
                     expect(!fits, "\(label): at 980 the \(Int(chrome.statusSlotWidth())) pt slot cannot hold the checkbox (\(Int(checkbox)) pt) with the status minimum and commands (\(Int(chrome.slotNeed(for: state))) pt)")
                     expect(status.width < ModernEditorChrome.minimumUploadStatusWidth, "\(label): the rule is not vacuous, with the checkbox forced on the status would drop to \(Int(status.width)) pt")
@@ -1444,8 +1512,10 @@ private enum GlassChromeTests {
             let rig = makeRig(NSSize(width: width, height: 740))
             let state = UploadState.failure(message: "Upload to Example S3 failed: the connection was refused.")
             let fits = rig.chrome.slotHasRoomForCheckbox(during: state)
-            let need = rig.chrome.slotNeed(for: state) + 12 + rig.controls.dragOriginalControl.fittingSize.width
-            expect(fits == (rig.chrome.statusSlotWidth() >= need) && (fits || !previous), "\(tag) \(Int(width)): the answer is the measured comparison and never flips back as the window grows")
+            // The toggle sits on the View plate, so the slot the bar leaves with the toggle showing is the room left once it has its place.
+            let need = rig.chrome.slotNeed(for: state)
+            expect(!rig.controls.dragOriginalControl.isHidden && fits == (rig.chrome.statusSlotWidth() >= need) && (fits || !previous), "\(tag) \(Int(width)): the answer is the measured comparison and never flips back as the window grows")
+            if width >= 1000 { expect(fits, "\(tag) \(Int(width)): from 1000 pt an error keeps the toggle (F-J7-006) (slot \(rig.chrome.statusSlotWidth()), need \(need), zoom \(rig.controls.zoomControl.superview!.frame.width))") }
             previous = fits
         }
         expect(previous, "\(tag): by 1500 pt the checkbox stays beside an error")
@@ -1478,6 +1548,309 @@ private enum GlassChromeTests {
     }
 
     /// Audit fix 1 (item 2): "Link copied" shows the link itself, cut in the middle as the slot narrows, and gives up the link before itself.
+    // MARK: Toolbox and Zoom as glass choice panels
+
+    private struct ChoiceRig {
+        let window: NonorderingWindow, content: NSView, target: MenuTarget, probe: NativeMenuProbe
+        var shown: [GlassChoiceWindow] = []
+    }
+
+    /// A never-ordered window at a known place on a large screen, so an open panel's frame is placed the way it would be on screen.
+    private static func choiceWindow() -> (NonorderingWindow, NSView) {
+        let (window, content) = window(NSSize(width: 600, height: 400))
+        window.setFrameOrigin(NSPoint(x: 300, y: 300))
+        return (window, content)
+    }
+
+    private static func anchorOnScreen(_ view: NSView) -> NSRect { view.window!.convertToScreen(view.convert(view.bounds, to: nil)) }
+
+    /// Keeps a panel off screen: a presenter that orders nothing, the panel taken as holding the keyboard, and a large screen.
+    private static func offScreen(_ panel: MenuChoicePanel) {
+        panel.host.presenter = { _, _ in }
+        panel.host.keyStateProbe = { true }
+        panel.host.visibleFrameOverride = NSRect(x: 0, y: 0, width: 1800, height: 1200)
+    }
+
+    /// A fresh open, whatever state the panel was left in.
+    private static func reopen(_ button: any PanelOwner) {
+        button.choicePanel.host.close()
+        button.performClick(nil)
+    }
+
+    private static func mouse(_ type: NSEvent.EventType, on view: NSView, flags: NSEvent.ModifierFlags = []) -> NSEvent {
+        event(type, in: view.window!, at: view.convert(NSPoint(x: view.bounds.midX, y: view.bounds.midY), to: nil), flags: flags)
+    }
+
+    private static func menuItem(_ title: String, _ action: Selector, key: String = "", target: AnyObject, symbol: String = "square") -> NSMenuItem {
+        let item = NSMenuItem(title: title, action: action, keyEquivalent: key)
+        item.target = target
+        item.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
+        return item
+    }
+
+    private static func toolboxFixture(_ target: MenuTarget) -> (ToolboxPopUpButton, NSWindow, NSView) {
+        let (window, content) = choiceWindow()
+        let toolbox = ToolboxPopUpButton()
+        toolbox.frame = NSRect(x: 20, y: 340, width: 60, height: 36)
+        toolbox.setAccessibilityLabel("Toolbox")
+        content.addSubview(toolbox)
+        let menu = NSMenu(title: "Toolbox")
+        menu.addItem(menuItem("Save to History", #selector(MenuTarget.save(_:)), key: "s", target: target))
+        menu.addItem(menuItem("Export…", #selector(MenuTarget.export(_:)), key: "e", target: target))
+        menu.addItem(.separator())
+        menu.addItem(menuItem("Copy", #selector(MenuTarget.copyIt(_:)), key: "c", target: target))
+        menu.addItem(menuItem("Paste", #selector(MenuTarget.paste(_:)), key: "v", target: target))
+        menu.addItem(.separator())
+        menu.addItem(menuItem("Filled Shapes", #selector(MenuTarget.fill(_:)), target: target))
+        menu.addItem(menuItem("Shadow", #selector(MenuTarget.shadow(_:)), target: target))
+        menu.addItem(menuItem("Text Style…", #selector(MenuTarget.font(_:)), key: "t", target: target))
+        toolbox.install(menu, toggles: [#selector(MenuTarget.fill(_:)), #selector(MenuTarget.shadow(_:)), #selector(MenuTarget.font(_:))])
+        return (toolbox, window, content)
+    }
+
+    private static func zoomFixture(_ target: MenuTarget) -> (ZoomPopUpButton, NSWindow, NSView) {
+        let (window, content) = choiceWindow()
+        let zoom = ZoomPopUpButton(frame: NSRect(x: 20, y: 20, width: 87, height: 36), pullsDown: false)
+        zoom.addItems(withTitles: ["25%", "50%", "75%", "100%", "150%", "200%"])
+        for (index, item) in zoom.itemArray.enumerated() { item.representedObject = [0.25, 0.5, 0.75, 1, 1.5, 2][index] }
+        zoom.menu?.addItem(.separator())
+        let actual = menuItem("Actual Size", #selector(MenuTarget.actualSize(_:)), key: "0", target: target)
+        actual.tag = ZoomPopUpButton.actualSizeTag
+        zoom.menu?.addItem(actual)
+        let computed = NSMenuItem(title: "83%", action: nil, keyEquivalent: "")
+        computed.tag = ZoomPopUpButton.computedZoomTag; computed.toolTip = "Fit, 83%"; computed.representedObject = 0.83
+        zoom.menu?.insertItem(computed, at: 0)
+        zoom.select(computed)
+        zoom.target = target; zoom.action = #selector(MenuTarget.zoomChanged(_:))
+        zoom.setAccessibilityLabel("Canvas zoom")
+        content.addSubview(zoom)
+        return (zoom, window, content)
+    }
+
+    private static func menuChoiceChecks() {
+        // Toolbox: five-group shape in miniature (three plates), rows from the menu, validation, choosing, dismissal, focus.
+        let target = MenuTarget(), probe = NativeMenuProbe()
+        defer { probe.stop() }
+        let (toolbox, window, _) = toolboxFixture(target)
+        let panel = toolbox.choicePanel
+        offScreen(panel)
+        target.isOpen = { toolbox.isOpen }
+        target.disabled = ["paste:"]
+        toolbox.mouseDown(with: mouse(.leftMouseDown, on: toolbox))
+        expect(toolbox.isOpen && panel.host.requestedKey, "toolbox: a click opens the glass panel and takes the keyboard")
+        expect(panel.focusedRow == nil, "toolbox: a pointer open focuses no row")
+        expect(panel.host.plates.count == 3 && panel.rows.count == 7, "toolbox: one plate per group of the menu (\(panel.host.plates.count)) and one row per item (\(panel.rows.count))")
+        expect(panel.host.plates.map { $0.arrangedViews.count } == [2, 2, 3], "toolbox: the separators split the plates 2 / 2 / 3")
+        expect(panel.rows.map(\.kind) == [.command, .command, .command, .command, .toggle, .toggle, .toggle], "toolbox: toggles are toggles, the rest commands (\(panel.rows.map(\.kind)))")
+        expect(panel.rows[0].title == "Save to History" && panel.rows[0].shortcutText == "⌘S" && panel.rows[0].leadingImage === toolbox.menu?.items[0].image, "toolbox: a row shows the item's title, shortcut and own icon")
+        expect(panel.rows[4].isChosen && !panel.rows[5].isChosen, "toolbox: a toggle row shows the item's state (\(panel.rows.map(\.isChosen)), item states \(toolbox.menu?.items.map(\.state.rawValue) ?? []))")
+        target.fillOn = false
+        toolbox.performClick(nil); toolbox.performClick(nil)
+        expect(!panel.rows[4].isChosen, "toolbox: the state is read again on every open (Filled Shapes off)")
+        target.fillOn = true
+        toolbox.performClick(nil); toolbox.performClick(nil)
+        expect(panel.rows[4].accessibilityRole() == .checkBox && (panel.rows[4].accessibilityValue() as? NSNumber) == 1, "toolbox: a toggle row speaks as a checkbox with value 1")
+        expect(!panel.rows[3].isEnabled && panel.rows[2].isEnabled && !panel.rows[3].acceptsFirstResponder, "toolbox: the row validation disables (Paste) is dimmed and never takes focus")
+        let anchor = anchorOnScreen(toolbox)
+        expect(panel.host.placement.map { $0.edge == .minY && $0.frame.maxY <= anchor.minY } == true, "toolbox: the panel opens below the button, not over it")
+        expect(toolbox.accessibilityRole() == .menuButton && toolbox.accessibilityLabel() == "Toolbox" && toolbox.accessibilityValue() == nil, "toolbox: still a menu button named Toolbox with no value")
+        // A second request closes; the click on the anchor the host consumes cannot reopen it.
+        toolbox.performClick(nil)
+        expect(!toolbox.isOpen, "toolbox: a second press closes the panel")
+        toolbox.performClick(nil)
+        expect(panel.host.handleMouseDown(in: window, at: window.convertPoint(fromScreen: NSPoint(x: anchor.midX, y: anchor.midY))) && !toolbox.isOpen,
+               "toolbox: a click on the anchor while open only closes it and is consumed")
+        toolbox.performClick(nil)
+        expect(!panel.host.handleMouseDown(in: window, at: NSPoint(x: 400, y: 100)) && !toolbox.isOpen, "toolbox: a click elsewhere closes it and passes through")
+        // Choosing a row closes first, then performs the item's own command.
+        toolbox.performClick(nil)
+        panel.rows[1].performClick(nil)
+        expect(target.hits == ["export"] && target.openWhenPerformed == [false] && !toolbox.isOpen, "toolbox: choosing a row closes the panel, then runs the command (\(target.hits))")
+        toolbox.performClick(nil)
+        panel.rows[3].performClick(nil)
+        expect(target.hits == ["export"] && toolbox.isOpen, "toolbox: a disabled row does nothing and the panel stays open")
+        toolbox.performClick(nil)
+        // Keyboard: opens on Return, Space, Down, Up and the accessibility press with the first row focused; arrows move; Return chooses.
+        // (Nothing is switched on here, so there is no chosen row to land on.)
+        target.fillOn = false
+        for code: UInt16 in [36, 49, 76, 125, 126] {
+            toolbox.keyDown(with: keyEvent(code, in: window))
+            expect(toolbox.isOpen && panel.focusedRow === panel.rows[0], "toolbox: key \(code) opens the panel on the first enabled row")
+            toolbox.performClick(nil)
+        }
+        expect(toolbox.accessibilityPerformPress() && toolbox.isOpen && panel.focusedRow === panel.rows[0], "toolbox: the accessibility press opens it on the first row")
+        let panelWindow = panel.host.window
+        panelWindow.sendEvent(keyEvent(125, in: panelWindow))
+        expect(panel.focusedRow === panel.rows[1], "toolbox: Down moves to the next row")
+        panelWindow.sendEvent(keyEvent(125, in: panelWindow))
+        panelWindow.sendEvent(keyEvent(125, in: panelWindow))
+        expect(panel.focusedRow === panel.rows[4], "toolbox: Down skips the disabled row")
+        panelWindow.sendEvent(keyEvent(36, in: panelWindow))
+        expect(target.hits == ["export", "fill"] && !toolbox.isOpen, "toolbox: Return on the focused row runs it and closes (\(target.hits))")
+        // Escape closes and the opener has the keyboard again.
+        window.makeFirstResponder(toolbox)
+        toolbox.keyDown(with: keyEvent(49, in: window))
+        panelWindow.sendEvent(keyEvent(53, in: panelWindow))
+        expect(!toolbox.isOpen && window.firstResponder === toolbox, "toolbox: Escape closes the panel and the Toolbox has the focus again")
+        // The test seam still replaces the panel.
+        var requested = 0
+        toolbox.popUpHandler = { _, _ in requested += 1 }
+        toolbox.performClick(nil)
+        expect(requested == 1 && !toolbox.isOpen, "toolbox: popUpHandler replaces showing the panel")
+        toolbox.popUpHandler = nil
+        // A disabled button opens nothing.
+        toolbox.isEnabled = false
+        toolbox.performClick(nil)
+        expect(!toolbox.isOpen && toolbox.accessibilityPerformPress() == false, "toolbox: a disabled Toolbox does not open")
+        toolbox.isEnabled = true
+        expect(probe.began == 0, "toolbox: nothing above tracked a native menu")
+
+        // A long list scrolls and a small screen caps the height.
+        let (longWindow, longContent) = choiceWindow()
+        let long = ToolboxPopUpButton()
+        long.frame = NSRect(x: 20, y: 340, width: 60, height: 36)
+        longContent.addSubview(long)
+        let longMenu = NSMenu(title: "Long")
+        for index in 0..<40 { longMenu.addItem(menuItem("Command \(index)", #selector(MenuTarget.save(_:)), target: target)) }
+        long.install(longMenu)
+        long.choicePanel.host.presenter = { _, _ in }
+        long.choicePanel.host.visibleFrameOverride = NSRect(x: 0, y: 0, width: 1800, height: 500)
+        long.performClick(nil)
+        let longHost = long.choicePanel.host
+        expect(longHost.placement.map { $0.scrolls && $0.frame.height <= 500 - 2 * GlassPanelHost.screenMargin } == true && longHost.scrolls == true,
+               "toolbox: forty rows on a 500 pt screen scroll inside a capped panel (\(String(describing: longHost.placement?.frame)))")
+        longHost.close()
+        _ = longWindow
+
+        zoomChoiceChecks()
+        choiceRouteChecks()
+    }
+
+    private static func zoomChoiceChecks() {
+        let target = MenuTarget(), probe = NativeMenuProbe()
+        defer { probe.stop() }
+        let (zoom, window, _) = zoomFixture(target)
+        let panel = zoom.choicePanel
+        offScreen(panel)
+        target.isOpen = { zoom.isOpen }
+        target.actualSizeOn = false
+        zoom.performClick(nil)
+        expect(zoom.isOpen && panel.host.plates.count == 2 && panel.rows.count == 8, "zoom: percentages and the computed row on one plate, Actual Size on the next (\(panel.host.plates.count) plates, \(panel.rows.count) rows)")
+        expect(panel.rows.dropLast().allSatisfy { $0.kind == .option } && panel.rows.last?.kind == .toggle, "zoom: the percentages are options and Actual Size is a toggle")
+        expect(panel.rows[0].title == "83%" && panel.rows[0].isChosen && panel.rows.dropFirst().dropLast().allSatisfy { !$0.isChosen }, "zoom: the computed row is the chosen one")
+        expect(panel.rows.last?.title == "Actual Size" && panel.rows.last?.shortcutText == "⌘0" && panel.rows.last?.isChosen == false, "zoom: Actual Size shows its own shortcut and, when off, no check")
+        let anchor = anchorOnScreen(zoom)
+        expect(panel.host.placement.map { $0.edge == .maxY && $0.frame.minY >= anchor.maxY } == true, "zoom: the panel opens above the footer button")
+        // A percentage: selects it in the pop-up and sends the pop-up's action; the face is that percentage.
+        panel.rows.first { $0.title == "50%" }?.performClick(nil)
+        expect(zoom.titleOfSelectedItem == "50%" && target.hits == ["zoom"] && target.openWhenPerformed == [false] && !zoom.isOpen, "zoom: choosing 50% selects it and sends the zoom action after closing (\(target.hits))")
+        // Actual Size: performs its own command, leaves the selection and the percentage face alone.
+        zoom.performClick(nil)
+        expect(panel.rows.first { $0.title == "50%" }?.isChosen == true && panel.rows[0].isChosen == false, "zoom: reopened, the chosen row is the selected percentage")
+        target.actualSizeOn = true
+        reopen(zoom)
+        expect(panel.rows.last?.isChosen == true, "zoom: Actual Size shows on while the command is on")
+        panel.rows.last?.performClick(nil)
+        expect(target.hits == ["zoom", "actualSize"] && zoom.titleOfSelectedItem == "50%" && zoom.selectedItem?.tag != ZoomPopUpButton.actualSizeTag && !zoom.isOpen,
+               "zoom: Actual Size runs its own command and the face stays a percentage (\(zoom.titleOfSelectedItem ?? "nil"))")
+        // Keyboard: the chosen row is focused on a keyboard open.
+        window.makeFirstResponder(zoom)
+        zoom.keyDown(with: keyEvent(125, in: window))
+        expect(zoom.isOpen && panel.focusedRow?.title == "50%", "zoom: Down opens it on the chosen percentage")
+        panel.host.window.sendEvent(keyEvent(53, in: panel.host.window))
+        expect(!zoom.isOpen && window.firstResponder === zoom, "zoom: Escape closes it and the focus returns to the zoom")
+        // Disabled (Actual Size is up): nothing opens.
+        zoom.isEnabled = false
+        zoom.performClick(nil)
+        expect(!zoom.isOpen && !zoom.accessibilityPerformPress(), "zoom: a disabled zoom does not open")
+        zoom.isEnabled = true
+        expect(zoom.accessibilityValue() as? String == "Fit, 83%" || zoom.accessibilityValue() as? String == "50%", "zoom: the spoken value is still the item's tooltip or title")
+        expect(probe.began == 0, "zoom: nothing above tracked a native menu")
+    }
+
+    /// Every route that could show a pop-up's native dropdown opens the glass panel instead, and AppKit never starts menu tracking.
+    private static func choiceRouteChecks() {
+        let target = MenuTarget()
+        let toolbox = toolboxFixture(target), zoom = zoomFixture(target)
+        let buttons: [(String, any PanelOwner, NSWindow)] = [("Toolbox", toolbox.0, toolbox.1), ("Zoom", zoom.0, zoom.1)]
+        let probe = NativeMenuProbe()
+        defer { probe.stop() }
+        for (name, button, window) in buttons {
+            offScreen(button.choicePanel)
+            probe.guardAgainstHang(button.menu)
+            // AppKit asks the view for a contextual menu on a right-click and on a Control-click; with none to show it cannot present the rows.
+            expect(button.menu(for: mouse(.rightMouseDown, on: button)) == nil && button.menu(for: mouse(.leftMouseDown, on: button, flags: .control)) == nil && button.menu != nil,
+                   "\(name): a right-click or Control-click has no contextual menu to show (the menu itself stays as the panel's source)")
+            // What the control exposes to assistive technology: the actions are enumerated, and each is routed to the panel.
+            let actions = button.accessibilityActionNames()
+            expect(actions.contains(.press) || actions.contains(.showMenu), "\(name): exposes a way to open it (\(actions.map(\.rawValue)))")
+            if actions.contains(.press) { expect(button.isAccessibilitySelectorAllowed(#selector(NSAccessibilityProtocol.accessibilityPerformPress)), "\(name): AXPress is allowed") }
+            var routes: [(String, Bool, () -> Void)] = [
+                ("performClick", true, { button.performClick(nil) }),
+                ("middle click", false, { button.otherMouseDown(with: mouse(.otherMouseDown, on: button)) }),
+                ("left click", false, { button.mouseDown(with: mouse(.leftMouseDown, on: button)) }),
+                ("right click", false, { button.rightMouseDown(with: mouse(.rightMouseDown, on: button)) }),
+                ("Control-click", false, { button.mouseDown(with: mouse(.leftMouseDown, on: button, flags: .control)) }),
+                ("AXPress", true, { _ = button.accessibilityPerformPress() }),
+                ("AXShowMenu", true, { _ = button.accessibilityPerformShowMenu() }),
+                ("context-menu key", true, { button.showContextMenuForSelection(nil) }),
+                ("Return", true, { button.keyDown(with: keyEvent(36, in: window)) }),
+                ("Space", true, { button.keyDown(with: keyEvent(49, in: window)) }),
+                ("Down", true, { button.keyDown(with: keyEvent(125, in: window)) }),
+                ("Up", true, { button.keyDown(with: keyEvent(126, in: window)) }),
+            ]
+            // Whatever other actions the control lists must also end in the panel (or in nothing), never in a native menu.
+            for action in actions where ![NSAccessibility.Action.press, .showMenu].contains(action) { routes.append(("action " + action.rawValue, true, { _ = button.accessibilityPerformAction(action) })) }
+            if actions.contains(.showMenu) { expect(button.isAccessibilitySelectorAllowed(#selector(NSAccessibilityProtocol.accessibilityPerformShowMenu)), "\(name): AXShowMenu is allowed") }
+            for (route, keyboard, run) in routes {
+                button.choicePanel.host.close()
+                run()
+                expect(button.isOpen, "\(name): \(route) presents the glass panel")
+                expect(keyboard == (button.choicePanel.focusedRow != nil), "\(name): \(route) \(keyboard ? "focuses a row" : "leaves every row unfocused")")
+                expect(probe.began == 0, "\(name): \(route) started no native menu tracking")
+            }
+            button.choicePanel.host.close()
+            // Typing is not a route to a menu: AppKit's type-ahead would select a row without asking, so the key goes up the responder chain.
+            button.keyDown(with: keyEvent(0, in: window))
+            expect(!button.isOpen && probe.began == 0, "\(name): a letter key opens nothing")
+        }
+    }
+
+    /// The Original size toggle in the real chrome: a checkbox-role glass toggle on the View plate that flips, acts, and gives its room back.
+    private static func originalSizeChecks() {
+        let rig = makeRig(NSSize(width: 1100, height: 700))
+        let toggle = rig.controls.dragOriginalControl, chrome = rig.chrome
+        guard let choice = toggle as? GlassChoiceButton else { expect(false, "the Original size control is a glass choice"); return }
+        let target = MenuTarget()
+        toggle.target = target; toggle.action = #selector(MenuTarget.originalChanged(_:))
+        expect(choice.kind == .toggle && choice.indicator == .checkbox && choice.title == "Original size" && choice.accessibilityRole() == .checkBox, "original size: a checkbox-role toggle titled Original size")
+        expect(choice.accessibilityLabel() == "Export at original size" && (choice.titleLabel.font?.pointSize ?? 0) >= 18, "original size: spoken as Export at original size and drawn at the readable size")
+        expect(chrome.surface(for: toggle)?.identifier?.rawValue == "GlassViewGroup", "original size: it sits on the View plate")
+        choice.state = .off
+        expect(!choice.isChosen && (choice.accessibilityValue() as? NSNumber) == 0, "original size: off reads 0")
+        _ = choice.sendAction(choice.action, to: choice.target)
+        expect(choice.state == .on && choice.isChosen && (choice.accessibilityValue() as? NSNumber) == 1 && target.hits == ["original:1"], "original size: a click turns it on and the action sees state on (\(target.hits))")
+        _ = choice.sendAction(choice.action, to: choice.target)
+        expect(choice.state == .off && target.hits == ["original:1", "original:0"], "original size: a second click turns it off")
+        // Space and the VoiceOver press reach the same code as a click: performClick and AXPress flip it and the action sees the new state.
+        target.hits = []
+        choice.performClick(nil)
+        expect(choice.state == .on && target.hits == ["original:1"], "original size: performClick (Space) turns it on and the action sees state on (\(target.hits))")
+        expect(choice.accessibilityPerformPress() && choice.state == .off && target.hits == ["original:1", "original:0"], "original size: the accessibility press flips it back (\(target.hits))")
+        _ = choice.plate
+        // Its room: hidden it leaves the View plate and the status slot grows by exactly that much; shown again it takes it back.
+        rig.content.layoutSubtreeIfNeeded()
+        let shownPlate = group(rig, "GlassViewGroup").frame.width, shownSlot = chrome.statusSlotWidth()
+        toggle.isHidden = true
+        rig.content.layoutSubtreeIfNeeded()
+        let hiddenPlate = group(rig, "GlassViewGroup").frame.width, hiddenSlot = chrome.statusSlotWidth()
+        expect(abs((shownPlate - hiddenPlate) - chrome.originalSizeWidth) < 0.5 && abs((hiddenSlot - shownSlot) - chrome.originalSizeWidth) < 0.5,
+               "original size: hiding it shrinks the View plate and grows the status slot by its width (\(shownPlate - hiddenPlate), \(hiddenSlot - shownSlot) vs \(chrome.originalSizeWidth))")
+        toggle.isHidden = false
+        rig.content.layoutSubtreeIfNeeded()
+        expect(abs(group(rig, "GlassViewGroup").frame.width - shownPlate) < 0.5, "original size: showing it again restores the plate")
+    }
+
     private static func uploadVariantChecks() {
         let url = URL(string: "https://cdn.shoemoney.com/pics/Shot-20261010-153012.png")!
         let variants = UploadState.success(url: url, copied: true).statusVariants
@@ -1755,14 +2128,14 @@ private enum GlassChromeTests {
         chrome.frameMode = false
         rig.content.layoutSubtreeIfNeeded()
         expect(topFrameSlack >= -0.5, "\(label): the Frame-mode top bar fits at the minimum with \(topFrameSlack) pt to spare")
-        // Bottom bar, measured: the checkbox and a 120 pt status are the worst case.
+        // Bottom bar, measured: the Original size toggle (on the View plate) and a 120 pt status are the worst case.
         let zoomWidth = rect(shared.zoomControl.superview!, in: rig).width
         let formatWidth = rect(shared.dragFormatControl, in: rig).width
         let checkbox = shared.dragOriginalControl.fittingSize.width
         let icons = pad + 2 * M.iconButton.width + spacing
         let resizeWidth = rect(chrome.resizeButton, in: rig).width
-        let bottom = icons + (pad + zoomWidth + spacing + resizeWidth) + icons + (pad + formatWidth + 2 * spacing + 2 * M.iconButton.width)
-            + 4 * M.groupGap + checkbox + 12 + 120
+        let bottom = icons + (pad + zoomWidth + spacing + resizeWidth + spacing + checkbox) + icons + (pad + formatWidth + 2 * spacing + 2 * M.iconButton.width)
+            + 4 * M.groupGap + 120
         expect(bottom <= usable, "\(label): the bottom bar with the checkbox and a 120 pt status needs \(bottom) of \(usable) (zoom \(zoomWidth), format \(formatWidth), checkbox \(checkbox))")
         expect(ModernEditorChrome.minimumWindowWidth >= max(frame, bottom) + 24, "\(label): the minimum window width \(ModernEditorChrome.minimumWindowWidth) covers the worst case \(max(frame, bottom) + 24)")
         // The window's minimum is measured from the live plates and agrees with this arithmetic.
@@ -1932,10 +2305,11 @@ private enum GlassChromeTests {
         expect(chrome.surface(for: shared.dragExportView)?.identifier?.rawValue == "GlassFooterRow" && shared.dragExportView.superview is ChromeFillCell, "\(label): Drag Me is a compact cell on the footer plate")
         expect(chrome.surface(for: shared.dragFormatControl)?.identifier?.rawValue == "GlassFooterRow", "\(label): the format toggle sits on the footer plate")
         expect(chrome.surface(for: shared.paletteButton)?.identifier?.rawValue == "GlassAnnotationGroup" && chrome.surface(for: chrome.fontButton)?.identifier?.rawValue == "GlassAnnotationGroup", "\(label): Color and Font share the annotation plate")
-        for plainControl in [shared.dragOriginalControl, shared.status] as [NSControl] {
-            expect(chrome.surface(for: plainControl) == nil, "\(label): \(describe(plainControl)) stays plain, outside any glass")
-            expect(plainControl.superview is NSStackView && !(plainControl.superview?.superview is GlassSurfaceView), "\(label): \(describe(plainControl)) lives in the plain status row")
-        }
+        let originalSize = shared.dragOriginalControl
+        expect(chrome.surface(for: originalSize)?.identifier?.rawValue == "GlassViewGroup" && originalSize.superview is NSStackView && chrome.surface(for: originalSize)?.arrangedViews.contains(originalSize) == true,
+               "\(label): the Original size toggle is a choice on the View plate, beside Zoom and Resize")
+        expect(chrome.surface(for: shared.status) == nil && shared.status.superview is NSStackView && !(shared.status.superview?.superview is GlassSurfaceView),
+               "\(label): the status stays plain, outside any glass, in the status row")
         expect(chrome.surface(for: shared.zoomControl)?.identifier?.rawValue == "GlassViewGroup" && (shared.zoomControl.superview as? ChromeFillCell)?.fixedSize.height == 36, "\(label): the zoom popup sits in a 36 pt cell on the view plate")
         if let zoom = shared.zoomControl as? ZoomPopUpButton {
             let item = NSMenuItem(title: "83%", action: nil, keyEquivalent: "")
@@ -1945,6 +2319,17 @@ private enum GlassChromeTests {
             zoom.selectItem(withTitle: "100%")
             expect((zoom.accessibilityValue() as? String) == "100%", "\(label): a plain zoom item is spoken as its title")
             zoom.menu?.removeItem(item)
+            // The cell is what the face needs: every face the zoom can show is drawn whole in the real footer frame, at 20 pt, never truncated.
+            let wide = NSMenuItem(title: "200%", action: nil, keyEquivalent: ""); wide.tag = ZoomPopUpButton.computedZoomTag
+            zoom.menu?.insertItem(wide, at: 0)
+            for face in zoom.itemArray where face.tag != ZoomPopUpButton.actualSizeTag && !face.isSeparatorItem {
+                zoom.select(face)
+                rig.content.layoutSubtreeIfNeeded()
+                let metrics = zoom.faceTextMetrics
+                expect(zoom.faceTextFits && metrics.font.pointSize == 20, "\(label): the zoom face \(face.title) is drawn whole at 20 pt: needs \(metrics.needed), has \(metrics.available) in a \(zoom.frame.size) face")
+            }
+            zoom.menu?.removeItem(wide)
+            zoom.selectItem(withTitle: "100%")
         }
         expect(sameColor(shared.status.textColor, .labelColor), "\(label): status text uses the label color")
         expect(chrome.surface(for: shared.canvas) == nil, "\(label): the canvas never sits in glass")

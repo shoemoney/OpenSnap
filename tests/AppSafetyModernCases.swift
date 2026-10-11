@@ -47,7 +47,9 @@ extension AppSafetyTests {
             ("OSN-044: the drag well is a keyboard-operable button: it takes focus, Space and Return open the Export panel, VoiceOver presses it, hover and press change its cursor and cell", modernDragWellKeyboard),
             ("OSN-044: the PNG | JPG toggle takes Left, Right and Space and a click through changeDragOptions and stores the same format as before", modernFormatToggleInput),
             ("OSN-044: the canvas border is a hairline at rest and shows its handles on hover or while the crop tool is chosen", modernBorderHandlesFollowTool),
-            ("OSN-044: Differentiate Without Color and Increase Contrast reach the real tool buttons, the toggle and the Snap button", modernStateOptionsReachControls)
+            ("OSN-044: Differentiate Without Color and Increase Contrast reach the real tool buttons, the toggle and the Snap button", modernStateOptionsReachControls),
+            ("The zoom opens a glass panel above the footer: percentages and the computed row are options, Actual Size is a toggle that keeps the percentage face and its refusal path", modernZoomPanel),
+            ("Original size is a glass checkbox toggle on the View plate: it persists DragOriginalSize, shows only for a large shot, and gives the status slot its room back", modernOriginalSizeToggle)
         ]
     }
 
@@ -1637,6 +1639,93 @@ extension AppSafetyTests {
         try expect(placed.maxX <= chrome.saveButton.convert(chrome.saveButton.bounds, to: nil).minX - 12 + 0.5, "The status keeps its 12 pt gap before Save")
     }
 
+    private static func modernZoomPanel() throws {
+        let (fixture, chrome) = try modernFixture()
+        let app = fixture.app, zoom = app.zoomControl
+        let probe = NativeMenuProbe()
+        defer { probe.stop() }
+        offScreen(zoom.choicePanel)
+        // A blank canvas has no Actual Size to offer: the row is there, dimmed, and choosing it changes nothing.
+        zoom.performClick(nil)
+        var panel = zoom.choicePanel
+        let actualRow = try (panel.rows.first { $0.title == "Actual Size" }).unwrap("the Actual Size row")
+        try expect(!actualRow.isEnabled && !app.canToggleActualSize && actualRow.kind == .toggle, "Without a snap picture the Actual Size row is a dimmed toggle")
+        actualRow.performClick(nil)
+        try expect(!app.isActualSize && zoom.titleOfSelectedItem == "100%", "Choosing a dimmed Actual Size does nothing and keeps the 100% face")
+        zoom.choicePanel.host.close()
+        try viewportFixture(app)
+        app.setCanvasDisplayZoom(0.83, label: "Fit")
+        zoom.performClick(nil)
+        panel = zoom.choicePanel
+        try expect(zoom.isOpen && panel.host.plates.count == 2 && panel.rows.count == 8, "Percentages and the computed row on one plate, Actual Size on its own (\(panel.host.plates.count) plates, \(panel.rows.count) rows)")
+        try expect(panel.rows.map(\.title) == ["83%", "25%", "50%", "75%", "100%", "150%", "200%", "Actual Size"], "Rows in menu order: \(panel.rows.map(\.title))")
+        try expect(panel.rows.dropLast().allSatisfy { $0.kind == .option } && panel.rows.last?.kind == .toggle, "Percent rows (and the computed Fit row) are options; Actual Size is a toggle")
+        try expect(panel.rows.filter(\.isChosen).map(\.title) == ["83%"], "The computed Fit row is the chosen one: \(panel.rows.filter(\.isChosen).map(\.title))")
+        try expect(panel.rows.last?.isEnabled == true && panel.rows.last?.shortcutText == MenuShortcut.text(for: try (zoom.menu?.items.last).unwrap("last item")), "With a snap picture Actual Size is enabled and shows the main-menu shortcut")
+        let footer = zoom.window!.convertToScreen(zoom.convert(zoom.bounds, to: nil))
+        try expect(panel.host.placement.map { $0.edge == .maxY && $0.frame.minY >= footer.maxY } == true, "The panel opens above the footer, not over it")
+        // A percentage reaches the canvas through changeZoom, and the pop-up shows it.
+        try (panel.rows.first { $0.title == "150%" }).unwrap("150% row").performClick(nil)
+        try expect(abs(app.canvas.zoom - 1.5) < 0.001 && zoom.titleOfSelectedItem == "150%" && !zoom.isOpen, "Choosing 150% zooms the canvas and the face reads 150% (zoom \(app.canvas.zoom))")
+        zoom.performClick(nil)
+        try expect(panel.rows.filter(\.isChosen).map(\.title) == ["150%"], "Reopened, 150% is the chosen row: \(panel.rows.filter(\.isChosen).map(\.title))")
+        // Actual Size: the main-menu command runs; the face stays a percentage and the zoom dims while it is up.
+        try (panel.rows.first { $0.title == "Actual Size" }).unwrap("Actual Size row").performClick(nil)
+        try waitForMain("The face is a percentage again") { zoom.titleOfSelectedItem?.hasSuffix("%") == true && zoom.selectedItem?.tag != ZoomPopUpButton.actualSizeTag }
+        defer { if app.isActualSize { app.leaveActualSize() } }
+        try expect(app.isActualSize && app.canvas.zoom == 1 && !zoom.isEnabled, "Actual Size is up and the zoom is dimmed (zoom \(app.canvas.zoom))")
+        zoom.performClick(nil)
+        try expect(!zoom.isOpen, "A dimmed zoom opens nothing")
+        // The screenshot harness can still show the state: the panel presents without the button's own gate, and Actual Size reads on.
+        zoom.choicePanel.present(relativeTo: zoom, preferredEdge: ChoiceEdge.above, keyboard: false)
+        try expect(zoom.isOpen && zoom.choicePanel.rows.last?.title == "Actual Size" && zoom.choicePanel.rows.last?.isChosen == true && zoom.choicePanel.rows.last?.isEnabled == true,
+                   "Presented directly, the panel shows Actual Size chosen while it is up")
+        zoom.choicePanel.host.close()
+        app.leaveActualSize()
+        zoom.performClick(nil)
+        try expect(zoom.isOpen && panel.rows.last?.isChosen == false, "Back out of Actual Size the toggle is off")
+        // Escape returns the focus to the zoom.
+        zoom.choicePanel.host.close()
+        app.window.makeFirstResponder(zoom)
+        zoom.keyDown(with: try keyDown(125, in: app))
+        try expect(zoom.isOpen && panel.focusedRow?.isChosen == true, "Down opens it on the chosen row")
+        panel.host.window.sendEvent(panelKey(53, in: panel.host.window))
+        try expect(!zoom.isOpen && app.window.firstResponder === zoom, "Escape closes it and the zoom has the focus again")
+        try expect(probe.began == 0 && zoom.target === app && zoom.action == #selector(AppDelegate.changeZoom(_:)), "No native menu started and the zoom keeps its action")
+        _ = chrome
+    }
+
+    private static func modernOriginalSizeToggle() throws {
+        let (fixture, chrome) = try modernFixture()
+        let app = fixture.app, toggle = app.dragOriginalControl
+        try expect(toggle.kind == .toggle && toggle.indicator == .checkbox && toggle.title == "Original size" && toggle.accessibilityLabel() == "Export at original size" && toggle.accessibilityRole() == .checkBox,
+                   "A checkbox toggle titled Original size and spoken as Export at original size")
+        try expect(AppToolTip.text(for: toggle)?.hasPrefix("Drag out, copy, export and upload the picture at its own pixel size") == true, "It keeps its tooltip")
+        try expect(chrome.surface(for: toggle)?.identifier?.rawValue == "GlassViewGroup" && toggle.target === app && toggle.action == #selector(AppDelegate.changeDragOptions(_:)), "It sits on the View plate and keeps its action")
+        // A small shot has nothing to offer: hidden, and the View plate is as narrow as it was without the box.
+        app.window.contentView?.layoutSubtreeIfNeeded()
+        try expect(!app.isLargeShot && toggle.isHidden, "A blank canvas hides the toggle")
+        func plateWidth() -> CGFloat { app.window.contentView?.layoutSubtreeIfNeeded(); return chrome.surface(for: toggle)?.frame.width ?? 0 }
+        let withoutBox = plateWidth()
+        // A large shot shows it; a click flips it once, stores the choice and changes what a drag, export or upload sends.
+        try viewportFixture(app)
+        app.dragOriginalControl.state = .off; app.changeDragOptions(nil); app.updateViewportChrome()
+        try expect(app.isLargeShot && !toggle.isHidden, "A large shot shows the toggle")
+        try expect(abs(plateWidth() - withoutBox - chrome.originalSizeWidth) < 0.5, "The View plate widens by exactly the toggle's width (\(plateWidth() - withoutBox) vs \(chrome.originalSizeWidth))")
+        toggle.performClick(nil)
+        try expect(toggle.state == .on && toggle.isChosen && UserDefaults.standard.bool(forKey: "DragOriginalSize") && app.dragAtOriginalSize, "A click turns it on once: stored, and drag, export and upload use the picture's own pixels")
+        try expect((toggle.accessibilityValue() as? NSNumber) == 1, "VoiceOver reads it on")
+        _ = toggle.accessibilityPerformPress()
+        try expect(toggle.state == .off && !UserDefaults.standard.bool(forKey: "DragOriginalSize") && !app.dragAtOriginalSize, "The accessibility press turns it back off and stores that")
+        toggle.state = .on; app.changeDragOptions(nil)
+        try expect(UserDefaults.standard.bool(forKey: "DragOriginalSize") && toggle.state == .on, "Setting the state and sending the action stores it (the path every other test and tool uses)")
+        // Actual Size and Frame take it away again.
+        app.toggleActualSize()
+        try expect(toggle.isHidden, "Actual Size hides the toggle")
+        app.leaveActualSize()
+        try expect(!toggle.isHidden, "and leaving it brings the toggle back")
+    }
+
     private static func modernZoomFace() throws {
         let (fixture, chrome) = try modernFixture()
         let app = fixture.app, zoom = app.zoomControl
@@ -1655,9 +1744,22 @@ extension AppSafetyTests {
         for item in zoom.itemArray where item.tag != ZoomPopUpButton.actualSizeTag && !item.isSeparatorItem {
             let title = item.title
             zoom.select(item)
-            try expect(zoom.fittingSize.width <= cell.frame.width - 8 + 0.5, "\(title) fits the zoom cell (\(zoom.fittingSize.width) in \(cell.frame.width))")
+            try expect(zoom.fittingSize.width <= cell.frame.width + 0.5, "\(title) fits the zoom cell (\(zoom.fittingSize.width) in \(cell.frame.width))")
         }
         try expect((AppToolTip.text(for: zoom) ?? "").hasSuffix("one image pixel per screen pixel."), "Zoom keeps a tooltip that says what the percentage measures")
+        // The cell is what the face needs: in the real footer, at the minimum window and at 1100, every face the zoom can show is drawn whole at 20 pt.
+        let computed = NSMenuItem(title: "200%", action: nil, keyEquivalent: ""); computed.tag = ZoomPopUpButton.computedZoomTag
+        for width in [ModernEditorChrome.minimumWindowWidth, 1100] as [CGFloat] {
+            try resizeWindow(app, contentWidth: width)
+            zoom.menu?.insertItem(computed, at: 0)
+            defer { zoom.menu?.removeItem(computed); zoom.selectItem(withTitle: "100%") }
+            for item in zoom.itemArray where item.tag != ZoomPopUpButton.actualSizeTag && !item.isSeparatorItem {
+                zoom.select(item)
+                app.window.contentView?.layoutSubtreeIfNeeded()
+                let metrics = zoom.faceTextMetrics
+                try expect(zoom.faceTextFits && metrics.font.pointSize == 20, "\(Int(width)): the zoom face \(item.title) is drawn whole at 20 pt: needs \(metrics.needed), the face draws it in \(metrics.available) (face \(zoom.frame.size))")
+            }
+        }
     }
 
     private static func modernBodyType() throws {
