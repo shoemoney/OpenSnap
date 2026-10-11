@@ -148,8 +148,87 @@ private enum SettingsWindowTests {
         liveDifferentiateRow()
         words()
         viewTreeAudit()
+        externalTree()
         print("SettingsWindowTests: \(checks) checks passed (standalone controller; no window ordered onto the desktop)")
     }
+
+    // MARK: What an external client sees
+
+    /// The tree the AX server publishes, walked from the window down: the glass plates' controls reach assistive technology (a labelled plate
+    /// used to answer with no children, and a choice on an unlabelled plate was dropped), with names, roles, values and a coherent parent chain.
+    private static func externalTree() {
+        let list = sampleDestinations(count: 2)
+        let (controller, _, _, _, _, _) = makeController(destinations: list)
+        let window = controller.window
+        func reached(_ tree: AXTree.Tree, _ role: NSAccessibility.Role, _ label: String, _ what: String) -> AXTree.Node? {
+            let node = tree.find(role, label)
+            expect(node != nil, "\(what): \(role.rawValue) \"\(label)\" is reachable from the window. Tree:\n\(tree.outline)")
+            return node
+        }
+        func children(_ tree: AXTree.Tree, _ group: AXTree.Node) -> [String] { tree.children(of: group).map { $0.label ?? "" } }
+
+        // General: Show in radios, the Snapping plate (one toggle) and the Hints plate (two).
+        controller.select(0)
+        window.contentView?.layoutSubtreeIfNeeded()
+        var tree = AXTree.walk(window)
+        if let showIn = reached(tree, .radioGroup, "Show in", "General") {
+            expect(tree.children(of: showIn).count == 3 && tree.children(of: showIn).allSatisfy { $0.role == .radioButton }, "Show in holds its three radio buttons")
+        }
+        if let snapping = reached(tree, .group, "Snapping", "General") {
+            expect(tree.children(of: snapping).count == 1 && tree.children(of: snapping)[0].role == .checkBox, "the Snapping plate shows its toggle (it used to be an empty group): \(children(tree, snapping))")
+            expect(tree.children(of: snapping).first?.number == (general(controller).snapCheckbox.isChosen ? 1 : 0), "the snap toggle's value is its state")
+        }
+        if let hints = reached(tree, .group, "Hints", "General") {
+            let kids = tree.children(of: hints)
+            expect(kids.count == 2 && kids.allSatisfy { $0.role == .checkBox } && kids.compactMap { $0.number } == [general(controller).hoverHintsCheckbox.isChosen ? 1 : 0, general(controller).keyboardTipsCheckbox.isChosen ? 1 : 0] && kids.map { $0.label ?? "" } == [general(controller).hoverHintsCheckbox.title, general(controller).keyboardTipsCheckbox.title],
+                   "the Hints plate shows its two toggles in order, with their values: \(kids.map { "\($0.label ?? "") \(String(describing: $0.value))" })")
+            if let first = kids.first {
+                let toggle = general(controller).hoverHintsCheckbox!
+                let before = toggle.isChosen
+                expect(AXTree.press(first) && toggle.isChosen != before, "AXPress on a toggle reached from the window flips it")
+                _ = AXTree.press(first)
+            }
+        }
+        expect(tree.parentProblems().isEmpty, "General: every parent agrees with the tree: \(tree.parentProblems().prefix(3))")
+
+        // Capture: the enable toggle, a modifier group per shortcut and Clear All.
+        controller.select(2)
+        window.contentView?.layoutSubtreeIfNeeded()
+        tree = AXTree.walk(window)
+        if let shortcuts = reached(tree, .group, "Shortcuts", "Capture") {
+            expect(tree.children(of: shortcuts).count == 1 && tree.children(of: shortcuts)[0].role == .checkBox, "the Shortcuts plate shows its enable toggle: \(children(tree, shortcuts))")
+        }
+        let rowGroups = tree.nodes.filter { $0.role == .group && ($0.label ?? "").hasSuffix(" shortcut") }
+        expect(rowGroups.count >= 3, "each capture shortcut has a row plate (\(rowGroups.count))")
+        for row in rowGroups {
+            let kids = tree.descendants(of: row)
+            expect(kids.contains { $0.role == .popUpButton } && kids.contains { $0.role == .group && ($0.label ?? "").hasSuffix(" modifiers") },
+                   "\(row.label ?? ""): the key pop-up and the modifier group are inside its plate: \(kids.map { $0.role?.rawValue ?? "?" })")
+        }
+        if let modifiers = tree.nodes.first(where: { $0.role == .group && ($0.label ?? "").hasSuffix(" modifiers") }) {
+            expect(tree.children(of: modifiers).count == 4 && tree.children(of: modifiers).allSatisfy { $0.role == .checkBox }, "a modifier group holds its four toggles")
+        }
+        if let clear = reached(tree, .group, "Clear shortcuts", "Capture") {
+            expect(children(tree, clear) == ["Clear All"], "the Clear plate shows Clear All: \(children(tree, clear))")
+        }
+        expect(tree.parentProblems().isEmpty, "Capture: every parent agrees with the tree: \(tree.parentProblems().prefix(3))")
+
+        // Upload: the destination action plate.
+        controller.select(3)
+        let tab = controller.upload
+        _ = tab.view; tab.refresh()
+        window.contentView?.layoutSubtreeIfNeeded()
+        tree = AXTree.walk(window)
+        if let actions = reached(tree, .group, "Destination actions", "Upload") {
+            let kids = tree.children(of: actions)
+            expect(kids.count == 4 && kids.allSatisfy { $0.role == .button } && kids.map { $0.label ?? "" } == tab.actionPlate.arrangedViews.compactMap { ($0 as? NSButton)?.title },
+                   "the action plate shows Add, Edit, Remove and Make Default in order: \(kids.map { $0.label ?? "" })")
+            expect(kids.map { $0.enabled } == tab.actionPlate.arrangedViews.compactMap { ($0 as? NSButton)?.isEnabled }, "...and which of them is disabled")
+        }
+        expect(tree.parentProblems().isEmpty, "Upload: every parent agrees with the tree: \(tree.parentProblems().prefix(3))")
+    }
+
+    private static func general(_ controller: SettingsWindowController) -> GeneralSettingsTab { controller.general }
 
     // MARK: Structure
 

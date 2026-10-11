@@ -154,14 +154,14 @@ suites = [
     ("canvas-navigator-tests", ["CanvasNavigator.swift"], "CanvasNavigatorTests.swift", "CANVAS_NAVIGATOR_TESTS", ()),
     ("canvas-border-tests", ["WindowSizing.swift", "CanvasBorderView.swift"], "CanvasBorderTests.swift", "CANVAS_BORDER_TESTS", ()),
     ("resize-panel-tests", with_choices(["ResizePresets.swift", "ResizePanel.swift"]), "ResizePanelTests.swift", "RESIZE_PANEL_TESTS", ()),
-    ("resize-panel-layout-tests", with_choices(["ResizePresets.swift", "ResizePanel.swift", "TestDefaults.swift"]), "ResizePanelLayoutTests.swift", "RESIZE_PANEL_LAYOUT_TESTS", ()),
+    ("resize-panel-layout-tests", with_choices(["ResizePresets.swift", "ResizePanel.swift", "TestDefaults.swift", "AccessibilityTreeWalk.swift"]), "ResizePanelLayoutTests.swift", "RESIZE_PANEL_LAYOUT_TESTS", ()),
     ("export-accessory-tests", ["ExportAccessory.swift"], "ExportAccessoryTests.swift", "EXPORT_ACCESSORY_TESTS", ()),
     ("image-export-tests", ["SVGPath.swift", "DocumentModel.swift", "VectorGeometry.swift", "ImageExport.swift"], "ImageExportTests.swift", "IMAGE_EXPORT_TESTS", ()),
     ("vector-geometry-tests", ["SVGPath.swift", "DocumentModel.swift", "VectorGeometry.swift"], "VectorGeometryTests.swift", "VECTOR_GEOMETRY_TESTS", ()),
     ("stroke-fitting-tests", ["SVGPath.swift", "StrokeFitting.swift"], "StrokeFittingTests.swift", "STROKE_FITTING_TESTS", ()),
     ("canvas-tests", ["SVGPath.swift", "DocumentModel.swift", "VectorGeometry.swift", "StrokeFitting.swift", "ImageExport.swift", "Canvas.swift"], "CanvasTests.swift", "CANVAS_TESTS", ()),
     ("history-store-tests", ["SVGPath.swift", "DocumentModel.swift", "VectorGeometry.swift", "StrokeFitting.swift", "ImageExport.swift", "Canvas.swift", "OpenSnapFile.swift", "HistoryStore.swift"], "HistoryStoreTests.swift", "HISTORY_STORE_TESTS", ()),
-    ("history-browser-tests", with_choices(["HistoryBrowser.swift", "TestDefaults.swift", "AppToolTip.swift", "DisplayOptions.swift", "DisplayOptions+ChromeAccessibility.swift", "OriginalActionButton.swift", "StateStyles.swift", "GlassChrome.swift", *ICONS]), "HistoryBrowserTests.swift", "HISTORY_BROWSER_TESTS", ()),
+    ("history-browser-tests", with_choices(["HistoryBrowser.swift", "TestDefaults.swift", "AppToolTip.swift", "DisplayOptions.swift", "DisplayOptions+ChromeAccessibility.swift", "OriginalActionButton.swift", "StateStyles.swift", "GlassChrome.swift", *ICONS, "AccessibilityTreeWalk.swift"]), "HistoryBrowserTests.swift", "HISTORY_BROWSER_TESTS", ()),
     ("history-remote-deletion-tests", with_choices(["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift", "AppAlert.swift", "HistoryRemoteDeletion.swift", *ICONS]), "HistoryRemoteDeletionTests.swift", None, ("--test",)),
     ("publishing-tests", with_choices(["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift", "AppAlert.swift", *ICONS]), "PublishingTests.swift", None, ("--test",)),
     ("publishing-shutdown-tests", with_choices(["Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift", "AppAlert.swift", *ICONS]), "PublishingShutdownTests.swift", None, ("--test",)),
@@ -169,7 +169,7 @@ suites = [
     ("hotkey-tests", with_choices(["GlobalHotkeys.swift", "AppToolTip.swift", "TestDefaults.swift"]), "GlobalHotkeysTests.swift", "GLOBAL_HOTKEY_TESTS", ()),
     ("settings-window-tests", with_choices(["SettingsWindow.swift", "GeneralPreferencesState.swift", "GlobalHotkeys.swift", "AppToolTip.swift", "DisplayOptions.swift", "OriginalCaptureFlash.swift",
                                "StrokeFitting.swift", "Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift", "PublishingDestinationsView.swift", "AppAlert.swift", *ICONS,
-                               "TestDefaults.swift", "ViewTreeAudit.swift", "ContrastProbe.swift"]), "SettingsWindowTests.swift", "SETTINGS_WINDOW_TESTS", ()),
+                               "TestDefaults.swift", "ViewTreeAudit.swift", "ContrastProbe.swift", "AccessibilityTreeWalk.swift"]), "SettingsWindowTests.swift", "SETTINGS_WINDOW_TESTS", ()),
     ("svg-tests", ["SVGPath.swift", "DocumentModel.swift", "VectorGeometry.swift", "StrokeFitting.swift", "ImageExport.swift", "Canvas.swift", "SVGExport.swift"], "SVGExportTests.swift", "SVG_EXPORT_TESTS", ()),
     ("opensnap-file-tests", ["SVGPath.swift", "DocumentModel.swift", "VectorGeometry.swift", "StrokeFitting.swift", "ImageExport.swift", "Canvas.swift", "OpenSnapFile.swift"], "OpenSnapFileTests.swift", "OPENSNAP_FILE_TESTS", ()),
     ("migration-tests", ["SVGPath.swift", "LegacyReader.swift", "DocumentModel.swift", "VectorGeometry.swift", "StrokeFitting.swift", "ImageExport.swift", "Canvas.swift", "OpenSnapFile.swift", "HistoryStore.swift", "Migration.swift"], "MigrationTests.swift", "MIGRATION_TESTS", (), {"CFFIXED_USER_HOME": "@temp-home"}),
@@ -212,8 +212,8 @@ modern_suites = [
     ("menu-symbols-tests", [*ICONS, "MenuSymbols.swift"], "MenuSymbolsTests.swift", "MENU_SYMBOLS_TESTS", ()),
     ("icon-coverage-tests", [*ICONS], "IconCoverageTests.swift", "ICON_COVERAGE_TESTS", ()),
     # The shared glass choice primitives: button, group, panel host and the NSMenu adapter, on never-ordered windows.
-    ("glass-choices-tests", with_choices(["ContrastProbe.swift", "ViewTreeAudit.swift", "AccessibilityAudit.swift", "MenuSymbols.swift"]), "GlassChoicesTests.swift", "GLASS_CHOICES_TESTS", ()),
-    ("glass-chrome-tests", with_choices(["DisplayOptions.swift", "DisplayOptions+ChromeAccessibility.swift", "OriginalActionButton.swift", *ICONS, "BezelDrawingControls.swift", "DocumentModel.swift", "StateStyles.swift", "GlassChrome.swift", "UploadStatus.swift", "ModernEditorChrome.swift", "AppToolTip.swift", "ContrastProbe.swift"]), "GlassChromeTests.swift", "GLASS_CHROME_TESTS", ()),
+    ("glass-choices-tests", with_choices(["ContrastProbe.swift", "ViewTreeAudit.swift", "AccessibilityAudit.swift", "MenuSymbols.swift", "AccessibilityTreeWalk.swift"]), "GlassChoicesTests.swift", "GLASS_CHOICES_TESTS", ()),
+    ("glass-chrome-tests", with_choices(["DisplayOptions.swift", "DisplayOptions+ChromeAccessibility.swift", "OriginalActionButton.swift", *ICONS, "BezelDrawingControls.swift", "DocumentModel.swift", "StateStyles.swift", "GlassChrome.swift", "UploadStatus.swift", "ModernEditorChrome.swift", "AppToolTip.swift", "ContrastProbe.swift", "AccessibilityTreeWalk.swift"]), "GlassChromeTests.swift", "GLASS_CHROME_TESTS", ()),
 ]
 with ThreadPoolExecutor(max_workers=len(suites) + len(modern_suites)) as executor:
     futures = [executor.submit(suite, *args) for args in suites]

@@ -25,7 +25,7 @@ private enum ResizePanelLayoutTests {
     static func main() {
         _ = NSApplication.shared
         KeyboardNavigation.fullKeyboardAccess = { true }
-        do { try run(); try behaviour(); print("ResizePanelLayoutTests: \(checks) checks passed") }
+        do { try run(); try behaviour(); try externalTree(); print("ResizePanelLayoutTests: \(checks) checks passed") }
         catch { print("FAIL \(error)"); exit(1) }
     }
 
@@ -168,6 +168,53 @@ private enum ResizePanelLayoutTests {
         }
     }
     @MainActor private final class AppliedBox { var values: [(CGSize, Bool, CGPoint)] = [] }
+
+    /// The sheet as an external client sees it, walked from its window down: the action plates are named groups of their buttons, the choices on
+    /// unlabelled single-control plates (Lock proportions) are reachable, and every parent agrees with the tree.
+    private static func externalTree() throws {
+        let suite = "OpenSnapResizeTree." + UUID().uuidString
+        let defaults = TestDefaults(name: suite)
+        defer { TestDefaults.dispose(defaults, name: suite) }
+        let parent = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 700), styleMask: [.titled, .resizable], backing: .buffered, defer: true)
+        parent.isReleasedWhenClosed = false
+        var applied: [(CGSize, Bool, CGPoint)] = []
+        let resize = ResizePanel(session: ResizePanelSession(size: CGSize(width: 1517, height: 1011), onApply: { applied.append(($0, $1, $2)) }),
+                                 presets: ResizePresetStore(defaults: defaults))
+        resize.show(attachedTo: parent)
+        guard let panel: NSPanel = private_(resize, "panel"), let content = panel.contentView, let mode: GlassChoiceGroup = private_(resize, "modeControl") else {
+            throw Failure(description: "the sheet exists")
+        }
+        content.layoutSubtreeIfNeeded()
+        var tree = AXTree.walk(panel)
+        func need(_ role: NSAccessibility.Role, _ label: String) throws -> AXTree.Node {
+            guard let node = tree.find(role, label) else { throw Failure(description: "\(role.rawValue) \"\(label)\" is reachable from the sheet's window. Tree:\n\(tree.outline)") }
+            return node
+        }
+        let actions = try need(.group, "Resize actions")
+        try expectTree(tree.children(of: actions).map { $0.label ?? "" } == ["Cancel", "Apply", "OK"] && tree.children(of: actions).allSatisfy { $0.role == .button },
+                       "the Resize actions plate shows Cancel, Apply and OK in order: \(tree.children(of: actions).map { $0.label ?? "" })")
+        let modeGroup = try need(.radioGroup, mode.accessibilityLabel() ?? "")
+        try expectTree(tree.children(of: modeGroup).map { $0.label ?? "" } == ["Resize", "Crop", "Limit"] && tree.children(of: modeGroup).compactMap { $0.number } == [1, 0, 0],
+                       "the mode group shows its three radio buttons, Resize chosen: \(tree.children(of: modeGroup).map { "\($0.label ?? "") \(String(describing: $0.value))" })")
+        let lock = try need(.checkBox, "Lock proportions")
+        try expectTree(lock.number != nil, "the Lock proportions toggle on its own unlabelled plate is reachable, with a value")
+        _ = try need(.checkBox, "Manage presets")
+        _ = try need(.popUpButton, "Size preset")
+        // Choosing a mode from outside moves the tree: Crop adds its anchor grid.
+        let crop = try need(.radioButton, "Crop")
+        try expectTree(AXTree.press(crop), "AXPress on the Crop radio button is performed")
+        content.layoutSubtreeIfNeeded()
+        tree = AXTree.walk(panel)
+        _ = try need(.radioGroup, "Crop anchor")
+        try expectTree(tree.find(.radioButton, "Crop")?.number == 1 && mode.selectedIndex == 1, "AXPress chose Crop (the group says so)")
+        let problems = tree.parentProblems()
+        try expectTree(problems.isEmpty, "every parent agrees with the tree and leads back to the window: \(problems.prefix(3))")
+    }
+
+    private static func expectTree(_ condition: @autoclosure () -> Bool, _ message: String) throws {
+        guard condition() else { throw Failure(description: message) }
+        checks += 1
+    }
 
     private static func behaviour() throws {
         // Mode choice: the glass group re-renders the rows and the sheet fits each mode.
