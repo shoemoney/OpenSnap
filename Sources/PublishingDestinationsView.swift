@@ -28,6 +28,10 @@ final class PublishingDestinationsView: NSView {
         return NSSize(width: sheetWidth, height: min(height, visibleFrame.height))
     }
 
+    /// The glass plates carry a 4 pt inset of their own, so the form and footer give them less margin than a native control needs: that is
+    /// what keeps the SFTP form inside the 680 pt sheet of a 1280 x 800 screen with 44 pt rows.
+    private static let pageTop = Space.s4, footerTop = Space.s2, footerBottom = Space.s3
+
     private(set) var editing: PublishingDestination?
 
     /// The tallest the sheet may be (set from the screen). The form always asks for what it needs and scrolls when that is more.
@@ -39,7 +43,7 @@ final class PublishingDestinationsView: NSView {
     var preferredHeight: CGFloat { min(maxSheetHeight, formPageHeight) }
     /// The visible form's rows, the separator, the footer with its result band, and the margins around them.
     var formPageHeight: CGFloat {
-        Space.s5 + formPage.fittingSize.height + Space.s5 + 1 + Space.s3 + formFooter.fittingSize.height + Space.s4
+        Self.pageTop + formPage.fittingSize.height + Space.s5 + 1 + Self.footerTop + formFooter.fittingSize.height + Self.footerBottom
     }
     private func notifyPreferredHeight() { onPreferredHeightChange?(preferredHeight) }
 
@@ -133,16 +137,16 @@ final class PublishingDestinationsView: NSView {
             document.topAnchor.constraint(equalTo: clip.topAnchor),
             formPage.leadingAnchor.constraint(equalTo: document.leadingAnchor, constant: Space.s5),
             formPage.trailingAnchor.constraint(equalTo: document.trailingAnchor, constant: -Space.s5),
-            formPage.topAnchor.constraint(equalTo: document.topAnchor, constant: Space.s5),
+            formPage.topAnchor.constraint(equalTo: document.topAnchor, constant: Self.pageTop),
             formPage.bottomAnchor.constraint(equalTo: document.bottomAnchor, constant: -Space.s5),
             scrollView.leadingAnchor.constraint(equalTo: leadingAnchor), scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
             scrollView.topAnchor.constraint(equalTo: topAnchor),
             separator.leadingAnchor.constraint(equalTo: leadingAnchor), separator.trailingAnchor.constraint(equalTo: trailingAnchor),
             separator.topAnchor.constraint(equalTo: scrollView.bottomAnchor),
-            bottomAnchor.constraint(equalTo: formFooter.bottomAnchor, constant: Space.s4),
+            bottomAnchor.constraint(equalTo: formFooter.bottomAnchor, constant: Self.footerBottom),
             formFooter.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Space.s5),
             formFooter.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Space.s5),
-            formFooter.topAnchor.constraint(equalTo: separator.bottomAnchor, constant: Space.s3),
+            formFooter.topAnchor.constraint(equalTo: separator.bottomAnchor, constant: Self.footerTop),
         ])
         showForm(for: destination)
     }
@@ -320,6 +324,8 @@ final class PublishingDestinationsView: NSView {
         formHelp.maximumNumberOfLines = 0; formHelp.preferredMaxLayoutWidth = contentWidth
         formPage.addArrangedSubview(formHelp)
         formPage.setCustomSpacing(Space.s4, after: rows["password"]!.stack)
+        // The Protocol plate is 44 pt against the 36 pt fields around it; 8 pt each side keeps the rows' centres on the form's 48 pt pitch.
+        for id in ["name", "protocol"] { if let stack = rows[id]?.stack { formPage.setCustomSpacing(Space.s2, after: stack) } }
     }
 
     private var keychainSource: Bool { sourcePopup.indexOfSelectedItem == 1 }

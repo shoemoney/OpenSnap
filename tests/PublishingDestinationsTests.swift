@@ -1092,9 +1092,6 @@ enum PublishingDestinationsTests {
         _ = NSApplication.shared
         NSApp.setActivationPolicy(.prohibited)
         let fake = NSRect(x: 0, y: 0, width: 1280, height: 800)
-        // The editor itself is built on a 900-high screen: its glass plates (44 pt rows) make the S3 and SFTP forms taller than the 680 pt
-        // sheet a 800-high screen allows, and the sheet-height assertions below need room to differ per protocol.
-        let screen = NSRect(x: 0, y: 0, width: 1280, height: 900)
 
         // Size: 720 wide, min(720, visible height - 120), never taller than the screen.
         let size = PublishingDestinationsView.sheetSize(visibleFrame: fake)
@@ -1106,20 +1103,20 @@ enum PublishingDestinationsTests {
 
         let destinations = fixtureDestinations()
         let publisher = try coordinator(destinations: destinations)
-        let (panel, view) = publisher.buildEditor(editing: nil, visibleFrame: screen)
+        let (panel, view) = publisher.buildEditor(editing: nil, visibleFrame: fake)
         defer { panel.orderOut(nil) }
         panel.contentView?.layoutSubtreeIfNeeded()
         try expect(view.scrollView.hasVerticalScroller && !view.scrollView.hasHorizontalScroller && view.scrollView.documentView != nil, "the form lives in a vertical NSScrollView")
         try expect(panel.title == "Add Destination" && publisher.buildEditor(editing: destinations[0]).0.title == "Edit Destination", "the sheet is titled for what it does")
         func contentHeight(_ p: NSPanel) -> CGFloat { p.contentRect(forFrameRect: p.frame).height }
         let panelWidth = panel.contentRect(forFrameRect: panel.frame).width
-        try expect(panelWidth == 720 && panel.frame.height <= screen.height, "the sheet is 720 wide: \(panelWidth)")
+        try expect(panelWidth == 720 && panel.frame.height <= fake.height, "the sheet is 720 wide: \(panelWidth)")
         // The sheet is sized to the protocol's form (top edge fixed).
         let topEdge = panel.frame.maxY
         view.showForm(for: nil); panel.contentView?.layoutSubtreeIfNeeded()
         let webDAVHeight = contentHeight(panel)
-        try expect(webDAVHeight < 760 && abs(webDAVHeight - view.preferredHeight) <= 0.5 && panel.frame.maxY == topEdge,
-                   "the new-destination form hugs its rows instead of the 760 maximum: \(webDAVHeight), top \(panel.frame.maxY) vs \(topEdge)")
+        try expect(webDAVHeight < 680 && abs(webDAVHeight - view.preferredHeight) <= 0.5 && panel.frame.maxY == topEdge,
+                   "the new-destination form hugs its rows instead of the 680 maximum: \(webDAVHeight), top \(panel.frame.maxY) vs \(topEdge)")
         func blankBand(_ p: NSPanel, _ v: PublishingDestinationsView) throws -> CGFloat {
             p.contentView?.layoutSubtreeIfNeeded()
             let help = try unwrap(descendants(v).compactMap { $0 as? NSTextField }.first { !$0.isHiddenOrHasHiddenAncestor && $0.stringValue == PublishingDestinationsView.formCopy(for: v.selectedProtocol).help })
@@ -1135,11 +1132,18 @@ enum PublishingDestinationsTests {
             let help = try unwrap(descendants(view).compactMap { $0 as? NSTextField }.first { !$0.isHiddenOrHasHiddenAncestor && $0.stringValue == PublishingDestinationsView.formCopy(for: transport).help })
             let needed = ceil(help.cell?.cellSize(forBounds: NSRect(x: 0, y: 0, width: help.frame.width, height: .greatestFiniteMagnitude)).height ?? 0)
             try expect(help.frame.height + 0.5 >= needed, "\(transport) help is clipped: \(help.frame.height) of \(needed)")
-            try expect(abs(heights[transport]! - view.preferredHeight) <= 0.5 && panel.frame.maxY == topEdge && panel.frame.height <= screen.height, "\(transport) sheet \(heights[transport]!) follows its form")
+            try expect(abs(heights[transport]! - view.preferredHeight) <= 0.5 && panel.frame.maxY == topEdge && panel.frame.height <= fake.height, "\(transport) sheet \(heights[transport]!) follows its form")
             let band = try blankBand(panel, view)
             try expect(band < 120, "\(transport) leaves \(band) pt of blank band")
         }
         try expect(heights[.s3]! > heights[.webDAV]! && heights[.sftp]! != heights[.s3]!, "the sheet height follows the protocol: \(heights)")
+        // Compactness: with 44 pt glass rows the WebDAV, FTP, FTPS and SFTP forms still fit the 680 pt sheet of a 1280 x 800 screen without
+        // scrolling (their forms were 626, 605, 605 and 674 pt before the glass rows).
+        for transport in [PublishingProtocol.webDAV, .ftp, .ftps, .sftp] {
+            view.protocolPopup.selectItem(withTitle: transport.title); view.formChanged(); panel.contentView?.layoutSubtreeIfNeeded()
+            try expect(view.formPageHeight <= size.height && view.scrollView.documentView!.frame.height <= view.scrollView.contentView.bounds.height + 0.5,
+                       "\(transport.title) needs \(view.formPageHeight) pt but the sheet is \(size.height) pt, so it would scroll (document \(view.scrollView.documentView!.frame.height) in \(view.scrollView.contentView.bounds.height))")
+        }
         view.protocolPopup.selectItem(at: 0); view.formChanged()
         // A Test error grows the result band, the sheet follows it, and Cancel leaves no trace of it.
         let beforeError = contentHeight(panel)
