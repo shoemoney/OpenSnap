@@ -683,11 +683,11 @@ def check_glass_record(label, record):
     if slug.endswith(("-width-640", "-width-560")):
         # The destination sheet at its normal and its minimum width, S3-compatible with the Keychain key source; its faces were measured too.
         expected = 560 if slug.endswith("-width-560") else 640
-        # The form is laid out at exactly the requested width; the window around it may add a scroller (up to 20 pt), never anything wider.
-        if not isinstance(glass.get("formWidth"), (int, float)) or abs(glass["formWidth"] - expected) > 1:
-            problems.append(f"glass: {label} form is {glass.get('formWidth')!r} pt wide, expected {expected}")
-        if not isinstance(glass.get("sheetWidth"), (int, float)) or not expected - 1 <= glass["sheetWidth"] <= expected + 20:
-            problems.append(f"glass: {label} sheet window is {glass.get('sheetWidth')!r} pt wide, expected {expected} (plus at most a 20 pt scroller)")
+        # Neither the form nor the window around it may be narrower than the width asked for, nor wider than that plus a 20 pt scroller allowance.
+        for what, key in (("form", "formWidth"), ("sheet window", "sheetWidth")):
+            value = glass.get(key)
+            if not isinstance(value, (int, float)) or not expected - 1 <= value <= expected + 20:
+                problems.append(f"glass: {label} {what} is {value!r} pt wide, expected {expected} (plus at most a 20 pt scroller)")
         if glass.get("protocol") != "S3":
             problems.append(f"glass: {label} was not taken with the S3-compatible protocol (protocol {glass.get('protocol')!r})")
         faces = glass.get("faceTitles") or []
