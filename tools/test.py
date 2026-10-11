@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Run independent native regression suites against a consistent source snapshot."""
 from concurrent.futures import ThreadPoolExecutor
+from threading import Lock
 from pathlib import Path
 import argparse, hashlib, json, os, platform, re, subprocess, sys, tempfile
 
@@ -11,6 +12,7 @@ root = Path(__file__).resolve().parent.parent
 build = root / "build"
 build.mkdir(exist_ok=True)
 SUITE_OUTPUT = []  # every suite binary's output, for the G11 skip budget at the end
+NATIVE_SUITE_LOCK = Lock()  # Compile in parallel; AppKit processes must not compete for key-window/focus state.
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -116,10 +118,11 @@ def suite(name, sources, test, define=None, arguments=(), environment=None):
         env = dict(os.environ)
         for key, value in environment.items():
             env[key] = tempfile.mkdtemp(prefix="home-", dir=snapshot) if value == "@temp-home" else value
-    run = subprocess.run([str(binary), *arguments], cwd=root, env=env, capture_output=True, text=True)
-    SUITE_OUTPUT.append(run.stdout + run.stderr)
-    print(run.stdout + run.stderr, end="", flush=True)
-    run.check_returncode()
+    with NATIVE_SUITE_LOCK:
+        run = subprocess.run([str(binary), *arguments], cwd=root, env=env, capture_output=True, text=True)
+        SUITE_OUTPUT.append(run.stdout + run.stderr)
+        print(run.stdout + run.stderr, end="", flush=True)
+        run.check_returncode()
     return "PASS", name
 
 # Subsets from tools/fetch-fontawesome.sh are exercised when they have been built.
