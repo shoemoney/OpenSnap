@@ -1,10 +1,14 @@
 // Pure tests: isolated UserDefaults suite and fake hotkey backend only.
 // No app/window creation, OS hotkey registration, Accessibility, keyboard event
 // synthesis, credentials, desktop capture, or network.
-// xcrun swiftc -D GLOBAL_HOTKEY_TESTS -swift-version 5 -target arm64-apple-macosx13.0 \
-//   Sources/GlobalHotkeys.swift tests/GlobalHotkeysTests.swift -o /tmp/opensnap-hotkey-tests
+// xcrun swiftc -D GLOBAL_HOTKEY_TESTS -swift-version 5 -target arm64-apple-macosx26.0 \
+//   Sources/GlobalHotkeys.swift Sources/AppToolTip.swift Sources/DesignTokens.swift Sources/DisplayOptions.swift \
+//   Sources/DisplayOptions+ChromeAccessibility.swift Sources/OriginalActionButton.swift Sources/StateStyles.swift Sources/GlassChrome.swift \
+//   Sources/GlassChoices.swift Sources/FontAwesomeIcons.swift Sources/ChromeIcons.swift Sources/FontAwesomeFree.swift Sources/SVGPath.swift \
+//   tests/TestDefaults.swift tests/GlobalHotkeysTests.swift -o /tmp/opensnap-hotkey-tests
 // /tmp/opensnap-hotkey-tests
-// Repeat compilation for x86_64-apple-macosx13.0 (Intel); Swift 6 is also checked.
+// The shortcut form's glass choices need macOS 26 (the form compiles with the glass chrome); the form itself is exercised in
+// tests/SettingsWindowTests.swift, where it sits in the Capture tab.
 #if GLOBAL_HOTKEY_TESTS
 import AppKit
 import Carbon

@@ -3,9 +3,11 @@
 // xcrun swiftc -swift-version 5 -target arm64-apple-macosx26.0 -D SETTINGS_WINDOW_TESTS \
 //   Sources/SettingsWindow.swift Sources/GeneralPreferencesState.swift Sources/GlobalHotkeys.swift Sources/AppToolTip.swift \
 //   Sources/DesignTokens.swift Sources/FontAwesomeIcons.swift Sources/ChromeIcons.swift Sources/FontAwesomeFree.swift \
-//   Sources/SVGPath.swift Sources/StrokeFitting.swift Sources/DisplayOptions.swift Sources/OriginalCaptureFlash.swift \
-//   Sources/Publishing.swift Sources/PublishingS3.swift Sources/PublishingDestinations.swift Sources/PublishingDestinationsView.swift \
-//   tests/TestDefaults.swift tests/ViewTreeAudit.swift tests/SettingsWindowTests.swift -o build/settings-window-tests
+//   Sources/SVGPath.swift Sources/StrokeFitting.swift Sources/DisplayOptions.swift Sources/DisplayOptions+ChromeAccessibility.swift \
+//   Sources/OriginalActionButton.swift Sources/StateStyles.swift Sources/GlassChrome.swift Sources/GlassChoices.swift \
+//   Sources/OriginalCaptureFlash.swift Sources/AppAlert.swift Sources/Publishing.swift Sources/PublishingS3.swift \
+//   Sources/PublishingDestinations.swift Sources/PublishingDestinationsView.swift \
+//   tests/TestDefaults.swift tests/ViewTreeAudit.swift tests/ContrastProbe.swift tests/SettingsWindowTests.swift -o build/settings-window-tests
 #if SETTINGS_WINDOW_TESTS
 import AppKit
 import Carbon
@@ -102,9 +104,15 @@ private enum SettingsWindowTests {
         fit()
         alignmentAndTypography()
         preferenceControls()
+        radioGroups()
+        toggles()
+        glassStructure()
+        rowBaselines()
         flash()
         shortcuts()
+        shortcutForm()
         upload()
+        uploadActionPlates()
         uploadWithPublishing()
         shortcutPause()
         shortcutPauseFailureAndNotification()
@@ -140,6 +148,18 @@ private enum SettingsWindowTests {
             expect(!all.contains { $0.localizedCaseInsensitiveContains(word) }, "no row or control mentions \(word)")
         }
         expect(controller.window.delegate === controller, "the controller is the window's delegate")
+        // Every control keeps the identifier it had, and each resolves to exactly one button in its own tab (or on the strip).
+        let identifiers: [(tab: Int, ids: [String])] = [
+            (0, ["presenceDock", "presenceMenuBar", "presenceBoth", "includeApp", "showToolTips", "showKeyboardTips"]),
+            (1, ["precisionPrecise", "precisionMedium", "precisionLoose", "arrowEnd", "arrowStart"]),
+            (2, ["showCaptureFlash"]),
+            (3, ["addDestination", "editDestination", "removeDestination", "makeDefaultDestination", "addFirstDestination"])]
+        for (index, group) in identifiers.enumerated() {
+            controller.select(index)
+            for id in group.ids { _ = button(id, in: controller.tabItems[index].viewController.view) }
+        }
+        for title in SettingsLayout.tabTitles { _ = button("settingsTab." + title, in: controller.strip) }
+        controller.select(0)
     }
 
     // MARK: The tab strip
@@ -164,27 +184,37 @@ private enum SettingsWindowTests {
         return out
     }
 
-    /// Audit fix 2: the strip's tabs read on its plate in light, dark and both Increase Contrast arms; the selected tab is held on its own fill too.
+    /// The tabs read on their plate in light, dark and both Increase Contrast arms. Glass is a live material an offscreen render cannot
+    /// sample, so a resting label is judged against the two surfaces the plate can be: the window surface it floats over and the opaque
+    /// plate Reduce Transparency draws; the current tab's label is judged against its own accent fill, blended over the window.
     private static func tabStripContrast() {
         typealias Palette = DesignTokens.Palette
-        let (controller, _, _, _, _, _) = makeController(destinations: sampleDestinations(count: 2))
+        for (name, appearance) in ContrastProbe.appearances {
+            let highContrast = name.contains("Contrast")
+            appearance.performAsCurrentDrawingAppearance {
+                let window = Palette.resolve(Palette.Surface.window, for: appearance)
+                let plate = Palette.resolve(Palette.Surface.content, for: appearance)
+                let rest = StateStyles.command(.rest, primary: false, focused: false, highContrast: highContrast, differentiate: false, appearance: appearance)
+                for (surfaceName, surface) in [("window", window), ("opaque plate", plate)] {
+                    let ratio = Palette.contrastRatio(rest.content, Palette.rgb(surface).rgb)
+                    expect(ratio >= 4.5, "a resting tab label reads at 4.5:1 on the \(surfaceName) (\(name): \(ratio))")
+                }
+                let selected = StateStyles.command(.selected, primary: false, focused: false, highContrast: highContrast, differentiate: false, appearance: appearance)
+                let fill = selected.fill ?? .clear
+                let backdrop = Palette.blend(fill, alpha: fill.alphaComponent, over: window)
+                let ratio = Palette.contrastRatio(selected.content, backdrop)
+                expect(selected.strongText && ratio >= 4.5, "the current tab's label is semibold and reads on its own fill (\(name): \(ratio))")
+            }
+        }
+        // The same through the strip a user sees: Reduce Transparency draws an opaque plate under the tabs, so the drawn pixels can be judged.
+        defer { DisplayOptions.override = nil }
+        DisplayOptions.override = DisplayOptions(reduceTransparency: true)
+        let (controller, _, _, _, _, _) = makeController()
         let strip = controller.strip
         controller.select(1)
         strip.frame = NSRect(x: 0, y: 0, width: SettingsLayout.contentWidth, height: SettingsTabStrip.height)
         strip.layoutSubtreeIfNeeded()
-        for (name, appearance) in ContrastProbe.appearances {
-            let reading = ContrastProbe.measure(strip, appearance: appearance, plateAt: NSPoint(x: 3, y: strip.bounds.midY),
-                                                textFrames: strip.buttons.map { strip.convert($0.bounds, from: $0) })
-            expect(reading.plateOpaque, "the strip draws an opaque plate (\(name))")
-            for (button, ratio) in zip(strip.buttons, reading.textRatios) { expect(ratio >= 4.5, "\(button.title) reads at 4.5:1 on the strip (\(name): \(ratio))") }
-            appearance.performAsCurrentDrawingAppearance {
-                let window = Palette.resolve(Palette.Surface.window, for: appearance)
-                let selected = Palette.blend(Palette.State.selectedFill, alpha: 1, over: window)
-                let backdrop = NSColor(srgbRed: selected.red, green: selected.green, blue: selected.blue, alpha: 1)
-                let ratio = Palette.contrastRatio(Palette.resolve(Palette.Text.primary, for: appearance), Palette.rgb(backdrop).rgb)
-                expect(ratio >= 4.5, "the selected tab's title reads on its own fill (\(name): \(ratio))")
-            }
-        }
+        expect(strip.plate.transparencyPlate != nil, "Reduce Transparency puts the opaque plate behind the tabs")
     }
 
     private static func tabStrip() {
@@ -202,26 +232,32 @@ private enum SettingsWindowTests {
             expect(button.imagePosition == .imageLeading && button.image != nil, "\(button.title): an icon beside the label")
             expect(button.frame.height >= DesignTokens.Size.hitMin, "\(button.title): the tab is at least \(DesignTokens.Size.hitMin) pt tall (\(button.frame.height))")
         }
-        // Differentiate Without Color: the current tab is also a 2 pt outline in the text colour, not only an accent tint.
-        func currentBorder(_ options: DisplayOptions?) -> (CGFloat, Bool) {
+        // Differentiate Without Color: the current tab also carries the capsule under its glyph, a shape and not a tint alone.
+        func capsules(_ options: DisplayOptions?) -> [Bool] {
             DisplayOptions.override = options
-            strip.select(0); strip.select(1); strip.select(0)
-            let layer = strip.buttons[0].layer
-            let accent = DesignTokens.Palette.resolve(DesignTokens.Palette.accent, for: strip.effectiveAppearance).cgColor
-            return (layer?.borderWidth ?? 0, layer?.borderColor != nil && layer?.borderColor != accent && strip.buttons[1].layer?.borderWidth == 0)
+            NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
+            strip.select(0); strip.select(1)
+            return strip.buttons.map { $0.showsIndicator && !$0.indicatorLayer.isHidden }
         }
-        let plainTab = currentBorder(.none), outlinedTab = currentBorder(DisplayOptions(differentiateWithoutColor: true))
+        let plainTabs = capsules(.none), outlinedTabs = capsules(DisplayOptions(differentiateWithoutColor: true))
         DisplayOptions.override = nil
-        expect(plainTab.0 == 1 && outlinedTab.0 == 2 && outlinedTab.1 && !plainTab.1, "the current tab gains a 2 pt outline under Differentiate Without Color and the others stay bare (\(plainTab.0) -> \(outlinedTab.0))")
+        NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
+        expect(plainTabs == [false, false, false, false] && outlinedTabs == [false, true, false, false],
+               "the current tab gains the capsule under Differentiate Without Color and the others stay bare (\(plainTabs) -> \(outlinedTabs))")
+        strip.select(0)
         expect(strip.contentWidth + 2 * DesignTokens.Space.s3 <= SettingsLayout.contentWidth, "the four tabs fit the 640 pt window: \(strip.contentWidth)")
         let stripBox = strip.convert(strip.bounds, to: window.contentView), rowBox = strip.buttons.map { $0.convert($0.bounds, to: window.contentView) }.reduce(NSRect.null) { $0.union($1) }
         expect(abs((rowBox.midX) - stripBox.midX) < 1, "the tabs are centred across the window")
         expect(abs(window.contentLayoutRect.maxY - strip.convert(strip.bounds, to: nil).maxY) < 1.5 || strip.frame.maxY >= (window.contentView?.bounds.maxY ?? 0) - 0.5,
                "the strip is at the top of the content")
 
-        // A solid surface with a separator below, and no glass anywhere in it.
-        let kinds = descendants(strip).map { String(describing: type(of: $0)) }
-        expect(!kinds.contains { $0.contains("Glass") || $0.contains("VisualEffect") } && !(strip is NSVisualEffectView), "the strip is solid, not glass: \(Set(kinds))")
+        // The four tabs share ONE glass plate in the bar's container, over a solid window surface with a separator below; no glass nests.
+        expect(strip.plate.arrangedViews.count == 4 && zip(strip.plate.arrangedViews, strip.buttons).allSatisfy { $0 === $1 } && strip.buttons.allSatisfy { $0.isDescendant(of: strip.plate) },
+               "the four tabs sit on one plate, in order")
+        expect(plates(in: strip).count == 1 && strip.plate.superview != nil && strip.plate.isDescendant(of: strip.container) && strip.container.superview === strip,
+               "that is the strip's only plate, held in its glass container")
+        expect(nestedGlass(in: strip).isEmpty && strip.plate.tintColor == nil && strip.plate.identifier?.rawValue == "SettingsTabBar", "no glass inside the plate, and the plate carries no tint")
+        expect(!strip.buttons.contains { $0.superview is NSVisualEffectView } && !(strip is NSVisualEffectView) && !(strip is NSGlassEffectView), "the strip itself is a plain view; the plate is its glass")
         var surface: [CGFloat] = []
         strip.effectiveAppearance.performAsCurrentDrawingAppearance { strip.updateLayer(); surface = rgb(strip.layer?.backgroundColor, in: strip) }
         expect(surface == resolved(Palette.Surface.window, in: strip) && surface.last == 1, "the strip fills with the opaque window surface: \(surface)")
@@ -233,37 +269,46 @@ private enum SettingsWindowTests {
             expect(abs(line.maxY - strip.frame.minY) < 0.5, "the separator sits directly under the strip (\(line) vs \(strip.frame))")
         }
 
-        // States: rest, hover, pressed and selected are fills; selected adds a border and an accent icon (not colour alone).
+        // States: rest, hover, pressed and selected are fills StatePlate draws from StateStyles; selected adds a border, a semibold label and a solid glyph (not colour alone).
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
             window.appearance = NSAppearance(named: appearance)
             controller.select(1)
+            // The glass hands its content its own appearance (the material decides), so each tab is judged under the appearance it really has.
+            func expected(_ state: ControlState, _ button: NSView) -> StateStyle {
+                StateStyles.command(state, primary: false, focused: false, highContrast: false, differentiate: false, appearance: button.effectiveAppearance)
+            }
             for (index, button) in strip.buttons.enumerated() {
                 let layer = button.layer!
                 let fill = rgb(layer.backgroundColor, in: button)
+                let runFont = button.attributedTitle.attribute(.font, at: 0, effectiveRange: nil) as? NSFont
                 if index == 1 {
                     expect(layer.borderWidth == 1 && rgb(layer.borderColor, in: button) == resolved(Palette.accent, in: button), "\(appearance.rawValue): the selected tab has a 1 pt accent border")
-                    expect(fill == resolved(Palette.State.selectedFill, in: button), "\(appearance.rawValue): the selected tab has the selected fill: \(fill)")
-                    expect(button.contentTintColor.map { resolved($0, in: button) } == resolved(Palette.accent, in: button), "\(appearance.rawValue): the selected icon is accent")
-                    expect(button.accessibilityValue() as? Int == 1, "the selected tab reports value 1")
+                    expect(fill == resolved(expected(.selected, button).fill!, in: button) && abs(fill.last! - 0.20) < 0.001, "\(appearance.rawValue): the selected tab has the selected fill: \(fill)")
+                    expect(button.plate.stateStyle.strongText && runFont == DesignTokens.Typography.font(.bodyStrong), "\(appearance.rawValue): the selected label is semibold, not colour alone")
+                    expect(button.contentTintColor.map { resolved($0, in: button) } == resolved(expected(.selected, button).content, in: button), "\(appearance.rawValue): the selected glyph takes the state's content colour")
+                    expect(button.iconSource != .none && button.activeFamily == .solid, "\(appearance.rawValue): the selected glyph is the solid one")
+                    expect(button.accessibilityValue() as? Int == 1 && button.isCurrent, "the selected tab reports value 1")
                 } else {
-                    expect(layer.borderWidth == 0 && fill.last == 0, "\(appearance.rawValue): \(button.title) rests with no fill and no border (\(fill))")
-                    expect(button.contentTintColor.map { resolved($0, in: button) } == resolved(Palette.Text.secondary, in: button), "\(appearance.rawValue): a resting icon is secondary")
-                    expect(button.accessibilityValue() as? Int == 0, "an unselected tab reports value 0")
+                    expect(layer.borderWidth == 0 && (fill.last ?? 0) == 0, "\(appearance.rawValue): \(button.title) rests with no fill and no border (\(fill))")
+                    expect(runFont == DesignTokens.Typography.font(.body) && !button.plate.stateStyle.strongText, "\(appearance.rawValue): a resting label is regular weight")
+                    expect(button.contentTintColor.map { resolved($0, in: button) } == resolved(expected(.rest, button).content, in: button), "\(appearance.rawValue): a resting glyph takes the rest content colour")
+                    expect(button.accessibilityValue() as? Int == 0 && !button.isCurrent, "an unselected tab reports value 0")
                 }
             }
             let rest = strip.buttons[2]
             rest.setHovered(true)
             expect(rgb(rest.layer?.backgroundColor, in: rest) == resolved(Palette.State.hover, in: rest), "\(appearance.rawValue): hover fills with the hover colour")
-            rest.setPressed(true)
+            rest.highlight(true)
             expect(rgb(rest.layer?.backgroundColor, in: rest) == resolved(Palette.State.pressed, in: rest), "\(appearance.rawValue): pressed fills with the pressed colour")
-            rest.setPressed(false); rest.setHovered(false)
-            expect(rgb(rest.layer?.backgroundColor, in: rest).last == 0, "\(appearance.rawValue): the fill clears when the pointer leaves")
+            rest.highlight(false); rest.setHovered(false)
+            expect((rgb(rest.layer?.backgroundColor, in: rest).last ?? 0) == 0, "\(appearance.rawValue): the fill clears when the pointer leaves")
             let current = strip.buttons[1]
             current.setHovered(true)
-            expect(rgb(current.layer?.backgroundColor, in: current) == resolved(Palette.State.selectedFill, in: current), "\(appearance.rawValue): hover never washes out the selected tab")
-            current.setPressed(true)
+            expect(rgb(current.layer?.backgroundColor, in: current) == resolved(expected(.selected, current).fill!, in: current) && current.layer?.borderWidth == 1,
+                   "\(appearance.rawValue): hover never washes out the selected tab")
+            current.highlight(true)
             expect((rgb(current.layer?.backgroundColor, in: current).last ?? 0) >= 0.32 - 0.001, "\(appearance.rawValue): pressing the selected tab deepens its fill")
-            current.setPressed(false); current.setHovered(false)
+            current.highlight(false); current.setHovered(false)
         }
         window.appearance = nil
         controller.select(0)
@@ -587,7 +632,9 @@ private enum SettingsWindowTests {
             expect(gridBox.width <= SettingsLayout.gridWidth + 0.5, "\(name): the form fits the content width (\(gridBox.width))")
             if index < 2 {
                 // A short form is as wide as its widest control: its ink sits in the middle, not against the left.
-                let ink = descendants(tab).filter { ($0 is NSControl) && !$0.isHidden && $0.bounds.width > 0 }.map { alignment(of: $0, in: tab) }.reduce(NSRect.null) { $0.union($1) }
+                // Ink is what is seen: the labels, the plates and the other controls (a choice inside a plate is inset by the plate, which is the shape drawn).
+                let ink = descendants(tab).filter { (($0 is NSControl && !($0 is GlassChoiceButton)) || $0 is GlassSurfaceView) && !$0.isHidden && $0.bounds.width > 0 }
+                    .map { alignment(of: $0, in: tab) }.reduce(NSRect.null) { $0.union($1) }
                 let left = ink.minX, right = tab.bounds.maxX - ink.maxX
                 expect(abs(left - right) < 4, "\(name): the controls and labels are centred in the window (left room \(left), right room \(right))")
                 expect(left > 30 && ink.width / tab.bounds.width > 0.7, "\(name): the form takes its share of the width, not a left-hand corner (\(ink.width / tab.bounds.width))")
@@ -605,8 +652,8 @@ private enum SettingsWindowTests {
             expect(cells >= (index == 2 ? 1 : 2), "\(name): the grid rows were checked (\(cells))")
             if index == 2 {
                 let form = controller.capture.hotkeyForm!
-                let box = alignment(of: form.enabledCheckbox, in: tab)
-                expect(abs(box.minX - controlColumn) < 1.5, "Capture: the embedded Enable checkbox starts at the control column (\(box.minX) vs \(controlColumn))")
+                let box = alignment(of: form.enabledPlate, in: tab)
+                expect(abs(box.minX - controlColumn) < 1.5, "Capture: the embedded Enable plate starts at the control column (\(box.minX) vs \(controlColumn))")
             }
         }
         // The Capture tab's shortcut rows sit in the same label column as the rows above them.
@@ -615,9 +662,9 @@ private enum SettingsWindowTests {
         let flashLabel = descendants(tab).compactMap { $0 as? NSTextField }.first { $0.stringValue == "Flash:" }!
         let screenLabel = descendants(tab).compactMap { $0 as? NSTextField }.first { $0.stringValue == "Screen region:" }!
         expect(abs(frame(of: flashLabel, in: tab).maxX - frame(of: screenLabel, in: tab).maxX) < 0.5, "the embedded shortcut rows line up with the Flash row")
-        let flashBox = alignment(of: controller.capture.flashCheckbox, in: tab)
-        let popupBox = alignment(of: controller.capture.hotkeyForm.keyPopup(for: .screen), in: tab)
-        expect(abs(flashBox.minX - popupBox.minX) < 1.5, "the checkbox and the key popup share the control column: \(flashBox.minX) vs \(popupBox.minX)")
+        let flashBox = alignment(of: controller.capture.flashPlate, in: tab)
+        let popupBox = alignment(of: controller.capture.hotkeyForm.rowPlate(for: .screen), in: tab)
+        expect(abs(flashBox.minX - popupBox.minX) < 1.5, "the Flash plate and the shortcut rows share the control column: \(flashBox.minX) vs \(popupBox.minX)")
         let labelWidth = SettingsLayout.labelColumnWidth
         let widest = SettingsLayout.rowLabels.map { ($0 as NSString).size(withAttributes: [.font: DesignTokens.Typography.font(.bodyStrong)]).width }.max()!
         expect(labelWidth >= widest, "the label column is wide enough for the longest row label (\(labelWidth) vs \(widest))")
@@ -680,6 +727,249 @@ private enum SettingsWindowTests {
         expect(state(drawing.precisionButtons) == [1] && general.hoverHintsCheckbox.state == .off, "refresh re-reads the owner's stored state (still Medium, hints off), not the last edit")
     }
 
+    /// A choice's label is drawn whole: its frame is at least what the text field itself says it needs (the text plus the cell's own padding),
+    /// and a wrapped label has the height of every line at the width it was given. A label cut short ends in an ellipsis or loses its last line.
+    private static func labelIsWhole(_ button: GlassChoiceButton) -> Bool {
+        let label = button.titleLabel
+        guard label.frame.width > 0 else { return false }
+        if button.wrapWidth == nil { return label.fittingSize.width <= label.frame.width + 0.01 }
+        let kept = label.preferredMaxLayoutWidth
+        label.preferredMaxLayoutWidth = label.frame.width
+        defer { label.preferredMaxLayoutWidth = kept }
+        return label.fittingSize.height <= label.frame.height + 0.01
+    }
+
+    // MARK: Radio sets
+
+    private static func arrowEvent(_ code: UInt16, window: NSWindow) -> NSEvent {
+        keyEvent(code == 123 ? "\u{F702}" : (code == 124 ? "\u{F703}" : (code == 125 ? "\u{F701}" : "\u{F700}")), code: code, flags: [], window: window)
+    }
+    private static func chosen(_ group: GlassChoiceGroup) -> [Int] { group.buttons.filter { $0.state == .on }.map(\.tag) }
+
+    /// Presence, Precision and Arrow head are radio sets, each on ONE plate: a click or an arrow key changes the stored preference once,
+    /// the choice is a glyph and a fill and a weight, and each set is one tab stop.
+    private static func radioGroups() {
+        var current = initialState
+        let (controller, _, _, _, _, _) = makeController(state: current)
+        var delivered: [GeneralPreferencesState] = []
+        controller.onChange = { delivered.append($0); current = $0 }
+        let window = controller.window
+        let saved = KeyboardNavigation.fullKeyboardAccess
+        KeyboardNavigation.fullKeyboardAccess = { true }
+        defer { KeyboardNavigation.fullKeyboardAccess = saved }
+
+        func check(_ name: String, tab: Int, group: GlassChoiceGroup, identifiers: [String], titles: [String], tags: [Int], label: String) {
+            controller.select(tab)
+            window.contentView?.layoutSubtreeIfNeeded()
+            expect(group.buttons.map { $0.identifier?.rawValue ?? "" } == identifiers, "\(name): the identifiers stay on the buttons: \(group.buttons.map { $0.identifier?.rawValue ?? "" })")
+            expect(group.buttons.map(\.title) == titles && group.buttons.map(\.tag) == tags, "\(name): titles and stored values are unchanged")
+            expect(group.buttons.allSatisfy { $0.kind == .option && $0.indicator == .radio && $0.markImage != nil && $0.showsMark }, "\(name): every choice is an option with a radio glyph")
+            expect(plates(in: group).count == 1 && group.plate.arrangedViews.count == titles.count && group.plate.axis == .horizontal && group.plate.tintColor == nil, "\(name): the set is ONE untinted horizontal plate")
+            expect(group.buttons.allSatisfy { $0.titleLabel.font?.pointSize == 20 && $0.frame.height == GlassChoiceButton.height }, "\(name): each choice is a 20 pt label in a control-high button")
+            expect(group.buttons.allSatisfy { labelIsWhole($0) }, "\(name): no choice label is cut short: \(group.buttons.map { "\($0.title) \($0.titleLabel.frame.width) of \($0.titleLabel.fittingSize.width)" })")
+            expect(group.accessibilityRole() == .radioGroup && group.accessibilityLabel() == label, "\(name): VoiceOver gets a radio group named '\(label)'")
+            expect(group.buttons.allSatisfy { $0.accessibilityRole() == .radioButton && $0.accessibilityLabel() == $0.title }, "\(name): every choice is a radio button with its own name")
+            let on = group.buttons.filter { $0.accessibilityValue() as? NSNumber == 1 }
+            expect(on.count == 1 && on[0].isAccessibilitySelected() && group.accessibilityValue() as? String == on[0].title, "\(name): exactly one radio reports 1, and the group's value is its name")
+            // The choice is not colour alone: a filled glyph, an accent fill with its border, and the semibold face.
+            let chosenButton = on[0], others = group.buttons.filter { $0 !== chosenButton }
+            expect(chosenButton.markImage !== others[0].markImage && chosenButton.plate.stateStyle.strongText && chosenButton.plate.stateStyle.fill != nil && chosenButton.plate.stateStyle.borderWidth == 1
+                   && chosenButton.titleLabel.font == DesignTokens.Typography.font(.bodyStrong), "\(name): the choice has its own glyph, fill, border and semibold face")
+            expect(others.allSatisfy { $0.titleLabel.font == DesignTokens.Typography.font(.body) && $0.plate.stateStyle.fill == nil && $0.plate.stateStyle.borderWidth == 0 }, "\(name): the others rest bare in the regular face")
+            // One tab stop per set: the chosen button, and only it.
+            let stops = group.buttons.filter(\.canBecomeKeyView)
+            expect(stops.count == 1 && stops[0] === chosenButton, "\(name): the set is one tab stop, on the chosen choice (\(stops.map(\.title)))")
+        }
+        let general = controller.general, drawing = controller.drawing
+        check("Show in", tab: 0, group: general.presenceGroup, identifiers: ["presenceDock", "presenceMenuBar", "presenceBoth"], titles: ["Dock", "Menu bar", "Both"], tags: [2, 1, 0], label: "Show in")
+        check("Drawing precision", tab: 1, group: drawing.precisionGroup, identifiers: ["precisionPrecise", "precisionMedium", "precisionLoose"], titles: ["Precise", "Medium", "Loose"], tags: [0, 1, 2], label: "Drawing precision")
+        check("Arrow head", tab: 1, group: drawing.arrowGroup, identifiers: ["arrowEnd", "arrowStart"], titles: ["End", "Start"], tags: [2, 1], label: "Arrow head")
+
+        // A click chooses it and stores it, once; clicking the chosen one again stores nothing.
+        controller.select(0)
+        var count = delivered.count
+        general.presenceGroup.buttons[0].performClick(nil)
+        expect(delivered.count == count + 1 && delivered.last?.statusMenu == 2 && chosen(general.presenceGroup) == [2], "clicking Dock stores Dock once (\(delivered.count - count) edits)")
+        general.presenceGroup.buttons[0].performClick(nil)
+        expect(delivered.count == count + 1 && chosen(general.presenceGroup) == [2], "clicking the chosen choice again stores nothing")
+        // Arrow keys move the choice and the stored value, one edit per step, and stop at the ends.
+        controller.select(1)
+        window.contentView?.layoutSubtreeIfNeeded()
+        let precision = drawing.precisionGroup!
+        expect(window.makeFirstResponder(precision.buttons[1]) && window.firstResponder === precision.buttons[1], "the chosen precision can take the keyboard")
+        count = delivered.count
+        precision.buttons[1].keyDown(with: arrowEvent(124, window: window))
+        expect(delivered.count == count + 1 && delivered.last?.drawingPrecision == .loose && chosen(precision) == [2] && window.firstResponder === precision.buttons[2],
+               "Right moves to Loose, stores it once and takes the focus with it")
+        precision.buttons[2].keyDown(with: arrowEvent(124, window: window))
+        expect(delivered.count == count + 1 && chosen(precision) == [2], "Right stops at the last choice and stores nothing")
+        precision.buttons[2].keyDown(with: arrowEvent(123, window: window)); precision.buttons[1].keyDown(with: arrowEvent(123, window: window))
+        expect(delivered.count == count + 3 && delivered.last?.drawingPrecision == .precise && chosen(precision) == [0], "Left walks back to Precise, one edit a step")
+        precision.buttons[0].keyDown(with: arrowEvent(126, window: window))
+        expect(delivered.count == count + 3 && chosen(precision) == [0], "Up at the first choice stores nothing")
+        precision.buttons[0].keyDown(with: arrowEvent(125, window: window))
+        expect(delivered.last?.drawingPrecision == .medium && chosen(precision) == [1], "Down moves on like Right")
+        // Space chooses the focused choice.
+        let arrow = drawing.arrowGroup!
+        expect(window.makeFirstResponder(arrow.buttons[0]), "the chosen arrow head can take the keyboard")
+        arrow.buttons[0].keyDown(with: arrowEvent(124, window: window))
+        expect(delivered.last?.arrowHead == 1 && chosen(arrow) == [1], "Right chooses Start")
+        // Stored values that came from outside move the set without an edit (a menu command).
+        count = delivered.count
+        controller.synchronize(GeneralPreferencesState(drawingPrecision: .loose, arrowHead: 2, includeApp: true, statusMenu: 1))
+        expect(delivered.count == count && chosen(precision) == [2] && chosen(arrow) == [2] && chosen(general.presenceGroup) == [1], "a synchronize moves the sets and sends nothing")
+        // The only tab stop moves with the choice.
+        expect(precision.buttons.filter(\.canBecomeKeyView).map(\.tag) == [2], "the tab stop follows the choice")
+        // The tab's key-view loop passes through each set once.
+        controller.select(0)
+        window.contentView?.layoutSubtreeIfNeeded()
+        window.recalculateKeyViewLoop()
+        var seen: [NSView] = [], view: NSView? = controller.strip
+        for _ in 0..<30 { view = view?.nextValidKeyView; guard let next = view, next !== controller.strip else { break }; seen.append(next) }
+        let titlesSeen = seen.compactMap { ($0 as? GlassChoiceButton)?.identifier?.rawValue }
+        expect(titlesSeen.filter { $0.hasPrefix("presence") }.count == 1, "Tab passes through the Show in set once (\(titlesSeen))")
+    }
+
+    // MARK: Toggles
+
+    private static func toggles() {
+        var current = initialState
+        let (controller, defaults, _, _, _, _) = makeController(state: current)
+        var delivered: [GeneralPreferencesState] = []
+        controller.onChange = { delivered.append($0); current = $0 }
+        let window = controller.window
+        let general = controller.general
+        controller.select(0)
+        window.contentView?.layoutSubtreeIfNeeded()
+        let hover = general.hoverHintsCheckbox!, keys = general.keyboardTipsCheckbox!, snap = general.snapCheckbox!
+        for (name, toggle, id) in [("hover hints", hover, "showToolTips"), ("keyboard tips", keys, "showKeyboardTips"), ("snap", snap, "includeApp")] {
+            expect(toggle.kind == .toggle && toggle.indicator == .checkbox && toggle.identifier?.rawValue == id, "\(name): a checkbox toggle that keeps its identifier \(id)")
+            expect(toggle.accessibilityRole() == .checkBox && toggle.accessibilityLabel() == toggle.title && toggle.titleLabel.font?.pointSize == 20, "\(name): VoiceOver gets a named check box and the label is 20 pt")
+        }
+        // Related toggles share one plate; the long snap sentence has its own.
+        expect(general.hintsPlate.arrangedViews.count == 2 && general.hintsPlate.arrangedViews[0] === hover && general.hintsPlate.arrangedViews[1] === keys && general.hintsPlate.axis == .vertical,
+               "the two hint options share one vertical plate")
+        expect(general.snapPlate.arrangedViews.count == 1 && general.snapPlate.arrangedViews[0] === snap && general.snapPlate !== general.hintsPlate && plates(in: general.view).count == 3,
+               "the snap option has its own plate, and the General tab has three: Show in, Snapping, Hints")
+        expect(general.hintsPlate.accessibilityRole() == .group && general.hintsPlate.accessibilityLabel() == "Hints", "the plate is a named group")
+        expect([hover, keys, snap].allSatisfy { labelIsWhole($0) }, "no check box label is cut short, and the wrapped one keeps every line: \([hover, keys, snap].map { "\($0.title.prefix(12)) \($0.titleLabel.frame.size) needs \($0.titleLabel.fittingSize)" })")
+        // The sentence wraps: two readable lines, wholly inside its row, the plate no wider than the control column.
+        window.contentView?.layoutSubtreeIfNeeded()
+        let lines = ceil(snap.titleLabel.frame.height / ceil(DesignTokens.Typography.font(.bodyStrong).boundingRectForFont.height))
+        expect(snap.wrapWidth != nil && lines >= 2 && snap.bounds.insetBy(dx: -0.5, dy: -0.5).contains(snap.titleLabel.frame) && snap.frame.height > GlassChoiceButton.height,
+               "the long sentence wraps onto \(lines) lines inside a taller row and nothing is cut: \(snap.titleLabel.frame) in \(snap.bounds)")
+        expect(general.snapPlate.frame.width <= general.controlWidth + 0.5 && general.snapPlate.frame.maxX <= general.grid.bounds.maxX + 0.5, "the wrapped plate stays inside the control column (\(general.snapPlate.frame.width) of \(general.controlWidth))")
+        expect(snap.titleLabel.frame.width + 0.5 >= (snap.title as NSString).boundingRect(with: NSSize(width: snap.wrapWidth!, height: .greatestFiniteMagnitude), options: .usesLineFragmentOrigin,
+                                                                                         attributes: [.font: DesignTokens.Typography.font(.bodyStrong)]).width,
+               "the label is as wide as the wrapped text needs")
+        // Each click flips its own preference, once, with the complete state; the glyph changes with it.
+        func click(_ toggle: GlassChoiceButton, _ edit: (inout GeneralPreferencesState) -> Void, _ name: String) {
+            var expected = current; edit(&expected)
+            let count = delivered.count, before = toggle.markImage, wasOn = toggle.state == .on
+            toggle.performClick(nil)
+            expect(delivered.count == count + 1 && delivered.last == expected, "\(name): one edit with the complete state (\(delivered.count - count) edits; \(String(describing: delivered.last)) vs \(expected))")
+            expect((toggle.state == .on) == !wasOn && toggle.isChosen == !wasOn && toggle.accessibilityValue() as? NSNumber == (wasOn ? 0 : 1), "\(name): the check box now reads \(wasOn ? "off" : "on")")
+            expect(toggle.markImage !== before && (toggle.titleLabel.font == DesignTokens.Typography.font(wasOn ? .body : .bodyStrong)), "\(name): the glyph and the weight changed with the state")
+        }
+        click(hover, { $0.showToolTips = true }, "hover hints on")
+        click(hover, { $0.showToolTips = false }, "hover hints off")
+        click(keys, { $0.showKeyboardTips = true }, "keyboard tips on")
+        click(snap, { $0.includeApp = false }, "snap off")
+        click(snap, { $0.includeApp = true }, "snap on")
+        // A VoiceOver press on the check box flips it exactly as a click does.
+        let count = delivered.count
+        _ = hover.accessibilityPerformPress()
+        expect(delivered.count == count + 1 && delivered.last?.showToolTips == true && hover.state == .on && hover.accessibilityValue() as? NSNumber == 1,
+               "a VoiceOver press flips the check box once (\(delivered.count - count) edits)")
+        // The flash toggle on the Capture tab persists its own key and nothing else.
+        controller.select(2)
+        let flash = controller.capture.flashCheckbox!
+        expect(flash.kind == .toggle && flash.indicator == .checkbox && flash.accessibilityRole() == .checkBox && flash.identifier?.rawValue == "showCaptureFlash", "the flash option is a checkbox toggle")
+        expect(controller.capture.flashPlate.arrangedViews.count == 1 && controller.capture.flashPlate.arrangedViews[0] === flash, "it sits on a plate of its own")
+        flash.performClick(nil)
+        expect(defaults.object(forKey: OriginalCaptureFlashTiming.showFlashKey) as? Bool == false && flash.state == .off && flash.accessibilityValue() as? NSNumber == 0, "clicking it stores false and it reads off")
+        flash.performClick(nil)
+        expect(defaults.object(forKey: OriginalCaptureFlashTiming.showFlashKey) as? Bool == true && flash.state == .on, "clicking again stores true and it reads on")
+    }
+
+    // MARK: Glass structure
+
+    /// Every tab holds its plates in one container and no plate is inside another; the choices draw fills, never glass.
+    private static func glassStructure() {
+        let (controller, _, _, _, _, _) = makeController(destinations: sampleDestinations(count: 2))
+        let expectedPlates = [3, 2, 9, 1]
+        for index in controller.tabItems.indices {
+            controller.select(index)
+            let tab = controller.tabItems[index].viewController, name = controller.tabItems[index].label
+            tab.view.layoutSubtreeIfNeeded()
+            let visible = plates(in: tab.view).filter { !$0.isHiddenOrHasHiddenAncestor }
+            expect(visible.count == expectedPlates[index], "\(name): \(expectedPlates[index]) plates, one per related group (found \(visible.count))")
+            expect(nestedGlass(in: tab.view).isEmpty, "\(name): no glass view inside another")
+            expect(tab.glassContainer.contentView === tab.grid && tab.glassContainer.superview === tab.view, "\(name): the plates share one container around the form")
+            expect(visible.allSatisfy { $0.isDescendant(of: tab.glassContainer) && $0.tintColor == nil }, "\(name): every plate sits in that container and carries no tint")
+            expect(descendants(tab.view).compactMap { $0 as? NSGlassEffectContainerView }.count == 1, "\(name): exactly one glass container")
+        }
+        // The destination list and the shortcut recorders stay solid and native.
+        controller.select(3)
+        expect(!descendants(controller.upload.listScroll).contains { $0 is NSGlassEffectView }, "the destination list is solid content")
+        // The shortcut form is glass too: the enable box, one plate per action (key pop-up and four modifier toggles) and Clear All.
+        controller.select(2)
+        let form = controller.capture.hotkeyForm!
+        let formPlates = plates(in: form)
+        expect(formPlates.count == 8 && formPlates.contains { $0 === form.enabledPlate } && formPlates.contains { $0 === form.clearPlate } && form.rowPlates.count == 6 && form.rowPlates.allSatisfy { p in formPlates.contains { $0 === p } },
+               "the form has eight plates: Shortcuts, six actions, Clear All (\(formPlates.count))")
+        expect(GlobalHotkeyAction.allCases.allSatisfy { action in
+            let plate = form.rowPlate(for: action)
+            return plate.arrangedViews.count == 5 && plate.arrangedViews[0] is ChromeFillCell && form.keyPopup(for: action).isDescendant(of: plate)
+                && zip(plate.arrangedViews.dropFirst(), form.modifierToggles(for: action)).allSatisfy { $0 === $1 }
+        }, "each action's key and its four modifiers share ONE plate, in order")
+        expect(form.enabledPlate.arrangedViews.count == 1 && form.enabledPlate.arrangedViews[0] === form.enabledCheckbox && form.clearPlate.arrangedViews.count == 1 && form.clearPlate.arrangedViews[0] === form.clearButton,
+               "the enable box and Clear All each have a plate of their own")
+        expect(nestedGlass(in: form).isEmpty && !descendants(form).contains { $0 is NSSegmentedControl } && form.rowPlates.allSatisfy { $0.tintColor == nil }, "no glass inside glass, no segmented control left, no tint")
+        // The display options reach every set and toggle while the window is up.
+        defer { DisplayOptions.override = nil }
+        controller.select(0)
+        let general = controller.general
+        DisplayOptions.override = DisplayOptions(reduceTransparency: true, increaseContrast: true, differentiateWithoutColor: true)
+        NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
+        let all: [GlassSurfaceView] = [general.presenceGroup.plate, general.snapPlate, general.hintsPlate]
+        expect(all.allSatisfy { $0.transparencyPlate != nil && $0.showsContrastBorder }, "Reduce Transparency and Increase Contrast reach the General plates live")
+        let chosenRadio = general.presenceGroup.buttons.first { $0.isChosen }!
+        expect(chosenRadio.showsIndicator && general.snapCheckbox.showsIndicator, "Differentiate Without Color adds the capsule to the chosen radio and the checked box")
+        expect(!general.hoverHintsCheckbox.showsIndicator, "an unchecked box stays bare")
+        DisplayOptions.override = nil
+        NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
+        expect(all.allSatisfy { $0.transparencyPlate == nil } && !chosenRadio.showsIndicator, "and they go again with the options")
+    }
+
+    // MARK: Baselines
+
+    /// A row's label sits on the same baseline as the first line of its choices, whatever the plate around them: measured from where the
+    /// grid really put the label and where the button really put its text.
+    private static func rowBaselines() {
+        let (controller, _, _, _, _, _) = makeController(destinations: sampleDestinations(count: 1))
+        // A text field is flipped: its baseline offset is measured down from the top edge, so the point is that far from the top in its own space.
+        func baseline(_ field: NSTextField, in root: NSView) -> CGFloat {
+            field.convert(NSPoint(x: 0, y: field.isFlipped ? field.firstBaselineOffsetFromTop : field.bounds.height - field.firstBaselineOffsetFromTop), to: root).y
+        }
+        let rows: [(tab: Int, label: String, first: () -> GlassChoiceButton?)] = [
+            (0, "Show in:", { controller.general.presenceGroup.buttons.first }), (0, "Snapping:", { controller.general.snapCheckbox }),
+            (0, "Hints:", { controller.general.hoverHintsCheckbox }), (1, "Drawing precision:", { controller.drawing.precisionGroup.buttons.first }),
+            (1, "Arrow head:", { controller.drawing.arrowGroup.buttons.first }), (2, "Flash:", { controller.capture.flashCheckbox }),
+            (2, "Shortcuts:", { controller.capture.hotkeyForm.enabledCheckbox }), (2, "Screen region:", { controller.capture.hotkeyForm.modifierToggles(for: .screen)[0] }),
+            (2, "Show OpenSnap:", { controller.capture.hotkeyForm.modifierToggles(for: .show)[0] })]
+        for row in rows {
+            controller.select(row.tab)
+            controller.window.contentView?.layoutSubtreeIfNeeded()
+            let tab = controller.tabItems[row.tab].viewController.view
+            guard let label = descendants(tab).compactMap({ $0 as? NSTextField }).first(where: { $0.stringValue == row.label }), let button = row.first() else {
+                expect(false, "\(row.label): the label and its first choice were found"); continue
+            }
+            let delta = abs(baseline(label, in: tab) - baseline(button.titleLabel, in: tab))
+            expect(delta <= 1.5, "\(row.label) shares a baseline with its first choice (off by \(delta) pt)")
+        }
+    }
+
     // MARK: Capture flash
 
     private static func flash() {
@@ -710,45 +1000,161 @@ private enum SettingsWindowTests {
         let form = controller.capture.hotkeyForm!
         expect(form.isDescendant(of: controller.capture.view), "the shortcut form is embedded in the Capture tab")
         try? manager.install(globalScreen: {}, globalWindow: {}, globalFullscreen: {}, globalFrame: {}, globalUpload: {}, globalShow: {})
-        let popup = form.keyPopup(for: .screen), modifiers = form.modifierControl(for: .screen)
+        let popup = form.keyPopup(for: .screen), modifiers = form.modifierToggles(for: .screen)
         let k = GlobalHotkeyKeys.choices.firstIndex { $0.name == "K" }! + 1
-        expect(popup.indexOfSelectedItem == 0 && !modifiers.isEnabled, "an action with no key starts at None with its modifiers off")
-        popup.selectItem(at: k); _ = popup.target?.perform(popup.action, with: popup)
-        expect(modifiers.isEnabled, "choosing a key enables its modifiers")
+        func press(_ toggle: GlassChoiceButton) { toggle.performClick(nil) }
+        func pick(_ popup: GlassPopUpButton, _ index: Int) { popup.selectItem(at: index); _ = popup.target?.perform(popup.action, with: popup) }
+        expect(popup.indexOfSelectedItem == 0 && modifiers.allSatisfy { !$0.isEnabled && $0.state == .off }, "an action with no key starts at None with its modifiers off")
+        pick(popup, k)
+        expect(modifiers.allSatisfy(\.isEnabled), "choosing a key enables its modifiers")
         expect(manager.settings.screen == .none && form.statusField.stringValue.hasPrefix("Error: "), "a key without Command or Control is refused and said so: '\(form.statusField.stringValue)'")
         expect(hotkeySettings(defaults).screen == .none && backend.bindings.isEmpty, "the refused edit changed nothing stored or registered")
-        modifiers.setSelected(true, forSegment: 0); _ = modifiers.target?.perform(modifiers.action, with: modifiers)
+        press(modifiers[0])
         expect(manager.settings.screen == .init(keyCode: GlobalHotkeyKeys.choices[k - 1].code, modifiers: .command), "Command plus K reaches the GlobalHotkeys model: \(manager.settings.screen)")
         expect(hotkeySettings(defaults).screen == manager.settings.screen, "and is persisted through the model's own store")
         expect(backend.bindings[GlobalHotkeyAction.screen.carbonID] != nil && !form.statusField.stringValue.hasPrefix("Error"), "a running manager registers it at once and the error clears")
-        modifiers.setSelected(true, forSegment: 3); _ = modifiers.target?.perform(modifiers.action, with: modifiers)
+        press(modifiers[3])
         expect(manager.settings.screen.modifiers == [.command, .shift], "a second modifier is added")
-        let other = form.keyPopup(for: .window)
-        other.selectItem(at: k); _ = other.target?.perform(other.action, with: other)
-        form.modifierControl(for: .window).setSelected(true, forSegment: 0); form.modifierControl(for: .window).setSelected(true, forSegment: 3)
-        _ = form.modifierControl(for: .window).target?.perform(form.modifierControl(for: .window).action, with: form.modifierControl(for: .window))
-        expect(manager.settings.window == .none && form.statusField.stringValue.contains("same shortcut"), "a duplicate shortcut is refused with the manager's own message: '\(form.statusField.stringValue)'")
-        popup.selectItem(at: 0); _ = popup.target?.perform(popup.action, with: popup)
-        expect(!modifiers.isEnabled && (0..<4).allSatisfy { !modifiers.isSelected(forSegment: $0) }, "None clears and disables the modifiers")
-        form.enabledCheckbox.state = .off; _ = form.enabledCheckbox.target?.perform(form.enabledCheckbox.action, with: form.enabledCheckbox)
-        expect(!manager.settings.enabled && !hotkeySettings(defaults).enabled, "the enable box turns every shortcut off")
+        let other = form.keyPopup(for: .window), otherMods = form.modifierToggles(for: .window)
+        pick(other, k)
+        press(otherMods[0])
+        let keyCodeK = GlobalHotkeyKeys.choices[k - 1].code
+        expect(manager.settings.window == .init(keyCode: keyCodeK, modifiers: .command), "Command plus K on Window is its own shortcut, so it is accepted")
+        press(otherMods[3])
+        expect(manager.settings.window == .init(keyCode: keyCodeK, modifiers: .command) && manager.settings.screen.modifiers == [.command, .shift] && form.statusField.stringValue.contains("same shortcut"),
+               "adding Shift makes it Screen region's shortcut: refused with the manager's own message, and nothing saved changes: '\(form.statusField.stringValue)'")
+        pick(popup, 0)
+        expect(modifiers.allSatisfy { !$0.isEnabled && $0.state == .off }, "None clears and disables the modifiers")
+        form.enabledCheckbox.performClick(nil)
+        expect(!manager.settings.enabled && !hotkeySettings(defaults).enabled && form.enabledCheckbox.state == .off, "the enable box turns every shortcut off")
         form.clearButton.performClick(nil)
         expect(manager.settings == .defaults && form.enabledCheckbox.state == .on && GlobalHotkeyAction.allCases.allSatisfy { manager.settings[$0] == .none }, "Clear All sets every key to None at once")
         expect(form.clearButton.title == "Clear All" && !descendants(form).contains { ($0 as? NSButton)?.title == "Disable All" || ($0 as? NSButton)?.title == "Reset Defaults" },
                "Reset Defaults is Clear All, and Disable All is gone: the enable box is the one switch")
         // F-J2-020: a duplicate the manager refused leaves a red line; unticking the box answers it instead of validating the same draft again.
         for action in [GlobalHotkeyAction.screen, .window] {
-            let key = form.keyPopup(for: action), mods = form.modifierControl(for: action)
-            key.selectItem(at: k); _ = key.target?.perform(key.action, with: key)
-            mods.setSelected(true, forSegment: 0); _ = mods.target?.perform(mods.action, with: mods)
+            pick(form.keyPopup(for: action), k)
+            press(form.modifierToggles(for: action)[0])
         }
         expect(form.statusField.stringValue.hasPrefix("Error: ") && form.statusField.stringValue.contains("same shortcut"), "the duplicate leaves its error on screen: '\(form.statusField.stringValue)'")
-        form.enabledCheckbox.state = .off; _ = form.enabledCheckbox.target?.perform(form.enabledCheckbox.action, with: form.enabledCheckbox)
+        // A chosen modifier reads as chosen on its plate: the accent fill and border and the semibold face, not colour alone.
+        let chosenToggle = form.modifierToggles(for: .window)[0], bareToggle = form.modifierToggles(for: .window)[1]
+        expect(chosenToggle.state == .on && chosenToggle.plate.stateStyle.fill != nil && chosenToggle.plate.stateStyle.borderWidth == 1 && chosenToggle.plate.stateStyle.strongText
+               && chosenToggle.titleLabel.font == DesignTokens.Typography.font(.bodyStrong), "a chosen modifier is the accent fill, a border and a semibold symbol")
+        expect(bareToggle.state == .off && bareToggle.plate.stateStyle.fill == nil && bareToggle.titleLabel.font == DesignTokens.Typography.font(.body), "an unchosen one rests bare")
+        form.enabledCheckbox.performClick(nil)
         expect(!manager.settings.enabled && form.enabledCheckbox.state == .off && form.statusField.stringValue == GlobalHotkeyForm.idleLiveStatus && form.statusField.textColor == DesignTokens.Palette.Text.primary,
                "Unticking the box clears the stale duplicate error: '\(form.statusField.stringValue)'")
         expect(form.keyPopup(for: .window).indexOfSelectedItem == 0, "the rejected draft is dropped, not kept beside a disabled form")
-        expect(GlobalHotkeyAction.allCases.allSatisfy { form.modifierControl(for: $0).selectedSegmentBezelColor == DesignTokens.Palette.accent }, "a chosen modifier is drawn in the accent")
         controller.show(); controller.window.orderOut(nil)
+    }
+
+    // MARK: The shortcut form's glass choices
+
+    /// The enable box, each row's key pop-up and four modifier toggles, and Clear All: what they store, how they are named, and that none is cut short.
+    private static func shortcutForm() {
+        let (controller, defaults, manager, backend, _, _) = makeController()
+        controller.select(2)
+        let window = controller.window, form = controller.capture.hotkeyForm!
+        window.contentView?.layoutSubtreeIfNeeded()
+        try? manager.install(globalScreen: {}, globalWindow: {}, globalFullscreen: {}, globalFrame: {}, globalUpload: {}, globalShow: {})
+        let k = GlobalHotkeyKeys.choices.firstIndex { $0.name == "K" }! + 1
+
+        // Names and roles: six rows of Command are told apart by ear, every toggle is a check box with a value, the key is a pop-up button.
+        var names: [String] = []
+        for action in GlobalHotkeyAction.allCases {
+            let toggles = form.modifierToggles(for: action), key = form.keyPopup(for: action)
+            expect(toggles.map(\.title) == ["\u{2318}", "\u{2325}", "\u{2303}", "\u{21E7}"], "\(action.title): the four modifiers are drawn as their symbols, Command first")
+            expect(toggles.map { $0.accessibilityLabel() ?? "" } == ["\(action.title) Command", "\(action.title) Option", "\(action.title) Control", "\(action.title) Shift"], "\(action.title): each modifier is spoken with its action")
+            names += toggles.map { $0.accessibilityLabel() ?? "" }
+            expect(toggles.allSatisfy { $0.kind == .toggle && $0.indicator == GlassChoiceButton.Indicator.none && $0.accessibilityRole() == .checkBox && ($0.accessibilityValue() as? NSNumber)?.intValue == 0 && AppToolTip.text(for: $0) == GlobalHotkeyForm.modifierToolTip },
+                   "\(action.title): the modifiers are check boxes, off, with the modifier tooltip: \(toggles.map { "\($0.kind) \($0.indicator) \(String(describing: $0.accessibilityRole())) \(String(describing: $0.accessibilityValue())) \(String(describing: AppToolTip.text(for: $0)))" })")
+            expect(key.accessibilityRole() == .popUpButton && key.accessibilityLabel() == "\(action.title) key" && key.indexOfSelectedItem == 0 && key.numberOfItems == GlobalHotkeyKeys.choices.count + 1 && key.itemTitle(at: 0) == "None",
+                   "\(action.title): the key is a pop-up named '\(action.title) key', None first, then every key")
+            let plate = form.rowPlate(for: action)
+            expect(plate.accessibilityRole() == .group && plate.accessibilityLabel() == "\(action.title) shortcut" && plate.identifier?.rawValue == "GlobalHotkeyRow." + action.rawValue, "\(action.title): the plate is a named group")
+        }
+        expect(Set(names).count == names.count, "all \(names.count) modifier names are unique")
+        expect(form.enabledCheckbox.kind == .toggle && form.enabledCheckbox.indicator == .checkbox && form.enabledCheckbox.accessibilityRole() == .checkBox && form.enabledCheckbox.accessibilityValue() as? NSNumber == 1
+               && form.enabledCheckbox.title == "Enable global capture shortcuts", "the enable box is a labelled check box, on")
+        expect(form.clearButton is CommandButton && form.clearButton.title == "Clear All" && form.clearButton.cell?.accessibilityRole() == .button && (form.clearButton.attributedTitle.attribute(.font, at: 0, effectiveRange: nil) as? NSFont)?.pointSize == 20, "Clear All is a titled command button at 20 pt")
+
+        // With no key the modifiers are off, dimmed and skipped by the keyboard.
+        let screenMods = form.modifierToggles(for: .screen), screenKey = form.keyPopup(for: .screen)
+        let saved = KeyboardNavigation.fullKeyboardAccess
+        KeyboardNavigation.fullKeyboardAccess = { true }
+        defer { KeyboardNavigation.fullKeyboardAccess = saved }
+        expect(screenMods.allSatisfy { !$0.isEnabled && $0.alphaValue == StateStyles.disabledAlpha && !$0.canBecomeKeyView && !$0.acceptsFirstResponder }, "with no key the modifiers dim and take no focus")
+        expect(screenKey.canBecomeKeyView && screenKey.acceptsFirstResponder, "the key pop-up is on the Tab loop")
+
+        // The key is chosen through the panel: a long list that scrolls, rows named like the keys, the chosen one marked, one action sent.
+        let host = screenKey.choicePanel.host
+        var presented = 0
+        host.presenter = { _, _ in presented += 1 }
+        host.visibleFrameOverride = NSRect(x: 0, y: 0, width: 1440, height: 900)
+        host.accessibility = .none
+        screenKey.performClick(nil)
+        let panel = screenKey.choicePanel
+        expect(host.isShown && presented == 1 && panel.rows.count == GlobalHotkeyKeys.choices.count + 1 && panel.rows.first?.title == "None" && panel.rows.last?.title == "Space",
+               "the key pop-up opens a glass panel of None and every key (\(panel.rows.count) rows)")
+        expect(host.contentSize.height > 900 && host.placement?.scrolls == true && (host.placement?.frame.height ?? .infinity) <= 900, "the long list is taller than the screen, so the panel caps and scrolls (\(host.contentSize.height) pt in \(String(describing: host.placement)))")
+        expect(panel.rows.filter(\.isChosen).map(\.title) == ["None"], "None is the chosen row to start")
+        let before = manager.settings
+        panel.activate(panel.rows.first { $0.title == "K" }!)
+        expect(!host.isShown && screenKey.indexOfSelectedItem == k && screenKey.titleOfSelectedItem == "K", "choosing a row closes the panel and sets the pop-up to K")
+        expect(screenMods.allSatisfy { $0.isEnabled && $0.alphaValue == 1 } && manager.settings == before && form.statusField.stringValue.hasPrefix("Error: "),
+               "a key alone is refused (no Command or Control), and the modifiers wake up")
+        screenKey.performClick(nil)
+        expect(panel.rows.filter(\.isChosen).map(\.title) == ["K"], "the panel marks the current key")
+        host.close()
+        expect(KeyboardNavigation.reaches(screenMods[0]), "an enabled modifier is on the Tab loop")
+
+        // Every combination of the four modifiers stores exactly those flags; the ones the manager refuses leave the saved value alone.
+        let all = GlobalHotkeyForm.modifierSegments.map(\.0)
+        var accepted = 0, refused = 0
+        for mask in 0..<16 {
+            let wanted = GlobalHotkeyModifiers(all.indices.filter { mask & (1 << $0) != 0 }.map { all[$0] })
+            let previous = manager.settings.screen   // the steps toward a refused set can pass through accepted ones, so only "an accepted shortcut stays" is asserted
+            for (index, toggle) in screenMods.enumerated() where (toggle.state == .on) != (wanted.contains(all[index])) { toggle.performClick(nil) }
+            expect(zip(screenMods, all).allSatisfy { ($0.state == .on) == wanted.contains($1) } && form.draft().screen.modifiers == wanted, "the toggles show \(wanted.rawValue) and the draft holds the same flags")
+            if wanted.contains(.command) || wanted.contains(.control) {
+                expect(manager.settings.screen == .init(keyCode: GlobalHotkeyKeys.choices[k - 1].code, modifiers: wanted) && hotkeySettings(defaults).screen == manager.settings.screen && !form.statusField.stringValue.hasPrefix("Error"),
+                       "flags \(wanted.rawValue) with K are stored and registered exactly as chosen"); accepted += 1
+            } else {
+                let standing = manager.settings.screen
+                expect(form.statusField.stringValue.hasPrefix("Error: ") && (standing == .none || (standing.keyCode == GlobalHotkeyKeys.choices[k - 1].code && !standing.modifiers.isDisjoint(with: [.command, .control]))) && hotkeySettings(defaults).screen == standing,
+                       "flags \(wanted.rawValue) with K are refused with an error, and what stays saved is a shortcut the manager accepted (\(standing.modifiers.rawValue), was \(previous.modifiers.rawValue))"); refused += 1
+            }
+            expect(screenMods.map { ($0.accessibilityValue() as? NSNumber)?.intValue ?? -1 } == all.map { wanted.contains($0) ? 1 : 0 }, "the check boxes read the same flags")
+        }
+        expect(accepted == 12 && refused == 4, "twelve of the sixteen combinations carry Command or Control (\(accepted) and \(refused))")
+        expect(backend.bindings[GlobalHotkeyAction.screen.carbonID] != nil, "the shortcut stays registered")
+        // A chosen modifier carries the capsule under Differentiate Without Color, and the chosen look otherwise.
+        defer { DisplayOptions.override = nil }
+        for toggle in screenMods where toggle.state == .off { toggle.performClick(nil) }
+        DisplayOptions.override = DisplayOptions(differentiateWithoutColor: true)
+        NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
+        expect(screenMods.allSatisfy { $0.state == .on && $0.showsIndicator && $0.plate.stateStyle.strongText && $0.plate.stateStyle.fill != nil }, "chosen modifiers are the fill, the border, the semibold symbol and the capsule")
+        expect(form.modifierToggles(for: .window).allSatisfy { !$0.showsIndicator }, "an unchosen row stays bare")
+        DisplayOptions.override = nil
+        NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
+
+        // Nothing is cut short: the symbols, the pop-up faces, the enable label and Clear All.
+        window.contentView?.layoutSubtreeIfNeeded()
+        let toggles = GlobalHotkeyAction.allCases.flatMap { form.modifierToggles(for: $0) } + [form.enabledCheckbox]
+        expect(toggles.allSatisfy { labelIsWhole($0) }, "no modifier symbol and no enable label is cut short")
+        expect(GlobalHotkeyAction.allCases.allSatisfy { action in
+            let key = form.keyPopup(for: action)
+            return key.frame.width + 0.5 >= key.intrinsicContentSize.width && key.frame.height == GlassChoiceButton.height
+        }, "every key pop-up is wide enough for its widest key name and a control tall")
+        expect(form.clearButton.frame.width + 0.5 >= SettingsActionButton.width(for: "Clear All"), "Clear All holds its label")
+        expect(toggles.allSatisfy { $0.titleLabel.font?.pointSize == 20 } && form.clearButton.font?.pointSize == 20, "every label is 20 pt")
+
+        // Clear All resets every key, the modifiers and the pop-ups together.
+        form.clearButton.performClick(nil)
+        expect(manager.settings == .defaults && GlobalHotkeyAction.allCases.allSatisfy { form.keyPopup(for: $0).indexOfSelectedItem == 0 && form.modifierToggles(for: $0).allSatisfy { !$0.isEnabled && $0.state == .off } },
+               "Clear All sets every pop-up to None and every modifier off")
+        expect(backend.bindings.isEmpty, "and nothing stays registered")
     }
 
     // MARK: Upload
@@ -848,6 +1254,78 @@ private enum SettingsWindowTests {
         many.0.window.contentView?.layoutSubtreeIfNeeded()
         expect(many.0.content.scrollableExtent < 0.5 && captionInside(many.0.upload), "the caption under a full list is on screen without scrolling")
         uploadOnShortScreens()
+    }
+
+    // MARK: Glass choices
+
+    /// Every glass view that sits inside another glass plate: there must be none, the plate is the only glass and the controls draw fills.
+    private static func nestedGlass(in view: NSView) -> [NSView] {
+        descendants(view).filter { candidate in
+            guard candidate is NSGlassEffectView else { return false }
+            var up = candidate.superview
+            while let ancestor = up { if ancestor is NSGlassEffectView { return true }; up = ancestor.superview }
+            return false
+        }
+    }
+    private static func plates(in view: NSView) -> [GlassSurfaceView] { descendants(view).compactMap { $0 as? GlassSurfaceView } }
+    private static func resolvedAlpha(_ color: NSColor?, in view: NSView) -> CGFloat? {
+        var alpha: CGFloat?
+        view.effectiveAppearance.performAsCurrentDrawingAppearance { alpha = color?.usingColorSpace(.sRGB)?.alphaComponent }
+        return alpha
+    }
+
+    /// Add…, Edit…, Remove and Make Default are titled command buttons on ONE glass plate, drawing their own fills; the lone Add… in an
+    /// empty list has a plate of its own that goes with it.
+    private static func uploadActionPlates() {
+        let list = sampleDestinations(count: 2)
+        let (controller, _, _, _, _, _) = makeController(destinations: list)
+        controller.select(3)
+        let tab = controller.upload
+        _ = tab.view; tab.refresh()
+        controller.window.contentView?.layoutSubtreeIfNeeded()
+        let plate = tab.actionPlate!
+        let buttons = [tab.addButton!, tab.editButton!, tab.removeButton!, tab.defaultButton!]
+        expect(plate.arrangedViews.count == 4 && zip(plate.arrangedViews, buttons).allSatisfy { $0 === $1 }, "the four commands share one plate, in reading order")
+        expect(plate.identifier?.rawValue == "SettingsDestinationActions" && plate.isDescendant(of: tab.view) && !plate.isHiddenOrHasHiddenAncestor, "the plate is on the tab and on screen")
+        expect(plate.tintColor == nil && plate.accessibilityRole() == .group && plate.accessibilityLabel() == "Destination actions", "the plate carries no tint and is a named group for VoiceOver")
+        expect(buttons.allSatisfy { $0 is CommandButton && $0.isDescendant(of: plate) && $0.font?.pointSize == 20 && $0.attributedTitle.attribute(.font, at: 0, effectiveRange: nil) is NSFont },
+               "each command is a CommandButton with a 20 pt label")
+        expect(buttons.allSatisfy { $0.frame.height == GlassChrome.Metrics.commandHeight && $0.frame.width >= SettingsActionButton.width(for: $0.title) - 0.5 }, "each is a control tall and wide enough for its label")
+        expect(nestedGlass(in: tab.view).isEmpty && plates(in: tab.view).filter { !$0.isHiddenOrHasHiddenAncestor }.count == 1, "one visible plate and no glass inside glass")
+        // The enabled and disabled logic is unchanged, and a disabled command dims through the state alpha.
+        expect(tab.editButton.isEnabled && tab.removeButton.isEnabled && !tab.defaultButton.isEnabled && tab.addButton.isEnabled, "Make Default is off for the default destination")
+        expect(tab.defaultButton.alphaValue == StateStyles.disabledAlpha && tab.defaultButton.plate.isDisabled && tab.defaultButton.plate.style.fill == nil, "a disabled command dims and draws no fill")
+        expect(tab.editButton.alphaValue == 1 && !tab.editButton.plate.isDisabled, "an enabled one is at full strength")
+        tab.editButton.setHovered(true)
+        expect(abs((resolvedAlpha(tab.editButton.plate.style.fill, in: tab.editButton) ?? 0) - 0.08) < 0.001 && tab.editButton.layer?.backgroundColor != nil, "hover fills the command, not the plate")
+        tab.editButton.setHovered(false)
+        expect(tab.editButton.plate.style.fill == nil, "the fill clears when the pointer leaves")
+        tab.rows[0].onClick?(1)
+        expect(tab.defaultButton.isEnabled && tab.defaultButton.alphaValue == 1, "choosing another row turns Make Default on at full strength")
+        // The plates follow the display options while the window is up.
+        defer { DisplayOptions.override = nil }
+        DisplayOptions.override = DisplayOptions(reduceTransparency: true, increaseContrast: true)
+        NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
+        expect(plate.transparencyPlate != nil && plate.showsContrastBorder && buttons.allSatisfy { $0.accessibility.increaseContrast }, "Reduce Transparency and Increase Contrast reach the plate and its commands live")
+        DisplayOptions.override = nil
+        NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
+        expect(plate.transparencyPlate == nil && !plate.showsContrastBorder, "and they go again when the options do")
+
+        // An empty list: the lone Add… sits on its own plate inside the list, and the four-command plate steps aside.
+        let empty = makeController()
+        empty.0.select(3)
+        let blank = empty.0.upload
+        _ = blank.view; blank.refresh()
+        empty.0.window.contentView?.layoutSubtreeIfNeeded()
+        expect(!blank.emptyAddPlate.isHiddenOrHasHiddenAncestor && blank.emptyAddPlate.arrangedViews.count == 1 && blank.emptyAddPlate.arrangedViews[0] === blank.emptyAddButton
+               && blank.emptyAddPlate.isDescendant(of: blank.listScroll), "the empty list's Add… sits on its own plate inside the list")
+        expect(blank.actionPlate.isHiddenOrHasHiddenAncestor && nestedGlass(in: blank.view).isEmpty, "the four-command plate is out of the layout while the list is empty, and nothing nests")
+        expect(!blank.emptyAddButton.isHidden && blank.emptyAddButton.title == "Add…" && blank.emptyAddButton.identifier?.rawValue == "addFirstDestination", "the in-list Add… keeps its title and identifier")
+        // Once a destination exists the lone plate goes with its button.
+        let filled = makeController(destinations: sampleDestinations(count: 1))
+        filled.0.select(3)
+        _ = filled.0.upload.view; filled.0.upload.refresh()
+        expect(filled.0.upload.emptyAddButton.isHidden && filled.0.upload.emptyAddPlate.isHidden && !filled.0.upload.actionPlate.isHiddenOrHasHiddenAncestor, "with a destination the lone plate is hidden and the four-command plate shows")
     }
 
     private static func captionInside(_ tab: UploadSettingsTab) -> Bool {
@@ -1073,20 +1551,21 @@ private enum SettingsWindowTests {
         controller.window.orderOut(nil)
     }
 
-    /// R1-018: the current tab's outline follows Differentiate Without Color while the window is up, not only when the tab is next selected.
+    /// R1-018: the current tab's non-colour cue follows Differentiate Without Color while the window is up, not only when the tab is next selected.
     private static func liveDifferentiateOutline() {
         let (controller, _, _, _, _, _) = makeController()
         let tab = controller.strip.buttons[0]
         DisplayOptions.override = DisplayOptions.none
         defer { DisplayOptions.override = nil }
+        NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
         tab.setCurrent(true)
-        expect(tab.layer?.borderWidth == 1, "the current tab has a 1 pt accent edge by default (\(tab.layer?.borderWidth ?? -1))")
+        expect(tab.layer?.borderWidth == 1 && !tab.showsIndicator, "the current tab has a 1 pt accent edge and no capsule by default (\(tab.layer?.borderWidth ?? -1))")
         DisplayOptions.override = DisplayOptions(differentiateWithoutColor: true)
         NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
-        expect(tab.layer?.borderWidth == 2, "turning Differentiate Without Color on redraws the outline at once, with no tab change (\(tab.layer?.borderWidth ?? -1))")
+        expect(tab.showsIndicator && !tab.indicatorLayer.isHidden, "turning Differentiate Without Color on adds the capsule at once, with no tab change")
         DisplayOptions.override = DisplayOptions.none
         NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
-        expect(tab.layer?.borderWidth == 1, "and turning it off puts the thin edge back")
+        expect(!tab.showsIndicator && tab.indicatorLayer.isHidden, "and turning it off takes the capsule away")
     }
 
     /// F-R-003: the selected destination row has a cue that is not hue under Differentiate Without Color (a 2 pt edge in the text colour and
