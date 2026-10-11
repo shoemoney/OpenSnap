@@ -416,7 +416,9 @@ final class ResizeAnchorGrid: NSView {
     static let spacing: CGFloat = DesignTokens.Space.s2
     var anchor: ResizePanelAnchor = .center { didSet { if anchor != oldValue { needsDisplay = true; invalidateAccessibility() } } }
     var onChange: ((ResizePanelAnchor) -> Void)?
-    private var hovered: ResizePanelAnchor?
+    var accessibility: ChromeAccessibility = .live { didSet { needsDisplay = true } }
+    private(set) var hovered: ResizePanelAnchor?
+    private(set) var pressed: ResizePanelAnchor?
     private var hoverArea: NSTrackingArea?
     private var cellElements: [ResizeAnchorCellElement] = []
 
@@ -450,22 +452,34 @@ final class ResizeAnchorGrid: NSView {
         onChange?(cell)
     }
 
+    /// What a cell draws: the shared command state (rest, hover, pressed, selected) resolved by `StateStyles.command`, so a cell reads like
+    /// every other button on a glass plate and follows Increase Contrast and Differentiate Without Color.
+    func style(of cell: ResizePanelAnchor) -> StateStyle {
+        StateStyles.command(StatePlate.controlState(hovered: cell == hovered, pressed: cell == pressed, selected: cell == anchor, disabled: false),
+                            primary: false, focused: false, highContrast: accessibility.increaseContrast,
+                            differentiate: accessibility.differentiateWithoutColor, selected: cell == anchor, appearance: effectiveAppearance)
+    }
+
     override func draw(_ dirtyRect: NSRect) {
         for cell in ResizePanelAnchor.allCases {
             let rect = frame(of: cell).insetBy(dx: 1, dy: 1)
+            let style = style(of: cell)
             let selected = cell == anchor
-            let path = NSBezierPath(roundedRect: rect, xRadius: DesignTokens.Radius.md, yRadius: DesignTokens.Radius.md)
-            if selected { DesignTokens.Palette.State.selectedFill.setFill(); path.fill() }
-            else if cell == hovered { DesignTokens.Palette.State.hover.setFill(); path.fill() }
-            (selected ? DesignTokens.Palette.accent : DesignTokens.Palette.separator).setStroke()
-            path.lineWidth = selected ? 2 : 1
-            path.stroke()
+            let path = NSBezierPath(roundedRect: rect, xRadius: StatePlate.radius, yRadius: StatePlate.radius)
+            // A resting cell keeps a hairline so the nine read as cells on the plate; the selected one is the accent fill and border.
+            if let fill = style.fill { fill.setFill(); path.fill() }
+            if let border = style.border, style.borderWidth > 0 { border.setStroke(); path.lineWidth = style.borderWidth; path.stroke() }
+            else { DesignTokens.Palette.separator.setStroke(); path.lineWidth = 1; path.stroke() }
             // The dot is the kept part; a selected cell carries a ring as well, so the choice never rests on colour alone.
             let dot = NSRect(x: rect.midX - 6, y: rect.midY - 6, width: 12, height: 12)
-            let mark = NSBezierPath(ovalIn: dot)
-            DesignTokens.Palette.Text.primary.setFill()
-            if selected { mark.fill(); let ring = NSBezierPath(ovalIn: dot.insetBy(dx: -4, dy: -4)); ring.lineWidth = 1.5; DesignTokens.Palette.Text.primary.setStroke(); ring.stroke() }
-            else { DesignTokens.Palette.Text.secondary.setFill(); NSBezierPath(ovalIn: dot.insetBy(dx: 3, dy: 3)).fill() }
+            style.content.setFill()
+            if selected {
+                NSBezierPath(ovalIn: dot).fill()
+                let ring = NSBezierPath(ovalIn: dot.insetBy(dx: -4, dy: -4)); ring.lineWidth = 1.5; style.content.setStroke(); ring.stroke()
+            } else {
+                style.content.withAlphaComponent(0.6).setFill()
+                NSBezierPath(ovalIn: dot.insetBy(dx: 3, dy: 3)).fill()
+            }
         }
     }
     override var focusRingMaskBounds: NSRect { bounds }
@@ -476,8 +490,13 @@ final class ResizeAnchorGrid: NSView {
     }
     override func mouseDown(with event: NSEvent) {
         window?.makeFirstResponder(self)
-        if let cell = cell(at: convert(event.locationInWindow, from: nil)) { select(cell) }
+        if let cell = cell(at: convert(event.locationInWindow, from: nil)) { setPressed(cell); select(cell) }
     }
+    override func mouseUp(with event: NSEvent) { setPressed(nil) }
+    /// Press and hover entry points; the pointer events and the tests both go through them.
+    func setPressed(_ cell: ResizePanelAnchor?) { if cell != pressed { pressed = cell; needsDisplay = true } }
+    func setHovered(_ cell: ResizePanelAnchor?) { if cell != hovered { hovered = cell; needsDisplay = true } }
+    override func viewDidChangeEffectiveAppearance() { super.viewDidChangeEffectiveAppearance(); needsDisplay = true }
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
         if let hoverArea { removeTrackingArea(hoverArea) }
@@ -485,10 +504,9 @@ final class ResizeAnchorGrid: NSView {
         addTrackingArea(area); hoverArea = area
     }
     override func mouseMoved(with event: NSEvent) {
-        let cell = cell(at: convert(event.locationInWindow, from: nil))
-        if cell != hovered { hovered = cell; needsDisplay = true }
+        setHovered(cell(at: convert(event.locationInWindow, from: nil)))
     }
-    override func mouseExited(with event: NSEvent) { if hovered != nil { hovered = nil; needsDisplay = true } }
+    override func mouseExited(with event: NSEvent) { setHovered(nil); setPressed(nil) }
     override func keyDown(with event: NSEvent) {
         let column = anchor.rawValue % 3, row = anchor.rawValue / 3
         let moved: (Int, Int)?
