@@ -4,6 +4,13 @@
 #if APP_SAFETY_TESTS
 import AppKit
 
+/// The two pop-ups whose choices are a glass panel: the panel they open, and whether it is open.
+@MainActor
+protocol AppSafetyPanelOwner: NSPopUpButton { var choicePanel: MenuChoicePanel { get } }
+extension AppSafetyPanelOwner { var isOpen: Bool { choicePanel.host.isShown } }
+extension ToolboxPopUpButton: AppSafetyPanelOwner {}
+extension ZoomPopUpButton: AppSafetyPanelOwner {}
+
 extension AppSafetyTests {
     static var menuCases: [(String, () throws -> Void)] {
         [
@@ -14,6 +21,8 @@ extension AppSafetyTests {
             ("Every app-owned dropdown renders at body size: main, Toolbox, zoom, upload and status menus", menuDropdownFonts),
             ("The status item opens a menu: Show or Hide, Snap, Settings, Quit", menuStatusItems),
             ("The status menu's first row follows the editor and the app being in front", menuStatusDynamicTitle),
+            ("The Toolbox opens a glass panel of its five groups: 18 rows with the menu's icons, shortcuts and validation, choosing runs the command, Escape returns the focus", menuToolboxPanel),
+            ("Every route to the Toolbox, Zoom and Upload choices opens the glass panel and starts no native menu: click, right-click, Control-click, AX press and Show Menu, the context-menu key, Return, Space, Up and Down", menuNoNativeRoutes),
         ]
     }
 
@@ -30,6 +39,55 @@ extension AppSafetyTests {
         if let match = root as? T, match.accessibilityLabel() == label { return match }
         for child in root.subviews { if let found = firstView(type, label: label, in: child) { return found } }
         return nil
+    }
+
+    /// Keeps a choice panel off screen: it records the window it would show, treats the panel as holding the keyboard, and has a large screen.
+    static func offScreen(_ panel: MenuChoicePanel) {
+        panel.host.presenter = { _, _ in }
+        panel.host.keyStateProbe = { true }
+        panel.host.visibleFrameOverride = NSRect(x: 0, y: 0, width: 2400, height: 1600)
+    }
+
+    /// A key-down for the open panel's own window.
+    static func panelKey(_ code: UInt16, in window: NSWindow) -> NSEvent {
+        NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0, windowNumber: window.windowNumber, context: nil,
+                         characters: "", charactersIgnoringModifiers: "", isARepeat: false, keyCode: code)!
+    }
+
+    /// A pointer event at the middle of a view, for the handlers a test calls directly.
+    static func pointer(_ type: NSEvent.EventType, on view: NSView, flags: NSEvent.ModifierFlags = []) -> NSEvent {
+        let point = view.convert(NSPoint(x: view.bounds.midX, y: view.bounds.midY), to: nil)
+        return NSEvent.mouseEvent(with: type, location: point, modifierFlags: flags, timestamp: 0, windowNumber: view.window?.windowNumber ?? 0,
+                                  context: nil, eventNumber: 1, clickCount: 1, pressure: 1)!
+    }
+
+    /// Counts native menu tracking (a dropdown, a pop-up or a context menu). AppKit posts `NSMenu.didBeginTrackingNotification` when a menu
+    /// starts tracking and the glass panel never tracks a menu, so a route that fell back to the native rows would be counted here.
+    @MainActor
+    final class NativeMenuProbe {
+        private(set) var began = 0
+        private var token: NSObjectProtocol?
+        private var timers: [Timer] = []
+        init() {
+            token = NotificationCenter.default.addObserver(forName: NSMenu.didBeginTrackingNotification, object: nil, queue: nil) { [weak self] _ in
+                MainActor.assumeIsolated { self?.began += 1 }
+            }
+        }
+        /// A route that wrongly fell back to the native menu would track until someone answers; this lets the run end instead of hanging.
+        func guardAgainstHang(_ menu: NSMenu?) {
+            let timer = Timer(timeInterval: 0.5, repeats: false) { _ in MainActor.assumeIsolated { menu?.cancelTracking() } }
+            for mode in [RunLoop.Mode.common, .eventTracking] { RunLoop.main.add(timer, forMode: mode) }
+            timers.append(timer)
+        }
+        func stop() {
+            if let token { NotificationCenter.default.removeObserver(token) }
+            token = nil
+            for timer in timers { timer.invalidate() }
+        }
+    }
+
+    private static func toolboxButton(_ app: AppDelegate) throws -> ToolboxPopUpButton {
+        try (firstView(NSPopUpButton.self, label: "Toolbox", in: app.window.contentView) as? ToolboxPopUpButton).unwrap("Toolbox button")
     }
 
     private static func toolboxMenu(_ app: AppDelegate) throws -> NSMenu {
@@ -184,6 +242,142 @@ extension AppSafetyTests {
         try expect(item.title == "Show OpenSnap", "After hiding, the row reads Show: \(item.title)")
         app.statusShowHide()
         try expect(window.isVisible, "Choosing Show shows the editor again")
+    }
+
+    private static func menuToolboxPanel() throws {
+        let fixture = try Fixture(), app = fixture.app
+        let toolbox = try toolboxButton(app), probe = NativeMenuProbe()
+        defer { probe.stop() }
+        let panel = toolbox.choicePanel
+        offScreen(panel)
+        toolbox.performClick(nil)
+        let menu = try toolbox.menu.unwrap("Toolbox menu")
+        let items = menu.items.filter { !$0.isSeparatorItem }
+        try expect(toolbox.isOpen && panel.host.plates.count == 5 && panel.rows.count == 18 && items.count == 18,
+                   "A click opens five group plates holding 18 rows (\(panel.host.plates.count) plates, \(panel.rows.count) rows)")
+        try expect(panel.host.plates.map { $0.arrangedViews.count } == [2, 5, 4, 4, 3], "The plates follow the menu's groups: \(panel.host.plates.map { $0.arrangedViews.count })")
+        for (row, item) in zip(panel.rows, items) {
+            try expect(panel.item(for: row) === item && row.title == item.title && row.leadingImage === item.image && row.shortcutText == MenuShortcut.text(for: item)
+                       && row.isEnabled == item.isEnabled, "'\(item.title)' shows the menu item's own title, icon, shortcut and enabled state")
+        }
+        let toggles: Set<Selector> = [#selector(AppDelegate.toggleBezelFill(_:)), #selector(AppDelegate.toggleBezelShadow(_:)), #selector(AppDelegate.chooseFont)]
+        try expect(panel.rows.allSatisfy { row in
+            let isToggle = panel.item(for: row)?.action.map(toggles.contains) == true
+            return row.kind == (isToggle ? .toggle : .command)
+        } && panel.rows.filter { $0.kind == .toggle }.count == 3, "Filled Shapes, Shadow and Text Style are toggles; the other 15 are commands")
+        try expect(!app.window.isVisible && probe.began == 0, "Nothing was ordered on screen and no native menu started")
+        // Validation: the app's own rule, read again at every open.
+        func row(_ action: Selector) throws -> GlassChoiceButton {
+            try (panel.rows.first { panel.item(for: $0)?.action == action }).unwrap(NSStringFromSelector(action))
+        }
+        let fill = #selector(AppDelegate.toggleBezelFill(_:)), save = #selector(AppDelegate.saveHistory)
+        let fillItem = try menu.items.first { $0.action == fill }.unwrap("fill item")
+        try expect(try row(fill).isEnabled == app.validateMenuItem(fillItem), "Filled Shapes follows validateMenuItem")
+        app.canvas.filled = true
+        toolbox.performClick(nil); toolbox.performClick(nil)
+        try expect(try row(fill).isChosen, "Filled Shapes shows on while the pen fills")
+        app.canvas.filled = false
+        app.frameCaptureInProgress = true
+        toolbox.performClick(nil); toolbox.performClick(nil)
+        try expect(Set(panel.rows.filter { !$0.isEnabled }.compactMap { panel.item(for: $0)?.action }).isSuperset(of: [#selector(AppDelegate.toggleBezelFill(_:)), #selector(AppDelegate.toggleBezelShadow(_:))]),
+                   "While a Frame capture runs Filled Shapes and Shadow are disabled (a state the screenshot harness can set)")
+        app.frameCaptureInProgress = false
+        app.terminationStarted = true
+        toolbox.performClick(nil); toolbox.performClick(nil)
+        let disabled = panel.rows.filter { !$0.isEnabled }.compactMap { panel.item(for: $0)?.action }
+        let fillOff = try row(fill)
+        try expect(Set(disabled).isSuperset(of: toggles) && !fillOff.isChosen, "While the app is quitting the three toggles are disabled (\(disabled.map(NSStringFromSelector)))")
+        try expect(fillOff.acceptsFirstResponder == false, "A disabled row never takes the keyboard")
+        app.terminationStarted = false
+        toolbox.performClick(nil); toolbox.performClick(nil)
+        let fillRow = try row(fill), saveRow = try row(save)
+        try expect(fillRow.isEnabled && saveRow.isEnabled, "and enabled again once it is not")
+        // Choosing a row closes the panel, then runs the main-menu command.
+        try expect(!app.canvas.filled, "Fill starts off")
+        try row(fill).performClick(nil)
+        try expect(app.canvas.filled && !toolbox.isOpen, "Choosing Filled Shapes closes the panel and turns the pen fill on")
+        // Escape returns the focus to the opener; a click on the opener only closes.
+        app.canvas.filled = false
+        app.window.makeFirstResponder(toolbox)
+        toolbox.keyDown(with: try NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0, windowNumber: 0, context: nil, characters: " ", charactersIgnoringModifiers: " ", isARepeat: false, keyCode: 49).unwrap("a key"))
+        try expect(toolbox.isOpen && panel.focusedRow?.isEnabled == true, "Space opens it with an enabled row focused (\(panel.focusedRow?.title ?? "none"))")
+        panel.host.window.sendEvent(panelKey(53, in: panel.host.window))
+        try expect(!toolbox.isOpen && app.window.firstResponder === toolbox, "Escape closes it and the Toolbox has the focus again")
+        toolbox.performClick(nil)
+        let click = pointer(.leftMouseDown, on: toolbox)
+        try expect(panel.host.handleMouseDown(in: app.window, at: click.locationInWindow) && !toolbox.isOpen, "A click on the Toolbox while it is open only closes it and is consumed")
+        // The recorded request seam still stands in for the panel.
+        var requests = 0
+        toolbox.popUpHandler = { _, _ in requests += 1 }
+        toolbox.performClick(nil)
+        try expect(requests == 1 && !toolbox.isOpen && probe.began == 0, "popUpHandler records the open request and shows nothing")
+    }
+
+    private static func menuNoNativeRoutes() throws {
+        let fixture = try Fixture(), app = fixture.app
+        let probe = NativeMenuProbe()
+        defer { probe.stop() }
+        let toolbox = try toolboxButton(app), zoom = app.zoomControl
+        // The two pop-ups: every way AppKit or an assistive tool could show the dropdown opens the panel instead.
+        for (name, button) in [("Toolbox", toolbox as any AppSafetyPanelOwner), ("Zoom", zoom as any AppSafetyPanelOwner)] {
+            offScreen(button.choicePanel)
+            probe.guardAgainstHang(button.menu)
+            try expect(button.menu(for: pointer(.rightMouseDown, on: button)) == nil && button.menu(for: pointer(.leftMouseDown, on: button, flags: .control)) == nil && button.menu != nil,
+                       "\(name): AppKit finds no contextual menu for a right-click or Control-click")
+            let actions = button.accessibilityActionNames()
+            try expect(actions.contains(.press) || actions.contains(.showMenu), "\(name) exposes \(actions.map(\.rawValue)) to assistive tools")
+            var routes: [(String, Bool, () -> Void)] = [
+                ("click", false, { button.mouseDown(with: pointer(.leftMouseDown, on: button)) }),
+                ("performClick", true, { button.performClick(nil) }),
+                ("right-click", false, { button.rightMouseDown(with: pointer(.rightMouseDown, on: button)) }),
+                ("Control-click", false, { button.mouseDown(with: pointer(.leftMouseDown, on: button, flags: .control)) }),
+                ("middle click", false, { button.otherMouseDown(with: pointer(.otherMouseDown, on: button)) }),
+                ("AXPress", true, { _ = button.accessibilityPerformPress() }),
+                ("AXShowMenu", true, { _ = button.accessibilityPerformShowMenu() }),
+                ("context-menu key", true, { button.showContextMenuForSelection(nil) }),
+            ]
+            for (key, code) in [("Return", 36), ("Space", 49), ("Down", 125), ("Up", 126)] as [(String, UInt16)] {
+                routes.append((key, true, { button.keyDown(with: panelKey(code, in: app.window)) }))
+            }
+            for action in actions where ![NSAccessibility.Action.press, .showMenu].contains(action) { routes.append(("action " + action.rawValue, true, { _ = button.accessibilityPerformAction(action) })) }
+            for (route, keyboard, run) in routes {
+                button.choicePanel.host.close()
+                run()
+                try expect(button.isOpen, "\(name): \(route) presents the glass panel")
+                try expect(keyboard == (button.choicePanel.focusedRow != nil), "\(name): \(route) \(keyboard ? "focuses a row" : "leaves every row unfocused")")
+                try expect(probe.began == 0, "\(name): \(route) started no native menu")
+            }
+            button.choicePanel.host.close()
+            button.keyDown(with: panelKey(0, in: app.window))
+            try expect(!button.isOpen && probe.began == 0, "\(name): a letter key opens nothing (no type-ahead into a native menu)")
+        }
+        // The Upload button: right-click, Control-click, AX Show Menu and the context-menu key open the panel; a click uploads.
+        let upload = try (app.webpostButton as? OriginalActionButton).unwrap("Upload button")
+        app.uploadChoices.panelSetup = offScreen
+        probe.guardAgainstHang(upload.menu)
+        try expect(upload.menu(for: pointer(.rightMouseDown, on: upload)) == nil && upload.showMenuOnLeftClick == false, "Upload: no contextual menu for AppKit, and a left click is the upload")
+        let uploadActions = upload.accessibilityActionNames()
+        try expect(uploadActions.contains(.showMenu), "Upload exposes Show Menu (\(uploadActions.map(\.rawValue)))")
+        let uploadRoutes: [(String, Bool, () -> Void)] = [
+            ("right-click", false, { upload.rightMouseDown(with: pointer(.rightMouseDown, on: upload)); upload.rightMouseUp(with: pointer(.rightMouseUp, on: upload)) }),
+            ("Control-click", false, { upload.mouseDown(with: pointer(.leftMouseDown, on: upload, flags: .control)); upload.mouseUp(with: pointer(.leftMouseUp, on: upload, flags: .control)) }),
+            ("AXShowMenu", true, { _ = upload.accessibilityPerformShowMenu() }),
+            ("context-menu key", true, { upload.showContextMenuForSelection(nil) }),
+        ]
+        for (route, keyboard, run) in uploadRoutes {
+            app.uploadChoices.panel?.host.close()
+            run()
+            try expect(app.uploadChoices.isOpen, "Upload: \(route) presents the glass panel")
+            try expect(keyboard == (app.uploadChoices.panel?.focusedRow != nil), "Upload: \(route) \(keyboard ? "focuses a row" : "leaves every row unfocused")")
+            try expect(probe.began == 0, "Upload: \(route) started no native menu")
+        }
+        app.uploadChoices.panel?.host.close()
+        var uploads = 0
+        app.publishing.uploader = { _, _, plan, _ in uploads += 1; return plan.publicURL ?? plan.remoteURL }
+        upload.performClick(nil)
+        try expect(!app.uploadChoices.isOpen && probe.began == 0 && (app.publishing.isBusy || uploads == 1 || app.status.stringValue.hasPrefix("Uploading")), "Upload: a click starts the upload and opens no menu")
+        try waitForMain("The upload finishes") { !app.publishing.isBusy }
+        try expect(probe.began == 0, "No route started a native menu")
     }
 }
 

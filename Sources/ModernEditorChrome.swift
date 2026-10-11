@@ -68,25 +68,74 @@ final class StatusTextField: NSTextField {
     }
 }
 
-/// The zoom popup. Its face shows only the percentage, so the mode word of a computed zoom (Fit, Frame, Normal, ...)
-/// travels on the item's tooltip and in the spoken value instead.
-final class ZoomPopUpButton: NSPopUpButton {
+/// Where a choice panel opens relative to its anchor, in screen terms whatever the anchor's flippedness (`.minY` is below it, `.maxY` above).
+/// The top bar's Toolbox opens downward and the footer's Zoom and Upload upward; the host flips either when the screen has no room.
+enum ChoiceEdge {
+    static let below = NSRectEdge.minY
+    static let above = NSRectEdge.maxY
+}
+
+/// The zoom pop-up. Its face shows only the percentage, so the mode word of a computed zoom (Fit, Frame, Normal, ...)
+/// travels on the item's tooltip and in the spoken value instead. It is a `GlassPopUpButton`: every way of opening it (a click, a right or
+/// Control-click, Space, Return, Down, Up, `performClick`, VoiceOver's press and Show Menu, the context-menu key) opens one glass panel
+/// built from its own menu, which stays the source of truth. The percentages and the computed row are options (the selected item is the
+/// chosen one); Actual Size is a toggle that performs its own command and never becomes the face.
+final class ZoomPopUpButton: GlassPopUpButton {
     /// The menu-only Actual Size command: it never becomes the face, so it is not part of the capsule's width budget.
     static let actualSizeTag = 998
+    /// The computed Fit / Frame / Normal row `setCanvasDisplayZoom` keeps first in the menu.
+    static let computedZoomTag = 999
+
+    override init(frame frameRect: NSRect, pullsDown flag: Bool) {
+        super.init(frame: frameRect, pullsDown: flag)
+        configureChoices()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        configureChoices()
+    }
+
+    private func configureChoices() {
+        panelIdentifier = "Zoom"
+        panelLabel = "Canvas zoom"
+        minimumPanelWidth = 200
+        // The zoom sits in the footer, so its choices open above it (the host flips them when the screen has no room).
+        preferredEdge = ChoiceEdge.above
+        // The footer is crowded (the status line takes what the plates leave), so the face is tight: the percentage, its chevron, and no more.
+        facePadding = DesignTokens.Space.s1
+        chevronColumn = 27
+        kind = { $0.tag == ZoomPopUpButton.actualSizeTag ? .toggle : .option }
+    }
+
     override func accessibilityValue() -> Any? { selectedItem?.toolTip ?? titleOfSelectedItem }
-    override var canBecomeKeyView: Bool { KeyboardNavigation.reaches(self) }
+
+    /// The capsule is sized for the percentage alone, not for the longest row of the menu ("Actual Size"), which is never the face: choosing
+    /// it sends its command through the application and leaves the pop-up's selection where it was.
+    override var intrinsicContentSize: NSSize {
+        let width = ceil((faceTitle as NSString).size(withAttributes: [.font: DesignTokens.Typography.font(.body)]).width)
+        return NSSize(width: 2 * facePadding + width + chevronColumn, height: GlassChoiceButton.height)
+    }
 }
 
 /// The Toolbox: a menu button. It keeps NSPopUpButton as its base so the chrome's sizing and the key-view loop stay as they were, but it
 /// never uses the selection-style pop-up behaviour: that style laid the chosen row over its own button, so the open menu covered the
-/// Toolbox, Photos and the first tools, and exposed a "value" (it read "Select All"). The rows now open below the button like any menu, the
-/// button has no value and reads as a menu button named "Toolbox" (R2-004, F-J6-009). The menu is a copy of the menu-bar rows, icons and all.
+/// Toolbox, Photos and the first tools, and exposed a "value" (it read "Select All"). The rows now open below the button as a glass panel
+/// of group plates, the button has no value and reads as a menu button named "Toolbox" (R2-004, F-J6-009). The menu is a copy of the
+/// menu-bar rows, icons and all, and stays the source of truth for titles, shortcuts and validation; the panel only draws it.
+///
+/// Like `GlassPopUpButton` it takes every way of showing the menu natively and opens the panel instead: a click or Control-click, a right
+/// or other button (`menu(for:)` is nil), Space, Return, Down, Up, `performClick`, the accessibility press and Show Menu, and the context-menu
+/// key. It is not a `GlassPopUpButton` because its face is the Toolbox icon and chevron (a `faceItem` image), not the selected title.
 final class ToolboxPopUpButton: NSPopUpButton, NSMenuDelegate {
     let faceItem = NSMenuItem(title: "Toolbox", action: nil, keyEquivalent: "")
     /// Test seam: where the last open put the top-left of the menu, in this view's coordinates.
     private(set) var lastPopUpOrigin: NSPoint?
-    /// Test seam: replaces showing the menu (a menu tracks until it closes, so a test records the request instead).
+    /// Test seam: replaces showing the panel (the panel is a window, so a test can record the request instead).
     var popUpHandler: ((NSMenu, NSPoint) -> Void)?
+    /// The rows that switch something on or off (Filled Shapes, Shadow, Text Style), by action; the rest are plain commands.
+    private(set) var toggleActions: Set<Selector> = []
+    private var cachedPanel: MenuChoicePanel?
 
     convenience init() {
         self.init(frame: .zero, pullsDown: false)
@@ -97,28 +146,63 @@ final class ToolboxPopUpButton: NSPopUpButton, NSMenuDelegate {
     override var canBecomeKeyView: Bool { KeyboardNavigation.reaches(self) }
     override func accessibilityValue() -> Any? { nil }
     override func accessibilityRole() -> NSAccessibility.Role? { .menuButton }
-    override func accessibilityPerformPress() -> Bool { openMenu(); return true }
 
     /// Rows go in `menu`; the closed button shows `image`.
     func setFace(_ image: NSImage?) { faceItem.image = image; needsDisplay = true }
-    func install(_ rows: NSMenu) {
+    func install(_ rows: NSMenu, toggles: Set<Selector> = []) {
+        cachedPanel?.host.close(restoreFocus: false)
+        cachedPanel = nil
         rows.delegate = self
         menu = rows
+        toggleActions = toggles
         select(nil)
     }
-    /// Opens the rows just under the button, aligned to its leading edge, so nothing on the bar is covered.
-    func openMenu() {
-        guard isEnabled, let rows = menu else { return }
-        let origin = NSPoint(x: 0, y: isFlipped ? bounds.maxY + 4 : bounds.minY - 4)
-        lastPopUpOrigin = origin
-        if let popUpHandler { popUpHandler(rows, origin) } else { rows.popUp(positioning: nil, at: origin, in: self) }
+
+    // MARK: the panel
+
+    /// The panel over the installed rows: a submenu drills in, a toggle shows its state, the rest are commands.
+    var choicePanel: MenuChoicePanel {
+        if let cachedPanel, cachedPanel.menu === menu { return cachedPanel }
+        let toggles = toggleActions
+        let panel = MenuChoicePanel(menu: menu ?? NSMenu(), identifier: "Toolbox", accessibilityLabel: "Toolbox", kind: { item in
+            if item.submenu != nil { return .submenu }
+            return item.action.map(toggles.contains) == true ? .toggle : .command
+        })
+        cachedPanel = panel
+        return panel
     }
-    override func mouseDown(with event: NSEvent) { openMenu() }
-    override func performClick(_ sender: Any?) { openMenu() }
+    var isChoicesOpen: Bool { cachedPanel?.host.isShown == true }
+
+    /// The rows open just under the button, aligned to its leading edge, so nothing on the bar is covered; a second request while they are
+    /// open only closes them. `keyboard` focuses the first enabled row (or the chosen one).
+    func openMenu(keyboard: Bool = false) { openChoices(keyboard: keyboard) }
+    func openChoices(keyboard: Bool) {
+        guard isEnabled, window != nil, let rows = menu, rows.numberOfItems > 0 else { return }
+        if isChoicesOpen { cachedPanel?.host.close(); return }
+        if let popUpHandler {
+            let origin = NSPoint(x: 0, y: isFlipped ? bounds.maxY + 4 : bounds.minY - 4)
+            lastPopUpOrigin = origin
+            popUpHandler(rows, origin)
+            return
+        }
+        choicePanel.present(relativeTo: self, preferredEdge: ChoiceEdge.below, keyboard: keyboard)
+    }
+
+    // MARK: every opening route
+
+    override func menu(for event: NSEvent) -> NSMenu? { nil }
+    override func mouseDown(with event: NSEvent) { openChoices(keyboard: false) }
+    override func rightMouseDown(with event: NSEvent) { openChoices(keyboard: false) }
+    override func otherMouseDown(with event: NSEvent) { openChoices(keyboard: false) }
+    override func performClick(_ sender: Any?) { openChoices(keyboard: true) }
+    override func accessibilityPerformPress() -> Bool { guard isEnabled else { return false }; openChoices(keyboard: true); return true }
+    override func accessibilityPerformShowMenu() -> Bool { guard isEnabled else { return false }; openChoices(keyboard: true); return true }
+    @available(macOS 15.0, *)
+    override func showContextMenuForSelection(_ sender: Any?) { openChoices(keyboard: true) }
     override func keyDown(with event: NSEvent) {
         switch event.keyCode {
-        case 36, 49, 76, 125, 126: openMenu()      // Return, Space, keypad Enter, Down, Up
-        default: super.keyDown(with: event)
+        case 36, 49, 76, 125, 126: openChoices(keyboard: true)      // Return, Space, keypad Enter, Down, Up
+        default: nextResponder?.keyDown(with: event)                // never AppKit's type-ahead, which would select a row without asking
         }
     }
     func menuDidClose(_ menu: NSMenu) { DispatchQueue.main.async { [weak self] in self?.select(nil) } }
@@ -175,13 +259,32 @@ final class ModernEditorChrome: NSView {
         typealias M = GlassChrome.Metrics
         let cancel = cancelFrameButton.isHidden ? M.groupSpacing + M.iconButton.width : 0
         let top = fit("GlassHeaderLeading") + fit("GlassCaptureGroup") + cancel + fit("GlassToolBar") + fit("GlassAnnotationGroup") + 3 * M.groupGap
-        let status = controls.dragOriginalControl.fittingSize.width + 12 + Self.minimumStatusWidth
-        return ceil(max(top, fitFooterGroups() + status)) + 2 * DesignTokens.Layout.margin
+        return ceil(max(top, fitFooterGroups(withOriginalSize: true, atMinimumWidth: true) + Self.minimumStatusWidth)) + 2 * DesignTokens.Layout.margin
     }
     private func fit(_ id: String) -> CGFloat { surfaceList.first { $0.identifier?.rawValue == id }?.fittingSize.width ?? 0 }
-    /// The four plates of the bottom bar and the gaps between them and the status slot.
-    private func fitFooterGroups() -> CGFloat {
-        fit("GlassUndoWipeGroup") + fit("GlassViewGroup") + fit("GlassSaveGroup") + fit("GlassFooterRow") + 4 * GlassChrome.Metrics.groupGap
+    /// What the Original size toggle adds to the View plate while it shows: its own width and the spacing before it. The toggle sits on that
+    /// plate, so it takes its room from the status slot (the plate grows, the slot shrinks) instead of from inside it.
+    var originalSizeWidth: CGFloat { controls.dragOriginalControl.fittingSize.width + GlassChrome.Metrics.groupSpacing }
+
+    /// The four plates of the bottom bar and the gaps between them and the status slot. `withOriginalSize` states whether the View plate is
+    /// counted with the toggle on it or without, whatever the toggle is doing now, so the answer to "would it fit" never depends on the answer.
+    /// `atMinimumWidth` counts the PNG | JPG toggle in its compact form, the form it has in any window narrower than `compactFormatBelow`,
+    /// which is where the minimum window sits; it is measured the same whatever width the window has when the number is asked for.
+    private func fitFooterGroups(withOriginalSize: Bool? = nil, atMinimumWidth: Bool = false) -> CGFloat {
+        var view = fit("GlassViewGroup")
+        if let withOriginalSize {
+            let showing = !controls.dragOriginalControl.isHidden
+            if withOriginalSize && !showing { view += originalSizeWidth } else if !withOriginalSize && showing { view -= originalSizeWidth }
+        }
+        return fit("GlassUndoWipeGroup") + view + fit("GlassSaveGroup") + (atMinimumWidth ? footerRowAtMinimumWidth() : fit("GlassFooterRow")) + 4 * GlassChrome.Metrics.groupGap
+    }
+
+    /// The footer plate with the PNG | JPG toggle compact, however wide it is now.
+    private func footerRowAtMinimumWidth() -> CGFloat {
+        guard let toggle = controls.dragFormatControl as? SegmentedToggle, let constraint = formatWidthConstraint else { return fit("GlassFooterRow") }
+        let compact = SegmentedToggle(titles: toggle.titles)
+        compact.isCompact = true
+        return fit("GlassFooterRow") - constraint.constant + ceil(compact.intrinsicContentSize.width)
     }
 
     /// The width the bottom bar leaves for the status slot at the window's current width: the bar's width less its four plates and gaps.
@@ -219,7 +322,7 @@ final class ModernEditorChrome: NSView {
     /// current width, holds the checkbox as well as everything `slotNeed` lists. At 980 an error keeps it (the message shrinks to "Failed"); an upload
     /// in progress or done does not have the room, so the checkbox steps aside there; from about 1100 on it stays.
     func slotHasRoomForCheckbox(during state: UploadState) -> Bool {
-        statusSlotWidth() >= slotNeed(for: state) + Self.statusRowSpacing + controls.dragOriginalControl.fittingSize.width
+        bounds.width - 2 * DesignTokens.Layout.margin - fitFooterGroups(withOriginalSize: true) >= slotNeed(for: state)
     }
     /// The status line keeps at least this much beside the Original size checkbox at the minimum window.
     static let minimumStatusWidth: CGFloat = 120
@@ -490,17 +593,29 @@ final class ModernEditorChrome: NSView {
         // Bottom bar: [Undo][Wipe] · [Zoom][Resize…] · [Original size] status · [Save][History] · [PNG|JPG][Drag][Upload]
         let undoWipeGroup = plate([fixed(undoButton), fixed(wipeButton)], "GlassUndoWipeGroup")
 
-        // The zoom popup is sized once for its widest face (the percentage alone) so it never jumps.
-        let zoomInset = DesignTokens.Space.s1
+        // The zoom popup is sized once for its widest face (the percentage alone, with its own padding and chevron) so it never jumps.
+        let zoomInset: CGFloat = 0
         controls.zoomControl.isBordered = false
         let selectedZoom = controls.zoomControl.indexOfSelectedItem
-        let widestZoom = (0..<controls.zoomControl.numberOfItems).filter { controls.zoomControl.item(at: $0)?.tag != ZoomPopUpButton.actualSizeTag && controls.zoomControl.item(at: $0)?.isSeparatorItem == false }.map { index -> CGFloat in
-            controls.zoomControl.selectItem(at: index); return controls.zoomControl.fittingSize.width
-        }.max() ?? 0
+        let faceTitles = (0..<controls.zoomControl.numberOfItems).filter { controls.zoomControl.item(at: $0)?.tag != ZoomPopUpButton.actualSizeTag && controls.zoomControl.item(at: $0)?.isSeparatorItem == false }
+        let widestZoom: CGFloat
+        if let face = controls.zoomControl as? GlassPopUpButton {
+            // The face draws its title between its padding and its chevron column, so the cell is what the widest face needs of both: every
+            // percentage, and the computed Fit / Frame row at its widest ("200%"), but not Actual Size, which is never the face.
+            let computed = ceil(("200%" as NSString).size(withAttributes: [.font: DesignTokens.Typography.font(.body)]).width)
+            let text = faceTitles.map { index -> CGFloat in face.selectItem(at: index); return face.faceTextMetrics.needed.width }.max() ?? 0
+            widestZoom = max(text, computed) + 2 * face.facePadding + face.chevronColumn
+        } else {
+            widestZoom = faceTitles.map { index -> CGFloat in controls.zoomControl.selectItem(at: index); return controls.zoomControl.fittingSize.width }.max() ?? 0
+        }
         if selectedZoom >= 0 { controls.zoomControl.selectItem(at: selectedZoom) }
         let zoomCell = cell(controls.zoomControl, size: NSSize(width: ceil(widestZoom) + 2 * zoomInset, height: Metrics.commandHeight), fit: .centered(inset: zoomInset))
         let resizeWidth = ceil((resizeButton.visibleTitle as NSString).size(withAttributes: [.font: DesignTokens.Typography.font(.body)]).width) + 2 * DesignTokens.Space.s2
-        let viewGroup = plate([zoomCell, fixed(resizeButton, NSSize(width: resizeWidth, height: Metrics.commandHeight))], "GlassViewGroup")
+        // Original size is a glass toggle at the end of the View plate (it explains what the percentage beside it measures). The app hides it
+        // for a small shot, in Frame and at Actual Size; the plate's stack drops a hidden view, so the plate shrinks and the slot grows back.
+        let originalSize = controls.dragOriginalControl
+        if let toggle = originalSize as? ChromeFillable { fillList.append(toggle) }
+        let viewGroup = plate([zoomCell, fixed(resizeButton, NSSize(width: resizeWidth, height: Metrics.commandHeight)), originalSize], "GlassViewGroup")
 
         let saveGroup = plate([fixed(saveButton), fixed(historyButton)], "GlassSaveGroup")
 
@@ -524,7 +639,7 @@ final class ModernEditorChrome: NSView {
 
         // The status takes whatever width the groups leave; the Original size checkbox only exists for a large shot.
         // An upload swaps what sits here (spinner and Cancel, Open and Copy, Retry and Details) and hides the checkbox; the slot never grows.
-        let statusRow = NSStackView(views: uploadControls.leadingViews + [controls.dragOriginalControl, controls.status] + uploadControls.trailingViews)
+        let statusRow = NSStackView(views: uploadControls.leadingViews + [controls.status] + uploadControls.trailingViews)
         statusRow.orientation = .horizontal
         statusRow.spacing = Self.statusRowSpacing
         statusRow.alignment = .centerY

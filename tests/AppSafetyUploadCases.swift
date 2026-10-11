@@ -79,7 +79,7 @@ extension AppSafetyTests {
     }
 
     /// Sets the window's content width and lets the bars react, as a user dragging the edge would.
-    private static func resizeWindow(_ app: AppDelegate, contentWidth: CGFloat) throws {
+    static func resizeWindow(_ app: AppDelegate, contentWidth: CGFloat) throws {
         let frame = app.window.frameRect(forContentRect: NSRect(x: 0, y: 0, width: contentWidth, height: app.window.contentView?.bounds.height ?? 640))
         app.window.setFrame(NSRect(origin: app.window.frame.origin, size: frame.size), display: false)
         app.window.contentView?.layoutSubtreeIfNeeded()
@@ -352,8 +352,10 @@ extension AppSafetyTests {
                 app.uploadState = state
                 let fits = chrome.slotHasRoomForCheckbox(during: state)
                 try expect(app.dragOriginalControl.isHidden == !fits, "\(Int(width)) \(state): the checkbox is \(fits ? "kept" : "hidden") where the \(Int(chrome.statusSlotWidth())) pt slot \(fits ? "holds" : "cannot hold") it")
-                // F-J7-006: an error gives up its words ("Failed") before the checkbox leaves; an upload under way and a link keep the old rule.
-                let expectsRoom = width > 1000 || state.isFailure
+                // F-J7-006: an error gives up its words ("Failed") before the toggle leaves, from 1000 pt up. The toggle is a glass choice 41 pt wider
+                // than the checkbox it replaced, so on the 980 floor itself (13 pt short) the error is whole and the toggle steps aside, like it does
+                // for an upload under way and a link.
+                let expectsRoom = width > 1000
                 try expect(fits == expectsRoom, "\(Int(width)) \(state): \(expectsRoom ? "there is room" : "980 has none")")
                 chrome.window?.contentView?.layoutSubtreeIfNeeded()
                 let status = chrome.convert(app.status.bounds, from: app.status), box = chrome.convert(app.dragOriginalControl.bounds, from: app.dragOriginalControl)
@@ -364,15 +366,19 @@ extension AppSafetyTests {
         // A resize while the error is up moves the checkbox with the width.
         app.uploadState = .failure(message: "Server said no.")
         try resizeWindow(app, contentWidth: 1440)
-        try expect(!app.dragOriginalControl.isHidden, "An error at 1440 shows the checkbox")
-        try resizeWindow(app, contentWidth: ModernEditorChrome.minimumWindowWidth)
-        try expect(!app.dragOriginalControl.isHidden, "...and narrowing to 980 keeps it: the error gives up its words, not the checkbox (F-J7-006)")
-        // The error line at 980 is a whole form, never a cut sentence, and the box is whole and clear of it.
+        try expect(!app.dragOriginalControl.isHidden, "An error at 1440 shows the toggle")
+        try resizeWindow(app, contentWidth: 1000)
+        try expect(!app.dragOriginalControl.isHidden, "...and narrowing to 1000 keeps it: the error gives up its words, not the toggle (F-J7-006)")
+        // The error line at 1000 is a whole form, never a cut sentence, and the toggle is whole and clear of it.
         app.uploadState = .failure(message: "Upload failed · HTTP 403\ncurl: (22) The requested URL returned error: 403")
         chrome.window?.contentView?.layoutSubtreeIfNeeded()
-        let status980 = chrome.convert(app.status.bounds, from: app.status), box980 = chrome.convert(app.dragOriginalControl.bounds, from: app.dragOriginalControl)
-        try expect(!app.dragOriginalControl.isHidden && box980.maxX <= status980.minX + 0.5 && ["Upload failed · HTTP 403", "Upload failed", "Failed"].contains(app.status.stringValue),
-                   "At 980 with an error the checkbox is shown clear of a whole error form (\(app.status.stringValue), box \(box980), status \(status980))")
+        let status1000 = chrome.convert(app.status.bounds, from: app.status), box1000 = chrome.convert(app.dragOriginalControl.bounds, from: app.dragOriginalControl)
+        try expect(!app.dragOriginalControl.isHidden && box1000.maxX <= status1000.minX + 0.5 && ["Upload failed · HTTP 403", "Upload failed", "Failed"].contains(app.status.stringValue),
+                   "At 1000 with an error the toggle is shown clear of a whole error form (\(app.status.stringValue), box \(box1000), status \(status1000))")
+        // On the 980 floor the same error is a whole form too, and the toggle has stepped aside for it.
+        try resizeWindow(app, contentWidth: ModernEditorChrome.minimumWindowWidth)
+        try expect(app.dragOriginalControl.isHidden && ["Upload failed · HTTP 403", "Upload failed", "Failed"].contains(app.status.stringValue),
+                   "On the 980 floor the toggle steps aside for the error, which is a whole form (\(app.status.stringValue))")
         app.uploadState = .idle
         try expect(!app.dragOriginalControl.isHidden, "and idle brings it back")
         stub.gate.signal()
