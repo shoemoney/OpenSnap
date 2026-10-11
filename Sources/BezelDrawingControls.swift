@@ -777,10 +777,20 @@ final class BezelHoverButton: NSButton {
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         _ = sendAction(on: .leftMouseDown)
+        setAccessibilityElement(true)
     }
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         _ = sendAction(on: .leftMouseDown)
+        setAccessibilityElement(true)
+    }
+    /// Assistive activation dispatches the same action once, without the cell's mouse-tracking path. This button acts on mouse-down;
+    /// the standard cell's accessibility press could open the panel yet report an unsupported attribute to the outside client.
+    override func accessibilityRole() -> NSAccessibility.Role? { .button }
+    override func accessibilityChildren() -> [Any]? { [] }
+    override func accessibilityPerformPress() -> Bool {
+        guard isEnabled, let action else { return false }
+        return sendAction(action, to: target)
     }
     override var canBecomeKeyView: Bool { KeyboardNavigation.reaches(self) }
     private var hoverTracking: NSTrackingArea?

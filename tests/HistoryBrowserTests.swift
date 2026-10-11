@@ -134,6 +134,8 @@ struct HistoryBrowserTests {
                     }
                     let problems = tree.parentProblems()
                     try expect(problems.isEmpty,"Every parent agrees with the tree and leads back to the window: \(problems.prefix(3))")
+                    let shape = tree.shapeProblems()
+                    try expect(shape.isEmpty,"No command group hands out an AXUnknown wrapper, and no node lacks a role (\(shape.count)): \(shape.prefix(3))")
                     // AXPress on a reached command runs it.
                     var opened = 0
                     browser.onOpen = { _ in opened += 1 }

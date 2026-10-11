@@ -29,6 +29,13 @@ private final class ActionTarget: NSObject {
     @objc func formatChanged(_ sender: Any?) { hits.append("format:" + String((sender as? SegmentedToggle)?.selectedSegment ?? -1)) }
 }
 
+@MainActor
+private final class PalettePressTarget: NSObject {
+    var hits = 0
+    var onPress: (() -> Void)?
+    @objc func press(_ sender: Any?) { hits += 1; onPress?() }
+}
+
 /// What a panel needs to open on a never-ordered window: a presenter that shows nothing, and a screen big enough to sit below its anchor.
 @MainActor
 private func offscreenPanel(_ host: GlassPanelHost) {
@@ -1330,6 +1337,7 @@ private enum GlassChromeTests {
             }
         }
         expect(tree.parentProblems().isEmpty, "Size panel: every parent agrees with the tree: \(tree.parentProblems().prefix(3))")
+        expect(tree.shapeProblems().isEmpty, "Size panel: no AXUnknown wrapper, role-less node (\(tree.shapeProblems().count)): \(tree.shapeProblems().prefix(3))")
         slider.dismissPopover()
 
         // The Color panel: ten swatches and the Custom colour row.
@@ -1357,7 +1365,24 @@ private enum GlassChromeTests {
         }
         if let third = tree.find(.checkBox, "Color 3") { expect(AXTree.press(third) && picked == [2], "Color panel: AXPress on a reached swatch chooses it (\(picked))") }
         expect(tree.parentProblems().isEmpty, "Color panel: every parent agrees with the tree: \(tree.parentProblems().prefix(3))")
+        expect(tree.shapeProblems().isEmpty, "Color panel: no AXUnknown wrapper, role-less node (\(tree.shapeProblems().count)): \(tree.shapeProblems().prefix(3))")
         host.close()
+        let opener = BezelHoverButton(frame: NSRect(x: 40, y: 200, width: 48, height: 36))
+        opener.setAccessibilityLabel("Drawing colors")
+        let target = PalettePressTarget()
+        opener.target = target; opener.action = #selector(PalettePressTarget.press(_:))
+        content.addSubview(opener)
+        target.onPress = { host.show(relativeTo: opener.bounds, of: opener, preferredEdge: .minY, makeKey: true) }
+        expect(opener.accessibilityPerformPress() && host.isShown && target.hits == 1, "The Color opener reports a successful press and opens its panel once")
+        host.close()
+        let openerTree = AXTree.walk(window)
+        if let reached = reach(openerTree, .button, "Drawing colors", "Color opener") {
+            expect(reached.object === opener, "The Color opener publishes its own accessibility action")
+            expect(AXTree.press(reached) && host.isShown && target.hits == 2, "AXPress succeeds, opens Color and dispatches exactly once")
+            host.close()
+            opener.isEnabled = false
+            expect(!AXTree.press(reached) && !host.isShown && target.hits == 2, "A disabled Color opener sends no action")
+        }
         _ = window
     }
 
