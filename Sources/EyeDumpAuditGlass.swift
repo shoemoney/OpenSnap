@@ -271,6 +271,14 @@ extension AuditRun {
                 record["parentFrame"] = rectJSON(parent.frame)
                 record["parentContentFrame"] = rectJSON(parent.convertToScreen(parent.contentLayoutRect))
                 record["parentClass"] = String(describing: type(of: parent))
+                // The part of the parent that is on screen, and the screen's own visible area: a panel that can fit in the visible parent must, and one
+                // that cannot falls back to the screen. Derived from the frames until the host reports its own containment.
+                let screenVisible = (parent.screen ?? NSScreen.main)?.visibleFrame
+                let visibleParent = screenVisible.map { parent.frame.intersection($0) } ?? parent.frame
+                if let screenVisible { record["screenVisibleFrame"] = rectJSON(screenVisible) }
+                record["parentVisibleFrame"] = rectJSON(visibleParent)
+                record["containment"] = host.frame.width <= visibleParent.width + 1 ? "parent" : "screenFallback"
+                record["containmentSource"] = "derived from the frames: panel width <= visible parent width"
             }
             if let opener = extraFaceRoots.first, let openerWindow = opener.window {
                 record["openerFrame"] = rectJSON(openerWindow.convertToScreen(opener.convert(opener.bounds, to: nil)))
