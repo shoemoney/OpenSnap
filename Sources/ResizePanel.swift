@@ -886,9 +886,15 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate, NSMenu
         }
     }
 
+    /// Commits what is being typed in a size or name field. A glass control that has the keyboard (the segment an arrow key just moved to,
+    /// Apply) keeps it, so the next key goes where the person is.
+    private func commitFieldEditing() {
+        if panel?.firstResponder is NSTextView { panel?.makeFirstResponder(nil) }
+    }
+
     @objc private func changeMode(_ sender: GlassChoiceGroup) {
         guard let mode = ResizePanelMode(rawValue: sender.selectedIndex) else { return }
-        panel?.makeFirstResponder(nil)
+        commitFieldEditing()
         session.state.setMode(mode)
         renderState()
         panel?.contentView?.layoutSubtreeIfNeeded()
@@ -897,7 +903,7 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate, NSMenu
     }
 
     @objc private func changeRatio(_ sender: GlassChoiceButton) {
-        panel?.makeFirstResponder(nil)
+        commitFieldEditing()
         session.state.setPreserveRatio(sender.isChosen)
         renderState()
         schedulePreview()
@@ -979,7 +985,7 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate, NSMenu
     }
 
     @objc private func addPreset(_ sender: Any?) {
-        panel?.makeFirstResponder(nil)
+        commitFieldEditing()
         do {
             let selected = presets.presets.first(where: { $0.id == selectedPresetID })
             let name = selected?.editable == false ? (selected?.name ?? "New Size") + " Copy" : (presetName?.stringValue ?? "New Size")
@@ -990,7 +996,7 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate, NSMenu
     }
 
     @objc private func savePreset(_ sender: Any?) {
-        panel?.makeFirstResponder(nil)
+        commitFieldEditing()
         persistSelectedPreset(); reloadPresets()
     }
 
@@ -1010,7 +1016,7 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate, NSMenu
 
     @objc private func applySheet(_ sender: Any?) {
         previewTimer?.invalidate(); previewTimer = nil
-        panel?.makeFirstResponder(nil)
+        commitFieldEditing()
         do {
             try session.apply(beforeDelivery: { self.endSheet(.OK) })
         } catch {
@@ -1021,7 +1027,7 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate, NSMenu
 
     @objc private func previewSheet(_ sender: Any?) {
         previewTimer?.invalidate(); previewTimer = nil
-        panel?.makeFirstResponder(nil)
+        commitFieldEditing()
         do {
             // Apply keeps the change (one Undo step) and leaves the sheet open on the new size; Cancel then undoes only what is typed next.
             if try session.commit() { renderState() } else { _ = try session.preview() }

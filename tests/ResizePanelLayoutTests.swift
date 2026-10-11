@@ -121,10 +121,21 @@ private enum ResizePanelLayoutTests {
         while let next = current?.superview { if let plate = next as? GlassSurfaceView { return plate }; current = next }
         return nil
     }
+    /// A key the way the application delivers it: the key window's key equivalents first (the default button's Return, Cancel's Escape), and only
+    /// when none takes it, the window's sendEvent to the focused control. The sheet is not on screen, so it is told it became key, which is what
+    /// arms its default button's Return.
+    private static func deliver(_ event: NSEvent, to window: NSWindow) {
+        window.becomeKey()
+        if !window.performKeyEquivalent(with: event) { window.sendEvent(event) }
+    }
     private static func descendants(_ view: NSView) -> [NSView] { view.subviews.flatMap { [$0] + descendants($0) } }
+    /// A key-down as AppKit builds it: arrows carry their private-use character and the numeric-pad and function flags; every event has characters.
     private static func key(_ code: UInt16, _ text: String = "", window: NSWindow? = nil) throws -> NSEvent {
-        guard let event = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0, windowNumber: window?.windowNumber ?? 0, context: nil,
-                                           characters: text, charactersIgnoringModifiers: text, isARepeat: false, keyCode: code) else { throw Failure(description: "key event") }
+        let arrows: [UInt16: UInt32] = [123: 0xF702, 124: 0xF703, 125: 0xF701, 126: 0xF700]
+        let characters = arrows[code].flatMap { UnicodeScalar($0) }.map { String($0) } ?? text
+        let flags: NSEvent.ModifierFlags = arrows[code] == nil ? [] : [.numericPad, .function]
+        guard let event = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: flags, timestamp: 0, windowNumber: window?.windowNumber ?? 0, context: nil,
+                                           characters: characters, charactersIgnoringModifiers: characters, isARepeat: false, keyCode: code) else { throw Failure(description: "key event") }
         return event
     }
 
@@ -324,7 +335,7 @@ private enum ResizePanelLayoutTests {
             try opens("the context-menu command") { popup.showContextMenuForSelection(nil) }
             _ = rig.panel.makeFirstResponder(popup)
             for (code, text, label) in [(UInt16(49), " ", "Space"), (125, "", "Down"), (126, "", "Up")] {
-                try opens(label) { rig.panel.sendEvent(try key(code, text, window: rig.panel)) }
+                try opens(label) { deliver(try key(code, text, window: rig.panel), to: rig.panel) }
             }
             // Return and keypad Enter belong to the default button (OK) while the sheet has one, as with a native pop-up.
             for (code, text, label) in [(UInt16(36), "\r", "Return"), (76, "\u{3}", "Enter")] {
@@ -355,33 +366,74 @@ private enum ResizePanelLayoutTests {
             try expect(!manage.isChosen && !manage.isAccessibilityExpanded() && rig.content.frame.height == before, "A second click folds it back to the same height")
         }
 
-        // Buttons: one trailing plate, OK the only tinted control, Return and keypad Enter = OK, Escape = Cancel, with a glass face focused.
-        for (name, code, text, applies) in [("Return", UInt16(36), "\r", true), ("Enter", UInt16(76), "\u{3}", true), ("Escape", UInt16(53), "\u{1b}", false)] {
+        // Buttons: one trailing plate, OK the only tinted control, Return and keypad Enter = OK, Escape = Cancel. The keys take the route a real
+        // key takes (the key window's key equivalents, then its sendEvent to the focused control), with the keyboard on each kind of glass
+        // control in turn.
+        do {
             let rig = Rig(); defer { rig.close() }
             let buttons = descendants(rig.content).compactMap { $0 as? GlassChoiceButton }
-            guard let cancel = buttons.first(where: { $0.title == "Cancel" }), let apply = buttons.first(where: { $0.title == "Apply" }), let ok = buttons.first(where: { $0.title == "OK" }),
-                  let face: GlassPopUpButton = private_(rig.resize, "presetPopup") else { throw Failure(description: "buttons") }
-            let choices = face.choicePanel
+            guard let cancel = buttons.first(where: { $0.title == "Cancel" }), let apply = buttons.first(where: { $0.title == "Apply" }), let ok = buttons.first(where: { $0.title == "OK" }) else { throw Failure(description: "buttons") }
             try expect(plate(of: cancel) === plate(of: apply) && plate(of: apply) === plate(of: ok), "Cancel, Apply and OK share one glass plate")
             try expect(ok.isPrimary && !cancel.isPrimary && !apply.isPrimary && buttons.filter(\.isPrimary).count == 1, "OK is the only primary (tinted) control")
             try expect(rig.panel.defaultButtonCell === ok.cell && cancel.keyEquivalent == "\u{1b}", "OK is the default button; Escape is Cancel")
-            choices.host.presenter = { _, _ in }
-            try expect(rig.panel.makeFirstResponder(face) && rig.panel.firstResponder === face, "The keyboard is on the Preset face")
-            let event = try key(code, text, window: rig.panel)
-            if applies {
-                // AppKit parks a Return key equivalent while a sheet is not on screen, so the sheet's own routing cannot be driven here: what is
-                // proved is that the focused face does not take the key for itself (no panel opens, nothing is chosen) and that the window's
-                // default button, which is what Return fires, is OK and applies.
-                face.keyDown(with: event)
-                try expect(!choices.host.isShown && rig.appliedBox.values.isEmpty, "\(name) on a focused face does not open the panel or act by itself")
-                guard let cell = rig.panel.defaultButtonCell, cell.isEnabled else { throw Failure(description: "default cell") }
-                cell.performClick(nil)
-                try expect(rig.appliedBox.values.count == 1 && rig.appliedBox.values[0].0 == CGSize(width: 1517, height: 1011) && rig.panel.sheetParent == nil,
-                           "\(name) runs the default button: OK applies once with the sheet's size and ends the sheet")
-            } else {
-                rig.panel.sendEvent(event)
-                try expect(rig.appliedBox.values.isEmpty && rig.panel.sheetParent == nil, "\(name) with a glass face focused is Cancel: applies nothing and ends the sheet")
+        }
+        for focus in ["Apply", "lock toggle", "preset pop-up", "manage toggle", "limit group", "mode group"] {
+            for (name, code, text, applies) in [("Return", UInt16(36), "\r", true), ("Enter", UInt16(76), "\u{3}", true), ("Escape", UInt16(53), "\u{1b}", false)] {
+                let rig = Rig(); defer { rig.close() }
+                guard let mode: GlassChoiceGroup = private_(rig.resize, "modeControl"), let limit: GlassChoiceGroup = private_(rig.resize, "limitControl"),
+                      let lock: GlassChoiceButton = private_(rig.resize, "ratioButton"), let popup: GlassPopUpButton = private_(rig.resize, "presetPopup"),
+                      let manage: GlassChoiceButton = private_(rig.resize, "presetDisclosure"),
+                      let apply = descendants(rig.content).compactMap({ $0 as? GlassChoiceButton }).first(where: { $0.title == "Apply" }) else { throw Failure(description: "controls") }
+                popup.choicePanel.host.presenter = { _, _ in }
+                let target: NSView
+                switch focus {
+                case "mode group": target = mode.buttons[mode.selectedIndex]
+                case "limit group": mode.choose(2); target = limit.buttons[limit.selectedIndex]
+                case "lock toggle": target = lock
+                case "preset pop-up": target = popup
+                case "manage toggle": target = manage
+                default: target = apply
+                }
+                try expect(rig.panel.makeFirstResponder(target) && rig.panel.firstResponder === target, "The keyboard is on the \(focus)")
+                let before = (mode.selectedIndex, limit.selectedIndex, lock.isChosen, manage.isChosen)
+                deliver(try key(code, text, window: rig.panel), to: rig.panel)
+                let after = (mode.selectedIndex, limit.selectedIndex, lock.isChosen, manage.isChosen)
+                if applies {
+                    // Return reaches the window's default button before the focused control sees it, so OK runs and nothing else moves.
+                    try expect(rig.appliedBox.values.count == 1 && rig.panel.sheetParent == nil && before == after && !popup.choicePanel.host.isShown,
+                               "\(name) with the \(focus) focused runs OK (applied \(rig.appliedBox.values.count), sheet \(rig.panel.sheetParent == nil ? "ended" : "up"), choices \(before) -> \(after))")
+                } else {
+                    try expect(rig.appliedBox.values.isEmpty && rig.panel.sheetParent == nil, "\(name) with the \(focus) focused is Cancel: applies nothing and ends the sheet")
+                }
             }
+        }
+
+        // Arrow keys in a glass group move the choice and the keyboard goes with it: the next arrow moves again. Real arrow events carry the
+        // numeric-pad and function flags.
+        do {
+            let rig = Rig(); defer { rig.close() }
+            guard let mode: GlassChoiceGroup = private_(rig.resize, "modeControl"), let limit: GlassChoiceGroup = private_(rig.resize, "limitControl") else { throw Failure(description: "groups") }
+            func arrow(_ code: UInt16) throws -> NSEvent { try key(code, window: rig.panel) }
+            try expect(rig.panel.makeFirstResponder(mode.buttons[0]), "The keyboard is on the chosen mode segment")
+            deliver(try arrow(124), to: rig.panel)
+            try expect(mode.selectedIndex == 1 && rig.state().mode == .crop && rig.panel.firstResponder === mode.buttons[1], "→ chooses Crop and the keyboard stays on the Crop segment (\(String(describing: rig.panel.firstResponder)))")
+            deliver(try arrow(124), to: rig.panel)
+            try expect(mode.selectedIndex == 2 && rig.state().mode == .limit && rig.panel.firstResponder === mode.buttons[2], "A second → moves again, to Limit, and the keyboard follows")
+            deliver(try arrow(123), to: rig.panel)
+            try expect(mode.selectedIndex == 1 && rig.panel.firstResponder === mode.buttons[1], "← moves back")
+            deliver(try arrow(124), to: rig.panel)
+            // Limit by is the same: the arrow chooses Width and the next one Height.
+            try expect(rig.panel.makeFirstResponder(limit.buttons[0]), "The keyboard is on Longest side")
+            deliver(try arrow(124), to: rig.panel)
+            try expect(limit.selectedIndex == 1 && rig.state().limitMode == .width && rig.panel.firstResponder === limit.buttons[1], "→ in Limit by chooses Width and keeps the keyboard")
+            deliver(try arrow(124), to: rig.panel)
+            try expect(limit.selectedIndex == 2 && rig.state().limitMode == .height && rig.panel.firstResponder === limit.buttons[2], "…and again chooses Height")
+            // Typing in a field still ends its editing when a choice changes: the field's text is committed and the field editor goes.
+            guard let width: NSTextField = private_(rig.resize, "widthField") else { throw Failure(description: "width") }
+            mode.choose(0)
+            try expect(rig.panel.makeFirstResponder(width) && rig.panel.firstResponder is NSTextView, "The keyboard is in the Width field editor")
+            mode.choose(1)
+            try expect(!(rig.panel.firstResponder is NSTextView), "Choosing a mode while typing ends the field editor")
         }
 
         // Escape with the preset panel open closes only the panel; a second Escape is Cancel. Space and Down open a focused face.
@@ -391,15 +443,15 @@ private enum ResizePanelLayoutTests {
             let choices = face.choicePanel
             choices.host.presenter = { _, _ in }
             _ = rig.panel.makeFirstResponder(face)
-            rig.panel.sendEvent(try key(49, " ", window: rig.panel))
+            deliver(try key(49, " ", window: rig.panel), to: rig.panel)
             try expect(choices.host.isShown, "Space on the focused face opens the preset panel")
             choices.host.window.sendEvent(try key(53, "\u{1b}", window: choices.host.window))
             try expect(!choices.host.isShown && rig.panel.sheetParent === rig.parent && rig.appliedBox.values.isEmpty && !rig.isFinished,
                        "Escape with the panel open closes the panel; the sheet stays up and Cancel does not run")
-            rig.panel.sendEvent(try key(125, "", window: rig.panel))
+            deliver(try key(125, "", window: rig.panel), to: rig.panel)
             try expect(choices.host.isShown && choices.focusedRow?.isChosen == true, "Down on the focused face opens the panel on the chosen row")
             choices.host.close()
-            rig.panel.sendEvent(try key(53, "\u{1b}", window: rig.panel))
+            deliver(try key(53, "\u{1b}", window: rig.panel), to: rig.panel)
             try expect(rig.panel.sheetParent == nil && rig.appliedBox.values.isEmpty, "A second Escape (panel closed) runs Cancel and ends the sheet")
         }
 
