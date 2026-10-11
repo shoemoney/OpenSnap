@@ -19,6 +19,8 @@ once ran its EXIT cleanup against the real defaults domain). Proved, each with a
      `ps`, `ps eww` and `kill` are replaced by fakes (E2E_WATCHDOG_PS / E2E_WATCHDOG_ENV / E2E_WATCHDOG_KILL) so no test reads or signals a real process.
  (h) the E2E inventory (tools/e2e-inventory.py): docs/design/e2e/inventory.json and the coverage matrix match the sources, every FAIcon case and
      menu symbol is listed, every pre-filled proof names a real test, and scratch copies with a drift or a bad proof make --check fail.
+     Rows converted to glass keep their native evidence as `history` in inventory.json: it must equal the matrix at its pinned commit byte for
+     byte, the row's current class is `unverified` with gap reason `UI changed`, and a restored class, an edited history or a stray reason fails.
 Run: python3 -I tools/test-e2e-session-guard.py
 """
 from pathlib import Path
@@ -686,7 +688,7 @@ def ledger_mutant(base, name, pick, edit):
 
 
 def test_gap_reason_ledger(base, folder):
-    vocabulary = ("permission", "hardware", "OS-owned", "harness", "unsafe", "AX presence only", "AX value only", "text readout only")
+    vocabulary = ("permission", "hardware", "OS-owned", "harness", "unsafe", "AX presence only", "AX value only", "text readout only", "UI changed")
     text = (folder / "coverage-matrix.md").read_text()
     check(next(l for l in text.splitlines() if l.startswith("| ID |")).endswith("| reachability note | gap reason |"), "ledger: the matrix ends with the static reachability note and the audited gap reason as separate columns")
     rows = [[c.strip() for c in LEDGER_SPLIT.split(line.strip().strip("|"))] for line in text.splitlines() if line.startswith("| E2E-")]
@@ -742,6 +744,105 @@ def test_gap_reason_ledger(base, folder):
     result = inventory_check(tree)
     check("coverage-matrix.md ledger is inconsistent" not in (result.stdout + result.stderr), "ledger (can fail): editing only the static note does not trip the ledger rules (it trips the freshness check instead)")
     check(result.returncode != 0, "ledger (can fail): a hand-edited static note still fails --check because the matrix is generated")
+    test_converted_history(base, folder)
+
+
+HISTORY_KEYS = ("observed", "sourceSHA", "evidencePath", "evidenceClass", "reviewer", "gapReason")
+HISTORY_COLUMNS = (7, 8, 9, 10, 11, 13)   # observed, source SHA, evidence (path), evidence class, reviewer, gap reason
+
+
+def matrix_cells(text):
+    return {cells[0]: cells for cells in ([c.strip() for c in LEDGER_SPLIT.split(line.strip().strip("|"))] for line in text.splitlines() if line.startswith("| E2E-"))}
+
+
+def base_matrix_cells(commit):
+    """The matrix as it was at `commit` (the native evidence the converted rows were reset from), or None when this checkout cannot read it."""
+    result = subprocess.run(["git", "-C", str(root), "show", f"{commit}:docs/design/e2e/coverage-matrix.md"], capture_output=True, text=True)
+    return matrix_cells(result.stdout) if result.returncode == 0 and result.stdout else None
+
+
+def history_digest(history):
+    return "sha256:" + hashlib.sha256(json.dumps([history.get(k, "") for k in HISTORY_KEYS], ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()
+
+
+def history_problems(tree, base_rows):
+    """Independent of the generator: what is wrong with the history of every row converted to glass in `tree`.
+    `base_rows` is the matrix at the pinned commit; with None only the digest and the current state can be judged."""
+    entries = json.loads((tree / "docs/design/e2e/inventory.json").read_text())["entries"]
+    rows = matrix_cells((tree / "docs/design/e2e/coverage-matrix.md").read_text())
+    converted = {e["id"]: e["history"] for e in entries if e.get("history")}
+    problems = []
+    for ident, h in sorted(converted.items()):
+        row = rows.get(ident)
+        if history_digest(h) != h.get("digest"):
+            problems.append(f"{ident}: the history digest does not match its fields")
+        if base_rows is not None:
+            prior = base_rows.get(ident)
+            if prior is None or tuple(prior[i] for i in HISTORY_COLUMNS) != tuple(h.get(k) for k in HISTORY_KEYS):
+                problems.append(f"{ident}: the history differs from the matrix at {h.get('from')}")
+        if h.get("evidenceClass") not in ("E2E", "rendered"):
+            problems.append(f"{ident}: a history holds prior E2E or rendered evidence, not {h.get('evidenceClass')!r}")
+        if not row or row[10] != "unverified" or row[13] != "UI changed":
+            problems.append(f"{ident}: a converted row's current class is unverified with gap reason UI changed (found {row and row[10]!r} / {row and row[13]!r})")
+        elif not row[7].startswith("Converted to glass in") or f"Prior native evidence {h.get('evidenceClass')} at {h.get('sourceSHA')} " not in row[7] or "not current glass coverage" not in row[7]:
+            problems.append(f"{ident}: its observed cell is not the transition note for its history")
+        elif (row[8], row[9], row[11]) != ("TBD", "TBD", "TBD"):
+            problems.append(f"{ident}: its source SHA, evidence path and reviewer must not carry the native evidence as current")
+    for ident, row in sorted(rows.items()):
+        if row[13] == "UI changed" and ident not in converted:
+            problems.append(f"{ident}: gap reason UI changed on a row with no history")
+    return problems
+
+
+def test_converted_history(base, folder):
+    entries = json.loads((folder / "inventory.json").read_text())["entries"]
+    converted = {e["id"]: e["history"] for e in entries if e.get("history")}
+    commits = {h.get("from") for h in converted.values()}
+    check(len(converted) > 0 and len(commits) == 1, f"history: {len(converted)} rows converted to glass keep their native evidence, all from the matrix at {', '.join(sorted(map(str, commits)))}")
+    base_rows = base_matrix_cells(next(iter(commits))) if len(commits) == 1 else None
+    problems = history_problems(root, base_rows)
+    check(not problems, "history: each converted row's history equals its prior cells byte for byte"
+          + ("" if base_rows is not None else " (digest only: the pinned commit is not readable in this checkout)") + " and its current class is unverified with gap reason UI changed"
+          + (f" ({problems[:3]})" if problems else ""))
+    rows = matrix_cells((folder / "coverage-matrix.md").read_text())
+    check({i for i, r in rows.items() if r[13] == "UI changed"} == set(converted), "history: gap reason UI changed sits on exactly the rows that have a history")
+    check(not any(r[10] in ("E2E", "rendered") and i in converted for i, r in rows.items()), "history: no converted row still counts E2E or rendered evidence as current")
+
+    def restore(r):   # the pre-conversion row, exactly: native evidence counted as current again
+        for column, key in zip(HISTORY_COLUMNS, HISTORY_KEYS):
+            r[column] = converted[r[0]][key]
+    converted_row = lambda r: r[13] == "UI changed" and r[0] in converted
+    verdicts = {
+        "a converted row restored to its native E2E or rendered evidence (still counting it as current)": ledger_mutant(base, "history-restored", converted_row, restore),
+        "a converted row flipped back to a counted class while it still says it was converted": ledger_mutant(
+            base, "history-class-flip", converted_row, lambda r: (r.__setitem__(10, "E2E"), r.__setitem__(13, ""))),
+        "`UI changed` on an unverified row that has no transition history": ledger_mutant(
+            base, "history-stray-reason", lambda r: r[10] == "unverified" and r[0] not in converted, lambda r: (r.__setitem__(7, "J1 lane: gap: UI changed."), r.__setitem__(13, "UI changed"))),
+    }
+    for label, (tree, ident) in verdicts.items():
+        result = inventory_check(tree)
+        check(result.returncode != 0 and ident in (result.stdout + result.stderr), f"history (can fail): {label} makes --check fail and names {ident}")
+    stray_tree, stray_ident = verdicts["`UI changed` on an unverified row that has no transition history"]
+    check("no history in inventory.json" in (inventory_check(stray_tree).stdout + inventory_check(stray_tree).stderr), "history (can fail): the stray `UI changed` is refused for lacking a history")
+
+    # An edited history: the generator's digest sees it; one whose digest was recomputed to match is seen by the pinned-commit comparison.
+    tree = inventory_tree(base, "history-edited")
+    path = tree / "docs/design/e2e/inventory.json"
+    document = json.loads(path.read_text())
+    target = next(e for e in document["entries"] if e.get("history"))
+    target["history"]["observed"] += " (edited)"
+    path.write_text(json.dumps(document, indent=1, ensure_ascii=False) + "\n")
+    result = inventory_check(tree)
+    check(result.returncode != 0 and target["id"] in (result.stdout + result.stderr), f"history (can fail): an edited history makes --check fail and names {target['id']}")
+    check(any(target["id"] in p for p in history_problems(tree, base_rows)), "history (can fail): the guard's own digest check sees the edited history too")
+    if base_rows is not None:
+        target["history"]["digest"] = history_digest(target["history"])
+        path.write_text(json.dumps(document, indent=1, ensure_ascii=False) + "\n")
+        check(any(target["id"] in p and "differs from the matrix" in p for p in history_problems(tree, base_rows)),
+              "history (can fail): a history edited with its digest recomputed still differs from the matrix at the pinned commit")
+    # A converted row re-labelled with another valid reason keeps the generator content but is not the state this round requires.
+    tree, ident = ledger_mutant(base, "history-other-reason", converted_row, lambda r: (r.__setitem__(7, "J9 lane: gap: harness."), r.__setitem__(13, "harness")))
+    check(any(ident in p for p in history_problems(tree, base_rows)), f"history (can fail): a converted row relabelled with another reason is refused by the history check ({ident})")
 
 
 PANEL = "com.apple.appkit.xpc.openAndSavePanelService"
