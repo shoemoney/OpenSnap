@@ -189,9 +189,8 @@ enum UploadNotice {
 ///   uploading   spinner, status text, Cancel
 ///   success     status text, Open, Copy (the last two only when the link was copied)
 ///   failure     status text, Retry, Details
-/// Every command is an icon button with a rest plate (a faint fill, as the unselected segment of the PNG | JPG toggle has), so each one
-/// reads as a button before the pointer arrives; it deepens on hover and press like the rest of the chrome. They sit on the bar itself,
-/// not on a glass plate of their own: the bars hold exactly eight plates.
+/// Every command is an icon button on one glass plate of its own, like Save and History beside it: the plate is what makes the icons read
+/// as buttons, and each draws its hover, press and focus fills like the rest of the chrome. The plate shows only while a command does.
 @MainActor
 final class UploadStatusControls {
     static let spinnerSide: CGFloat = 20
@@ -203,6 +202,8 @@ final class UploadStatusControls {
     let retryButton = CommandButton(title: "", target: nil, action: nil)
     let detailsButton = CommandButton(title: "", target: nil, action: nil)
     private(set) var state: UploadState = .idle
+    /// The glass plate the commands sit on. The bar gives it to the controls once it has built it; it is hidden whenever no command shows.
+    private(set) var commandPlate: GlassSurfaceView?
 
     init() {
         spinner.style = .spinning
@@ -222,7 +223,8 @@ final class UploadStatusControls {
 
     /// Everything the stack arranges for the upload, in reading order (the spinner first, the commands after the status text).
     var leadingViews: [NSView] { [spinner] }
-    var trailingViews: [NSView] { commandButtons }
+    var trailingViews: [NSView] { commandPlate.map { [$0] } ?? commandButtons }
+    func attach(plate: GlassSurfaceView) { commandPlate = plate; apply(state) }
     var commandButtons: [CommandButton] { [cancelButton, openButton, copyButton, retryButton, detailsButton] }
 
     private func icon(_ button: CommandButton, _ icon: FAIcon, name: String) {
@@ -230,7 +232,6 @@ final class UploadStatusControls {
         button.iconPointSize = GlassChrome.Metrics.iconPointSize
         button.icon = icon
         button.makeIconOnly(name: name)
-        button.showsRestPlate = true
         button.setAccessibilityLabel(name)
         GlassChrome.fix(button, GlassChrome.Metrics.iconButton)
         button.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -248,5 +249,6 @@ final class UploadStatusControls {
         copyButton.isHidden = !linked
         retryButton.isHidden = !state.isFailure
         detailsButton.isHidden = !state.isFailure
+        commandPlate?.isHidden = commandButtons.allSatisfy(\.isHidden)
     }
 }

@@ -1599,7 +1599,8 @@ private enum GlassChromeTests {
             }
         }
         let plates = surfaces(rig)
-        expect(plates.count == 8, "\(label): eight glass plates, one per group (\(plates.count))")
+        let uploadPlate = chrome.uploadControls.commandPlate?.isHidden == false ? 1 : 0
+        expect(plates.count == 8 + uploadPlate, "\(label): eight glass plates, one per group, and the upload commands' while a command shows (\(plates.count))")
         for glass in plates {
             let frame = rect(glass, in: rig)
             expect(rig.content.bounds.insetBy(dx: -0.5, dy: -0.5).contains(frame), "\(label): plate \(describe(glass)) lies inside the content")
@@ -1724,15 +1725,9 @@ private enum GlassChromeTests {
                 shared.status.invalidateIntrinsicContentSize()
                 rig.content.layoutSubtreeIfNeeded()
                 let status = rect(shared.status, in: rig), box = rect(shared.dragOriginalControl, in: rig)
-                if width == 980 && state.isFailure {
-                    // F-J7-006: an error gives up its words, not the checkbox. Its narrowest form is "Failed", and the slot holds that beside the box and both commands.
-                    let narrowest = try! unwrapState(state.statusVariants.last)
-                    expect(fits, "\(label): at 980 the \(Int(chrome.statusSlotWidth())) pt slot holds the checkbox (\(Int(checkbox)) pt) with the error at its narrowest and the commands (\(Int(chrome.slotNeed(for: state))) pt)")
-                    expect(narrowest == "Failed" && chrome.statusCellWidth(of: narrowest) <= status.width + 0.5, "\(label): the status (\(Int(status.width)) pt) holds \"\(narrowest)\" whole (\(Int(chrome.statusCellWidth(of: narrowest))) pt)")
-                    expect(box.intersection(status).width <= 0.5 && box.maxX <= status.minX + 0.5 && box.width >= checkbox - 0.5, "\(label): the checkbox stands whole and clear of the status (\(box) vs \(status))")
-                } else if width == 980 {
+                if width == 980 {
                     expect(!fits, "\(label): at 980 the \(Int(chrome.statusSlotWidth())) pt slot cannot hold the checkbox (\(Int(checkbox)) pt) with the status minimum and commands (\(Int(chrome.slotNeed(for: state))) pt)")
-                    expect(status.width < ModernEditorChrome.minimumUploadStatusWidth, "\(label): the rule is not vacuous, with the checkbox forced on the status would drop to \(Int(status.width)) pt")
+                    expect(state.isFailure || status.width < ModernEditorChrome.minimumUploadStatusWidth, "\(label): the rule is not vacuous, with the checkbox forced on the status would drop to \(Int(status.width)) pt")
                 } else {
                     expect(fits, "\(label): at 1440 the \(Int(chrome.statusSlotWidth())) pt slot holds the checkbox (\(Int(checkbox)) pt) and \(Int(chrome.slotNeed(for: state))) pt of message and commands")
                     expect(status.width >= ModernEditorChrome.minimumUploadStatusWidth - 0.5, "\(label): with the checkbox shown the status keeps \(Int(status.width)) pt")
@@ -1748,12 +1743,14 @@ private enum GlassChromeTests {
             let state = UploadState.failure(message: "Upload to Example S3 failed: the connection was refused.")
             let fits = rig.chrome.slotHasRoomForCheckbox(during: state)
             // The toggle sits on the View plate, so the slot the bar leaves with it showing is already net of its place: the need is the message and commands.
-            let need = rig.chrome.slotNeed(for: state)
+            let need = rig.chrome.slotNeedDuringAnyUpload
             expect(!rig.controls.dragOriginalControl.isHidden && fits == (rig.chrome.statusSlotWidth() >= need) && (fits || !previous), "\(tag) \(Int(width)): the answer is the measured comparison and never flips back as the window grows")
-            expect(fits, "\(tag) \(Int(width)): from the 980 floor up an error keeps the toggle beside it (F-J7-006)")
+            let others = [UploadState.uploading(name: "Shot"), .success(url: URL(string: "https://cdn.example.com/pics/x.png")!, copied: true)].map { rig.chrome.slotHasRoomForCheckbox(during: $0) }
+            expect(others.allSatisfy { $0 == fits }, "\(tag) \(Int(width)): the checkbox is shown or hidden alike in every upload state, so the bar does not jump (error \(fits), others \(others))")
+            expect(width > 1000 || !fits, "\(tag) \(Int(width)): at the 980 floor the checkbox steps aside for the whole upload, an error included")
             previous = fits
         }
-        expect(previous, "\(tag): by 1500 pt the checkbox stays beside an error")
+        expect(previous, "\(tag): by 1500 pt the checkbox stays beside an upload's message")
     }
 
     /// R2-014: below 1100 pt the PNG | JPG toggle is one compact button (about 64 pt) that shows the current format and flips on a click; the
@@ -1767,8 +1764,18 @@ private enum GlassChromeTests {
             let compact = width < 1100
             widths[width] = toggle.frame.width
             expect(toggle.isCompact == compact, "\(Int(width)): the toggle is \(compact ? "compact" : "two segments") (\(toggle.frame.width) pt)")
-            if compact { expect(toggle.frame.width < 80 && toggle.frame.width > 50, "\(Int(width)): the compact toggle is about 64 pt (\(toggle.frame.width))") }
+            if compact { expect(toggle.frame.width < 100 && toggle.frame.width > 50, "\(Int(width)): the compact toggle is one button about 84 pt (\(toggle.frame.width))") }
             else { expect(toggle.frame.width > 100, "\(Int(width)): the full toggle keeps both segments (\(toggle.frame.width))") }
+            // A compact "PNG" must not look like the selected segment of the two-segment toggle: it carries a swap cue, and only then.
+            expect(rig.chrome.formatSwapCueVisible == compact, "\(Int(width)): the swap cue is \(compact ? "shown on the compact button" : "hidden beside two segments")")
+            if compact {
+                let cue = toggle.subviews.compactMap { $0 as? NSImageView }.first
+                rig.chrome.layoutSubtreeIfNeeded()
+                if let cue {
+                    expect(cue.image != nil && cue.hitTest(NSPoint(x: 1, y: 1)) == nil && cue.frame.maxX <= toggle.bounds.maxX + 0.5 && cue.frame.minX >= toggle.bounds.midX,
+                           "\(Int(width)): the cue sits inside the button's trailing half and passes clicks through (\(cue.frame) in \(toggle.bounds))")
+                } else { expect(false, "\(Int(width)): the compact toggle has a swap cue view") }
+            }
         }
         let compact = SegmentedToggle(titles: ["PNG", "JPG"]), target = ActionTarget()
         compact.target = target; compact.action = #selector(ActionTarget.formatChanged(_:))
@@ -2112,6 +2119,20 @@ private enum GlassChromeTests {
         expect(UploadState.success(url: url, copied: false).statusVariants == ["Published image"] && UploadState.idle.statusVariants.isEmpty, "An uncopied link and idle have no link text")
         expect(UploadState.uploading(name: "Shot").statusVariants == ["Uploading Shot…", "Uploading…"] && UploadState.failure(message: "No.\nMore").statusVariants == ["No."], "Uploading gives up the file name before the verb; an error is its first line")
         expect(UploadState.middleTruncated("abcdefghij", to: 6) == "ab…hij" && UploadState.middleTruncated("abc", to: 6) == "abc", "middleTruncated keeps the end a little longer than the start")
+        // A save notice names its file; where the slot cannot hold the whole line it shows "Saved" whole, never "Saved Quarterly mo…".
+        let saved = StatusTextField(labelWithString: "")
+        saved.font = DesignTokens.Typography.font(.body); saved.lineBreakMode = .byTruncatingTail
+        for write in [{ saved.setVariants(["Saved Quarterly mockup.opensnap"]) }, { saved.stringValue = "Saved Quarterly mockup.opensnap" }] {
+            write()
+            saved.setFrameSize(NSSize(width: 2000, height: 24))
+            expect(saved.stringValue == "Saved Quarterly mockup.opensnap" && saved.spokenValue == nil, "A wide slot shows the file name too")
+            for width in [200, 150, 100] as [CGFloat] {
+                saved.setFrameSize(NSSize(width: width, height: 24))
+                let cell = saved.cell?.cellSize.width ?? 0
+                expect(!saved.stringValue.contains("…") && saved.stringValue.hasPrefix("Saved") && cell <= width + 0.5, "At \(Int(width)) pt the notice reads whole, not cut mid-word (\"\(saved.stringValue)\", needs \(cell) pt)")
+            }
+            expect(saved.stringValue == "Saved" && saved.spokenValue == "Saved Quarterly mockup.opensnap", "Narrow, the word alone shows and VoiceOver still hears the whole line (\(saved.spokenValue ?? "nil"))")
+        }
         let field = StatusTextField(labelWithString: "")
         field.font = DesignTokens.Typography.font(.body)
         field.lineBreakMode = .byTruncatingTail
@@ -2306,12 +2327,12 @@ private enum GlassChromeTests {
                 expect(footer.insetBy(dx: -0.5, dy: -0.5).contains(frame), "\(tag): \(title) lies inside the bottom bar (\(frame) vs \(footer))")
                 expect(abs(frame.width - GlassChrome.Metrics.iconButton.width) < 0.5, "\(tag): \(title) is not squeezed (\(frame.width) of \(GlassChrome.Metrics.iconButton.width))")
                 expect(frame.height >= 36 && button.visibleTitle.isEmpty && button.icon != nil, "\(tag): \(title) is a 36 pt icon button")
-                expect(button.showsRestPlate && button.plate.style.fill != nil, "\(tag): \(title) carries a rest plate, so it reads as a button before the pointer arrives")
+                expect(!button.showsRestPlate && chrome.surface(for: button)?.identifier?.rawValue == "GlassUploadCommands", "\(tag): \(title) sits on the upload commands' glass plate like Save and History, not on a flat grey square of its own")
                 occupied.append((title, frame))
             }
-            expect(surfaces(rig).count == 8 && surfaces(rig).allSatisfy { $0.identifier?.rawValue != "GlassUploadCommands" }, "\(tag): the upload adds no glass plate; the bars still hold eight")
+            expect(surfaces(rig).count == (commands.isEmpty ? 8 : 9) && surfaces(rig).contains { $0.identifier?.rawValue == "GlassUploadCommands" } == !commands.isEmpty, "\(tag): the commands share one glass plate, shown only while one does; the bars hold eight otherwise")
             let spinnerPart: CGFloat = state.isUploading ? UploadStatusControls.spinnerSide + ModernEditorChrome.statusRowSpacing : 0
-            expect(abs(chrome.slotNeed(for: state) - (chrome.minimumMessageWidth(for: state) + spinnerPart + CGFloat(commands.count) * (GlassChrome.Metrics.iconButton.width + ModernEditorChrome.statusRowSpacing))) < 0.5,
+            expect(abs(chrome.slotNeed(for: state) - (chrome.minimumMessageWidth(for: state) + spinnerPart + (commands.isEmpty ? 0 : CGFloat(commands.count) * GlassChrome.Metrics.iconButton.width + CGFloat(commands.count - 1) * GlassChrome.Metrics.groupSpacing + 2 * GlassChrome.Metrics.groupInset + ModernEditorChrome.statusRowSpacing))) < 0.5,
                    "\(tag): slotNeed counts the message minimum (an error counts its narrowest form), the spinner and each command with its gap")
             let status = rect(shared.status, in: rig)
             occupied.append(("status", status))
@@ -2660,9 +2681,10 @@ private enum GlassChromeTests {
     private static func glassDepthChecks(_ rig: Rig, _ label: String) {
         let chrome = rig.chrome
         rig.content.layoutSubtreeIfNeeded()
-        let glass = allGlass(in: chrome)
-        expect(glass.count <= 8, "\(label): at most 8 glass surfaces in the window (\(glass.count))")
-        expect(glass.count == 8 && glass.allSatisfy { $0 is GlassSurfaceView }, "\(label): they are exactly the eight group plates (\(glass.count))")
+        let glass = allGlass(in: chrome).filter { !$0.isHiddenOrHasHiddenAncestor }
+        let uploadPlate = chrome.uploadControls.commandPlate?.isHidden == false ? 1 : 0
+        expect(glass.count <= 9, "\(label): at most 9 glass surfaces in the window (\(glass.count))")
+        expect(glass.count == 8 + uploadPlate && glass.allSatisfy { $0 is GlassSurfaceView }, "\(label): they are exactly the eight group plates, and the upload commands' while a command shows (\(glass.count))")
         for view in glass {
             var ancestor = view.superview
             while let current = ancestor {

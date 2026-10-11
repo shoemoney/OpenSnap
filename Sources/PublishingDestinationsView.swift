@@ -48,6 +48,11 @@ final class PublishingDestinationsView: NSView {
     private func notifyPreferredHeight() { onPreferredHeightChange?(preferredHeight) }
 
     let scrollView = NSScrollView()
+    /// How much of the form's edge dissolves where more of the form lies beyond it, so a paragraph is never sliced by a hard line.
+    static let scrollFadeHeight: CGFloat = 32
+    private let scrollFade = CAGradientLayer()
+    /// Whether the form runs on below the visible part / above it: the edge that does fades out instead of being cut.
+    private(set) var fadesAtBottom = false, fadesAtTop = false
     private let formPage = NSStackView()
     /// The inline Test / Save result: a glyph and text together, never colour alone. It sits above the buttons and is as tall as its text.
     let formResult: DestinationStatusRow
@@ -115,6 +120,10 @@ final class PublishingDestinationsView: NSView {
         scrollView.hasVerticalScroller = true; scrollView.hasHorizontalScroller = false; scrollView.autohidesScrollers = true
         scrollView.drawsBackground = false; scrollView.borderType = .noBorder
         scrollView.translatesAutoresizingMaskIntoConstraints = false; addSubview(scrollView)
+        scrollView.wantsLayer = true; scrollView.layer?.mask = scrollFade
+        scrollFade.startPoint = CGPoint(x: 0.5, y: 1); scrollFade.endPoint = CGPoint(x: 0.5, y: 0)   // layer space: y grows upward
+        scrollView.contentView.postsBoundsChangedNotifications = true
+        NotificationCenter.default.addObserver(self, selector: #selector(scrollMoved), name: NSView.boundsDidChangeNotification, object: scrollView.contentView)
 
         let separator = NSBox(); separator.boxType = .separator; separator.translatesAutoresizingMaskIntoConstraints = false; addSubview(separator)
         formFooter.translatesAutoresizingMaskIntoConstraints = false; addSubview(formFooter)
@@ -138,6 +147,25 @@ final class PublishingDestinationsView: NSView {
         showForm(for: destination)
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+
+    deinit { NotificationCenter.default.removeObserver(self) }
+    @objc private func scrollMoved() { updateScrollFade() }
+    override func layout() { super.layout(); updateScrollFade() }
+
+    /// Fades the top or bottom edge of the form when part of it is scrolled out of sight there.
+    func updateScrollFade() {
+        guard let document = scrollView.documentView else { return }
+        let clip = scrollView.contentView.bounds
+        fadesAtTop = clip.minY > 0.5
+        fadesAtBottom = clip.maxY < document.frame.height - 0.5
+        let height = max(1, scrollView.bounds.height), fade = min(0.5, Self.scrollFadeHeight / height)
+        let opaque = NSColor.black.cgColor, clear = NSColor.black.withAlphaComponent(0).cgColor
+        CATransaction.begin(); CATransaction.setDisableActions(true)
+        scrollFade.frame = scrollView.bounds
+        scrollFade.colors = [fadesAtTop ? clear : opaque, opaque, opaque, fadesAtBottom ? clear : opaque]
+        scrollFade.locations = [0, NSNumber(value: Double(fadesAtTop ? fade : 0)), NSNumber(value: Double(1 - (fadesAtBottom ? fade : 0))), 1]
+        CATransaction.commit()
+    }
 
     override func viewDidMoveToWindow() { super.viewDidMoveToWindow(); updateDefaultButton() }
 
@@ -219,8 +247,10 @@ final class PublishingDestinationsView: NSView {
         sectionHeaders.append(header)
         return header
     }
+    /// A row caption ends in a colon, as the labels of the Settings forms and every classic Mac form do; the control keeps the bare name for VoiceOver.
+    static func captionText(_ title: String) -> String { title.isEmpty ? "" : title + ":" }
     private func addRow(_ id: String, _ title: String, _ control: NSView, stretches: Bool = true, visible: @escaping (PublishingProtocol, Bool) -> Bool) {
-        let caption = label(title, style: .bodyStrong)
+        let caption = label(Self.captionText(title), style: .bodyStrong)
         let stack = NSStackView(views: [caption, control]); stack.orientation = .horizontal; stack.alignment = .centerY; stack.spacing = Space.s4
         caption.widthAnchor.constraint(equalToConstant: Self.captionWidth).isActive = true
         caption.preferredMaxLayoutWidth = Self.captionWidth
@@ -243,27 +273,27 @@ final class PublishingDestinationsView: NSView {
         var copy = FormCopy()
         switch transport {
         case .webDAV:
-            copy.endpointPlaceholder = "https://example.com/uploads"; copy.folderPlaceholder = "screenshots (under the endpoint)"
+            copy.endpointPlaceholder = "https://example.com"; copy.folderPlaceholder = "screenshots"
             copy.usernamePlaceholder = "Blank for anonymous access"
             copy.help = "WebDAV, or any server that accepts an HTTP PUT. The endpoint starts with http:// or https://. Folders must exist. Public base URL maps to the remote folder; only the file name is appended."
             copy.testNote = "Test asks the server about the folder and, when a login is set, checks it. It never uploads."
         case .ftp:
-            copy.endpointPlaceholder = "ftp://ftp.example.com/uploads"; copy.folderPlaceholder = "screenshots (under the endpoint)"
+            copy.endpointPlaceholder = "ftp://ftp.example.com"; copy.folderPlaceholder = "screenshots"
             copy.usernamePlaceholder = "Blank for anonymous access"
             copy.help = "Plain FTP: the endpoint starts with ftp:// and the password travels unencrypted, so use FTPS or SFTP where the server offers them. Folders must exist. Public base URL maps to the upload folder; only the file name is appended."
             copy.testNote = "Test logs in and lists the folder. It never uploads."
         case .ftps:
-            copy.endpointPlaceholder = "ftps://ftp.example.com/uploads"; copy.folderPlaceholder = "screenshots (under the endpoint)"
+            copy.endpointPlaceholder = "ftps://ftp.example.com"; copy.folderPlaceholder = "screenshots"
             copy.usernamePlaceholder = "Blank for anonymous access"
             copy.help = "FTPS: ftp:// starts explicit TLS and ftps:// implicit TLS; TLS is required either way. Folders must exist. Public base URL maps to the upload folder; only the file name is appended."
             copy.testNote = "Test logs in over TLS and lists the folder. It never uploads."
         case .sftp:
-            copy.endpointPlaceholder = "sftp://host.example.com/uploads"; copy.folderPlaceholder = "screenshots (under the remote root)"
-            copy.usernamePlaceholder = "Blank to use the SSH configuration"
+            copy.endpointPlaceholder = "sftp://host.example.com"; copy.folderPlaceholder = "screenshots"
+            copy.usernamePlaceholder = "Blank to use SSH config"
             copy.help = "SFTP uses keys from your SSH configuration or agent, with strict known-host checks, and needs no password. Give the SSH host (an alias from ~/.ssh/config or a host name) and an absolute remote root; leave username and port empty to use the alias settings. Folders must exist."
             copy.testNote = "Test connects over SSH and lists the folder. It never uploads."
         case .s3:
-            copy.endpointCaption = "Endpoint"; copy.endpointPlaceholder = "Blank for AWS, or https://s3.example.com"
+            copy.endpointCaption = "Endpoint"; copy.endpointPlaceholder = "Blank for AWS, or a URL"
             copy.folderCaption = "Key prefix"; copy.folderPlaceholder = "screenshots (optional)"
             copy.usernameCaption = "Access key ID"; copy.usernamePlaceholder = "AKIAIOSFODNN7EXAMPLE"
             copy.passwordCaption = "Secret access key"
@@ -290,16 +320,16 @@ final class PublishingDestinationsView: NSView {
         Typography.apply(.body, to: passwordField)
         let all: (PublishingProtocol, Bool) -> Bool = { _, _ in true }
         formPage.addArrangedSubview(sectionHeader("Connection"))
-        addRow("name", "Name", styled(nameField, "Shown in the Upload right-click menu"), visible: all)
+        addRow("name", "Name", styled(nameField, "Shown in the Upload menu"), visible: all)
         addRow("protocol", "Protocol", choicePlate(protocolPopup, caption: "Protocol", identifier: "DestinationProtocol"), visible: all)
         addRow("endpoint", "Endpoint URL", styled(endpointField, ""), visible: { [unowned self] p, _ in p != .sftp || self.showsLegacySFTPEndpoint })
         addRow("region", "Region", styled(regionField, "us-east-1, or auto for R2"), visible: { p, _ in p == .s3 })
         addRow("bucket", "Bucket", styled(bucketField, "my-bucket"), visible: { p, _ in p == .s3 })
         addRow("folder", "Remote folder", styled(folderField, ""), visible: all)
-        addRow("public", "Public base URL", styled(publicField, "https://cdn.example.com/screenshots (optional)"), visible: all)
+        addRow("public", "Public base URL", styled(publicField, "https://cdn.example.com"), visible: all)
         addRow("alias", "SSH host alias", styled(aliasField, "myserver or host.example.com"), visible: { p, _ in p == .sftp })
         addRow("root", "SFTP remote root", styled(remoteRootField, "/var/www/site/uploads"), visible: { p, _ in p == .sftp })
-        addRow("port", "SFTP port", styled(portField, "Blank to use SSH configuration"), visible: { p, _ in p == .sftp })
+        addRow("port", "SFTP port", styled(portField, "Blank to use SSH config"), visible: { p, _ in p == .sftp })
         addRow("acl", "", glassPlate([aclCheckbox], identifier: "DestinationPublicReadGroup"), stretches: false, visible: { p, _ in p == .s3 })
         if let last = rows["acl"]?.stack { formPage.setCustomSpacing(Space.s5, after: last) }
         formPage.addArrangedSubview(sectionHeader("Credentials"))
@@ -328,7 +358,7 @@ final class PublishingDestinationsView: NSView {
         let transport = selectedProtocol, keychain = keychainSource, copy = Self.formCopy(for: transport)
         for row in rows.values { row.stack.isHidden = !row.visible(transport, keychain) }
         func caption(_ id: String, _ text: String) {
-            rows[id]?.label.stringValue = text
+            rows[id]?.label.stringValue = Self.captionText(text)
             rows[id]?.stack.arrangedSubviews.last?.setAccessibilityLabel(text)
         }
         caption("endpoint", copy.endpointCaption); caption("folder", copy.folderCaption)

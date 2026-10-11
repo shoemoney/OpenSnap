@@ -203,8 +203,29 @@ struct HistoryBrowserTests {
                         browser.setFilters(category:.all,date:filter)
                         try expect(browser.visibleItems.map(\.name) == names,"Calendar range \(filter)")
                     }
+                    let calendarDay = [dated("TodayStart",todayStart),dated("JustBeforeToday",todayStart.addingTimeInterval(-0.5)),dated("Midday",now),dated("TomorrowStart",calendar.date(byAdding:.day,value:1,to:todayStart)!)]
+                    browser.update(items:calendarDay); browser.setFilters(category:.all,date:.today)
+                    try expect(browser.visibleItems.map(\.name) == ["TodayStart","Midday"],"Today is the calendar day of now: \(browser.visibleItems.map(\.name))")
+                    browser.update(items:values)
                     browser.setFilters(category:.all); try expect(browser.visibleItems.count == values.count,"All dates excludes future")
                     try expect(todayStart.timeIntervalSince(yesterdayStart) == 23*3600,"Fixture must cross DST")
+                }
+            }),
+            ("The search field is as tall as the filter plates beside it and draws the chrome's own magnifier, not the system's", {
+                try browser { browser,_ in
+                    browser.update(items:[item("A")]); laidOut(browser,width:1000,height:720)
+                    let content = browser.window!.contentView!
+                    let field = try descendants(content).compactMap { $0 as? NSSearchField }.first.unwrap("search field")
+                    var outer: NSView = field
+                    while let parent = outer.superview, !(outer is GlassSurfaceView) { outer = parent }
+                    let datePlate = try glassPlate(of:browser.dateFilterPopUp).unwrap("date plate")
+                    try expect(outer is GlassSurfaceView && abs(outer.frame.height - datePlate.frame.height) < 0.5,
+                               "The search control is as tall as the date plate: \(outer.frame.height) vs \(datePlate.frame.height)")
+                    try expect(field.frame.height >= GlassChoiceButton.height - 0.5, "The field itself is a full control high (\(field.frame.height))")
+                    let cell = try (field.cell as? NSSearchFieldCell).unwrap("search cell")
+                    let expected = ChromeIcons.resolve(.magnifyingGlass,family:.regular,pointSize:GlassChrome.Metrics.iconPointSize * 0.8).image
+                    try expect(cell.searchButtonCell?.image != nil && cell.searchButtonCell?.image?.size == expected?.size,
+                               "The magnifier is the Font Awesome one (\(String(describing: cell.searchButtonCell?.image?.size)) vs \(String(describing: expected?.size)))")
                 }
             }),
             ("Selection survives identical metadata refresh without full reload", {
@@ -666,7 +687,7 @@ struct HistoryBrowserTests {
                     try expect(row[0].isEnabled && row[1].isEnabled && !row[2].isEnabled,"Row buttons keep their validation")
                 }
             }),
-            ("The action row shows icon and label while the window holds them, keeps the three that take something away labelled at the 880 minimum, and never clips (R1-012)", {
+            ("The action row shows icon and label while the window holds them, collapses every label together at the 880 minimum (never a mix), and never clips (R1-012)", {
                 try browser { browser,_ in
                     let content = try browser.window?.contentView.unwrap("content view") ?? NSView()
                     func show(width: CGFloat) throws -> [HistoryBrowser.Action: NSButton] {
@@ -676,7 +697,6 @@ struct HistoryBrowserTests {
                         let row = MainActor.assumeIsolated { actionButtons(browser) }
                         return Dictionary(uniqueKeysWithValues: zip(HistoryBrowser.Action.allCases,row))
                     }
-                    let destructive: [HistoryBrowser.Action] = [.remove,.deleteFiles,.deleteRemote]
                     var labels: [CGFloat: HistoryBrowser.ActionLabels] = [:]
                     for width in [HistoryBrowser.minimumSize.width,1000,1400] as [CGFloat] {
                         let buttons = try show(width:width)
@@ -684,7 +704,7 @@ struct HistoryBrowserTests {
                         let rowBox = browser.actionRow.convert(browser.actionRow.bounds,to:content), formatBox = try glassPlate(of:browser.dragFormatPopUp).unwrap("format plate")
                         for (action,button) in buttons {
                             let shown = !button.title.isEmpty
-                            try expect(shown == (browser.actionLabels == .all || (browser.actionLabels == .destructiveOnly && destructive.contains(action))), "\(Int(width)): \(action) label follows the mode \(browser.actionLabels)")
+                            try expect(shown == (browser.actionLabels == .all), "\(Int(width)): \(action) label follows the mode \(browser.actionLabels)")
                             if shown { try expect(button.title == action.shortTitle && button.imagePosition == .imageLeading && (button.font?.pointSize ?? 0) >= 20, "\(Int(width)): \(action) shows its short title beside its icon at 20 pt") }
                             else { try expect(button.imagePosition == .imageOnly && button.image != nil && button.toolTip == action.title, "\(Int(width)): \(action) is an icon with its full name as tooltip") }
                             let box = button.convert(button.bounds,to:content)
@@ -692,7 +712,8 @@ struct HistoryBrowserTests {
                                        "\(Int(width)): \(action) sits inside the row, unclipped (\(box) in \(rowBox))")
                             try expect(box.width >= DesignTokens.Size.tool.width - 0.5 && box.height >= DesignTokens.Size.control - 0.5, "\(Int(width)): \(action) is a full-size target (\(box.size))")
                         }
-                        try expect(destructive.allSatisfy { !buttons[$0]!.title.isEmpty }, "\(Int(width)): Hide, Trash and Delete from Web keep their labels")
+                        let labelled = buttons.values.filter { !$0.title.isEmpty }.count
+                        try expect(labelled == 0 || labelled == buttons.count, "\(Int(width)): the row collapses as one, never a mix of labelled and icon-only commands (\(labelled) of \(buttons.count) labelled)")
                         let formatInFooter = formatBox.convert(formatBox.bounds,to:content)
                         try expect(browser.footerRow.arrangedSubviews.contains(formatBox) && content.bounds.contains(formatInFooter) && formatInFooter.maxX <= content.bounds.maxX - DesignTokens.Space.s4 + 0.5,
                                    "\(Int(width)): the drag format sits at the end of the footer line, whole (\(formatInFooter))")
@@ -702,9 +723,9 @@ struct HistoryBrowserTests {
                     try expect(browser.actionLabels == .all && content.fittingSize.width <= HistoryBrowser.minimumSize.width, "with every label showing, the window's own minimum is still 880 (fits at \(content.fittingSize.width))")
                     // A drag inward is decided from the width the window is about to have: 880 is accepted and collapses the labels first.
                     let proposed = browser.window!.frameRect(forContentRect:NSRect(x:0,y:0,width:880,height:720)).size
-                    try expect(browser.windowWillResize(browser.window!,to:proposed) == proposed && browser.actionLabels == .destructiveOnly && browser.window!.minSize.width == 880,
-                               "a resize to 880 is accepted, with the labels already collapsed (\(browser.actionLabels), min \(browser.window!.minSize))")
-                    try expect(labels[HistoryBrowser.minimumSize.width] == .destructiveOnly, "at the 880 minimum only the three destructive ones carry labels (\(String(describing: labels[880])))")
+                    try expect(browser.windowWillResize(browser.window!,to:proposed) == proposed && browser.actionLabels == .none && browser.window!.minSize.width == 880,
+                               "a resize to 880 is accepted, with every label already collapsed (\(browser.actionLabels), min \(browser.window!.minSize))")
+                    try expect(labels[HistoryBrowser.minimumSize.width] == HistoryBrowser.ActionLabels.none, "at the 880 minimum no command carries a label, Hide, Trash and Delete from Web included (\(String(describing: labels[880])))")
                     try expect(labels[1000] == .all, "the default 1000 pt window labels every action (\(String(describing: labels[1000])))")
                     try expect(labels[1400] == .all, "a wide window labels every action (\(String(describing: labels[1400])))")
                     try expect(HistoryBrowser.Action.remove.icon == .folderMinus && HistoryBrowser.Action.remove.icon != .eyeSlash && HistoryBrowser.Action.remove.shortTitle == "Hide",
@@ -929,10 +950,10 @@ struct HistoryBrowserTests {
                     browser.update(items:[item("A"),item("B",-1)]); laidOut(browser,width:1000,height:720)
                     let content = browser.window!.contentView!
                     let glass = descendants(content).filter { $0 is NSGlassEffectView }
-                    // Three action plates, plus one plate each for the category choice, the date filter and Drag as: every choice is a plate, nothing else is glass.
-                    let filterPlates = [browser.categoryChoice.plate,glassPlate(of:browser.dateFilterPopUp),glassPlate(of:browser.dragFormatPopUp)].compactMap { $0 as NSView? }
-                    try expect(glass.count == 6 && glass.allSatisfy { $0 is GlassSurfaceView } && filterPlates.count == 3 && filterPlates.allSatisfy { plate in glass.contains { $0 === plate } } && browser.actionPlates.allSatisfy { plate in glass.contains { $0 === plate } },
-                               "History draws exactly its three action plates and its three choice plates as glass (found \(glass.count))")
+                    // Three action plates, plus one plate each for the category choice, the search field, the date filter and Drag as: every choice is a plate, nothing else is glass.
+                    let filterPlates = [browser.categoryChoice.plate,browser.searchPlate,glassPlate(of:browser.dateFilterPopUp),glassPlate(of:browser.dragFormatPopUp)].compactMap { $0 as NSView? }
+                    try expect(glass.count == 7 && glass.allSatisfy { $0 is GlassSurfaceView } && filterPlates.count == 4 && filterPlates.allSatisfy { plate in glass.contains { $0 === plate } } && browser.actionPlates.allSatisfy { plate in glass.contains { $0 === plate } },
+                               "History draws exactly its three action plates and its four filter plates (category, search, date, Drag as) as glass (found \(glass.count))")
                     for plate in glass {
                         let nested = descendants(plate).filter { $0 !== plate && ($0 is NSGlassEffectView || $0 is NSVisualEffectView) }
                         try expect(nested.isEmpty,"A glass plate holds another material: \(nested.map { String(describing: type(of:$0)) })")
@@ -1101,15 +1122,16 @@ struct HistoryBrowserTests {
                     choices.host.presenter = { _,_ in }
                     try expect(popup.accessibilityLabel() == "History date filter" && popup.accessibilityRole() == .popUpButton && popup.titleOfSelectedItem == "All dates" && popup.faceTitle == "All dates",
                                "The pop-up is named History date filter, a pop-up button showing All dates")
-                    try expect(popup.itemTitles == HistoryBrowser.DateFilter.allCases.map(\.title) && glassPlate(of:popup) != nil && popup.superview is ChromeFillCell,"…on a glass plate in a fill cell, with the same four choices")
+                    try expect(popup.itemTitles == HistoryBrowser.DateFilter.allCases.map(\.title) && glassPlate(of:popup) != nil && popup.superview is ChromeFillCell,"…on a glass plate in a fill cell, with the five choices")
                     let all = [item("Now",0),item("Old",-5)]
                     browser.update(items:all)
                     popup.performClick(nil)
                     try expect(choices.host.isShown && choices.rows.map(\.title) == HistoryBrowser.DateFilter.allCases.map(\.title),"The panel lists \(choices.rows.map(\.title))")
-                    try expect(choices.rows.allSatisfy { $0.accessibilityRole() == .radioButton && $0.isEnabled } && choices.rows.map { ($0.accessibilityValue() as? NSNumber)?.intValue ?? -1 } == [1,0,0,0],"Rows are enabled radio buttons, 1 on All dates and 0 elsewhere")
+                    try expect(choices.rows.allSatisfy { $0.accessibilityRole() == .radioButton && $0.isEnabled } && choices.rows.map { ($0.accessibilityValue() as? NSNumber)?.intValue ?? -1 } == [1,0,0,0,0],"Rows are enabled radio buttons, 1 on All dates and 0 elsewhere")
+                    try expect(choices.rows.map(\.title) == ["All dates","Last hour","Today","Yesterday","Last 48 hours"],"The date choices run shortest window to longest, with Today: \(choices.rows.map(\.title))")
                     let last48 = try choices.rows.first { $0.title == "Last 48 hours" }.unwrap("row")
                     choices.activate(last48)
-                    try expect(!choices.host.isShown && browser.dateFilter == .last48 && popup.faceTitle == "Last 48 hours" && popup.indexOfSelectedItem == 3,"Choosing Last 48 hours sets the filter (\(browser.dateFilter)) and the face")
+                    try expect(!choices.host.isShown && browser.dateFilter == .last48 && popup.faceTitle == "Last 48 hours" && popup.indexOfSelectedItem == 4,"Choosing Last 48 hours sets the filter (\(browser.dateFilter)) and the face")
                     try expect(browser.visibleItems.map(\.name) == ["Now"],"…and filters the grid: \(browser.visibleItems.map(\.name))")
                     browser.setFilters(category:.all,date:.all)
                     try expect(popup.faceTitle == "All dates" && browser.visibleItems.count == 2,"setFilters moves the face back")

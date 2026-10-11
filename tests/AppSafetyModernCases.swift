@@ -1125,7 +1125,7 @@ extension AppSafetyTests {
         func glass(in view: NSView) -> [NSGlassEffectView] { ((view as? NSGlassEffectView).map { [$0] } ?? []) + view.subviews.flatMap { glass(in: $0) } }
         func check(_ label: String) throws {
             content.layoutSubtreeIfNeeded()
-            let found = glass(in: content)
+            let found = glass(in: content).filter { !$0.isHiddenOrHasHiddenAncestor }
             try expect(found.count == 8 && found.allSatisfy { $0 is GlassSurfaceView }, "\(label): exactly the eight group plates (\(found.count))")
             for view in found {
                 var ancestor = view.superview
@@ -1283,7 +1283,7 @@ extension AppSafetyTests {
     private static func modernAccessibilityInjection() throws {
         let (fixture, chrome) = try modernFixture()
         let app = fixture.app
-        let surfaces = collect(GlassSurfaceView.self, in: app.window.contentView!)
+        let surfaces = collect(GlassSurfaceView.self, in: app.window.contentView!).filter { !$0.isHiddenOrHasHiddenAncestor }
         let buttons = collect(CommandButton.self, in: app.window.contentView!)
         try expect(surfaces.count == 8, "Both bars have their eight plates (\(surfaces.count))")
         let snap = chrome.snapButton, arrow = try (app.toolButtons[.arrow] as? CommandButton).unwrap("arrow"), undo = chrome.undoButton

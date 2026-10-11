@@ -134,7 +134,8 @@ private enum OriginalCapturePickerTests {
         expect(label.midX == G.magnifierBorderRect.midX && label.size == NSSize(width: labelText.width + 8, height: labelText.height + 10),
                "The label stays centred under the lens, 4 pt left and right and 5 pt above and below its text")
         let labelled = OriginalCaptureMagnifierView(frame: NSRect(origin: .zero, size: G.initialSize))
-        labelled.labelString = "1028x664"
+        labelled.labelString = "1028×664"
+        expect(OriginalCaptureSelectionView.sizeReadout(for: NSSize(width: 1028, height: 664)) == "1028×664px", "The selection read-out multiplies with × like every other size")
         labelled.frame.size = labelled.requiredDisplaySize
         expect(labelled.bounds.contains(labelled.labelRect) && labelled.labelRect.minY - G.magnifierRect.maxY >= 4,
                "The mounted view is sized to hold lens and label together, with the 4 pt gap")
@@ -169,7 +170,7 @@ private enum OriginalCapturePickerTests {
         let view = OriginalCaptureSelectionView(frame: bounds, windowOnly: false, defaults: defaults)
         view.mountMagnifierIfEnabled(pointer: NSPoint(x: 500, y: 400))
         guard let mag = view.magnifier else { preconditionFailure("Preference on mounts the magnifier") }
-        expect(mag.superview === view && mag.isFlipped && mag.mousePoint == NSPoint(x: 500, y: 400) && mag.labelString == "500x400",
+        expect(mag.superview === view && mag.isFlipped && mag.mousePoint == NSPoint(x: 500, y: 400) && mag.labelString == "500×400",
                "Mounted, flipped, fed the pointer and the %dx%d label")
         expect(mag.frame.size == mag.requiredDisplaySize && mag.frame.origin.x == 500 - mag.frame.width - 2
                && mag.frame.origin.y == 400 - mag.frame.height - 2, "Placed up-left of the pointer by required size + offset")

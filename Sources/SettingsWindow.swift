@@ -297,6 +297,13 @@ final class GeneralSettingsTab: SettingsTabViewController {
         return rows
     }
 
+    override func loadView() {
+        super.loadView()
+        // A checked option is a filled chip as wide as its plate: every checkbox plate of the tab is as wide as the widest, so the
+        // chips match whichever options are on.
+        hintsPlate.widthAnchor.constraint(equalTo: snapPlate.widthAnchor).isActive = true
+    }
+
     override func refresh() {
         guard presenceGroup != nil else { return }
         let state = model.state
@@ -405,6 +412,8 @@ final class CaptureSettingsTab: SettingsTabViewController {
         super.loadView()
         grid.row(at: 1).mergeCells(in: NSRange(location: 0, length: 2))
         grid.row(at: 1).yPlacement = .top
+        // Flash and Shortcuts are both one checkbox on a plate: the same width, so a checked chip is the same size on either.
+        if let enabledPlate = hotkeyForm.enabledPlate { flashPlate.widthAnchor.constraint(equalTo: enabledPlate.widthAnchor).isActive = true }
     }
 
     override func refresh() {
@@ -945,6 +954,12 @@ class SettingsWindow: NSWindow {
     var onClose: (() -> Void)?
     /// Called with the tab index (0 to 3) for Command-1 to Command-4.
     var onSelectTab: ((Int) -> Void)?
+    /// Called just before a sheet hangs from this window, so the owner can make room for it.
+    var onSheetWillBegin: ((NSWindow) -> Void)?
+    override func beginSheet(_ sheetWindow: NSWindow, completionHandler handler: ((NSApplication.ModalResponse) -> Void)? = nil) {
+        onSheetWillBegin?(sheetWindow)
+        super.beginSheet(sheetWindow, completionHandler: handler)
+    }
 
     required override init(contentRect: NSRect, styleMask style: NSWindow.StyleMask, backing backingStoreType: NSWindow.BackingStoreType, defer flag: Bool) {
         super.init(contentRect: contentRect, styleMask: style, backing: backingStoreType, defer: flag)
@@ -1058,8 +1073,9 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         AppToolTip.install(on: content)
 
         observers.append(NotificationCenter.default.addObserver(forName: NSWindow.didEndSheetNotification, object: window, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.upload.refresh() }
+            MainActor.assumeIsolated { self?.upload.refresh(); self?.sheetDidEnd() }
         })
+        window.onSheetWillBegin = { [weak self] sheet in self?.sheetWillBegin(sheet) }
         observers.append(NotificationCenter.default.addObserver(forName: NSWindow.didBecomeKeyNotification, object: window, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self else { return }
@@ -1223,9 +1239,44 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     /// The whole window height a tab needs, title bar and tab strip included.
     func windowHeight(forTabAt index: Int) -> CGFloat { frame(forTabAt: index, keepingTopOf: window.frame).height }
 
+    // MARK: A sheet is never larger than the window it hangs from
+
+    /// The size of the sheet hanging from the window now. The window grows tall enough to hold it (a taller sheet would hang off the bottom
+    /// edge; the width is the sheet's own business, `PublishingDestinationsView.sheetWidth(forHostWidth:)` keeps it within the window) and goes back to the tab's own size when the sheet is gone.
+    private(set) var sheetSize: NSSize?
+    private var sheetResizeObserver: NSObjectProtocol?
+
+    func sheetWillBegin(_ sheet: NSWindow) {
+        sheetSize = sheet.frame.size
+        if let sheetResizeObserver { NotificationCenter.default.removeObserver(sheetResizeObserver) }
+        // The destination form hugs its content, so the sheet changes height as the protocol changes; the window follows it.
+        sheetResizeObserver = NotificationCenter.default.addObserver(forName: NSWindow.didResizeNotification, object: sheet, queue: .main) { [weak self, weak sheet] _ in
+            MainActor.assumeIsolated {
+                guard let self, let sheet, self.sheetSize != nil else { return }
+                self.sheetSize = sheet.frame.size
+                self.fit(animated: false)
+            }
+        }
+        fit(animated: false)
+    }
+
+    func sheetDidEnd() {
+        if let sheetResizeObserver { NotificationCenter.default.removeObserver(sheetResizeObserver) }
+        sheetResizeObserver = nil
+        guard sheetSize != nil else { return }
+        sheetSize = nil
+        fit(animated: false)
+    }
+
     func fit(animated: Bool) {
         guard selectedIndex >= 0 else { return }
         var target = frame(forTabAt: selectedIndex, keepingTopOf: window.frame)
+        if let sheetSize {
+            // The sheet hangs from the content's top edge: its bottom is the title bar plus its own height below the window's top.
+            let titleBar = window.frameRect(forContentRect: .zero).height
+            let height = max(target.height, sheetSize.height + titleBar)
+            target.origin.y = target.maxY - height; target.size.height = height
+        }
         let visible = visibleFrame()
         // A tab taller than the screen is capped to it: the scroll view in the content scrolls the rest.
         if target.height > visible.height { target.size.height = visible.height }

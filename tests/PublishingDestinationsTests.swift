@@ -41,6 +41,7 @@ enum PublishingDestinationsTests {
         try MainActor.assumeIsolated { try glassFaceWidths() }
         try MainActor.assumeIsolated { try sheetLaidOutWidth() }
         try MainActor.assumeIsolated { try resultBandAndSheetWidth() }
+        try MainActor.assumeIsolated { try labelsPlaceholdersAndFade() }
         try connectionTests()
         print("Destination and S3 self-checks passed: \(checks). No uploads were executed.")
     }
@@ -459,7 +460,7 @@ enum PublishingDestinationsTests {
                 let fields = descendants(view).compactMap { $0 as? NSTextField }.filter { $0.isEditable && !$0.isHiddenOrHasHiddenAncestor }
                 try expect(fields.count >= 4, "\(transport)/\(source): only \(fields.count) editable fields")
                 for field in fields { field.stringValue = "filled in" }
-                let captions = Set(view.visibleFormCaptions.map(\.stringValue))
+                let captions = Set(view.visibleFormCaptions.map { $0.stringValue.hasSuffix(":") ? String($0.stringValue.dropLast()) : $0.stringValue })
                 for field in fields {
                     let name = field.accessibilityLabel() ?? ""
                     try expect(captions.contains(name), "\(transport)/\(source): a filled field is named “\(name)”, not one of \(captions.sorted())")
@@ -480,6 +481,47 @@ enum PublishingDestinationsTests {
         try expect(message("http://x.example.com", PublishingProtocol.ftp.schemes).contains("ftp://") && !message("http://x.example.com", PublishingProtocol.ftp.schemes).contains("http://"), "an FTP endpoint error names ftp://")
         try expect(message("sftp://x", PublishingProtocol.webDAV.schemes).contains("http:// or https://"), "a WebDAV endpoint error names http:// or https://")
         try expect(!message("ftp://x.example.com", ["http", "https"]).contains("matching scheme"), "the vague wording is gone")
+    }
+
+    /// Signoff: form captions end in a colon like the Settings labels, no placeholder is cut off in the narrowest sheet, and a form that
+    /// scrolls fades the edge it runs past instead of slicing a paragraph with a hard line.
+    @MainActor static func labelsPlaceholdersAndFade() throws {
+        _ = NSApplication.shared
+        NSApp.setActivationPolicy(.prohibited)
+        let publisher = try coordinator(destinations: fixtureDestinations())
+        let (panel, view) = publisher.buildEditor(editing: nil, visibleFrame: NSRect(x: 0, y: 0, width: 1440, height: 900), hostWidth: PublishingDestinationsView.sheetMinWidth)
+        defer { panel.orderOut(nil) }
+        for transport in PublishingProtocol.allCases {
+            for source in 0...1 {
+                view.protocolPopup.selectItem(withTitle: transport.title); view.sourcePopup.selectItem(at: source); view.formChanged()
+                panel.contentView?.layoutSubtreeIfNeeded()
+                for caption in view.visibleFormCaptions {
+                    try expect(caption.stringValue.hasSuffix(":"), "\(transport.title): the caption “\(caption.stringValue)” ends in a colon like the Settings labels")
+                }
+                for field in descendants(view).compactMap({ $0 as? NSTextField }) where field.isEditable && !field.isHiddenOrHasHiddenAncestor {
+                    guard let placeholder = field.placeholderString, !placeholder.isEmpty else { continue }
+                    let width = ceil((placeholder as NSString).size(withAttributes: [.font: field.font ?? DesignTokens.Typography.font(.body)]).width)
+                    let room = field.bounds.width - 2 * DesignTokens.Space.s3
+                    try expect(width <= room, "\(transport.title)/\(source): the placeholder “\(placeholder)” needs \(width) pt but the field has \(room) at the 560 pt minimum sheet")
+                }
+            }
+        }
+        // A form taller than its sheet fades the edge it runs on past, and only that edge.
+        let (short, shortView) = publisher.buildEditor(editing: nil, visibleFrame: NSRect(x: 0, y: 0, width: 1280, height: 500), hostWidth: 640)
+        defer { short.orderOut(nil) }
+        shortView.protocolPopup.selectItem(withTitle: PublishingProtocol.s3.title); shortView.formChanged()
+        short.contentView?.layoutSubtreeIfNeeded()
+        let document = try unwrap(shortView.scrollView.documentView)
+        try expect(document.frame.height > shortView.scrollView.contentView.bounds.height + 1, "the S3 form scrolls in a short sheet")
+        try expect(shortView.fadesAtBottom && !shortView.fadesAtTop && shortView.scrollView.layer?.mask != nil, "at the top the bottom edge fades (bottom \(shortView.fadesAtBottom), top \(shortView.fadesAtTop))")
+        shortView.scrollView.contentView.scroll(to: NSPoint(x: 0, y: document.frame.height - shortView.scrollView.contentView.bounds.height))
+        shortView.scrollView.reflectScrolledClipView(shortView.scrollView.contentView)
+        shortView.updateScrollFade()
+        try expect(!shortView.fadesAtBottom && shortView.fadesAtTop, "scrolled to the end only the top edge fades")
+        let (tall, tallView) = publisher.buildEditor(editing: nil, visibleFrame: NSRect(x: 0, y: 0, width: 1280, height: 1600), hostWidth: 640)
+        defer { tall.orderOut(nil) }
+        tall.contentView?.layoutSubtreeIfNeeded()
+        try expect(!tallView.fadesAtBottom && !tallView.fadesAtTop, "a form that fits fades nothing")
     }
 
     /// F-J2-013 and 018: the sheet never overhangs its parent, and a result has a band of its own that nothing grows into.
@@ -1313,7 +1355,7 @@ enum PublishingDestinationsTests {
         let fields = descendants(view).compactMap { $0 as? NSTextField }.compactMap(\.placeholderString)
         try expect(!fields.isEmpty && !fields.contains { $0.lowercased().contains("shoemoney") }, "a placeholder names the owner: \(fields.filter { $0.lowercased().contains("shoemoney") })")
         try expect(view.aliasField.placeholderString == "myserver or host.example.com" && view.remoteRootField.placeholderString == "/var/www/site/uploads"
-                   && view.endpointField.placeholderString == "https://example.com/uploads" && view.folderField.placeholderString?.hasPrefix("screenshots") == true,
+                   && view.endpointField.placeholderString == "https://example.com" && view.folderField.placeholderString?.hasPrefix("screenshots") == true,
                    "neutral SSH alias, SFTP root, endpoint and folder placeholders")
 
         // The product word is Upload: no user-visible string on the form says Webpost.
@@ -1353,7 +1395,7 @@ enum PublishingDestinationsTests {
             }
         }
         view.protocolPopup.selectItem(withTitle: PublishingProtocol.s3.title); view.formChanged()
-        try expect(view.visibleFormCaptions.contains { $0.stringValue == "Endpoint" } && view.endpointField.placeholderString?.contains("Blank for AWS") == true,
+        try expect(view.visibleFormCaptions.contains { $0.stringValue == "Endpoint:" } && view.endpointField.placeholderString?.contains("Blank for AWS") == true,
                    "the S3 endpoint row is labelled Endpoint with the AWS hint as its placeholder")
         panel.contentView?.layoutSubtreeIfNeeded()
         // The Protocol pop-up shows every title whole: it is as wide as its widest title plus the padding and chevron (never cut).
