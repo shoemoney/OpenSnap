@@ -13,6 +13,8 @@ proposal to be confirmed by screenshots/`eye-dump` after implementation. Line nu
 > **Owner requirement of 2026-10-09 10:24 CDT (P1):** the permanent right rail is removed — see **T15**, which supersedes every rail
 > statement elsewhere in this document.
 
+> **GLASS CHOICES.** The glass-choices work converts the app-owned choices that this document names as native menus, pop-ups, popovers, checkboxes, radios and segmented controls: Toolbox, Zoom and Upload menus; the Color and Size panels; the footer Original size control; the History filters; Resize; Settings; and the destination sheet's protocol, key-source and public-read choices. Where a passage below still describes one of them as a native control, that passage is the 4b2ae0f record and is superseded by [Glass choices](#glass-choices). Plan, inventory and acceptance list: `docs/design/glass-pickers-implementation.md`.
+
 **Scope guard.** No Classic fidelity revival. Owner rules in force: readable UI text ≥ 18 pt (default 20 pt) in native points; real Font
 Awesome Pro semantic icons (arrow *tool* stays); disciplined single-level glass **navigation** layer, solid readable **content**
 surfaces, tokenised type/spacing/corners/colors, semantic selected/hover/pressed/disabled/focus states, content first, no decoration.
@@ -26,6 +28,33 @@ assumes: tests are written with the change, independent review is separate, and 
 for double edits).
 
 ---
+
+## Glass choices
+
+**Status and source.** This section summarises the shared rules for app-owned choices. `docs/design/glass-pickers-implementation.md` is the authority for the inventory, the primitive contract and the acceptance list; where this section and that plan differ, the plan wins.
+
+**Primitives** (`Sources/GlassChoices.swift`, additive changes in `GlassChrome.swift`).
+* `GlassSurfaceView`: a glass plate. Horizontal by default (bar plates); vertical for stacked full-width rows.
+* `GlassChoiceButton`: a `CommandButton` with a `kind` (command, option, toggle, submenu) and an `indicator` (none, check, checkbox, radio, chevron). Its accessibility role follows the kind. Chosen state is a fill, a border, a heavier weight and a glyph, never colour alone.
+* `GlassChoiceGroup`: an exclusive set of option buttons on one plate, with radio-group accessibility, one Tab stop and arrow keys that move the choice.
+* `GlassPanelHost`: a floating, transparent, borderless child panel holding one glass container with the group plates. Frame placement is a pure function: preferred edge, flip when there is no room, clamp to the visible screen, height cap with scrolling.
+* `MenuChoicePanel`: builds a `GlassPanelHost` from an `NSMenu`.
+* `GlassPopUpButton`: a glass face for a pop-up; its choices open in a `MenuChoicePanel`.
+
+**Panel behaviour.**
+* One glass container per panel and one plate per menu group or choice group. Glass never sits inside glass; per-button states are fills drawn by `StatePlate` and `StateStyles`.
+* Transient dismissal: Escape, a click outside, app deactivation, the parent window closing, miniaturising, entering full screen, presenting a sheet, or the anchor leaving its window. A click on the opener while the panel is open only closes it.
+* One panel is shown at a time. Focus returns to the responder that had it when the panel opened.
+* The `NSMenu` or `NSPopUpButton` stays the source of truth. `MenuChoicePanel` runs the menu's update on each open, so validation, dynamic titles and state come from the menu. Activating a row closes the panel first, then performs the menu item through the menu or, for a pop-up's plain item, selects it and sends the pop-up's action. The Upload destination menu is rebuilt on every open.
+
+**Keyboard.**
+* Editor bars (no default button): Return, Space or Down on a focused opener opens its choices.
+* Sheets and dialogs with a default button (Resize, destination sheet): Return and keypad Enter stay with the default button (OK or Save); Space or Down opens a focused choice face.
+* Open panel: Up, Down, Tab, Home and End move; Return and Space choose; Right and Left enter and leave a submenu. The first Escape closes the panel, so a sheet's Cancel runs only on a second Escape. Focus then returns to the opener.
+
+**Unchanged app-owned choice.** The footer PNG | JPG toggle was already the app-owned `SegmentedToggle` drawn from `StateStyles.toggleSegment` on the footer plate (not an `NSSegmentedControl`); it is not part of this change.
+
+**What stays native.** The menu bar; the system Font, Color, Save, Open, Export and Print panels; the share picker; contextual menus (canvas and History grid); the History search field, thumbnail grid and details; text, password and other form fields; the destination list.
 
 ## 0. Decisions that gate the plan (ask the owner once, up front)
 
@@ -251,7 +280,7 @@ enum StateStyles { static func command(_ s: ControlState, primary: Bool, focused
 **Ownership.** Hotspot chain with T4 (same files). Slider/swatch/History/DragExportView parts are separable *except* `DragExportView` which lives in `App.swift` (serial).
 **Prerequisites.** T2 palette, T3 sizes; T4 decides whether plates are layers (A/B both use `CommandButton`).
 **Tests.** `StateStylesTests` (pure): for every state × primary × HC × differentiate assert the exact fill alpha / content alpha / indicator flags; disabled never has a hover/pressed fill; selected+differentiate always has `indicator`; pressed ≠ hover; HC strictly stronger than normal. `CommandButtonStateTests`: drive `setHovered/mouseDown/state/isEnabled` and assert `layer?.backgroundColor` equals the resolved style (this is what `GlassChromeTests` asserts only at the `tintColor` property today). Slider: knob rect scales; `DragExportView` first responder + press action invoked on Space/Return.
-**Risks.** Re-implementing glass-tile behaviour in layers can regress click/Control-click/menu paths (`OriginalActionButton`) — keep inheritance and re-run `OriginalActionButtonTests`; focus rings drawn over a layer plate need `focusRingMaskBounds` in the button's own coordinates; if Q3-A, toolbar item views have their own states — apply `StateStyles` only to bottom-bar controls and the stroke pill. After T15 the *Size* column above describes the popover's horizontal track and the pill glyph, not a vertical slider (T15 §d); the five preset buttons in that popover use the Command column.
+**Risks.** Re-implementing glass-tile behaviour in layers can regress click/Control-click/menu paths (`OriginalActionButton`) — keep inheritance and re-run `OriginalActionButtonTests`; focus rings drawn over a layer plate need `focusRingMaskBounds` in the button's own coordinates; if Q3-A, toolbar item views have their own states — apply `StateStyles` only to bottom-bar controls and the stroke pill. After T15 the *Size* column above describes the panel's horizontal track and the pill glyph, not a vertical slider (T15 §d); the five preset buttons in that panel use the Command column.
 **Estimate.** 2.5 d.
 
 ---
@@ -262,11 +291,11 @@ enum StateStyles { static func command(_ s: ControlState, primary: Bool, focused
 
 **Target spec.**
 * **Labels (VoiceOver text = verb or noun + role-free):** tools "Select tool", "Brush tool", … (add the word "tool"); Upload → "Upload image" (tooltip same); Drag well → "Drag image to another app" with role `.button` + `accessibilityPerformPress` → Export panel; Toolbox → "Toolbox menu"; PNG|JPG → segments "PNG", "JPG" under group "Image format"; status item → "Show or hide OpenSnap". Selected state exposed through `NSButton.state` (already) and `accessibilityValue` for the tool group.
-* **Relocated controls (T15 §d, §f):** Size becomes a pill with role `.slider`, label "Drawing size", `accessibilityValue` = the whole-number size ("9"), `accessibilityPerformIncrement/Decrement` stepping one preset, and a custom action "Show size options" that opens the popover; Color keeps label "Drawing colors" and its swatch `accessibilityValue`; Cancel keeps "Cancel"; Undo/Wipe/Resize/Save/History keep their labels and tooltips when they move to the bottom bar. The Size popover's track is a second `.slider` element with the same value and the five preset buttons are `.button`s labelled "Size N".
+* **Relocated controls (T15 §d, §f):** Size becomes a pill with role `.slider`, label "Drawing size", `accessibilityValue` = the whole-number size ("9"), `accessibilityPerformIncrement/Decrement` stepping one preset, and a custom action "Show size options" that opens the panel; Color keeps label "Drawing colors" and its swatch `accessibilityValue`; Cancel keeps "Cancel"; Undo/Wipe/Resize/Save/History keep their labels and tooltips when they move to the bottom bar. The Size panel's track is a second `.slider` element with the same value and the five preset buttons are `.button`s labelled "Size N".
 * **Visible names, not just tooltips:** keep icon-only chrome (owner's "content first"), but (a) native tooltip delay is the only text → add **Icon+text mode** (View ▸ "Show Toolbar Labels") only if Q3-A (toolbar customisation provides it for free); (b) hover-hint bevel remains optional. State this as a conscious trade-off, not a defect.
 * **Live announcements:** `AppDelegate.announce(_:)` posts `NSAccessibility.post(element: window, notification: .announcementRequested, userInfo: [.announcement: text, .priority: .medium])` on upload start/success/error, capture success, Frame enter/leave, Undo/Redo result. Status label gets `setAccessibilityRole(.staticText)` + `accessibilityLiveRegion`-equivalent via announcements.
 * **Display options (one `DisplayOptions` value replacing `ChromeAccessibility`, read live + observed):** `reduceMotion` (also gate hint-bevel fade `OriginalHelpBevel.swift:255-279`, flash ramp `OriginalCaptureFlash.swift:6-23`, countdown alpha `OriginalCaptureCountdown.swift:141`, drag-thumbnail shrink `App.swift:582-596` — already gated by `animatesWindowZoom`), `reduceTransparency` (T4 plates), `increaseContrast` (T2 HC arms + T4 borders + slider/overview/hint-bevel variants), `differentiateWithoutColor` (T6 indicator/check/prefix), all observed via `NSWorkspace.accessibilityDisplayOptionsDidChangeNotification` by **every** window with custom drawing (currently only `ModernEditorChrome`).
-* **Keyboard:** `window.autorecalculatesKeyViewLoop = true`; `initialFirstResponder = canvas`; explicit loop top bar (left → right) → canvas → bottom bar (left → right) — after T15 this is also the default geometric order, so only the Size popover and Color popover need explicit `nextKeyView` entries; every custom view that draws content exposes `focusRingType`/mask; `GlassChromeButton`/`CommandButton.canBecomeKeyView` honours Full Keyboard Access; Tab from canvas moves to the next control and Shift-Tab to the previous one whenever the bars are tab stops (Full Keyboard Access, or after Window > Focus Toolbar); the legacy "Tab = Pen" swap is Control-Tab (`OriginalHintMessages.toolHoverPrefix`), and plain Tab keeps the swap only while the bars are not tab stops (audit F-J1-007).
+* **Keyboard:** `window.autorecalculatesKeyViewLoop = true`; `initialFirstResponder = canvas`; explicit loop top bar (left → right) → canvas → bottom bar (left → right) — after T15 this is also the default geometric order, so only the Size panel and Color panel need explicit `nextKeyView` entries; every custom view that draws content exposes `focusRingType`/mask; `GlassChromeButton`/`CommandButton.canBecomeKeyView` honours Full Keyboard Access; Tab from canvas moves to the next control and Shift-Tab to the previous one whenever the bars are tab stops (Full Keyboard Access, or after Window > Focus Toolbar); the legacy "Tab = Pen" swap is Control-Tab (`OriginalHintMessages.toolHoverPrefix`), and plain Tab keeps the swap only while the bars are not tab stops (audit F-J1-007).
 * **Escape/Return:** Prefs gets Cancel-on-Escape (`cancelOperation` → `closePreferences`); Destinations sheet: Return = Save/Done, Escape = Cancel/Done (set `keyEquivalent` on the buttons, `PublishingDestinationsView.swift:36-40,221-224`); History: Return = Open, Escape = close; every `NSAlert` already handles both.
 * **Errors/colour:** error strings are prefixed "Error:" (not colour-only).
 
@@ -307,7 +336,7 @@ enum StateStyles { static func command(_ s: ControlState, primary: Bool, focused
 **Current state (4b2ae0f).** The toggle is merged: `FormatToggle` (`ImageExport.swift:5-22`, PNG default, JPG fixed 0.75, stored via the old `DragFormatChoice` row index), `dragFormatToggle` `NSSegmentedControl(.capsule)` in the glass `formatSurface` (`App+ModernChrome.swift:79-85`, `ModernEditorChrome.swift:342-351`), `dragFormat/dragQuality/uploadEncoding/historyJPEGQuality` switch on `modernChrome != nil` (`App.swift:1218-1233,1494,1759-1767`), Export panel accessory with `fixedJPEGQuality` (`ExportAccessory.swift:147-150,253-262`, `App.swift:1565-1575`), drag file extension `.jpg` (`App.swift:131-135`). Leftovers: the unused `dragFormatControl` popup still allocated (`App.swift:226`) and the stored-row compatibility shim; "Skitch" format entries in Export (`ExportAccessory.swift:3-6`), History (`HistoryBrowser.swift:45,315`); upload has only a status string and a modal alert on failure (`App.swift:1795-1812`); drag well has no states/keyboard path (T6).
 
 **Target spec.**
-* **Bottom bar — superseded by T15 §c** (left → right): `[Undo][Wipe]` · `[Zoom][Resize…]` · `Original size` checkbox (`body`, only when `isLargeShot`) + one flexible truncating status that now also carries the pixel size and byte count (the separate `dragSizeLabel` is no longer on screen) · `[Save][History]` · `[PNG | JPG][Drag][Upload]`. The toggle and the two icon buttons live in one glass group (T4); the status text sits on the solid surface between the groups.
+* **Bottom bar — superseded by T15 §c** (left → right): `[Undo][Wipe]` · `[Zoom][Resize…]` · `Original size` toggle (`body`, a glass choice button; only when `isLargeShot`) + one flexible truncating status that now also carries the pixel size and byte count (the separate `dragSizeLabel` is no longer on screen) · `[Save][History]` · `[PNG | JPG][Drag][Upload]`. The toggle and the two icon buttons live in one glass group (T4); the status text sits on the solid surface between the groups.
 * Format model: replace the row-index hack with a small enum `ImageFormat { png, jpg }` persisted under `OpenSnap.imageFormat` (migration maps old `DragFormatChoice` 1…5 → `.jpg`, else `.png` — in WP4's defaults copy); `FormatToggle.jpgQuality` becomes `ImageFormat.jpgQuality = 0.75` in `DesignTokens`/model, shared by drag, export, upload, History export (already true in code; keep the byte-comparison tests, `AppSafetyModernCases` toggle case).
 * Segmented control: custom `SegmentedToggle` drawn with `StateStyles` (T6) on the glass capsule (no native bezel → no double plate); labels `body` 20.
 * Export accessory (Modern): formats **PNG, JPG, PDF, TIFF, SVG** (drop GIF/BMP/“Skitch” unless needed; keep behind “More formats…” only if owner wants); JPEG quality row replaced by static text "JPG quality 75 %" (the slider is locked today, `ExportAccessory.swift:253-262`).
@@ -319,7 +348,7 @@ enum StateStyles { static func command(_ s: ControlState, primary: Bool, focused
 **Ownership.** **App.swift serial; ModernEditorChrome/App+ModernChrome hotspots** (T4/T6/T7 chain).
 **Prerequisites.** **T15** (it already moves the footer to the final bottom-bar order and merges `dragSizeLabel` into the status text; T9 then adds the upload state UI *inside that status slot*), WP2 (remove Classic `dragFormatControl` popup and `webpost` button), WP4 (defaults migration, names), T4/T6.
 **Tests.** Keep the merged byte-level tests (drag/export/upload/History produce the same bytes); add `UploadStateTests` (state machine via the injected `publishing.uploader` seam: idle → uploading → success/failure; Cancel returns to idle; Retry re-invokes with the same payload; error text begins "Error:"); `FooterLayoutTests` at min width: status truncates before any control clips; toggle exposes two AX children "PNG"/"JPG"; defaults migration test (old `DragFormatChoice` 3 → JPG).
-**Risks.** *Width (T15):* the status slot is 291 pt at 980 (141 pt while the Original-size checkbox is shown, both ESTIMATE). The upload row (20 pt spinner + 8 + name + 12 + inline Cancel ≈ 140 pt of fixed parts) therefore **hides the Original-size checkbox for the duration of an upload** and lets the name truncate; do not widen the bar. `uploadEncoding` and `exportPanelAccessory` still branch on `modernChrome != nil` — after Classic removal these collapse (do it in WP2 to avoid dead branches); inline error UI must not break the shutdown barrier (`finishShutdownDecision` expects the alert path to be async, `App.swift:403-417`).
+**Risks.** *Width (T15):* the status slot is 291 pt at 980 (141 pt while the Original-size checkbox is shown, both ESTIMATE). The upload row (20 pt spinner + 8 + name + 12 + inline Cancel ≈ 140 pt of fixed parts) therefore **hides the Original-size toggle for the duration of an upload** and lets the name truncate; do not widen the bar. `uploadEncoding` and `exportPanelAccessory` still branch on `modernChrome != nil` — after Classic removal these collapse (do it in WP2 to avoid dead branches); inline error UI must not break the shutdown barrier (`finishShutdownDecision` expects the alert path to be async, `App.swift:403-417`).
 **Estimate.** 2 d.
 
 ---
@@ -351,7 +380,7 @@ enum StateStyles { static func command(_ s: ControlState, primary: Bool, focused
 
 **Target spec.**
 * Prefs (T8 structure) tabs: **General** (Dock/Menu bar/Both presence, "Show OpenSnap window in fullscreen and crosshair snaps", tool-tip overlays, keyboard-tip overlay), **Drawing** (precision, arrow head), **Capture** (shortcuts inline: the Hotkeys form embedded; flash pref), **Upload** (destinations list embedded). Removed: Appearance, Relaunch, Play sounds (and keys `appearanceStyle`, `disableSounds`). Row label column right-aligned 20 pt `bodyStrong`; control column `body`; 16 pt rhythm (`Space.s4`).
-* History: toolbar-style filter row (segmented category · search · date popup) in the window toolbar when T4-A; grid unchanged; **selection cue = accent border + check badge**; drag formats `PNG, JPG, PDF, TIFF, SVG` (+ `.opensnap` document); empty state text "No history yet. Press ⌘S… " (functional, no illustration); warning row uses error prefix.
+* History: toolbar-style filter row (category choice group · search · date pop-up face) in the window toolbar when T4-A; grid unchanged; **selection cue = accent border + check badge**; drag formats `PNG, JPG, PDF, TIFF, SVG` (+ `.opensnap` document); empty state text "No history yet. Press ⌘S… " (functional, no illustration); warning row uses error prefix.
 * Destinations: placeholders become neutral (`https://example.com/uploads`, `screenshots`, `~/.ssh/config alias`, `/var/www/site/uploads`); form rows grouped into "Connection" and "Credentials" with section headers (`headline`); buttons `body`, default (Return) = Save, Escape = Cancel; Test result is an inline status row with ✓/✗ **glyphs from FA** not colour alone; list shows default with a "Default" pill (text + check), not a trailing "(Default)" string (`PublishingDestinationsView.swift:90`).
 * Publishing sheet helpers (`Publishing.swift:1062-1099`) use tokens; message sheet minimum width 560.
 * Hotkeys: action titles "Show OpenSnap", etc.; replace the Command+Shift+7 prose with a conflict warning generated from `GlobalHotkeyManager.lastError`.
@@ -427,7 +456,7 @@ All gates run from `tools/test.py` (new rows) and the clean-clone job; each gate
 | G1 | **Clean-clone build** with `original/` absent | `tools/check-clean-clone.sh`: `git clone --no-hardlinks` to a temp dir, assert `! -e original`, `sh tools/build.sh`, `python3 tools/test.py`, `python3 tools/test-native-startup.py`; `build.sh` must not mention `original/` | first `cp` at `tools/build.sh:14` aborts (`set -eu`) |
 | G2 | **No-original-assets byte match** | `tools/check-no-original.py`: (a) static: `original/`, `Skitch.app` absent from `Sources/ tests/ tools/ build.sh`; (b) when a local `original/Skitch.app` exists, SHA-256 every regular file there and fail if any file in the built bundle matches; (c) bundle `Resources` allow-list = {`OpenSnap.png`, `Assets.car`, `OpenSnap.icns`, subset fonts only in dev builds}; run from `release.sh` before `codesign --verify` | bundle contains 60+ original PNGs, 9 `.m4a`, `firstlaunch.skitch` |
 | G3 | **No "Skitch" in user-visible strings** | static: regex `/skitch/i` over string literals in `Sources/` outside an allow-list (`Sources/Migration/`) + `Info.plist` values; dynamic: `OpenSnap --dump-strings DIR` walks every window/menu/status item/tooltip/AX label/placeholder/alert text built by the audit harness and writes JSON; `tools/check-user-strings.py` asserts none matches `/skitch|openskitch/i` | 27 string sites + `Info.plist` (INV §7) |
-| G4 | **Font-floor test walking the live tree** | `tests/ViewTreeAudit.swift` + `ViewTreeAuditTests`: build main window (default, minimum, Frame), Prefs (each tab), History, Photos sheet, Resize (3 modes), Hotkeys, Destinations (list + each protocol), Export accessory, Fonts accessory, Overview panel, color popover; collect `NSTextField/NSButton/NSPopUpButton/NSSegmentedControl/NSTextView/NSTableView(cell)` fonts, `NSMenu` item fonts (recursively), `NSAttributedString` `.font` spans of custom-drawn text via `Typography` registry; assert every readable font ≥ 18, controls ≥ 20 unless `caption`; plus the T1 source gate | no tree walker exists; 19 system-owned surfaces unchecked; custom-drawn text invisible |
+| G4 | **Font-floor test walking the live tree** | `tests/ViewTreeAudit.swift` + `ViewTreeAuditTests`: build main window (default, minimum, Frame), Prefs (each tab), History, Photos sheet, Resize (3 modes), Hotkeys, Destinations (list + each protocol), Export accessory, Fonts accessory, Overview panel, color panel; collect `NSTextField/NSButton/NSPopUpButton/NSSegmentedControl/NSTextView/NSTableView(cell)` fonts, `NSMenu` item fonts (recursively), `NSAttributedString` `.font` spans of custom-drawn text via `Typography` registry; assert every readable font ≥ 18, controls ≥ 20 unless `caption`; plus the T1 source gate | no tree walker exists; 19 system-owned surfaces unchecked; custom-drawn text invisible |
 | G5 | **Glass depth ≤ 1 and no glass over content** | `GlassDepthTests` (T4): no glass ancestor/descendant of any `NSGlassEffectView`; count budget; frame-intersection with canvas well at 3 sizes; Reduce-Transparency plates | 26 surfaces; fallback absent |
 | G6 | **No emoji / decorative glyphs** | static: scan every string literal (incl. `\u{…}`) for Emoji_Presentation, U+2190–21FF arrows (allow `⇧⇥⌘⌥⌃`), U+2600–27BF, U+2B00–2BFF, U+F8FF, U+00BA, ASCII `...` in titles; dynamic: same set over the dumped strings | `º`×2, U+F8FF, `...`×4 |
 | G7 | **Visual snapshot / eye-dump gate** | `tools/eye-dump.sh` rewritten: one style, isolated support, synthetic fixture, PNG + `layout.json` for S01–S28; `tools/check-eye-dump.py` asserts: image non-empty, no control frame clipped (from JSON), every labelled control's measured text colour vs sampled background ≥ 4.5:1, window sizes within token minima; **pixel baselines only for deterministic non-glass surfaces** (sheets, Prefs, History with fixed fixtures) using a perceptual-hash tolerance; glass regions masked (wallpaper dependent) | script is Classic-looped and requires `original/`; asserts nothing |
@@ -545,6 +574,8 @@ The orchestrator's mapping **is correct** with two additions: (i) the 44-pt tool
 
 ### d. Stroke width: from a vertical 36 × 96 slider to a pill + popover
 
+> **Superseded in part by [Glass choices](#glass-choices).** The Size panel is an app-owned glass `GlassPanelHost` panel with glass plates for its track and presets, not an `NSPopover` with solid content, so the popover class, content and translucency statements below are the 4b2ae0f record. The pill, gesture, undo grouping, arrow-key and edge intent still apply to the panel.
+
 **Problem.** `BezelSizeSlider` maps value on the y axis (`pointForValue` `:136-138`, `setValueForPoint` `:171-174`), is 96 pt tall (`ModernEditorChrome.swift:325-326`) and cannot sit in a 44-pt bar; rotating it or shrinking it is excluded by the owner.
 
 **Spec.** Keep `widthControl` as the single model object (`App.swift:217`: `let widthControl = BezelSizeSlider(frame: .zero)` stays; so do `target/action = changeWidth(_:)` `App+ModernChrome.swift:59`, `onBegin/onEnd` `:60-64`, `trackHint` `:122`, `syncDrawingControls` `App.swift:1046-1049`, `endTracking()` callers `App.swift:387,493`). Add a third style:
@@ -602,13 +633,13 @@ Shortcuts are read from the live main menu by `ModernEditorChrome.menuShortcut(f
 | Action | Selector (target = AppDelegate) | New location | Shortcut | AX label (VoiceOver) | Tooltip | Hover hint |
 |---|---|---|---|---|---|---|
 | Hide | `vanish` (→ `toggleVisible`) | top A, 1st | ⌘M (Window ▸ Minimize) | "Hide" | "Hide (⌘M)" | – |
-| Toolbox | popup, items copied from main menu | top A, 2nd | per item | "Toolbox" | – | – |
+| Toolbox | glass menu panel, items copied from main menu | top A, 2nd | per item | "Toolbox" | – | – |
 | Photos | `showPhotos` | top A, 3rd | — | "Photos" | "Photos" | – |
 | Snap / Snap Frame | `snapButtonPressed`; **alternate** `fullscreenSnap` (right/Control-click via `alternateTarget/Action`, `App+ModernChrome.swift:114-115`); Frame ⇒ `performFrameSnap` (Shift = timed) | top B, 1st (primary 56 × 44, the primary command) | ⌘1 Crosshair / ⌘4 Frame are *menu* actions (`screenSnap`/`frameSnap`), so the tooltip shows none — unchanged | "Snap" / "Snap Frame" (`syncSnapPresentation` `:184-190`) | `snapToolTip` / `snapFrameToolTip` (`:43-44`) | – |
 | Cancel (Frame only) | `cancelFrame` | top B, 2nd, right of Snap; present only while `frameMode` | — | "Cancel" | "Cancel" | – |
 | 10 tools | `chooseTool(_:)` (identifier = tool id) | top C, archive order, 44 × 40 | per tool as today | "Select", "Brush", … | "<Id> tool" | `OriginalHintMessages.hover(tool:)`, owner `tool-<id>` |
 | Color | `showDrawingColors(_:)`; hover-open `drawingColorHover`; **Shift ⇒ canvas background** (`applyChosenColor`) | top D, 1st | — | "Drawing colors" + RGBA value (`App.swift:1062`) | "Color: hover for original preset colors; hold Shift to change the canvas background" (`ModernEditorChrome.swift:228`) | presets 100–110 (`App.swift:1113`) |
-| Size | `changeWidth(_:)`; `onBegin/onEnd` undo grouping | top D, 2nd (pill → popover, §d) | arrows on the focused pill; Space/Return opens | "Drawing size" (`.slider`, value) | "Size N" (dynamic) | tag 20 `drawing-size` |
+| Size | `changeWidth(_:)`; `onBegin/onEnd` undo grouping | top D, 2nd (pill → glass panel, §d) | arrows on the focused pill; Space/Return opens | "Drawing size" (`.slider`, value) | "Size N" (dynamic) | tag 20 `drawing-size` |
 | Font | `chooseFont` | top D, 3rd | — (Text ▸ Font…) | "Font" | "Font" | – |
 | Undo | `undo` | bottom UW, 1st | ⌘Z | "Undo" | "Undo (⌘Z)" | – |
 | Wipe (+ **Blank/Clear/Wipe** stage retitle, `updateWipeButton` `App.swift:1201-1208`, found by action) | `wipe` | bottom UW, 2nd | — | "Blank"/"Clear"/"Wipe" (live title) | same | tag 50 `wipe` |
@@ -616,10 +647,10 @@ Shortcuts are read from the live main menu by `ModernEditorChrome.menuShortcut(f
 | Zoom | `changeZoom(_:)` | bottom ZR, 1st (glass capsule) | — | "Canvas zoom" (+ value "Fit, 83%") | "Canvas zoom" | – |
 | Save to History | `saveHistory` | bottom SH, 1st | — | "Save" | "Save to History" | – |
 | History | `showHistory` | bottom SH, 2nd | — | "History" | "History" | – |
-| Upload | `share(_:)`; **right-click menu** from `configureWebpostButton` (`App.swift:1620-1627`, `showMenuOnLeftClick = false`) | bottom OUT, 3rd (unchanged) | — | "Upload to destination" | "Upload" | – |
+| Upload | `share(_:)`; **right-click menu panel** (glass, built from the `NSMenu` in `configureWebpostButton`) (`App.swift:1620-1627`, `showMenuOnLeftClick = false`) | bottom OUT, 3rd (unchanged) | — | "Upload to destination" | "Upload" | – |
 | PNG \| JPG, Drag well, Original size | `changeDragOptions(_:)`; drag session | bottom OUT / status row (unchanged) | – | "Image format" / "Drag Me" / "Drag out at original size" | as today | tag 40 (drag) |
 
-**Key-view / VoiceOver order.** After T15 the geometric default loop is top bar left→right, canvas, bottom bar left→right, which is also the subview order of `header`, `scrollView`, `footer` (keep that z-order; the canvas border stays last). The Size and Color popovers are entered by Return/Space and return focus to their pill/swatch.
+**Key-view / VoiceOver order.** After T15 the geometric default loop is top bar left→right, canvas, bottom bar left→right, which is also the subview order of `header`, `scrollView`, `footer` (keep that z-order; the canvas border stays last). The Size and Color panels are entered by Return/Space and return focus to their pill/swatch.
 
 ### g. Per-action destination table
 
@@ -628,7 +659,7 @@ Shortcuts are read from the live main menu by `ModernEditorChrome.menuShortcut(f
 | Snap / Snap Frame | right rail, 1st (vertical capture group) | **Top bar, group B, after Photos** | capture is the primary verb; keeps the 56 × 44 primary visually prominent beside the tools |
 | Cancel | right rail, under Snap (Frame only) | **Top bar, group B, right of Snap** | its pair; the group collapses to Snap alone outside Frame mode |
 | Color | right rail, drawing group | **Top bar, group D, 1st** | attribute of the pen; next to the tools it modifies |
-| Size | right rail, vertical 36 × 96 slider | **Top bar, group D, 2nd — 48 pt pill + popover** | needs no vertical space; value visible in the glyph (§d) |
+| Size | right rail, vertical 36 × 96 slider | **Top bar, group D, 2nd — 48 pt pill + glass panel** | needs no vertical space; value visible in the glyph (§d) |
 | Font | right rail, drawing group | **Top bar, group D, 3rd** | text-tool attribute |
 | Undo | right rail, history group | **Bottom bar, group UW, 1st** | document history; away from the tool row |
 | Wipe | right rail, history group | **Bottom bar, group UW, 2nd** | destructive, beside Undo, away from the tools |
@@ -636,7 +667,7 @@ Shortcuts are read from the live main menu by `ModernEditorChrome.menuShortcut(f
 | Save to History, History | top bar trailing | **Bottom bar, group SH** | document/output verbs; balances the bottom bar and keeps the top bar to capture + annotation |
 | Zoom | status row, plain popup 160 pt | **Bottom bar, group ZR, 1st, glass capsule, face = percentage** | adjacent view/size controls; width lever |
 | `dragSizeLabel` | status row, separate 18-pt label | **merged into the status text** (no on-screen element) | saves ≈ 170 pt; the info survives in the status, tooltip and (T8) window subtitle |
-| Original size checkbox | status row | status row, first element, only when `isLargeShot` | unchanged behaviour; lever 3 if over budget |
+| Original size control (was a checkbox; now a glass toggle) | status row | status row, first element, only when `isLargeShot` | unchanged behaviour; lever 3 if over budget |
 | PNG \| JPG, Drag, Upload | footer, trailing | unchanged | already last |
 | Hide, Toolbox, Photos | top bar leading | unchanged (group A) | – |
 
@@ -656,7 +687,7 @@ Shortcuts are read from the live main menu by `ModernEditorChrome.menuShortcut(f
 | `AppSafetyModernCases.swift:412` | `widthControl.style == .modern` | `== .pill` |
 | `AppSafetyModernCases.swift:467,872-873` | "rail Wipe" wording | wording only; recommend renaming `wipeRailButton` → `wipeButton` (`App.swift:303,1201-1208`) in the same change |
 | `AppSafetyModernCases.swift:562-575` | Frame hint fits the status at 1024 | re-measure; may need the shorter hint (§b) |
-| `AppSafetyModernCases.swift:1046-1060` | Color popover opens, system appearance | add: opened with `preferredEdge == .minY` and its positioning view is in the top bar |
+| `AppSafetyModernCases.swift:1046-1060` | Color panel opens, system appearance | add: opened with `preferredEdge == .minY` and its positioning view is in the top bar |
 | `GlassChromeTests.swift:568` | `toolButton == 48×40 … railWidth == 64 && rightRailWidth == 64` | `toolButton == 44×40`; remove both rail asserts; add `groupGap == 12` |
 | `GlassChromeTests.swift:326-400` (`sliderTests`, `:387` loops `[.classic, .modern]`) | vertical geometry in both styles | `.modern` → `.pill`; vertical geometry stays asserted for `.classic` only; add pill glyph tests |
 | `GlassChromeTests.swift:720` | `glassContainers.count >= 7` | `>= 8` |
@@ -704,22 +735,22 @@ Matrix: **{light, dark} × {980 × min height, 1024 × 740, 1280 × 800, 1440 ×
 
 1. **No rail:** no blank column right of the canvas; the viewport's right edge is 12 pt from the window edge (measure); no control to the right of or below the canvas other than the bottom bar.
 2. **Top bar:** `[Hide][Toolbox][Photos]  [Snap]  10 tools  [Color][Size][Font]` in one row, all icons ≥ 22 pt, no clipping, no overlap; Snap is the primary command; the selected tool is distinguishable without colour (glyph family swap); gaps ≥ 12 pt.
-3. **Bottom bar:** `[Undo][Wipe]  [Zoom][Resize]  status  [Save][History]  [PNG|JPG][Drag][Upload]`; all text ≥ 18 pt (20 pt for controls); status truncates with an ellipsis rather than pushing a control; at 980 with a large image the Original size checkbox is visible and nothing clips.
+3. **Bottom bar:** `[Undo][Wipe]  [Zoom][Resize]  status  [Save][History]  [PNG|JPG][Drag][Upload]`; all text ≥ 18 pt (20 pt for controls); status truncates with an ellipsis rather than pushing a control; at 980 with a large image the Original size toggle is visible and nothing clips.
 4. **Frame mode (980 and 1280):** Snap reads *Snap Frame*, Cancel sits right of it, the hole spans the full viewport to the 12-pt margin, the capture rectangle drawn/measured equals the hole when the canvas fills it, no control overlaps the hole, Photos is still visible (lever 4 not applied unless flagged).
-5. **Stroke popover open (light and dark, 980 and 1280):** opens below the pill, solid (non-glass) content, "Size" + 20-pt readout, horizontal track with five ticks, five preset buttons, selected preset marked without colour alone; dragging changes the pill's glyph thickness live; Escape closes; the Size value survives reopening.
-6. **Color popover from the top bar:** opens below the swatch, not clipped by the window edge at 980.
+5. **Size panel open (light and dark, 980 and 1280):** opens below the pill as a glass panel, "Size" + 20-pt readout, horizontal track with five ticks, five preset buttons, selected preset marked without colour alone; dragging changes the pill's glyph thickness live; Escape closes; the Size value survives reopening.
+6. **Color panel from the top bar:** opens below the swatch, not clipped by the window edge at 980.
 7. **Selection / text editing:** a selected element, then text editing in the canvas; Color/Size/Font still affect the selection; a Size drag changes the selected text's font size and one ⌘Z reverts it.
 8. **PNG | JPG both states** at 980: both segments and the pressed/selected state readable; toggle does not change the bar's width.
 9. **Reduce Transparency, Increase Contrast** at 980: bars still legible (the shared T4 fallback applies; T15 adds nothing translucent).
 10. **Centring:** a small canvas (e.g. 150 × 90) is centred with equal left/right and top/bottom margins at every width; a large canvas fills the viewport edge-to-edge to the 12-pt margin and pans.
-11. **Keyboard / AX (non-visual, record the log):** Tab order top-left → top-right → canvas → bottom-left → bottom-right; VoiceOver reads each label of §f; Space on the Size pill opens the popover; arrows step the value.
+11. **Keyboard / AX (non-visual, record the log):** Tab order top-left → top-right → canvas → bottom-left → bottom-right; VoiceOver reads each label of §f; Space on the Size pill opens the panel; arrows step the value.
 
 ### k. Decisions and unresolved items
 
 * **D-T15-1** — zoom popup face shows the percentage only (`"83%"`) with the mode word in tooltip/AX (§b). Needed for the 980-pt bottom bar. Alternative: lever 3 with a 160-pt zoom.
 * **D-T15-2** — Size arrow keys on the pill follow `NSSlider` (Right/Up larger); the Classic-era Down = larger inversion is dropped for the pill.
 * **D-T15-3** — tool tiles become 44 × 40 (4 pt narrower than the icon pills).
-* **Unresolved until measured:** the real widths of the zoom capsule (108), the PNG | JPG capsule (143), the Original-size checkbox (138) and the merged status text (≈ 395); the Frame-hint margin at 1024; the title-bar height on macOS 26 (32 assumed from a Classic eye-dump); whether the system popover frame is translucent; whether `NSStackView` collapses Cancel's glass surface cleanly in `NSGlassEffectContainerView` (the existing vertical group already does).
+* **Unresolved until measured:** the real widths of the zoom capsule (108), the PNG | JPG capsule (143), the Original-size checkbox (138) and the merged status text (≈ 395); the Frame-hint margin at 1024; the title-bar height on macOS 26 (32 assumed from a Classic eye-dump); whether `NSStackView` collapses Cancel's glass surface cleanly in `NSGlassEffectContainerView` (the existing vertical group already does).
 * **Not decided here:** `NSToolbar` for the top bar (Q3) — T15's 16 items at 946 of 956 pt are the budget any toolbar must meet.
 
 ---
