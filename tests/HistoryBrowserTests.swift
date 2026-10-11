@@ -406,8 +406,8 @@ struct HistoryBrowserTests {
             }),
             ("Tabs use plain names", {
                 try browser { browser,_ in
-                    let segmented = try descendants(browser.window!.contentView!).compactMap { $0 as? NSSegmentedControl }.first.unwrap("category control")
-                    let labels = (0..<segmented.segmentCount).map { segmented.label(forSegment:$0) ?? "" }
+                    let segmented = try descendants(browser.window!.contentView!).compactMap { $0 as? GlassChoiceGroup }.first { $0.accessibilityLabel() == "History category" }.unwrap("category control")
+                    let labels = segmented.buttons.map(\.title)
                     try expect(labels == ["All","Shared","Exported","Saved"],"Tab names are \(labels)")
                     try expect(HistoryBrowser.Category.allCases.map(\.title) == labels,"Category titles match the control")
                     try expect(!labels.joined().contains("DragMe") && !labels.joined().contains("/"),"The cramped Saved/DragMe'd name is gone")
@@ -615,7 +615,7 @@ struct HistoryBrowserTests {
                         try expect(!button.isEnabled,"\(action) is enabled with nothing selected")
                     }
                     // The old layout stacked the same seven in two text-button rows under the details.
-                    let textButtons = descendants(browser.window!.contentView!).compactMap { $0 as? NSButton }.filter { !($0 is NSPopUpButton) && $0 !== browser.clearFiltersButton && !$0.title.isEmpty }
+                    let textButtons = descendants(browser.window!.contentView!).compactMap { $0 as? NSButton }.filter { !($0 is NSPopUpButton) && !($0 is GlassChoiceButton) && $0 !== browser.clearFiltersButton && !$0.title.isEmpty }
                     try expect(textButtons.allSatisfy { $0.image != nil },"Only the action row carries labels, and each beside its icon: \(textButtons.map(\.title))")
                     let menu = try grid(browser).menu.unwrap("context menu")
                     try expect(menu.items.map(\.title) == HistoryBrowser.Action.allCases.map(\.title),"Context menu items: \(menu.items.map(\.title))")
@@ -760,8 +760,8 @@ struct HistoryBrowserTests {
                     for control in descendants(content).compactMap({ $0 as? NSControl }) {
                         try expect(drawnSizes(control).allSatisfy { $0 >= 18 },"\(type(of:control)) is below 18 pt")
                     }
-                    let segmented = try descendants(content).compactMap { $0 as? NSSegmentedControl }.first.unwrap("category control")
-                    try expect(segmented.font?.pointSize == 20,"Tabs are body size")
+                    let segmented = try descendants(content).compactMap { $0 as? GlassChoiceGroup }.first.unwrap("category control")
+                    try expect(segmented.buttons.allSatisfy { ($0.titleLabel.font?.pointSize ?? 0) >= 20 },"Tabs are body size")
                     try expect(browser.filterRow.frame.maxX <= content.bounds.width + 0.5 && browser.filterRow.frame.minX >= 0,"The filter row overflows the window at 880 wide: \(browser.filterRow.frame)")
                     try expect(browser.actionRow.frame.maxX <= content.bounds.width + 0.5,"The action row overflows the window at 880 wide")
                 }
