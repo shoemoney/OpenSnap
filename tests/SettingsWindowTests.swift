@@ -102,6 +102,10 @@ private enum SettingsWindowTests {
         fit()
         alignmentAndTypography()
         preferenceControls()
+        radioGroups()
+        toggles()
+        glassStructure()
+        rowBaselines()
         flash()
         shortcuts()
         upload()
@@ -613,7 +617,9 @@ private enum SettingsWindowTests {
             expect(gridBox.width <= SettingsLayout.gridWidth + 0.5, "\(name): the form fits the content width (\(gridBox.width))")
             if index < 2 {
                 // A short form is as wide as its widest control: its ink sits in the middle, not against the left.
-                let ink = descendants(tab).filter { ($0 is NSControl) && !$0.isHidden && $0.bounds.width > 0 }.map { alignment(of: $0, in: tab) }.reduce(NSRect.null) { $0.union($1) }
+                // Ink is what is seen: the labels, the plates and the other controls (a choice inside a plate is inset by the plate, which is the shape drawn).
+                let ink = descendants(tab).filter { (($0 is NSControl && !($0 is GlassChoiceButton)) || $0 is GlassSurfaceView) && !$0.isHidden && $0.bounds.width > 0 }
+                    .map { alignment(of: $0, in: tab) }.reduce(NSRect.null) { $0.union($1) }
                 let left = ink.minX, right = tab.bounds.maxX - ink.maxX
                 expect(abs(left - right) < 4, "\(name): the controls and labels are centred in the window (left room \(left), right room \(right))")
                 expect(left > 30 && ink.width / tab.bounds.width > 0.7, "\(name): the form takes its share of the width, not a left-hand corner (\(ink.width / tab.bounds.width))")
@@ -641,9 +647,9 @@ private enum SettingsWindowTests {
         let flashLabel = descendants(tab).compactMap { $0 as? NSTextField }.first { $0.stringValue == "Flash:" }!
         let screenLabel = descendants(tab).compactMap { $0 as? NSTextField }.first { $0.stringValue == "Screen region:" }!
         expect(abs(frame(of: flashLabel, in: tab).maxX - frame(of: screenLabel, in: tab).maxX) < 0.5, "the embedded shortcut rows line up with the Flash row")
-        let flashBox = alignment(of: controller.capture.flashCheckbox, in: tab)
+        let flashBox = alignment(of: controller.capture.flashPlate, in: tab)
         let popupBox = alignment(of: controller.capture.hotkeyForm.keyPopup(for: .screen), in: tab)
-        expect(abs(flashBox.minX - popupBox.minX) < 1.5, "the checkbox and the key popup share the control column: \(flashBox.minX) vs \(popupBox.minX)")
+        expect(abs(flashBox.minX - popupBox.minX) < 1.5, "the Flash plate and the key popup share the control column: \(flashBox.minX) vs \(popupBox.minX)")
         let labelWidth = SettingsLayout.labelColumnWidth
         let widest = SettingsLayout.rowLabels.map { ($0 as NSString).size(withAttributes: [.font: DesignTokens.Typography.font(.bodyStrong)]).width }.max()!
         expect(labelWidth >= widest, "the label column is wide enough for the longest row label (\(labelWidth) vs \(widest))")
@@ -704,6 +710,222 @@ private enum SettingsWindowTests {
         controller.onChange = nil
         controller.refresh()
         expect(state(drawing.precisionButtons) == [1] && general.hoverHintsCheckbox.state == .off, "refresh re-reads the owner's stored state (still Medium, hints off), not the last edit")
+    }
+
+    // MARK: Radio sets
+
+    private static func arrowEvent(_ code: UInt16, window: NSWindow) -> NSEvent {
+        keyEvent(code == 123 ? "\u{F702}" : (code == 124 ? "\u{F703}" : (code == 125 ? "\u{F701}" : "\u{F700}")), code: code, flags: [], window: window)
+    }
+    private static func chosen(_ group: GlassChoiceGroup) -> [Int] { group.buttons.filter { $0.state == .on }.map(\.tag) }
+
+    /// Presence, Precision and Arrow head are radio sets, each on ONE plate: a click or an arrow key changes the stored preference once,
+    /// the choice is a glyph and a fill and a weight, and each set is one tab stop.
+    private static func radioGroups() {
+        var current = initialState
+        let (controller, _, _, _, _, _) = makeController(state: current)
+        var delivered: [GeneralPreferencesState] = []
+        controller.onChange = { delivered.append($0); current = $0 }
+        let window = controller.window
+        let saved = KeyboardNavigation.fullKeyboardAccess
+        KeyboardNavigation.fullKeyboardAccess = { true }
+        defer { KeyboardNavigation.fullKeyboardAccess = saved }
+
+        func check(_ name: String, tab: Int, group: GlassChoiceGroup, identifiers: [String], titles: [String], tags: [Int], label: String) {
+            controller.select(tab)
+            window.contentView?.layoutSubtreeIfNeeded()
+            expect(group.buttons.map { $0.identifier?.rawValue ?? "" } == identifiers, "\(name): the identifiers stay on the buttons: \(group.buttons.map { $0.identifier?.rawValue ?? "" })")
+            expect(group.buttons.map(\.title) == titles && group.buttons.map(\.tag) == tags, "\(name): titles and stored values are unchanged")
+            expect(group.buttons.allSatisfy { $0.kind == .option && $0.indicator == .radio && $0.markImage != nil && $0.showsMark }, "\(name): every choice is an option with a radio glyph")
+            expect(plates(in: group).count == 1 && group.plate.arrangedViews.count == titles.count && group.plate.axis == .horizontal && group.plate.tintColor == nil, "\(name): the set is ONE untinted horizontal plate")
+            expect(group.buttons.allSatisfy { $0.titleLabel.font?.pointSize == 20 && $0.frame.height == GlassChoiceButton.height }, "\(name): each choice is a 20 pt label in a control-high button")
+            expect(group.accessibilityRole() == .radioGroup && group.accessibilityLabel() == label, "\(name): VoiceOver gets a radio group named '\(label)'")
+            expect(group.buttons.allSatisfy { $0.accessibilityRole() == .radioButton && $0.accessibilityLabel() == $0.title }, "\(name): every choice is a radio button with its own name")
+            let on = group.buttons.filter { $0.accessibilityValue() as? NSNumber == 1 }
+            expect(on.count == 1 && on[0].isAccessibilitySelected() && group.accessibilityValue() as? String == on[0].title, "\(name): exactly one radio reports 1, and the group's value is its name")
+            // The choice is not colour alone: a filled glyph, an accent fill with its border, and the semibold face.
+            let chosenButton = on[0], others = group.buttons.filter { $0 !== chosenButton }
+            expect(chosenButton.markImage !== others[0].markImage && chosenButton.plate.stateStyle.strongText && chosenButton.plate.stateStyle.fill != nil && chosenButton.plate.stateStyle.borderWidth == 1
+                   && chosenButton.titleLabel.font == DesignTokens.Typography.font(.bodyStrong), "\(name): the choice has its own glyph, fill, border and semibold face")
+            expect(others.allSatisfy { $0.titleLabel.font == DesignTokens.Typography.font(.body) && $0.plate.stateStyle.fill == nil && $0.plate.stateStyle.borderWidth == 0 }, "\(name): the others rest bare in the regular face")
+            // One tab stop per set: the chosen button, and only it.
+            let stops = group.buttons.filter(\.canBecomeKeyView)
+            expect(stops.count == 1 && stops[0] === chosenButton, "\(name): the set is one tab stop, on the chosen choice (\(stops.map(\.title)))")
+        }
+        let general = controller.general, drawing = controller.drawing
+        check("Show in", tab: 0, group: general.presenceGroup, identifiers: ["presenceDock", "presenceMenuBar", "presenceBoth"], titles: ["Dock", "Menu bar", "Both"], tags: [2, 1, 0], label: "Show in")
+        check("Drawing precision", tab: 1, group: drawing.precisionGroup, identifiers: ["precisionPrecise", "precisionMedium", "precisionLoose"], titles: ["Precise", "Medium", "Loose"], tags: [0, 1, 2], label: "Drawing precision")
+        check("Arrow head", tab: 1, group: drawing.arrowGroup, identifiers: ["arrowEnd", "arrowStart"], titles: ["End", "Start"], tags: [2, 1], label: "Arrow head")
+
+        // A click chooses it and stores it, once; clicking the chosen one again stores nothing.
+        controller.select(0)
+        var count = delivered.count
+        general.presenceGroup.buttons[0].performClick(nil)
+        expect(delivered.count == count + 1 && delivered.last?.statusMenu == 2 && chosen(general.presenceGroup) == [2], "clicking Dock stores Dock once (\(delivered.count - count) edits)")
+        general.presenceGroup.buttons[0].performClick(nil)
+        expect(delivered.count == count + 1 && chosen(general.presenceGroup) == [2], "clicking the chosen choice again stores nothing")
+        // Arrow keys move the choice and the stored value, one edit per step, and stop at the ends.
+        controller.select(1)
+        window.contentView?.layoutSubtreeIfNeeded()
+        let precision = drawing.precisionGroup!
+        expect(window.makeFirstResponder(precision.buttons[1]) && window.firstResponder === precision.buttons[1], "the chosen precision can take the keyboard")
+        count = delivered.count
+        precision.buttons[1].keyDown(with: arrowEvent(124, window: window))
+        expect(delivered.count == count + 1 && delivered.last?.drawingPrecision == .loose && chosen(precision) == [2] && window.firstResponder === precision.buttons[2],
+               "Right moves to Loose, stores it once and takes the focus with it")
+        precision.buttons[2].keyDown(with: arrowEvent(124, window: window))
+        expect(delivered.count == count + 1 && chosen(precision) == [2], "Right stops at the last choice and stores nothing")
+        precision.buttons[2].keyDown(with: arrowEvent(123, window: window)); precision.buttons[1].keyDown(with: arrowEvent(123, window: window))
+        expect(delivered.count == count + 3 && delivered.last?.drawingPrecision == .precise && chosen(precision) == [0], "Left walks back to Precise, one edit a step")
+        precision.buttons[0].keyDown(with: arrowEvent(126, window: window))
+        expect(delivered.count == count + 3 && chosen(precision) == [0], "Up at the first choice stores nothing")
+        precision.buttons[0].keyDown(with: arrowEvent(125, window: window))
+        expect(delivered.last?.drawingPrecision == .medium && chosen(precision) == [1], "Down moves on like Right")
+        // Space chooses the focused choice.
+        let arrow = drawing.arrowGroup!
+        expect(window.makeFirstResponder(arrow.buttons[0]), "the chosen arrow head can take the keyboard")
+        arrow.buttons[0].keyDown(with: arrowEvent(124, window: window))
+        expect(delivered.last?.arrowHead == 1 && chosen(arrow) == [1], "Right chooses Start")
+        // Stored values that came from outside move the set without an edit (a menu command).
+        count = delivered.count
+        controller.synchronize(GeneralPreferencesState(drawingPrecision: .loose, arrowHead: 2, includeApp: true, statusMenu: 1))
+        expect(delivered.count == count && chosen(precision) == [2] && chosen(arrow) == [2] && chosen(general.presenceGroup) == [1], "a synchronize moves the sets and sends nothing")
+        // The only tab stop moves with the choice.
+        expect(precision.buttons.filter(\.canBecomeKeyView).map(\.tag) == [2], "the tab stop follows the choice")
+        // The tab's key-view loop passes through each set once.
+        controller.select(0)
+        window.contentView?.layoutSubtreeIfNeeded()
+        window.recalculateKeyViewLoop()
+        var seen: [NSView] = [], view: NSView? = controller.strip
+        for _ in 0..<30 { view = view?.nextValidKeyView; guard let next = view, next !== controller.strip else { break }; seen.append(next) }
+        let titlesSeen = seen.compactMap { ($0 as? GlassChoiceButton)?.identifier?.rawValue }
+        expect(titlesSeen.filter { $0.hasPrefix("presence") }.count == 1, "Tab passes through the Show in set once (\(titlesSeen))")
+    }
+
+    // MARK: Toggles
+
+    private static func toggles() {
+        var current = initialState
+        let (controller, defaults, _, _, _, _) = makeController(state: current)
+        var delivered: [GeneralPreferencesState] = []
+        controller.onChange = { delivered.append($0); current = $0 }
+        let window = controller.window
+        let general = controller.general
+        controller.select(0)
+        window.contentView?.layoutSubtreeIfNeeded()
+        let hover = general.hoverHintsCheckbox!, keys = general.keyboardTipsCheckbox!, snap = general.snapCheckbox!
+        for (name, toggle, id) in [("hover hints", hover, "showToolTips"), ("keyboard tips", keys, "showKeyboardTips"), ("snap", snap, "includeApp")] {
+            expect(toggle.kind == .toggle && toggle.indicator == .checkbox && toggle.identifier?.rawValue == id, "\(name): a checkbox toggle that keeps its identifier \(id)")
+            expect(toggle.accessibilityRole() == .checkBox && toggle.accessibilityLabel() == toggle.title && toggle.titleLabel.font?.pointSize == 20, "\(name): VoiceOver gets a named check box and the label is 20 pt")
+        }
+        // Related toggles share one plate; the long snap sentence has its own.
+        expect(general.hintsPlate.arrangedViews.count == 2 && general.hintsPlate.arrangedViews[0] === hover && general.hintsPlate.arrangedViews[1] === keys && general.hintsPlate.axis == .vertical,
+               "the two hint options share one vertical plate")
+        expect(general.snapPlate.arrangedViews.count == 1 && general.snapPlate.arrangedViews[0] === snap && general.snapPlate !== general.hintsPlate && plates(in: general.view).count == 3,
+               "the snap option has its own plate, and the General tab has three: Show in, Snapping, Hints")
+        expect(general.hintsPlate.accessibilityRole() == .group && general.hintsPlate.accessibilityLabel() == "Hints", "the plate is a named group")
+        // The sentence wraps: two readable lines, wholly inside its row, the plate no wider than the control column.
+        window.contentView?.layoutSubtreeIfNeeded()
+        let lines = ceil(snap.titleLabel.frame.height / ceil(DesignTokens.Typography.font(.bodyStrong).boundingRectForFont.height))
+        expect(snap.wrapWidth != nil && lines >= 2 && snap.bounds.insetBy(dx: -0.5, dy: -0.5).contains(snap.titleLabel.frame) && snap.frame.height > GlassChoiceButton.height,
+               "the long sentence wraps onto \(lines) lines inside a taller row and nothing is cut: \(snap.titleLabel.frame) in \(snap.bounds)")
+        expect(general.snapPlate.frame.width <= general.controlWidth + 0.5 && general.snapPlate.frame.maxX <= general.grid.bounds.maxX + 0.5, "the wrapped plate stays inside the control column (\(general.snapPlate.frame.width) of \(general.controlWidth))")
+        expect(snap.titleLabel.frame.width + 0.5 >= (snap.title as NSString).boundingRect(with: NSSize(width: snap.wrapWidth!, height: .greatestFiniteMagnitude), options: .usesLineFragmentOrigin,
+                                                                                         attributes: [.font: DesignTokens.Typography.font(.bodyStrong)]).width,
+               "the label is as wide as the wrapped text needs")
+        // Each click flips its own preference, once, with the complete state; the glyph changes with it.
+        func click(_ toggle: GlassChoiceButton, _ edit: (inout GeneralPreferencesState) -> Void, _ name: String) {
+            var expected = current; edit(&expected)
+            let count = delivered.count, before = toggle.markImage, wasOn = toggle.state == .on
+            toggle.performClick(nil)
+            expect(delivered.count == count + 1 && delivered.last == expected, "\(name): one edit with the complete state (\(delivered.count - count) edits; \(String(describing: delivered.last)) vs \(expected))")
+            expect((toggle.state == .on) == !wasOn && toggle.isChosen == !wasOn && toggle.accessibilityValue() as? NSNumber == (wasOn ? 0 : 1), "\(name): the check box now reads \(wasOn ? "off" : "on")")
+            expect(toggle.markImage !== before && (toggle.titleLabel.font == DesignTokens.Typography.font(wasOn ? .body : .bodyStrong)), "\(name): the glyph and the weight changed with the state")
+        }
+        click(hover, { $0.showToolTips = true }, "hover hints on")
+        click(hover, { $0.showToolTips = false }, "hover hints off")
+        click(keys, { $0.showKeyboardTips = true }, "keyboard tips on")
+        click(snap, { $0.includeApp = false }, "snap off")
+        click(snap, { $0.includeApp = true }, "snap on")
+        // A VoiceOver press on the check box flips it exactly as a click does.
+        let count = delivered.count
+        _ = hover.accessibilityPerformPress()
+        expect(delivered.count == count + 1 && delivered.last?.showToolTips == true && hover.state == .on && hover.accessibilityValue() as? NSNumber == 1,
+               "a VoiceOver press flips the check box once (\(delivered.count - count) edits)")
+        // The flash toggle on the Capture tab persists its own key and nothing else.
+        controller.select(2)
+        let flash = controller.capture.flashCheckbox!
+        expect(flash.kind == .toggle && flash.indicator == .checkbox && flash.accessibilityRole() == .checkBox && flash.identifier?.rawValue == "showCaptureFlash", "the flash option is a checkbox toggle")
+        expect(controller.capture.flashPlate.arrangedViews.count == 1 && controller.capture.flashPlate.arrangedViews[0] === flash, "it sits on a plate of its own")
+        flash.performClick(nil)
+        expect(defaults.object(forKey: OriginalCaptureFlashTiming.showFlashKey) as? Bool == false && flash.state == .off && flash.accessibilityValue() as? NSNumber == 0, "clicking it stores false and it reads off")
+        flash.performClick(nil)
+        expect(defaults.object(forKey: OriginalCaptureFlashTiming.showFlashKey) as? Bool == true && flash.state == .on, "clicking again stores true and it reads on")
+    }
+
+    // MARK: Glass structure
+
+    /// Every tab holds its plates in one container and no plate is inside another; the choices draw fills, never glass.
+    private static func glassStructure() {
+        let (controller, _, _, _, _, _) = makeController(destinations: sampleDestinations(count: 2))
+        let expectedPlates = [3, 2, 1, 1]
+        for index in controller.tabItems.indices {
+            controller.select(index)
+            let tab = controller.tabItems[index].viewController, name = controller.tabItems[index].label
+            tab.view.layoutSubtreeIfNeeded()
+            let visible = plates(in: tab.view).filter { !$0.isHiddenOrHasHiddenAncestor }
+            expect(visible.count == expectedPlates[index], "\(name): \(expectedPlates[index]) plates, one per related group (found \(visible.count))")
+            expect(nestedGlass(in: tab.view).isEmpty, "\(name): no glass view inside another")
+            expect(tab.glassContainer.contentView === tab.grid && tab.glassContainer.superview === tab.view, "\(name): the plates share one container around the form")
+            expect(visible.allSatisfy { $0.isDescendant(of: tab.glassContainer) && $0.tintColor == nil }, "\(name): every plate sits in that container and carries no tint")
+            expect(descendants(tab.view).compactMap { $0 as? NSGlassEffectContainerView }.count == 1, "\(name): exactly one glass container")
+        }
+        // The destination list and the shortcut recorders stay solid and native.
+        controller.select(3)
+        expect(!descendants(controller.upload.listScroll).contains { $0 is NSGlassEffectView }, "the destination list is solid content")
+        controller.select(2)
+        expect(!descendants(controller.capture.hotkeyForm).contains { $0 is NSGlassEffectView || $0 is GlassChoiceButton } && descendants(controller.capture.hotkeyForm).contains { $0 is NSPopUpButton },
+               "the shortcut recorders stay native form fields")
+        // The display options reach every set and toggle while the window is up.
+        defer { DisplayOptions.override = nil }
+        controller.select(0)
+        let general = controller.general
+        DisplayOptions.override = DisplayOptions(reduceTransparency: true, increaseContrast: true, differentiateWithoutColor: true)
+        NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
+        let all: [GlassSurfaceView] = [general.presenceGroup.plate, general.snapPlate, general.hintsPlate]
+        expect(all.allSatisfy { $0.transparencyPlate != nil && $0.showsContrastBorder }, "Reduce Transparency and Increase Contrast reach the General plates live")
+        let chosenRadio = general.presenceGroup.buttons.first { $0.isChosen }!
+        expect(chosenRadio.showsIndicator && general.snapCheckbox.showsIndicator, "Differentiate Without Color adds the capsule to the chosen radio and the checked box")
+        expect(!general.hoverHintsCheckbox.showsIndicator, "an unchecked box stays bare")
+        DisplayOptions.override = nil
+        NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
+        expect(all.allSatisfy { $0.transparencyPlate == nil } && !chosenRadio.showsIndicator, "and they go again with the options")
+    }
+
+    // MARK: Baselines
+
+    /// A row's label sits on the same baseline as the first line of its choices, whatever the plate around them: measured from where the
+    /// grid really put the label and where the button really put its text.
+    private static func rowBaselines() {
+        let (controller, _, _, _, _, _) = makeController(destinations: sampleDestinations(count: 1))
+        // A text field is flipped: its baseline offset is measured down from the top edge, so the point is that far from the top in its own space.
+        func baseline(_ field: NSTextField, in root: NSView) -> CGFloat {
+            field.convert(NSPoint(x: 0, y: field.isFlipped ? field.firstBaselineOffsetFromTop : field.bounds.height - field.firstBaselineOffsetFromTop), to: root).y
+        }
+        let rows: [(tab: Int, label: String, first: () -> GlassChoiceButton?)] = [
+            (0, "Show in:", { controller.general.presenceGroup.buttons.first }), (0, "Snapping:", { controller.general.snapCheckbox }),
+            (0, "Hints:", { controller.general.hoverHintsCheckbox }), (1, "Drawing precision:", { controller.drawing.precisionGroup.buttons.first }),
+            (1, "Arrow head:", { controller.drawing.arrowGroup.buttons.first }), (2, "Flash:", { controller.capture.flashCheckbox })]
+        for row in rows {
+            controller.select(row.tab)
+            controller.window.contentView?.layoutSubtreeIfNeeded()
+            let tab = controller.tabItems[row.tab].viewController.view
+            guard let label = descendants(tab).compactMap({ $0 as? NSTextField }).first(where: { $0.stringValue == row.label }), let button = row.first() else {
+                expect(false, "\(row.label): the label and its first choice were found"); continue
+            }
+            let delta = abs(baseline(label, in: tab) - baseline(button.titleLabel, in: tab))
+            expect(delta <= 1.5, "\(row.label) shares a baseline with its first choice (off by \(delta) pt)")
+        }
     }
 
     // MARK: Capture flash
