@@ -17,6 +17,7 @@ extension AppSafetyTests {
             ("Upload status commands are named for VoiceOver, are 36 pt icon buttons with a rest plate, and only the commands of the current state are shown", uploadCommandsAreLabelled),
             ("Link copied shows the link itself (full URL on the tooltip and as VoiceOver help) and gives it up to the width the slot has", uploadLinkInStatus),
             ("The Original size checkbox steps aside during an upload or a link only where the measured slot cannot hold it, and an error at 980 keeps it with the message at its narrowest (F-J7-006)", uploadCheckboxFollowsWidth),
+            ("On the 980 floor the real footer in the idle, uploading, link and error states draws every label and face whole: nothing is truncated or overlaps, and the error keeps its narrowest form beside Original size", uploadFooterFitsAtFloor),
             ("Upload with no destination says so in the status line and opens Settings › Upload, whose empty list offers Add… (F-J5-004)", uploadWithoutDestinationExplains),
             ("The upload result keeps the end of the file name at 980, 1024 and 1440, narrowing to Copied · …name (R1-014)", uploadStatusAtWidths),
             ("Upload sends the picture at its own pixel size when Original size is ticked and as shown when it is not, and History records the size that went out (R1-002)", uploadHonoursOriginalSize)
@@ -352,10 +353,8 @@ extension AppSafetyTests {
                 app.uploadState = state
                 let fits = chrome.slotHasRoomForCheckbox(during: state)
                 try expect(app.dragOriginalControl.isHidden == !fits, "\(Int(width)) \(state): the checkbox is \(fits ? "kept" : "hidden") where the \(Int(chrome.statusSlotWidth())) pt slot \(fits ? "holds" : "cannot hold") it")
-                // F-J7-006: an error gives up its words ("Failed") before the toggle leaves, from 1000 pt up. The toggle is a glass choice 41 pt wider
-                // than the checkbox it replaced, so on the 980 floor itself (13 pt short) the error is whole and the toggle steps aside, like it does
-                // for an upload under way and a link.
-                let expectsRoom = width > 1000
+                // F-J7-006: an error gives up its words ("Failed") before the checkbox leaves; an upload under way and a link keep the old rule.
+                let expectsRoom = width > 1000 || state.isFailure
                 try expect(fits == expectsRoom, "\(Int(width)) \(state): \(expectsRoom ? "there is room" : "980 has none")")
                 chrome.window?.contentView?.layoutSubtreeIfNeeded()
                 let status = chrome.convert(app.status.bounds, from: app.status), box = chrome.convert(app.dragOriginalControl.bounds, from: app.dragOriginalControl)
@@ -366,22 +365,65 @@ extension AppSafetyTests {
         // A resize while the error is up moves the checkbox with the width.
         app.uploadState = .failure(message: "Server said no.")
         try resizeWindow(app, contentWidth: 1440)
-        try expect(!app.dragOriginalControl.isHidden, "An error at 1440 shows the toggle")
-        try resizeWindow(app, contentWidth: 1000)
-        try expect(!app.dragOriginalControl.isHidden, "...and narrowing to 1000 keeps it: the error gives up its words, not the toggle (F-J7-006)")
-        // The error line at 1000 is a whole form, never a cut sentence, and the toggle is whole and clear of it.
+        try expect(!app.dragOriginalControl.isHidden, "An error at 1440 shows the checkbox")
+        try resizeWindow(app, contentWidth: ModernEditorChrome.minimumWindowWidth)
+        try expect(!app.dragOriginalControl.isHidden, "...and narrowing to 980 keeps it: the error gives up its words, not the checkbox (F-J7-006)")
+        // The error line at 980 is a whole form, never a cut sentence, and the box is whole and clear of it.
         app.uploadState = .failure(message: "Upload failed · HTTP 403\ncurl: (22) The requested URL returned error: 403")
         chrome.window?.contentView?.layoutSubtreeIfNeeded()
-        let status1000 = chrome.convert(app.status.bounds, from: app.status), box1000 = chrome.convert(app.dragOriginalControl.bounds, from: app.dragOriginalControl)
-        try expect(!app.dragOriginalControl.isHidden && box1000.maxX <= status1000.minX + 0.5 && ["Upload failed · HTTP 403", "Upload failed", "Failed"].contains(app.status.stringValue),
-                   "At 1000 with an error the toggle is shown clear of a whole error form (\(app.status.stringValue), box \(box1000), status \(status1000))")
-        // On the 980 floor the same error is a whole form too, and the toggle has stepped aside for it.
-        try resizeWindow(app, contentWidth: ModernEditorChrome.minimumWindowWidth)
-        try expect(app.dragOriginalControl.isHidden && ["Upload failed · HTTP 403", "Upload failed", "Failed"].contains(app.status.stringValue),
-                   "On the 980 floor the toggle steps aside for the error, which is a whole form (\(app.status.stringValue))")
+        let status980 = chrome.convert(app.status.bounds, from: app.status), box980 = chrome.convert(app.dragOriginalControl.bounds, from: app.dragOriginalControl)
+        try expect(!app.dragOriginalControl.isHidden && box980.maxX <= status980.minX + 0.5 && ["Upload failed · HTTP 403", "Upload failed", "Failed"].contains(app.status.stringValue),
+                   "At 980 with an error the checkbox is shown clear of a whole error form (\(app.status.stringValue), box \(box980), status \(status980))")
         app.uploadState = .idle
         try expect(!app.dragOriginalControl.isHidden, "and idle brings it back")
         stub.gate.signal()
+    }
+
+    /// The 980 floor in the real window: the Original size toggle, the Zoom face, Resize… and the status each fit their frame in every upload state,
+    /// no two of them overlap, and an error shows its narrowest whole form ("Failed") with the toggle beside it.
+    static func uploadFooterFitsAtFloor() throws {
+        let fixture = try Fixture(), app = fixture.app
+        let chrome = try chromeOf(app)
+        try largeUploadShot(app)
+        try resizeWindow(app, contentWidth: ModernEditorChrome.minimumWindowWidth)
+        app.uploadSuccessDuration = 600
+        let toggle = app.dragOriginalControl, zoom = app.zoomControl, resize = chrome.resizeButton
+        let url = URL(string: "https://cdn.example.com/pics/Shot-0123456789ab.png")!
+        let states: [(String, UploadState, Bool)] = [
+            ("idle", .idle, true), ("uploading", .uploading(name: "Shot"), false), ("link", .success(url: url, copied: true), false),
+            ("error", .failure(message: "Upload to Example S3 failed: the connection was refused."), true)]
+        for (name, state, togglePresent) in states {
+            app.uploadState = state
+            chrome.window?.contentView?.layoutSubtreeIfNeeded()
+            func rect(_ view: NSView) -> NSRect { chrome.convert(view.bounds, from: view) }
+            try expect(toggle.isHidden == !togglePresent, "980 \(name): the Original size toggle is \(togglePresent ? "beside the message" : "out of the way")")
+            // Every face and label fits its frame.
+            try expect(zoom.faceTextFits, "980 \(name): the zoom face is drawn whole (\(zoom.faceTextMetrics.needed) in \(zoom.faceTextMetrics.available))")
+            try expect(resize.fittingSize.width <= resize.frame.width + 0.5, "980 \(name): Resize… fits its button (\(resize.fittingSize.width) in \(resize.frame.width))")
+            let statusNeeds = chrome.statusCellWidth(of: app.status.stringValue)
+            try expect(statusNeeds <= app.status.frame.width + 0.5, "980 \(name): the status \"\(app.status.stringValue)\" is shown whole (\(statusNeeds) in \(app.status.frame.width))")
+            if togglePresent {
+                try expect(toggle.fittingSize.width <= toggle.frame.width + 0.5 && toggle.titleLabel.frame.width >= toggle.titleLabel.intrinsicContentSize.width - 0.5 && (toggle.titleLabel.font?.pointSize ?? 0) >= 20,
+                           "980 \(name): Original size is drawn whole at 20 pt (\(toggle.fittingSize.width) in \(toggle.frame.width), title \(toggle.titleLabel.frame.width) of \(toggle.titleLabel.intrinsicContentSize.width))")
+            }
+            // Nothing in the bar overlaps anything else, and all of it is inside the bar.
+            var parts: [(String, NSView)] = [("zoom", zoom), ("Resize…", resize), ("status", app.status), ("Save", chrome.saveButton), ("History", chrome.historyButton), ("Upload", chrome.shareButton)]
+            if togglePresent { parts.append(("Original size", toggle)) }
+            for command in chrome.uploadControls.commandButtons where !command.isHiddenOrHasHiddenAncestor { parts.append(("upload command", command)) }
+            let bar = rect(chrome.footer)
+            for (index, a) in parts.enumerated() {
+                try expect(bar.insetBy(dx: -0.5, dy: -0.5).contains(rect(a.1)), "980 \(name): \(a.0) is inside the bottom bar (\(rect(a.1)) in \(bar))")
+                for b in parts[(index + 1)...] {
+                    let overlap = rect(a.1).intersection(rect(b.1))
+                    try expect(overlap.isNull || overlap.width <= 0.5 || overlap.height <= 0.5, "980 \(name): \(a.0) overlaps \(b.0) by \(overlap)")
+                }
+            }
+            if name == "error" {
+                try expect(app.status.stringValue == "Failed" && state.statusVariants.last == "Failed", "980 error: the status is the narrowest whole form, \"Failed\" (\(app.status.stringValue))")
+                try expect(rect(toggle).maxX <= rect(app.status).minX + 0.5, "980 error: Original size stands clear of the message")
+            }
+        }
+        app.uploadState = .idle
     }
 
     static func uploadHonoursOriginalSize() throws {

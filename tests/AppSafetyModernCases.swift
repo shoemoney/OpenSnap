@@ -1655,12 +1655,19 @@ extension AppSafetyTests {
         zoom.performClick(nil)
         panel = zoom.choicePanel
         try expect(zoom.isOpen && panel.host.plates.count == 2 && panel.rows.count == 8, "Percentages and the computed row on one plate, Actual Size on its own (\(panel.host.plates.count) plates, \(panel.rows.count) rows)")
-        try expect(panel.rows.map(\.title) == ["83%", "25%", "50%", "75%", "100%", "150%", "200%", "Actual Size"], "Rows in menu order: \(panel.rows.map(\.title))")
+        try expect(panel.rows.map(\.title) == ["Fit, 83%", "25%", "50%", "75%", "100%", "150%", "200%", "Actual Size"], "Rows in menu order, the computed one saying its mode: \(panel.rows.map(\.title))")
+        try expect(panel.rows[0].accessibilityLabel() == "Fit, 83%" && zoom.titleOfSelectedItem == "83%" && zoom.menu?.items.first?.title == "83%", "The row is spoken with its mode while the face and the menu's own title stay \"83%\"")
+        try expect(panel.rows.allSatisfy { $0.titleLabel.frame.width >= $0.titleLabel.intrinsicContentSize.width - 0.5 }, "No row's title is truncated")
         try expect(panel.rows.dropLast().allSatisfy { $0.kind == .option } && panel.rows.last?.kind == .toggle, "Percent rows (and the computed Fit row) are options; Actual Size is a toggle")
-        try expect(panel.rows.filter(\.isChosen).map(\.title) == ["83%"], "The computed Fit row is the chosen one: \(panel.rows.filter(\.isChosen).map(\.title))")
+        try expect(panel.rows.filter(\.isChosen).map(\.title) == ["Fit, 83%"], "The computed Fit row is the chosen one: \(panel.rows.filter(\.isChosen).map(\.title))")
         try expect(panel.rows.last?.isEnabled == true && panel.rows.last?.shortcutText == MenuShortcut.text(for: try (zoom.menu?.items.last).unwrap("last item")), "With a snap picture Actual Size is enabled and shows the main-menu shortcut")
         let footer = zoom.window!.convertToScreen(zoom.convert(zoom.bounds, to: nil))
         try expect(panel.host.placement.map { $0.edge == .maxY && $0.frame.minY >= footer.maxY } == true, "The panel opens above the footer, not over it")
+        // Choosing the computed row itself changes nothing: the same zoom, the same face.
+        let fitZoom = app.canvas.zoom
+        panel.rows[0].performClick(nil)
+        try expect(abs(app.canvas.zoom - fitZoom) < 0.0001 && zoom.titleOfSelectedItem == "83%" && !zoom.isOpen, "Choosing the Fit row keeps the zoom and the 83% face")
+        zoom.performClick(nil)
         // A percentage reaches the canvas through changeZoom, and the pop-up shows it.
         try (panel.rows.first { $0.title == "150%" }).unwrap("150% row").performClick(nil)
         try expect(abs(app.canvas.zoom - 1.5) < 0.001 && zoom.titleOfSelectedItem == "150%" && !zoom.isOpen, "Choosing 150% zooms the canvas and the face reads 150% (zoom \(app.canvas.zoom))")

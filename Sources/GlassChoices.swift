@@ -128,6 +128,12 @@ final class GlassChoiceButton: CommandButton {
     static let glyphPointSize = DesignTokens.Typography.iconInline
     static var glyphSide: CGFloat { ceil(glyphPointSize * 1.25) }
 
+    /// Space between the button's edge and its first and last content. A control on a crowded bar tightens it (the Original size toggle);
+    /// every other button keeps `padding`.
+    var horizontalPadding: CGFloat = GlassChoiceButton.padding { didSet { if horizontalPadding != oldValue { contentDidChange() } } }
+    /// Space between neighbouring content (mark, icon, title, trailing glyph). Defaults to `gap`.
+    var contentGap: CGFloat = GlassChoiceButton.gap { didSet { if contentGap != oldValue { contentDidChange() } } }
+
     var kind: Kind { didSet { if kind != oldValue { kindDidChange() } } }
     var indicator: Indicator { didSet { if indicator != oldValue { indicatorDidChange() } } }
     /// Named `choiceLayout` because `layout` is NSView's own method.
@@ -354,7 +360,7 @@ final class GlassChoiceButton: CommandButton {
         let parts = parts()
         let multiline = parts.text.height > singleLineHeight + 1
         let height = multiline ? parts.text.height + 2 * DesignTokens.Space.s2 : Self.height
-        return NSSize(width: max(minimumWidth, 2 * Self.padding + parts.width(gap: Self.gap, shortcutGap: Self.shortcutGap)), height: max(Self.height, height))
+        return NSSize(width: max(minimumWidth, 2 * horizontalPadding + parts.width(gap: contentGap, shortcutGap: Self.shortcutGap)), height: max(Self.height, height))
     }
 
     override func layout() {
@@ -364,14 +370,14 @@ final class GlassChoiceButton: CommandButton {
 
     private func layoutContent() {
         let parts = parts()
-        let side = Self.glyphSide, gap = Self.gap
+        let side = Self.glyphSide, gap = contentGap
         func centred(_ height: CGFloat) -> CGFloat { ((bounds.height - height) / 2).rounded() }
         let trailingBlock = parts.trailing > 0 ? parts.trailing + gap : 0
         let shortcutBlock = parts.shortcut > 0 ? parts.shortcut + Self.shortcutGap : 0
-        var x = Self.padding
+        var x = horizontalPadding
         if choiceLayout == .segment {
             let content = parts.width(gap: gap, shortcutGap: Self.shortcutGap)
-            x = max(Self.padding, ((bounds.width - content) / 2).rounded())
+            x = max(horizontalPadding, ((bounds.width - content) / 2).rounded())
         }
         if parts.mark > 0 { markView.frame = NSRect(x: x, y: centred(side), width: side, height: side); x += side + gap }
         if parts.icon > 0 { iconView.frame = NSRect(x: x, y: centred(side), width: side, height: side); x += side + gap }
@@ -380,17 +386,17 @@ final class GlassChoiceButton: CommandButton {
         if choiceLayout == .segment {
             available = parts.text.width
         } else {
-            available = max(0, bounds.width - Self.padding - x - shortcutBlock - trailingBlock)
+            available = max(0, bounds.width - horizontalPadding - x - shortcutBlock - trailingBlock)
         }
         titleLabel.frame = NSRect(x: x, y: centred(textHeight), width: available, height: textHeight)
         x += choiceLayout == .segment ? parts.text.width : available
         if parts.shortcut > 0 {
-            let origin = choiceLayout == .segment ? x + Self.shortcutGap : bounds.width - Self.padding - trailingBlock - parts.shortcut
+            let origin = choiceLayout == .segment ? x + Self.shortcutGap : bounds.width - horizontalPadding - trailingBlock - parts.shortcut
             shortcutLabel.frame = NSRect(x: origin, y: centred(singleLineHeight), width: parts.shortcut, height: singleLineHeight)
             x = origin + parts.shortcut
         }
         if parts.trailing > 0 {
-            let origin = choiceLayout == .segment ? x + gap : bounds.width - Self.padding - side
+            let origin = choiceLayout == .segment ? x + gap : bounds.width - horizontalPadding - side
             trailingView.frame = NSRect(x: origin, y: centred(side), width: side, height: side)
         }
     }
@@ -1118,6 +1124,9 @@ final class MenuChoicePanel: NSObject {
     weak var popUp: NSPopUpButton?
     var minimumWidth: CGFloat { didSet { host.minimumWidth = minimumWidth } }
     private let kindFor: @MainActor (NSMenuItem) -> GlassChoiceButton.Kind
+    /// The words a row shows (and VoiceOver reads) for an item. The item's own title by default; a menu whose face must stay short can have its
+    /// panel say more (the zoom's computed row says "Fit, 83%" where the face says "83%"). The menu's titles are never changed.
+    var rowTitle: @MainActor (NSMenuItem) -> String = { $0.title }
     /// The rows on screen now, top to bottom (the Back row first while inside a submenu).
     private(set) var rows: [GlassChoiceButton] = []
     private(set) var headers: [GlassChoiceLabel] = []
@@ -1219,7 +1228,7 @@ final class MenuChoicePanel: NSObject {
                 continue
             }
             let kind = kindFor(item)
-            let row = GlassChoiceButton(title: item.title, kind: kind, layout: .row)
+            let row = GlassChoiceButton(title: rowTitle(item), kind: kind, layout: .row)
             row.identifier = NSUserInterfaceItemIdentifier("choice.\(index)")
             row.isEnabled = item.isEnabled
             if kind == .option || kind == .toggle { row.isChosen = item.state != .off }
@@ -1372,6 +1381,8 @@ class GlassPopUpButton: NSPopUpButton {
     /// Overrides the default roles: a plain item is an option (the selected one is chosen), a submenu item a submenu row, and an item with
     /// its own action keeps `MenuChoicePanel.defaultKind`.
     var kind: (@MainActor (NSMenuItem) -> GlassChoiceButton.Kind)? { didSet { discardPanel() } }
+    /// Passes through to the panel's `rowTitle`: what a row says for an item, when that is not the item's title.
+    var rowTitle: (@MainActor (NSMenuItem) -> String)? { didSet { discardPanel() } }
     /// Test seam: replaces presenting the panel. It receives the panel and whether the keyboard opened it.
     var presentHandler: ((MenuChoicePanel, Bool) -> Void)?
 
@@ -1411,6 +1422,7 @@ class GlassPopUpButton: NSPopUpButton {
             if item.submenu != nil { return .submenu }
             return self.choicePanel.hasOwnAction(item) ? MenuChoicePanel.defaultKind(item) : .option
         }, popUp: self, minimumWidth: minimumPanelWidth)
+        if let rowTitle { panel.rowTitle = rowTitle }
         cachedPanel = panel
         return panel
     }

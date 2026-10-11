@@ -147,6 +147,8 @@ private enum GlassChoicesTests {
         buttonSemanticsTests()
         buttonAppearanceTests()
         buttonLayoutTests()
+        buttonSpacingKnobTests()
+        rowTitleTests()
         indicatorGlyphTests()
         groupTests()
         hostTests()
@@ -602,6 +604,71 @@ private enum GlassChoicesTests {
     }
 
     // MARK: button layout
+
+    /// `horizontalPadding` and `contentGap` are per-button knobs for a crowded bar: they default to the roomy values and, when tightened, move
+    /// the measured width and the laid-out content by exactly the same amounts, so what is budgeted is what is drawn.
+    private static func buttonSpacingKnobTests() {
+        let roomy = makeButton("Original size", .toggle, indicator: .checkbox)
+        expect(roomy.horizontalPadding == GlassChoiceButton.padding && roomy.contentGap == GlassChoiceButton.gap, "The knobs default to the row padding and gap")
+        let text = needed("Original size", .bodyStrong).width
+        let side = GlassChoiceButton.glyphSide
+        expect(roomy.intrinsicContentSize.width == 2 * 12 + side + 8 + text, "By default a checkbox toggle is 12 + mark + 8 + title + 12 (\(roomy.intrinsicContentSize.width))")
+        let tight = makeButton("Original size", .toggle, indicator: .checkbox)
+        tight.horizontalPadding = 8
+        tight.contentGap = 4
+        expect(tight.intrinsicContentSize.width == 2 * 8 + side + 4 + text, "Tightened it is 8 + mark + 4 + title + 8 (\(tight.intrinsicContentSize.width))")
+        expect(roomy.intrinsicContentSize.width - tight.intrinsicContentSize.width == 2 * (12 - 8) + (8 - 4), "and exactly the two savings narrower")
+        expect(tight.intrinsicContentSize.height == 36 && (tight.titleLabel.font?.pointSize ?? 0) >= 20, "The row stays 36 pt tall and its title 20 pt")
+        tight.frame = NSRect(x: 0, y: 0, width: tight.intrinsicContentSize.width, height: 36)
+        tight.layoutSubtreeIfNeeded()
+        expect(tight.markImage != nil && tight.showsMark, "The checkbox mark is there")
+        let mark = descendants(tight).compactMap { $0 as? NSImageView }.first { $0.image === tight.markImage }
+        expect(mark?.frame.minX == 8 && tight.titleLabel.frame.minX == 8 + side + 4, "The mark starts at the tightened padding and the title follows one tightened gap later (\(String(describing: mark?.frame)), \(tight.titleLabel.frame))")
+        expect(abs(tight.titleLabel.frame.maxX - (tight.bounds.width - 8)) < 0.5, "The title ends at the tightened trailing padding (\(tight.titleLabel.frame), width \(tight.bounds.width))")
+        // A trailing glyph and a shortcut follow the same knobs.
+        let trailing = makeButton("Sample", .toggle, indicator: .check)
+        trailing.horizontalPadding = 6
+        trailing.contentGap = 2
+        expect(trailing.intrinsicContentSize.width == 2 * 6 + needed("Sample", .bodyStrong).width + 2 + side, "A trailing check column uses the tightened padding and gap (\(trailing.intrinsicContentSize.width))")
+        trailing.frame = NSRect(x: 0, y: 0, width: 300, height: 36)
+        trailing.isChosen = true
+        trailing.layoutSubtreeIfNeeded()
+        let check = descendants(trailing).compactMap { $0 as? NSImageView }.first { $0.image === trailing.trailingImage }
+        expect(trailing.titleLabel.frame.minX == 6 && check.map { abs($0.frame.maxX - (300 - 6)) < 0.5 } == true, "A row's title starts at the padding and its check ends at the trailing padding (\(trailing.titleLabel.frame), \(String(describing: check?.frame)))")
+    }
+
+    /// `rowTitle` lets a menu's panel say more than the item's title: the visible row and the spoken label, with the menu itself untouched.
+    private static func rowTitleTests() {
+        let menu = NSMenu(title: "Zoom")
+        let plainItem = NSMenuItem(title: "100%", action: nil, keyEquivalent: "")
+        let computed = NSMenuItem(title: "100%", action: nil, keyEquivalent: ""); computed.tag = 999; computed.toolTip = "Fit, 100%"
+        menu.addItem(computed); menu.addItem(plainItem)
+        let panel = MenuChoicePanel(menu: menu, identifier: "RowTitle", accessibilityLabel: "Zoom")
+        let (window, content) = (NSWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 300), styleMask: [.titled], backing: .buffered, defer: true), NSView())
+        window.contentView = content
+        panel.host.presenter = { _, _ in }
+        panel.host.visibleFrameOverride = NSRect(x: 0, y: 0, width: 1600, height: 1000)
+        let anchor = NSButton(title: "", target: nil, action: nil)
+        anchor.frame = NSRect(x: 20, y: 250, width: 80, height: 36)
+        content.addSubview(anchor)
+        panel.present(relativeTo: anchor, preferredEdge: .minY, keyboard: false)
+        expect(panel.rows.map(\.title) == ["100%", "100%"] && panel.rows.map { $0.accessibilityLabel() } == ["100%", "100%"], "By default a row says its item's title, to the eye and to VoiceOver")
+        panel.host.close()
+        panel.rowTitle = { $0.tag == 999 ? ($0.toolTip ?? $0.title) : $0.title }
+        panel.present(relativeTo: anchor, preferredEdge: .minY, keyboard: false)
+        expect(panel.rows.map(\.title) == ["Fit, 100%", "100%"] && panel.rows.map { $0.accessibilityLabel() } == ["Fit, 100%", "100%"], "With a row title hook the computed row says its mode, visibly and to VoiceOver")
+        expect(menu.items.map(\.title) == ["100%", "100%"] && panel.rows.allSatisfy { $0.frame.width >= $0.intrinsicContentSize.width - 0.5 }, "The menu's own titles are untouched and the panel is wide enough for the longer row")
+        panel.host.close()
+        // The pop-up passes the hook through, and changing it makes a new panel.
+        let popUp = GlassPopUpButton(frame: NSRect(x: 20, y: 200, width: 120, height: 36), pullsDown: false)
+        popUp.addItems(withTitles: ["25%", "100%"])
+        popUp.menu?.items[1].tag = 999; popUp.menu?.items[1].toolTip = "Fit, 100%"
+        content.addSubview(popUp)
+        let before = popUp.choicePanel
+        popUp.rowTitle = { $0.tag == 999 ? ($0.toolTip ?? $0.title) : $0.title }
+        expect(popUp.choicePanel !== before && popUp.choicePanel.rowTitle(popUp.menu!.items[1]) == "Fit, 100%" && popUp.choicePanel.rowTitle(popUp.menu!.items[0]) == "25%", "A pop-up passes its row title hook to its panel")
+        _ = window
+    }
 
     private static func buttonLayoutTests() {
         let plainButton = makeButton("Sample", .command)
