@@ -1,0 +1,3 @@
+captures walked 2028, text nodes 53070, glass rows 5926, smallest 18.0 pt
+skipped system-owned/private nodes {'titleBarWidgetOrSystemPanel': 7746, 'systemPanel': 0, 'privateButtonField': 5174}
+violations 0; controls 18-20 pt 13140; status-truncated captures 18

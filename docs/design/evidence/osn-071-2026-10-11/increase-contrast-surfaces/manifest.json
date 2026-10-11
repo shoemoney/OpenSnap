@@ -1,0 +1,7571 @@
+{
+ "sourceSha": "4254505",
+ "bundleId": "com.shoemoney.opensnap.eyedump-40821",
+ "iconMode": "sf",
+ "faMode": "FA unavailable: no FontAwesome7Pro subset fonts are bundled in this build, so every capture uses SF Symbols (nothing was faked)",
+ "captureCount": 168,
+ "unavailable": [],
+ "gaps": [
+  {
+   "appearance": "dark",
+   "iconMode": "sf",
+   "id": "S26",
+   "reason": "No Wipe confirmation exists: Wipe/Undo (Canvas.wipe) acts immediately, so there is nothing to capture; recorded as a finding",
+   "surface": "Wipe confirmation"
+  },
+  {
+   "appearance": "light",
+   "iconMode": "sf",
+   "id": "S26",
+   "reason": "No Wipe confirmation exists: Wipe/Undo (Canvas.wipe) acts immediately, so there is nothing to capture; recorded as a finding",
+   "surface": "Wipe confirmation"
+  }
+ ],
+ "captures": [
+  {
+   "id": "S12",
+   "slug": "frame-mode",
+   "surface": "Frame mode",
+   "state": "Frame mode: clear canvas hole, Snap Frame + Cancel, window alpha 0.8",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-mode-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-mode-dark-ic@4254505.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|func enterFrame",
+    "ModernEditorChrome.swift|private func applyFrameMode"
+   ]
+  },
+  {
+   "id": "S12",
+   "slug": "frame-mode",
+   "surface": "Frame mode",
+   "state": "Frame mode: clear canvas hole, Snap Frame + Cancel, window alpha 0.8",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-mode-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-mode-light-ic@4254505.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|func enterFrame",
+    "ModernEditorChrome.swift|private func applyFrameMode"
+   ]
+  },
+  {
+   "id": "S12",
+   "slug": "frame-resnap",
+   "surface": "Frame mode",
+   "state": "Re-snap (keep pen) Frame mode over existing annotations",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-resnap-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-resnap-dark-ic@4254505.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|@objc func resnap()"
+   ]
+  },
+  {
+   "id": "S12",
+   "slug": "frame-resnap",
+   "surface": "Frame mode",
+   "state": "Re-snap (keep pen) Frame mode over existing annotations",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-resnap-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-resnap-light-ic@4254505.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|@objc func resnap()"
+   ]
+  },
+  {
+   "id": "S12",
+   "slug": "frame-w1024",
+   "surface": "Frame mode",
+   "state": "Frame mode at window width 1024 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    2048,
+    2358
+   ],
+   "pointSize": [
+    1024,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-w1024-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1382
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-w1024-dark-ic@4254505.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|func enterFrame",
+    "ModernEditorChrome.swift|private func applyFrameMode"
+   ]
+  },
+  {
+   "id": "S12",
+   "slug": "frame-w1024",
+   "surface": "Frame mode",
+   "state": "Frame mode at window width 1024 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1024,
+    1179
+   ],
+   "pixelSize": [
+    2048,
+    2358
+   ],
+   "pointSize": [
+    1024,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-w1024-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1382
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-w1024-light-ic@4254505.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|func enterFrame",
+    "ModernEditorChrome.swift|private func applyFrameMode"
+   ]
+  },
+  {
+   "id": "S12",
+   "slug": "frame-w1280",
+   "surface": "Frame mode",
+   "state": "Frame mode at window width 1280 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    1179
+   ],
+   "pixelSize": [
+    2560,
+    2358
+   ],
+   "pointSize": [
+    1280,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-w1280-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1105
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-w1280-dark-ic@4254505.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|func enterFrame",
+    "ModernEditorChrome.swift|private func applyFrameMode"
+   ]
+  },
+  {
+   "id": "S12",
+   "slug": "frame-w1280",
+   "surface": "Frame mode",
+   "state": "Frame mode at window width 1280 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    1179
+   ],
+   "pixelSize": [
+    2560,
+    2358
+   ],
+   "pointSize": [
+    1280,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-w1280-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1105
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-w1280-light-ic@4254505.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|func enterFrame",
+    "ModernEditorChrome.swift|private func applyFrameMode"
+   ]
+  },
+  {
+   "id": "S12",
+   "slug": "frame-w980",
+   "surface": "Frame mode",
+   "state": "Frame mode at window width 980 pt",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    1179
+   ],
+   "pixelSize": [
+    1960,
+    2358
+   ],
+   "pointSize": [
+    980,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-w980-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1444
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-w980-dark-ic@4254505.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|func enterFrame",
+    "ModernEditorChrome.swift|private func applyFrameMode"
+   ]
+  },
+  {
+   "id": "S12",
+   "slug": "frame-w980",
+   "surface": "Frame mode",
+   "state": "Frame mode at window width 980 pt",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    1179
+   ],
+   "pixelSize": [
+    1960,
+    2358
+   ],
+   "pointSize": [
+    980,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S12-frame-w980-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1444
+   ],
+   "downscaled": true,
+   "layout": "layout/S12-frame-w980-light-ic@4254505.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|func enterFrame",
+    "ModernEditorChrome.swift|private func applyFrameMode"
+   ]
+  },
+  {
+   "id": "S16",
+   "slug": "permission-sheet",
+   "surface": "Screen Recording permission sheet",
+   "state": "app-owned sheet: title, instructions, Open System Settings (default) and Cancel",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1120,
+    388
+   ],
+   "pointSize": [
+    560,
+    194
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S16-permission-sheet-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1120,
+    388
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "Capture.swift|final class ScreenRecordingPermissionSheet",
+    "Capture.swift|struct ScreenRecordingGate"
+   ]
+  },
+  {
+   "id": "S16",
+   "slug": "permission-sheet",
+   "surface": "Screen Recording permission sheet",
+   "state": "app-owned sheet: title, instructions, Open System Settings (default) and Cancel",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1120,
+    388
+   ],
+   "pointSize": [
+    560,
+    194
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S16-permission-sheet-light-ic@4254505.png",
+   "storedPixelSize": [
+    1120,
+    388
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "Capture.swift|final class ScreenRecordingPermissionSheet",
+    "Capture.swift|struct ScreenRecordingGate"
+   ]
+  },
+  {
+   "id": "S16",
+   "slug": "permission-sheet-in-context",
+   "surface": "Screen Recording permission sheet",
+   "state": "the sheet over the dimmed editor (sheet + parent composite, sheet in front)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S16-permission-sheet-in-context-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "Capture.swift|final class ScreenRecordingPermissionSheet",
+    "Capture.swift|struct ScreenRecordingGate"
+   ]
+  },
+  {
+   "id": "S16",
+   "slug": "permission-sheet-in-context",
+   "surface": "Screen Recording permission sheet",
+   "state": "the sheet over the dimmed editor (sheet + parent composite, sheet in front)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S16-permission-sheet-in-context-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "Capture.swift|final class ScreenRecordingPermissionSheet",
+    "Capture.swift|struct ScreenRecordingGate"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture",
+   "surface": "Settings: Capture",
+   "state": "Capture tab: flash on, shortcuts enabled, every action None",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1266
+   ],
+   "pointSize": [
+    640,
+    633
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1187
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture",
+   "surface": "Settings: Capture",
+   "state": "Capture tab: flash on, shortcuts enabled, every action None",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1266
+   ],
+   "pointSize": [
+    640,
+    633
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1187
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture-1280x800",
+   "surface": "Settings: Capture",
+   "state": "Capture tab: flash on, shortcuts enabled, every action None, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1266
+   ],
+   "pointSize": [
+    640,
+    633
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-1280x800-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1187
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture-1280x800",
+   "surface": "Settings: Capture",
+   "state": "Capture tab: flash on, shortcuts enabled, every action None, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1266
+   ],
+   "pointSize": [
+    640,
+    633
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-1280x800-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1187
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture-error",
+   "surface": "Settings: Capture",
+   "state": "Capture tab with a refused shortcut (a key with no Command or Control)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1314
+   ],
+   "pointSize": [
+    640,
+    657
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-error-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1232
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture-error",
+   "surface": "Settings: Capture",
+   "state": "Capture tab with a refused shortcut (a key with no Command or Control)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1314
+   ],
+   "pointSize": [
+    640,
+    657
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-error-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1232
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture-error-1280x800",
+   "surface": "Settings: Capture",
+   "state": "Capture tab with a refused shortcut (a key with no Command or Control), sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1314
+   ],
+   "pointSize": [
+    640,
+    657
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-error-1280x800-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1232
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture-error-1280x800",
+   "surface": "Settings: Capture",
+   "state": "Capture tab with a refused shortcut (a key with no Command or Control), sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1314
+   ],
+   "pointSize": [
+    640,
+    657
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-error-1280x800-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1232
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture-modifiers",
+   "surface": "Settings: Capture",
+   "state": "Capture tab with Option-Control-K chosen for Screen region: the chosen modifier toggles are in the accent",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1266
+   ],
+   "pointSize": [
+    640,
+    633
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-modifiers-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1187
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture-modifiers",
+   "surface": "Settings: Capture",
+   "state": "Capture tab with Option-Control-K chosen for Screen region: the chosen modifier toggles are in the accent",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1266
+   ],
+   "pointSize": [
+    640,
+    633
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-modifiers-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1187
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture-modifiers-1280x800",
+   "surface": "Settings: Capture",
+   "state": "Capture tab with Option-Control-K chosen for Screen region: the chosen modifier toggles are in the accent, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1266
+   ],
+   "pointSize": [
+    640,
+    633
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-modifiers-1280x800-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1187
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-capture-modifiers-1280x800",
+   "surface": "Settings: Capture",
+   "state": "Capture tab with Option-Control-K chosen for Screen region: the chosen modifier toggles are in the accent, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1266
+   ],
+   "pointSize": [
+    640,
+    633
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-capture-modifiers-1280x800-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1187
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-drawing",
+   "surface": "Settings: Drawing",
+   "state": "Drawing tab, default values",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    564
+   ],
+   "pointSize": [
+    640,
+    282
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-drawing-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    529
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-drawing",
+   "surface": "Settings: Drawing",
+   "state": "Drawing tab, default values",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    564
+   ],
+   "pointSize": [
+    640,
+    282
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-drawing-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    529
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-drawing-1280x800",
+   "surface": "Settings: Drawing",
+   "state": "Drawing tab, default values, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    564
+   ],
+   "pointSize": [
+    640,
+    282
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-drawing-1280x800-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    529
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-drawing-1280x800",
+   "surface": "Settings: Drawing",
+   "state": "Drawing tab, default values, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    564
+   ],
+   "pointSize": [
+    640,
+    282
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-drawing-1280x800-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    529
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-drawing-alt",
+   "surface": "Settings: Drawing",
+   "state": "Drawing tab, alternate values (Loose, Start)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    564
+   ],
+   "pointSize": [
+    640,
+    282
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-drawing-alt-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    529
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-drawing-alt",
+   "surface": "Settings: Drawing",
+   "state": "Drawing tab, alternate values (Loose, Start)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    564
+   ],
+   "pointSize": [
+    640,
+    282
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-drawing-alt-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    529
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-drawing-alt-1280x800",
+   "surface": "Settings: Drawing",
+   "state": "Drawing tab, alternate values (Loose, Start), sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    564
+   ],
+   "pointSize": [
+    640,
+    282
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-drawing-alt-1280x800-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    529
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-drawing-alt-1280x800",
+   "surface": "Settings: Drawing",
+   "state": "Drawing tab, alternate values (Loose, Start), sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    564
+   ],
+   "pointSize": [
+    640,
+    282
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-drawing-alt-1280x800-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    529
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-general",
+   "surface": "Settings: General",
+   "state": "General tab, default values",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    742
+   ],
+   "pointSize": [
+    640,
+    371
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-general-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    696
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-general",
+   "surface": "Settings: General",
+   "state": "General tab, default values",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    742
+   ],
+   "pointSize": [
+    640,
+    371
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-general-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    696
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-general-1280x800",
+   "surface": "Settings: General",
+   "state": "General tab, default values, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    742
+   ],
+   "pointSize": [
+    640,
+    371
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-general-1280x800-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    696
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-general-1280x800",
+   "surface": "Settings: General",
+   "state": "General tab, default values, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    742
+   ],
+   "pointSize": [
+    640,
+    371
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-general-1280x800-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    696
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-general-alt",
+   "surface": "Settings: General",
+   "state": "General tab, alternate values (Menu bar, snap window off, both hint options on)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    742
+   ],
+   "pointSize": [
+    640,
+    371
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-general-alt-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    696
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-general-alt",
+   "surface": "Settings: General",
+   "state": "General tab, alternate values (Menu bar, snap window off, both hint options on)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    742
+   ],
+   "pointSize": [
+    640,
+    371
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-general-alt-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    696
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-general-alt-1280x800",
+   "surface": "Settings: General",
+   "state": "General tab, alternate values (Menu bar, snap window off, both hint options on), sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    742
+   ],
+   "pointSize": [
+    640,
+    371
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-general-alt-1280x800-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    696
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-general-alt-1280x800",
+   "surface": "Settings: General",
+   "state": "General tab, alternate values (Menu bar, snap window off, both hint options on), sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    742
+   ],
+   "pointSize": [
+    640,
+    371
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-general-alt-1280x800-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    696
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload",
+   "surface": "Settings: Upload",
+   "state": "Upload tab: three saved destinations, the first is the default",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    896
+   ],
+   "pointSize": [
+    640,
+    448
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    840
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload",
+   "surface": "Settings: Upload",
+   "state": "Upload tab: three saved destinations, the first is the default",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    896
+   ],
+   "pointSize": [
+    640,
+    448
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    840
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-1280x800",
+   "surface": "Settings: Upload",
+   "state": "Upload tab: three saved destinations, the first is the default, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    896
+   ],
+   "pointSize": [
+    640,
+    448
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-1280x800-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    840
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-1280x800",
+   "surface": "Settings: Upload",
+   "state": "Upload tab: three saved destinations, the first is the default, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    896
+   ],
+   "pointSize": [
+    640,
+    448
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-1280x800-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    840
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-empty",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, no destination saved",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    570
+   ],
+   "pointSize": [
+    640,
+    285
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-empty-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    534
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-empty",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, no destination saved",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    570
+   ],
+   "pointSize": [
+    640,
+    285
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-empty-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    534
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-empty-1280x800",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, no destination saved, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    570
+   ],
+   "pointSize": [
+    640,
+    285
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-empty-1280x800-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    534
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-empty-1280x800",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, no destination saved, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    570
+   ],
+   "pointSize": [
+    640,
+    285
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-empty-1280x800-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    534
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-many",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, eight saved destinations, all listed: the list is as tall as the screen allows and scrolls past that; Add…, Edit…, Remove, Make Default and the caption in view",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1466
+   ],
+   "pointSize": [
+    640,
+    733
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-many-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1374
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-many",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, eight saved destinations, all listed: the list is as tall as the screen allows and scrolls past that; Add…, Edit…, Remove, Make Default and the caption in view",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1466
+   ],
+   "pointSize": [
+    640,
+    733
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-many-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1374
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-many-1280x800",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, eight saved destinations, all listed: the list is as tall as the screen allows and scrolls past that; Add…, Edit…, Remove, Make Default and the caption in view, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1412
+   ],
+   "pointSize": [
+    640,
+    706
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-many-1280x800-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1324
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-many-1280x800",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, eight saved destinations, all listed: the list is as tall as the screen allows and scrolls past that; Add…, Edit…, Remove, Make Default and the caption in view, sized for a 1280 x 800 screen (706 pt visible)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1412
+   ],
+   "pointSize": [
+    640,
+    706
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-many-1280x800-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1324
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-many-440",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, eight destinations on a very short 440 pt visible height: the list scrolls inside, the caption stays in view",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    880
+   ],
+   "pointSize": [
+    640,
+    440
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-many-440-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    825
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-many-440",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, eight destinations on a very short 440 pt visible height: the list scrolls inside, the caption stays in view",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    880
+   ],
+   "pointSize": [
+    640,
+    440
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-many-440-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    825
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-many-640",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, eight destinations on a 640 pt tall screen (616 pt visible): same window, list capped",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1232
+   ],
+   "pointSize": [
+    640,
+    616
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-many-640-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1155
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S17",
+   "slug": "settings-upload-many-640",
+   "surface": "Settings: Upload",
+   "state": "Upload tab, eight destinations on a 640 pt tall screen (616 pt visible): same window, list capped",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1232
+   ],
+   "pointSize": [
+    640,
+    616
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S17-settings-upload-many-640-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1155
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class SettingsWindowController",
+    "SettingsWindow.swift|final class SettingsTabViewController"
+   ]
+  },
+  {
+   "id": "S18",
+   "slug": "hotkeys-via-app-menu",
+   "surface": "Settings: Capture",
+   "state": "Capture Shortcuts… from the app menu: Settings opens on the Capture tab (all actions None)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1266
+   ],
+   "pointSize": [
+    640,
+    633
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S18-hotkeys-via-app-menu-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1187
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|@objc func shortcutSettings()",
+    "SettingsWindow.swift|static let captureTabIndex",
+    "GlobalHotkeys.swift|final class GlobalHotkeyForm"
+   ]
+  },
+  {
+   "id": "S18",
+   "slug": "hotkeys-via-app-menu",
+   "surface": "Settings: Capture",
+   "state": "Capture Shortcuts… from the app menu: Settings opens on the Capture tab (all actions None)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    1266
+   ],
+   "pointSize": [
+    640,
+    633
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S18-hotkeys-via-app-menu-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1187
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|@objc func shortcutSettings()",
+    "SettingsWindow.swift|static let captureTabIndex",
+    "GlobalHotkeys.swift|final class GlobalHotkeyForm"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-edit-form",
+   "surface": "Destinations / Publishing",
+   "state": "edit form for the selected destination, a sheet on the Settings window",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1520
+   ],
+   "pointSize": [
+    737,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-edit-form-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1237
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|private func showForm(for"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-edit-form",
+   "surface": "Destinations / Publishing",
+   "state": "edit form for the selected destination, a sheet on the Settings window",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1520
+   ],
+   "pointSize": [
+    737,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-edit-form-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1237
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|private func showForm(for"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-edit-form-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "edit form for the selected destination, a sheet on the Settings window (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1584
+   ],
+   "pointSize": [
+    737,
+    792
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-edit-form-in-context-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1290
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|private func showForm(for"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-edit-form-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "edit form for the selected destination, a sheet on the Settings window (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1584
+   ],
+   "pointSize": [
+    737,
+    792
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-edit-form-in-context-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1290
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|private func showForm(for"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-focus",
+   "surface": "Preferences text field focus",
+   "state": "first visible text field focused in the destination edit form",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1520
+   ],
+   "pointSize": [
+    737,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-form-focus-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1237
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|private func buildForm()"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-focus",
+   "surface": "Preferences text field focus",
+   "state": "first visible text field focused in the destination edit form",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1520
+   ],
+   "pointSize": [
+    737,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-form-focus-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1237
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|private func buildForm()"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-focus-in-context",
+   "surface": "Preferences text field focus",
+   "state": "first visible text field focused in the destination edit form (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1584
+   ],
+   "pointSize": [
+    737,
+    792
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-form-focus-in-context-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1290
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|private func buildForm()"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-focus-in-context",
+   "surface": "Preferences text field focus",
+   "state": "first visible text field focused in the destination edit form (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1584
+   ],
+   "pointSize": [
+    737,
+    792
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-form-focus-in-context-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1290
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|private func buildForm()"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-ftp",
+   "surface": "Destinations / Publishing",
+   "state": "new FTP destination: its own endpoint scheme, placeholders and help, and the Test note in the one-line result band",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1218
+   ],
+   "pointSize": [
+    737,
+    609
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-form-ftp-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    992
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|static func formCopy",
+    "PublishingDestinationsView.swift|private func refreshForm"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-ftp",
+   "surface": "Destinations / Publishing",
+   "state": "new FTP destination: its own endpoint scheme, placeholders and help, and the Test note in the one-line result band",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1218
+   ],
+   "pointSize": [
+    737,
+    609
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-form-ftp-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    992
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|static func formCopy",
+    "PublishingDestinationsView.swift|private func refreshForm"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-ftp-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "new FTP destination: its own endpoint scheme, placeholders and help, and the Test note in the one-line result band (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1282
+   ],
+   "pointSize": [
+    737,
+    641
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-form-ftp-in-context-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1044
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|static func formCopy",
+    "PublishingDestinationsView.swift|private func refreshForm"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-ftp-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "new FTP destination: its own endpoint scheme, placeholders and help, and the Test note in the one-line result band (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1282
+   ],
+   "pointSize": [
+    737,
+    641
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-form-ftp-in-context-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1044
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|static func formCopy",
+    "PublishingDestinationsView.swift|private func refreshForm"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-ftps",
+   "surface": "Destinations / Publishing",
+   "state": "new FTPS destination: its own endpoint scheme, placeholders and help, and the Test note in the one-line result band",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1218
+   ],
+   "pointSize": [
+    737,
+    609
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-form-ftps-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    992
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|static func formCopy",
+    "PublishingDestinationsView.swift|private func refreshForm"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-ftps",
+   "surface": "Destinations / Publishing",
+   "state": "new FTPS destination: its own endpoint scheme, placeholders and help, and the Test note in the one-line result band",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1218
+   ],
+   "pointSize": [
+    737,
+    609
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-form-ftps-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    992
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|static func formCopy",
+    "PublishingDestinationsView.swift|private func refreshForm"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-ftps-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "new FTPS destination: its own endpoint scheme, placeholders and help, and the Test note in the one-line result band (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1282
+   ],
+   "pointSize": [
+    737,
+    641
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-form-ftps-in-context-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1044
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|static func formCopy",
+    "PublishingDestinationsView.swift|private func refreshForm"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-ftps-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "new FTPS destination: its own endpoint scheme, placeholders and help, and the Test note in the one-line result band (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1282
+   ],
+   "pointSize": [
+    737,
+    641
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-form-ftps-in-context-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1044
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|static func formCopy",
+    "PublishingDestinationsView.swift|private func refreshForm"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-s3",
+   "surface": "Destinations / Publishing",
+   "state": "new S3-compatible destination: its own endpoint scheme, placeholders and help, and the Test note in the one-line result band",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1520
+   ],
+   "pointSize": [
+    737,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-form-s3-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1237
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|static func formCopy",
+    "PublishingDestinationsView.swift|private func refreshForm"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-s3",
+   "surface": "Destinations / Publishing",
+   "state": "new S3-compatible destination: its own endpoint scheme, placeholders and help, and the Test note in the one-line result band",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1520
+   ],
+   "pointSize": [
+    737,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-form-s3-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1237
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|static func formCopy",
+    "PublishingDestinationsView.swift|private func refreshForm"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-s3-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "new S3-compatible destination: its own endpoint scheme, placeholders and help, and the Test note in the one-line result band (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1584
+   ],
+   "pointSize": [
+    737,
+    792
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-form-s3-in-context-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1290
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|static func formCopy",
+    "PublishingDestinationsView.swift|private func refreshForm"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-s3-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "new S3-compatible destination: its own endpoint scheme, placeholders and help, and the Test note in the one-line result band (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1584
+   ],
+   "pointSize": [
+    737,
+    792
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-form-s3-in-context-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1290
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|static func formCopy",
+    "PublishingDestinationsView.swift|private func refreshForm"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-sftp",
+   "surface": "Destinations / Publishing",
+   "state": "new SFTP destination: its own endpoint scheme, placeholders and help, and the Test note in the one-line result band",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1356
+   ],
+   "pointSize": [
+    737,
+    678
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-form-sftp-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1104
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|static func formCopy",
+    "PublishingDestinationsView.swift|private func refreshForm"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-sftp",
+   "surface": "Destinations / Publishing",
+   "state": "new SFTP destination: its own endpoint scheme, placeholders and help, and the Test note in the one-line result band",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1356
+   ],
+   "pointSize": [
+    737,
+    678
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-form-sftp-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1104
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|static func formCopy",
+    "PublishingDestinationsView.swift|private func refreshForm"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-sftp-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "new SFTP destination: its own endpoint scheme, placeholders and help, and the Test note in the one-line result band (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1420
+   ],
+   "pointSize": [
+    737,
+    710
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-form-sftp-in-context-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1156
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|static func formCopy",
+    "PublishingDestinationsView.swift|private func refreshForm"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-sftp-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "new SFTP destination: its own endpoint scheme, placeholders and help, and the Test note in the one-line result band (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1420
+   ],
+   "pointSize": [
+    737,
+    710
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-form-sftp-in-context-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1156
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|static func formCopy",
+    "PublishingDestinationsView.swift|private func refreshForm"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-webdav",
+   "surface": "Destinations / Publishing",
+   "state": "new WebDAV destination: its own endpoint scheme, placeholders and help, and the Test note in the one-line result band",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1260
+   ],
+   "pointSize": [
+    737,
+    630
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-form-webdav-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1026
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|static func formCopy",
+    "PublishingDestinationsView.swift|private func refreshForm"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-webdav",
+   "surface": "Destinations / Publishing",
+   "state": "new WebDAV destination: its own endpoint scheme, placeholders and help, and the Test note in the one-line result band",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1260
+   ],
+   "pointSize": [
+    737,
+    630
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-form-webdav-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1026
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|static func formCopy",
+    "PublishingDestinationsView.swift|private func refreshForm"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-webdav-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "new WebDAV destination: its own endpoint scheme, placeholders and help, and the Test note in the one-line result band (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1324
+   ],
+   "pointSize": [
+    737,
+    662
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-form-webdav-in-context-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1078
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|static func formCopy",
+    "PublishingDestinationsView.swift|private func refreshForm"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-form-webdav-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "new WebDAV destination: its own endpoint scheme, placeholders and help, and the Test note in the one-line result band (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1324
+   ],
+   "pointSize": [
+    737,
+    662
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-form-webdav-in-context-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1078
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|static func formCopy",
+    "PublishingDestinationsView.swift|private func refreshForm"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-from-settings-640",
+   "surface": "Destinations / Publishing",
+   "state": "the editor as hosted by the 640 pt Settings window: 640 wide, so it never overhangs its parent",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1314,
+    1520
+   ],
+   "pointSize": [
+    657,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-from-settings-640-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1388
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "Publishing.swift|func buildEditor(editing",
+    "PublishingDestinationsView.swift|static func sheetWidth(forHostWidth"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-from-settings-640",
+   "surface": "Destinations / Publishing",
+   "state": "the editor as hosted by the 640 pt Settings window: 640 wide, so it never overhangs its parent",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1314,
+    1520
+   ],
+   "pointSize": [
+    657,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-from-settings-640-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1388
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "Publishing.swift|func buildEditor(editing",
+    "PublishingDestinationsView.swift|static func sheetWidth(forHostWidth"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-from-settings-640-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "the editor as hosted by the 640 pt Settings window: 640 wide, so it never overhangs its parent (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1314,
+    1584
+   ],
+   "pointSize": [
+    657,
+    792
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-from-settings-640-in-context-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1447
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "Publishing.swift|func buildEditor(editing",
+    "PublishingDestinationsView.swift|static func sheetWidth(forHostWidth"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-from-settings-640-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "the editor as hosted by the 640 pt Settings window: 640 wide, so it never overhangs its parent (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1314,
+    1584
+   ],
+   "pointSize": [
+    657,
+    792
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-from-settings-640-in-context-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1447
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "Publishing.swift|func buildEditor(editing",
+    "PublishingDestinationsView.swift|static func sheetWidth(forHostWidth"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-short-screen",
+   "surface": "Destinations / Publishing",
+   "state": "edit form on a short display (visible frame 1280 x 500): the form scrolls and Test, Cancel and Save stay pinned",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    760
+   ],
+   "pointSize": [
+    737,
+    380
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-short-screen-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    619
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "Publishing.swift|func buildEditor(editing",
+    "PublishingDestinationsView.swift|static func sheetSize"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-short-screen",
+   "surface": "Destinations / Publishing",
+   "state": "edit form on a short display (visible frame 1280 x 500): the form scrolls and Test, Cancel and Save stay pinned",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    760
+   ],
+   "pointSize": [
+    737,
+    380
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-short-screen-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    619
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "Publishing.swift|func buildEditor(editing",
+    "PublishingDestinationsView.swift|static func sheetSize"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-short-screen-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "edit form on a short display (visible frame 1280 x 500): the form scrolls and Test, Cancel and Save stay pinned (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    896
+   ],
+   "pointSize": [
+    737,
+    448
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-short-screen-in-context-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    729
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "Publishing.swift|func buildEditor(editing",
+    "PublishingDestinationsView.swift|static func sheetSize"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-short-screen-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "edit form on a short display (visible frame 1280 x 500): the form scrolls and Test, Cancel and Save stay pinned (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    896
+   ],
+   "pointSize": [
+    737,
+    448
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-short-screen-in-context-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    729
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "Publishing.swift|func buildEditor(editing",
+    "PublishingDestinationsView.swift|static func sheetSize"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-test-connected",
+   "surface": "Destinations / Publishing",
+   "state": "S3 form after a synthetic successful Test: check glyph, Connected, detail line",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1520
+   ],
+   "pointSize": [
+    737,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-test-connected-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1237
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|func showTestResult",
+    "PublishingDestinationsView.swift|final class DestinationStatusRow"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-test-connected",
+   "surface": "Destinations / Publishing",
+   "state": "S3 form after a synthetic successful Test: check glyph, Connected, detail line",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1520
+   ],
+   "pointSize": [
+    737,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-test-connected-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1237
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|func showTestResult",
+    "PublishingDestinationsView.swift|final class DestinationStatusRow"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-test-connected-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "S3 form after a synthetic successful Test: check glyph, Connected, detail line (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1584
+   ],
+   "pointSize": [
+    737,
+    792
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-test-connected-in-context-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1290
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|func showTestResult",
+    "PublishingDestinationsView.swift|final class DestinationStatusRow"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-test-connected-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "S3 form after a synthetic successful Test: check glyph, Connected, detail line (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1584
+   ],
+   "pointSize": [
+    737,
+    792
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-test-connected-in-context-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1290
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|func showTestResult",
+    "PublishingDestinationsView.swift|final class DestinationStatusRow"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-test-error",
+   "surface": "Destinations / Publishing",
+   "state": "S3 form after a synthetic failed Test: octagon glyph and an Error: line",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1520
+   ],
+   "pointSize": [
+    737,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-test-error-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1237
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|func showTestResult",
+    "PublishingDestinationsView.swift|final class DestinationStatusRow"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-test-error",
+   "surface": "Destinations / Publishing",
+   "state": "S3 form after a synthetic failed Test: octagon glyph and an Error: line",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1520
+   ],
+   "pointSize": [
+    737,
+    760
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-test-error-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1237
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|func showTestResult",
+    "PublishingDestinationsView.swift|final class DestinationStatusRow"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-test-error-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "S3 form after a synthetic failed Test: octagon glyph and an Error: line (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1584
+   ],
+   "pointSize": [
+    737,
+    792
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-test-error-in-context-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1290
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|func showTestResult",
+    "PublishingDestinationsView.swift|final class DestinationStatusRow"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-test-error-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "S3 form after a synthetic failed Test: octagon glyph and an Error: line (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1584
+   ],
+   "pointSize": [
+    737,
+    792
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-test-error-in-context-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1290
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PublishingDestinationsView.swift|func showTestResult",
+    "PublishingDestinationsView.swift|final class DestinationStatusRow"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-test-error-webdav",
+   "surface": "Destinations / Publishing",
+   "state": "WebDAV form after a synthetic failed Test (HTTP 401): the band grows to its lines and the form above it shrinks to make room",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1224
+   ],
+   "pointSize": [
+    737,
+    612
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-test-error-webdav-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    996
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "Publishing.swift|enum PublishingConnectionTest",
+    "PublishingDestinationsView.swift|func showTestResult"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-test-error-webdav",
+   "surface": "Destinations / Publishing",
+   "state": "WebDAV form after a synthetic failed Test (HTTP 401): the band grows to its lines and the form above it shrinks to make room",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1224
+   ],
+   "pointSize": [
+    737,
+    612
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-destinations-test-error-webdav-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    996
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "Publishing.swift|enum PublishingConnectionTest",
+    "PublishingDestinationsView.swift|func showTestResult"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-test-error-webdav-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "WebDAV form after a synthetic failed Test (HTTP 401): the band grows to its lines and the form above it shrinks to make room (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1288
+   ],
+   "pointSize": [
+    737,
+    644
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-test-error-webdav-in-context-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1049
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "Publishing.swift|enum PublishingConnectionTest",
+    "PublishingDestinationsView.swift|func showTestResult"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "destinations-test-error-webdav-in-context",
+   "surface": "Destinations / Publishing",
+   "state": "WebDAV form after a synthetic failed Test (HTTP 401): the band grows to its lines and the form above it shrinks to make room (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1474,
+    1288
+   ],
+   "pointSize": [
+    737,
+    644
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S19-destinations-test-error-webdav-in-context-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1049
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "Publishing.swift|enum PublishingConnectionTest",
+    "PublishingDestinationsView.swift|func showTestResult"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "settings-upload-empty",
+   "surface": "Destinations / Publishing",
+   "state": "Settings, Upload tab, no destination saved: No destinations yet and Add… inside the list",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    570
+   ],
+   "pointSize": [
+    640,
+    285
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-settings-upload-empty-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    534
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class UploadSettingsTab",
+    "App.swift|@objc func sharingSettings()"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "settings-upload-empty",
+   "surface": "Destinations / Publishing",
+   "state": "Settings, Upload tab, no destination saved: No destinations yet and Add… inside the list",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    570
+   ],
+   "pointSize": [
+    640,
+    285
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-settings-upload-empty-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    534
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class UploadSettingsTab",
+    "App.swift|@objc func sharingSettings()"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "settings-upload-list",
+   "surface": "Destinations / Publishing",
+   "state": "Settings, Upload tab: three synthetic destinations (Example S3 default, SFTP, WebDAV) with Add…, Edit…, Remove and Make Default",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    896
+   ],
+   "pointSize": [
+    640,
+    448
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-settings-upload-list-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    840
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class UploadSettingsTab"
+   ]
+  },
+  {
+   "id": "S19",
+   "slug": "settings-upload-list",
+   "surface": "Destinations / Publishing",
+   "state": "Settings, Upload tab: three synthetic destinations (Example S3 default, SFTP, WebDAV) with Add…, Edit…, Remove and Make Default",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1280,
+    896
+   ],
+   "pointSize": [
+    640,
+    448
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S19-settings-upload-list-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    840
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "SettingsWindow.swift|final class UploadSettingsTab"
+   ]
+  },
+  {
+   "id": "S20",
+   "slug": "history-1120x850-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 1120 x 850: grid reflow, check badge, details beside the grid",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2240,
+    1700
+   ],
+   "pointSize": [
+    1120,
+    850
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-1120x850-selected-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    911
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "HistoryBrowser.swift|final class HistoryTileView",
+    "HistoryBrowser.swift|func layoutDetails"
+   ]
+  },
+  {
+   "id": "S20",
+   "slug": "history-1120x850-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 1120 x 850: grid reflow, check badge, details beside the grid",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2240,
+    1700
+   ],
+   "pointSize": [
+    1120,
+    850
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-1120x850-selected-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    911
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "HistoryBrowser.swift|final class HistoryTileView",
+    "HistoryBrowser.swift|func layoutDetails"
+   ]
+  },
+  {
+   "id": "S20",
+   "slug": "history-1280x800-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 1280 x 800: grid reflow, check badge, details beside the grid",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-1280x800-selected-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "HistoryBrowser.swift|final class HistoryTileView",
+    "HistoryBrowser.swift|func layoutDetails"
+   ]
+  },
+  {
+   "id": "S20",
+   "slug": "history-1280x800-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 1280 x 800: grid reflow, check badge, details beside the grid",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-1280x800-selected-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "HistoryBrowser.swift|final class HistoryTileView",
+    "HistoryBrowser.swift|func layoutDetails"
+   ]
+  },
+  {
+   "id": "S20",
+   "slug": "history-880x600-none",
+   "surface": "History browser",
+   "state": "880 x 600, nothing selected: the details column shows the summary instead of a blank hint; tiles sized to their preview",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1760,
+    1200
+   ],
+   "pointSize": [
+    880,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-880x600-none-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "HistoryBrowser.swift|static func summaryLines",
+    "HistoryBrowser.swift|static func tileHeight"
+   ]
+  },
+  {
+   "id": "S20",
+   "slug": "history-880x600-none",
+   "surface": "History browser",
+   "state": "880 x 600, nothing selected: the details column shows the summary instead of a blank hint; tiles sized to their preview",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1760,
+    1200
+   ],
+   "pointSize": [
+    880,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-880x600-none-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "HistoryBrowser.swift|static func summaryLines",
+    "HistoryBrowser.swift|static func tileHeight"
+   ]
+  },
+  {
+   "id": "S20",
+   "slug": "history-880x600-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 880 x 600: grid reflow, check badge, details beside the grid",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1760,
+    1270
+   ],
+   "pointSize": [
+    880,
+    635
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-880x600-selected-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    866
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "HistoryBrowser.swift|final class HistoryTileView",
+    "HistoryBrowser.swift|func layoutDetails"
+   ]
+  },
+  {
+   "id": "S20",
+   "slug": "history-880x600-selected",
+   "surface": "History browser",
+   "state": "six synthetic entries, one selected, window 880 x 600: grid reflow, check badge, details beside the grid",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1760,
+    1270
+   ],
+   "pointSize": [
+    880,
+    635
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-880x600-selected-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    866
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "HistoryBrowser.swift|final class HistoryTileView",
+    "HistoryBrowser.swift|func layoutDetails"
+   ]
+  },
+  {
+   "id": "S20",
+   "slug": "history-action-focus",
+   "surface": "History browser",
+   "state": "keyboard focus on the Open action: the focus ring around its rounded fill (made first responder directly; real Tab reaches it only with Full Keyboard Access or Window > Focus Toolbar)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-action-focus-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "HistoryBrowser.swift|final class HistoryActionButton",
+    "GlassChrome.swift|override func becomeFirstResponder"
+   ]
+  },
+  {
+   "id": "S20",
+   "slug": "history-action-focus",
+   "surface": "History browser",
+   "state": "keyboard focus on the Open action: the focus ring around its rounded fill (made first responder directly; real Tab reaches it only with Full Keyboard Access or Window > Focus Toolbar)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-action-focus-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "HistoryBrowser.swift|final class HistoryActionButton",
+    "GlassChrome.swift|override func becomeFirstResponder"
+   ]
+  },
+  {
+   "id": "S20",
+   "slug": "history-action-hover",
+   "surface": "History browser",
+   "state": "one entry selected and the Copy action hovered: its own label 0.08 fill on the glass plate, the other actions at rest",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-action-hover-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "HistoryBrowser.swift|final class HistoryActionButton",
+    "GlassChrome.swift|func setHovered"
+   ]
+  },
+  {
+   "id": "S20",
+   "slug": "history-action-hover",
+   "surface": "History browser",
+   "state": "one entry selected and the Copy action hovered: its own label 0.08 fill on the glass plate, the other actions at rest",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-action-hover-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "HistoryBrowser.swift|final class HistoryActionButton",
+    "GlassChrome.swift|func setHovered"
+   ]
+  },
+  {
+   "id": "S20",
+   "slug": "history-action-pressed",
+   "surface": "History browser",
+   "state": "one entry selected and the Copy action held down (press bracket driven directly, not a real click): the pressed fill and glyph scale on its plate",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-action-pressed-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "HistoryBrowser.swift|final class HistoryActionButton",
+    "GlassChrome.swift|override func highlight"
+   ]
+  },
+  {
+   "id": "S20",
+   "slug": "history-action-pressed",
+   "surface": "History browser",
+   "state": "one entry selected and the Copy action held down (press bracket driven directly, not a real click): the pressed fill and glyph scale on its plate",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-action-pressed-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "HistoryBrowser.swift|final class HistoryActionButton",
+    "GlassChrome.swift|override func highlight"
+   ]
+  },
+  {
+   "id": "S20",
+   "slug": "history-empty",
+   "surface": "History browser",
+   "state": "History window with no entries",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-empty-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|@objc func showHistory()",
+    "HistoryBrowser.swift|private func buildUI()"
+   ]
+  },
+  {
+   "id": "S20",
+   "slug": "history-empty",
+   "surface": "History browser",
+   "state": "History window with no entries",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-empty-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|@objc func showHistory()",
+    "HistoryBrowser.swift|private func buildUI()"
+   ]
+  },
+  {
+   "id": "S20",
+   "slug": "history-link-copied",
+   "surface": "History browser",
+   "state": "a Shared entry selected after Copy Link: the footer confirms, and the destination link is cut in its middle with the full text in its tooltip",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1760,
+    1394
+   ],
+   "pointSize": [
+    880,
+    697
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-link-copied-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    950
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "HistoryBrowser.swift|func confirm",
+    "HistoryBrowser.swift|let isLink"
+   ]
+  },
+  {
+   "id": "S20",
+   "slug": "history-link-copied",
+   "surface": "History browser",
+   "state": "a Shared entry selected after Copy Link: the footer confirms, and the destination link is cut in its middle with the full text in its tooltip",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1760,
+    1394
+   ],
+   "pointSize": [
+    880,
+    697
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-link-copied-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    950
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "HistoryBrowser.swift|func confirm",
+    "HistoryBrowser.swift|let isLink"
+   ]
+  },
+  {
+   "id": "S20",
+   "slug": "history-no-match",
+   "surface": "History browser",
+   "state": "filters that match nothing at 880 x 600: centred message, no save hint",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1760,
+    1200
+   ],
+   "pointSize": [
+    880,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-no-match-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "HistoryBrowser.swift|private func updateEmptyState"
+   ]
+  },
+  {
+   "id": "S20",
+   "slug": "history-no-match",
+   "surface": "History browser",
+   "state": "filters that match nothing at 880 x 600: centred message, no save hint",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1760,
+    1200
+   ],
+   "pointSize": [
+    880,
+    600
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-no-match-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    818
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "HistoryBrowser.swift|private func updateEmptyState"
+   ]
+  },
+  {
+   "id": "S20",
+   "slug": "history-no-match-footer",
+   "surface": "History browser",
+   "state": "filters that match nothing: the footer stays (0 of 6 items) and Clear filters offers the way out",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1760,
+    1394
+   ],
+   "pointSize": [
+    880,
+    697
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-no-match-footer-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    950
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "HistoryBrowser.swift|func clearFilters",
+    "HistoryBrowser.swift|static func statusText"
+   ]
+  },
+  {
+   "id": "S20",
+   "slug": "history-no-match-footer",
+   "surface": "History browser",
+   "state": "filters that match nothing: the footer stays (0 of 6 items) and Clear filters offers the way out",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1760,
+    1394
+   ],
+   "pointSize": [
+    880,
+    697
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-no-match-footer-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    950
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "HistoryBrowser.swift|func clearFilters",
+    "HistoryBrowser.swift|static func statusText"
+   ]
+  },
+  {
+   "id": "S20",
+   "slug": "history-populated",
+   "surface": "History browser",
+   "state": "six synthetic entries across dates and actions (Saved/Exported/Shared)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-populated-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "HistoryBrowser.swift|func update(items",
+    "HistoryBrowser.swift|private func buildUI()"
+   ]
+  },
+  {
+   "id": "S20",
+   "slug": "history-populated",
+   "surface": "History browser",
+   "state": "six synthetic entries across dates and actions (Saved/Exported/Shared)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-populated-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "HistoryBrowser.swift|func update(items",
+    "HistoryBrowser.swift|private func buildUI()"
+   ]
+  },
+  {
+   "id": "S20",
+   "slug": "history-selected",
+   "surface": "History browser",
+   "state": "one entry selected (action buttons enabled)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-selected-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "HistoryBrowser.swift|private func updateControls()"
+   ]
+  },
+  {
+   "id": "S20",
+   "slug": "history-selected",
+   "surface": "History browser",
+   "state": "one entry selected (action buttons enabled)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-selected-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "HistoryBrowser.swift|private func updateControls()"
+   ]
+  },
+  {
+   "id": "S20",
+   "slug": "history-tile-hover",
+   "surface": "History browser",
+   "state": "one entry selected (accent fill, border, check badge) and another tile hovered (label 0.08 fill)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-tile-hover-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "HistoryBrowser.swift|func setHovered"
+   ]
+  },
+  {
+   "id": "S20",
+   "slug": "history-tile-hover",
+   "surface": "History browser",
+   "state": "one entry selected (accent fill, border, check badge) and another tile hovered (label 0.08 fill)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2000,
+    1440
+   ],
+   "pointSize": [
+    1000,
+    720
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S20-history-tile-hover-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    864
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "HistoryBrowser.swift|func setHovered"
+   ]
+  },
+  {
+   "id": "S24",
+   "slug": "statusitem-highlighted",
+   "surface": "status-bar item",
+   "state": "menu-bar icon, highlighted",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    64,
+    56
+   ],
+   "pointSize": [
+    32,
+    28
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "NSView.cacheDisplay (view only, not a window capture)",
+   "file": "S24-statusitem-highlighted-dark-ic@4254505.png",
+   "storedPixelSize": [
+    64,
+    56
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|button.alternateImage"
+   ]
+  },
+  {
+   "id": "S24",
+   "slug": "statusitem-highlighted",
+   "surface": "status-bar item",
+   "state": "menu-bar icon, highlighted",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    64,
+    56
+   ],
+   "pointSize": [
+    32,
+    28
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "NSView.cacheDisplay (view only, not a window capture)",
+   "file": "S24-statusitem-highlighted-light-ic@4254505.png",
+   "storedPixelSize": [
+    64,
+    56
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|button.alternateImage"
+   ]
+  },
+  {
+   "id": "S24",
+   "slug": "statusitem-normal",
+   "surface": "status-bar item",
+   "state": "menu-bar icon, normal (the button view only; the real bar is not captured)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    64,
+    56
+   ],
+   "pointSize": [
+    32,
+    28
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "NSView.cacheDisplay (view only, not a window capture)",
+   "file": "S24-statusitem-normal-dark-ic@4254505.png",
+   "storedPixelSize": [
+    64,
+    56
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|func installMenuPresence()"
+   ]
+  },
+  {
+   "id": "S24",
+   "slug": "statusitem-normal",
+   "surface": "status-bar item",
+   "state": "menu-bar icon, normal (the button view only; the real bar is not captured)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    64,
+    56
+   ],
+   "pointSize": [
+    32,
+    28
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "NSView.cacheDisplay (view only, not a window capture)",
+   "file": "S24-statusitem-normal-light-ic@4254505.png",
+   "storedPixelSize": [
+    64,
+    56
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|func installMenuPresence()"
+   ]
+  },
+  {
+   "id": "S25",
+   "slug": "about-panel",
+   "surface": "About window",
+   "state": "app-owned About window: icon, name, version and build, credit line, license link",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    720,
+    744
+   ],
+   "pointSize": [
+    360,
+    372
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S25-about-panel-dark-ic@4254505.png",
+   "storedPixelSize": [
+    720,
+    744
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|@objc func about()",
+    "AboutWindow.swift|final class AboutWindow"
+   ]
+  },
+  {
+   "id": "S25",
+   "slug": "about-panel",
+   "surface": "About window",
+   "state": "app-owned About window: icon, name, version and build, credit line, license link",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    720,
+    744
+   ],
+   "pointSize": [
+    360,
+    372
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S25-about-panel-light-ic@4254505.png",
+   "storedPixelSize": [
+    720,
+    744
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|@objc func about()",
+    "AboutWindow.swift|final class AboutWindow"
+   ]
+  },
+  {
+   "id": "S25",
+   "slug": "license-window",
+   "surface": "About window",
+   "state": "the MIT License window with the paragraphs reflowed to the window width",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1240,
+    1184
+   ],
+   "pointSize": [
+    620,
+    592
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S25-license-window-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1146
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "AboutWindow.swift|static func reflowed"
+   ]
+  },
+  {
+   "id": "S25",
+   "slug": "license-window",
+   "surface": "About window",
+   "state": "the MIT License window with the paragraphs reflowed to the window width",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1240,
+    1184
+   ],
+   "pointSize": [
+    620,
+    592
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S25-license-window-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    1146
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "AboutWindow.swift|static func reflowed"
+   ]
+  },
+  {
+   "id": "S26",
+   "slug": "close-unsaved",
+   "surface": "alerts / sheets",
+   "state": "Save your drawing? sheet (Save / Cancel / Don’t Save)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S26-close-unsaved-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|func confirmDiscard(",
+    "AppAlert.swift|final class AppAlert"
+   ]
+  },
+  {
+   "id": "S26",
+   "slug": "close-unsaved",
+   "surface": "alerts / sheets",
+   "state": "Save your drawing? sheet (Save / Cancel / Don’t Save)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S26-close-unsaved-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|func confirmDiscard(",
+    "AppAlert.swift|final class AppAlert"
+   ]
+  },
+  {
+   "id": "S26",
+   "slug": "error-generic",
+   "surface": "alerts / sheets",
+   "state": "generic error sheet",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S26-error-generic-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|func error(_ error: Error)",
+    "AppAlert.swift|convenience init(error: Error)"
+   ]
+  },
+  {
+   "id": "S26",
+   "slug": "error-generic",
+   "surface": "alerts / sheets",
+   "state": "generic error sheet",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S26-error-generic-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|func error(_ error: Error)",
+    "AppAlert.swift|convenience init(error: Error)"
+   ]
+  },
+  {
+   "id": "S26",
+   "slug": "history-hide",
+   "surface": "alerts / sheets",
+   "state": "Hide drawings from History? sheet",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S26-history-hide-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|func removeHistory("
+   ]
+  },
+  {
+   "id": "S26",
+   "slug": "history-hide",
+   "surface": "alerts / sheets",
+   "state": "Hide drawings from History? sheet",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S26-history-hide-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|func removeHistory("
+   ]
+  },
+  {
+   "id": "S26",
+   "slug": "history-trash",
+   "surface": "alerts / sheets",
+   "state": "Move archived drawings to Trash? sheet",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S26-history-trash-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|func removeHistory("
+   ]
+  },
+  {
+   "id": "S26",
+   "slug": "history-trash",
+   "surface": "alerts / sheets",
+   "state": "Move archived drawings to Trash? sheet",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S26-history-trash-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|func removeHistory("
+   ]
+  },
+  {
+   "id": "S26",
+   "slug": "rename",
+   "surface": "alerts / sheets",
+   "state": "Rename… sheet with text field",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S26-rename-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|@objc func renameDocument()",
+    "App.swift|func prompt(",
+    "AppAlert.swift|final class AppAlert"
+   ]
+  },
+  {
+   "id": "S26",
+   "slug": "rename",
+   "surface": "alerts / sheets",
+   "state": "Rename… sheet with text field",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S26-rename-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|@objc func renameDocument()",
+    "App.swift|func prompt(",
+    "AppAlert.swift|final class AppAlert"
+   ]
+  },
+  {
+   "id": "S28",
+   "slug": "focus-footer-upload",
+   "surface": "keyboard focus",
+   "state": "Upload button is first responder",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    120
+   ],
+   "pointSize": [
+    1488,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S28-focus-footer-upload-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S28-focus-footer-upload-dark-ic@4254505.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "ModernEditorChrome.swift|shareButton = CommandButton"
+   ]
+  },
+  {
+   "id": "S28",
+   "slug": "focus-footer-upload",
+   "surface": "keyboard focus",
+   "state": "Upload button is first responder",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    120
+   ],
+   "pointSize": [
+    1488,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S28-focus-footer-upload-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S28-focus-footer-upload-light-ic@4254505.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "ModernEditorChrome.swift|shareButton = CommandButton"
+   ]
+  },
+  {
+   "id": "S28",
+   "slug": "focus-footer-zoom",
+   "surface": "keyboard focus",
+   "state": "Zoom popup is first responder",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    120
+   ],
+   "pointSize": [
+    1488,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S28-focus-footer-zoom-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S28-focus-footer-zoom-dark-ic@4254505.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "ModernEditorChrome.swift|controls.zoomControl.isBordered"
+   ]
+  },
+  {
+   "id": "S28",
+   "slug": "focus-footer-zoom",
+   "surface": "keyboard focus",
+   "state": "Zoom popup is first responder",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    120
+   ],
+   "pointSize": [
+    1488,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S28-focus-footer-zoom-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    48
+   ],
+   "downscaled": true,
+   "layout": "layout/S28-focus-footer-zoom-light-ic@4254505.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "ModernEditorChrome.swift|controls.zoomControl.isBordered"
+   ]
+  },
+  {
+   "id": "S28",
+   "slug": "focus-topbar-hide",
+   "surface": "keyboard focus",
+   "state": "Hide button is first responder",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    172
+   ],
+   "pointSize": [
+    1488,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S28-focus-topbar-hide-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S28-focus-topbar-hide-dark-ic@4254505.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "GlassChrome.swift|focusRingMaskBounds"
+   ]
+  },
+  {
+   "id": "S28",
+   "slug": "focus-topbar-hide",
+   "surface": "keyboard focus",
+   "state": "Hide button is first responder",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    172
+   ],
+   "pointSize": [
+    1488,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S28-focus-topbar-hide-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S28-focus-topbar-hide-light-ic@4254505.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "GlassChrome.swift|focusRingMaskBounds"
+   ]
+  },
+  {
+   "id": "S28",
+   "slug": "focus-topbar-snap",
+   "surface": "keyboard focus",
+   "state": "Snap (primary) is first responder",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    172
+   ],
+   "pointSize": [
+    1488,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S28-focus-topbar-snap-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S28-focus-topbar-snap-dark-ic@4254505.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "GlassChrome.swift|focusShape"
+   ]
+  },
+  {
+   "id": "S28",
+   "slug": "focus-topbar-snap",
+   "surface": "keyboard focus",
+   "state": "Snap (primary) is first responder",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    172
+   ],
+   "pointSize": [
+    1488,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S28-focus-topbar-snap-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S28-focus-topbar-snap-light-ic@4254505.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "GlassChrome.swift|focusShape"
+   ]
+  },
+  {
+   "id": "S28",
+   "slug": "focus-topbar-tool",
+   "surface": "keyboard focus",
+   "state": "Brush tool button is first responder (focus ring)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    172
+   ],
+   "pointSize": [
+    1488,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S28-focus-topbar-tool-dark-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S28-focus-topbar-tool-dark-ic@4254505.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "GlassChrome.swift|override func drawFocusRingMask"
+   ]
+  },
+  {
+   "id": "S28",
+   "slug": "focus-topbar-tool",
+   "surface": "keyboard focus",
+   "state": "Brush tool button is first responder (focus ring)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    172
+   ],
+   "pointSize": [
+    1488,
+    86
+   ],
+   "scale": 2,
+   "sourceSha": "4254505",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S28-focus-topbar-tool-light-ic@4254505.png",
+   "storedPixelSize": [
+    1200,
+    69
+   ],
+   "downscaled": true,
+   "layout": "layout/S28-focus-topbar-tool-light-ic@4254505.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "GlassChrome.swift|override func drawFocusRingMask"
+   ]
+  }
+ ],
+ "injectedDisplayOptions": [
+  [
+   "increaseContrast"
+  ]
+ ],
+ "requested": [
+  {
+   "mode": "sf",
+   "appearance": "light",
+   "group": "custom",
+   "surfaces": "S12,S16,S17,S18,S19,S20,S24,S25,S26,S28"
+  },
+  {
+   "mode": "sf",
+   "appearance": "dark",
+   "group": "custom",
+   "surfaces": "S12,S16,S17,S18,S19,S20,S24,S25,S26,S28"
+  }
+ ]
+}
