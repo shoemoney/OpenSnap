@@ -113,6 +113,17 @@ extension AppDelegate {
                 self.sizeNormalWindowToCanvas(centered: false)
                 self.dirty = baseline.dirty
                 self.window.isDocumentEdited = baseline.dirty
+            } else if cancelled, !baseline.inFullScreen, self.isFullScreen {
+                // Full screen was entered while the sheet was up, so it never fitted the drawing (the session blocked it) and holds no record of
+                // the zoom to put back: the windowed zoom goes back as that record and the restored drawing is fitted to the Space as a normal
+                // entry would. The baseline's frame is the window's, not the Space's; it is kept for the way out (mirror of FS-A).
+                if abs(self.canvas.zoom - baseline.zoom) >= 0.0005 { self.setCanvasDisplayZoom(baseline.zoom, label: baseline.fit == nil ? "Output" : "Fit") }
+                self.pictureFitZoom = baseline.fit
+                self.fullScreenZoom = nil; self.clearFullScreenWindowRecords()
+                self.fitDrawingForFullScreen()
+                self.fullScreenWindowedFrame = (generation, baseline.frame)
+                self.dirty = baseline.dirty
+                self.window.isDocumentEdited = baseline.dirty
             } else if cancelled {
                 if abs(self.canvas.zoom - baseline.zoom) >= 0.0005 {
                     self.setCanvasDisplayZoom(baseline.zoom, label: baseline.fit == nil ? "Output" : "Fit")
