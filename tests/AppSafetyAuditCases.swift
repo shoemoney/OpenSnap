@@ -112,7 +112,7 @@ extension AppSafetyTests {
         // Reopening after the pick: Blue, and only Blue, is marked, with the check drawn.
         app.presentDrawingColors(hover: false)
         let marked = app.presetColorButtons.filter { $0.state == .on }
-        try expect(marked.map(\.tag) == [blue.tag] && app.customColorButton?.isCurrentChoice == false, "Blue is the one marked preset after picking it (\(marked.map(\.tag)))")
+        try expect(marked.map(\.tag) == [blue.tag] && app.customColorButton?.isChosen == false, "Blue is the one marked preset after picking it (\(marked.map(\.tag)))")
         guard let again = marked.first else { throw Failure(description: "marked swatch") }
         again.frame = NSRect(x: 0, y: 0, width: 42, height: 32)
         try expect(again.controlState == .selected && again.swatchStyle.check, "and it draws as selected, with its check")
