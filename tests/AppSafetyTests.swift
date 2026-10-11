@@ -3738,6 +3738,7 @@ enum AppSafetyTests {
                 try expect(app.colorPanel?.handleMouseDown(in: window, at: onColor) == false && app.colorPanel?.isShown != true,
                            "A press on the Color control closes a hover-opened palette without swallowing the click")
                 app.paletteButton.performClick(nil)
+                try waitForMain("Deferred Color pin activation", until: { app.colorPanel?.isShown == true && !app.colorOpenedByHover })
                 try expect(app.colorPanel?.isShown == true && !app.colorOpenedByHover && app.colorPanel?.anchor === app.paletteButton,
                            "...and that click's action opens the pinned palette")
                 try expect(app.colorPanel?.handleMouseDown(in: window, at: onColor) == true && app.colorPanel?.isShown != true,
@@ -3778,6 +3779,7 @@ enum AppSafetyTests {
                 let blue = OriginalDrawingControls.presets[2]
                 guard let blueSwatch = app.presetColorButtons.first(where: { $0.tag == blue.tag }) else { throw Failure(description: "No Blue swatch") }
                 blueSwatch.performClick(nil)
+                try waitForMain("Deferred Blue preset activation", until: { app.colorPanel == nil })
                 try expect(SketchColor(app.canvas.strokeColor) == SketchColor(blue.color), "A pick changes the stroke colour")
                 try expect(app.colorPanel == nil && window.firstResponder === app.paletteButton, "...closes the panel and hands the keyboard back")
                 // Shift picks the background and leaves the stroke colour alone.
@@ -3785,7 +3787,9 @@ enum AppSafetyTests {
                 app.showDrawingColors(app.paletteButton)
                 let yellow = OriginalDrawingControls.presets[1]
                 guard let yellowSwatch = app.presetColorButtons.first(where: { $0.tag == yellow.tag }) else { throw Failure(description: "No Yellow swatch") }
-                app.choosePresetColor(yellowSwatch)
+                yellowSwatch.performClick(nil)
+                AppSafetyEvents.current = try click([]) // A later event must not erase the initiating Shift modifier.
+                try waitForMain("Deferred Shift/background preset activation", until: { app.colorPanel == nil })
                 try expect(app.canvas.document.backgroundColor == SketchColor(yellow.color) && SketchColor(app.canvas.strokeColor) == SketchColor(blue.color) && app.colorPanel == nil,
                            "Shift sets the background, keeps the stroke colour and closes the panel")
                 AppSafetyEvents.current = nil
