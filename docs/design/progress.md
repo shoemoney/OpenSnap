@@ -293,7 +293,7 @@ Every finding ID from J1 to J8 (93), every review round 1 ID R1-001 to R1-024 (2
 | F-J1-020 | fixed | batches 1 to 3c; J4 pass | Undo disabled on a blank canvas |
 | F-J1-021 | fixed | batches 1 to 3c; J4 pass | Save is the box-archive glyph |
 | F-J1-022 | fixed | batches 1 to 3c; J4 pass | ⌘M hides the window; no capture of the hidden state |
-| F-J1-023 | deferred | none | Text editor exposes no AX selection |
+| F-J1-023 | partial | `impl/followup-20261010` at `210e80e` (not on main) | Not reproduced: real-input check selected and deleted text; guard `fuTextEditorAccessibility`. VoiceOver speech unproved |
 | F-J1-024 | fixed | batches 1 to 3c; J4 pass | Option-Return finishes text entry |
 | F-J1-025 | fixed | batches 1 to 3c; J4 pass | Add Shadow disabled without a snap |
 | F-J1-026 | fixed | batches 1 to 3c; J4 pass | Flip mirrors shapes and keeps text readable |
@@ -337,7 +337,7 @@ Every finding ID from J1 to J8 (93), every review round 1 ID R1-001 to R1-024 (2
 | F-J4-003 | fixed | batch 4 `d9ed8b7`; rendered (inferred) | History footer notice after Delete from Web. The CDN cache is outside the app |
 | F-J4-004 | fixed | batch 4 `e3f99b8`; rendered (inferred) | History keeps the published size for Shared entries |
 | F-J4-005 | fixed | batch 4 `d9ed8b7`; rendered (inferred) | Destructive sheets are Cancel-first, including Delete from Web |
-| F-J4-006 | open | none | Previous document's size shown briefly after History › Open |
+| F-J4-006 | fixed | earlier code; guard `fuHistoryOpenShowsNewSize` on `impl/followup-20261010` at `210e80e` (not on main) | No source change; the size is synced on open. The J4 retest was PARTIAL; no real-input re-run on `210e80e` |
 | F-J4-007 | open | none | Erased fragments lose their shadow; a design question, may be intended |
 | F-J5-001 | fixed | J6 pass | An invalid delay keeps the sheet with the error line |
 | F-J5-002 | fixed | J6 pass (caveat) | ⌘D answers the History sheet once History is key; may be the harness |
@@ -617,16 +617,16 @@ Outside what the harness or the isolated session could prove, or decided and not
 
 **Decisions (deferred or accepted; not built)**
 
-- **Navigator column** in Actual Size (R1-016): deferred.
-- **Eraser shadow on cut fragments** (R1-021, open; F-J4-007, a design question): a format change, not made.
+- **Navigator column** in Actual Size (R1-016, with F-J3-009): left unchanged in the follow-up pass. The only small candidate, "fit up to 200%", changes zoom semantics broadly, and the navigator panel is already sized to its content.
+- **Eraser shadow on cut fragments** (R1-021, open; F-J4-007, a design question): a recorded design trade-off, left unchanged in the follow-up pass. No stored format or semantics change.
 - **Record-shortcut field:** the 69-item key pop-up remains (F-J2-020, partial). UX debt, deferred.
-- **Text editor accessibility selection** (F-J1-023): deferred; next in line.
+- **Text editor accessibility selection** (F-J1-023): not reproduced on `impl/followup-20261010` at `210e80e` (headless guard, and a real-input check that selected and deleted text). Not on main. VoiceOver speech unproved.
 - **Drag-well Export panel** (F-J1-012): OS-owned panel, never retested. A gap.
 - **Upload percentage:** no byte progress exists to show. Accepted in the round 3 record, which cites it as R2-014. In this index R2-014 is the 980 bottom bar (fixed), so the percentage item has no row here of its own.
 - **"Failed" at 980** with the HTTP code in AX help and Details (F-J8-001): accepted trade-off. The owner may want `HTTP 403` in the footer.
 - **Pause note only on the Capture tab** (F-J8-002): accepted trade-off; an AX value on the tab group would serve testing.
-- **Small and empty documents use 4 to 41% of a large window** (F-J3-009): open, no fix recorded.
-- **Previous document's size shown briefly after History › Open** (F-J4-006): open.
+- **Small and empty documents use 4 to 41% of a large window** (F-J3-009): open, left unchanged in the follow-up pass (see the navigator line above).
+- **Previous document's size shown briefly after History › Open** (F-J4-006): fixed by earlier code, guarded by `fuHistoryOpenShowsNewSize` on `210e80e`. Not on main.
 - **The final render manifest's two historic menu gaps:** accepted in round 3.
 
 **Owner, before any push (root-owned)**
@@ -664,7 +664,8 @@ App-specific alerts are no longer NSAlert: they are app-owned sheets at 20 pt (O
 - **Batches 9 to 12 and review rounds 3 to 5: done.** Fixes and their evidence are in the fix batches table and the resolution index. Batch 12 has no capture folder; its evidence is the test set.
 - **Round 6: completed.** R6-001 and R6-002 were fixed in batch 13; see the response table in findings.md and final-verification.md.
 - **Final integration gates: passed** on the byte-identical candidate `1ea366c` → `41700b3`. OSN-062 and the complete visual acceptance matrix stay in progress for explicit remaining gaps.
-- **Open with no fix recorded:** F-J3-009, F-J4-006, F-J4-007 and R1-021 (stretch goal). Partial: the 17 partial IDs, listed in the totals table with their notes. Gaps listed in the resolution index: F-J1-012, F-J2-011, F-J2-017, F-J3-008, F-J3-010.
+- **Open with no fix recorded:** F-J3-009, F-J4-007 and R1-021 (stretch goal). Partial: the 17 partial IDs, listed in the totals table with their notes. Gaps listed in the resolution index: F-J1-012, F-J2-011, F-J2-017, F-J3-008, F-J3-010.
+- **Follow-up pass on `impl/followup-20261010` (not on main, see the section before the final handoff):** the three full-screen edge cases (FS-A, FS-B, FS-C) are fixed at `210e80e`. Review corrections FR-1 to FR-4 are in progress. The text-editor selection and History-open items are in the resolution index above.
 - **R1-001 history cleanup: complete in the local repository.** The exact exposed blob is absent from all refs and the primary object database; fresh remote refs never contained it. The tested tree is unchanged.
 - **Font Awesome glyphs:** default Free vectors are shown in root candidate captures. The old `sf` label reflects absence of Pro fonts, not actual per-icon resolution. Optional Pro mode is still untested.
 - **Round-1 incident (OSN-001):** a can-fail proof deleted the owner's real `com.shoemoney.opensnap` defaults plist. Cause: a cleanup trap was installed before an id refusal. Fixed in `db973a6`. The SkitchRedux store and `com.shoemoney.skitch-redux.plist` hashed unchanged. The migration marker is a file in the absent OpenSnap folder, so the parked migration is unaffected.
@@ -683,6 +684,19 @@ App-specific alerts are no longer NSAlert: they are app-owned sheets at 20 pt (O
 - **OSN-023:** manual 1x and 2x menu-bar check not done.
 - **Alert check count reconciled:** the full integration run at `a79a1d8` prints `AppAlertTests: 77 checks passed`; the `2cc0415` commit message figure (74) predates later additions.
 - **Not done:** no push and no release. The first real launch and migration on the owner's machine is parked by the owner.
+
+## Follow-up implementation pass (2026-10-10, integration branch impl/followup-20261010, not merged to main)
+
+Full record: [followup-implementation.md](followup-implementation.md) (version 2). Baseline `7fef2a8`, integration head `210e80e`. Nothing pushed, tagged, released or installed.
+
+- **Scope.** The owner's go-ahead on 2026-10-10 covered the History text and glass-button request and the remaining actionable audit code issues.
+- **Package 1, History glass buttons and text** (`72f77a9`). Seven `HistoryActionButton`s on three glass plates in one container. Unit tests, and rendered captures only. No real-input result.
+- **Harness package** (`770b6c0`). The S43 Delete from Web lookup walks the glass plates again, closing the Package 1 open item. New rendered S20 captures for action hover, pressed and focus. Rendered only.
+- **Package 2, behaviour defects** (`210e80e`). FS-A, FS-B and FS-C fixed, each with a test that fails on `7fef2a8`. F-J4-006 fixed by earlier code, guarded by `fuHistoryOpenShowsNewSize`. F-J1-023 not reproduced headless, guarded by `fuTextEditorAccessibility`. F-J3-009 / R1-016 and R1-021 / F-J4-007 left unchanged, with reasons.
+- **Real-input check, F-J1-023** (E2E class, isolated session `com.shoemoney.opensnap.e2e-83132`, synthetic text). The AX text area was read and its selection was set and honoured by a real Delete key. The session stores were unchanged. Unresolved: an untargeted type inserted at the driver's pointer position, not over the selection. VoiceOver speech unproved.
+- **Integrated checks at `210e80e`.** Cold `tools/build.sh` PASS. Full `tools/test.py` run 1 PASS: app safety 257/257, native AppKit idle termination PASS, real-store guard unchanged.
+- **Independent review of `7fef2a8..210e80e`.** FR-1 (P2, confirmed): a window can be oversized when leaving full screen during Actual Size. FR-2 (P2, plausible): the FS-B and FS-C window restore may be lost if AppKit restores its frame later in the exit. FR-3 (P3, confirmed): the FS-A Cancel branch lacks a generation check. FR-4 (P3, plausible): History plates are not accessibility elements. Correction round in progress.
+- **Coverage.** No coverage-matrix row changed in this pass, and the coverage-summary counts are unchanged. Nothing was added to "Merges to main, in order", because nothing has merged to main. The final candidate hashes and the final full-suite result come in the next revision of the record.
 
 ## Final root handoff
 

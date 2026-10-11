@@ -1373,3 +1373,28 @@ Round 6 (independent review of `3b453b3`). Tests in `tests/AppSafetyBatch11Cases
 - Leaving full screen while the Resize sheet is up, then Cancel, puts full screen's zoom and frame back on the normal window.
 - After a size change made in full screen, leaving full screen resizes the window only if the zoom changed.
 - The Actual Size navigator nudge, when full screen is entered during Actual Size, may leave the window up to about 175 pt narrower than its canvas.
+
+### Responses after the follow-up pass (2026-10-10)
+
+Work on `impl/followup-20261010` (head `210e80e`, not on main). Full record: [followup-implementation.md](../followup-implementation.md). Unit and headless tests and rendered captures are not real-input E2E. F-J1-023 has one real-input check, in its row below.
+
+| ID | Sev | Finding | Follow-up |
+|---|---|---|---|
+| FS-A | — | Leaving full screen with the Resize sheet up, then Cancel, put full screen's zoom and frame on the normal window. | **Fixed** (`719735d`, merged in `210e80e`). Cancel after full screen restores the picture, the pre-full-screen zoom and a window sized for it. `fuCancelResizeAfterFullScreenExit` (fails on `7fef2a8`). |
+| FS-B | — | After a size change made in full screen, leaving full screen resized the window only if the zoom changed. | **Fixed** (`719735d`). The picture size at entry is remembered, and the window follows a change. `fuWindowFollowsSizeChangeMadeInFullScreen` (fails on `7fef2a8`). |
+| FS-C | — | Actual Size navigator nudge across full screen could leave the window up to about 175 pt narrower than its canvas. | **Fixed** (`719735d`). The frame Actual Size began with is restored on exit. `fuWindowAfterNudgeAndFullScreen` (fails on `7fef2a8`). |
+| F-J4-006 | P3 | A freshly opened History entry shows the previous document's size for a moment. | **Fixed by earlier code**; no source change. `fuHistoryOpenShowsNewSize` is a guard, not a red test: removing the `syncDragSizeText()` call in a scratch copy fails it. The J4 retest (PARTIAL) was not re-run on `210e80e`. F-J6-005 is a separate finding and is unchanged. |
+| F-J1-023 | P3 | The text editor exposes no settable AX selection. | **Partial.** Not reproduced headless: a standard `AXTextArea` with a settable `AXSelectedTextRange` (guard `fuTextEditorAccessibility`; can-fail proof: `setAccessibilityElement(false)` fails it). Real-input check on `210e80e`, isolated session: the selection was set and a real Delete key removed exactly it. An untargeted type inserted at the driver's pointer position, not over the selection; the cause is unresolved. VoiceOver speech is unproved. |
+| F-J3-009 / R1-016 | P3 | Small documents use a small share of a large window; the Actual Size navigator column is mostly empty. | **Left unchanged.** The only small candidate, "fit up to 200%", changes zoom semantics broadly. The navigator is already sized to its content. Stays open. |
+| R1-021 / F-J4-007 | P3 | The eraser drops the shadow from the rest of a cut shape. | **Left unchanged.** Recorded design trade-off; no stored format or semantics change. Stays open. |
+
+The "—" in the Sev column is because the source does not grade FS-A, FS-B and FS-C. They are the three bullets above, recorded in review round 6.
+
+Review of `7fef2a8..210e80e` (one focused independent review). Correction round in progress.
+
+| ID | Sev | Finding | Follow-up |
+|---|---|---|---|
+| FR-1 | P2 | Leaving full screen during Actual Size resizes the window to an oversized frame; `setWindowFrame(returnFrame)` ignores Actual Size. | correction in progress |
+| FR-2 | P2 | FS-B and FS-C window restore runs once and may be lost if AppKit restores its frame later in the exit (plausible; headless tests cannot tell). | correction in progress |
+| FR-3 | P3 | The FS-A Cancel branch uses the full-screen zoom record without a generation check (R6-002 class). | correction in progress |
+| FR-4 | P3 | History plates are not accessibility elements, so the groups may not be announced (plausible). | correction in progress |
