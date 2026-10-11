@@ -95,7 +95,7 @@ private enum FontAwesomeIconsTests {
     // MARK: table
 
     private static func table() {
-        expect(FAIcon.allCases.count == 39, "Icon table lists the 39 mapped icons")
+        expect(FAIcon.allCases.count == 49, "Icon table lists the 49 mapped icons")
         expect(Set(FAIcon.allCases.map(\.rawValue)).count == FAIcon.allCases.count, "Icon names are unique")
         expect(FAIcon.allCases.allSatisfy { $0.rawValue == $0.rawValue.lowercased() && !$0.rawValue.contains(" ") }, "Icon names are lowercase kebab-case")
         expect(FAIcon(rawValue: "eye-slash") == .eyeSlash && FAIcon(rawValue: "cloud-arrow-up") == .upload, "Raw values are the icons.yml keys")
@@ -108,7 +108,12 @@ private enum FontAwesomeIconsTests {
                && FAIcon.arrowRotateRight.codepoint == 0xF01E && FAIcon(rawValue: "arrow-rotate-right") == .arrowRotateRight
                && FAIcon.circleInfo.codepoint == 0xF05A && FAIcon(rawValue: "circle-info") == .circleInfo
                && FAIcon.chevronRight.codepoint == 0xF054 && FAIcon(rawValue: "chevron-right") == .chevronRight
-               && FAIcon.chevronLeft.codepoint == 0xF053 && FAIcon(rawValue: "chevron-left") == .chevronLeft,
+               && FAIcon.chevronLeft.codepoint == 0xF053 && FAIcon(rawValue: "chevron-left") == .chevronLeft
+               && FAIcon.fileExport.codepoint == 0xF56E && FAIcon(rawValue: "file-export") == .fileExport
+               && FAIcon.paste.codepoint == 0xF0EA && FAIcon.clone.codepoint == 0xF24D && FAIcon.objectGroup.codepoint == 0xF247
+               && FAIcon.display.codepoint == 0xE163 && FAIcon.cameraRotate.codepoint == 0xE0D8 && FAIcon.leftRight.codepoint == 0xF337
+               && FAIcon.shapes.codepoint == 0xF61F && FAIcon.layerGroup.codepoint == 0xF5FD && FAIcon.magnifyingGlass.codepoint == 0xF002
+               && FAIcon(rawValue: "magnifying-glass") == .magnifyingGlass && FAIcon(rawValue: "layer-group") == .layerGroup,
                "Spot-checked codepoints match icons.yml")
         expect(FAFamily.regular.postScriptName == "FontAwesome7Pro-Regular" && FAFamily.solid.postScriptName == "FontAwesome7Pro-Solid", "PostScript names")
         expect(FAFamily.allCases.map(\.resourceName) == ["FontAwesome7Pro-Regular-subset", "FontAwesome7Pro-Solid-subset"], "Resource names")

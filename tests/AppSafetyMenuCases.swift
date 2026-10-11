@@ -290,8 +290,14 @@ extension AppSafetyTests {
                    "A click opens five group plates holding 18 rows (\(panel.host.plates.count) plates, \(panel.rows.count) rows)")
         try expect(panel.host.plates.map { $0.arrangedViews.count } == [2, 5, 4, 4, 3], "The plates follow the menu's groups: \(panel.host.plates.map { $0.arrangedViews.count })")
         for (row, item) in zip(panel.rows, items) {
-            try expect(panel.item(for: row) === item && row.title == item.title && row.leadingImage === item.image && row.shortcutText == MenuShortcut.text(for: item)
-                       && row.isEnabled == item.isEnabled, "'\(item.title)' shows the menu item's own title, icon, shortcut and enabled state")
+            // The copied item still carries the menu bar's SF Symbol; the glass row is app-owned UI and draws the action's Font Awesome glyph instead.
+            var drawsFontAwesome = false
+            if case .fontAwesomeFree = row.leadingIconSource { drawsFontAwesome = true }
+            if case .fontAwesome = row.leadingIconSource { drawsFontAwesome = true }
+            try expect(panel.item(for: row) === item && row.title == item.title && row.shortcutText == MenuShortcut.text(for: item)
+                       && row.isEnabled == item.isEnabled, "'\(item.title)' shows the menu item's own title, shortcut and enabled state")
+            try expect(item.image != nil && row.leadingImage == nil && row.icon != nil && row.icon == MenuChoiceIcons.icon(for: item) && drawsFontAwesome && row.leadingIconImage !== item.image,
+                       "'\(item.title)' draws its Font Awesome glyph (\(row.leadingIconSource)), not the menu item's SF Symbol")
         }
         let toggles: Set<Selector> = [#selector(AppDelegate.toggleBezelFill(_:)), #selector(AppDelegate.toggleBezelShadow(_:)), #selector(AppDelegate.chooseFont)]
         try expect(panel.rows.allSatisfy { row in

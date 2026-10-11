@@ -185,6 +185,7 @@ private enum GlassChoicesTests {
         menuActivationTests()
         menuKeyboardTests()
         submenuTests()
+        menuIconTests()
         returnKeyTests()
         typeAheadTests()
         rebuiltMenuTests()
@@ -1816,6 +1817,135 @@ private enum GlassChoicesTests {
     }
 
 
+
+
+    // MARK: Font Awesome glyphs on glass rows
+
+    /// The Toolbox and the zoom's Actual Size are copies of main-menu items, which carry SF Symbols in the native menu bar. Their glass rows are
+    /// app-owned UI and draw semantic Font Awesome glyphs instead, resolved through the icon chain; the native menu keeps everything it has.
+    private static func menuIconTests() {
+        // Action -> Free vector the default build (no Pro fonts) must draw. frame snap's Pro glyph camera-viewfinder is drawn by the Free `expand`.
+        let table: [(action: String, title: String, free: String)] = [
+            ("saveHistory", "Save to History", "box-archive"), ("exportFile", "Export…", "file-export"),
+            ("copyArtwork", "Copy", "copy"), ("paste", "Paste", "paste"), ("duplicate", "Duplicate", "clone"), ("deleteSelection", "Delete", "trash"),
+            ("selectAll", "Select All", "object-group"),
+            ("screenSnap", "Snap", "crosshairs"), ("fullscreenSnap", "Fullscreen Snapshot", "display"), ("frameSnap", "Frame Snapshot", "expand"),
+            ("resnap", "Re-snap", "camera-rotate"),
+            ("rotateCW", "Rotate Clockwise", "arrow-rotate-right"), ("flipH", "Flip Horizontal", "left-right"),
+            ("trimSnap", "Crop Snap at Current Edges", "crop-simple"), ("wipeSnap", "Remove Snap Picture", "broom"),
+            ("toggleBezelFill:", "Filled Shapes", "shapes"), ("toggleBezelShadow:", "Shadow", "layer-group"), ("chooseFont", "Text Style…", "font"),
+        ]
+        expect(!FontAwesomeFont.isAvailable(.regular) && !FontAwesomeFont.isAvailable(.solid), "(setup) no Pro font is registered: the default build")
+        let rig = Rig()
+
+        // The "main menu": items with SF Symbols from MenuSymbols, the way the menu bar has them.
+        let bar = NSMenu()
+        bar.autoenablesItems = false
+        var originals: [NSMenuItem] = []
+        for (index, row) in table.enumerated() {
+            let item = NSMenuItem(title: row.title, action: Selector(row.action), keyEquivalent: ["s", "e", "c", "v", "d", "\u{8}", "a", "1", "2", "3", "4", "r", "f", "t", "w", "i", "h", "y"][index])
+            bar.addItem(item)
+            originals.append(item)
+        }
+        MenuSymbols.apply(to: bar)
+        expect(originals.allSatisfy { $0.image != nil && $0.image?.isTemplate == true }, "(setup) every native menu-bar item has its SF Symbol image")
+        struct Snapshot: Equatable { var title: String, key: String, mask: UInt, action: Selector?, image: ObjectIdentifier?, state: Int }
+        func snapshot(_ item: NSMenuItem) -> Snapshot {
+            Snapshot(title: item.title, key: item.keyEquivalent, mask: item.keyEquivalentModifierMask.rawValue, action: item.action, image: item.image.map(ObjectIdentifier.init), state: item.state.rawValue)
+        }
+        let before = originals.map(snapshot)
+
+        // The Toolbox: live copies of those items, five groups.
+        let toolbox = NSMenu(title: "Toolbox")
+        toolbox.autoenablesItems = false
+        for (index, item) in originals.enumerated() {
+            if [2, 7, 11, 15].contains(index) { toolbox.addItem(.separator()) }
+            toolbox.addItem(item.copy() as! NSMenuItem)
+        }
+        let copies = toolbox.items.filter { !$0.isSeparatorItem }
+        expect(copies.count == 18 && copies.allSatisfy { $0.image != nil }, "(setup) the copies carry the SF images too, as the app's Toolbox rows do")
+        let toggles: Set<Selector> = [Selector("toggleBezelFill:"), Selector("toggleBezelShadow:"), Selector("chooseFont")]
+        let panel = MenuChoicePanel(menu: toolbox, identifier: "IconsToolbox", accessibilityLabel: "Toolbox", kind: { $0.action.map(toggles.contains) == true ? .toggle : .command })
+        rig.attach(panel.host)
+        panel.present(relativeTo: rig.anchor, preferredEdge: .minY, keyboard: false)
+        expect(panel.rows.count == 18, "(setup) the Toolbox panel has its 18 rows")
+        for (row, expected) in zip(panel.rows, table) {
+            expect(row.title == expected.title, "(row order) \(expected.title)")
+            expect(row.leadingIconImage !== panel.item(for: row)?.image, "Toolbox \"\(expected.title)\" shows the menu item's SF Symbol image instead of its Font Awesome glyph")
+            expect(row.leadingIconSource == .fontAwesomeFree(expected.free), "Toolbox \"\(expected.title)\" draws the Free vector \(expected.free), not an SF Symbol (got \(row.leadingIconSource))")
+            if case .sfSymbol = row.leadingIconSource { expect(false, "\(expected.title) must never resolve to an SF Symbol") }
+            expect(row.leadingIconImage != nil && row.leadingIconImage?.isTemplate == true && row.leadingIconImage !== panel.item(for: row)?.image, "\(expected.title) shows the glyph, not the item's own image")
+            expect(row.icon == MenuChoiceIcons.icon(for: panel.item(for: row)!) && row.icon != nil, "\(expected.title) is mapped by its action")
+        }
+        expect(MenuChoiceIcons.map.count == table.count + 1 && table.allSatisfy { MenuChoiceIcons.map[Selector($0.action)] != nil }, "The map covers the 18 Toolbox actions and Actual Size, nothing else")
+        expect(panel.rows.allSatisfy { $0.reservesIconColumn }, "Every row reserves the icon column, so the titles line up")
+        panel.activate(panel.rows[0])
+
+        // The native menu bar is untouched by any of it: same SF images, titles, shortcuts, masks and actions.
+        expect(originals.map(snapshot) == before, "The native menu-bar items keep their SF images, titles, shortcuts and actions")
+        expect(originals.allSatisfy { $0.image?.isTemplate == true } && originals.map { $0.image }.allSatisfy { $0 != nil }, "...and still have an image")
+
+
+        // Zoom's Actual Size: a copy of the main-menu item added to a pop-up of percentages.
+        let actualOriginal = NSMenuItem(title: "Actual Size", action: Selector("toggleActualSize"), keyEquivalent: "0")
+        let actualBar = NSMenu(); actualBar.autoenablesItems = false; actualBar.addItem(actualOriginal)
+        MenuSymbols.apply(to: actualBar)
+        expect(actualOriginal.image != nil, "(setup) the menu bar's Actual Size has its SF Symbol")
+        let zoom = GlassPopUpButton(frame: NSRect(x: 300, y: 300, width: 120, height: 36), pullsDown: false)
+        zoom.menu?.autoenablesItems = false
+        zoom.addItems(withTitles: ["25%", "50%", "100%"])
+        let actual = actualOriginal.copy() as! NSMenuItem
+        actual.tag = 998
+        zoom.menu?.addItem(.separator()); zoom.menu?.addItem(actual)
+        rig.window.contentView?.addSubview(zoom)
+        zoom.panelIdentifier = "IconsZoom"
+        rig.attach(zoom.choicePanel.host)
+        zoom.performClick(nil)
+        let actualRow = zoom.choicePanel.rows.last!
+        expect(actualRow.title == "Actual Size" && actualRow.leadingIconSource == .fontAwesomeFree("magnifying-glass") && actualRow.icon == .magnifyingGlass,
+               "The zoom's Actual Size row draws the Free magnifying-glass (got \(actualRow.leadingIconSource))")
+        expect(zoom.choicePanel.rows.dropLast().allSatisfy { $0.leadingIconImage == nil }, "...and the percentages have no glyph")
+        expect(actualOriginal.image != nil && actualOriginal.title == "Actual Size" && actualOriginal.keyEquivalent == "0" && actualOriginal.action == Selector("toggleActualSize"), "The native Actual Size item is unchanged")
+        zoom.choicePanel.host.close()
+        zoom.removeFromSuperview()
+
+        // An action the map does not know keeps the item's own image; a call site's hook goes ahead of the map.
+        let other = NSMenu(); other.autoenablesItems = false
+        let image = NSImage(size: NSSize(width: 16, height: 16), flipped: false) { _ in true }
+        let unknown = NSMenuItem(title: "Something else", action: Selector("notInTheMap"), keyEquivalent: ""); unknown.image = image
+        let mapped = NSMenuItem(title: "Paste", action: Selector("paste"), keyEquivalent: ""); mapped.image = image
+        let hooked = NSMenuItem(title: "Hooked", action: Selector("saveHistory"), keyEquivalent: ""); hooked.image = image
+        for item in [unknown, mapped, hooked] { other.addItem(item) }
+        let mixed = MenuChoicePanel(menu: other, identifier: "IconsMixed", accessibilityLabel: "Mixed")
+        rig.attach(mixed.host)
+        mixed.present(relativeTo: rig.anchor, preferredEdge: .minY, keyboard: false)
+        expect(mixed.rows[0].leadingIconImage === image && mixed.rows[0].leadingIconSource == .none && mixed.rows[0].icon == nil, "An unmapped action keeps the item's image")
+        expect(mixed.rows[1].leadingIconSource == .fontAwesomeFree("paste") && mixed.rows[1].leadingIconImage !== image, "A mapped action ignores the item's image")
+        mixed.host.close()
+        mixed.rowIcon = { $0.title == "Hooked" ? FAIcon.gear : (nil as FAIcon?) }
+        mixed.present(relativeTo: rig.anchor, preferredEdge: .minY, keyboard: false)
+        expect(mixed.rows[2].leadingIconSource == .fontAwesomeFree("gear") && mixed.rows[1].leadingIconSource == .fontAwesomeFree("paste"), "A rowIcon hook wins over the map, and falls back to it when it returns nil")
+        mixed.host.close()
+        let pop = GlassPopUpButton(frame: NSRect(x: 300, y: 300, width: 120, height: 36), pullsDown: false)
+        pop.menu?.autoenablesItems = false
+        pop.addItems(withTitles: ["One", "Two"])
+        pop.rowIcon = { $0.title == "Two" ? FAIcon.globe : (nil as FAIcon?) }
+        rig.window.contentView?.addSubview(pop)
+        rig.attach(pop.choicePanel.host)
+        pop.performClick(nil)
+        expect(pop.choicePanel.rows[1].leadingIconSource == .fontAwesomeFree("globe") && pop.choicePanel.rows[0].leadingIconImage == nil, "A pop-up passes its rowIcon hook through")
+        pop.choicePanel.host.close()
+        pop.removeFromSuperview()
+
+        // The chain: when the Free vector misses, the same row falls back to the icon's SF Symbol (never to nothing).
+        let savedFree = ChromeIcons.freeGlyph
+        ChromeIcons.freeGlyph = { _, _ in nil }
+        defer { ChromeIcons.freeGlyph = savedFree }
+        panel.present(relativeTo: rig.anchor, preferredEdge: .minY, keyboard: false)
+        expect(zip(panel.rows, table).allSatisfy { row, expected in row.leadingIconSource == .sfSymbol(row.icon!.sfSymbolFallback) && row.leadingIconImage != nil },
+               "With no Free vector a mapped row falls back to the icon's SF Symbol through the chain")
+        panel.host.close()
+    }
 
     // MARK: Return belongs to the default button
 

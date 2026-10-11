@@ -247,16 +247,24 @@ final class GlassChoiceButton: CommandButton {
         contentDidChange()
     }
 
+    /// Where the leading glyph came from: the Font Awesome chain's answer (Pro, embedded Free, or the SF fallback) for an `icon`, or `.none` for
+    /// no glyph or for a raw `leadingImage` (a menu item's own image, which is not from the chain).
+    private(set) var leadingIconSource: ChromeIconSource = .none
+
     // The cell never draws a glyph: the leading icon is a subview, so the title, shortcut and glyphs lay out as one row.
     override func refreshIcon() {
         let glyph = (showsSelection ? selectedIcon : nil) ?? icon
         let family = showsSelection ? selectedFamily : iconFamily
         if let leadingImage {
             iconView.image = leadingImage
+            leadingIconSource = .none
         } else if let glyph {
-            iconView.image = ChromeIcons.resolve(glyph, family: family, pointSize: iconPointSize).image
+            let resolved = ChromeIcons.resolve(glyph, family: family, pointSize: iconPointSize)
+            iconView.image = resolved.image
+            leadingIconSource = resolved.image == nil ? .none : resolved.source
         } else {
             iconView.image = nil
+            leadingIconSource = .none
         }
         iconView.isHidden = iconView.image == nil
         contentDidChange()
@@ -1191,6 +1199,45 @@ final class GlassPanelHost: NSObject {
     }
 }
 
+// MARK: - Menu icons
+
+/// The semantic Font Awesome glyph for a menu command, by action. A choice panel is app-owned UI, so a row for a mapped command draws this
+/// (Pro, then the embedded Free vector, then the SF Symbol, through `ChromeIcons`) and ignores the item's own image: the Toolbox and the zoom's
+/// Actual Size are copies of main-menu items, and the native menu bar keeps its SF Symbols, model, actions, wording and shortcuts untouched.
+/// An action that is not listed keeps `item.image`. Keys are the real @objc selector names in App.swift, as in `MenuSymbols`.
+@MainActor
+enum MenuChoiceIcons {
+    static let map: [Selector: FAIcon] = Dictionary(uniqueKeysWithValues: [
+        // Keep and share
+        ("saveHistory", FAIcon.boxArchive),            // the footer's Save
+        ("exportFile", FAIcon.fileExport),             // a file leaving the app
+        // Edit
+        ("copyArtwork", FAIcon.copy),
+        ("paste", FAIcon.paste),
+        ("duplicate", FAIcon.clone),
+        ("deleteSelection", FAIcon.trash),
+        ("selectAll", FAIcon.objectGroup),             // every object drawn as one group
+        // Capture
+        ("screenSnap", FAIcon.crosshairs),             // the Snap button
+        ("fullscreenSnap", FAIcon.display),            // the whole display
+        ("frameSnap", FAIcon.frameViewfinder),         // the Snap Frame button
+        ("resnap", FAIcon.cameraRotate),               // take the same snap again
+        // Adjust the picture
+        ("rotateCW", FAIcon.arrowRotateRight),
+        ("flipH", FAIcon.leftRight),                   // a flip is a left-right exchange
+        ("trimSnap", FAIcon.cropSimple),
+        ("wipeSnap", FAIcon.broom),                    // the footer's Clear image
+        // Pen settings
+        ("toggleBezelFill:", FAIcon.shapes),           // filled shapes
+        ("toggleBezelShadow:", FAIcon.layerGroup),     // a shadow is a layer behind
+        ("chooseFont", FAIcon.font),
+        // View
+        ("toggleActualSize", FAIcon.magnifyingGlass),
+    ].map { (Selector($0.0), $0.1) })
+
+    static func icon(for item: NSMenuItem) -> FAIcon? { item.action.flatMap { map[$0] } }
+}
+
 // MARK: - Menu adapter
 
 /// Fills a `GlassPanelHost` from an `NSMenu`, which stays the source of truth: every open runs the delegate's `menuNeedsUpdate` and
@@ -1210,6 +1257,10 @@ final class MenuChoicePanel: NSObject {
     /// The words a row shows (and VoiceOver reads) for an item. The item's own title by default; a menu whose face must stay short can have its
     /// panel say more (the zoom's computed row says "Fit, 83%" where the face says "83%"). The menu's titles are never changed.
     var rowTitle: @MainActor (NSMenuItem) -> String = { $0.title }
+    /// The glyph a row shows for an item, first: a call site's own choice, ahead of `MenuChoiceIcons`. nil falls back to the map, and an item
+    /// the map does not know keeps its own image.
+    var rowIcon: @MainActor (NSMenuItem) -> FAIcon? = { _ in nil }
+    private func glyph(for item: NSMenuItem) -> FAIcon? { rowIcon(item) ?? MenuChoiceIcons.icon(for: item) }
     /// The rows on screen now, top to bottom (the Back row first while inside a submenu).
     private(set) var rows: [GlassChoiceButton] = []
     private(set) var headers: [GlassChoiceLabel] = []
@@ -1298,7 +1349,7 @@ final class MenuChoicePanel: NSObject {
             groups[0].append(back)
         }
         let items = current.items.filter { !$0.isSeparatorItem && !$0.isHidden && !$0.isAlternate && !$0.isSectionHeader }
-        let hasImage = items.contains { $0.image != nil }
+        let hasImage = items.contains { $0.image != nil || glyph(for: $0) != nil }
         let hasTrailing = items.contains { item in
             let kind = kindFor(item)
             return kind == .option || kind == .toggle || kind == .submenu
@@ -1320,7 +1371,7 @@ final class MenuChoicePanel: NSObject {
             row.identifier = NSUserInterfaceItemIdentifier("choice.\(index)")
             row.isEnabled = item.isEnabled
             if kind == .option || kind == .toggle { row.isChosen = item.state != .off }
-            row.leadingImage = item.image
+            if let icon = glyph(for: item) { row.icon = icon } else { row.leadingImage = item.image }
             row.shortcutText = MenuShortcut.text(for: item)
             row.reservesIconColumn = hasImage
             row.reservesTrailingColumn = hasTrailing
@@ -1564,6 +1615,8 @@ class GlassPopUpButton: NSPopUpButton {
     var kind: (@MainActor (NSMenuItem) -> GlassChoiceButton.Kind)? { didSet { discardPanel() } }
     /// Passes through to the panel's `rowTitle`: what a row says for an item, when that is not the item's title.
     var rowTitle: (@MainActor (NSMenuItem) -> String)? { didSet { discardPanel() } }
+    /// Passes through to the panel's `rowIcon`: the glyph a row shows for an item, ahead of the action map.
+    var rowIcon: (@MainActor (NSMenuItem) -> FAIcon?)? { didSet { discardPanel() } }
     /// Test seam: replaces presenting the panel. It receives the panel and whether the keyboard opened it.
     var presentHandler: ((MenuChoicePanel, Bool) -> Void)?
 
@@ -1604,6 +1657,7 @@ class GlassPopUpButton: NSPopUpButton {
             return self.choicePanel.hasOwnAction(item) ? MenuChoicePanel.defaultKind(item) : .option
         }, popUp: self, minimumWidth: minimumPanelWidth)
         if let rowTitle { panel.rowTitle = rowTitle }
+        if let rowIcon { panel.rowIcon = rowIcon }
         cachedPanel = panel
         return panel
     }

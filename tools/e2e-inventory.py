@@ -332,17 +332,22 @@ def build_toolbox(parsed):
 
 # ------------------------------------------------------------------------------------------------------------------- icons
 FA_WHERE = {  # entry path for each icon, kept beside the source-derived "used in" list
-    "eyeSlash": "Top bar › Hide", "folderMinus": "History › Hide (list-only removal)", "chevronDown": "Top bar › Toolbox (face); every glass pop-up face (Zoom, History, Resize preset, destination form, Capture key)", "toolbox": "Top bar › Toolbox", "images": "Top bar › Photos", "boxArchive": "Bottom bar › Save",
+    "eyeSlash": "Top bar › Hide", "folderMinus": "History › Hide (list-only removal)", "chevronDown": "Top bar › Toolbox (face); every glass pop-up face (Zoom, History, Resize preset, destination form, Capture key)", "toolbox": "Top bar › Toolbox", "images": "Top bar › Photos", "boxArchive": "Bottom bar › Save; Toolbox panel › Save to History",
     "clockRotateLeft": "Bottom bar › History", "arrowPointer": "Top bar › Select tool", "paintbrush": "Top bar › Brush tool; Settings › Drawing tab",
     "slashForward": "Top bar › Line tool", "circle": "Top bar › Ellipse tool; unchosen radio glyph of glass options", "square": "Top bar › Rectangle tool; unchecked box glyph of glass toggles", "fillDrip": "Top bar › Fill tool",
-    "eraser": "Top bar › Eraser tool", "text": "Top bar › Text tool", "arrowUpRight": "Top bar › Arrow tool", "cropSimple": "Top bar › Crop tool",
-    "crosshairs": "Top bar › Snap; Settings › Capture tab", "frameViewfinder": "Top bar › Snap Frame (Frame mode)", "xmark": "Top bar › Cancel (Frame mode)",
-    "font": "Top bar › Font", "arrowRotateLeft": "Bottom bar › Undo", "broom": "Bottom bar › Wipe",
+    "eraser": "Top bar › Eraser tool", "text": "Top bar › Text tool", "arrowUpRight": "Top bar › Arrow tool", "cropSimple": "Top bar › Crop tool; Toolbox panel › Crop Snap at Current Edges",
+    "crosshairs": "Top bar › Snap; Settings › Capture tab; Toolbox panel › Snap", "frameViewfinder": "Top bar › Snap Frame (Frame mode); Toolbox panel › Frame Snapshot", "xmark": "Top bar › Cancel (Frame mode)",
+    "font": "Top bar › Font; Toolbox panel › Text Style…", "arrowRotateLeft": "Bottom bar › Undo", "broom": "Bottom bar › Wipe; Toolbox panel › Remove Snap Picture",
     "upload": "Bottom bar › Upload; Settings › Upload tab", "dragHand": "Bottom bar › Drag Me", "check": "Default pill; success results; chosen glass row and swatch; checked box mark",
-    "xmarkCircle": "Failure results", "openExternal": "History › Open", "copy": "History › Copy", "link": "History › Copy Link",
-    "globe": "History › Open Link", "trash": "History › Move to Trash", "linkSlash": "History › Delete from Web", "circleCheck": "Connected result; selected tile badge; chosen radio glyph of glass options",
+    "xmarkCircle": "Failure results", "openExternal": "History › Open", "copy": "History › Copy; Toolbox panel › Copy", "link": "History › Copy Link",
+    "globe": "History › Open Link", "trash": "History › Move to Trash; Toolbox panel › Delete", "linkSlash": "History › Delete from Web", "circleCheck": "Connected result; selected tile badge; chosen radio glyph of glass options",
     "gear": "Settings › General tab",
     "chevronRight": "Glass choice panel › submenu row; Resize › Manage presets (trailing chevron)", "chevronLeft": "Glass choice panel › Back row (leaving a submenu)",
+    # Glyphs of the Toolbox and Zoom rows: the glass rows draw these instead of the menu bar's SF Symbols (MenuChoiceIcons, one entry per action).
+    "arrowRotateRight": "Toolbox panel › Rotate Clockwise",
+    "fileExport": "Toolbox panel › Export…", "paste": "Toolbox panel › Paste", "clone": "Toolbox panel › Duplicate", "objectGroup": "Toolbox panel › Select All",
+    "display": "Toolbox panel › Fullscreen Snapshot", "cameraRotate": "Toolbox panel › Re-snap", "leftRight": "Toolbox panel › Flip Horizontal",
+    "shapes": "Toolbox panel › Filled Shapes", "layerGroup": "Toolbox panel › Shadow", "magnifyingGlass": "Zoom panel › Actual Size",
 }
 
 # Icons that came with the glass choices carry the tests that draw them: the codepoint table, the quarter turn of the embedded chevron-down and the row that shows each.
@@ -350,6 +355,13 @@ FA_PROOF = {
     "chevronRight": proof("FontAwesomeIconsTests.swift", "Spot-checked codepoints match icons.yml", ("IconCoverageTests.swift", " is the embedded chevron-down turned a quarter"), ("GlassChoicesTests.swift", "The chevron points right")),
     "chevronLeft": proof("FontAwesomeIconsTests.swift", "Spot-checked codepoints match icons.yml", ("IconCoverageTests.swift", " is the embedded chevron-down turned a quarter"), ("GlassChoicesTests.swift", "The Back row carries the left chevron")),
 }
+# The glyphs of the Toolbox and Zoom rows (MenuChoiceIcons): codepoint table, the embedded Free vector drawn at 1x and 2x, and the row that shows each
+# with the default build (no Pro font), never an SF Symbol.
+for _case in ("fileExport", "paste", "clone", "objectGroup", "display", "cameraRotate", "leftRight", "shapes", "layerGroup"):
+    FA_PROOF[_case] = proof("FontAwesomeIconsTests.swift", "Spot-checked codepoints match icons.yml", ("IconCoverageTests.swift", " is a square template image sized to the point size"),
+                            ("GlassChoicesTests.swift", " draws the Free vector"))
+FA_PROOF["magnifyingGlass"] = proof("FontAwesomeIconsTests.swift", "Spot-checked codepoints match icons.yml", ("IconCoverageTests.swift", " is a square template image sized to the point size"),
+                                    ("GlassChoicesTests.swift", "The zoom's Actual Size row draws the Free magnifying-glass"))
 
 
 def build_icons():
