@@ -686,10 +686,10 @@ def check_glass_record(label, record):
         if glass.get("protocol") != "S3":
             problems.append(f"glass: {label} was not taken with the S3-compatible protocol (protocol {glass.get('protocol')!r})")
         faces = glass.get("faceTitles") or []
-        if "Access key stored in Keychain" not in faces:
-            problems.append(f"glass: {label} does not show the Keychain key source face (faces {faces})")
-        if not any(str(face).startswith("S3") for face in faces):
-            problems.append(f"glass: {label} does not show the S3-compatible protocol face (faces {faces})")
+        if glass.get("sourceTitle") != "Access key stored in Keychain":
+            problems.append(f"glass: {label} does not have the Keychain key source chosen (source {glass.get('sourceTitle')!r})")
+        if len(faces) < 2 or not any(str(face).startswith("S3") for face in faces):
+            problems.append(f"glass: {label} must show and measure the S3-compatible protocol face and the key source face (faces {faces})")
     if variant == "hidden":
         if glass.get("originalSizeVisible") is not False:
             problems.append(f"glass: {label} is the reflow capture but the Original size toggle is still visible")
@@ -968,7 +968,7 @@ def self_test():
             if slug.endswith(("-acl-off", "-acl-on")):
                 panel.update(rowTitles=["Make uploads public-read"], protocol="S3", chosenIndexes=[0] if slug.endswith("-acl-on") else [])
             if slug.endswith(("-width-640", "-width-560")):
-                panel.update(protocol="S3", sheetWidth=560 if slug.endswith("-560") else 640, faceTitles=["S3-compatible", "Access key stored in Keychain"])
+                panel.update(protocol="S3", sheetWidth=560 if slug.endswith("-560") else 640, sourceTitle="Access key stored in Keychain", faceTitles=["S3-compatible", "Keychain"])
             if slug.endswith(("-original-off", "-original-on")):
                 panel.update(rowTitles=["Original size"], chosenIndexes=[0] if slug.endswith("-original-on") else [], originalSizeVisible=True, largeShot=True)
             if variant == "hidden":

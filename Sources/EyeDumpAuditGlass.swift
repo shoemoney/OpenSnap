@@ -730,7 +730,7 @@ extension AuditRun {
             form.formChanged()
             pump(0.6)
             let record = glassRecord(kind: "group", identifier: "DestinationSheetWidth", variant: "rest", host: narrow, rowsRoot: narrow.contentView,
-                                     extra: ["protocol": "S3", "sourceTitle": form.sourcePopup.titleOfSelectedItem ?? "", "requestedWidth": Double(width), "sheetWidth": Double(narrow.frame.width.rounded()),
+                                     extra: ["protocol": "S3", "sourceTitle": form.sourcePopup.titleOfSelectedItem ?? "", "requestedWidth": Double(width), "sheetWidth": Double((narrow.contentView?.frame.width ?? narrow.frame.width).rounded()), "sheetFrameWidth": Double(narrow.frame.width.rounded()),
                                              "sheetMinWidth": Double(PublishingDestinationsView.sheetMinWidth)])
             shoot("S58", slug, surface: "Destination sheet", state: "S3-compatible with the Keychain key source, sheet \(Int(width)) pt wide", windows: [narrow, settings], refs: refs, settle: 0.3, extra: ["glassPanel": record])
             closeHarnessSheet(narrow)
