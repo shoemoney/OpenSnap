@@ -1536,13 +1536,11 @@ private enum GlassChromeTests {
                 rig.content.layoutSubtreeIfNeeded()
                 let status = rect(shared.status, in: rig), box = rect(shared.dragOriginalControl, in: rig)
                 if width == 980 && state.isFailure {
-                    // F-J7-006 held on the floor while the box was a 129 pt native checkbox. The glass toggle is wider (41 pt), so on the floor
-                    // the slot is 13 pt short of the toggle, the error at its narrowest ("Failed") and both commands: the toggle steps
-                    // aside, as it does for every other upload state, and the error is whole. The error keeps the toggle from a few points up
-                    // (checked from 1000 below), so only the last few points of the floor differ.
+                    // F-J7-006: an error gives up its words, not the checkbox. Its narrowest form is "Failed", and the slot holds that beside the box and both commands.
                     let narrowest = try! unwrapState(state.statusVariants.last)
-                    expect(!fits, "\(label): on the 980 floor the \(Int(chrome.statusSlotWidth())) pt slot is short of the toggle (\(Int(checkbox)) pt) with the error at its narrowest and the commands (\(Int(chrome.slotNeed(for: state))) pt)")
-                    expect(narrowest == "Failed" && status.width < chrome.statusCellWidth(of: narrowest), "\(label): the rule is not vacuous, with the toggle forced on the status (\(Int(status.width)) pt) could not hold \"\(narrowest)\" (\(Int(chrome.statusCellWidth(of: narrowest))) pt)")
+                    expect(fits, "\(label): at 980 the \(Int(chrome.statusSlotWidth())) pt slot holds the checkbox (\(Int(checkbox)) pt) with the error at its narrowest and the commands (\(Int(chrome.slotNeed(for: state))) pt)")
+                    expect(narrowest == "Failed" && chrome.statusCellWidth(of: narrowest) <= status.width + 0.5, "\(label): the status (\(Int(status.width)) pt) holds \"\(narrowest)\" whole (\(Int(chrome.statusCellWidth(of: narrowest))) pt)")
+                    expect(box.intersection(status).width <= 0.5 && box.maxX <= status.minX + 0.5 && box.width >= checkbox - 0.5, "\(label): the checkbox stands whole and clear of the status (\(box) vs \(status))")
                 } else if width == 980 {
                     expect(!fits, "\(label): at 980 the \(Int(chrome.statusSlotWidth())) pt slot cannot hold the checkbox (\(Int(checkbox)) pt) with the status minimum and commands (\(Int(chrome.slotNeed(for: state))) pt)")
                     expect(status.width < ModernEditorChrome.minimumUploadStatusWidth, "\(label): the rule is not vacuous, with the checkbox forced on the status would drop to \(Int(status.width)) pt")
@@ -1560,10 +1558,10 @@ private enum GlassChromeTests {
             let rig = makeRig(NSSize(width: width, height: 740))
             let state = UploadState.failure(message: "Upload to Example S3 failed: the connection was refused.")
             let fits = rig.chrome.slotHasRoomForCheckbox(during: state)
-            // The toggle sits on the View plate, so the slot the bar leaves with the toggle showing is the room left once it has its place.
+            // The toggle sits on the View plate, so the slot the bar leaves with it showing is already net of its place: the need is the message and commands.
             let need = rig.chrome.slotNeed(for: state)
             expect(!rig.controls.dragOriginalControl.isHidden && fits == (rig.chrome.statusSlotWidth() >= need) && (fits || !previous), "\(tag) \(Int(width)): the answer is the measured comparison and never flips back as the window grows")
-            if width >= 1000 { expect(fits, "\(tag) \(Int(width)): from 1000 pt an error keeps the toggle (F-J7-006) (slot \(rig.chrome.statusSlotWidth()), need \(need), zoom \(rig.controls.zoomControl.superview!.frame.width))") }
+            expect(fits, "\(tag) \(Int(width)): from the 980 floor up an error keeps the toggle beside it (F-J7-006)")
             previous = fits
         }
         expect(previous, "\(tag): by 1500 pt the checkbox stays beside an error")
@@ -1785,7 +1783,12 @@ private enum GlassChromeTests {
         zoom.performClick(nil)
         expect(zoom.isOpen && panel.host.plates.count == 2 && panel.rows.count == 8, "zoom: percentages and the computed row on one plate, Actual Size on the next (\(panel.host.plates.count) plates, \(panel.rows.count) rows)")
         expect(panel.rows.dropLast().allSatisfy { $0.kind == .option } && panel.rows.last?.kind == .toggle, "zoom: the percentages are options and Actual Size is a toggle")
-        expect(panel.rows[0].title == "83%" && panel.rows[0].isChosen && panel.rows.dropFirst().dropLast().allSatisfy { !$0.isChosen }, "zoom: the computed row is the chosen one")
+        expect(panel.rows[0].title == "Fit, 83%" && panel.rows[0].accessibilityLabel() == "Fit, 83%" && panel.rows[0].isChosen && panel.rows.dropFirst().dropLast().allSatisfy { !$0.isChosen },
+               "zoom: the computed row says its mode in the panel (visible and spoken) and is the chosen one (\(panel.rows[0].title))")
+        expect(panel.rows.dropFirst().dropLast().map(\.title) == ["25%", "50%", "75%", "100%", "150%", "200%"] && zoom.titleOfSelectedItem == "83%" && zoom.menu?.items[0].title == "83%",
+               "zoom: the fixed rows read as before and the face and the menu's own title stay the percentage alone")
+        expect(panel.rows.allSatisfy { $0.titleLabel.frame.width >= $0.titleLabel.intrinsicContentSize.width - 0.5 && $0.frame.width >= $0.intrinsicContentSize.width - 0.5 },
+               "zoom: the panel is wide enough for every row, the longer computed one included")
         expect(panel.rows.last?.title == "Actual Size" && panel.rows.last?.shortcutText == "⌘0" && panel.rows.last?.isChosen == false, "zoom: Actual Size shows its own shortcut and, when off, no check")
         let anchor = anchorOnScreen(zoom)
         expect(panel.host.placement.map { $0.edge == .maxY && $0.frame.minY >= anchor.maxY } == true, "zoom: the panel opens above the footer button")
