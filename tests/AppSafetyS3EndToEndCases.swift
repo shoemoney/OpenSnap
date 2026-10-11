@@ -122,7 +122,9 @@ extension AppSafetyTests {
             guard let history = app.historyWindow as? AppSafetyWindow, let browser = app.historyBrowser else { throw Failure(description: "History window") }
             history.simulatesVisibility = true; history.shown = true
             browser.select(ids: [entry.id])
-            let button = try browser.actionRow.arrangedSubviews.compactMap { $0 as? NSButton }
+            // The actions sit on glass plates inside the row, so find them through the plates.
+            func buttons(in view: NSView) -> [NSButton] { ((view as? NSButton).map { [$0] } ?? []) + view.subviews.flatMap(buttons(in:)) }
+            let button = try buttons(in: browser.actionRow)
                 .first { $0.accessibilityLabel() == HistoryBrowser.Action.deleteRemote.title }.s3Unwrap("Delete from Web button")
             try expect(browser.canPerform(.deleteRemote) && button.isEnabled, "Delete from Web is enabled for the S3 upload")
 

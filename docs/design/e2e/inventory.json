@@ -11044,7 +11044,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "case .xmarkCircle; Free codepoint 0xF057; SF fallback xmark.circle; used in PublishingDestinationsView.swift",
+   "note": "case .xmarkCircle; Free codepoint 0xF057; SF fallback xmark.circle; used in HistoryBrowser.swift, PublishingDestinationsView.swift",
    "shortcut": null,
    "proof": [],
    "rendered": [

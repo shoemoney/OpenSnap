@@ -37,6 +37,36 @@ struct HistoryBrowserTests {
         try body(view,defaults)
     }
     static func descendants(_ view: NSView) -> [NSView] { [view]+view.subviews.flatMap(descendants) }
+    /// The seven action buttons in `Action.allCases` order, wherever the glass plates put them.
+    static func actionButtons(_ browser: HistoryBrowser) -> [HistoryActionButton] { descendants(browser.actionRow).compactMap { $0 as? HistoryActionButton } }
+    /// The sizes a control really draws: the spans of an attributed label (a button's own title field keeps the system 13 pt in `font`
+    /// and draws the attributed title), else its font. Empty labels draw nothing.
+    static func drawnSizes(_ control: NSControl) -> [CGFloat] {
+        var sizes: [CGFloat] = []
+        if let button = control as? NSButton, button.imagePosition == .imageOnly { return [] } // draws no text (the search field's own accessory buttons too)
+        let attributed = (control as? NSTextField)?.attributedStringValue ?? (control as? NSButton)?.attributedTitle
+        if let attributed, attributed.length > 0 {
+            attributed.enumerateAttribute(.font,in:NSRange(location:0,length:attributed.length)) { value,_,_ in sizes.append(((value as? NSFont) ?? control.font)?.pointSize ?? 13) }
+        } else { sizes = [control.font?.pointSize ?? 20] }
+        return sizes
+    }
+    /// A shared snap selected with every callback wired, so all seven actions are enabled.
+    static func selectingEverythingEnabled(_ browser: HistoryBrowser) {
+        let shared = item("Shared",action:"Shared",link:true)
+        browser.onOpen = { _ in }; browser.onCopy = { _ in }; browser.onCopyLink = { _ in }; browser.onOpenLink = { _ in }
+        browser.onRemove = { _ in }; browser.onDeleteFiles = { _ in }; browser.onDeleteRemote = { _ in }
+        browser.update(items:[shared,item("Other",-1)]); browser.select(ids:[shared.id])
+    }
+    static func luminance(_ color: NSColor) -> Double {
+        let c = color.usingColorSpace(.sRGB) ?? color
+        func channel(_ v: CGFloat) -> Double { let v = Double(v); return v <= 0.03928 ? v / 12.92 : pow((v + 0.055) / 1.055, 2.4) }
+        return 0.2126 * channel(c.redComponent) + 0.7152 * channel(c.greenComponent) + 0.0722 * channel(c.blueComponent)
+    }
+    /// WCAG contrast of `text` over `background`, both resolved under `appearance`.
+    static func contrast(_ text: NSColor,over background: NSColor,_ appearance: NSAppearance) -> Double {
+        let a = luminance(DesignTokens.Palette.resolve(text,for:appearance)), b = luminance(DesignTokens.Palette.resolve(background,for:appearance))
+        return (max(a,b) + 0.05) / (min(a,b) + 0.05)
+    }
     static func grid(_ browser: HistoryBrowser) throws -> NSCollectionView {
         guard let content = browser.window?.contentView,let grid = descendants(content).compactMap({ $0 as? NSCollectionView }).first else { throw Failure("Missing native grid") }
         return grid
@@ -309,7 +339,7 @@ struct HistoryBrowserTests {
                     let cell = browser.collectionView(grid,itemForRepresentedObjectAt:IndexPath(item:0,section:0))
                     let views = descendants(browser.window!.contentView!)+descendants(cell.view)
                     let controls = views.compactMap { $0 as? NSControl }
-                    try expect(controls.allSatisfy { ($0.font?.pointSize ?? 18) >= 18 },"Readable control below 18pt")
+                    try expect(controls.allSatisfy { drawnSizes($0).allSatisfy { $0 >= 18 } },"Readable control below 18pt: \(controls.filter { !drawnSizes($0).allSatisfy { $0 >= 18 } }.map { String(describing: type(of: $0)) })")
                     let fields = descendants(cell.view).compactMap { $0 as? NSTextField }
                     try expect(fields.contains { $0.stringValue == "A" && $0.font!.pointSize >= 20 },"Thumbnail name below20")
                     browser.window!.contentView!.layoutSubtreeIfNeeded()
@@ -539,7 +569,7 @@ struct HistoryBrowserTests {
                     browser.update(items:[item("One")])
                     try expect(browser.emptyState.isHidden,"The empty state stays over a populated grid")
                     browser.setFilters(category:.all,query:"zzz")
-                    try expect(!browser.emptyState.isHidden && browser.emptyTitle.stringValue.contains("match") && browser.emptyHint.isHidden,"Filtered-out History says no items match, with no save hint")
+                    try expect(!browser.emptyState.isHidden && browser.emptyTitle.stringValue.contains("match") && !browser.emptyHint.isHidden && !browser.emptyHint.stringValue.contains("save"),"Filtered-out History says no items match and how to get them back, with no save hint")
                     try expect(!browser.clearFiltersButton.isHidden && browser.clearFiltersButton.title == "Clear filters","A no-match state has no Clear filters button")
                     try expect(browser.statusLine == "0 of 1 item","The footer is gone from the no-match state: \(browser.statusLine)")
                     browser.clearFilters()
@@ -573,7 +603,7 @@ struct HistoryBrowserTests {
             }),
             ("The seven actions are a toolbar row and a context menu, each with a name for VoiceOver", {
                 try browser { browser,_ in
-                    let row = browser.actionRow.arrangedSubviews.compactMap { $0 as? NSButton }.filter { !($0 is NSPopUpButton) }
+                    let row = actionButtons(browser)
                     try expect(row.count == 7,"The action row has \(row.count) buttons")
                     try expect(Set(HistoryBrowser.Action.allCases.map(\.icon)).count == 7,"Each action has its own icon")
                     for (button,action) in zip(row,HistoryBrowser.Action.allCases) {
@@ -585,7 +615,7 @@ struct HistoryBrowserTests {
                         try expect(!button.isEnabled,"\(action) is enabled with nothing selected")
                     }
                     // The old layout stacked the same seven in two text-button rows under the details.
-                    let textButtons = descendants(browser.window!.contentView!).compactMap { $0 as? NSButton }.filter { !($0 is NSPopUpButton) && $0 !== browser.clearFiltersButton && !$0.title.isEmpty && $0.bezelStyle == .rounded }
+                    let textButtons = descendants(browser.window!.contentView!).compactMap { $0 as? NSButton }.filter { !($0 is NSPopUpButton) && $0 !== browser.clearFiltersButton && !$0.title.isEmpty }
                     try expect(textButtons.allSatisfy { $0.image != nil },"Only the action row carries labels, and each beside its icon: \(textButtons.map(\.title))")
                     let menu = try grid(browser).menu.unwrap("context menu")
                     try expect(menu.items.map(\.title) == HistoryBrowser.Action.allCases.map(\.title),"Context menu items: \(menu.items.map(\.title))")
@@ -601,7 +631,7 @@ struct HistoryBrowserTests {
                         let frame = browser.window!.frameRect(forContentRect: NSRect(x:0,y:0,width:width,height:720))
                         browser.window!.setFrame(NSRect(origin:browser.window!.frame.origin,size:frame.size),display:false)
                         content.layoutSubtreeIfNeeded(); browser.windowDidResize(Notification(name:NSWindow.didResizeNotification,object:browser.window)); content.layoutSubtreeIfNeeded()
-                        let row = browser.actionRow.arrangedSubviews.compactMap { $0 as? NSButton }.filter { !($0 is NSPopUpButton) }
+                        let row = MainActor.assumeIsolated { actionButtons(browser) }
                         return Dictionary(uniqueKeysWithValues: zip(HistoryBrowser.Action.allCases,row))
                     }
                     let destructive: [HistoryBrowser.Action] = [.remove,.deleteFiles,.deleteRemote]
@@ -682,7 +712,7 @@ struct HistoryBrowserTests {
                     recorded.canDeleteFromWeb = true; legacy.canDeleteFromWeb = false
                     browser.onDeleteRemote = { _ in }; browser.onCopyLink = { _ in }
                     browser.update(items:[recorded,legacy])
-                    let button = try browser.actionRow.arrangedSubviews.compactMap { $0 as? NSButton }.first { $0.accessibilityLabel() == HistoryBrowser.Action.deleteRemote.title }.unwrap("Delete from Web button")
+                    let button = try actionButtons(browser).first { $0.accessibilityLabel() == HistoryBrowser.Action.deleteRemote.title }.unwrap("Delete from Web button")
                     browser.select(ids:[recorded.id])
                     try expect(browser.canPerform(.deleteRemote) && button.isEnabled && (AppToolTip.text(for:button) ?? button.toolTip) == "Delete from Web","A recorded entry can be deleted from the web")
                     browser.select(ids:[legacy.id])
@@ -728,7 +758,7 @@ struct HistoryBrowserTests {
                     browser.update(items:[item("A")]); laidOut(browser,width:880,height:600)
                     let content = browser.window!.contentView!
                     for control in descendants(content).compactMap({ $0 as? NSControl }) {
-                        try expect((control.font?.pointSize ?? 20) >= 18,"\(type(of:control)) is below 18 pt")
+                        try expect(drawnSizes(control).allSatisfy { $0 >= 18 },"\(type(of:control)) is below 18 pt")
                     }
                     let segmented = try descendants(content).compactMap { $0 as? NSSegmentedControl }.first.unwrap("category control")
                     try expect(segmented.font?.pointSize == 20,"Tabs are body size")
@@ -804,6 +834,163 @@ struct HistoryBrowserTests {
                     browser.update(items:[plain]); browser.select(ids:[plain.id])
                     let again = descendants(browser.window!.contentView!).compactMap { $0 as? NSTextField }.first { $0.accessibilityLabel() == "Size" }
                     try expect(again?.stringValue == "1011 × 758","An entry that was never published reports its own size")
+                }
+            })
+            ,
+            ("The seven actions are shared glass-chrome buttons on three grouped glass plates in one container, the removal group apart and labelled", {
+                try browser { browser,_ in
+                    browser.update(items:[item("A")]); laidOut(browser,width:1000,height:720)
+                    let content = browser.window!.contentView!, buttons = actionButtons(browser)
+                    try expect(buttons.count == 7 && buttons.allSatisfy { $0 is CommandButton },"All seven actions are CommandButtons: \(buttons.map { String(describing: type(of:$0)) })")
+                    try expect(!descendants(content).compactMap { $0 as? NSButton }.contains { $0.bezelStyle == .rounded && $0.isBordered && !($0 is NSPopUpButton) && type(of:$0) == NSButton.self && !$0.title.isEmpty },"A plain rounded text button is left in History")
+                    let container = try (browser.actionContainer).unwrap("glass container")
+                    try expect(container.identifier?.rawValue == "HistoryActionBar" && browser.actionPlates.count == 3 && browser.actionPlates.allSatisfy { descendants(container).contains($0) },"The three plates share one glass container")
+                    for (plate,group) in zip(browser.actionPlates,HistoryBrowser.actionGroups) {
+                        try expect(plate.identifier?.rawValue == group.identifier && plate.accessibilityLabel() == group.label,"Plate \(group.identifier) is named \(group.label)")
+                        let inside = descendants(plate).compactMap { $0 as? HistoryActionButton }
+                        try expect(inside.count == group.actions.count && zip(inside,group.actions).allSatisfy { $0.accessibilityLabel() == $1.title },"\(group.identifier) holds \(group.actions.map(\.title))")
+                    }
+                    let frames = browser.actionPlates.map { $0.convert($0.bounds,to:content) }
+                    try expect(frames[0].maxX + GlassChrome.Metrics.groupGap - 0.5 <= frames[1].minX,"The open and link groups keep the group gap: \(frames)")
+                    try expect(frames[2].minX - frames[1].maxX >= 2 * GlassChrome.Metrics.groupGap - 0.5 && abs(frames[2].maxX - (content.bounds.maxX - DesignTokens.Space.s4)) < 1,"The removal group is set apart at the trailing edge: \(frames)")
+                    try expect(frames.allSatisfy { abs($0.height - GlassChrome.Metrics.headerHeight) < 0.5 },"Every plate is one bar row high: \(frames)")
+                    let remove = Set(descendants(browser.actionPlates[2]).compactMap { ($0 as? HistoryActionButton)?.accessibilityLabel() })
+                    try expect(remove == ["Hide from History","Move to Trash","Delete from Web"],"Only the three that take something away share the last plate: \(remove)")
+                }
+            }),
+            ("Glass is only the chrome: no glass inside glass, none over the grid, tiles or details", {
+                try browser { browser,_ in
+                    browser.update(items:[item("A"),item("B",-1)]); laidOut(browser,width:1000,height:720)
+                    let content = browser.window!.contentView!
+                    let glass = descendants(content).filter { $0 is NSGlassEffectView }
+                    try expect(glass.count == 3 && glass.allSatisfy { $0 is GlassSurfaceView },"History draws exactly its three action plates as glass (found \(glass.count))")
+                    for plate in glass {
+                        let nested = descendants(plate).filter { $0 !== plate && ($0 is NSGlassEffectView || $0 is NSVisualEffectView) }
+                        try expect(nested.isEmpty,"A glass plate holds another material: \(nested.map { String(describing: type(of:$0)) })")
+                    }
+                    for content in [try grid(browser) as NSView,browser.detailsPanel,browser.emptyState] {
+                        var ancestor: NSView? = content
+                        while let view = ancestor { try expect(!(view is NSGlassEffectView),"\(type(of:content)) sits on a glass material"); ancestor = view.superview }
+                        try expect(!descendants(content).contains { $0 is NSGlassEffectView || $0 is NSVisualEffectView },"\(type(of:content)) draws a glass material")
+                    }
+                    let cell = browser.collectionView(try grid(browser),itemForRepresentedObjectAt:IndexPath(item:0,section:0))
+                    try expect(!descendants(cell.view).contains { $0 is NSGlassEffectView || $0 is NSVisualEffectView },"A tile is glass")
+                }
+            }),
+            ("With nothing selected the selection-dependent actions are disabled, still legible, and do not move when a snap is selected", {
+                try browser { browser,_ in
+                    let shared = item("Shared",action:"Shared",link:true)
+                    browser.onOpen = { _ in }; browser.onCopy = { _ in }; browser.onCopyLink = { _ in }; browser.onOpenLink = { _ in }
+                    browser.onRemove = { _ in }; browser.onDeleteFiles = { _ in }; browser.onDeleteRemote = { _ in }
+                    browser.update(items:[shared]); laidOut(browser,width:1000,height:720)
+                    let content = browser.window!.contentView!, buttons = actionButtons(browser)
+                    let before = buttons.map { $0.convert($0.bounds,to:content) }
+                    for (button,action) in zip(buttons,HistoryBrowser.Action.allCases) {
+                        try expect(!button.isEnabled && !button.title.isEmpty,"\(action) is disabled but still in the row with its label")
+                        let style = button.plate.stateStyle
+                        try expect(style.contentAlpha >= StateStyles.disabledAlpha(highContrast:false) && abs(button.alphaValue - style.contentAlpha) < 0.001,"\(action) disabled stays legible (alpha \(button.alphaValue))")
+                        try expect(!button.isHidden && button.frame.height >= DesignTokens.Size.control - 0.5,"\(action) keeps its full-size slot")
+                    }
+                    browser.select(ids:[shared.id]); laidOut(browser,width:1000,height:720)
+                    try expect(buttons.allSatisfy(\.isEnabled),"Selecting a shared snap enables all seven")
+                    let after = buttons.map { $0.convert($0.bounds,to:content) }
+                    try expect(before == after,"The row jumped when a snap was selected: \(before) -> \(after)")
+                    try expect(buttons.allSatisfy { $0.alphaValue == 1 },"Enabled actions are drawn at full strength")
+                    browser.select(ids:[]); laidOut(browser,width:1000,height:720)
+                    try expect(buttons.allSatisfy { !$0.isEnabled } && buttons.map({ $0.convert($0.bounds,to:content) }) == before,"Clearing the selection disables them again, in place")
+                }
+            }),
+            ("Tab reaches every enabled action in reading order, skips the disabled ones, and no action is the default button", {
+                let saved = KeyboardNavigation.fullKeyboardAccess
+                KeyboardNavigation.fullKeyboardAccess = { true }
+                defer { KeyboardNavigation.fullKeyboardAccess = saved }
+                try browser { browser,_ in
+                    laidOut(browser,width:1000,height:720)
+                    @MainActor func loop() throws -> [NSView] {
+                        browser.window!.recalculateKeyViewLoop() // what AppKit does itself when the window first orders in
+                        let start = try grid(browser) as NSView
+                        var seen: [NSView] = [], view = start.nextValidKeyView
+                        while let current = view, current !== start, seen.count < 60 { seen.append(current); view = current.nextValidKeyView }
+                        return seen
+                    }
+                    try expect(!loop().contains { $0 is HistoryActionButton },"Disabled actions are not tab stops")
+                    selectingEverythingEnabled(browser); laidOut(browser,width:1000,height:720)
+                    let reached = try loop().compactMap { $0 as? HistoryActionButton }
+                    try expect(reached.map { $0.accessibilityLabel() ?? "" } == HistoryBrowser.Action.allCases.map(\.title),"Tab reaches the seven actions in order: \(reached.map { $0.accessibilityLabel() ?? "" })")
+                    for button in actionButtons(browser) {
+                        try expect(button.keyEquivalent.isEmpty && browser.window!.defaultButtonCell !== button.cell,"\(button.accessibilityLabel() ?? "") must not be the default button")
+                    }
+                    try expect(browser.window!.defaultButtonCell == nil,"History has no default button, so Return cannot trigger a removal")
+                    var opened = 0, removed = 0
+                    browser.onOpen = { _ in opened += 1 }; browser.onRemove = { _ in removed += 1 }
+                    let gridView = try grid(browser)
+                    gridView.keyDown(with:NSEvent.keyEvent(with:.keyDown,location:.zero,modifierFlags:[],timestamp:0,windowNumber:0,context:nil,characters:"\r",charactersIgnoringModifiers:"\r",isARepeat:false,keyCode:36)!)
+                    try expect(opened == 1 && removed == 0,"Return in the grid still opens the selection and removes nothing (opened \(opened), removed \(removed))")
+                }
+            }),
+            ("Every action shows rest, hover, pressed, focus and disabled on its own plate fill", {
+                try browser { browser,_ in
+                    selectingEverythingEnabled(browser); laidOut(browser,width:1000,height:720)
+                    let open = try actionButtons(browser).first.unwrap("Open")
+                    try expect(open.plate.style.fill == nil,"Open on its glass plate has no fill at rest")
+                    open.setHovered(true)
+                    try expect(open.plate.style.fill != nil && open.isHovered,"Hover draws a fill on the button, not another glass surface")
+                    open.setHovered(false)
+                    try expect(browser.window!.makeFirstResponder(open) && open.plate.stateStyle.focusRing && open.focusRingType == .exterior,"Keyboard focus draws the focus ring on the focused action")
+                    _ = browser.window!.makeFirstResponder(nil)
+                    try expect(!open.plate.stateStyle.focusRing,"The ring goes when focus moves on")
+                    open.isEnabled = false
+                    try expect(open.plate.style.fill == nil && open.plate.stateStyle.contentAlpha < 1,"A disabled action loses its fills and dims")
+                }
+            }),
+            ("Clear filters is the single accent button of the no-match state and reads as a button", {
+                try browser { browser,_ in
+                    browser.update(items:[item("A")]); browser.setFilters(category:.all,query:"zzz"); laidOut(browser,width:1000,height:720)
+                    let clear = browser.clearFiltersButton
+                    try expect(!clear.isHidden && clear.isPrimary && clear.plate.style.fill != nil,"Clear filters takes the primary fill")
+                    try expect(clear.frame.height >= DesignTokens.Size.control - 0.5 && clear.frame.width > 120 && drawnSizes(clear).allSatisfy { $0 >= 20 },"It is a full-size target with a 20 pt label (\(clear.frame))")
+                    try expect(clear.accessibilityLabel() == "Clear filters" && clear.image != nil,"It has a glyph and a name")
+                    var ancestor: NSView? = clear
+                    while let view = ancestor { try expect(!(view is NSGlassEffectView),"Clear filters sits on glass"); ancestor = view.superview }
+                }
+            }),
+            ("History text is body size or larger and keeps its contrast in light and dark, in every state", {
+                try browser { browser,_ in
+                    @MainActor func check(_ state: String) throws {
+                        laidOut(browser,width:880,height:600)
+                        let content = browser.window!.contentView!
+                        for control in descendants(content).compactMap({ $0 as? NSControl }) {
+                            try expect(drawnSizes(control).allSatisfy { $0 >= 18 },"\(state): \(type(of:control)) draws below 18 pt")
+                        }
+                    }
+                    try check("empty")
+                    browser.update(items:[item("A"),item("B",-1)]); try check("populated")
+                    browser.select(ids:[browser.visibleItems[0].id]); try check("selected")
+                    let cell = browser.collectionView(try grid(browser),itemForRepresentedObjectAt:IndexPath(item:0,section:0))
+                    let header = browser.collectionView(try grid(browser),viewForSupplementaryElementOfKind:NSCollectionView.elementKindSectionHeader,at:IndexPath(item:0,section:0))
+                    for field in (descendants(cell.view)+descendants(header)).compactMap({ $0 as? NSTextField }) {
+                        try expect(drawnSizes(field).allSatisfy { $0 >= 18 },"tile or day header text '\(field.stringValue)' draws below 18 pt")
+                    }
+                    browser.setFilters(category:.all,query:"zzz"); try check("no match")
+                    let content = browser.window!.contentView!
+                    let texts = descendants(content).compactMap { $0 as? NSTextField }
+                    let roles: [(String,NSTextField?,NSColor)] = [
+                        ("empty hint",browser.emptyHint,DesignTokens.Palette.Text.secondary),
+                        ("empty title",browser.emptyTitle,DesignTokens.Palette.Text.primary),
+                        ("detail label",texts.first { $0.stringValue == "Name:" },DesignTokens.Palette.Text.secondary),
+                        ("detail value",texts.first { $0.accessibilityLabel() == "Name" },DesignTokens.Palette.Text.primary),
+                        ("day header",header.subviews.compactMap { $0 as? NSTextField }.first,DesignTokens.Palette.Text.primary),
+                        ("status",texts.first { $0.stringValue == browser.statusLine },DesignTokens.Palette.Text.secondary)]
+                    for (name,field,role) in roles {
+                        let field = try field.unwrap(name)
+                        try expect(field.textColor == role,"\(name) uses its semantic text role")
+                        for appearance in [NSAppearance(named:.aqua)!,NSAppearance(named:.darkAqua)!] {
+                            for surface in [DesignTokens.Palette.Surface.window,DesignTokens.Palette.Surface.content] {
+                                let ratio = contrast(role,over:surface,appearance)
+                                try expect(ratio >= 4.5,"\(name) contrast \(ratio) under \(appearance.name.rawValue)")
+                            }
+                        }
+                    }
                 }
             })
         ]
