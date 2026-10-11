@@ -264,6 +264,25 @@ extension AuditRun {
         record["truncatedRows"] = (labels + faces).filter { ($0["fits"] as? Bool) != true }.compactMap { $0["title"] as? String }
         record["unmeasuredText"] = AuditRun.unmeasuredText
         if kind == "panel", variant != "dismissed" {
+            // Placement: where the panel is and where the window it hangs from is (screen coordinates, bottom-left origin, [x, y, width, height]), plus the
+            // parent's content area (the title bar is what lies above it) and the opener's frame, so a panel that hangs outside its parent can be judged.
+            let parent = host.parent ?? extraFaceRoots.first?.window
+            if let parent {
+                record["parentFrame"] = rectJSON(parent.frame)
+                record["parentContentFrame"] = rectJSON(parent.convertToScreen(parent.contentLayoutRect))
+                record["parentClass"] = String(describing: type(of: parent))
+                // The part of the parent that is on screen, and the screen's own visible area: a panel that can fit in the visible parent must, and one
+                // that cannot falls back to the screen. Derived from the frames until the host reports its own containment.
+                let screenVisible = (parent.screen ?? NSScreen.main)?.visibleFrame
+                let visibleParent = screenVisible.map { parent.frame.intersection($0) } ?? parent.frame
+                if let screenVisible { record["screenVisibleFrame"] = rectJSON(screenVisible) }
+                record["parentVisibleFrame"] = rectJSON(visibleParent)
+                record["containment"] = host.frame.width <= visibleParent.width + 1 ? "parent" : "screenFallback"
+                record["containmentSource"] = "derived from the frames: panel width <= visible parent width"
+            }
+            if let opener = extraFaceRoots.first, let openerWindow = opener.window {
+                record["openerFrame"] = rectJSON(openerWindow.convertToScreen(opener.convert(opener.bounds, to: nil)))
+            }
             // Height cap: how many rows the panel has, how many are wholly in view, and whether the host scrolls them.
             record["totalRows"] = rows.count
             record["visibleRows"] = rows.filter { isWhollyInView($0) }.count
