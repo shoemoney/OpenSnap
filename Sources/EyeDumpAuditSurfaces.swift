@@ -1396,6 +1396,29 @@ extension AuditRun {
                           refs: ["HistoryBrowser.swift|func setHovered"], settle: 0.4)
                     other.setHovered(false)
                 } else { gap("S20", "History tile hover", "no unselected tile was found in the grid") }
+                // The actions sit on glass plates inside the row; each button draws its own state fill on its plate.
+                func actionButton(_ action: HistoryBrowser.Action, in view: NSView) -> HistoryActionButton? {
+                    if let found = view as? HistoryActionButton, found.accessibilityLabel() == action.title { return found }
+                    for sub in view.subviews { if let found = actionButton(action, in: sub) { return found } }
+                    return nil
+                }
+                if let row = app.historyBrowser?.actionRow, let copy = actionButton(.copy, in: row), let open = actionButton(.open, in: row) {
+                    copy.setHovered(true)
+                    shoot("S20", "history-action-hover", surface: "History browser", state: "one entry selected and the Copy action hovered: its own label 0.08 fill on the glass plate, the other actions at rest", windows: [history],
+                          refs: ["HistoryBrowser.swift|final class HistoryActionButton", "GlassChrome.swift|func setHovered"], settle: 0.4)
+                    copy.highlight(true)
+                    shoot("S20", "history-action-pressed", surface: "History browser", state: "one entry selected and the Copy action held down (press bracket driven directly, not a real click): the pressed fill and glyph scale on its plate", windows: [history],
+                          refs: ["HistoryBrowser.swift|final class HistoryActionButton", "GlassChrome.swift|override func highlight"], settle: 0.4)
+                    copy.highlight(false); copy.setHovered(false)
+                    let restore = history.firstResponder
+                    history.makeKeyAndOrderFront(nil)
+                    if history.makeFirstResponder(open) {
+                        shoot("S20", "history-action-focus", surface: "History browser", state: "keyboard focus on the Open action: the focus ring around its rounded fill (made first responder directly; real Tab reaches it only with Full Keyboard Access or Window > Focus Toolbar)", windows: [history],
+                              refs: ["HistoryBrowser.swift|final class HistoryActionButton", "GlassChrome.swift|override func becomeFirstResponder"], settle: 0.4)
+                    } else { gap("S20", "History action focus", "the Open action did not take the keyboard") }
+                    history.makeFirstResponder(restore === open ? nil : restore)
+                    pump(0.3)
+                } else { gap("S20", "History action states", "the Copy or Open action was not found on the glass plates") }
                 for (width, height) in [(880, 600), (1120, 850), (1280, 800)] as [(CGFloat, CGFloat)] {
                     history.setFrame(NSRect(x: history.frame.minX, y: max(40, history.frame.maxY - height), width: width, height: height), display: true)
                     pump(0.8)
