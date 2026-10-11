@@ -377,7 +377,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     /// The zoom full screen replaced, put back when it ends (only while the document and the zoom are still the ones full screen set).
     var fullScreenZoom: (generation: UUID, before: CGFloat, applied: CGFloat)?
     /// The picture size the window was sized for when full screen began: a different one on the way out means the window must follow (FS-B).
-    var fullScreenEntryOutput: CGSize?
+    /// Kept, like the frame below, until AppKit says the exit is done, so the window work can run again if AppKit puts its own frame back
+    /// after the first resize out (FR-2); both are tagged with the document and cleared by the next entry.
+    var fullScreenEntryOutput: (generation: UUID, size: CGSize)?
     /// The frame the window had before an Actual Size that was left inside full screen: AppKit's own pre-full-screen frame is the one the
     /// navigator nudged, so the way out puts this one back (FS-C).
     var fullScreenWindowedFrame: (generation: UUID, frame: CGRect)?
@@ -545,6 +547,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     }
     func windowWillEnterFullScreen(_ notification: Notification) {
         guard (notification.object as? NSWindow) === window else { return }
+        fullScreenEntryOutput = nil; fullScreenWindowedFrame = nil
         leaveFrame()
     }
     func windowDidEnterFullScreen(_ notification: Notification) {
@@ -555,7 +558,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     }
     func windowDidExitFullScreen(_ notification: Notification) {
         guard (notification.object as? NSWindow) === window else { return }
-        restoreZoomAfterFullScreen(); clearStatusNotice(); refreshStatusText()
+        finishFullScreenExit(); clearStatusNotice(); refreshStatusText()
     }
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         if sender === preferencesWindow { closePreferences(); return false }

@@ -8,7 +8,10 @@ extension AppDelegate {
     func fitDrawingForFullScreen() {
         guard !isActualSize, activeResizeSession == nil, windowGesture == nil else { return }
         let before = fullScreenZoom?.before ?? canvas.zoom
-        if fullScreenZoom?.generation != documentGeneration { fullScreenEntryOutput = canvas.outputSize }
+        if fullScreenZoom?.generation != documentGeneration {
+            // A new entry: whatever window records an earlier one left behind (no did-exit arrived) are not this one's.
+            fullScreenEntryOutput = (documentGeneration, canvas.outputSize); fullScreenWindowedFrame = nil
+        }
         fitCanvasToWindow(maximumScale: Self.fullScreenMaximumScale)
         fullScreenZoom = (documentGeneration, before, canvas.zoom)
         updateViewportChrome()
@@ -34,19 +37,41 @@ extension AppDelegate {
         return abs(canvas.zoom - saved.applied) >= 0.0005
     }
 
+    /// The first resize out of full screen: the zoom the window had is back, and the window holds the picture again. The window records stay
+    /// until `finishFullScreenExit`, which repeats the window work in case AppKit restored its own frame after this resize (FR-2).
     func restoreZoomAfterFullScreen() {
         // A size change made in full screen was not fitted to the window then; it is now, once the zoom the window had is back (R4-004),
         // and the window follows the picture even when the zoom came back unchanged (FS-B).
-        let entryOutput = fullScreenEntryOutput, returnFrame = fullScreenWindowedFrame
         defer {
-            fullScreenZoom = nil; fullScreenEntryOutput = nil; fullScreenWindowedFrame = nil
-            if let returnFrame, returnFrame.generation == documentGeneration { setWindowFrame(returnFrame.frame) }
+            fullScreenZoom = nil
+            // With Actual Size still up the window is sized for the full-resolution picture at 100%, which is not what it will show; the
+            // records wait for Actual Size to end (`leaveActualSize`) instead of sizing the window for it now (FR-1).
+            if !isActualSize { applyFullScreenReturnFrame() }
             let zoomMoved = refitPictureZoom()
-            if zoomMoved || entryOutput.map({ $0 != canvas.outputSize }) == true { sizeNormalWindowToCanvas(centered: false) }
+            if !isActualSize, zoomMoved || fullScreenEntryOutputChanged { sizeNormalWindowToCanvas(centered: false) }
         }
         guard let saved = fullScreenZoom, saved.generation == documentGeneration, !isActualSize,
               abs(canvas.zoom - saved.applied) < 0.0005 else { return }
         setCanvasDisplayZoom(saved.before, label: "Zoom")
         updateViewportChrome()
+    }
+
+    /// AppKit's did-exit: the window work is done again (AppKit may have put its own, navigator-narrowed frame back since the first resize)
+    /// and the records go. With Actual Size still up they stay for `leaveActualSize`.
+    func finishFullScreenExit() {
+        restoreZoomAfterFullScreen()
+        if !isActualSize { clearFullScreenWindowRecords() }
+    }
+
+    func clearFullScreenWindowRecords() { fullScreenEntryOutput = nil; fullScreenWindowedFrame = nil }
+
+    /// Whether the window was sized for something other than the picture it now holds: the picture changed size while full screen was up
+    /// (FS-B), or it is another document altogether, taken in full screen, that the window was never sized for.
+    var fullScreenEntryOutputChanged: Bool {
+        fullScreenEntryOutput.map { $0.generation != documentGeneration || $0.size != canvas.outputSize } == true
+    }
+
+    func applyFullScreenReturnFrame() {
+        if let returnFrame = fullScreenWindowedFrame, returnFrame.generation == documentGeneration { setWindowFrame(returnFrame.frame) }
     }
 }

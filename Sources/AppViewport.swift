@@ -104,10 +104,11 @@ extension AppDelegate {
             if cancelled, baseline.inFullScreen, !self.isFullScreen {
                 // Full screen ended while the sheet was up: the picture goes back, but the zoom and frame in the baseline are full screen's. The
                 // window gets the zoom it had before full screen (or a fit) and a size that holds the restored picture (FS-A).
-                if let before = baseline.fullScreen?.before { self.setCanvasDisplayZoom(before, label: baseline.fit == nil ? "Output" : "Fit") }
-                else { self.fitCanvasToWindow() }
+                // A record that is another document's (a new snap was taken in full screen) is not this one's zoom (R6-002).
+                let before = baseline.fullScreen.flatMap { $0.generation == generation ? $0.before : nil } ?? baseline.zoom
+                if abs(self.canvas.zoom - before) >= 0.0005 { self.setCanvasDisplayZoom(before, label: baseline.fit == nil ? "Output" : "Fit") }
                 self.pictureFitZoom = baseline.fit
-                self.fullScreenZoom = nil; self.fullScreenEntryOutput = nil
+                self.fullScreenZoom = nil; self.clearFullScreenWindowRecords()
                 self.refitPictureZoom()
                 self.sizeNormalWindowToCanvas(centered: false)
                 self.dirty = baseline.dirty
@@ -203,13 +204,16 @@ extension AppDelegate {
             if isFullScreen {
                 setCanvasDisplayZoom(state.zoom, label: "Normal")
                 pictureFitZoom = state.pictureFit
-                fullScreenWindowedFrame = (state.generation, state.windowFrame)
                 fitDrawingForFullScreen()
+                fullScreenWindowedFrame = (state.generation, state.windowFrame)
             } else {
                 setCanvasDisplayZoom(state.fullScreenZoom.flatMap { $0.generation == state.generation ? $0.before : nil } ?? state.zoom, label: "Normal")
                 pictureFitZoom = state.pictureFit
                 fullScreenZoom = nil
-                if refitPictureZoom() || sizeChanged { sizeNormalWindowToCanvas(centered: false) }
+                // Full screen ended while Actual Size was up: the window work it left waiting is done now, for the picture that is back (FR-1).
+                applyFullScreenReturnFrame()
+                if refitPictureZoom() || sizeChanged || fullScreenEntryOutputChanged { sizeNormalWindowToCanvas(centered: false) }
+                clearFullScreenWindowRecords()
             }
         } else {
             setCanvasDisplayZoom(state.zoom, label: "Normal")

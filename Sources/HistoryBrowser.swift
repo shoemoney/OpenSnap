@@ -469,7 +469,8 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         let options = ChromeAccessibility.live
         actionPlates = Self.actionGroups.map { group in
             let plate = GlassChrome.plate(group.actions.compactMap { buttons[$0] },identifier:group.identifier,accessibility:options)
-            plate.setAccessibilityLabel(group.label); plate.setAccessibilityRole(.group)
+            // A label and role are only spoken for an accessibility element; otherwise VoiceOver walks straight through the plate (FR-4).
+            plate.setAccessibilityElement(true); plate.setAccessibilityLabel(group.label); plate.setAccessibilityRole(.group)
             return plate
         }
         for button in buttons.values { button.accessibility = options }
