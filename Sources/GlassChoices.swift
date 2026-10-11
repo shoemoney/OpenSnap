@@ -82,6 +82,29 @@ private func makeRowLabel(_ style: DesignTokens.Typography.Style) -> NSTextField
     return label
 }
 
+/// What a row label needs, measured the way it is drawn: by a real text field in the face that will be shown, so the cell's own padding is
+/// counted (a bounding box of the string alone is about 4 pt short, and the label then truncates). Wrapping labels measure at `wrapWidth`.
+@MainActor
+private enum LabelMetrics {
+    private static let probe = makeRowLabel(.body)
+
+    static func fit(_ text: String, style: DesignTokens.Typography.Style, wrapWidth: CGFloat? = nil) -> NSSize {
+        guard !text.isEmpty else { return .zero }
+        let wraps = wrapWidth != nil
+        probe.font = DesignTokens.Typography.font(style)
+        probe.stringValue = text
+        probe.lineBreakMode = wraps ? .byWordWrapping : .byTruncatingTail
+        probe.maximumNumberOfLines = wraps ? 0 : 1
+        probe.cell?.wraps = wraps
+        probe.preferredMaxLayoutWidth = wrapWidth ?? 0
+        let size = probe.fittingSize
+        return NSSize(width: ceil(size.width), height: ceil(size.height))
+    }
+
+    /// One line of 20 pt text, as the row's label draws it.
+    static var lineHeight: CGFloat { fit("Mg", style: .bodyStrong).height }
+}
+
 // MARK: - Choice button
 
 /// One glass choice: a titled button that is a command, an option of an exclusive set, a toggle, or a row that opens a submenu.
@@ -297,21 +320,15 @@ final class GlassChoiceButton: CommandButton {
 
     // MARK: size and layout
 
-    private var singleLineHeight: CGFloat { ceil(DesignTokens.Typography.font(.bodyStrong).boundingRectForFont.height) }
+    private var singleLineHeight: CGFloat { LabelMetrics.lineHeight }
 
-    /// The title measured in the strong face, so choosing a row never changes its width.
-    private func titleSize() -> NSSize {
-        let text = title
-        guard !text.isEmpty else { return .zero }
-        let limit = wrapWidth ?? .greatestFiniteMagnitude
-        let box = (text as NSString).boundingRect(with: NSSize(width: limit, height: .greatestFiniteMagnitude), options: [.usesLineFragmentOrigin, .usesFontLeading],
-                                                 attributes: [.font: DesignTokens.Typography.font(.bodyStrong)])
-        return NSSize(width: ceil(min(box.width, limit)), height: ceil(box.height))
-    }
+    /// The title as its label needs it: measured in the strong face by a real text field, so choosing a row never changes its width and
+    /// the label never truncates (single line) or clips (wrapped: the height of every line it needs).
+    private func titleSize() -> NSSize { LabelMetrics.fit(title, style: .bodyStrong, wrapWidth: wrapWidth) }
 
     private func shortcutWidth() -> CGFloat {
         guard let shortcutText, !shortcutText.isEmpty else { return 0 }
-        return ceil((shortcutText as NSString).size(withAttributes: [.font: DesignTokens.Typography.font(.body)]).width)
+        return LabelMetrics.fit(shortcutText, style: .body).width
     }
 
     private struct Parts {
@@ -482,13 +499,12 @@ final class GlassChoiceLabel: NSView {
     var title: String { label.stringValue }
 
     override var intrinsicContentSize: NSSize {
-        let width = ceil((label.stringValue as NSString).size(withAttributes: [.font: DesignTokens.Typography.font(.bodyStrong)]).width)
-        return NSSize(width: width + 2 * GlassChoiceButton.padding, height: GlassChoiceButton.height)
+        NSSize(width: LabelMetrics.fit(label.stringValue, style: .bodyStrong).width + 2 * GlassChoiceButton.padding, height: GlassChoiceButton.height)
     }
 
     override func layout() {
         super.layout()
-        let height = ceil(DesignTokens.Typography.font(.bodyStrong).boundingRectForFont.height)
+        let height = LabelMetrics.lineHeight
         label.frame = NSRect(x: GlassChoiceButton.padding, y: ((bounds.height - height) / 2).rounded(),
                              width: max(0, bounds.width - 2 * GlassChoiceButton.padding), height: height)
     }
