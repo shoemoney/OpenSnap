@@ -122,8 +122,10 @@ private enum ResizePanelLayoutTests {
         return nil
     }
     /// A key the way the application delivers it: the key window's key equivalents first (the default button's Return, Cancel's Escape), and only
-    /// when none takes it, the window's sendEvent to the focused control. The sheet is not on screen, so it is told it became key, which is what
-    /// arms its default button's Return.
+    /// when none takes it, the window's sendEvent to the focused control. The sheet is not on screen and the app is not active, so it is told it
+    /// became key, which is what arms its default button's Return. This is window and responder routing on an offscreen, inactive sheet; it is not
+    /// proof of on-screen or active-application behaviour. It also pre-routes Return to the default button, so a test of what a control does
+    /// with Return itself must use `sendEvent` alone.
     private static func deliver(_ event: NSEvent, to window: NSWindow) {
         window.becomeKey()
         if !window.performKeyEquivalent(with: event) { window.sendEvent(event) }
@@ -408,16 +410,22 @@ private enum ResizePanelLayoutTests {
             }
         }
 
-        // A glass group in a sheet with a default button does not take Return or Enter for itself, even if a key reaches it directly.
+        // A glass group in a sheet with a default button does not take Return or Enter for itself. This one goes through the window's sendEvent
+        // ONLY (no key-equivalent pre-call, so the default button cannot have taken the key first), with the keyboard on a segment that is not the
+        // chosen one: a group that took the key would choose it and the mode would change.
         do {
+            for (name, code, text) in [("Return", UInt16(36), "\r"), ("Enter", UInt16(76), "\u{3}")] {
+                let rig = Rig(); defer { rig.close() }
+                guard let mode: GlassChoiceGroup = private_(rig.resize, "modeControl") else { throw Failure(description: "mode") }
+                try expect(rig.panel.makeFirstResponder(mode.buttons[1]) && rig.panel.firstResponder === mode.buttons[1] && mode.selectedIndex == 0, "The keyboard is on the Crop segment while Resize is chosen")
+                rig.panel.sendEvent(try key(code, text, window: rig.panel))
+                try expect(mode.selectedIndex == 0 && rig.state().mode == .resize, "\(name) reaching the group through sendEvent does not choose the focused segment (mode \(rig.state().mode))")
+            }
             let rig = Rig(); defer { rig.close() }
             guard let mode: GlassChoiceGroup = private_(rig.resize, "modeControl") else { throw Failure(description: "mode") }
-            let chosen = mode.buttons[mode.selectedIndex]
-            _ = rig.panel.makeFirstResponder(chosen)
-            for (code, text) in [(UInt16(36), "\r"), (76, "\u{3}")] {
-                try expect(chosen.keyHandler?(try key(code, text, window: rig.panel)) == false && mode.selectedIndex == 0, "Key \(code) in the mode group is left for OK")
-            }
-            try expect(chosen.keyHandler?(try key(49, " ", window: rig.panel)) == true, "…while Space still chooses in the group")
+            _ = rig.panel.makeFirstResponder(mode.buttons[1])
+            rig.panel.sendEvent(try key(49, " ", window: rig.panel))
+            try expect(mode.selectedIndex == 1, "…while Space through the same route does choose it")
         }
 
         // Arrow keys in a glass group move the choice and the keyboard goes with it: the next arrow moves again. Real arrow events carry the
