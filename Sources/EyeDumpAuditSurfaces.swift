@@ -381,6 +381,17 @@ extension AuditRun {
             step("S45", "audit batch 8: WebDAV note, footer error with the box, pause note, Details size, Resize unticked") { s45() }
             step("S46", "audit batch 10: oversized Resize, corner drag, Export accessory, selected Upload row, Capture note error, Details after delete") { s46() }
             step("S47", "audit batch 11: Actual Size after an oversized Resize, native-width Resize, ticked corner drag, Export accessory when nothing differs") { s47() }
+            step("S50", "glass: Toolbox panel") { s50() }
+            step("S51", "glass: Zoom panel") { s51() }
+            step("S52", "glass: Upload panel") { s52() }
+            step("S53", "glass: Colour panel") { s53() }
+            step("S54", "glass: Size panel") { s54() }
+            step("S55", "glass: History choices") { s55() }
+            step("S56", "glass: Settings groups") { s56() }
+            step("S57", "glass: Resize sheet choices") { s57() }
+            step("S58", "glass: destination sheet choices") { s58() }
+            step("S59", "glass: footer Original size toggle") { s59() }
+            step("S60", "glass: Settings Capture tab choices and key panel") { s60() }
             step("S13", "capture picker") { s13() }
             step("S14", "countdown") { s14() }
             step("S15", "capture flash") { s15() }
@@ -569,7 +580,7 @@ extension AuditRun {
         loadSynthetic(size: CGSize(width: 1000, height: 700), name: "Color and size")
         app.presentDrawingColors(hover: false)
         pump(0.6)
-        let popoverWindow = app.colorPopover?.contentViewController?.view.window
+        let popoverWindow = app.colorPanelWindow
         shoot("S06", "color-palette", surface: "color picker", state: "preset palette popover open (original ten presets + Custom color…)",
               windows: popoverWindow.map { [window, $0] } ?? [window], refs: ["App.swift|func presentDrawingColors"])
         if let popoverWindow {
@@ -656,17 +667,33 @@ extension AuditRun {
             }
             toggle.selectedSegment = 0; app.changeDragOptions(toggle)
         }
-        guard let format = firstView(of: NSPopUpButton.self, label: "Drag Me format") else {
-            if firstView(of: SegmentedToggle.self, label: "Image format") == nil { gap("S09", "format control", "neither the format popup nor the PNG|JPG toggle was found") }
-            return
+        // The format control is the PNG|JPG toggle now; the old pop-up only matters if a build still has it. Its absence must never skip the
+        // Upload capture below (the early return that used to sit here hid the whole Upload menu from S09).
+        if let format = firstView(of: NSPopUpButton.self, label: "Drag Me format") {
+            captureTrackedMenu("S09", "format-popup-open", surface: "footer", state: "format popup open (PNG selected)", refs: ["ModernEditorChrome.swift|let formatHolder", "App+ModernChrome.swift|dragFormatControl.addItems"],
+                               dismiss: { format.menu?.cancelTracking() }, trigger: { format.menu?.popUp(positioning: nil, at: NSPoint(x: 0, y: format.bounds.height), in: format) })
+            pump(0.4)
+        } else if firstView(of: SegmentedToggle.self, label: "Image format") == nil {
+            gap("S09", "format control", "neither the format popup nor the PNG|JPG toggle was found")
         }
-        captureTrackedMenu("S09", "format-popup-open", surface: "footer", state: "format popup open (PNG selected)", refs: ["ModernEditorChrome.swift|let formatHolder", "App+ModernChrome.swift|dragFormatControl.addItems"],
-                           dismiss: { format.menu?.cancelTracking() }, trigger: { format.menu?.popUp(positioning: nil, at: NSPoint(x: 0, y: format.bounds.height), in: format) })
-        pump(0.4)
-        if let share = app.webpostButton, let menu = share.menu {
-            captureTrackedMenu("S09", "upload-menu-open", surface: "footer", state: "Upload (Webpost) destination menu open, no destination configured",
-                               refs: ["App.swift|func uploadDestinationMenuItems", "App.swift|func configureWebpostButton"],
+        guard let share = app.webpostButton else { gap("S09", "Upload menu", "the Upload (Webpost) button was not found"); return }
+        captureUploadChoices("S09", "upload-menu-open", surface: "footer", state: "Upload (Webpost) destination choices open, no destination configured",
+                             refs: ["App.swift|func uploadDestinationMenuItems", "App.swift|func configureWebpostButton"], share: share)
+    }
+
+    /// Opens the Upload choices the way a user does (the button's own show-menu request) and captures what really appeared: the app-owned
+    /// glass panel when the build has one, else the native menu (tracked) it replaced. Never skipped for lack of a menu.
+    func captureUploadChoices(_ id: String, _ slug: String, surface: String, state: String, refs: [String], share: NSButton) {
+        let script = GlassPanelScript(id: id, surface: surface, identifier: "Upload", base: "upload", opener: share, refs: refs,
+                                      open: { _ = share.accessibilityPerformShowMenu() }, nativeMenu: share.menu)
+        if let opened = openGlassPanel(script, recordGap: false) {
+            shootGlassPanel(id, slug, surface: surface, state: state + " (glass panel)", panel: opened.panel, opener: share, refs: refs, identifier: "Upload")
+            dismissGlassPanel(id, slug + "-dismissed", surface: surface, state: "Upload panel dismissed with Escape", script: script, opened: opened)
+        } else if let menu = share.menu {
+            captureTrackedMenu(id, slug, surface: surface, state: state, refs: refs,
                                dismiss: { menu.cancelTracking() }, trigger: { menu.popUp(positioning: nil, at: NSPoint(x: 0, y: share.bounds.height + 4), in: share) })
+        } else {
+            gap(id, surface + " / " + state, "the Upload button has neither a glass panel nor a menu")
         }
     }
 
@@ -745,8 +772,7 @@ extension AuditRun {
             pump(0.2)
             app.widthControl.showPopover()
             pump(0.7)
-            let popoverWindow = app.widthControl.popover?.contentViewController?.view.window
-            popoverWindow?.orderFrontRegardless()
+            let popoverWindow = app.widthControl.panelWindow
             if popoverWindow == nil { gap("S30", "Size popover", "the popover window did not appear at \(spec)") }
             shoot("S30", "size-popover-\(widthSlug(spec))", surface: "Size popover", state: "Size popover open below the pill at window width \(spec), value 6.75, Brush tool",
                   windows: popoverWindow.map { [window, $0] } ?? [window], refs: ["BezelDrawingControls.swift|func showPopover", "BezelDrawingControls.swift|final class SizePopoverContent"],
@@ -766,13 +792,12 @@ extension AuditRun {
                 app.applyChosenColor(color, modifiers: [])
                 app.presentDrawingColors(hover: false)
                 pump(0.7)
-                let popoverWindow = app.colorPopover?.contentViewController?.view.window
-                popoverWindow?.orderFrontRegardless()
+                let popoverWindow = app.colorPanelWindow
                 if popoverWindow == nil { gap("S31", "Colour popover", "the popover window did not appear") }
                 var extra = popoverMetrics(popoverWindow, anchor: app.paletteButton)
-                extra["customRowIsCurrent"] = app.customColorButton?.isCurrentChoice ?? false
+                extra["customRowIsCurrent"] = app.customColorButton?.isChosen ?? false
                 extra["checkedPresets"] = app.presetColorButtons.filter { $0.state == .on }.map { $0.accessibilityLabel() ?? "" }
-                if let content = app.colorPopover?.contentViewController?.view {
+                if let content = app.colorPanel?.window.contentView {
                     extra["popoverContentSize"] = [Double(content.frame.width), Double(content.frame.height)]
                     extra["rowFrames"] = (app.presetColorButtons.map { $0 as NSView } + [app.customColorButton].compactMap { $0 }).map { rectJSON($0.frame) }
                 }
@@ -799,8 +824,7 @@ extension AuditRun {
         if let swatch = app.presetColorButtons.first(where: { $0.tag == OriginalDrawingControls.presets[2].tag }) { app.choosePresetColor(swatch) }
         app.presentDrawingColors(hover: false)
         pump(0.7)
-        let popoverWindow = app.colorPopover?.contentViewController?.view.window
-        popoverWindow?.orderFrontRegardless()
+        let popoverWindow = app.colorPanelWindow
         if popoverWindow == nil { gap("S41", "Colour popover", "the popover window did not appear") }
         var extra = popoverMetrics(popoverWindow, anchor: app.paletteButton)
         extra["checkedPresets"] = app.presetColorButtons.filter { $0.state == .on }.map { $0.accessibilityLabel() ?? "" }
@@ -1059,8 +1083,7 @@ extension AuditRun {
         // Size popover: the track's knob grows on hover and press.
         pill.showPopover()
         pump(0.6)
-        if let popoverWindow = pill.popover?.contentViewController?.view.window, let track = pill.popoverContent?.trackView {
-            popoverWindow.orderFrontRegardless()
+        if let popoverWindow = pill.panelWindow, let track = pill.popoverContent?.trackView {
             track.setHovered(true)
             shoot("S40", "size-track-hover", surface: "component states", state: "Size popover, pointer over the track: the knob grows to 1.15", windows: popoverWindow === window ? [window] : [window, popoverWindow],
                   refs: ["BezelDrawingControls.swift|var knobRect"], settle: 0.3, extra: popoverMetrics(popoverWindow, anchor: pill))
@@ -1081,8 +1104,7 @@ extension AuditRun {
         // Colour swatches: selected (3 pt accent outline + check), hover, pressed.
         app.presentDrawingColors(hover: false)
         pump(0.7)
-        if let popoverWindow = app.colorPopover?.contentViewController?.view.window, app.presetColorButtons.count > 4 {
-            popoverWindow.orderFrontRegardless()
+        if let popoverWindow = app.colorPanelWindow, app.presetColorButtons.count > 4 {
             let swatches = app.presetColorButtons
             swatches[2].setHovered(true)
             swatches[4].highlight(true)
@@ -1482,9 +1504,8 @@ extension AuditRun {
             pump(0.8)
             shoot("S21", "publish-progress-\(width)", surface: "publish progress", state: "Uploading <name>\u{2026}: 20 pt spinner, truncating status, Cancel on its plate; the Original size checkbox only where the slot holds it, at \(width)", refs: refs, extra: ["status": app.status.stringValue, "uploadState": String(describing: app.uploadState), "originalSizeCheckboxHidden": app.dragOriginalControl.isHidden])
             shoot("S21", "publish-progress-footer-\(width)", surface: "publish progress", state: "footer crop during the upload, at \(width)", crop: footerCrop(), refs: refs, settle: 0.1)
-            if width == "w980", let share = app.webpostButton, let menu = share.menu {
-                captureTrackedMenu("S21", "upload-menu-busy", surface: "publish progress", state: "destination menu while an upload runs (Cancel Upload offered)", refs: ["App.swift|Cancel Upload"],
-                                   dismiss: { menu.cancelTracking() }, trigger: { menu.popUp(positioning: nil, at: NSPoint(x: 0, y: share.bounds.height + 4), in: share) })
+            if width == "w980", let share = app.webpostButton {
+                captureUploadChoices("S21", "upload-menu-busy", surface: "publish progress", state: "destination choices while an upload runs (Cancel Upload offered)", refs: ["App.swift|Cancel Upload"], share: share)
             }
             gate.release.signal()
             pump(1.5)
@@ -1571,9 +1592,7 @@ extension AuditRun {
                                "iconIsTemplate": StatusIcon.image()?.isTemplate as Any,
                                "note": "Clicking the icon opens statusItemMenu; the first row follows the editor's visibility. The menu-bar strip titles are system-owned."]
         write(menus, to: "menus" + stemSuffix + ".json")
-        guard let toolbox = firstView(of: NSPopUpButton.self, label: "Toolbox") else { gap("S23", "Toolbox menu open", "toolbox popup not found"); return }
-        captureTrackedMenu("S23", "toolbox-menu-open", surface: "menus", state: "Toolbox menu open (a menu button; rows open below it, each with its icon)", refs: ["App.swift|func bezelToolbox()"],
-                           dismiss: { toolbox.menu?.cancelTracking() }, trigger: { toolbox.performClick(nil) })
+        captureToolboxChoices("S23", "toolbox-menu-open", surface: "menus", state: "Toolbox choices open (a glass panel; rows open below its button, each with its icon)", refs: ["App.swift|func bezelToolbox()"])
         pump(0.4)
         if let text = named["text"], let event = mouse(.rightMouseDown, docPoint: CGPoint(x: text.rect.minX + 20, y: text.rect.minY + 20)), let menu = canvas.menu(for: event) {
             let location = canvas.convert(event.locationInWindow, from: nil)

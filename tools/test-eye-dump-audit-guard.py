@@ -8,6 +8,9 @@
  (d) the defaults cleanup cannot touch a real domain: a script copy forced onto a real/odd id exits non-zero and records no
      delete, drop_throwaway_defaults refuses a bad id, and a normal run only deletes eyedump throwaway ids. Every script run
      here uses the scratch HOME and a fake `defaults` recorder; mutated copies with the protections stripped must go red.
+ (f) the glass-choice captures (S50-S60): the Swift table of required captures equals the checker's GLASS_SURFACES, the harness never uses CGEvent,
+     NSApp.sendEvent, AppleScript or screencapture (Escape goes to the panel's own sendEvent), `--groups glass` launches S50-S59 and logs what
+     was requested for the checker, and the manifest keeps each capture's glassPanel record; mutated copies of each must go red.
  (e) --display (injected display options): an unknown name is refused before anything launches, a valid set reaches only the
      throwaway child as OPENSNAP_AUDIT_DISPLAY_OPTIONS, no --display sets nothing, and (static) the Swift side reads that variable
      in exactly one place, behind the same HarnessGate the audit needs; mutated sources that read it ungated must go red.
@@ -587,6 +590,98 @@ def test_input_fence_summary(base, home):
     check("keyboard 0, buttons 0, pointer 61" not in line, f"fence summary (can fail): a script that prints one number is detected ({line!r})")
 
 
+GLASS_SOURCE = root / "Sources" / "EyeDumpAuditGlass.swift"
+GLASS_IDS = ["S50", "S51", "S52", "S53", "S54", "S55", "S56", "S57", "S58", "S59", "S60"]
+
+
+def checker_module():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("check_eye_dump", root / "tools" / "check-eye-dump.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def swift_glass_table(text):
+    """{surface: [slug]} from the `glassRequired` literal in EyeDumpAuditGlass.swift."""
+    block = text[text.index("static let glassRequired"):]
+    block = block[:block.index("\n    ]")]
+    return {surface: re.findall(r'"([^"]+)"', slugs) for surface, slugs in re.findall(r'"(S\d+)":\s*\[(.*?)\]', block)}
+
+
+def glass_source_problems(sources):
+    """Glass captures only use app-driven input: no CGEvent, no NSApp.sendEvent (the fence would swallow and count it), no AppleScript, no screen capture."""
+    problems = []
+    for path in sources:
+        for number, line in enumerate(path.read_text().splitlines(), 1):
+            code = line.split("//")[0]
+            if re.search(r"\bCGEvent\b|NSApp\s*\.\s*sendEvent|NSApplication\.shared\s*\.\s*sendEvent|\.postEvent\(|NSAppleScript|osascript|screencapture|CGDisplayCreateImage|CGEventPost", code):
+                problems.append(f"{path.name}:{number}: {line.strip()[:90]}")
+    return problems
+
+
+def test_glass_harness(base, home):
+    module = checker_module()
+    text = GLASS_SOURCE.read_text()
+    table = swift_glass_table(text)
+    check(table == module.GLASS_SURFACES and sorted(table) == GLASS_IDS,
+          f"glass: the Swift table of required captures equals the checker's GLASS_SURFACES for {', '.join(GLASS_IDS)}")
+    drifted = text.replace('"toolbox-hover", ', "", 1)
+    check(swift_glass_table(drifted) != module.GLASS_SURFACES, "glass (can fail): a Swift table missing a slug no longer equals the checker's")
+    check(all(re.search(rf'step\("{surface}"', (root / "Sources" / "EyeDumpAuditSurfaces.swift").read_text()) for surface in GLASS_IDS),
+          "glass: execute() has a step for each glass surface")
+    for surface in GLASS_IDS:
+        check(f'func s{surface[1:]}()' in "".join(path.read_text() for path in harness_sources()), f"glass: the harness implements {surface}")
+    check(glass_source_problems(harness_sources()) == [], "glass: no harness source uses CGEvent, NSApp.sendEvent, AppleScript or a screen capture")
+    scratch = Path(base) / "glass-input"
+    scratch.mkdir()
+    for line, label in [("let event = CGEvent(keyboardEventSource: nil, virtualKey: 53, keyDown: true)", "CGEvent"), ("NSApp.sendEvent(event)", "NSApp.sendEvent"),
+                        ("let task = Process(); task.arguments = [\"screencapture\"]", "screencapture"), ("NSAppleScript(source: \"x\")", "AppleScript")]:
+        planted = scratch / f"planted-{re.sub(r'\W', '', label)}.swift"
+        planted.write_text(text + "\nextension AuditRun { func planted() { " + line + " } }\n")
+        check(glass_source_problems([planted]) != [], f"glass (can fail): a planted {label} line in a scratch copy is detected")
+    check("panel.sendEvent(event)" in text, "glass: Escape is handed to the panel's own sendEvent, not the application's")
+
+    # `--groups glass` launches the glass surfaces and logs what was requested, per appearance and icon mode, for the checker.
+    app = fake_app(base)
+    out = Path(base) / "out-glass"
+    result = run_harness(SCRIPT, out, ["--app", str(app), "--guard-home", str(home), "--no-wait-gui", "--sha", "testsha", "--groups", "glass", "--appearances", "light,dark", "--icons", "sf"])
+    check(result.returncode == 0, f"glass: a --groups glass run exits 0 (got {result.returncode}: {result.stderr.strip()[-160:]})")
+    launches = read_launches(out)
+    wanted = ",".join(GLASS_IDS)
+    check(len(launches) == 2 and all(f"--audit-surfaces {wanted}" in launch.get("args", "") for launch in launches),
+          f"glass: --groups glass launches the harness once per appearance with {wanted}")
+    requested = [json.loads(line) for line in (out / "requested-surfaces.jsonl").read_text().splitlines()] if (out / "requested-surfaces.jsonl").is_file() else []
+    check(sorted((r["appearance"], r["mode"], r["surfaces"]) for r in requested) == [("dark", "sf", wanted), ("light", "sf", wanted)],
+          "glass: requested-surfaces.jsonl records each launch's mode, appearance and surfaces")
+    check(module.requested_runs(out) == [{"mode": "sf", "appearance": a, "surfaces": GLASS_IDS} for a in ("light", "dark")] or
+          module.requested_runs(out) == [{"mode": "sf", "appearance": a, "surfaces": GLASS_IDS} for a in ("dark", "light")],
+          "glass: the checker reads those requests back as the surfaces each run must have captured")
+    # can fail: the checker run on this launch-only output (no captures) must fail for every requested glass capture
+    stub = Path(base) / "glass-run-stub"
+    shutil.copytree(out, stub)
+    (stub / "case.png").write_bytes(b"")
+    verdict = subprocess.run([sys.executable, str(root / "tools" / "check-eye-dump.py"), str(stub), "--jobs", "1"], capture_output=True, text=True)
+    check(verdict.returncode != 0 and "was never captured" in verdict.stdout, "glass (can fail): a glass run that captured nothing fails the checker")
+    # can fail: a script that no longer logs the request leaves the checker nothing to hold the run to
+    mutant = script_copy(base, "glass-no-request", SCRIPT.read_text().replace("requested-surfaces.jsonl", "requested-surfaces.ignored"))
+    out2 = Path(base) / "out-glass-mutant"
+    run_harness(mutant, out2, ["--app", str(app), "--guard-home", str(home), "--no-wait-gui", "--sha", "testsha", "--groups", "glass", "--appearances", "light", "--icons", "sf"])
+    check(not (out2 / "requested-surfaces.jsonl").is_file(), "glass (can fail): stripping the request log from a script copy is detected by the same file check")
+
+    # The manifest keeps the glass record and the requests.
+    raw = Path(base) / "manifest-run"
+    (raw / "raw-sf" / "meta").mkdir(parents=True)
+    meta = {"id": "S50", "slug": "toolbox-rest", "surface": "Toolbox panel", "state": "x", "appearance": "light", "file": "S50-toolbox-rest-light.png", "pixelSize": [2, 2],
+            "pointSize": [1, 1], "scale": 2, "method": "m", "sourceRefs": [], "glassPanel": {"variant": "rest", "nestedGlassCount": 0}}
+    (raw / "raw-sf" / "meta" / "S50-toolbox-rest-light.json").write_text(json.dumps(meta))
+    (raw / "requested-surfaces.jsonl").write_text(json.dumps({"mode": "sf", "appearance": "light", "surfaces": "S50"}) + "\n")
+    subprocess.run([sys.executable, "-I", str(root / "tools" / "eye-dump-audit-manifest.py"), str(raw), "--sha", "x"], capture_output=True, check=True)
+    packed = json.loads((raw / "manifest.json").read_text())
+    check(packed["captures"][0].get("glassPanel") == meta["glassPanel"] and packed.get("requested") == [{"mode": "sf", "appearance": "light", "surfaces": "S50"}],
+          "glass: manifest.json carries each capture's glassPanel record and the requested surfaces")
+
+
 def test_runs_were_safe():
     check(len(RUNS) > 0 and all(env_problem(env) is None for env in RUNS),
           f"every one of the {len(RUNS)} script runs used the scratch HOME and the fake defaults recorder")
@@ -608,6 +703,7 @@ with tempfile.TemporaryDirectory(prefix="eyedump-guard-test.") as scratch:
     test_cleanup_protection(scratch, scratch_home)
     test_display_injection(scratch, scratch_home)
     test_input_fence(scratch)
+    test_glass_harness(scratch, scratch_home)
     test_runs_were_safe()
 if failures:
     raise SystemExit(f"FAIL test-eye-dump-audit-guard: {len(failures)} check(s) failed")

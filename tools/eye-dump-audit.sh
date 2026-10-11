@@ -15,6 +15,8 @@
 # state). The app tags each capture's file stem (-rt -ic -dwc -rm) and records the effective options in every meta/layout JSON and the manifest.
 #
 # Other groups: pairs (the S01/S02/S03/S12 captures that have a pre-rail twin), states (rail-removal state captures S30-S38, S38 being the app tooltip plate, S39 the titled window and the app-owned alert sheets, S40 the component states (OSN-044): popovers, Frame at 980/1280, large shot, centring, selection, PNG|JPG),
+# glass (S50-S60: every app-owned glass choice panel and group drawn as real windows, with a `glassPanel` record per capture that
+# tools/check-eye-dump.py holds to: one container, no nested glass, text >= 18 pt, hover/focus/chosen/disabled proofs, Escape dismissal with focus back),
 # layout (width budget), delta (a short regression subset). sizes runs the populated (S11M) and empty (S11E) matrix. --surfaces IDS runs exactly those surface ids.
 # --app APP uses a pre-built bundle instead of build/OpenSnap.app; --sha / --suffix tag the captures; --guard-home DIR points
 # the store guard at another home (tests only; recorded in safety.txt); --no-wait-gui skips waiting for other agents' GUI tests.
@@ -194,6 +196,8 @@ run_one() {
     mode=$1; appearance=$2; surfaces=$3; label=$4
     raw="$OUT/raw-$mode"
     wait_for_other_gui || return 1
+    # What this run was asked to capture, so tools/check-eye-dump.py can tell a surface that silently captured nothing from one nobody asked for.
+    printf '{"mode":"%s","appearance":"%s","group":"%s","surfaces":"%s"}\n' "$mode" "$appearance" "$label" "$surfaces" >> "$OUT/requested-surfaces.jsonl"
     support="$TMP/support-$label-$appearance-$mode"
     mkdir -p "$support" "$TMP/home" "$TMP/tmp"
     echo "== $label ($appearance, icons $mode): $surfaces"
@@ -235,6 +239,7 @@ for mode in $ICON_MODES; do
                 fullscreen) run_one "$mode" "$appearance" "S11F,S11FP" fullscreen ;;
                 pairs) run_one "$mode" "$appearance" "ENV,S01,S02,S03,S12" pairs ;;
                 states) run_one "$mode" "$appearance" "S30,S31,S32,S33,S34,S35,S36,S37,S38,S39,S40" states ;;
+                glass) run_one "$mode" "$appearance" "S50,S51,S52,S53,S54,S55,S56,S57,S58,S59,S60" glass ;;
                 layout) run_one "$mode" "$appearance" "LAYOUT" layout ;;
                 delta) run_one "$mode" "$appearance" "ENV,S01,S02,S03,S05,S07,S09,S11,S12,S14,S17,S24,S25,S29" delta ;;
                 *) echo "unknown group $group" >&2 ;;

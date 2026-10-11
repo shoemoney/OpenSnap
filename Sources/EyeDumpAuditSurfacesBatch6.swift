@@ -90,9 +90,7 @@ extension AuditRun {
         } else { gap("S44", "History questions", "History or its store was unavailable") }
         window.makeKeyAndOrderFront(nil)
         // 5. The Toolbox menu opens below its button with an icon on every row.
-        if let toolbox = firstView(of: ToolboxPopUpButton.self) {
-            captureTrackedMenu("S44", "toolbox-menu-open", surface: "menus", state: "Toolbox menu open below its button: icons on every row, Filled Shapes and Shadow included, nothing on the bar covered (F-J6-009, R2-004)",
-                               refs: ["ModernEditorChrome.swift|final class ToolboxPopUpButton"], dismiss: { toolbox.menu?.cancelTracking() }, trigger: { toolbox.performClick(nil) })
-        } else { gap("S44", "Toolbox menu open", "the Toolbox button was not found") }
+        captureToolboxChoices("S44", "toolbox-menu-open", surface: "menus", state: "Toolbox choices open below its button: icons on every row, Filled Shapes and Shadow included, nothing on the bar covered (F-J6-009, R2-004)",
+                              refs: ["ModernEditorChrome.swift|final class ToolboxPopUpButton"])
     }
 }
