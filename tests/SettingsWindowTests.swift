@@ -78,6 +78,8 @@ private enum SettingsWindowTests {
         let end = Date().addingTimeInterval(seconds)
         while !done() && Date() < end { _ = RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.02)) }
     }
+    /// What AppKit puts on every real arrow key: it reports the function and numeric-pad flags with no modifier held.
+    private static let realArrowFlags: NSEvent.ModifierFlags = [.numericPad, .function]
     private static func keyEvent(_ characters: String, code: UInt16, flags: NSEvent.ModifierFlags, window: NSWindow) -> NSEvent {
         NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: flags, timestamp: 0, windowNumber: window.windowNumber, context: nil,
                          characters: characters, charactersIgnoringModifiers: characters, isARepeat: false, keyCode: code)!
@@ -114,6 +116,7 @@ private enum SettingsWindowTests {
         modifierKeyboard()
         modifierGlyphs()
         modifierLabelsFit()
+        realKeyFlags()
         upload()
         uploadActionPlates()
         uploadWithPublishing()
@@ -344,7 +347,7 @@ private enum SettingsWindowTests {
         expect(window.makeFirstResponder(strip) && window.firstResponder === strip, "the strip can hold focus")
         expect(!strip.showsKeyboardFocus && strip.focusRingType == .none, "focus that arrives without a key press (the window opening) draws no ring")
         func arrow(_ code: UInt16, _ flags: NSEvent.ModifierFlags = []) {
-            strip.keyDown(with: keyEvent(code == 123 ? "\u{F702}" : "\u{F703}", code: code, flags: flags, window: window))
+            strip.keyDown(with: keyEvent(code == 123 ? "\u{F702}" : "\u{F703}", code: code, flags: flags.union(realArrowFlags), window: window))
         }
         arrow(124); expect(controller.selectedIndex == 1, "Right moves to Drawing")
         expect(strip.showsKeyboardFocus && strip.focusRingType == .exterior && strip.focusRingMaskBounds == strip.convert(strip.buttons[1].bounds, from: strip.buttons[1]),
@@ -745,7 +748,7 @@ private enum SettingsWindowTests {
     // MARK: Radio sets
 
     private static func arrowEvent(_ code: UInt16, window: NSWindow) -> NSEvent {
-        keyEvent(code == 123 ? "\u{F702}" : (code == 124 ? "\u{F703}" : (code == 125 ? "\u{F701}" : "\u{F700}")), code: code, flags: [], window: window)
+        keyEvent(code == 123 ? "\u{F702}" : (code == 124 ? "\u{F703}" : (code == 125 ? "\u{F701}" : "\u{F700}")), code: code, flags: realArrowFlags, window: window)
     }
     private static func chosen(_ group: GlassChoiceGroup) -> [Int] { group.buttons.filter { $0.state == .on }.map(\.tag) }
 
@@ -1322,6 +1325,50 @@ private enum SettingsWindowTests {
             }
         }
         print("  Modifier labels: \(judged) judged (24 toggles, chosen and unchosen), every fitting size within its frame")
+    }
+
+    // MARK: Real key flags
+
+    /// Only Command, Option, Control and Shift make a chord. The arrows carry the function and numeric-pad flags, and Caps Lock can be on for any
+    /// key, so none of them may turn an arrow, Escape or Command-W into "a modified key".
+    private static func realKeyFlags() {
+        let (controller, _, _, _, _, _) = makeController()
+        let window = controller.window
+        expect(keyEvent("\u{F703}", code: 124, flags: realArrowFlags, window: window).chordModifiers.isEmpty, "a real arrow key holds no modifier")
+        expect(keyEvent("a", code: 0, flags: [.capsLock, .function, .numericPad], window: window).chordModifiers.isEmpty, "Caps Lock, function and numeric pad are not chords")
+        expect(keyEvent("\u{F703}", code: 124, flags: [.shift, .function, .numericPad], window: window).chordModifiers == .shift, "Shift is, whatever else the arrow carries")
+        // The tab strip: arrows with the flags AppKit sends move between tabs, with Caps Lock too; a held modifier still does not.
+        controller.select(0)
+        let strip = controller.strip
+        strip.keyDown(with: keyEvent("\u{F703}", code: 124, flags: realArrowFlags, window: window))
+        expect(controller.selectedIndex == 1, "a real Right arrow moves to the next tab")
+        strip.keyDown(with: keyEvent("\u{F703}", code: 124, flags: realArrowFlags.union(.capsLock), window: window))
+        expect(controller.selectedIndex == 2, "and with Caps Lock on")
+        strip.keyDown(with: keyEvent("\u{F702}", code: 123, flags: realArrowFlags, window: window))
+        expect(controller.selectedIndex == 1, "a real Left arrow moves back")
+        strip.keyDown(with: keyEvent("\u{F703}", code: 124, flags: realArrowFlags.union(.option), window: window))
+        expect(controller.selectedIndex == 1, "Option with the arrow is not a tab move")
+        // Escape and Command-W with Caps Lock on still close the window.
+        var closes = 0
+        controller.onClose = { closes += 1 }
+        window.keyDown(with: keyEvent("\u{1b}", code: 53, flags: .capsLock, window: window))
+        expect(closes == 1, "Escape with Caps Lock on closes")
+        expect(window.performKeyEquivalent(with: keyEvent("w", code: 13, flags: [.command, .capsLock], window: window)) && closes == 2, "Command-W with Caps Lock on closes")
+        window.keyDown(with: keyEvent("\u{1b}", code: 53, flags: .shift, window: window))
+        expect(closes == 2, "Shift-Escape does not")
+        controller.onClose = nil
+        // The modifier toggles: a real Right arrow moves between Command, Option, Control and Shift (checked in modifierKeyboard with the same flags).
+        controller.select(2)
+        let form = controller.capture.hotkeyForm!
+        let toggles = form.modifierToggles(for: .screen)
+        let popup = form.keyPopup(for: .screen)
+        popup.selectItem(at: 1); _ = popup.target?.perform(popup.action, with: popup)
+        window.contentView?.layoutSubtreeIfNeeded()
+        _ = window.makeFirstResponder(toggles[0])
+        for index in 1...3 {
+            toggles[index - 1].keyDown(with: keyEvent("\u{F703}", code: 124, flags: realArrowFlags, window: window))
+            expect(window.firstResponder === toggles[index], "a real Right arrow reaches \(toggles[index].accessibilityLabel() ?? "") (Option, Control and Shift are reachable from the keyboard)")
+        }
     }
 
     // MARK: Upload

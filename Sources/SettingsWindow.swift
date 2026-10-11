@@ -854,7 +854,7 @@ final class SettingsTabStrip: NSView {
         return super.resignFirstResponder()
     }
     override func keyDown(with event: NSEvent) {
-        guard event.modifierFlags.intersection(.deviceIndependentFlagsMask).isEmpty, selectedIndex >= 0 else { return super.keyDown(with: event) }
+        guard event.chordModifiers.isEmpty, selectedIndex >= 0 else { return super.keyDown(with: event) }
         switch event.keyCode {
         case 123: setKeyboardFocus(true); onSelect?(max(0, selectedIndex - 1))
         case 124: setKeyboardFocus(true); onSelect?(min(buttons.count - 1, selectedIndex + 1))
@@ -957,11 +957,11 @@ class SettingsWindow: NSWindow {
     override func cancelOperation(_ sender: Any?) { requestClose() }
     /// A key nothing in the chain wanted ends up here; Escape is the one this window does.
     override func keyDown(with event: NSEvent) {
-        if event.keyCode == 53, event.modifierFlags.intersection(.deviceIndependentFlagsMask).isEmpty { cancelOperation(nil) }
+        if event.keyCode == 53, event.chordModifiers.isEmpty { cancelOperation(nil) }
         else { super.keyDown(with: event) }
     }
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
-        if event.type == .keyDown, event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command {
+        if event.type == .keyDown, event.chordModifiers == .command {
             let key = event.charactersIgnoringModifiers?.lowercased()
             if key == "w" { requestClose(); return true }
             if let key, let number = Int(key), (1...SettingsLayout.tabTitles.count).contains(number), attachedSheet == nil {
