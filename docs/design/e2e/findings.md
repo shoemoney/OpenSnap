@@ -1376,7 +1376,7 @@ Round 6 (independent review of `3b453b3`). Tests in `tests/AppSafetyBatch11Cases
 
 ### Responses after the follow-up pass (2026-10-10)
 
-Work on `impl/followup-20261010` (head `210e80e`, not on main). Full record: [followup-implementation.md](../followup-implementation.md). Unit and headless tests and rendered captures are not real-input E2E. F-J1-023 has one real-input check, in its row below.
+Work on `impl/followup-20261010` (final candidate head `718f601`, not on main). Full record: [followup-implementation.md](../followup-implementation.md). Unit and headless tests and rendered captures are not real-input E2E. F-J1-023 has one real-input check, in its row below.
 
 | ID | Sev | Finding | Follow-up |
 |---|---|---|---|
@@ -1390,11 +1390,11 @@ Work on `impl/followup-20261010` (head `210e80e`, not on main). Full record: [fo
 
 The "—" in the Sev column is because the source does not grade FS-A, FS-B and FS-C. They are the three bullets above, recorded in review round 6.
 
-Review of `7fef2a8..210e80e` (one focused independent review). Correction round in progress.
+Review of `7fef2a8..210e80e` (one focused independent review). Correction round done in `4a0043f`, merged as `718f601`.
 
 | ID | Sev | Finding | Follow-up |
 |---|---|---|---|
-| FR-1 | P2 | Leaving full screen during Actual Size resizes the window to an oversized frame; `setWindowFrame(returnFrame)` ignores Actual Size. | correction in progress |
-| FR-2 | P2 | FS-B and FS-C window restore runs once and may be lost if AppKit restores its frame later in the exit (plausible; headless tests cannot tell). | correction in progress |
-| FR-3 | P3 | The FS-A Cancel branch uses the full-screen zoom record without a generation check (R6-002 class). | correction in progress |
-| FR-4 | P3 | History plates are not accessibility elements, so the groups may not be announced (plausible). | correction in progress |
+| FR-1 | P2 | Leaving full screen during Actual Size resizes the window to an oversized frame; `setWindowFrame(returnFrame)` ignores Actual Size. | **Fixed in `4a0043f` (merged `718f601`).** With Actual Size up at exit, the window work waits, and the saved frame is applied once Actual Size ends, staying within the screen. Tests: `fuActualSizeStillUpOnTheWayOut`, `fuActualSizeReenteredInFullScreen`, and `b13StaleFullScreenZoom`, now bounded to the visible frame. Can-fail: a 6044×1968 window on a 2056×1197 screen with the fix reverted. |
+| FR-2 | P2 | FS-B and FS-C window restore runs once and may be lost if AppKit restores its frame later in the exit (plausible; headless tests cannot tell). | **Fixed in `4a0043f` (merged `718f601`); simulated handler order only.** The records survive the first resize, and `finishFullScreenExit()` on did-exit repeats the window work and then clears them. Tests: `fuNarrowFrameAfterFirstResizeOut`, `fuStaleWindowRecordsDoNotLeak`. The live full-screen transition has not been run. |
+| FR-3 | P3 | The FS-A Cancel branch uses the full-screen zoom record without a generation check (R6-002 class). | **Fixed in `4a0043f` (merged `718f601`).** Cancel takes the zoom only from a record of the same document, otherwise the window's own zoom. Test: `fuCancelResizeWithNewSnapInFullScreen`, in two variants. Can-fail: zoom 0.6 where 1.0 was expected. |
+| FR-4 | P3 | History plates are not accessibility elements, so the groups may not be announced (plausible). | **Fixed in `4a0043f` (merged `718f601`).** The plates are accessibility groups labelled "Open and copy", "Web link" and "Remove", with buttons still reachable. Test: the FR-4 case in `tests/HistoryBrowserTests.swift`. Can-fail: 48/49 with the element flag removed. |

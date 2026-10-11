@@ -1,6 +1,6 @@
 # Follow-up implementation record — History glass pass and open behaviour fixes
 
-> Status: version 2, 2026-10-10. Package 1 and the harness package are merged on the integration branch. Package 2 is merged there too, and an independent review found four items (FR-1 to FR-4). A correction round for them is in progress. This version records the results to date, the integrated checks at `210e80e` and the review. Correction round for FR-1 to FR-4, the final candidate hashes and the final full-suite result are recorded in the next revision.
+> Status: version 3, 2026-10-10, **final for this pass**. All four packages are merged on the integration branch, the independent review's four items (FR-1 to FR-4) are fixed, and the final candidate is `718f601`. Integrated gates passed at `718f601`. Nothing is on `main`.
 
 ## 1. Scope and authorization
 
@@ -12,7 +12,7 @@ On 2026-10-10 the owner replied "great job lets implement changes" to the close-
 | Item | Value |
 |---|---|
 | Baseline | `7fef2a8` (`docs: package final OpenSnap gallery and verification limits`) |
-| Integration branch | `impl/followup-20261010` (integration worktree `.todo-worktrees/followup-integration`), head `210e80e` |
+| Integration branch | `impl/followup-20261010` (integration worktree `.todo-worktrees/followup-integration`), final candidate head `718f601` (section 6) |
 | Worker branches | `impl/fu-history` (Package 1), `impl/fu-harness` (harness package), `impl/fu-behavior` (Package 2) |
 | This record | `docs/followup-implementation`, one file: `docs/design/followup-implementation.md` |
 
@@ -32,10 +32,10 @@ Status: **done**. Merged into the integration branch as `72f77a9`. Worker commit
 
 | Area | Result |
 |---|---|
-| Actions | Each of the seven actions is a `HistoryActionButton` (a `CommandButton` subclass) with a Font Awesome glyph and a 20 pt label. Hide keeps the folder-minus glyph. |
+| Actions | Each of the seven actions is a `HistoryActionButton` (a `CommandButton` subclass) with a Font Awesome glyph and a label drawn at 20 pt. Hide keeps the folder-minus glyph. |
 | Glass | One `GlassChrome.container` ("HistoryActionBar") holds three `GlassChrome.plate`s: Open + Copy; Copy Link + Open Link; Hide + Trash + Delete from Web at the trailing edge, at least 24 pt from the link plate. These are the only glass elements in the window. There is no glass on glass, and none over the grid, tiles or details. |
 | Layout | The bar is one 44 pt row, like the editor header. The grid and details panel are unchanged. |
-| Labels | Same measured collapse rule as before. All labels show at 1000 pt wide. At the 880 minimum only the three destructive actions keep labels. Text stays 20 pt. |
+| Labels | Same measured collapse rule as before. All labels show at 1000 pt wide. At the 880 minimum only the three destructive actions keep labels. Action labels stay at 20 pt. |
 | States | Hover and pressed fills sit on the button. The focus ring follows the button shape. Disabled actions stay in place, dimmed to the shared 0.38 alpha. No action has a key equivalent, and there is no default button. Return in the grid still opens. |
 | Keyboard | Tab follows reading order: filters, plates, grid. The window recalculates its key-view loop to do this. Reaching the buttons with Tab needs Full Keyboard Access or Focus Toolbar, as for every `CommandButton`. |
 | Clear filters | A single accent-filled button with the xmark-circle glyph. The no-match state adds the hint "Try a different search, tab or date." |
@@ -54,7 +54,7 @@ Added in `tests/HistoryBrowserTests.swift`. Each one was shown able to fail by a
 | Disabled actions stay in place and legible | Disabled buttons hidden |
 | Tab reaches all seven in order, with no default button | `keyEquivalent` "\r" on Hide; a button removed as a key view |
 | Clear filters is a primary accent button | Primary fill removed |
-| All History text at least 18 pt, with light and dark contrast (4 tests) | 14 pt label font |
+| App-drawn History text at least 18 pt (labels 20 pt), with light and dark contrast (4 tests). The native title bar is excluded: it is OS-owned at the system default size, about 13 pt | 14 pt label font |
 
 Two notes on the test set:
 
@@ -154,9 +154,31 @@ Evidence class: **real input**, the same class as the audit's E2E rows. It is no
 
 **Structural notes, left unchanged on purpose.** The canvas has a role and a label but is not an accessibility element, so the editor hangs off the scroll area. The "Move annotation text" grip is not exposed.
 
-## 6. Integrated checks at `210e80e`
+## 6. Final candidate and integrated gates
 
-Run on the integration tree after the Package 2 merge. These are the first run of the integrated checks, before the review correction round.
+### Final candidate
+
+| Item | Value |
+|---|---|
+| Branch | `impl/followup-20261010` |
+| HEAD | `718f601293133933f5746581c711f8064999a368` |
+| Tree | `685c4ea08ee9a65385201584b34d56900c230ba1` |
+| Merge order | `72f77a9` (History), `1974325` (record v1), `770b6c0` (harness), `210e80e` (behaviour), `0cbd2b4` (record v2 and ledger rows), `718f601` (review corrections, from `4a0043f`) |
+
+Nothing has been pushed, tagged, released or installed. `main` is unchanged.
+
+### Gates at `718f601`
+
+| Check | Result | Log |
+|---|---|---|
+| Cold `tools/build.sh` | PASS | `/tmp/fu-int-build2.log` (exit 0; five compiler warnings, no errors) |
+| Full `python3 tools/test.py` | PASS. All suites on arm64 with no source drift. App safety 262/262. Native AppKit idle termination PASS. Real-store guard unchanged: 122 files in 2 real-store folders and 2 defaults files, throwaway preference plists 0 before and 0 after. | `/tmp/fu-int-test2.log` |
+
+Root's final guarded renders at `718f601` (S20 and S43, and its core set): no material layout defect found. Stores unchanged. Input fence at zero.
+
+### Earlier run at `210e80e`
+
+Run after the Package 2 merge, before the review correction round. Kept for the record.
 
 | Check | Result | Log |
 |---|---|---|
@@ -165,14 +187,16 @@ Run on the integration tree after the Package 2 merge. These are the first run o
 
 ## 7. Independent review of `7fef2a8..210e80e`
 
-One focused review. A correction round is in progress. At most one correction round is allowed by the plan (section 8).
+One focused review, then one correction round (`4a0043f`, merged as `718f601`). No further round is planned in this pass.
 
 | ID | Sev | Finding | Status |
 |---|---|---|---|
-| FR-1 | P2, confirmed | `restoreZoomAfterFullScreen` resizes the window even while Actual Size is on, because the full-resolution `outputSize` never equals the entry size. So a large capture, taken to full screen, then Actual Size, then leaving full screen, gives a window bigger than the screen, and it stays oversized. `setWindowFrame(returnFrame)` also ignores Actual Size. The existing `b13StaleFullScreenZoom` bounded the frame only from below. | correction in progress |
-| FR-2 | P2, plausible (live) | FS-B and FS-C window work runs once, on the first resize out of full screen, and then clears its records. If AppKit restores its saved frame later in the exit transition, the fix is lost. Headless tests cannot tell. | correction in progress |
-| FR-3 | P3, confirmed | The FS-A Cancel branch used the full-screen zoom record without a generation check (the R6-002 class). It fell back to a fit, which discarded a user zoom. | correction in progress |
-| FR-4 | P3, plausible | History plates had a group role and label but were not accessibility elements, so VoiceOver would likely not announce the groups. | correction in progress |
+| FR-1 | P2, confirmed | Leaving full screen during Actual Size could leave the window oversized, bigger than the screen. | **Fixed** in `4a0043f`. The full-screen exit's window work runs only when Actual Size is off. With Actual Size up, the saved frame waits, and `leaveActualSize`'s windowed branch applies it and resizes the window once the zoom refits. Tests: `fuActualSizeStillUpOnTheWayOut`, `fuActualSizeReenteredInFullScreen`, and `b13StaleFullScreenZoom`, which now also bounds the window to the visible frame. Can-fail: with the fix reverted the window came out 6044×1968 on a 2056×1197 screen. |
+| FR-2 | P2, plausible (live) | FS-B and FS-C window records were cleared on the first resize out of full screen, so a late AppKit frame restore would undo the fix. | **Fixed (simulated handler order only).** The records are kept through the first resize. The new `finishFullScreenExit()`, called from `windowDidExitFullScreen`, repeats the window work idempotently and then clears them, unless Actual Size is up. Records are cleared at a new full-screen entry and generation-guarded. Tests: `fuNarrowFrameAfterFirstResizeOut`, `fuStaleWindowRecordsDoNotLeak`. Can-fail: the reverted fix gave viewport 1857 for a 1936 canvas. The live full-screen transition has not been run. |
+| FR-3 | P3, confirmed | The FS-A Cancel branch took the full-screen zoom record without a generation check and fell back to a fit, discarding a user zoom. | **Fixed** in `4a0043f`. Cancel takes the pre-full-screen zoom only from a record of the same document generation, otherwise `baseline.zoom`. The unconditional fit is gone. Test: `fuCancelResizeWithNewSnapInFullScreen`, in two variants. Can-fail: zoom 0.6 where 1.0 was expected. |
+| FR-4 | P3, plausible | History plates were not accessibility elements, so VoiceOver would likely not announce the groups. | **Fixed** in `4a0043f`. The three plates are accessibility groups labelled "Open and copy", "Web link" and "Remove". Their buttons stay reachable. Test: the FR-4 case in `tests/HistoryBrowserTests.swift`. Can-fail: with the element flag removed the test fails (48/49). |
+
+Correction-round checks: app-safety 262/262, history-browser-tests 49/49, accessibility-audit-tests 178 checks, build, `check-tokens`, `check-tooltips` and `e2e-inventory.py --check` pass. The History captures from the harness package predate this round. The correction does not change History rendering (FR-4 is accessibility only).
 
 Checked and fine, per the reviewer:
 
@@ -183,16 +207,15 @@ Checked and fine, per the reviewer:
 - Exactly three glass plates, none nested. No default button.
 - Return, Escape, the context menu and the `AppToolTip` reasons are intact.
 - The harness S20 resets state.
-- No attribution trailers in any commit.
 
 ## 8. Verification plan and honest limits
 
 ### Plan
 
-1. Integrated cold build on the integration tree, after the sources stop changing.
-2. One full `python3 tools/test.py` run on the integration tree, after the same point. Run 1 is in section 6.
-3. One independent code review, with at most one correction round. Review is in section 7; the correction round is in progress.
-4. A final guarded render review by the root.
+1. Integrated cold build on the integration tree, after the sources stop changing. Done at `718f601` (section 6).
+2. One full `python3 tools/test.py` run on the same tree. Done at `718f601`; the `210e80e` run is kept as the earlier run.
+3. One independent code review, with one correction round. Both are done (section 7).
+4. A final guarded render review by the root. Done at `718f601`: no material layout defect (section 6).
 
 Real-store hashes must be unchanged for every run. The guarded harness is the only route used for captures.
 
@@ -204,16 +227,19 @@ Real-store hashes must be unchanged for every run. The guarded harness is the on
 
 ### Not proved by this pass
 
-- spoken VoiceOver;
-- live Screen Recording capture;
-- multiple displays and 1x displays;
-- held-modifier gestures;
-- real assistive-client selection beyond the single text-editor check in section 5. The unit tests use the `NSAccessibility` protocol only;
-- the live full-screen transition sequence on screen, including the exit animation that FR-2 concerns;
-- F-J4-006 on the real display, since no real-input re-run of the History open path was made on `210e80e`.
+- **Live full-screen transition not exercised (FR-2).** The FR-2 fix is proved against simulated handler order only. The exit animation and AppKit's own frame restore have not run on screen.
+- **VoiceOver speech unproved.** The accessibility checks use the `NSAccessibility` protocol and AX reads. No assistive client has been heard announcing the editor or the History plates.
+- **Real hover, press and Tab on History not exercised.** The History action states (hover, pressed, focus, disabled) are rendered captures and unit tests only. No real pointer or key press was driven.
+- **Mirror case unchanged.** Full screen entered with the Resize sheet up, then Cancel, leaves the full-screen window's zoom unfitted. The reviewer judged it unchanged and harmless (section 4).
+- **F-J3-009 and R1-016 unchanged.** The only small candidate, "fit up to 200%", changes zoom semantics broadly. The navigator is already sized to its content.
+- **R1-021 and F-J4-007 unchanged.** The eraser shadow on cut fragments is a recorded design trade-off. Changing it would change stored semantics.
+- **Driver-pointer insertion oddity in the F-J1-023 real-input check.** An untargeted type after a selection landed at the driver's pointer position and did not replace the selection. Whether the cause is the driver's input route or the app's insertion handling is unresolved (section 5).
+- Live Screen Recording capture; multiple displays and 1x displays; held-modifier gestures.
+- F-J4-006 on the real display. No real-input re-run of the History open path was made on `718f601`.
+- Real assistive-client selection beyond the single text-editor check in section 5.
 
 Passing unit tests and harness captures do not close any of these.
 
 ## 9. Status
 
-This version: Package 1 and the harness package are merged to the integration branch (`72f77a9`, `770b6c0`). Package 2 is merged as `210e80e`, with the integrated build and the first full run recorded in section 6. The review found FR-1 to FR-4, and a correction round is in progress. Correction round for FR-1 to FR-4, the final candidate hashes and the final full-suite result are recorded in the next revision.
+Version 3, **final for this pass**. Package 1 (`72f77a9`), the harness package (`770b6c0`) and Package 2 (`210e80e`) are merged to the integration branch. The independent review's four items (FR-1 to FR-4) are fixed in `4a0043f`, merged as `718f601`. The final candidate is `718f601`. Its cold build and full test run passed (section 6). The root's final guarded renders at `718f601` (S20, S43 and the core set) found no material layout defect, with stores unchanged and the input fence at zero. Nothing is pushed, tagged, released or installed, and `main` is unchanged.
