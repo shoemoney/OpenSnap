@@ -1515,7 +1515,10 @@ extension AppSafetyTests {
             try panel.trackView.mouseUp(with: pointer(.leftMouseUp, 1))
         }
         try expect(app.canvas.strokeWidth == 12, "The drag ended on the largest size")
-        try oneStep("A preset click") { panel.presetButtons[4].performClick(nil) }
+        try oneStep("A preset click") {
+            panel.presetButtons[4].performClick(nil)
+            try waitForMain("Deferred Size preset undo transaction", until: { !slider.isPopoverShown })
+        }
         try oneStep("An arrow key on the pill") { try slider.keyDown(with: sizeKey(124, in: app)) }
         try oneStep("An assistive increment") { _ = slider.accessibilityPerformIncrement() }
         try oneStep("A Shift arrow") { try slider.keyDown(with: sizeKey(124, in: app, flags: [.shift])) }

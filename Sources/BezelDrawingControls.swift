@@ -100,10 +100,18 @@ final class BezelColorButton: NSButton {
         performClick(nil)
         return true
     }
-    /// Dispatch directly; native button-cell tracking can report an attribute error after the panel closes itself.
+    private(set) var activationModifiers: NSEvent.ModifierFlags?
+    /// A Color choice closes its panel. Finish the AX reply first, and retain the initiating modifiers for Shift/background picks.
     override func performClick(_ sender: Any?) {
         guard isEnabled, let action else { return }
-        _ = sendAction(action, to: target)
+        let modifiers = NSApp.currentEvent?.modifierFlags ?? []
+        let target = self.target
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.isEnabled else { return }
+            self.activationModifiers = modifiers
+            defer { self.activationModifiers = nil }
+            _ = self.sendAction(action, to: target)
+        }
     }
 
     /// The fill behind the swatch right now: the command hover or pressed fill, nil at rest, selected or disabled.
@@ -775,7 +783,10 @@ final class SizePresetButton: NSButton {
     }
     override func performClick(_ sender: Any?) {
         guard isAccessibilityEnabled() else { return }
-        choose()
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.isAccessibilityEnabled() else { return }
+            self.choose()
+        }
     }
     override func isAccessibilitySelected() -> Bool { isSelectedPreset }
     override func accessibilityRole() -> NSAccessibility.Role? { .radioButton }

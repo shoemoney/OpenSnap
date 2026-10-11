@@ -141,6 +141,14 @@ private enum GlassChromeTests {
         checks += 1
     }
 
+    private static func waitForMain(_ condition: () -> Bool) -> Bool {
+        let deadline = Date(timeIntervalSinceNow: 1)
+        while !condition(), Date() < deadline {
+            _ = RunLoop.current.run(mode: .default, before: Date(timeIntervalSinceNow: 0.01))
+        }
+        return condition()
+    }
+
     private static let toolOrder = ["select", "brush", "line", "ellipse", "rectangle", "fill", "eraser", "text", "arrow", "crop"]
     private static let snapToolTip = "Snap: drag an area or click a window; right-click or Control-click for Fullscreen"
     private static let snapFrameToolTip = "Snap Frame: capture the area inside the frame; hold Shift for a six-second timer"
@@ -599,16 +607,19 @@ private enum GlassChromeTests {
         // A preset click is one group; the selection moves with it.
         begins = 0; ends = 0
         panel.presetButtons[3].performClick(nil)
+        expect(waitForMain { ends == 1 }, "The preset action finishes after dispatch")
         expect(slider.doubleValue == 9.375 && begins == 1 && ends == 1 && panel.presetButtons.map(\.isSelectedPreset) == [false, false, false, true, false], "A preset click is one group: \(groups())")
         expect(!slider.isPopoverShown && slider.popoverContent == nil && slider.panel == nil, "A preset pick closes the panel, as a colour pick closes the colour panel (F-J1-019)")
         // Reopened, another preset is another group.
         slider.showPopover()
         guard let reopened = slider.popoverContent else { expect(false, "The panel reopens"); return }
         reopened.presetButtons[0].performClick(nil)
+        expect(waitForMain { ends == 2 }, "The reopened preset action finishes after dispatch")
         expect(slider.doubleValue == 1.5 && begins == 2 && ends == 2 && reopened.readout.stringValue == "2" && !slider.isPopoverShown, "Another preset: \(groups())")
         // A preset that is already the value is still a group and still closes the panel.
         slider.showPopover()
         slider.popoverContent?.presetButtons[0].performClick(nil)
+        expect(waitForMain { ends == 3 }, "The unchanged preset action still finishes after dispatch")
         expect(begins == 3 && ends == 3 && !slider.isPopoverShown, "Choosing the current preset again still closes the panel: \(groups())")
         // Dismissing mid-drag closes the group, and the late mouse-up cannot close it twice.
         slider.showPopover()
@@ -1333,7 +1344,8 @@ private enum GlassChromeTests {
             expect(tree.children(of: presets).map { $0.label ?? "" } == ["Size 2", "Size 4", "Size 7", "Size 9", "Size 12"], "Size panel: the five presets come in order: \(tree.children(of: presets).map { $0.label ?? "" })")
             if let seven = tree.children(of: presets).first(where: { $0.label == "Size 12" }) {
                 let before = slider.doubleValue
-                expect(AXTree.press(seven) && slider.doubleValue != before, "Size panel: AXPress on a reached preset sets the size (\(before) -> \(slider.doubleValue))")
+                expect(AXTree.press(seven) && slider.doubleValue == before, "Size accepts AXPress before closing its panel")
+                expect(waitForMain { slider.doubleValue != before }, "The accepted Size AXPress applies the reached preset")
             }
         }
         expect(tree.parentProblems().isEmpty, "Size panel: every parent agrees with the tree: \(tree.parentProblems().prefix(3))")
@@ -1366,7 +1378,10 @@ private enum GlassChromeTests {
         expect(tree.find(.radioButton, "Color 1")?.value as? NSNumber == 0, "Unchosen production-style Color presets expose value zero")
         swatches[0].state = .on
         expect(AXTree.walk(host.window).find(.radioButton, "Color 1")?.value as? NSNumber == 1, "Chosen Color presets expose value one")
-        if let third = tree.find(.radioButton, "Color 3") { expect(AXTree.press(third) && picked == [2], "Color panel: AXPress on a reached swatch chooses it (\(picked))") }
+        if let third = tree.find(.radioButton, "Color 3") {
+            expect(AXTree.press(third) && picked.isEmpty, "Color accepts preset AXPress before closing its panel")
+            expect(waitForMain { picked == [2] }, "The accepted Color AXPress chooses the reached swatch exactly once")
+        }
         expect(tree.parentProblems().isEmpty, "Color panel: every parent agrees with the tree: \(tree.parentProblems().prefix(3))")
         expect(tree.shapeProblems().isEmpty, "Color panel: no AXUnknown wrapper, role-less node (\(tree.shapeProblems().count)): \(tree.shapeProblems().prefix(3))")
         host.close()

@@ -1220,7 +1220,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     @objc func choosePresetColor(_ sender: NSButton) {
         guard !terminationStarted, !frameCaptureInProgress,
               let preset = OriginalDrawingControls.presets.first(where: { $0.tag == sender.tag }) else { return }
-        applyChosenColor(preset.color, modifiers: NSApp.currentEvent?.modifierFlags ?? [])
+        applyChosenColor(preset.color, modifiers: (sender as? BezelColorButton)?.activationModifiers ?? NSApp.currentEvent?.modifierFlags ?? [])
         closeDrawingColors()
     }
     @objc func chooseCustomColor(_ sender: NSButton) {
