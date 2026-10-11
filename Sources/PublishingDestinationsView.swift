@@ -67,8 +67,9 @@ final class PublishingDestinationsView: NSView {
     func choicePanel(for face: GlassChoiceButton) -> MenuChoicePanel {
         let key = ObjectIdentifier(face), model = face === protocolFace ? protocolPopup : sourcePopup
         if let panel = facePanels[key] { return panel }
+        // Every row is one of an exclusive set (a radio button reading 0 or 1), whether or not it is the chosen one; the chosen one is marked.
         let panel = MenuChoicePanel(menu: model.menu ?? NSMenu(), identifier: (face.identifier?.rawValue ?? "DestinationFace") + ".panel",
-                                    accessibilityLabel: face.accessibilityLabel() ?? "Choices", popUp: model)
+                                    accessibilityLabel: face.accessibilityLabel() ?? "Choices", kind: { _ in .option }, popUp: model)
         facePanels[key] = panel
         return panel
     }
@@ -361,9 +362,10 @@ final class PublishingDestinationsView: NSView {
         let widest = popup.itemTitles.map { ceil(($0 as NSString).size(withAttributes: [.font: Typography.font(.bodyStrong)]).width) }.max() ?? 0
         face.minimumWidth = 2 * GlassChoiceButton.padding + widest + GlassChoiceButton.gap + GlassChoiceButton.glyphSide
         face.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        // Down and Up open the choices from the keyboard, as they do on the pop-up this replaces; Space opens them through the button itself.
+        // Space, Down and Up open the choices from the keyboard, as they do on the pop-up this replaces. Return is not here: in a sheet it is
+        // the default button (Save), and the window handles it before the face sees it.
         face.keyHandler = { [weak self, weak face] event in
-            guard let self, let face, event.keyCode == 125 || event.keyCode == 126 else { return false }
+            guard let self, let face, [49, 125, 126].contains(event.keyCode) else { return false }
             self.openChoices(from: face, keyboard: true)
             return true
         }
@@ -504,7 +506,17 @@ final class PublishingDestinationsView: NSView {
             if let token { NotificationCenter.default.removeObserver(token) }
         }
     }
-    @objc func cancelFormTapped() { formResult.show(.idle, ""); onCancel?() }
+    /// Closes any choice panel that is up and says whether there was one. Escape with a panel open dismisses only the panel; the sheet stays.
+    @discardableResult
+    private func closeOpenChoicePanels() -> Bool {
+        let open = facePanels.values.filter { $0.host.isShown }
+        for panel in open { panel.host.close() }
+        return !open.isEmpty
+    }
+    @objc func cancelFormTapped() {
+        if closeOpenChoicePanels() { return }
+        formResult.show(.idle, ""); onCancel?()
+    }
 }
 
 extension PublishingProtocol {

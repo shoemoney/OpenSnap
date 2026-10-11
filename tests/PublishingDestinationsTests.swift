@@ -37,6 +37,7 @@ enum PublishingDestinationsTests {
         try MainActor.assumeIsolated { try formCopyAndLabels() }
         try MainActor.assumeIsolated { try glassChoiceSheet() }
         try MainActor.assumeIsolated { try publicReadToggle() }
+        try MainActor.assumeIsolated { try glassFaceEvents() }
         try MainActor.assumeIsolated { try resultBandAndSheetWidth() }
         try connectionTests()
         print("Destination and S3 self-checks passed: \(checks). No uploads were executed.")
@@ -888,6 +889,140 @@ enum PublishingDestinationsTests {
         try expect(!protocolPanel.host.isShown, "taking the sheet out of its window closes an open panel")
         window.contentView = view
         view.setUnavailable([])
+    }
+
+    /// A mouse event for the sheet's window at `point` (in window coordinates).
+    @MainActor static func mouseEvent(_ type: NSEvent.EventType, at point: NSPoint, window: NSWindow, modifiers: NSEvent.ModifierFlags = []) -> NSEvent {
+        NSEvent.mouseEvent(with: type, location: point, modifierFlags: modifiers, timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
+                           context: nil, eventNumber: 0, clickCount: 1, pressure: 1)!
+    }
+    /// A click on `view`: the point under the pointer must hit that very view (a click on its label or glyph is its own), then the button's
+    /// click path runs. (The window is never ordered on screen, so AppKit's mouse tracking loop does not run for it; the press-while-open
+    /// rule, which is where a second click on the opener is decided, is exercised separately through `pressWhileOpen`.)
+    @MainActor static func click(_ view: NSView, in window: NSWindow) throws {
+        let center = view.convert(NSPoint(x: view.bounds.midX, y: view.bounds.midY), to: nil)
+        let hit = window.contentView?.hitTest(window.contentView!.convert(center, from: nil))
+        try expect(hit === view, "a click at the middle of \((view as? NSButton)?.title ?? "the view") lands on it, got \(String(describing: hit))")
+        (view as? NSButton)?.performClick(nil)
+    }
+    /// The press the application's local mouse monitor sees while a panel is up: true when the host swallows it (a press on the opener).
+    @MainActor static func pressWhileOpen(_ view: NSView, in window: NSWindow, host: GlassPanelHost) -> Bool {
+        host.handleMouseDown(in: window, at: view.convert(NSPoint(x: view.bounds.midX, y: view.bounds.midY), to: nil))
+    }
+
+    /// The Protocol and Source faces through the sheet's real event paths: every row an exclusive-set radio, Return = the default button,
+    /// Space / Down open, a second press on the opener closes, and no route reaches a native pop-up menu.
+    @MainActor static func glassFaceEvents() throws {
+        let (window, view) = glassSheet(editing: nil)
+        defer { window.orderOut(nil) }
+        var saved = 0, cancelled = 0
+        view.onSave = { _, _ in saved += 1 }; view.onCancel = { cancelled += 1 }
+        view.nameField.stringValue = "Events"; view.endpointField.stringValue = "https://dav.example.com/up"
+        try expect(window.defaultButtonCell === view.saveButton.cell, "Save is the window's default button")
+
+        // Every row of both models is a radio in an exclusive set: the chosen one reads 1, the others 0.
+        try choose("S3-compatible", from: view.protocolFace, in: view)
+        for (face, chosenTitle) in [(view.protocolFace, "S3-compatible"), (view.sourceFace, "AWS credentials profile")] {
+            view.openChoices(from: face, keyboard: false)
+            let panel = view.choicePanel(for: face)
+            try expect(!panel.rows.isEmpty && panel.rows.allSatisfy { $0.accessibilityRole() == .radioButton && $0.kind == .option },
+                       "\(face.accessibilityLabel() ?? ""): every row is a radio button: \(panel.rows.map { $0.accessibilityRole()?.rawValue ?? "" })")
+            for row in panel.rows {
+                try expect((row.accessibilityValue() as? NSNumber) == (row.title == chosenTitle ? 1 : 0), "\(face.accessibilityLabel() ?? "") row “\(row.title)” reads \(String(describing: row.accessibilityValue()))")
+            }
+            try expect(panel.rows.filter(\.isChosen).map(\.title) == [chosenTitle], "only “\(chosenTitle)” is chosen")
+            panel.host.close()
+        }
+        try choose("WebDAV", from: view.protocolFace, in: view)
+        let panel = view.choicePanel(for: view.protocolFace)
+        window.makeFirstResponder(view.protocolFace)
+
+        // Return on the face: the sheet's default button answers (Save), the panel does not open.
+        window.sendEvent(keyEvent("\r", keyCode: 36, window: window))
+        try expect(saved == 1 && !panel.host.isShown && cancelled == 0, "Return on the Protocol face saves (saved \(saved)) and does not open the panel")
+        // Escape with the panel closed cancels the sheet.
+        window.sendEvent(keyEvent("\u{1b}", keyCode: 53, window: window))
+        try expect(cancelled == 1 && !panel.host.isShown, "Escape on the face cancels the sheet")
+
+        // Keypad Enter is Return here, too.
+        window.makeFirstResponder(view.sourceFace.isHiddenOrHasHiddenAncestor ? view.protocolFace : view.sourceFace)
+        window.sendEvent(keyEvent("\u{3}", keyCode: 76, window: window))
+        try expect(saved == 2 && !panel.host.isShown && cancelled == 1, "keypad Enter on a face saves (saved \(saved))")
+        saved = 1
+
+        // Space and Down open it, with the chosen row focused; they save nothing.
+        for (name, key, code) in [("Space", " ", UInt16(49)), ("Down", "\u{F701}", UInt16(125)), ("Up", "\u{F700}", UInt16(126))] {
+            window.makeFirstResponder(view.protocolFace)
+            window.sendEvent(keyEvent(key, keyCode: code, window: window))
+            try expect(panel.host.isShown && panel.focusedRow?.title == "WebDAV" && saved == 1, "\(name) on the face opens the panel on the chosen row (focused \(String(describing: panel.focusedRow?.title)))")
+            panel.host.close()
+        }
+
+        // Escape with a panel open closes only the panel; the next Escape cancels the sheet. Return and Enter keep meaning Save.
+        cancelled = 0
+        window.makeFirstResponder(view.protocolFace)
+        view.openChoices(from: view.protocolFace, keyboard: true)
+        panel.host.window.sendEvent(keyEvent("\u{1b}", keyCode: 53, window: panel.host.window))
+        try expect(!panel.host.isShown && cancelled == 0 && saved == 1, "Escape in the open panel closes only the panel (cancelled \(cancelled))")
+        view.openChoices(from: view.protocolFace, keyboard: false)
+        window.sendEvent(keyEvent("\u{1b}", keyCode: 53, window: window))
+        try expect(!panel.host.isShown && cancelled == 0, "an Escape that reaches the sheet while a panel is up still only closes the panel (cancelled \(cancelled))")
+        window.sendEvent(keyEvent("\u{1b}", keyCode: 53, window: window))
+        try expect(cancelled == 1 && !panel.host.isShown, "the second Escape cancels the sheet")
+        view.openChoices(from: view.protocolFace, keyboard: true)
+        panel.host.window.sendEvent(keyEvent("\r", keyCode: 36, window: panel.host.window))
+        try expect(!panel.host.isShown && saved == 1 && view.selectedProtocol == .webDAV, "Return in the panel chooses its focused row and saves nothing")
+        window.makeFirstResponder(view.protocolFace)
+        window.sendEvent(keyEvent("\r", keyCode: 36, window: window))
+        try expect(saved == 2 && !panel.host.isShown, "Return with a face focused and no panel up runs Save (saved \(saved))")
+        saved = 1
+
+        // A click opens it; a second click on the opener only closes it and does not reopen it.
+        try click(view.protocolFace, in: window)
+        try expect(panel.host.isShown, "a click on the face opens the panel")
+        try expect(pressWhileOpen(view.protocolFace, in: window, host: panel.host), "a second press on the opener is swallowed, so the face's own action cannot reopen the panel")
+        try expect(!panel.host.isShown, "a second press on the opener closes the panel")
+        spin(0.1)
+        try expect(!panel.host.isShown && saved == 1, "the second press did not reopen it")
+        try click(view.protocolFace, in: window)
+        try expect(panel.host.isShown, "a click after that opens it again")
+        try expect(!pressWhileOpen(view.nameField, in: window, host: panel.host) && !panel.host.isShown, "a press elsewhere closes the panel and goes on to its target")
+        // A click on the other face closes the first and opens the second (only one panel at a time).
+        try choose("S3-compatible", from: view.protocolFace, in: view)
+        try click(view.protocolFace, in: window)
+        try expect(panel.host.isShown, "the Protocol panel is open")
+        try click(view.sourceFace, in: window)
+        try expect(view.choicePanel(for: view.sourceFace).host.isShown && !panel.host.isShown, "opening another face closes the first panel: only one is up at a time")
+        view.choicePanel(for: view.sourceFace).host.close()
+
+        // No route leads to a native pop-up menu: the faces have no menu, the models are not in a window, and each secondary route is
+        // either blocked or ends in the glass panel.
+        var native = 0
+        for face in [view.protocolFace, view.sourceFace] {
+            let name = face.accessibilityLabel() ?? ""
+            face.menuPresenter = { _, _, _ in native += 1 }
+            let point = face.convert(NSPoint(x: face.bounds.midX, y: face.bounds.midY), to: nil)
+            try expect(face.menu == nil && face.menu(for: mouseEvent(.rightMouseDown, at: point, window: window)) == nil, "\(name) face has no menu")
+            try expect(!(face.cell is NSPopUpButtonCell) && !(face is NSPopUpButton), "\(name) face is not a pop-up")
+            face.rightMouseDown(with: mouseEvent(.rightMouseDown, at: point, window: window)); face.rightMouseUp(with: mouseEvent(.rightMouseUp, at: point, window: window))
+            face.mouseDown(with: mouseEvent(.leftMouseDown, at: point, window: window, modifiers: .control)); face.mouseUp(with: mouseEvent(.leftMouseUp, at: point, window: window, modifiers: .control))
+            face.showContextMenuForSelection(nil)
+            let panel = view.choicePanel(for: face)
+            try expect(native == 0 && !panel.host.isShown, "\(name): right-click, Control-click and the context-menu key reach neither a native menu nor the panel")
+            try expect(!face.accessibilityPerformShowMenu() && !face.isAccessibilitySelectorAllowed(#selector(NSAccessibilityProtocol.accessibilityPerformShowMenu)),
+                       "\(name): AXShowMenu is blocked, not routed to a native menu")
+            try expect(face.accessibilityPerformPress() && panel.host.isShown && native == 0, "\(name): AXPress opens the glass panel")
+            panel.host.close()
+            face.performClick(nil)
+            try expect(panel.host.isShown && native == 0, "\(name): performClick opens the glass panel")
+            panel.host.close()
+            // The actions the face performs: press, and nothing else (the others report no action done).
+            let others: [(String, Bool)] = [("increment", face.accessibilityPerformIncrement()), ("decrement", face.accessibilityPerformDecrement()),
+                ("confirm", face.accessibilityPerformConfirm()), ("cancel", face.accessibilityPerformCancel()), ("pick", face.accessibilityPerformPick()),
+                ("raise", face.accessibilityPerformRaise()), ("delete", face.accessibilityPerformDelete()), ("showMenu", face.accessibilityPerformShowMenu())]
+            try expect(others.allSatisfy { !$0.1 } && !panel.host.isShown && native == 0, "\(name): only AXPress does anything: \(others.filter(\.1).map(\.0))")
+        }
+        try expect(view.protocolPopup.window == nil && view.sourcePopup.window == nil && view.protocolPopup.superview == nil, "the model pop-ups can never track: they have no window")
     }
 
     @MainActor static func publicReadToggle() throws {
