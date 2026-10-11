@@ -8,6 +8,7 @@ extension AppSafetyTests {
     static var followupCases: [(String, () throws -> Void)] {
         [
             ("Leaving full screen with the Resize sheet up, then Cancel, restores the picture and leaves the window with its own zoom and size, not full screen's (FS-A)", fuCancelResizeAfterFullScreenExit),
+            ("Entering full screen with the Resize sheet up, then Cancel, restores the picture, fits it to the Space and gives the way out the windowed zoom and frame (mirror of FS-A)", fuCancelResizeAfterFullScreenEntry),
             ("A size change made in full screen resizes the window on the way out even when the zoom comes back unchanged (FS-B)", fuWindowFollowsSizeChangeMadeInFullScreen),
             ("Full screen entered during Actual Size and left from it returns a window that still holds its canvas, not the navigator-nudged one (FS-C)", fuWindowAfterNudgeAndFullScreen),
             ("Actual Size still up when full screen ends leaves the window alone, and leaving it afterwards sizes the window to hold the picture without ever exceeding the screen (FR-1)", fuActualSizeStillUpOnTheWayOut),
@@ -117,6 +118,41 @@ extension AppSafetyTests {
         try expect(abs(window.frame.width - windowed.width) < 1 && abs(window.frame.height - windowed.height) < 1,
                    "…in a window sized for it, not full screen's frame (\(window.frame.size) vs \(windowed.size))")
         try expect(app.fullScreenZoom == nil && app.dirty == dirty, "Full screen's record is gone and Cancel left the document as unsaved as it was (\(app.dirty))")
+    }
+
+    /// The mirror of FS-A: the sheet was opened in the window, full screen was entered with it up (so nothing fitted the drawing), then Cancel.
+    private static func fuCancelResizeAfterFullScreenEntry() throws {
+        let fixture = try Fixture(), app = fixture.app
+        let window = try fuWindow(app)
+        try fuLarge(app)
+        let windowed = window.frame, zoom = app.canvas.zoom, picture = app.canvas.outputSize, title = app.titlePixelSize, dirty = app.dirty
+        let session = try app.makeResizeSession().b6Unwrap("the resize session")
+        session.state.edit(.width, text: "1600")
+        try expect(try session.preview(), "A preview in the window")
+        try expect(app.canvas.outputSize.width == 1600, "The sheet shows 1600 wide (\(app.canvas.outputSize))")
+        let previewed = window.frame
+        let space = NSRect(x: 0, y: 0, width: 2056, height: 1329)
+        fuEnterFullScreen(app, window, frame: space)
+        try expect(app.isFullScreen && app.fullScreenZoom == nil, "Full screen is entered with the sheet up and fits nothing (\(String(describing: app.fullScreenZoom)))")
+        session.cancel()
+        try expect(app.canvas.outputSize == picture && app.titlePixelSize == title, "Cancel takes the picture and the title's size back (\(app.canvas.outputSize), \(app.titlePixelSize))")
+        try expect(abs(window.frame.width - space.width) < 1 && abs(window.frame.height - space.height) < 1,
+                   "The windowed frame is not applied to the full-screen window (\(window.frame.size), the Space is \(space.size))")
+        let fitted = app.canvas.zoom
+        try expect(fitted > 1.2 && abs(fitted - zoom) >= 0.0005, "The restored drawing is fitted to the Space, not left at the windowed \(zoom) (\(fitted))")
+        let scroll = try app.canvas.enclosingScrollView.b6Unwrap("the scroll view")
+        try expect(app.canvas.frame.width <= scroll.contentView.bounds.width + 0.5 && app.canvas.frame.height <= scroll.contentView.bounds.height + 0.5,
+                   "…and it fits whole (\(app.canvas.frame.size) in \(scroll.contentView.bounds.size))")
+        let record = try app.fullScreenZoom.b6Unwrap("full screen's record of the zoom")
+        try expect(abs(record.before - zoom) < 0.0005 && abs(record.applied - fitted) < 0.0005,
+                   "Full screen's record keeps the zoom before the sheet (\(zoom)) and the fit (\(fitted)): \(record)")
+        try expect(app.dirty == dirty && app.window.isDocumentEdited == dirty, "Cancel left the document as unsaved as it was (\(app.dirty))")
+        fuLeaveFullScreen(app, window, restoring: previewed)
+        try expect(app.fullScreenZoom == nil && abs(app.canvas.zoom - zoom) < 0.0005, "Leaving full screen gives back the zoom from before the sheet (\(app.canvas.zoom) vs \(zoom))")
+        try expect(abs(window.frame.width - windowed.width) < 1 && abs(window.frame.height - windowed.height) < 1,
+                   "…in the window's own frame (\(window.frame.size) vs \(windowed.size))")
+        let room = app.canvas.outputSize.width * app.canvas.zoom
+        try expect(fuViewportWidth(app) >= room - 0.5, "…which holds the canvas (viewport \(fuViewportWidth(app)) for \(room))")
     }
 
     // MARK: Full screen, size change made there (B)
