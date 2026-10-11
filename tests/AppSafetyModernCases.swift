@@ -447,39 +447,35 @@ extension AppSafetyTests {
     /// The Frame keyline is the canvas's own outline: all four edges for a canvas that fits, only the edges on screen for a larger one.
     private static func modernFrameKeylineFollowsCanvasEdges() throws {
         let (fixture, chrome) = try modernFixture()
-        let app = fixture.app, content = try (app.window.contentView).unwrap("content view")
-        func alphaAt(_ rep: NSBitmapImageRep, _ x: CGFloat, _ y: CGFloat) -> CGFloat {
-            let scale = CGFloat(rep.pixelsWide) / rep.size.width
-            return rep.colorAt(x: Int(x * scale), y: Int(y * scale))?.alphaComponent ?? -1
-        }
-        func render(_ rect: NSRect) throws -> NSBitmapImageRep {
-            let rep = try app.canvas.bitmapImageRepForCachingDisplay(in: rect).unwrap("bitmap")
-            app.canvas.cacheDisplay(in: rect, to: rep)
-            return rep
+        let app = fixture.app, content = try (app.window.contentView as? FrameChromeView).unwrap("content view")
+        let scroll = try content.canvasScrollView.unwrap("canvas scroll view")
+        func edgeAlphas() throws -> (edges: [CGFloat], interior: CGFloat, outline: NSRect, hole: NSRect) {
+            let rep = try content.bitmapImageRepForCachingDisplay(in: content.bounds).unwrap("bitmap")
+            content.cacheDisplay(in: content.bounds, to: rep)
+            let scale = CGFloat(rep.pixelsWide) / content.bounds.width
+            func alpha(_ x: CGFloat, _ y: CGFloat) -> CGFloat { rep.colorAt(x: Int(x * scale), y: Int(y * scale))?.alphaComponent ?? -1 }
+            let hole = scroll.convert(scroll.bounds, to: content).intersection(content.bounds)
+            let top = content.bounds.height - hole.maxY, bottom = content.bounds.height - hole.minY
+            let outline = try app.frameOutline.unwrap("the frame outline overlay")
+            return ([alpha(hole.minX + 1, top + hole.height / 2), alpha(hole.maxX - 1, top + hole.height / 2),
+                     alpha(hole.midX, top + 1), alpha(hole.midX, bottom - 1)], alpha(hole.midX, top + hole.height / 2),
+                    outline.convert(outline.bounds, to: content), hole)
         }
         app.setWindowFrame(CGRect(origin: app.window.frame.origin, size: app.window.minSize))
-        app.canvas.newBlank(size: CGSize(width: 300, height: 180)); app.setCanvasDisplayZoom(1, label: "Test")
-        content.layoutSubtreeIfNeeded()
-        app.enterFrame(keepingAnnotations: false, manualFlags: [])
-        defer { app.cancelFrame() }
-        content.layoutSubtreeIfNeeded()
-        let small = try render(app.canvas.visibleRect.intersection(app.canvas.bounds)), size = small.size
-        for (name, x, y) in [("left", 1.0, size.height / 2), ("right", size.width - 1, size.height / 2), ("top", size.width / 2, 1.0), ("bottom", size.width / 2, size.height - 1)] {
-            try expect(alphaAt(small, x, y) > 0.9, "A canvas that fits has its keyline on the \(name) edge")
+        // The keyline is the capture area's boundary (the hole), however the canvas sits in it: smaller, or larger.
+        for (label, size) in [("fits", CGSize(width: 300, height: 180)), ("overflows", CGSize(width: 3000, height: 2000))] {
+            app.canvas.newBlank(size: size); app.setCanvasDisplayZoom(1, label: "Test")
+            content.layoutSubtreeIfNeeded()
+            app.enterFrame(keepingAnnotations: false, manualFlags: [])
+            content.layoutSubtreeIfNeeded(); app.canvas.displayIfNeeded()
+            let (edges, interior, outline, hole) = try edgeAlphas()
+            try expect(abs(outline.minX - hole.minX) < 0.5 && abs(outline.maxX - hole.maxX) < 0.5 && abs(outline.minY - hole.minY) < 0.5 && abs(outline.maxY - hole.maxY) < 0.5,
+                       "A canvas that \(label): the outline overlay is the hole (\(outline) vs \(hole))")
+            try expect(edges.allSatisfy { $0 > 0.9 }, "A canvas that \(label): the keyline is on all four edges of the hole \(edges)")
+            try expect(interior < 0.1, "A canvas that \(label): the interior stays clear (\(interior))")
+            app.cancelFrame()
+            try expect(app.frameOutline == nil, "Leaving Frame removes the outline")
         }
-        try expect(alphaAt(small, size.width / 2, size.height / 2) < 0.1, "The canvas interior stays clear")
-        // A canvas larger than the hole: the clip view shows the left and top edges, and the others are off screen.
-        app.cancelFrame()
-        app.canvas.newBlank(size: CGSize(width: 3000, height: 2000)); app.setCanvasDisplayZoom(1, label: "Test")
-        content.layoutSubtreeIfNeeded()
-        app.enterFrame(keepingAnnotations: false, manualFlags: [])
-        content.layoutSubtreeIfNeeded()
-        let visible = app.canvas.visibleRect
-        let big = try render(visible), shown = big.size
-        try expect(visible.minX == 0 && visible.minY == 0 && visible.width < 3000 && visible.height < 2000, "The large canvas overflows the hole on the right and bottom: \(visible)")
-        try expect(alphaAt(big, 1, shown.height / 2) > 0.9 && alphaAt(big, shown.width / 2, 1) > 0.9, "The visible left and top edges carry the keyline")
-        try expect(alphaAt(big, shown.width - 1, shown.height / 2) < 0.1 && alphaAt(big, shown.width / 2, shown.height - 1) < 0.1,
-                   "The right and bottom keyline are off screen, not clipped by the margin")
         _ = chrome
     }
 
@@ -981,8 +977,8 @@ extension AppSafetyTests {
         defer { if app.isActualSize { app.leaveActualSize() } }
         try expect(app.isActualSize && app.canvas.zoom == 1 && app.canvas.outputSize == app.canvas.fullResolutionOutputSize,
                    "Choosing the zoom item puts the canvas at Actual Size (zoom \(app.canvas.zoom), output \(app.canvas.outputSize))")
-        try expect(app.zoomControl.titleOfSelectedItem == "100%" && app.zoomControl.selectedItem?.tag != ZoomPopUpButton.actualSizeTag,
-                   "The popup face stays a percentage after the choice: \(app.zoomControl.titleOfSelectedItem ?? "nil")")
+        try expect(app.zoomControl.titleOfSelectedItem == "Actual" && app.zoomControl.selectedItem?.tag != ZoomPopUpButton.actualSizeTag,
+                   "The popup face reads Actual after the choice: \(app.zoomControl.titleOfSelectedItem ?? "nil")")
         _ = chrome
     }
 
@@ -1676,13 +1672,22 @@ extension AppSafetyTests {
         try expect(abs(app.canvas.zoom - 1.5) < 0.001 && zoom.titleOfSelectedItem == "150%" && !zoom.isOpen, "Choosing 150% zooms the canvas and the face reads 150% (zoom \(app.canvas.zoom))")
         zoom.performClick(nil)
         try expect(panel.rows.filter(\.isChosen).map(\.title) == ["150%"], "Reopened, 150% is the chosen row: \(panel.rows.filter(\.isChosen).map(\.title))")
-        // Actual Size: the main-menu command runs; the face stays a percentage and the zoom dims while it is up.
+        // Actual Size: the main-menu command runs; the face reads "Actual" and the zoom stays enabled, because it is the way out.
         try (panel.rows.first { $0.title == "Actual Size" }).unwrap("Actual Size row").performClick(nil)
-        try waitForMain("The face is a percentage again") { zoom.titleOfSelectedItem?.hasSuffix("%") == true && zoom.selectedItem?.tag != ZoomPopUpButton.actualSizeTag }
+        try waitForMain("The face says Actual") { zoom.titleOfSelectedItem == "Actual" && zoom.selectedItem?.tag != ZoomPopUpButton.actualSizeTag }
         defer { if app.isActualSize { app.leaveActualSize() } }
-        try expect(app.isActualSize && app.canvas.zoom == 1 && !zoom.isEnabled, "Actual Size is up and the zoom is dimmed (zoom \(app.canvas.zoom))")
+        try expect(app.isActualSize && app.canvas.zoom == 1 && zoom.isEnabled, "Actual Size is up and the zoom stays enabled (zoom \(app.canvas.zoom))")
         zoom.performClick(nil)
-        try expect(!zoom.isOpen, "A dimmed zoom opens nothing")
+        try expect(zoom.isOpen, "The zoom opens in Actual Size: it is the way out")
+        try expect(panel.rows.filter(\.isChosen).map(\.title) == ["Actual Size"], "Exactly one row is checked in Actual Size: \(panel.rows.filter(\.isChosen).map(\.title))")
+        zoom.choicePanel.host.close()
+        // Choosing a percentage leaves Actual Size and zooms.
+        zoom.performClick(nil)
+        try (panel.rows.first { $0.title == "50%" }).unwrap("50% row").performClick(nil)
+        try expect(!app.isActualSize && abs(app.canvas.zoom - 0.5) < 0.001 && zoom.titleOfSelectedItem == "50%", "A percentage chosen in Actual Size leaves it and zooms (zoom \(app.canvas.zoom), face \(zoom.titleOfSelectedItem ?? "nil"))")
+        zoom.performClick(nil)
+        try (panel.rows.first { $0.title == "Actual Size" }).unwrap("Actual Size row").performClick(nil)
+        try waitForMain("Actual Size again") { app.isActualSize }
         // The screenshot harness can still show the state: the panel presents without the button's own gate, and Actual Size reads on.
         zoom.choicePanel.present(relativeTo: zoom, preferredEdge: ChoiceEdge.above, keyboard: false)
         try expect(zoom.isOpen && zoom.choicePanel.rows.last?.title == "Actual Size" && zoom.choicePanel.rows.last?.isChosen == true && zoom.choicePanel.rows.last?.isEnabled == true,

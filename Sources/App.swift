@@ -19,6 +19,19 @@ final class FrameChromeView: NSView {
     override func layout() { super.layout(); if showsCanvasHole { needsDisplay = true } }
 }
 
+/// The Frame outline: a 2 pt accent line just inside the edges of the canvas well, which is exactly the area Snap Frame captures
+/// (the transparent hole). It is laid over the scroll view by constraints, so it follows every window resize, and it never takes a click.
+final class FrameOutlineView: NSView {
+    static let strokeWidth: CGFloat = 2
+    override var isFlipped: Bool { true }
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+    override func draw(_ dirtyRect: NSRect) {
+        NSColor.controlAccentColor.setStroke()
+        let outline = NSBezierPath(rect: bounds.insetBy(dx: Self.strokeWidth / 2, dy: Self.strokeWidth / 2))
+        outline.lineWidth = Self.strokeWidth; outline.stroke()
+    }
+}
+
 /// The drag well. Dragging it hands the drawing to another app; it is also a keyboard-reachable button: Space or Return (and VoiceOver's
 /// press) run `onActivate`, which opens the Export panel, the alternative to dragging. Hover shows an open hand and a held press a closed one.
 final class DragExportView: NSView, NSDraggingSource, NSFilePromiseProviderDelegate {
@@ -434,6 +447,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     /// Overlay scrollers fade in over the Frame hole and a screen capture would take them with the picture, so Frame mode hides them.
     var frameScrollersShown = (horizontal: true, vertical: true)
     var frameTitlebarBackdrop: FrameChromeView?
+    var frameOutline: FrameOutlineView?
     /// Where the main window remembers its frame. A test names its own, so no run touches the real "OpenSnap.Main" entry.
     var frameAutosaveName: String? = MainWindowFrame.autosaveName
     /// Where the "is a frame saved?" question is asked. AppKit itself writes the frame to the standard defaults.
@@ -1284,7 +1298,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     static func zoomTooltip(spoken: String?) -> String { spoken.map { "\($0). " + zoomExplanation } ?? zoomExplanation }
     @objc func changeZoom(_ sender: NSPopUpButton) {
         AppToolTip.setText(Self.zoomTooltip(spoken: sender.selectedItem?.toolTip), for: sender)
-        guard !isActualSize, let scale = sender.selectedItem?.representedObject as? Double else { return }
+        guard let scale = sender.selectedItem?.representedObject as? Double else { return }
+        // The zoom stays live in Actual Size because it is a way out: a chosen percentage leaves Actual Size first.
+        if isActualSize, let chosen = sender.selectedItem { leaveActualSize(); sender.select(chosen) }
         canvas.setZoom(CGFloat(scale)); updateStatus()
     }
     /// Zooms the whole drawing into the window. A window never magnifies it past 100%; full screen passes a larger ceiling.
@@ -1303,11 +1319,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         canvas.setZoom(scale)
         for item in zoomControl.itemArray where item.tag == 999 { zoomControl.menu?.removeItem(item) }
         // The face is the percentage alone; the mode word rides on the tooltip and in the spoken value ("Fit, 83%").
+        // Actual Size is the exception: its face says "Actual", because the pop-up is the way out and must not look dimmed or inert.
         let percent = "\(Int((canvas.zoom*100).rounded()))%"
-        let item = NSMenuItem(title: percent, action: nil, keyEquivalent: "")
+        let item = NSMenuItem(title: label == "Actual" ? "Actual" : percent, action: nil, keyEquivalent: "")
         item.toolTip = "\(label), \(percent)"
         AppToolTip.setText(Self.zoomTooltip(spoken: "\(label), \(percent)"), for: zoomControl)
         item.tag = 999; item.representedObject = Double(canvas.zoom); zoomControl.menu?.insertItem(item, at: 0); zoomControl.select(item)
+        // The Actual Size toggle row carries the one checkmark while it is on; this row is only the face.
+        if label == "Actual" { item.state = .off }
     }
     func changed() {
         if isActualSize { _ = canvas.setPresentationOutputSize(canvas.fullResolutionOutputSize); scheduleNavigatorImage() }
@@ -2227,6 +2246,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             frameTitlebarBackdrop = backdrop
         }
         (window.contentView as? FrameChromeView)?.showsCanvasHole = true
+        if frameOutline == nil, let scroll = canvas.enclosingScrollView, let host = scroll.superview {
+            let outline = FrameOutlineView()
+            outline.translatesAutoresizingMaskIntoConstraints = false
+            host.addSubview(outline, positioned: .above, relativeTo: scroll)
+            NSLayoutConstraint.activate([
+                outline.leadingAnchor.constraint(equalTo: scroll.leadingAnchor), outline.trailingAnchor.constraint(equalTo: scroll.trailingAnchor),
+                outline.topAnchor.constraint(equalTo: scroll.topAnchor), outline.bottomAnchor.constraint(equalTo: scroll.bottomAnchor)
+            ])
+            frameOutline = outline
+        }
         canvas.enclosingScrollView?.drawsBackground = false
         canvas.enclosingScrollView?.hasHorizontalScroller = false; canvas.enclosingScrollView?.hasVerticalScroller = false
         canvas.framePreview = true
@@ -2251,6 +2280,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         Announcer.announce(Announcer.Message.frameLeft)
         frameMode = false; frameKeepsAnnotations = false; frameTimedSnap = false
         frameTitlebarBackdrop?.removeFromSuperview(); frameTitlebarBackdrop = nil
+        frameOutline?.removeFromSuperview(); frameOutline = nil
         canvas.framePreview = false
         (window.contentView as? FrameChromeView)?.showsCanvasHole = false
         window.isOpaque = frameWindowWasOpaque

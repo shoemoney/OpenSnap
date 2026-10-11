@@ -3172,8 +3172,10 @@ enum AppSafetyTests {
         app.updateViewportChrome(); app.toggleActualSize()
         guard let scroll = app.canvas.enclosingScrollView, let panel = app.navigatorWindow,
               let navigate = app.navigator.onNavigate else { throw Failure(description: "Actual navigator launch wiring") }
-        try expect(!panel.isVisible && panel.frame.minX == app.window.frame.minX - panel.frame.width + 5 &&
-                   panel.frame.minY == app.window.frame.minY + 30, "Hidden child navigator stays beside the parent's left edge")
+        try expect(!panel.isVisible && panel.frame.minX == app.window.frame.minX - panel.frame.width - AppDelegate.navigatorGap &&
+                   panel.frame.minY == app.window.frame.minY + 30, "Hidden child navigator stays beside the parent's left edge, a gap away")
+        let card = panel.contentView?.subviews.compactMap { $0 as? NSGlassEffectView }.first
+        try expect(card != nil && !panel.isOpaque && card?.contentView === app.navigator && card?.cornerRadius == DesignTokens.Radius.xl, "The overview is a rounded glass card, not a flat opaque panel")
         // The overview image is rendered for the slot it fills at this display's backing scale, not at a fixed 160 pixels (wide, then tall).
         func overviewResolution(_ shape: String) throws {
             guard let slot = app.navigator.thumbnailRect,

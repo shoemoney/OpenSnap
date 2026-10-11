@@ -195,20 +195,14 @@ private final class SketchTextGrip: NSView {
         color.withAlphaComponent(1).setStroke()
         let framePath = NSBezierPath(roundedRect: border, xRadius: 5, yRadius: 5)
         framePath.lineWidth = 1; framePath.stroke()
-        let pill = NSBezierPath(roundedRect: CGRect(x: border.minX, y: border.minY,
-                                                  width: 10, height: border.height), xRadius: 5, yRadius: 5)
-        color.withAlphaComponent(1).setFill(); pill.fill()
-        NSColor.black.setStroke(); pill.lineWidth = 1; pill.stroke()
-        var y = (inner.minY + 9).rounded(.towardZero) - 0.5
-        while y < inner.maxY - 8.5 {
-            for (offset, ink) in [(CGFloat(0), NSColor.black.withAlphaComponent(0.8)),
-                                  (CGFloat(1), NSColor.white.withAlphaComponent(0.5))] {
-                let line = NSBezierPath()
-                line.move(to: CGPoint(x: inner.minX + 2.5, y: y + offset))
-                line.line(to: CGPoint(x: inner.minX + 8.5, y: y + offset))
-                ink.setStroke(); line.lineWidth = 1; line.stroke()
-            }
-            y += 3
+        // The same white-with-accent look as the selection handles, as a short centred grip with three dots, not a full-height ruler.
+        let gripHeight = min(border.height, 28)
+        let pill = NSBezierPath(roundedRect: CGRect(x: border.minX, y: border.midY - gripHeight / 2, width: 10, height: gripHeight), xRadius: 5, yRadius: 5)
+        NSColor.white.setFill(); pill.fill()
+        NSColor.controlAccentColor.setStroke(); pill.lineWidth = 1; pill.stroke()
+        NSColor.controlAccentColor.setFill()
+        for index in -1...1 {
+            NSBezierPath(ovalIn: CGRect(x: border.minX + 3.5, y: border.midY + CGFloat(index) * 6 - 1.5, width: 3, height: 3)).fill()
         }
     }
     override func resetCursorRects() { addCursorRect(bounds, cursor: Self.moveCursor) }
@@ -1519,11 +1513,8 @@ final class CanvasView: NSView, NSTextViewDelegate {
         if let polygon = polygonPreview() { SketchRenderer.draw(polygon, inFlippedView: true) }
         NSGraphicsContext.restoreGraphicsState()
         drawSelectionChrome()
-        if framePreview {
-            NSColor.controlAccentColor.setStroke()
-            let boundary = NSBezierPath(rect: bounds.insetBy(dx: 1, dy: 1))
-            boundary.lineWidth = 2; boundary.stroke()
-        }
+        // The Frame outline is the app's overlay on the capture area (FrameOutlineView), not the canvas view's: the canvas can be
+        // smaller or larger than the viewport the capture takes, so its bounds are the wrong rectangle.
     }
     private func drawCheckerboard(in rect: CGRect) {
         NSColor.white.setFill(); rect.fill()
@@ -2098,6 +2089,8 @@ final class CanvasView: NSView, NSTextViewDelegate {
         addSubview(grip, positioned: .below, relativeTo: editor)
         window?.makeFirstResponder(editor)
         editor.selectAll(nil)
+        // A box begun near the viewport's edge is brought fully into view, grip chrome included.
+        scrollToVisible(editor.frame.union(grip.frame))
         needsDisplay = true
         onTextStyleContextChange?()
     }

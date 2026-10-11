@@ -247,13 +247,28 @@ extension AppDelegate {
         if navigatorWindow == nil {
             let panel = ActualNavigatorPanel(contentRect: navigator.frame, styleMask: [.borderless, .nonactivatingPanel],
                                              backing: .buffered, defer: false)
-            panel.contentView = navigator; panel.hasShadow = false
+            // The overview is a rounded glass card floating beside the editor, with a gap, like the bar plates.
+            let glass = NSGlassEffectView()
+            glass.style = .regular
+            glass.cornerRadius = DesignTokens.Radius.xl
+            glass.contentView = navigator
+            // The glass pins the overview with constraints; its 220 x 190 intrinsic size must not pull the panel wider than the 180 pt card.
+            for axis in [NSLayoutConstraint.Orientation.horizontal, .vertical] {
+                navigator.setContentCompressionResistancePriority(NSLayoutConstraint.Priority(1), for: axis)
+                navigator.setContentHuggingPriority(NSLayoutConstraint.Priority(1), for: axis)
+            }
+            // The container has no intrinsic size, so the card takes the size `positionActualNavigator` gives the panel, not the navigator's own.
+            let container = NSView(frame: CGRect(origin: .zero, size: navigator.frame.size))
+            glass.frame = container.bounds; glass.autoresizingMask = [.width, .height]
+            container.addSubview(glass)
+            panel.contentView = container; panel.hasShadow = false
+            panel.isOpaque = false; panel.backgroundColor = .clear
             panel.isReleasedWhenClosed = false; panel.hidesOnDeactivate = true
             panel.setAccessibilityLabel("Actual Size overview")
             navigatorWindow = panel
         }
         if let screen = window.screen ?? NSScreen.main {
-            let left = screen.visibleFrame.minX + navigator.frame.width - 5
+            let left = screen.visibleFrame.minX + navigator.frame.width + Self.navigatorGap
             if window.frame.minX < left {
                 var frame = window.frame
                 frame.origin.x = left
@@ -264,6 +279,7 @@ extension AppDelegate {
         navigator.onBackingChange = { [weak self] in
             MainActor.assumeIsolated { self?.scheduleNavigatorImage() }
         }
+        navigator.drawsSolidBackground = DisplayOptions.current.reduceTransparency
         positionActualNavigator()
         if window.isVisible, let panel = navigatorWindow { window.addChildWindow(panel, ordered: .above) }
     }
@@ -276,12 +292,15 @@ extension AppDelegate {
         return CGSize(width: 180, height: max(100, previewHeight + 64))
     }
 
+    /// Clear space between the overview card and the editor window's left edge.
+    static let navigatorGap = DesignTokens.Layout.gap
+
     func positionActualNavigator() {
         guard isActualSize, let window, let panel = navigatorWindow else { return }
-        // Original navigator is a non-key child along the parent's left edge.
+        // The navigator is a non-key child card along the parent's left edge, a gap away from it.
         // Extra header room preserves the user's 20-point readable-text preference.
         let size = actualNavigatorSize()
-        panel.setFrame(CGRect(x: window.frame.minX - size.width + 5,
+        panel.setFrame(CGRect(x: window.frame.minX - size.width - Self.navigatorGap,
                               y: window.frame.minY + 30, width: size.width, height: size.height), display: true)
     }
 
@@ -325,7 +344,7 @@ extension AppDelegate {
     @objc func canvasViewportChanged(_ notification: Notification) { updateViewportChrome() }
     func updateViewportChrome() {
         resizeButton?.isEnabled = !isActualSize && !frameMode
-        zoomControl.isEnabled = !isActualSize
+        zoomControl.isEnabled = true
         // An upload (running, done or failed) keeps the checkbox only when the slot, at this window width, holds it beside the message and
         // commands; otherwise the checkbox steps aside, so the bar never widens.
         let crowded = uploadState.occupiesStatusSlot && (modernChrome as? ModernEditorChrome)?.slotHasRoomForCheckbox(during: uploadState) != true

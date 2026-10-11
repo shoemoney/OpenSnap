@@ -325,7 +325,7 @@ extension NSShadow {
 }
 
 /// OriginalTextFieldEditor updateFrameSize (0x1c1e6): natural string width
-/// plus four points and two outline margins; glyph height plus eight points.
+/// plus four points and two outline margins; glyph height plus eight points plus the room outline and shadow need below the glyphs.
 /// Explicit line breaks determine rows, independently of a historical box width.
 enum OriginalTextGeometry {
     static func size(text: String, font: NSFont) -> CGSize {
@@ -343,7 +343,10 @@ enum OriginalTextGeometry {
         let height = max(glyphs.maxY, manager.extraLineFragmentUsedRect.maxY)
         let margin = CGFloat(Float(font.pointSize) * Float(OriginalTextEffects.outlinePercentage(fontSize: font.pointSize)) / 100)
         let width = (text as NSString).size(withAttributes: [.font: font]).width + 4 + 2 * margin
-        return CGSize(width: max(1, width), height: max(1, height + 8))
+        // The outline and the drop shadow (3 pt blur, 1 pt down) paint below the glyph rect; the box holds them so a
+        // box-sized clip never shears the tails of p, y and g.
+        let belowInk = (margin + 4).rounded(.up)
+        return CGSize(width: max(1, width), height: max(1, height + 8 + belowInk))
     }
     static func size(for element: SketchElement) -> CGSize {
         size(text: element.text, font: NSFont(name: element.fontName, size: element.fontSize)

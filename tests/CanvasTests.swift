@@ -225,6 +225,9 @@ struct CanvasTests {
             ("Option key arms the Line polygon, release commits one element and one Undo step", linePolygon),
             ("shadows fall down-right on screen and in export", shadowDirection),
             ("text editor group shadow and grip chrome shadow fall downward", editorShadowDirection),
+            ("the text drag handle is a short centred grip, not a full-height ruler", textGripIsShortGrip),
+            ("starting a text edit near the bottom of the viewport scrolls the box into view", textEditScrollsIntoView),
+            ("outlined and shadowed text keeps its descenders inside the box, on screen and in the PNG export", outlinedTextKeepsDescenders),
             ("eraser fragments never cast a shadow into the gap they leave (audit F-J1-001)", eraserLeavesNoShadow),
             ("a size change re-lays out selected and editing text so glyphs and frame follow together (audit F-J1-005)", textSizeKeepsGlyphsAndFrame),
             ("changing tool drops a pending crop overlay (audit F-J1-011)", toolChangeClearsCrop),
@@ -2666,7 +2669,7 @@ struct CanvasTests {
         try expect(preview.colorAt(x: 80, y: 65)!.alphaComponent < 0.01 &&
                    preview.colorAt(x: 50, y: 45)!.usingColorSpace(.deviceRGB)!.redComponent > 0.9,
                    "Preview clears backdrop/checkerboard while retaining visible annotation pixels")
-        try expect(preview.colorAt(x: 1, y: 40)!.alphaComponent > 0.5, "Preview displays visible capture boundary")
+        try expect(preview.colorAt(x: 1, y: 40)!.alphaComponent < 0.01, "Preview draws no boundary of its own: the app overlays the capture area")
         try expect(c.document == original && c.snapshotDocumentData() == data && c.imageData(format: "png") == png &&
                    dirty == 0 && !c.editingUndoManager.canUndo, "Preview leaves document, recovery, export and undo untouched")
         c.framePreview = false
@@ -2929,6 +2932,82 @@ struct CanvasTests {
             for y in (gh - 4)..<gh { bottom += Int(shadowed.grip[(y * gw + x) * 4 + 3]) }
         }
         try expect(bottom > top, "Grip chrome shadow must fall below the border (alpha above \(top), below \(bottom))")
+    }
+    static func textGripIsShortGrip() throws {
+        let c = canvas(NSSize(width: 300, height: 300)); let window = host(c); defer { window.close() }
+        window.setContentSize(c.canvasSize)
+        c.tool = .text; c.outlined = false; c.shadowed = false
+        c.mouseDown(with: try mouse(c, .leftMouseDown, CGPoint(x: 60, y: 40)))
+        guard let editor = c.subviews.compactMap({ $0 as? NSTextView }).first,
+              let grip = c.subviews.first(where: { String(describing: type(of: $0)).contains("SketchTextGrip") }) else { throw Failure(description: "Grip editor") }
+        editor.insertText("H\nH\nH\nH\nH", replacementRange: editor.selectedRange())
+        grip.layoutSubtreeIfNeeded(); grip.displayIfNeeded()
+        let w = Int(ceil(grip.bounds.width)), h = Int(ceil(grip.bounds.height))
+        try expect(h > 120, "The grip's box is tall enough to tell a ruler from a grip (\(h))")
+        guard let rep = grip.bitmapImageRepForCachingDisplay(in: grip.bounds) else { throw Failure(description: "Grip capture") }
+        grip.cacheDisplay(in: grip.bounds, to: rep)
+        let scale = CGFloat(rep.pixelsWide) / CGFloat(w)
+        func alpha(_ x: CGFloat, _ y: CGFloat) -> CGFloat { rep.colorAt(x: Int(x * scale), y: Int(y * scale))?.alphaComponent ?? 0 }
+        // Left tab column is x = 5 (margin) + 0.5 .. 10.5; probe its middle.
+        try expect(alpha(10, CGFloat(h) / 2) > 0.9, "The grip has its handle at the middle of the left edge")
+        try expect(alpha(10, 5 + 8) < 0.1, "The grip does not run the full height of the box (alpha near the top \(alpha(10, 13)))")
+        try expect(alpha(10, CGFloat(h) - 5 - 8) < 0.1, "…nor reach the bottom (alpha near the bottom \(alpha(10, CGFloat(h) - 13)))")
+    }
+    /// A text box begun near the edge of the viewport must not sit half out of it (the 980 pt Text editing capture).
+    static func textEditScrollsIntoView() throws {
+        let c = canvas(NSSize(width: 600, height: 1200)); let window = host(c); defer { window.close() }
+        window.setContentSize(CGSize(width: 500, height: 400))
+        c.displayIfNeeded()
+        c.tool = .text
+        let point = CGPoint(x: 100, y: 1050)
+        c.mouseDown(with: try mouse(c, .leftMouseDown, point))
+        c.mouseUp(with: try mouse(c, .leftMouseUp, point))
+        guard let editor = c.subviews.compactMap({ $0 as? NSTextView }).first else { throw Failure(description: "Scroll editor") }
+        let visible = c.visibleRect
+        try expect(visible.minY > 400, "The viewport scrolled toward the new text box (visible \(visible))")
+        try expect(visible.contains(editor.frame), "The whole text box is inside the viewport: box \(editor.frame), visible \(visible)")
+    }
+    /// Outline and shadow reach below the glyph rect. The box must hold them, or a box-sized clip (the text editor, an
+    /// invalidated region) shears the tails of p, y and g. Measured on the live view and on the PNG export.
+    static func outlinedTextKeepsDescenders() throws {
+        let fonts = ["Helvetica-Bold", "Georgia-Italic", "MarkerFelt-Wide", "SnellRoundhand-Bold"]
+        for font in fonts { for size in [CGFloat(24), 44, 60] {
+            var text = SketchElement(kind: .text)
+            text.text = "Ship it today! gypq"; text.fontName = font; text.fontSize = size
+            text.outlined = true; text.shadowed = true; text.color = SketchColor(.systemRed)
+            text.rect = CGRect(origin: CGPoint(x: 60, y: 40), size: OriginalTextGeometry.size(for: text))
+            let w = 900, h = 300
+            let c = canvas(NSSize(width: w, height: h))
+            let window = host(c); defer { window.close() }
+            window.setContentSize(c.canvasSize)
+            func live(_ elements: [SketchElement]) throws -> [UInt8] {
+                c.document.elements = elements
+                c.displayIfNeeded()
+                guard let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: w, pixelsHigh: h, bitsPerSample: 8, samplesPerPixel: 4,
+                        hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0) else { throw Failure(description: "capture") }
+                rep.size = c.bounds.size
+                c.cacheDisplay(in: c.bounds, to: rep)
+                return try rgbaBytes(rep, width: w, height: h) ?? { throw Failure(description: "live bytes") }()
+            }
+            let empty = try live([]), drawn = try live([text])
+            var lowestLive = 0
+            for y in 0..<h { for x in 0..<w {
+                let i = (y * w + x) * 4
+                if abs(Int(empty[i]) - Int(drawn[i])) + abs(Int(empty[i + 1]) - Int(drawn[i + 1])) + abs(Int(empty[i + 2]) - Int(drawn[i + 2])) > 12 { lowestLive = max(lowestLive, y) }
+            } }
+            var document = SketchDocument(size: CGSize(width: w, height: h))
+            document.backgroundColor = .clear; document.elements = [text]
+            let png = try ImageExport.encode(document: document, size: document.size, format: "png", jpegQuality: 1) ?? { throw Failure(description: "png") }()
+            let image = try NSBitmapImageRep(data: png) ?? { throw Failure(description: "png decode") }()
+            var lowestExport = 0
+            for y in 0..<image.pixelsHigh { for x in 0..<image.pixelsWide where (image.colorAt(x: x, y: y)?.alphaComponent ?? 0) > 0.02 { lowestExport = max(lowestExport, y) } }
+            let baseline = text.rect.minY + CGFloat(NSFont(name: font, size: size)?.ascender ?? size)
+            for (name, lowest) in [("on screen", lowestLive), ("in the PNG export", lowestExport)] {
+                try expect(CGFloat(lowest) > baseline + 1, "\(font) \(size) \(name): no ink below the baseline")
+                try expect(CGFloat(lowest + 1) <= text.rect.maxY - 2,
+                           "\(font) \(size) \(name): ink reaches row \(lowest), box ends at \(text.rect.maxY); outline and shadow need 2 pt inside the box")
+            }
+        } }
     }
     /// Top-down premultiplied sRGB RGBA bytes of a bitmap, drawn 1:1 at the given pixel size.
     static func rgbaBytes(_ bitmap: NSBitmapImageRep, width: Int, height: Int) -> [UInt8]? {

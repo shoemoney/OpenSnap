@@ -10,6 +10,7 @@ extension AppSafetyTests {
     static var layoutFitCases: [(String, () throws -> Void)] {
         [
             ("Layout fit at 980: every bar group and control fits its frame in normal and Frame mode, light and dark, Original size toggle shown and hidden", layoutFitAtMinimumWidth),
+            ("Frame outline sits on all four edges of the transparent capture area at the default size, 980, 1024 and 1280", frameOutlineMatchesCaptureArea),
             ("Layout fit can fail: a group squeezed below what its controls need is reported", layoutFitCanFail)
         ]
     }
@@ -90,6 +91,49 @@ extension AppSafetyTests {
             }
         }
         try expect(checked == 8, "All eight window states were measured (\(checked))")
+    }
+
+    /// The yellow outline is the capture area's boundary: its four edges must be drawn on the hole's four edges
+    /// (inset by half the 2 pt stroke), at every window width, not on the canvas view's bounds.
+    private static func frameOutlineMatchesCaptureArea() throws {
+        let fixture = try Fixture(), app = fixture.app
+        guard let content = app.window.contentView as? FrameChromeView, let scroll = content.canvasScrollView else { throw Failure(description: "Frame content view") }
+        app.window.appearance = NSAppearance(named: .aqua)
+        defer { app.window.appearance = nil }
+        let startWidth = app.window.frame.width
+        for width in [startWidth, 980, 1024, 1280] {
+            try viewportFixture(app)
+            app.canvas.newBlank(size: CGSize(width: 1000, height: 700))
+            app.setCanvasDisplayZoom(1, label: "Test")
+            app.setWindowFrame(CGRect(origin: app.window.frame.origin, size: CGSize(width: width, height: app.window.frame.height)))
+            app.enterFrame(keepingAnnotations: false, manualFlags: [])
+            content.layoutSubtreeIfNeeded(); app.canvas.displayIfNeeded()
+            defer { app.cancelFrame() }
+            guard let rep = content.bitmapImageRepForCachingDisplay(in: content.bounds) else { throw Failure(description: "The window content does not render") }
+            content.cacheDisplay(in: content.bounds, to: rep)
+            let scale = CGFloat(rep.pixelsWide) / content.bounds.width
+            let hole = scroll.convert(scroll.bounds, to: content).intersection(content.bounds)
+            func alpha(_ x: CGFloat, _ yFromTop: CGFloat) -> CGFloat {
+                rep.colorAt(x: Int(x * scale), y: Int(yFromTop * scale))?.alphaComponent ?? 0
+            }
+            let top = content.bounds.height - hole.maxY, bottom = content.bounds.height - hole.minY
+            // The outline is opaque; the hole around it is clear. Probe one point inside each edge, a third and two thirds along it.
+            for fraction in [CGFloat(0.33), 0.66] {
+                let x = hole.minX + hole.width * fraction, y = top + hole.height * fraction
+                let probes: [(String, CGFloat, CGFloat)] = [("top", x, top + 1), ("bottom", x, bottom - 1),
+                                                           ("left", hole.minX + 1, y), ("right", hole.maxX - 1, y)]
+                for (edge, px, py) in probes {
+                    try expect(alpha(px, py) > 0.5, "Frame at \(Int(width)) pt: the outline's \(edge) edge is not on the capture area's \(edge) edge (hole \(hole), probe \(px),\(py), alpha \(alpha(px, py)))")
+                }
+                let inner: [(String, CGFloat, CGFloat)] = [("top", x, top + 5), ("bottom", x, bottom - 5), ("left", hole.minX + 5, y), ("right", hole.maxX - 5, y)]
+                for (edge, px, py) in inner {
+                    try expect(alpha(px, py) < 0.05, "Frame at \(Int(width)) pt: a second line sits 5 pt inside the \(edge) edge (alpha \(alpha(px, py)))")
+                }
+                for (edge, px, py) in [("interior", x, y)] {
+                    try expect(alpha(px, py) < 0.05, "Frame at \(Int(width)) pt: the capture area's \(edge) is not clear")
+                }
+            }
+        }
     }
 
     private static func layoutFitCanFail() throws {

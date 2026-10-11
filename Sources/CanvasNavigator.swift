@@ -104,6 +104,9 @@ public final class CanvasNavigator: NSView {
     /// Fired when the panel moves to a display with another backing scale.
     public var onBackingChange: (() -> Void)?
 
+    /// True under Reduce Transparency, when the glass card gives way to an opaque one.
+    public var drawsSolidBackground = false { didSet { needsDisplay = true } }
+
     private var isDragging = false
     private lazy var navigationActions: [NSAccessibilityCustomAction] = [
         NSAccessibilityCustomAction(name: "Center viewport", target: self, selector: #selector(centerViewport)),
@@ -172,8 +175,11 @@ public final class CanvasNavigator: NSView {
     public override func accessibilityPerformPress() -> Bool { centerViewport() }
 
     public override func draw(_ dirtyRect: NSRect) {
-        NSColor.windowBackgroundColor.setFill()
-        bounds.fill()
+        // The card behind this view is glass; only Reduce Transparency asks for a solid plate.
+        if drawsSolidBackground {
+            NSColor.windowBackgroundColor.setFill()
+            NSBezierPath(roundedRect: bounds, xRadius: DesignTokens.Radius.xl, yRadius: DesignTokens.Radius.xl).fill()
+        }
         let header = CGRect(x: bounds.minX + NavigatorGeometry.padding,
                             y: bounds.minY + NavigatorGeometry.padding,
                             width: max(0, bounds.width - 2 * NavigatorGeometry.padding),

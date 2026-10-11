@@ -329,6 +329,7 @@ private enum CanvasNavigatorTests {
     /// 18 pt or smaller literal would not reach, and it is drawn with real ink (not blank).
     static func headerTypeToken() throws {
         let view = CanvasNavigator(frame: CGRect(x: 0, y: 0, width: 220, height: 190))
+        view.drawsSolidBackground = true  // the glass card is the app's job; the solid plate is the Reduce Transparency fallback
         guard let bitmap = CGContext(data: nil, width: 220, height: 190, bitsPerComponent: 8,
             bytesPerRow: 220 * 4, space: CGColorSpaceCreateDeviceRGB(),
             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
@@ -346,7 +347,7 @@ private enum CanvasNavigatorTests {
         let band = (190 - Int(NavigatorGeometry.padding) - Int(NavigatorGeometry.headerHeight))..<(190 - Int(NavigatorGeometry.padding))
         let background = luminance(215, band.lowerBound)
         let inkRows = band.filter { y in (Int(NavigatorGeometry.padding)..<200).contains { abs(luminance($0, y) - background) > 80 } }
-        let inkColumns = (0..<220).filter { x in band.contains { abs(luminance(x, $0) - background) > 80 } }
+        let inkColumns = (Int(NavigatorGeometry.padding)..<(220 - Int(NavigatorGeometry.padding))).filter { x in band.contains { abs(luminance(x, $0) - background) > 80 } }
         try expect(!inkRows.isEmpty && !inkColumns.isEmpty, "Header draws visible ink")
         let height = (inkRows.max() ?? 0) - (inkRows.min() ?? 0) + 1
         let width = (inkColumns.max() ?? 0) - (inkColumns.min() ?? 0) + 1
