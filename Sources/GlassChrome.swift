@@ -316,7 +316,12 @@ class CommandButton: OriginalActionButton, ChromeFillable {
             glyphScale = scale
             refreshIcon()
         }
+        plateDidSync(style)
     }
+
+    /// Called at the end of every `syncPlate` with the style that was just applied, so a subclass that draws its own content
+    /// (`GlassChoiceButton`'s label and glyphs) recolours it in step with the fill. Does nothing for the bar's buttons.
+    func plateDidSync(_ style: StateStyle) {}
 
     private func showIndicator(_ style: StateStyle) {
         showsIndicator = style.indicator
@@ -533,6 +538,8 @@ final class GlassSurfaceView: NSGlassEffectView {
     var shape: GlassShape { didSet { syncShape() } }
     var accessibility: ChromeAccessibility { didSet { applyDisplayOptions() } }
     let arrangedViews: [NSView]
+    /// `.horizontal` is the bar plate: one fixed-height row. `.vertical` stacks full-width rows and takes its height from its content.
+    let axis: NSUserInterfaceLayoutOrientation
     private let stack = NSStackView()
     private let host = NSView()
     private let solidPlate = NSView()
@@ -541,10 +548,12 @@ final class GlassSurfaceView: NSGlassEffectView {
     var transparencyPlate: NSView? { accessibility.reduceTransparency ? solidPlate : nil }
     var showsContrastBorder: Bool { accessibility.increaseContrast }
 
-    init(views: [NSView], shape: GlassShape = .rounded(DesignTokens.Radius.xl), accessibility: ChromeAccessibility, spacing: CGFloat = GlassChrome.Metrics.groupSpacing) {
+    init(views: [NSView], shape: GlassShape = .rounded(DesignTokens.Radius.xl), accessibility: ChromeAccessibility, spacing: CGFloat = GlassChrome.Metrics.groupSpacing,
+         axis: NSUserInterfaceLayoutOrientation = .horizontal) {
         self.shape = shape
         self.accessibility = accessibility
         self.arrangedViews = views
+        self.axis = axis
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
         wantsLayer = true
@@ -555,14 +564,23 @@ final class GlassSurfaceView: NSGlassEffectView {
         solidPlate.wantsLayer = true
         solidPlate.translatesAutoresizingMaskIntoConstraints = false
         solidPlate.isHidden = true
-        stack.orientation = .horizontal
+        stack.orientation = axis
         stack.spacing = spacing
-        stack.alignment = .centerY
+        stack.alignment = axis == .horizontal ? .centerY : .leading
         stack.distribution = .gravityAreas
         let inset = GlassChrome.Metrics.groupInset
         stack.edgeInsets = NSEdgeInsets(top: inset, left: inset, bottom: inset, right: inset)
         for view in views { stack.addArrangedSubview(view) }
         stack.translatesAutoresizingMaskIntoConstraints = false
+        if axis == .vertical {
+            // Every row takes the plate's inner width. High (not required) priority: a lone fixed-width view, such as a swatch grid,
+            // keeps its own width instead of fighting the plate.
+            for view in views {
+                let fill = view.widthAnchor.constraint(equalTo: stack.widthAnchor, constant: -2 * inset)
+                fill.priority = .defaultHigh
+                fill.isActive = true
+            }
+        }
         host.addSubview(solidPlate)
         host.addSubview(stack)
         NSLayoutConstraint.activate([
@@ -575,7 +593,8 @@ final class GlassSurfaceView: NSGlassEffectView {
         // The glass pins its content with weak constraints; the plate takes its width from the stack instead, so it hugs the group.
         // Every control on a plate is at most one command high, so every plate is one bar row high.
         NSLayoutConstraint.activate([widthAnchor.constraint(equalTo: stack.widthAnchor),
-                                     heightAnchor.constraint(equalToConstant: GlassChrome.Metrics.commandHeight + 2 * inset)])
+                                     axis == .horizontal ? heightAnchor.constraint(equalToConstant: GlassChrome.Metrics.commandHeight + 2 * inset)
+                                                         : heightAnchor.constraint(equalTo: stack.heightAnchor)])
         syncShape()
         applyDisplayOptions()
     }
@@ -662,9 +681,10 @@ enum GlassChrome {
         NSLayoutConstraint.activate([view.widthAnchor.constraint(equalToConstant: size.width), view.heightAnchor.constraint(equalToConstant: size.height)])
     }
 
-    /// One glass plate holding a group of controls.
-    static func plate(_ views: [NSView], identifier: String, accessibility: ChromeAccessibility) -> GlassSurfaceView {
-        let plate = GlassSurfaceView(views: views, accessibility: accessibility)
+    /// One glass plate holding a group of controls. `axis: .vertical` is a stack of full-width rows (a choice panel's group).
+    static func plate(_ views: [NSView], identifier: String, accessibility: ChromeAccessibility,
+                      axis: NSUserInterfaceLayoutOrientation = .horizontal) -> GlassSurfaceView {
+        let plate = GlassSurfaceView(views: views, accessibility: accessibility, axis: axis)
         plate.identifier = NSUserInterfaceItemIdentifier(identifier)
         return plate
     }
