@@ -129,12 +129,12 @@ Pre-change twins are referenced from `docs/design/evidence/impl-2026-10-09/root-
 | `S11FP-size-fullscreen-populated-light@cbd0186.png` | light | 2056×1290 | true full screen (styleMask.fullScreen) | `layout/S11FP-size-fullscreen-populated-light@cbd0186.json` | — |
 | `S11M-size-1024x740-dark@cbd0186.png` | dark | 1024×740 | requested 1024x740 (1024x740 pt), window is 1024x740 pt | `layout/S11M-size-1024x740-dark@cbd0186.json` | — |
 | `S11M-size-1024x740-light@cbd0186.png` | light | 1024×740 | requested 1024x740 (1024x740 pt), window is 1024x740 pt | `layout/S11M-size-1024x740-light@cbd0186.json` | — |
-| `S11M-size-1280x800-dark@cbd0186.png` | dark | 1280×800 | requested 1280x800 (1280x800 pt), window is 1280x800 pt | `layout/S11M-size-1280x800-dark@cbd0186.json` | — |
-| `S11M-size-1280x800-light@cbd0186.png` | light | 1280×800 | requested 1280x800 (1280x800 pt), window is 1280x800 pt | `layout/S11M-size-1280x800-light@cbd0186.json` | — |
+| `S11M-size-1280x800-dark@a399d8a7.png` | dark | 1280×800 | requested 1280x800 (1280x800 pt), window is 1280x800 pt | `layout/S11M-size-1280x800-dark@a399d8a7.json` | — |
+| `S11M-size-1280x800-light@a399d8a7.png` | light | 1280×800 | requested 1280x800 (1280x800 pt), window is 1280x800 pt | `layout/S11M-size-1280x800-light@a399d8a7.json` | — |
 | `S11M-size-1440x900-dark@cbd0186.png` | dark | 1440×900 | requested 1440x900 (1440x900 pt), window is 1440x900 pt | `layout/S11M-size-1440x900-dark@cbd0186.json` | — |
 | `S11M-size-1440x900-light@cbd0186.png` | light | 1440×900 | requested 1440x900 (1440x900 pt), window is 1440x900 pt | `layout/S11M-size-1440x900-light@cbd0186.json` | — |
-| `S11M-size-980xmin-dark@cbd0186.png` | dark | 980×640 | requested 980xmin (980x640 pt), window is 980x640 pt | `layout/S11M-size-980xmin-dark@cbd0186.json` | — |
-| `S11M-size-980xmin-light@cbd0186.png` | light | 980×640 | requested 980xmin (980x640 pt), window is 980x640 pt | `layout/S11M-size-980xmin-light@cbd0186.json` | — |
+| `S11M-size-980xmin-dark@a399d8a7.png` | dark | 980×640 | requested 980xmin (980x640 pt), window is 980x640 pt | `layout/S11M-size-980xmin-dark@a399d8a7.json` | — |
+| `S11M-size-980xmin-light@a399d8a7.png` | light | 980×640 | requested 980xmin (980x640 pt), window is 980x640 pt | `layout/S11M-size-980xmin-light@a399d8a7.json` | — |
 | `S11M-size-full-dark@cbd0186.png` | dark | 2056×1197 | requested full (2056x1197 pt), window is 2056x1197 pt | `layout/S11M-size-full-dark@cbd0186.json` | — |
 | `S11M-size-full-light@cbd0186.png` | light | 2056×1197 | requested full (2056x1197 pt), window is 2056x1197 pt | `layout/S11M-size-full-light@cbd0186.json` | — |
 | `S12-frame-mode-dark@cbd0186.png` | dark | 1488×1179 | Frame mode: clear canvas hole, Snap Frame + Cancel, window alpha 0.8 | `layout/S12-frame-mode-dark@cbd0186.json` | — |
@@ -573,20 +573,20 @@ Pre-change twins are referenced from `docs/design/evidence/impl-2026-10-09/root-
 | `S50-toolbox-rest-light@cbd0186.png` | light | 1488×1179 | Toolbox panel open on a drawing with nothing selected | `—` | — |
 | `S50-toolbox-rest-only-dark@cbd0186.png` | dark | 1488×1179 | Toolbox panel open on a drawing with nothing selected (the panel window alone) | `—` | — |
 | `S50-toolbox-rest-only-light@cbd0186.png` | light | 1488×1179 | Toolbox panel open on a drawing with nothing selected (the panel window alone) | `—` | — |
-| `S51-zoom-actual-size-dark@cbd0186.png` | dark | 1662×1179 | Zoom panel while Actual Size is on: the Actual Size toggle row is chosen and the face shows Actual | `—` | — |
-| `S51-zoom-actual-size-light@cbd0186.png` | light | 1662×1179 | Zoom panel while Actual Size is on: the Actual Size toggle row is chosen and the face shows Actual | `—` | — |
-| `S51-zoom-chosen-dark@cbd0186.png` | dark | 1488×1179 | Zoom panel: the computed Fit row is the chosen row | `—` | — |
-| `S51-zoom-chosen-light@cbd0186.png` | light | 1488×1179 | Zoom panel: the computed Fit row is the chosen row | `—` | — |
-| `S51-zoom-dismissed-dark@cbd0186.png` | dark | 1488×1179 | Zoom panel dismissed with Escape: gone, focus back on the zoom button | `layout/S51-zoom-dismissed-dark@cbd0186.json` | — |
-| `S51-zoom-dismissed-light@cbd0186.png` | light | 1488×1179 | Zoom panel dismissed with Escape: gone, focus back on the zoom button | `layout/S51-zoom-dismissed-light@cbd0186.json` | — |
-| `S51-zoom-focus-dark@cbd0186.png` | dark | 1488×1179 | Zoom panel open with a computed Fit row chosen; keyboard focus on row 0 (Fit, 100%) | `—` | — |
-| `S51-zoom-focus-light@cbd0186.png` | light | 1488×1179 | Zoom panel open with a computed Fit row chosen; keyboard focus on row 0 (Fit, 100%) | `—` | — |
-| `S51-zoom-hover-dark@cbd0186.png` | dark | 1488×1179 | Zoom panel open with a computed Fit row chosen; row 1 (25%) hovered | `—` | — |
-| `S51-zoom-hover-light@cbd0186.png` | light | 1488×1179 | Zoom panel open with a computed Fit row chosen; row 1 (25%) hovered | `—` | — |
-| `S51-zoom-rest-dark@cbd0186.png` | dark | 1488×1179 | Zoom panel open with a computed Fit row chosen | `—` | — |
-| `S51-zoom-rest-light@cbd0186.png` | light | 1488×1179 | Zoom panel open with a computed Fit row chosen | `—` | — |
-| `S51-zoom-rest-only-dark@cbd0186.png` | dark | 1488×1179 | Zoom panel open with a computed Fit row chosen (the panel window alone) | `—` | — |
-| `S51-zoom-rest-only-light@cbd0186.png` | light | 1488×1179 | Zoom panel open with a computed Fit row chosen (the panel window alone) | `—` | — |
+| `S51-zoom-actual-size-dark@a399d8a7.png` | dark | 1662×1179 | Zoom panel while Actual Size is on: the Actual Size toggle row is chosen and the face shows Actual | `—` | — |
+| `S51-zoom-actual-size-light@a399d8a7.png` | light | 1662×1179 | Zoom panel while Actual Size is on: the Actual Size toggle row is chosen and the face shows Actual | `—` | — |
+| `S51-zoom-chosen-dark@a399d8a7.png` | dark | 1488×1179 | Zoom panel: the computed Fit row is the chosen row | `—` | — |
+| `S51-zoom-chosen-light@a399d8a7.png` | light | 1488×1179 | Zoom panel: the computed Fit row is the chosen row | `—` | — |
+| `S51-zoom-dismissed-dark@a399d8a7.png` | dark | 1488×1179 | Zoom panel dismissed with Escape: gone, focus back on the zoom button | `layout/S51-zoom-dismissed-dark@a399d8a7.json` | — |
+| `S51-zoom-dismissed-light@a399d8a7.png` | light | 1488×1179 | Zoom panel dismissed with Escape: gone, focus back on the zoom button | `layout/S51-zoom-dismissed-light@a399d8a7.json` | — |
+| `S51-zoom-focus-dark@a399d8a7.png` | dark | 1488×1179 | Zoom panel open with a computed Fit row chosen; keyboard focus on row 0 (Fit, 100%) | `—` | — |
+| `S51-zoom-focus-light@a399d8a7.png` | light | 1488×1179 | Zoom panel open with a computed Fit row chosen; keyboard focus on row 0 (Fit, 100%) | `—` | — |
+| `S51-zoom-hover-dark@a399d8a7.png` | dark | 1488×1179 | Zoom panel open with a computed Fit row chosen; row 1 (25%) hovered | `—` | — |
+| `S51-zoom-hover-light@a399d8a7.png` | light | 1488×1179 | Zoom panel open with a computed Fit row chosen; row 1 (25%) hovered | `—` | — |
+| `S51-zoom-rest-dark@a399d8a7.png` | dark | 1488×1179 | Zoom panel open with a computed Fit row chosen | `—` | — |
+| `S51-zoom-rest-light@a399d8a7.png` | light | 1488×1179 | Zoom panel open with a computed Fit row chosen | `—` | — |
+| `S51-zoom-rest-only-dark@a399d8a7.png` | dark | 1488×1179 | Zoom panel open with a computed Fit row chosen (the panel window alone) | `—` | — |
+| `S51-zoom-rest-only-light@a399d8a7.png` | light | 1488×1179 | Zoom panel open with a computed Fit row chosen (the panel window alone) | `—` | — |
 | `S52-upload-busy-dark@cbd0186.png` | dark | 1488×1179 | Upload panel while an upload runs: Cancel Upload leads the rows | `—` | — |
 | `S52-upload-busy-light@cbd0186.png` | light | 1488×1179 | Upload panel while an upload runs: Cancel Upload leads the rows | `—` | — |
 | `S52-upload-chosen-dark@cbd0186.png` | dark | 1488×1179 | Upload panel after the default was switched to the second destination: the check follows it | `—` | — |

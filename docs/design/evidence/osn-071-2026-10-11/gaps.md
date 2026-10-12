@@ -1,6 +1,6 @@
 # OSN-071 gaps: coverage-matrix surfaces and modes NOT captured
 
-Round 2 @ `cbd0186` (round 1 was `4254505`; git keeps it). Everything here is a surface or mode with no capture in `REVIEW.md`, each with the concrete reason. A row of `docs/design/e2e/coverage-matrix.md` that is not listed here has at least one harness capture (its `rendered` surface ids or the S50 to S60 glass surfaces) in both light and dark. Gap categories follow the matrix (`permission`, `hardware`, `OS-owned`, `harness`, `unsafe`) plus `behaviour` for rows that are not visual states.
+Round 2 @ `cbd0186`, S51 fixed and recaptured at `a399d8a7` (round 1 was `4254505`; git keeps it). Everything here is a surface or mode with no capture in `REVIEW.md`, each with the concrete reason. A row of `docs/design/e2e/coverage-matrix.md` that is not listed here has at least one harness capture (its `rendered` surface ids or the S50 to S60 glass surfaces) in both light and dark. Gap categories follow the matrix (`permission`, `hardware`, `OS-owned`, `harness`, `unsafe`) plus `behaviour` for rows that are not visual states.
 
 ## Surface gaps from the harness (manifest `gaps`, every pack)
 
@@ -42,8 +42,8 @@ Panels formerly listed without a render are now covered by the glass surfaces: T
 | Welcome / first launch (S27) | all | The welcome document was removed; no surface exists |
 | Actual Size at widths other than the S07 capture, text editing at 1024 and 1440 | those widths | Captured at 980 and 1280 (S36, S05, S07); other widths follow the same layout (width budget is captured in the layout group) |
 
-## Defects the round 2 checks found (not coverage gaps)
+## Defects the round 2 checks found (fixed)
 
 | Surface | Finding |
 |---|---|
-| S51 `zoom-actual-size`, all 6 modes | The zoom pop-up face "Actual" needs 56 x 24 pt and is drawn in 54 x 25 pt, so `check-eye-dump.py --strict` (glass checks) and the text walker report it cut off. The capture is kept so the failure stays visible; it clears when the face is widened |
+| S51 `zoom-actual-size`, all 6 modes | Fixed in `a399d8a7`: the zoom pop-up face "Actual" needed 56 x 24 pt and was drawn in 54 x 25 pt, so `check-eye-dump.py --strict` and the text walker reported it cut off. S51 (every capture, base, Reduce Transparency and Increase Contrast) and S11M at 980 and 1280 (base) were recaptured at `a399d8a7`; `check-eye-dump.py --strict` exits 0 on all five packs and the walker reports 0 violations |

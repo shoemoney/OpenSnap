@@ -5678,15 +5678,15 @@
     800
    ],
    "scale": 2,
-   "sourceSha": "cbd0186",
+   "sourceSha": "a399d8a7",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S11M-size-1280x800-dark@cbd0186.png",
+   "file": "S11M-size-1280x800-dark@a399d8a7.png",
    "storedPixelSize": [
     1200,
     750
    ],
    "downscaled": true,
-   "layout": "layout/S11M-size-1280x800-dark@cbd0186.json",
+   "layout": "layout/S11M-size-1280x800-dark@a399d8a7.json",
    "before": null,
    "displayOptions": {
     "active": [],
@@ -5720,15 +5720,15 @@
     800
    ],
    "scale": 2,
-   "sourceSha": "cbd0186",
+   "sourceSha": "a399d8a7",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S11M-size-1280x800-light@cbd0186.png",
+   "file": "S11M-size-1280x800-light@a399d8a7.png",
    "storedPixelSize": [
     1200,
     750
    ],
    "downscaled": true,
-   "layout": "layout/S11M-size-1280x800-light@cbd0186.json",
+   "layout": "layout/S11M-size-1280x800-light@a399d8a7.json",
    "before": null,
    "displayOptions": {
     "active": [],
@@ -5846,15 +5846,15 @@
     640
    ],
    "scale": 2,
-   "sourceSha": "cbd0186",
+   "sourceSha": "a399d8a7",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S11M-size-980xmin-dark@cbd0186.png",
+   "file": "S11M-size-980xmin-dark@a399d8a7.png",
    "storedPixelSize": [
     1200,
     784
    ],
    "downscaled": true,
-   "layout": "layout/S11M-size-980xmin-dark@cbd0186.json",
+   "layout": "layout/S11M-size-980xmin-dark@a399d8a7.json",
    "before": null,
    "displayOptions": {
     "active": [],
@@ -5888,15 +5888,15 @@
     640
    ],
    "scale": 2,
-   "sourceSha": "cbd0186",
+   "sourceSha": "a399d8a7",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S11M-size-980xmin-light@cbd0186.png",
+   "file": "S11M-size-980xmin-light@a399d8a7.png",
    "storedPixelSize": [
     1200,
     784
    ],
    "downscaled": true,
-   "layout": "layout/S11M-size-980xmin-light@cbd0186.json",
+   "layout": "layout/S11M-size-980xmin-light@a399d8a7.json",
    "before": null,
    "displayOptions": {
     "active": [],
@@ -32008,9 +32008,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "cbd0186",
+   "sourceSha": "a399d8a7",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S51-zoom-actual-size-dark@cbd0186.png",
+   "file": "S51-zoom-actual-size-dark@a399d8a7.png",
    "storedPixelSize": [
     1200,
     851
@@ -32166,7 +32166,7 @@
      {
       "chevronColumn": 25,
       "facePadding": 4,
-      "fits": false,
+      "fits": true,
       "fittingSize": [
        56,
        24
@@ -32177,7 +32177,7 @@
        "weight": 5
       },
       "frameSize": [
-       54,
+       56,
        25
       ],
       "identifier": "Zoom",
@@ -32194,7 +32194,7 @@
     "openerFrame": [
      430,
      114,
-     87,
+     89,
      36
     ],
     "panelFrame": [
@@ -32251,9 +32251,7 @@
      1197
     ],
     "totalRows": 8,
-    "truncatedRows": [
-     "Actual"
-    ],
+    "truncatedRows": [],
     "unmeasuredText": [
      "SegmentedToggle segments (the footer PNG | JPG toggle)",
      "the Size panel readout and header",
@@ -32291,9 +32289,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "cbd0186",
+   "sourceSha": "a399d8a7",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S51-zoom-actual-size-light@cbd0186.png",
+   "file": "S51-zoom-actual-size-light@a399d8a7.png",
    "storedPixelSize": [
     1200,
     851
@@ -32449,7 +32447,7 @@
      {
       "chevronColumn": 25,
       "facePadding": 4,
-      "fits": false,
+      "fits": true,
       "fittingSize": [
        56,
        24
@@ -32460,7 +32458,7 @@
        "weight": 5
       },
       "frameSize": [
-       54,
+       56,
        25
       ],
       "identifier": "Zoom",
@@ -32477,7 +32475,7 @@
     "openerFrame": [
      430,
      114,
-     87,
+     89,
      36
     ],
     "panelFrame": [
@@ -32534,9 +32532,7 @@
      1197
     ],
     "totalRows": 8,
-    "truncatedRows": [
-     "Actual"
-    ],
+    "truncatedRows": [],
     "unmeasuredText": [
      "SegmentedToggle segments (the footer PNG | JPG toggle)",
      "the Size panel readout and header",
@@ -32574,9 +32570,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "cbd0186",
+   "sourceSha": "a399d8a7",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S51-zoom-chosen-dark@cbd0186.png",
+   "file": "S51-zoom-chosen-dark@a399d8a7.png",
    "storedPixelSize": [
     1200,
     951
@@ -32741,7 +32737,7 @@
        "weight": 5
       },
       "frameSize": [
-       54,
+       56,
        25
       ],
       "identifier": "Zoom",
@@ -32757,7 +32753,7 @@
     "openerFrame": [
      430,
      114,
-     87,
+     89,
      36
     ],
     "panelFrame": [
@@ -32851,9 +32847,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "cbd0186",
+   "sourceSha": "a399d8a7",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S51-zoom-chosen-light@cbd0186.png",
+   "file": "S51-zoom-chosen-light@a399d8a7.png",
    "storedPixelSize": [
     1200,
     951
@@ -33018,7 +33014,7 @@
        "weight": 5
       },
       "frameSize": [
-       54,
+       56,
        25
       ],
       "identifier": "Zoom",
@@ -33034,7 +33030,7 @@
     "openerFrame": [
      430,
      114,
-     87,
+     89,
      36
     ],
     "panelFrame": [
@@ -33128,15 +33124,15 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "cbd0186",
+   "sourceSha": "a399d8a7",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S51-zoom-dismissed-dark@cbd0186.png",
+   "file": "S51-zoom-dismissed-dark@a399d8a7.png",
    "storedPixelSize": [
     1200,
     951
    ],
    "downscaled": true,
-   "layout": "layout/S51-zoom-dismissed-dark@cbd0186.json",
+   "layout": "layout/S51-zoom-dismissed-dark@a399d8a7.json",
    "before": null,
    "displayOptions": {
     "active": [],
@@ -33181,7 +33177,7 @@
        "weight": 5
       },
       "frameSize": [
-       54,
+       56,
        25
       ],
       "identifier": "Zoom",
@@ -33240,15 +33236,15 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "cbd0186",
+   "sourceSha": "a399d8a7",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S51-zoom-dismissed-light@cbd0186.png",
+   "file": "S51-zoom-dismissed-light@a399d8a7.png",
    "storedPixelSize": [
     1200,
     951
    ],
    "downscaled": true,
-   "layout": "layout/S51-zoom-dismissed-light@cbd0186.json",
+   "layout": "layout/S51-zoom-dismissed-light@a399d8a7.json",
    "before": null,
    "displayOptions": {
     "active": [],
@@ -33293,7 +33289,7 @@
        "weight": 5
       },
       "frameSize": [
-       54,
+       56,
        25
       ],
       "identifier": "Zoom",
@@ -33352,9 +33348,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "cbd0186",
+   "sourceSha": "a399d8a7",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S51-zoom-focus-dark@cbd0186.png",
+   "file": "S51-zoom-focus-dark@a399d8a7.png",
    "storedPixelSize": [
     1200,
     951
@@ -33520,7 +33516,7 @@
        "weight": 5
       },
       "frameSize": [
-       54,
+       56,
        25
       ],
       "identifier": "Zoom",
@@ -33536,7 +33532,7 @@
     "openerFrame": [
      430,
      114,
-     87,
+     89,
      36
     ],
     "panelFrame": [
@@ -33630,9 +33626,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "cbd0186",
+   "sourceSha": "a399d8a7",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S51-zoom-focus-light@cbd0186.png",
+   "file": "S51-zoom-focus-light@a399d8a7.png",
    "storedPixelSize": [
     1200,
     951
@@ -33798,7 +33794,7 @@
        "weight": 5
       },
       "frameSize": [
-       54,
+       56,
        25
       ],
       "identifier": "Zoom",
@@ -33814,7 +33810,7 @@
     "openerFrame": [
      430,
      114,
-     87,
+     89,
      36
     ],
     "panelFrame": [
@@ -33908,9 +33904,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "cbd0186",
+   "sourceSha": "a399d8a7",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S51-zoom-hover-dark@cbd0186.png",
+   "file": "S51-zoom-hover-dark@a399d8a7.png",
    "storedPixelSize": [
     1200,
     951
@@ -34075,7 +34071,7 @@
        "weight": 5
       },
       "frameSize": [
-       54,
+       56,
        25
       ],
       "identifier": "Zoom",
@@ -34091,7 +34087,7 @@
     "openerFrame": [
      430,
      114,
-     87,
+     89,
      36
     ],
     "panelFrame": [
@@ -34185,9 +34181,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "cbd0186",
+   "sourceSha": "a399d8a7",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S51-zoom-hover-light@cbd0186.png",
+   "file": "S51-zoom-hover-light@a399d8a7.png",
    "storedPixelSize": [
     1200,
     951
@@ -34352,7 +34348,7 @@
        "weight": 5
       },
       "frameSize": [
-       54,
+       56,
        25
       ],
       "identifier": "Zoom",
@@ -34368,7 +34364,7 @@
     "openerFrame": [
      430,
      114,
-     87,
+     89,
      36
     ],
     "panelFrame": [
@@ -34462,9 +34458,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "cbd0186",
+   "sourceSha": "a399d8a7",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S51-zoom-rest-dark@cbd0186.png",
+   "file": "S51-zoom-rest-dark@a399d8a7.png",
    "storedPixelSize": [
     1200,
     951
@@ -34628,7 +34624,7 @@
        "weight": 5
       },
       "frameSize": [
-       54,
+       56,
        25
       ],
       "identifier": "Zoom",
@@ -34644,7 +34640,7 @@
     "openerFrame": [
      430,
      114,
-     87,
+     89,
      36
     ],
     "panelFrame": [
@@ -34738,9 +34734,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "cbd0186",
+   "sourceSha": "a399d8a7",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S51-zoom-rest-light@cbd0186.png",
+   "file": "S51-zoom-rest-light@a399d8a7.png",
    "storedPixelSize": [
     1200,
     951
@@ -34904,7 +34900,7 @@
        "weight": 5
       },
       "frameSize": [
-       54,
+       56,
        25
       ],
       "identifier": "Zoom",
@@ -34920,7 +34916,7 @@
     "openerFrame": [
      430,
      114,
-     87,
+     89,
      36
     ],
     "panelFrame": [
@@ -35014,9 +35010,9 @@
     324
    ],
    "scale": 2,
-   "sourceSha": "cbd0186",
+   "sourceSha": "a399d8a7",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S51-zoom-rest-only-dark@cbd0186.png",
+   "file": "S51-zoom-rest-only-dark@a399d8a7.png",
    "storedPixelSize": [
     408,
     648
@@ -35180,7 +35176,7 @@
        "weight": 5
       },
       "frameSize": [
-       54,
+       56,
        25
       ],
       "identifier": "Zoom",
@@ -35196,7 +35192,7 @@
     "openerFrame": [
      430,
      114,
-     87,
+     89,
      36
     ],
     "panelFrame": [
@@ -35290,9 +35286,9 @@
     324
    ],
    "scale": 2,
-   "sourceSha": "cbd0186",
+   "sourceSha": "a399d8a7",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S51-zoom-rest-only-light@cbd0186.png",
+   "file": "S51-zoom-rest-only-light@a399d8a7.png",
    "storedPixelSize": [
     408,
     648
@@ -35456,7 +35452,7 @@
        "weight": 5
       },
       "frameSize": [
-       54,
+       56,
        25
       ],
       "identifier": "Zoom",
@@ -35472,7 +35468,7 @@
     "openerFrame": [
      430,
      114,
-     87,
+     89,
      36
     ],
     "panelFrame": [

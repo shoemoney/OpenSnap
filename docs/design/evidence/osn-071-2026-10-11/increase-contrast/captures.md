@@ -299,20 +299,20 @@ Pre-change twins are referenced from `docs/design/evidence/impl-2026-10-09/root-
 | `S50-toolbox-rest-light-ic@cbd0186.png` | light | 1488×1179 | Toolbox panel open on a drawing with nothing selected | `—` | — |
 | `S50-toolbox-rest-only-dark-ic@cbd0186.png` | dark | 1488×1179 | Toolbox panel open on a drawing with nothing selected (the panel window alone) | `—` | — |
 | `S50-toolbox-rest-only-light-ic@cbd0186.png` | light | 1488×1179 | Toolbox panel open on a drawing with nothing selected (the panel window alone) | `—` | — |
-| `S51-zoom-actual-size-dark-ic@cbd0186.png` | dark | 1662×1179 | Zoom panel while Actual Size is on: the Actual Size toggle row is chosen and the face shows Actual | `—` | — |
-| `S51-zoom-actual-size-light-ic@cbd0186.png` | light | 1662×1179 | Zoom panel while Actual Size is on: the Actual Size toggle row is chosen and the face shows Actual | `—` | — |
-| `S51-zoom-chosen-dark-ic@cbd0186.png` | dark | 1488×1179 | Zoom panel: the computed Fit row is the chosen row | `—` | — |
-| `S51-zoom-chosen-light-ic@cbd0186.png` | light | 1488×1179 | Zoom panel: the computed Fit row is the chosen row | `—` | — |
-| `S51-zoom-dismissed-dark-ic@cbd0186.png` | dark | 1488×1179 | Zoom panel dismissed with Escape: gone, focus back on the zoom button | `layout/S51-zoom-dismissed-dark-ic@cbd0186.json` | — |
-| `S51-zoom-dismissed-light-ic@cbd0186.png` | light | 1488×1179 | Zoom panel dismissed with Escape: gone, focus back on the zoom button | `layout/S51-zoom-dismissed-light-ic@cbd0186.json` | — |
-| `S51-zoom-focus-dark-ic@cbd0186.png` | dark | 1488×1179 | Zoom panel open with a computed Fit row chosen; keyboard focus on row 0 (Fit, 100%) | `—` | — |
-| `S51-zoom-focus-light-ic@cbd0186.png` | light | 1488×1179 | Zoom panel open with a computed Fit row chosen; keyboard focus on row 0 (Fit, 100%) | `—` | — |
-| `S51-zoom-hover-dark-ic@cbd0186.png` | dark | 1488×1179 | Zoom panel open with a computed Fit row chosen; row 1 (25%) hovered | `—` | — |
-| `S51-zoom-hover-light-ic@cbd0186.png` | light | 1488×1179 | Zoom panel open with a computed Fit row chosen; row 1 (25%) hovered | `—` | — |
-| `S51-zoom-rest-dark-ic@cbd0186.png` | dark | 1488×1179 | Zoom panel open with a computed Fit row chosen | `—` | — |
-| `S51-zoom-rest-light-ic@cbd0186.png` | light | 1488×1179 | Zoom panel open with a computed Fit row chosen | `—` | — |
-| `S51-zoom-rest-only-dark-ic@cbd0186.png` | dark | 1488×1179 | Zoom panel open with a computed Fit row chosen (the panel window alone) | `—` | — |
-| `S51-zoom-rest-only-light-ic@cbd0186.png` | light | 1488×1179 | Zoom panel open with a computed Fit row chosen (the panel window alone) | `—` | — |
+| `S51-zoom-actual-size-dark-ic@a399d8a7.png` | dark | 1662×1179 | Zoom panel while Actual Size is on: the Actual Size toggle row is chosen and the face shows Actual | `—` | — |
+| `S51-zoom-actual-size-light-ic@a399d8a7.png` | light | 1662×1179 | Zoom panel while Actual Size is on: the Actual Size toggle row is chosen and the face shows Actual | `—` | — |
+| `S51-zoom-chosen-dark-ic@a399d8a7.png` | dark | 1488×1179 | Zoom panel: the computed Fit row is the chosen row | `—` | — |
+| `S51-zoom-chosen-light-ic@a399d8a7.png` | light | 1488×1179 | Zoom panel: the computed Fit row is the chosen row | `—` | — |
+| `S51-zoom-dismissed-dark-ic@a399d8a7.png` | dark | 1488×1179 | Zoom panel dismissed with Escape: gone, focus back on the zoom button | `layout/S51-zoom-dismissed-dark-ic@a399d8a7.json` | — |
+| `S51-zoom-dismissed-light-ic@a399d8a7.png` | light | 1488×1179 | Zoom panel dismissed with Escape: gone, focus back on the zoom button | `layout/S51-zoom-dismissed-light-ic@a399d8a7.json` | — |
+| `S51-zoom-focus-dark-ic@a399d8a7.png` | dark | 1488×1179 | Zoom panel open with a computed Fit row chosen; keyboard focus on row 0 (Fit, 100%) | `—` | — |
+| `S51-zoom-focus-light-ic@a399d8a7.png` | light | 1488×1179 | Zoom panel open with a computed Fit row chosen; keyboard focus on row 0 (Fit, 100%) | `—` | — |
+| `S51-zoom-hover-dark-ic@a399d8a7.png` | dark | 1488×1179 | Zoom panel open with a computed Fit row chosen; row 1 (25%) hovered | `—` | — |
+| `S51-zoom-hover-light-ic@a399d8a7.png` | light | 1488×1179 | Zoom panel open with a computed Fit row chosen; row 1 (25%) hovered | `—` | — |
+| `S51-zoom-rest-dark-ic@a399d8a7.png` | dark | 1488×1179 | Zoom panel open with a computed Fit row chosen | `—` | — |
+| `S51-zoom-rest-light-ic@a399d8a7.png` | light | 1488×1179 | Zoom panel open with a computed Fit row chosen | `—` | — |
+| `S51-zoom-rest-only-dark-ic@a399d8a7.png` | dark | 1488×1179 | Zoom panel open with a computed Fit row chosen (the panel window alone) | `—` | — |
+| `S51-zoom-rest-only-light-ic@a399d8a7.png` | light | 1488×1179 | Zoom panel open with a computed Fit row chosen (the panel window alone) | `—` | — |
 | `S52-upload-busy-dark-ic@cbd0186.png` | dark | 1488×1179 | Upload panel while an upload runs: Cancel Upload leads the rows | `—` | — |
 | `S52-upload-busy-light-ic@cbd0186.png` | light | 1488×1179 | Upload panel while an upload runs: Cancel Upload leads the rows | `—` | — |
 | `S52-upload-chosen-dark-ic@cbd0186.png` | dark | 1488×1179 | Upload panel after the default was switched to the second destination: the check follows it | `—` | — |

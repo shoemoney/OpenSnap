@@ -1,15 +1,3 @@
 captures walked 2248, text nodes 55792, glass rows 5950, smallest 18.0 pt
 skipped system-owned/private nodes {'titleBarWidgetOrSystemPanel': 8410, 'systemPanel': 0, 'privateButtonField': 5250}
-violations 12; controls 18-20 pt 14798; status-truncated captures 6
-   {'capture': 'base/S51-zoom-actual-size-dark', 'class': 'glass truncatedRows', 'rows': ['Actual']}
-   {'capture': 'base/S51-zoom-actual-size-dark', 'class': 'glass label', 'title': 'Actual', 'fits': False, 'pt': 20}
-   {'capture': 'base/S51-zoom-actual-size-light', 'class': 'glass truncatedRows', 'rows': ['Actual']}
-   {'capture': 'base/S51-zoom-actual-size-light', 'class': 'glass label', 'title': 'Actual', 'fits': False, 'pt': 20}
-   {'capture': 'reduce-transparency/S51-zoom-actual-size-dark-rt', 'class': 'glass truncatedRows', 'rows': ['Actual']}
-   {'capture': 'reduce-transparency/S51-zoom-actual-size-dark-rt', 'class': 'glass label', 'title': 'Actual', 'fits': False, 'pt': 20}
-   {'capture': 'reduce-transparency/S51-zoom-actual-size-light-rt', 'class': 'glass truncatedRows', 'rows': ['Actual']}
-   {'capture': 'reduce-transparency/S51-zoom-actual-size-light-rt', 'class': 'glass label', 'title': 'Actual', 'fits': False, 'pt': 20}
-   {'capture': 'increase-contrast/S51-zoom-actual-size-dark-ic', 'class': 'glass truncatedRows', 'rows': ['Actual']}
-   {'capture': 'increase-contrast/S51-zoom-actual-size-dark-ic', 'class': 'glass label', 'title': 'Actual', 'fits': False, 'pt': 20}
-   {'capture': 'increase-contrast/S51-zoom-actual-size-light-ic', 'class': 'glass truncatedRows', 'rows': ['Actual']}
-   {'capture': 'increase-contrast/S51-zoom-actual-size-light-ic', 'class': 'glass label', 'title': 'Actual', 'fits': False, 'pt': 20}
+violations 0; controls 18-20 pt 14798; status-truncated captures 6
