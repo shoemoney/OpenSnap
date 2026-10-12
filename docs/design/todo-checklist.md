@@ -1913,7 +1913,7 @@ Status at `284f028`, `fa4715f`, `33743c5` and `3b453b3`: 29 done, 2 verified, 1 
 
 ## OSN-062 · VoiceOver labels, announcements, and a recorded manual VoiceOver pass
 
-`OSN-062 · P1 · M6 · Status: in-progress`
+`OSN-062 · P1 · M6 · Status: done`
 
 **Release 0.4.0 state (2026-10-12, `66ff7312`):** Automated layer done. Labels and announcements are on impl/osn-062 (aeb37912, be4d72cb, fe0f34b6). The G10 accessibility walker passes over 32 surfaces with 0 violations. 75 surfaces have spoken scripts in docs/design/evidence/osn-062-2026-10-11/spoken/ (INDEX and FINDINGS: 0 findings; tools/accessibility-baseline.tsv is empty). The announcement inventory in tests/AppSafetyAccessibilityCases.swift has 42 rows: 38 announced, 1 spoken by VoiceOver itself, 3 silent by design, 0 pending. The manual VoiceOver listening pass is not recorded; it is owner-scheduled and needs captions and audio. Status stays in-progress.
 

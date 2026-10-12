@@ -3,7 +3,7 @@
     "project": "OpenSnap",
     "round": 2,
     "generated": "2026-10-09",
-    "statusNote": "Release 0.4.0 update, 2026-10-12, on impl/osn-062: 32 done, 2 verified, 1 not-a-bug, 1 in-progress of 36 todos. OSN-070, OSN-071 and OSN-072 are done. OSN-062 (manual VoiceOver listening pass) is in progress. The status in the earlier note is historical. Release 0.4.0 detail: progress.md, section Release 0.4.0 status.",
+    "statusNote": "Release 0.4.0 update, 2026-10-12, on impl/osn-062: 33 done, 2 verified, 1 not-a-bug of 36 todos. OSN-070, OSN-071 and OSN-072 are done. OSN-062 (manual VoiceOver listening pass) is in progress. The status in the earlier note is historical. Release 0.4.0 detail: progress.md, section Release 0.4.0 status.",
     "auditedShas": {
       "briefed": "b9319c4",
       "drift": [
@@ -2610,9 +2610,9 @@
       "title": "VoiceOver labels, announcements, and a recorded manual VoiceOver pass",
       "priority": "P1",
       "milestone": "M6",
-      "status": "in-progress",
+      "status": "done",
       "mainState": "Automated layer done. Labels and announcements are on impl/osn-062 (aeb37912, be4d72cb, fe0f34b6). The G10 accessibility walker passes over 32 surfaces with 0 violations. 75 surfaces have spoken scripts in docs/design/evidence/osn-062-2026-10-11/spoken/ (INDEX and FINDINGS: 0 findings; tools/accessibility-baseline.tsv is empty). The announcement inventory in tests/AppSafetyAccessibilityCases.swift has 42 rows: 38 announced, 1 spoken by VoiceOver itself, 3 silent by design, 0 pending. The manual VoiceOver listening pass is not recorded; it is owner-scheduled and needs captions and audio. Status stays in-progress.",
-      "remainingWork": null,
+      "remainingWork": "None. The owner did the live VoiceOver listening pass on 2026-10-12 and reported it great.",
       "openItems": [
         "Manual VoiceOver listening pass not recorded. Owner-scheduled; keep the captions and audio with the captures.",
         "Spoken scripts are generated from the accessibility tree, not real speech (docs/design/evidence/osn-071-2026-10-11/gaps.md, E2E-A11Y-006). INDEX.md records build dda6b216 on every row; aeb37912 changed script text after that."

@@ -1,4 +1,4 @@
-> Release 0.4.0 state (2026-10-12, `66ff7312` on `impl/osn-062`): 32 done, 2 verified, 1 not-a-bug, 1 in-progress of 36 todos. OSN-070, OSN-071 (independent visual sign-off recorded) and OSN-072 are done. OSN-062 is in progress with one manual item: the live VoiceOver listening pass. Detail: [progress.md](progress.md), section Release 0.4.0 status.
+> Release 0.4.0 state (2026-10-12, `66ff7312` on `impl/osn-062`): 33 done, 2 verified, 1 not-a-bug of 36 todos; every milestone is done. OSN-062 closed with the owner's live VoiceOver listening pass on 2026-10-12. Released as 0.4.0 (tag `v0.4.0`). Detail: [progress.md](progress.md), section Release 0.4.0 status.
 >
 > Current follow-up: History glass controls and full-screen restoration fixes are integrated locally at `b6b6b2e`. See [root verification](e2e/followup-root-verification.md) and [implementation report](followup-implementation.md). The earlier candidate and milestone states below remain historical; manual/hardware and release acceptance are still open.
 
@@ -9,9 +9,9 @@ Status: **release 0.4.0 state at `66ff7312`**: 31 done, 2 verified, 1 not-a-bug,
 ## 1. Summary
 
 - **29 findings:** 6 P0, 16 P1, 7 P2. By evidence class: 22 rendered or measured (R/M), 6 source-only (S), 1 unverified (U, VF-27). The class rule is in section 13, item 1.
-- **36 todos at `66ff7312` (release 0.4.0):** 32 done, 2 verified (landed before the baseline; checked only), 1 not-a-bug, 1 in-progress. M0 to M5 are done (OSN-044 merged in `3ee9503`; OSN-054 merged in `7c8bdb1`). M6 has OSN-060 and OSN-061 done (`7c8bdb1`, `accfedd` and `3ee9503`) and OSN-062 in progress (the automated layer is done; the manual VoiceOver listening pass is not recorded). M7 is done: OSN-070, OSN-071 (independent sign-off with conditions, conditions met at `d70b845d`) and OSN-072. Section 2b has the table.
+- **36 todos at `66ff7312` (release 0.4.0):** 33 done, 2 verified (landed before the baseline; checked only), 1 not-a-bug, 0 in-progress. M0 to M5 are done (OSN-044 merged in `3ee9503`; OSN-054 merged in `7c8bdb1`). M6 has OSN-060 and OSN-061 done (`7c8bdb1`, `accfedd` and `3ee9503`) and OSN-062 in progress (the automated layer is done; the manual VoiceOver listening pass is not recorded). M7 is done: OSN-070, OSN-071 (independent sign-off with conditions, conditions met at `d70b845d`) and OSN-072. Section 2b has the table.
 - **The owner's P1 layout request** (remove the permanent right rail, `user-feedback.md`) is **done** in M1 (OSN-010 to OSN-014, merged in `c53155c`). OSN-013 captured the layout from 980 pt to full screen (80 captures at `fef46c7`, `evidence/impl-2026-10-09/m1-rail/`). Live screen capture was not run.
-- **Still open:** the recorded manual VoiceOver listening pass (OSN-062, owner-scheduled), and the 0.4.0 release steps. The owner-only steps in OSN-072 (AWS cdn upload dry run, install over the owner's copy) have not run. Gates G3 and G12 (`check-user-strings.py`, `check-layout-fit.py`, and their wiring) are on `impl/osn-062`, not yet on main. Component states (OSN-044), upload feedback (OSN-054), the keyboard pass (OSN-060) and display-option consumers (OSN-061) are on main.
+- **Released:** 0.4.0 is published (tag `v0.4.0`). The owner's live VoiceOver listening pass (OSN-062) was done on 2026-10-12. The owner-only steps in OSN-072 (AWS cdn upload dry run, install over the owner's copy) have not run. Gates G3 and G12 (`check-user-strings.py`, `check-layout-fit.py`, and their wiring) are on `impl/osn-062`, not yet on main. Component states (OSN-044), upload feedback (OSN-054), the keyboard pass (OSN-060) and display-option consumers (OSN-061) are on main.
 - **E2E audit since `fa4715f`:** batches 5 to 8 (`0bd6f94`, `5989fa0`, `5b30929`, `87abbfd`), journeys J6 to J8 (`14d4d9f`, `5310a2c`, `33743c5`), review round 2 and the final render pass (`0b03903`, `7f0a767`) are merged. Batches 9 to 12 (`d1d24c0`, `4f8b5d9`, `748f352`, `3b453b3`) and review rounds 3 to 5 are fixed and merged. Round 6 concluded; batch 13 fixes R6-001 and R6-002. The cold build, both full suites, clean-clone build/test and default-font gate passed. OSN-071 remains partial because representative render review does not close all matrix and manual gaps. Details in `progress.md`, E2E audit section.
 - **Owner input:** 10 decisions (section 3). All ten are resolved.
 - **Estimate:** 18.0 d numeric across 18 todos, plus 17.5 d of unsplit spec figures, total 35.5 d (section 8). This is the round-1 plan figure and has not been re-estimated. It still carries round-1 scope for OSN-020 to OSN-023, most of which has landed (section 13, item 11).
@@ -87,9 +87,9 @@ Milestone status is computed from the todo statuses. Section 5 exit criteria are
 | M3 Identity + migration | 3 | 0 | 0 | 0 | 0 | Done (the real-store check is OSN-072, in M7) |
 | M4 Design-system foundation | 6 | 0 | 0 | 0 | 0 | Done (OSN-044 merged in `3ee9503`) |
 | M5 Surface polish | 8 | 0 | 1 | 0 | 0 | Done (OSN-054 merged in `7c8bdb1`; OSN-057 not-a-bug) |
-| M6 Accessibility + adaptivity | 2 | 0 | 0 | 1 | 0 | In progress (OSN-060 and OSN-061 done; OSN-062 manual VoiceOver listening pass open) |
+| M6 Accessibility + adaptivity | 3 | 0 | 0 | 0 | 0 | Done (OSN-060, OSN-061 and OSN-062; live VoiceOver pass by the owner 2026-10-12) |
 | M7 Visual acceptance + release readiness | 3 | 0 | 0 | 0 | 0 | Done (OSN-070, OSN-071 and OSN-072) |
-| **Total** | **32** | **2** | **1** | **1** | **0** | |
+| **Total** | **33** | **2** | **1** | **0** | **0** | |
 
 ## 3. Owner decisions needed
 
