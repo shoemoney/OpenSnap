@@ -411,10 +411,13 @@ final class ResizePanelSession {
 /// The crop anchor: nine cells laid out like the picture they stand for, the chosen one marking the part of the image that is kept.
 /// One tab stop; the arrow keys move the choice, the pointer picks a cell, and VoiceOver sees a radio group of nine named cells.
 @MainActor
-final class ResizeAnchorGrid: NSView, ChromeFillable {
+final class ResizeAnchorGrid: NSView, ChromeFillable, TokenFocusRinged {
     static let cellSize = NSSize(width: 56, height: 40)
     static let spacing: CGFloat = DesignTokens.Space.s2
-    var anchor: ResizePanelAnchor = .center { didSet { if anchor != oldValue { needsDisplay = true; invalidateAccessibility() } } }
+    var anchor: ResizePanelAnchor = .center { didSet { if anchor != oldValue { needsDisplay = true; tokenRing.refresh(); invalidateAccessibility() } } }
+    /// The keyboard focus ring: the app's token ring around the chosen cell (not AppKit's pale system ring).
+    private(set) lazy var tokenRing = TokenFocusRing(view: self, cornerRadius: DesignTokens.Radius.md, target: { [unowned self] in frame(of: anchor) })
+    override var focusRingType: NSFocusRingType { get { .none } set {} }
     var onChange: ((ResizePanelAnchor) -> Void)?
     var accessibility: ChromeAccessibility = .live { didSet { needsDisplay = true } }
     private(set) var hovered: ResizePanelAnchor?
@@ -424,7 +427,7 @@ final class ResizeAnchorGrid: NSView, ChromeFillable {
 
     override init(frame frameRect: NSRect) {
         super.init(frame: NSRect(origin: .zero, size: Self.intrinsic))
-        focusRingType = .exterior
+        _ = tokenRing
         setAccessibilityElement(true)
         setAccessibilityRole(.radioGroup)
         setAccessibilityLabel("Crop anchor")
@@ -482,12 +485,17 @@ final class ResizeAnchorGrid: NSView, ChromeFillable {
             }
         }
     }
-    override var focusRingMaskBounds: NSRect { bounds }
-    override func drawFocusRingMask() {
-        NSColor.black.setFill()
-        let rect = frame(of: anchor)
-        NSBezierPath(roundedRect: rect, xRadius: DesignTokens.Radius.md, yRadius: DesignTokens.Radius.md).fill()
+    override func becomeFirstResponder() -> Bool {
+        let accepted = super.becomeFirstResponder()
+        if accepted { tokenRing.setFocused(true) }
+        return accepted
     }
+    override func resignFirstResponder() -> Bool {
+        let accepted = super.resignFirstResponder()
+        if accepted { tokenRing.setFocused(false) }
+        return accepted
+    }
+    override func layout() { super.layout(); tokenRing.refresh() }
     override func mouseDown(with event: NSEvent) {
         window?.makeFirstResponder(self)
         if let cell = cell(at: convert(event.locationInWindow, from: nil)) { setPressed(cell); select(cell) }
@@ -496,7 +504,7 @@ final class ResizeAnchorGrid: NSView, ChromeFillable {
     /// Press and hover entry points; the pointer events and the tests both go through them.
     func setPressed(_ cell: ResizePanelAnchor?) { if cell != pressed { pressed = cell; needsDisplay = true } }
     func setHovered(_ cell: ResizePanelAnchor?) { if cell != hovered { hovered = cell; needsDisplay = true } }
-    override func viewDidChangeEffectiveAppearance() { super.viewDidChangeEffectiveAppearance(); needsDisplay = true }
+    override func viewDidChangeEffectiveAppearance() { super.viewDidChangeEffectiveAppearance(); needsDisplay = true; tokenRing.refresh() }
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
         if let hoverArea { removeTrackingArea(hoverArea) }
@@ -801,7 +809,7 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate, NSMenu
     }
 
     private func dimensionField(value: String, name: String) -> NSTextField {
-        let field = NSTextField(string: value)
+        let field = TokenTextField(string: value)
         field.font = DesignTokens.Typography.font(.body)
         field.delegate = self
         field.setAccessibilityLabel(name)

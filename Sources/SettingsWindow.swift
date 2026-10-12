@@ -75,12 +75,16 @@ enum SettingsLayout {
 
     /// The width a toggle's title may take inside a plate `plateWidth` wide: the plate's inset, the button's padding and its checkbox glyph are paid for first.
     static func toggleTextWidth(inPlateOfWidth plateWidth: CGFloat) -> CGFloat {
-        plateWidth - 2 * GlassChrome.Metrics.groupInset - 2 * GlassChoiceButton.padding - GlassChoiceButton.glyphSide - GlassChoiceButton.gap
+        plateWidth - 2 * togglePlateInset - 2 * GlassChoiceButton.padding - GlassChoiceButton.glyphSide - GlassChoiceButton.gap
     }
+
+    /// A toggle row is as wide as its plate, so its keyboard focus ring (4 pt out from the row) would sit on the plate's border at the plate's
+    /// usual 4 pt inset; a toggle plate is inset by 8 so the ring stands off it.
+    static let togglePlateInset = DesignTokens.Space.s2
 
     /// One glass plate around related toggles, one row each. It is an accessibility group with a name.
     static func togglePlate(_ toggles: [GlassChoiceButton], identifier: String, label: String) -> GlassSurfaceView {
-        let plate = GlassChrome.plate(toggles, identifier: identifier, accessibility: ChromeAccessibility.live, axis: .vertical)
+        let plate = GlassChrome.plate(toggles, identifier: identifier, accessibility: ChromeAccessibility.live, axis: .vertical, inset: togglePlateInset)
         plate.setAccessibilityElement(true); plate.setAccessibilityLabel(label); plate.setAccessibilityRole(.group)
         return plate
     }
@@ -102,7 +106,7 @@ enum SettingsLayout {
 
     /// Where the first line of a choice's text sits below the top of its plate: the plate's inset, the padding above the line and the line's
     /// own baseline. A grid row aligns its label to this, so the label sits on the same baseline as the first choice and not on the plate's edge.
-    static func firstChoiceBaseline(of button: GlassChoiceButton?) -> CGFloat {
+    static func firstChoiceBaseline(of button: GlassChoiceButton?, inset: CGFloat = GlassChrome.Metrics.groupInset) -> CGFloat {
         let font = Typography.font(.bodyStrong)
         let line = ceil(font.boundingRectForFont.height)
         let probe = NSTextField(labelWithString: "Ag")
@@ -110,7 +114,7 @@ enum SettingsLayout {
         let rowHeight = button?.intrinsicContentSize.height ?? GlassChoiceButton.height
         // A wrapped row is its lines plus the row padding; a one-line row is a control high with the line centred.
         let above = rowHeight > GlassChoiceButton.height ? Space.s2 : ((GlassChoiceButton.height - line) / 2).rounded()
-        return GlassChrome.Metrics.groupInset + above + probe.firstBaselineOffsetFromTop
+        return inset + above + probe.firstBaselineOffsetFromTop
     }
 
     /// A titled command for an action plate: the chrome's command button, so it draws its own rest, hover, pressed, focus and disabled fills.
@@ -138,7 +142,7 @@ final class SettingsPlateCell: NSView {
 
     init(_ content: NSView, firstChoice: GlassChoiceButton?) {
         self.content = content
-        baseline = SettingsLayout.firstChoiceBaseline(of: firstChoice)
+        baseline = SettingsLayout.firstChoiceBaseline(of: firstChoice, inset: (content as? GlassSurfaceView)?.inset ?? GlassChrome.Metrics.groupInset)
         super.init(frame: .zero)
         content.translatesAutoresizingMaskIntoConstraints = false
         addSubview(content)
@@ -783,7 +787,7 @@ final class SettingsTabButton: CommandButton {
 /// container, over the window surface. It is one key-view stop, the Left and Right arrows move between tabs while it has focus, and it
 /// presents itself as a tab group.
 @MainActor
-final class SettingsTabStrip: NSView {
+final class SettingsTabStrip: NSView, TokenFocusRinged {
     static let verticalPadding = DesignTokens.Space.s2
     static let height = GlassChrome.Metrics.headerHeight + 2 * verticalPadding
 
@@ -802,7 +806,7 @@ final class SettingsTabStrip: NSView {
         container = GlassChrome.container(around: plate, identifier: "SettingsTabs")
         super.init(frame: .zero)
         wantsLayer = true
-        focusRingType = .none
+        _ = tokenRing
         addSubview(container)
         NSLayoutConstraint.activate([
             container.centerXAnchor.constraint(equalTo: centerXAnchor), container.centerYAnchor.constraint(equalTo: centerYAnchor),
@@ -829,7 +833,7 @@ final class SettingsTabStrip: NSView {
         guard buttons.indices.contains(index) else { return }
         selectedIndex = index
         for (position, button) in buttons.enumerated() { button.setCurrent(position == index) }
-        noteFocusRingMaskChanged()
+        tokenRing.refresh()
     }
 
     @objc private func tabClicked(_ sender: NSButton) { onSelect?(sender.tag) }
@@ -847,12 +851,16 @@ final class SettingsTabStrip: NSView {
     /// Like a system control, the strip shows its focus ring only when the keyboard put focus there (Tab, an arrow key, Full Keyboard
     /// Access) and not when the window merely opens with it as the first key view.
     private(set) var showsKeyboardFocus = false
+    /// The ring is the app's token ring around the selected tab, shown only for keyboard focus.
+    private(set) lazy var tokenRing = TokenFocusRing(view: self, target: { [unowned self] in focusRect })
+    override var focusRingType: NSFocusRingType { get { .none } set {} }
     private func setKeyboardFocus(_ on: Bool) {
         guard showsKeyboardFocus != on else { return }
         showsKeyboardFocus = on
-        focusRingType = on ? .exterior : .none
-        noteFocusRingMaskChanged(); needsDisplay = true
+        tokenRing.setFocused(on)
+        needsDisplay = true
     }
+    override func layout() { super.layout(); tokenRing.refresh() }
     override func becomeFirstResponder() -> Bool {
         let accepted = super.becomeFirstResponder()
         if accepted, NSApp.currentEvent?.type == .keyDown || NSApp.isFullKeyboardAccessEnabled { setKeyboardFocus(true) }
@@ -874,10 +882,6 @@ final class SettingsTabStrip: NSView {
     private var focusRect: NSRect {
         guard buttons.indices.contains(selectedIndex) else { return .zero }
         return convert(buttons[selectedIndex].bounds, from: buttons[selectedIndex])
-    }
-    override var focusRingMaskBounds: NSRect { focusRect }
-    override func drawFocusRingMask() {
-        NSBezierPath(roundedRect: focusRect, xRadius: StatePlate.radius, yRadius: StatePlate.radius).fill()
     }
 
     // MARK: Accessibility

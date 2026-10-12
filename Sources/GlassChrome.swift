@@ -122,6 +122,12 @@ final class StatePlate {
     }
 }
 
+/// A control that gives up its focus ring while the choices it opened are on screen.
+@MainActor
+protocol FocusRingSuppressible: AnyObject {
+    var suppressesFocusRing: Bool { get set }
+}
+
 /// Anything on a group plate that draws its own state fill and follows the injected display options.
 @MainActor
 protocol ChromeFillable: AnyObject {
@@ -150,7 +156,7 @@ enum KeyboardNavigation {
 /// (`StatePlate`), never as another glass surface. Available on macOS 13 so the unit tests run anywhere. Click, Control-click and
 /// menu handling stay OriginalActionButton's.
 @MainActor
-class CommandButton: OriginalActionButton, ChromeFillable {
+class CommandButton: OriginalActionButton, ChromeFillable, FocusRingSuppressible {
     var icon: FAIcon? { didSet { refreshIcon() } }
     /// Glyph shown while `state == .on` (Actual Size swaps maximize for minimize); falls back to `icon`.
     var selectedIcon: FAIcon? { didSet { refreshIcon() } }
@@ -184,6 +190,8 @@ class CommandButton: OriginalActionButton, ChromeFillable {
     /// The glyph scale currently rendered (0.96 while pressed, none under Reduce Motion).
     private(set) var glyphScale: CGFloat = 1
     private var hasKeyboardFocus = false
+    /// True while the choices this button opened are on screen: they hold the focus ring, so this one is not drawn.
+    var suppressesFocusRing = false { didSet { if suppressesFocusRing != oldValue { syncPlate() } } }
     /// Whether the button presents as selected. Assigning `state` always counts; AppKit's own flips count only for
     /// two-state button types, because a momentary button reads `.on` while it is merely being clicked.
     private(set) var showsSelection = false
@@ -336,7 +344,7 @@ class CommandButton: OriginalActionButton, ChromeFillable {
 
     /// Pushes this button's own state into its fill, glyph colour, glyph size, alpha and indicator; the group plate behind it never changes.
     func syncPlate() {
-        plate.update(hovered: isHovered, pressed: isPressing, selected: isShownSelected, primary: isPrimary, disabled: !isEnabled, focused: hasKeyboardFocus)
+        plate.update(hovered: isHovered, pressed: isPressing, selected: isShownSelected, primary: isPrimary, disabled: !isEnabled, focused: hasKeyboardFocus && !suppressesFocusRing)
         let style = plate.stateStyle
         if contentTintColor != style.content { contentTintColor = style.content }
         alphaValue = style.contentAlpha
@@ -571,6 +579,9 @@ final class GlassSurfaceView: NSGlassEffectView {
     let arrangedViews: [NSView]
     /// `.horizontal` is the bar plate: one fixed-height row. `.vertical` stacks full-width rows and takes its height from its content.
     let axis: NSUserInterfaceLayoutOrientation
+    /// The space between the plate's edge and its controls: a control's focus ring (`StateStyles.focusRingOutset` + `focusRingWidth` = 4 pt) fits
+    /// inside the default, and a plate of full-width rows takes a bigger one so the ring stands off the plate's border.
+    let inset: CGFloat
     private let stack = NSStackView()
     private let host = NSView()
     private let solidPlate = NSView()
@@ -589,11 +600,12 @@ final class GlassSurfaceView: NSGlassEffectView {
     var showsContrastBorder: Bool { accessibility.increaseContrast }
 
     init(views: [NSView], shape: GlassShape = .rounded(DesignTokens.Radius.xl), accessibility: ChromeAccessibility, spacing: CGFloat = GlassChrome.Metrics.groupSpacing,
-         axis: NSUserInterfaceLayoutOrientation = .horizontal) {
+         axis: NSUserInterfaceLayoutOrientation = .horizontal, inset: CGFloat = GlassChrome.Metrics.groupInset) {
         self.shape = shape
         self.accessibility = accessibility
         self.arrangedViews = views
         self.axis = axis
+        self.inset = inset
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
         wantsLayer = true
@@ -611,7 +623,6 @@ final class GlassSurfaceView: NSGlassEffectView {
         stack.spacing = spacing
         stack.alignment = axis == .horizontal ? .centerY : .leading
         stack.distribution = .gravityAreas
-        let inset = GlassChrome.Metrics.groupInset
         stack.edgeInsets = NSEdgeInsets(top: inset, left: inset, bottom: inset, right: inset)
         for view in views { stack.addArrangedSubview(view) }
         stack.translatesAutoresizingMaskIntoConstraints = false
@@ -734,8 +745,8 @@ enum GlassChrome {
 
     /// One glass plate holding a group of controls. `axis: .vertical` is a stack of full-width rows (a choice panel's group).
     static func plate(_ views: [NSView], identifier: String, accessibility: ChromeAccessibility,
-                      axis: NSUserInterfaceLayoutOrientation = .horizontal) -> GlassSurfaceView {
-        let plate = GlassSurfaceView(views: views, accessibility: accessibility, axis: axis)
+                      axis: NSUserInterfaceLayoutOrientation = .horizontal, inset: CGFloat = Metrics.groupInset) -> GlassSurfaceView {
+        let plate = GlassSurfaceView(views: views, accessibility: accessibility, axis: axis, inset: inset)
         plate.identifier = NSUserInterfaceItemIdentifier(identifier)
         return plate
     }

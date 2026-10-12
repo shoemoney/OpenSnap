@@ -140,6 +140,7 @@ final class AppAlert: NSObject {
         if actionPlates.count > 1 { actionPlates[1].frame.origin = NSPoint(x: inset, y: inset) }
         for plate in actionPlates { content.addSubview(plate) }
         panel.isReleasedWhenClosed = false
+        panel.backgroundColor = DesignTokens.Palette.Surface.sheet
         panel.title = DesignTokens.Brand.name
         let size = content.frame.size // Assigning the content view resizes it to the (still empty) window.
         panel.contentView = content

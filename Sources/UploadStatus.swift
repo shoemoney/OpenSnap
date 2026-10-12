@@ -74,56 +74,23 @@ enum UploadState: Equatable {
     /// The longest sentence the status line can show; nil when idle.
     var statusText: String? { statusVariants.first }
 
-    /// "Link copied · cdn.example.com/pics/name.png", then the same with the middle of the address cut out a few characters at a time
-    /// (the host and the file name are the parts worth keeping). When none of those fits, the whole sentence comes last: the status line then
-    /// cuts it at its tail ("Link copied · cdn.exa…"), so the slot is never left empty and "Link copied" always leads, without a second ellipsis.
+    /// "Link copied · cdn.example.com/pics/name.png" where the slot holds it whole, then the host alone, then the status word ("Link copied"); the link
+    /// itself travels on the tooltip and as VoiceOver help (`detailText`). Like a save notice, it is never cut mid-word ("Link copied · Qua…png").
     static func copiedVariants(for url: URL) -> [String] {
         let base = "Link copied"
         let address = displayAddress(of: url)
         guard !address.isEmpty else { return [base] }
-        var variants = [base + " · " + address]
-        var keep = address.count - 3
-        while keep >= minimumAddressCharacters {
-            variants.append(base + " · " + middleTruncated(address, to: keep))
-            keep -= 3
-        }
-        // Narrower still, the host goes and the file name, which tells one upload from the next, is what is cut in the middle.
-        let name = url.lastPathComponent
-        if !name.isEmpty, name != address {
-            var keepName = min(name.count, address.count)
-            while keepName >= minimumNameCharacters {
-                let step = base + " · " + middleTruncated(name, to: keepName)
-                if step.count < (variants.last?.count ?? .max) { variants.append(step) }
-                keepName -= 2
-            }
-        }
-        // Narrower still: a shorter lead and only the end of the file name, where the part that tells one upload from the next sits
-        // ("Copied · …6611.png"). The sentence in full comes last, cut at its tail by the status line.
-        if !name.isEmpty {
-            var keepTail = min(name.count, minimumTailStart)
-            while keepTail >= minimumNameCharacters {
-                let step = shortBase + " · " + (keepTail < name.count ? "…" : "") + String(name.suffix(keepTail))
-                if step.count < (variants.last?.count ?? .max) { variants.append(step) }
-                keepTail -= 2
-            }
-        }
-        variants.append(variants[0])
-        return variants
+        // A middle step keeps the host, a whole word: the name that tells one upload from the next stays on the tooltip.
+        let host = url.host(percentEncoded: false) ?? ""
+        let hostStep = host.isEmpty || host == address ? [] : [base + " · " + host]
+        return [base + " · " + address] + hostStep + [base]
     }
-    static let minimumAddressCharacters = 14, minimumNameCharacters = 6, minimumTailStart = 14, shortBase = "Copied"
 
     /// The link without its scheme, which says nothing the host does not.
     static func displayAddress(of url: URL) -> String {
         let text = url.absoluteString
         for scheme in ["https://", "http://"] where text.lowercased().hasPrefix(scheme) { return String(text.dropFirst(scheme.count)) }
         return text
-    }
-
-    /// `text` cut to `count` characters with an ellipsis in the middle, keeping a little more of the end (the file name) than the start.
-    static func middleTruncated(_ text: String, to count: Int) -> String {
-        guard text.count > count, count > 1 else { return text }
-        let tail = count / 2, head = count - 1 - tail
-        return String(text.prefix(head)) + "…" + String(text.suffix(tail))
     }
 
     /// What the status line leaves out: the link itself, or the whole error. It travels on the tooltip and as VoiceOver help.

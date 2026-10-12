@@ -15,6 +15,7 @@ enum SVGExport {
         let layout = NSLayoutManager(), container = NSTextContainer(size: CGSize(width: max(1, element.rect.width), height: 100_000_000))
         container.lineFragmentPadding = 0; storage.addLayoutManager(layout); layout.addTextContainer(container)
         layout.ensureLayout(for: container)
+        let textTop = OriginalTextGeometry.textRect(for: element).minY
         var lines: [TextLine] = []
         layout.enumerateLineFragments(forGlyphRange: layout.glyphRange(for: container)) { rect, _, _, glyphs, _ in
             let range = layout.characterRange(forGlyphRange: glyphs, actualGlyphRange: nil)
@@ -22,10 +23,10 @@ enum SVGExport {
             if content.hasSuffix("\n") { content.removeLast() }
             if content.hasSuffix("\r") { content.removeLast() }
             let position = layout.location(forGlyphAt: glyphs.location)
-            lines.append(TextLine(content: content, position: CGPoint(x: element.rect.minX + rect.minX + position.x, y: element.rect.minY + rect.minY + position.y)))
+            lines.append(TextLine(content: content, position: CGPoint(x: element.rect.minX + rect.minX + position.x, y: textTop + rect.minY + position.y)))
         }
         if layout.extraLineFragmentTextContainer != nil || element.text.isEmpty {
-            lines.append(TextLine(content: "", position: CGPoint(x: element.rect.minX, y: element.rect.minY + layout.extraLineFragmentRect.minY + textBaseline(font: font))))
+            lines.append(TextLine(content: "", position: CGPoint(x: element.rect.minX, y: textTop + layout.extraLineFragmentRect.minY + textBaseline(font: font))))
         }
         return lines
     }
@@ -107,7 +108,8 @@ enum SVGExport {
             xml.append("<defs><filter id=\"opensnap-text-shadow\" filterUnits=\"userSpaceOnUse\" x=\"-\(width)\" y=\"-\(height)\" width=\"\(number(ceil(document.size.width)*3))\" height=\"\(number(ceil(document.size.height)*3))\" color-interpolation-filters=\"sRGB\"><feDropShadow dx=\"0\" dy=\"1\" stdDeviation=\"3\" flood-color=\"black\" flood-opacity=\"0.8\"/></filter></defs>")
         }
         for element in document.elements where element.kind == .text {
-            xml.append("<defs><clipPath id=\"opensnap-text-\(element.id.uuidString)\" clipPathUnits=\"userSpaceOnUse\"><rect x=\"\(number(element.rect.minX))\" y=\"\(number(element.rect.minY))\" width=\"\(number(max(0, element.rect.width)))\" height=\"\(number(max(0, element.rect.height)))\"/></clipPath></defs>")
+            let clip = OriginalTextGeometry.drawRect(for: element)
+            xml.append("<defs><clipPath id=\"opensnap-text-\(element.id.uuidString)\" clipPathUnits=\"userSpaceOnUse\"><rect x=\"\(number(clip.minX))\" y=\"\(number(clip.minY))\" width=\"\(number(max(0, clip.width)))\" height=\"\(number(max(0, clip.height)))\"/></clipPath></defs>")
         }
         if let data = document.backgroundPNG {
             let rect = document.canvasRect

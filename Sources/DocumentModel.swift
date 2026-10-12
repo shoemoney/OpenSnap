@@ -346,7 +346,38 @@ enum OriginalTextGeometry {
         // The outline and the drop shadow (3 pt blur, 1 pt down) paint below the glyph rect; the box holds them so a
         // box-sized clip never shears the tails of p, y and g.
         let belowInk = (margin + 4).rounded(.up)
-        return CGSize(width: max(1, width), height: max(1, height + 8 + belowInk))
+        return CGSize(width: max(1, width), height: max(1, height + 2 * verticalPadding + belowInk))
+    }
+    /// Room above the first line and, before the outline and shadow room, below the last: the box centres its ink, in the editor and on the page.
+    static let verticalPadding: CGFloat = 4
+
+    /// The box text lives in: the stored rect, grown downward when it is shorter than the font needs. A document made before the room for
+    /// outline and shadow existed, or a box resized below its text, would otherwise shear the tails of p, y and g (the layout clips lines that
+    /// do not fit the rect it is given). Selection and handles keep the stored rect; hit-testing uses this one.
+    static func drawRect(for element: SketchElement) -> CGRect {
+        let rect = element.rect
+        guard rect.width.isFinite, rect.height.isFinite, rect.width > 0 else { return rect }
+        let needed = textHeight(of: element, width: rect.width) + 2 * verticalPadding + belowInk(for: element)
+        return needed > rect.height ? CGRect(x: rect.minX, y: rect.minY, width: rect.width, height: needed) : rect
+    }
+    /// Where the string is drawn inside `drawRect`: inset by the vertical padding so the ink is centred in the box.
+    static func textRect(for element: SketchElement) -> CGRect {
+        let box = drawRect(for: element)
+        guard box.width.isFinite, box.height.isFinite, box.height > verticalPadding else { return box }
+        return CGRect(x: box.minX, y: box.minY + verticalPadding, width: box.width, height: box.height - verticalPadding)
+    }
+    private static func font(for element: SketchElement) -> NSFont {
+        NSFont(name: element.fontName, size: element.fontSize) ?? .boldSystemFont(ofSize: element.fontSize)
+    }
+    private static func textHeight(of element: SketchElement, width: CGFloat) -> CGFloat {
+        ceil((element.text as NSString).boundingRect(
+            with: CGSize(width: width, height: .greatestFiniteMagnitude), options: [.usesLineFragmentOrigin],
+            attributes: [.font: font(for: element), .paragraphStyle: SketchRenderer.textParagraphStyle]).height)
+    }
+    private static func belowInk(for element: SketchElement) -> CGFloat {
+        let font = font(for: element)
+        let margin = CGFloat(Float(font.pointSize) * Float(OriginalTextEffects.outlinePercentage(fontSize: font.pointSize)) / 100)
+        return (margin + 4).rounded(.up)
     }
     static func size(for element: SketchElement) -> CGSize {
         size(text: element.text, font: NSFont(name: element.fontName, size: element.fontSize)
@@ -457,11 +488,11 @@ enum SketchRenderer {
             if element.outlined {
                 attributes[.strokeColor] = OriginalTextEffects.outlineColor(element.color)
                 attributes[.strokeWidth] = OriginalTextEffects.outlinePercentage(fontSize: element.fontSize)
-                (element.text as NSString).draw(in: element.rect, withAttributes: attributes)
+                (element.text as NSString).draw(in: OriginalTextGeometry.textRect(for: element), withAttributes: attributes)
                 attributes.removeValue(forKey: .strokeColor)
                 attributes.removeValue(forKey: .strokeWidth)
             }
-            (element.text as NSString).draw(in: element.rect, withAttributes: attributes)
+            (element.text as NSString).draw(in: OriginalTextGeometry.textRect(for: element), withAttributes: attributes)
             cg.endTransparencyLayer()
             cg.endTransparencyLayer()
         case .brush where element.points.count == 1:

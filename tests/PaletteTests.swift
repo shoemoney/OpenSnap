@@ -95,12 +95,12 @@ private enum PaletteTests {
         try expect(alpha(P.State.hover, .highContrastAqua) > alpha(P.State.hover, .aqua) && alpha(P.State.hover, .highContrastDarkAqua) > alpha(P.State.hover, .darkAqua), "hover strengthens under Increase Contrast")
         for arm in [P.Arm.aqua, .darkAqua] {
             try expect(abs(alpha(P.State.hover, arm) - 0.08) < 0.005 && abs(alpha(P.State.pressed, arm) - 0.16) < 0.005, "hover 0.08, pressed 0.16 in \(arm)")
-            try expect(abs(alpha(P.State.selectedFill, arm) - 0.20) < 0.005, "selected fill 0.20 in \(arm)")
+            try expect(abs(alpha(P.State.selectedFill, arm) - (arm == .darkAqua ? 0.34 : 0.20)) < 0.005, "selected fill 0.20 light, 0.34 dark in \(arm)")
             try expect(abs(alpha(P.Overlay.plateFill, arm) - 0.75) < 0.005, "plate 0.75 in \(arm)")
         }
         for arm in [P.Arm.highContrastAqua, .highContrastDarkAqua] {
             try expect(abs(alpha(P.State.hover, arm) - 0.16) < 0.005 && abs(alpha(P.State.pressed, arm) - 0.28) < 0.005, "hover 0.16, pressed 0.28 in \(arm)")
-            try expect(abs(alpha(P.State.selectedFill, arm) - 0.32) < 0.005, "selected fill 0.32 in \(arm)")
+            try expect(abs(alpha(P.State.selectedFill, arm) - (arm == .highContrastDarkAqua ? 0.40 : 0.32)) < 0.005, "selected fill 0.32 light, 0.40 dark under Increase Contrast in \(arm)")
             try expect(abs(alpha(P.Overlay.plateFill, arm) - 0.92) < 0.005, "plate 0.92 in \(arm)")
         }
         try expect(P.resolve(P.Overlay.hudFill, arm: .aqua) == P.resolve(P.Overlay.hudFill, arm: .darkAqua), "overlays are fixed across light and dark")
@@ -113,6 +113,39 @@ private enum PaletteTests {
         try expect(P.onAccent(fill: navy, alpha: 1, over: plate) == .white, "dark blue accent keeps white text")
         try expect(P.onAccent(fill: navy, alpha: 0.2, over: plate) == .black, "navy at 0.2 over white is a pale tint: black text (an opaque-accent check would say white)")
         try expect(P.onAccent(fill: yellow, alpha: 0.1, over: NSColor.black) == .white, "yellow at 0.1 over black is nearly black: white text")
+
+        // OSN-071 r3: the dark selected fill reads as the accent, not as mud. Yellow (the accent the review ran with) over the dark window was
+        // rgb 75,64,24 at 0.20 (1.64:1 against the window, olive once the glass plate lightened it); at 0.34 it is rgb 106,89,19 (2.43:1).
+        // Whatever the accent, the label stays at 4.5:1 on the tint and the 1 pt accent edge keeps 3:1 against the window.
+        let accents: [(String, NSColor)] = [("yellow", NSColor(srgbRed: 1, green: 0.8, blue: 0, alpha: 1)), ("blue", NSColor(srgbRed: 10 / 255, green: 132 / 255, blue: 1, alpha: 1)),
+                                            ("orange", NSColor(srgbRed: 1, green: 159 / 255, blue: 10 / 255, alpha: 1)), ("green", NSColor(srgbRed: 48 / 255, green: 209 / 255, blue: 88 / 255, alpha: 1)),
+                                            ("pink", NSColor(srgbRed: 1, green: 55 / 255, blue: 95 / 255, alpha: 1)), ("purple", NSColor(srgbRed: 191 / 255, green: 90 / 255, blue: 242 / 255, alpha: 1)),
+                                            ("graphite", NSColor(srgbRed: 152 / 255, green: 152 / 255, blue: 157 / 255, alpha: 1))]
+        for arm in [P.Arm.darkAqua, .highContrastDarkAqua] {
+            let window = P.resolve(P.Surface.window, arm: arm), shownAlpha = alpha(P.State.selectedFill, arm)
+            for (accentName, accent) in accents {
+                let tint = P.blend(accent, alpha: shownAlpha, over: window)
+                let label = P.contrastRatio(P.resolve(P.Text.primary, arm: arm), tint)
+                try expect(label >= 4.5, "dark selected fill: the label on \(accentName) at \(shownAlpha) is \(label):1 in \(arm), needs 4.5")
+                let edge = P.contrastRatio(accent, P.rgb(window).rgb)
+                try expect(edge >= 3, "dark selected edge: \(accentName) against the window is \(edge):1 in \(arm), needs 3")
+            }
+            let yellow = accents[0].1, tint = P.blend(yellow, alpha: shownAlpha, over: window)
+            let against = P.contrastRatio(NSColor(srgbRed: tint.red, green: tint.green, blue: tint.blue, alpha: 1), P.rgb(window).rgb)
+            try expect(against >= 2.4, "dark selected fill: yellow tint is \(against):1 against the window in \(arm); the old 0.20 was 1.64:1")
+        }
+
+        // The alert and permission plate is its own neutral grey: no channel cast (the dark plate had come out rgb 41,30,30 under an orange wallpaper).
+        for arm in P.Arm.allCases {
+            let sheet = rgb(P.Surface.sheet, arm)
+            let spread = max(sheet.red, sheet.green, sheet.blue) - min(sheet.red, sheet.green, sheet.blue)
+            try expect(spread <= 4.0 / 255, "the sheet plate is neutral in \(arm): channel spread \(spread * 255)/255")
+            try expect(alpha(P.Surface.sheet, arm) == 1, "the sheet plate is opaque in \(arm)")
+            for (roleName, role) in textRoles {
+                let got = ratio(role, on: P.Surface.sheet, arm)
+                try expect(got >= 4.5, "\(roleName) on the sheet plate in \(arm) is \(got):1")
+            }
+        }
         print("PaletteTests: \(checks) checks passed")
     }
 }

@@ -1329,6 +1329,8 @@ final class MenuChoicePanel: NSObject {
         opened = true
         rebuild()
         host.show(relativeTo: view.bounds, of: view, preferredEdge: preferredEdge, makeKey: true)
+        // Focus moves into the open choices, so the button that opened them gives up its ring until they close: one ring at a time.
+        if host.isShown, let anchor = view as? FocusRingSuppressible { anchor.suppressesFocusRing = true; ringAnchor = view }
         focusedRow = nil
         if keyboard { focus(chosenRow() ?? firstEnabledRow()) }
     }
@@ -1340,6 +1342,8 @@ final class MenuChoicePanel: NSObject {
         menu.update()
     }
 
+    private weak var ringAnchor: NSView?
+
     private func panelDidClose() {
         guard opened else { return }
         opened = false
@@ -1347,6 +1351,8 @@ final class MenuChoicePanel: NSObject {
         for open in path.reversed() { open.delegate?.menuDidClose?(open) }
         path = []
         focusedRow = nil
+        (ringAnchor as? FocusRingSuppressible)?.suppressesFocusRing = false
+        ringAnchor = nil
     }
 
     // MARK: building
@@ -1619,7 +1625,7 @@ final class MenuChoicePanel: NSObject {
 /// The face is the selected item's title (`faceTitle`) at 20 pt with a trailing chevron, drawn here, with no bezel of its own: it sits on a
 /// plate or in a `ChromeFillCell`, which supply the hover and press fills.
 @MainActor
-class GlassPopUpButton: NSPopUpButton {
+class GlassPopUpButton: NSPopUpButton, TokenFocusRinged, FocusRingSuppressible {
     var panelIdentifier = "Choices" { didSet { discardPanel() } }
     var panelLabel = "Choices" { didSet { discardPanel() } }
     private var choiceEdge = NSRectEdge.minY
@@ -1640,6 +1646,10 @@ class GlassPopUpButton: NSPopUpButton {
     var presentHandler: ((MenuChoicePanel, Bool) -> Void)?
 
     private var cachedPanel: MenuChoicePanel?
+    /// The keyboard focus ring: the app's own token ring around the face, never AppKit's pale system one.
+    private(set) lazy var tokenRing = TokenFocusRing(view: self, target: { [unowned self] in isEnabled ? focusBounds : .zero })
+    override var focusRingType: NSFocusRingType { get { .none } set {} }
+    var suppressesFocusRing: Bool { get { tokenRing.isSuppressed } set { tokenRing.isSuppressed = newValue } }
     private let chevronView = RowGlyphView(frame: .zero)
 
     override init(frame frameRect: NSRect, pullsDown flag: Bool) {
@@ -1654,7 +1664,7 @@ class GlassPopUpButton: NSPopUpButton {
 
     private func configure() {
         isBordered = false
-        focusRingType = .exterior
+        _ = tokenRing
         DesignTokens.Typography.apply(.body, to: self)
         chevronView.image = ChromeIcons.resolve(.chevronDown, family: .solid, pointSize: GlassChoiceButton.glyphPointSize * 0.8).image
         chevronView.isHidden = false
@@ -1760,7 +1770,7 @@ class GlassPopUpButton: NSPopUpButton {
     override var alignmentRectInsets: NSEdgeInsets { NSEdgeInsets() }
 
     override var isEnabled: Bool {
-        didSet { chevronView.alphaValue = isEnabled ? 1 : StateStyles.disabledAlpha; needsDisplay = true; noteFocusRingMaskChanged() }
+        didSet { chevronView.alphaValue = isEnabled ? 1 : StateStyles.disabledAlpha; needsDisplay = true; noteFocusRingMaskChanged(); tokenRing.refresh() }
     }
 
     // The face is [facePadding][title][chevron column][facePadding]; the chevron glyph sits at the trailing end of its column. The defaults
@@ -1801,7 +1811,22 @@ class GlassPopUpButton: NSPopUpButton {
     override func layout() {
         super.layout()
         chevronView.frame = chevronRect
+        tokenRing.refresh()
     }
+
+    override func becomeFirstResponder() -> Bool {
+        let accepted = super.becomeFirstResponder()
+        if accepted { tokenRing.setFocused(true) }
+        return accepted
+    }
+
+    override func resignFirstResponder() -> Bool {
+        let accepted = super.resignFirstResponder()
+        if accepted { tokenRing.setFocused(false) }
+        return accepted
+    }
+
+    override func viewDidChangeEffectiveAppearance() { super.viewDidChangeEffectiveAppearance(); tokenRing.refresh() }
 
     /// Exactly what `draw(_:)` draws with: the 20 pt body face, truncating at the tail.
     private func faceAttributes(color: NSColor? = nil) -> [NSAttributedString.Key: Any] {
@@ -1839,4 +1864,101 @@ class GlassPopUpButton: NSPopUpButton {
         NSColor.black.setFill()
         NSBezierPath(roundedRect: focusBounds, xRadius: StatePlate.radius, yRadius: StatePlate.radius).fill()
     }
+}
+
+// MARK: - the token focus ring
+
+/// A control whose keyboard focus ring is the app's own (`StateStyles.focusRingColor`, 3 pt, standing off the control) and not AppKit's
+/// `.exterior` ring, which is a pale 1.4:1 on a light window and an olive in a dark one.
+@MainActor
+protocol TokenFocusRinged: AnyObject {
+    var tokenRing: TokenFocusRing { get }
+}
+
+/// The ring itself: a shape layer on the control, shown while the control holds keyboard focus. The control sets `focusRingType = .none`
+/// and tells the ring when focus arrives or leaves.
+@MainActor
+final class TokenFocusRing {
+    private weak var view: NSView?
+    let layer = CAShapeLayer()
+    /// The outline the ring follows, in the control's own coordinates; the whole bounds unless the control rings a part (the selected cell).
+    var target: () -> NSRect
+    var cornerRadius: CGFloat { didSet { refresh() } }
+    private(set) var isFocused = false
+    /// Held back while something the control opened (its choices panel) carries the focus instead.
+    var isSuppressed = false { didSet { refresh() } }
+    var isVisible: Bool { isFocused && !isSuppressed && !layer.isHidden }
+
+    init(view: NSView, cornerRadius: CGFloat? = nil, target: (() -> NSRect)? = nil) {
+        self.view = view
+        self.cornerRadius = cornerRadius ?? StatePlate.radius
+        self.target = target ?? { [weak view] in view?.bounds ?? .zero }
+        view.focusRingType = .none
+        view.wantsLayer = true
+        layer.fillColor = nil
+        layer.isHidden = true
+        layer.zPosition = 10
+        view.layer?.addSublayer(layer)
+    }
+
+    func setFocused(_ on: Bool) {
+        isFocused = on
+        refresh()
+    }
+
+    /// The ring's colour for the control's appearance and the live Increase Contrast setting.
+    var color: NSColor {
+        StateStyles.focusRingColor(highContrast: ChromeAccessibility.live.increaseContrast, appearance: view?.effectiveAppearance ?? .currentDrawing())
+    }
+
+    /// Redraws the ring around the control's current target; the control calls it from `layout()` and on an appearance change.
+    func refresh() {
+        guard let view else { return }
+        let rect = target()
+        let shown = isFocused && !isSuppressed && !rect.isEmpty
+        CATransaction.begin(); CATransaction.setDisableActions(true)
+        layer.isHidden = !shown
+        if shown {
+            let grow = StateStyles.focusRingOutset + StateStyles.focusRingWidth / 2
+            let outline = rect.insetBy(dx: -grow, dy: -grow)
+            let radius = min(cornerRadius + grow, outline.width / 2, outline.height / 2)
+            layer.frame = view.bounds
+            layer.path = CGPath(roundedRect: outline, cornerWidth: radius, cornerHeight: radius, transform: nil)
+            layer.lineWidth = StateStyles.focusRingWidth
+            layer.strokeColor = color.cgColor
+        }
+        CATransaction.commit()
+    }
+}
+
+/// A text field that rings itself with the token ring. The field editor takes first responder as soon as the field does, so focus is the
+/// editor being the window's first responder, read when the field becomes first responder and when editing ends.
+@MainActor
+final class TokenTextField: NSTextField, TokenFocusRinged {
+    private(set) lazy var tokenRing = TokenFocusRing(view: self)
+    override var focusRingType: NSFocusRingType { get { .none } set {} }
+    override func becomeFirstResponder() -> Bool {
+        let accepted = super.becomeFirstResponder()
+        tokenRing.setFocused(accepted && currentEditor() != nil)
+        return accepted
+    }
+    override func textDidEndEditing(_ notification: Notification) { super.textDidEndEditing(notification); tokenRing.setFocused(currentEditor() != nil) }
+    override func layout() { super.layout(); _ = tokenRing; tokenRing.refresh() }
+    override func viewDidChangeEffectiveAppearance() { super.viewDidChangeEffectiveAppearance(); tokenRing.refresh() }
+    override func viewDidMoveToWindow() { super.viewDidMoveToWindow(); _ = tokenRing }
+}
+
+@MainActor
+final class TokenSecureTextField: NSSecureTextField, TokenFocusRinged {
+    private(set) lazy var tokenRing = TokenFocusRing(view: self)
+    override var focusRingType: NSFocusRingType { get { .none } set {} }
+    override func becomeFirstResponder() -> Bool {
+        let accepted = super.becomeFirstResponder()
+        tokenRing.setFocused(accepted && currentEditor() != nil)
+        return accepted
+    }
+    override func textDidEndEditing(_ notification: Notification) { super.textDidEndEditing(notification); tokenRing.setFocused(currentEditor() != nil) }
+    override func layout() { super.layout(); _ = tokenRing; tokenRing.refresh() }
+    override func viewDidChangeEffectiveAppearance() { super.viewDidChangeEffectiveAppearance(); tokenRing.refresh() }
+    override func viewDidMoveToWindow() { super.viewDidMoveToWindow(); _ = tokenRing }
 }
