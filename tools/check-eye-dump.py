@@ -927,10 +927,37 @@ def overlay_problems(record):
     return problems
 
 
+def sheet_order_problems(record):
+    """A capture whose slug names a sheet or the destination sheet must record its composite order (bottom to top) and every sheet in it must
+    sit above its parent, with overlays above all plain windows. A sheet painted behind Settings shows as a sliver (F-R3-sheet-behind-parent)."""
+    slug, windows = record.get("slug", ""), record.get("windows")
+    if not slug or not isinstance(windows, list) or not ("sheet" in slug or "destination" in slug):
+        return []
+    label = f"{record.get('id', '?')}/{slug} ({record.get('appearance', '?')})"
+    order = record.get("compositeOrder")
+    if len(windows) < 2 and order is None:
+        return []
+    if not isinstance(order, list) or not order:
+        return [f"{label}: names a sheet but records no compositeOrder, so its sheet-above-parent order is unproven"]
+    position = {entry.get("window"): index for index, entry in enumerate(order) if isinstance(entry, dict)}
+    problems = []
+    for index, entry in enumerate(order):
+        if not isinstance(entry, dict):
+            continue
+        parent = entry.get("sheetParent")
+        if entry.get("isSheet") and parent in position and index < position[parent]:
+            problems.append(f"{label}: sheet window {entry.get('window')} ({entry.get('class')}) is ordered below its parent {parent} in the composite {[e.get('class') for e in order]}")
+    first_overlay = next((i for i, e in enumerate(order) if isinstance(e, dict) and e.get("isOverlay")), None)
+    if first_overlay is not None and any(isinstance(e, dict) and not e.get("isOverlay") for e in order[first_overlay:]):
+        problems.append(f"{label}: a plain window is painted over an overlay in the composite {[e.get('class') for e in order]}")
+    return problems
+
+
 def check_overlays(folder):
     problems = []
     for record in load_captures(folder):
         problems += overlay_problems(record)
+        problems += sheet_order_problems(record)
     # S24: the status-item states are rendered, so each state and each appearance must be a different picture.
     seen = {}
     for path in sorted(folder.glob("raw-*/S24-*.png")) + sorted(folder.glob("S24-*.png")):
@@ -1347,6 +1374,31 @@ def self_test():
         got = subprocess.run([sys.executable, script, str(folder), "--jobs", "1"], capture_output=True).returncode
         print(f"  self-test glass: no request file, hole: exit {got} (expected 1)")
         failed |= got != 1
+        # sheet order: a sheet painted below its parent, or a plain window over an overlay, fails; the right order and an unrelated slug pass
+        def entry(number, kind, **more):
+            return {"window": number, "class": kind, "title": "", "isOverlay": kind == "GlassChoiceWindow", "isSheet": "parent" in more and kind == "Sheet",
+                    **({"sheetParent": more["parent"]} if "parent" in more else {})}
+        sheet_cases = [
+            ("sheet above its parent", "destination-protocol-rest", [entry(1, "Window"), entry(2, "Sheet", parent=1)], 0),
+            ("sheet below its parent", "destination-protocol-rest", [entry(2, "Sheet", parent=1), entry(1, "Window")], 1),
+            ("destination sheet below Settings, panel on top", "destination-source-focus", [entry(2, "Sheet", parent=1), entry(1, "Window"), entry(3, "GlassChoiceWindow")], 1),
+            ("sheet, parent, then panel", "destination-source-focus", [entry(1, "Window"), entry(2, "Sheet", parent=1), entry(3, "GlassChoiceWindow")], 0),
+            ("plain window over the panel", "destination-source-focus", [entry(3, "GlassChoiceWindow"), entry(1, "Window"), entry(2, "Sheet", parent=1)], 1),
+            ("sheet slug with no composite order", "destination-width-640", None, 1),
+            ("below-parent order on a non-sheet slug is out of scope", "toolbox-rest", [entry(2, "Sheet", parent=1), entry(1, "Window")], 0),
+        ]
+        for label, slug, order, expected in sheet_cases:
+            folder = Path(workdir) / re.sub(r"\W+", "-", "sheet-" + label)
+            (folder / "raw-sf" / "meta").mkdir(parents=True)
+            (folder / "case.png").write_bytes(good)
+            record = {"id": "S99", "slug": slug, "appearance": "light", "windows": [{"class": "Window"}, {"class": "Sheet"}]}
+            if order is not None:
+                record["compositeOrder"] = order
+            (folder / "raw-sf" / "meta" / "case.json").write_text(json.dumps(record))
+            run = subprocess.run([sys.executable, script, str(folder), "--jobs", "1"], capture_output=True, text=True)
+            named = expected == 0 or "sheet" in run.stdout.lower() or "overlay" in run.stdout.lower()
+            print(f"  self-test sheet order: {label}: exit {run.returncode} (expected {expected}){'' if named else ' -- but not for a sheet-order reason'}")
+            failed |= run.returncode != expected or not named
         # contrast: advisory by default, fatal under --strict
         low = png_bytes(64, 48, lambda x, y: (128, 128, 128) if (x + y) % 7 else (140, 140, 140))
         weak = sample_layout(windowSize=[64, 48])
