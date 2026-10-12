@@ -307,9 +307,13 @@ final class PhotoBrowserCoordinator: NSObject, NSTableViewDataSource, NSTableVie
     /// Zero while the status line has nothing to say, so no blank line sits between the grid and the buttons.
     private lazy var statusCollapsed = status.heightAnchor.constraint(equalToConstant: 0)
     private func setStatus(_ text: String) { status.stringValue = text; statusCollapsed.isActive = text.isEmpty }
-    private let openButton = NSButton()
-    private let folderButton = NSButton()
-    private let libraryButton = NSButton()
+    /// The sheet's buttons are the alert's own: 36 pt glass capsules, each pair on one action plate (`AppAlert`).
+    let openButton = GlassChoiceButton(title: "", kind: .command, layout: .segment)
+    let folderButton = GlassChoiceButton(title: "", kind: .command, layout: .segment)
+    let libraryButton = GlassChoiceButton(title: "", kind: .command, layout: .segment)
+    let closeButton = GlassChoiceButton(title: "", kind: .command, layout: .segment)
+    private(set) var sourcesPlate: GlassSurfaceView?
+    private(set) var actionsPlate: GlassSurfaceView?
     private let thumbnails = NSCache<NSURL, NSImage>()
     private var entries: [PhotoBrowserEntry] = []
     private var folderAccess: PhotoBrowserFolderAccess?
@@ -379,10 +383,12 @@ final class PhotoBrowserCoordinator: NSObject, NSTableViewDataSource, NSTableVie
         configure(libraryButton, "Choose from Photos Library…", #selector(chooseLibrary))
         configure(openButton, "Open Selected Photo", #selector(openSelected)); openButton.isEnabled = false
         openButton.keyEquivalent = "\r"
-        let close = NSButton(title: "Close", target: self, action: #selector(closeBrowser))
-        close.font = DesignTokens.Typography.font(.body); close.keyEquivalent = "\u{1b}"
+        configure(closeButton, "Close", #selector(closeBrowser)); closeButton.keyEquivalent = "\u{1b}"
+        openButton.isPrimary = true
         sources.orientation = .horizontal; sources.spacing = 16
-        let bottom = NSStackView(views: [close, openButton]); bottom.spacing = 16
+        let sourcesPlate = GlassChrome.plate([folderButton, libraryButton], identifier: "PhotosSourcesPlate", accessibility: .live)
+        let bottom = GlassChrome.plate([closeButton, openButton], identifier: "PhotosActionsPlate", accessibility: .live)
+        self.sourcesPlate = sourcesPlate; actionsPlate = bottom
         status.font = DesignTokens.Typography.font(.body); status.maximumNumberOfLines = 2
         status.setAccessibilityRole(.staticText)
         setStatus("")
@@ -441,14 +447,15 @@ final class PhotoBrowserCoordinator: NSObject, NSTableViewDataSource, NSTableVie
         let showsEmpty = entries.isEmpty && !loading
         emptyState.isHidden = !showsEmpty
         sources.isHidden = showsEmpty
-        if showsEmpty { sources.setViews([], in: .leading); emptyActions.setViews([folderButton, libraryButton], in: .center) }
-        else { emptyActions.setViews([], in: .center); sources.setViews([folderButton, libraryButton], in: .leading) }
+        if showsEmpty { sources.setViews([], in: .leading); emptyActions.setViews(sourcesPlate.map { [$0] } ?? [], in: .center) }
+        else { emptyActions.setViews([], in: .center); sources.setViews(sourcesPlate.map { [$0] } ?? [], in: .leading) }
     }
     /// Errors say "Error:" in words, so they never rest on colour alone.
     private func showError(_ text: String) { setStatus(text.hasPrefix("Error:") ? text : "Error: " + text) }
-    private func configure(_ button: NSButton, _ title: String, _ action: Selector) {
+    private func configure(_ button: GlassChoiceButton, _ title: String, _ action: Selector) {
         button.title = title; button.target = self; button.action = action
-        button.bezelStyle = .rounded; button.font = DesignTokens.Typography.font(.body)
+        button.accessibility = .live
+        button.setAccessibilityLabel(title)
     }
     private func setLoading(_ loading: Bool) {
         self.loading = loading

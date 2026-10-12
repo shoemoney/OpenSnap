@@ -3176,6 +3176,12 @@ enum AppSafetyTests {
                    panel.frame.minY == app.window.frame.minY + 30, "Hidden child navigator stays beside the parent's left edge, a gap away")
         let card = panel.contentView?.subviews.compactMap { $0 as? NSGlassEffectView }.first
         try expect(card != nil && !panel.isOpaque && card?.contentView === app.navigator && card?.cornerRadius == DesignTokens.Radius.xl, "The overview is a rounded glass card, not a flat opaque panel")
+        func tintAlpha(_ name: NSAppearance.Name) -> CGFloat {
+            var alpha: CGFloat = -1
+            NSAppearance(named: name)?.performAsCurrentDrawingAppearance { alpha = card?.tintColor?.usingColorSpace(.deviceRGB)?.alphaComponent ?? -1 }
+            return alpha
+        }
+        try expect(tintAlpha(.aqua) > 0.4 && tintAlpha(.darkAqua) == 0, "The Light overview card carries a window-colour wash (flat grey without it); the Dark card is untouched (\(tintAlpha(.aqua)) / \(tintAlpha(.darkAqua)))")
         // The overview image is rendered for the slot it fills at this display's backing scale, not at a fixed 160 pixels (wide, then tall).
         func overviewResolution(_ shape: String) throws {
             guard let slot = app.navigator.thumbnailRect,

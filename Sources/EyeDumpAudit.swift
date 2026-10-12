@@ -96,6 +96,34 @@ final class AuditRun {
 
     static func isOverlay(_ window: NSWindow) -> Bool { overlayClassNames.contains { String(describing: type(of: window)).contains($0) } }
 
+    /// True when `window` is a sheet whose parent is also in `windows`.
+    static func isSheetWithParent(_ window: NSWindow, in windows: [NSWindow]) -> Bool {
+        guard let parent = window.sheetParent else { return false }
+        return windows.contains { $0 === parent }
+    }
+
+    /// Indices of `windows` from bottom to top as a composite must paint them: plain windows in the order given, a sheet directly above
+    /// its parent (however the caller listed them), overlays (popover, tooltip plate, glass panel) above everything.
+    static func compositeOrder(_ windows: [NSWindow]) -> [Int] {
+        func rank(_ index: Int, _ depth: Int = 0) -> Int {
+            if isOverlay(windows[index]) { return 1000 }
+            guard depth < 8, let parent = windows[index].sheetParent, let up = windows.firstIndex(where: { $0 === parent }) else { return 0 }
+            return rank(up, depth + 1) + 1
+        }
+        return windows.indices.map { ($0, rank($0)) }.sorted { $0.1 != $1.1 ? $0.1 < $1.1 : $0.0 < $1.0 }.map(\.0)
+    }
+
+    /// The composite order as recorded in a capture's meta: bottom to top, with each sheet's parent so a checker can prove sheet-above-parent.
+    func compositeOrderJSON(_ windows: [NSWindow]) -> [[String: Any]] {
+        Self.compositeOrder(windows).map { index in
+            let target = windows[index]
+            var entry: [String: Any] = ["window": target.windowNumber, "class": String(describing: type(of: target)), "title": target.title,
+                                        "isOverlay": Self.isOverlay(target), "isSheet": target.sheetParent != nil]
+            if let parent = target.sheetParent { entry["sheetParent"] = parent.windowNumber }
+            return entry
+        }
+    }
+
     /// For each overlay window after the first target: the fraction of its screen rectangle where the final image differs from the base
     /// window imaged alone. Near zero means the overlay was asked for but never reached the pixels (the joint-capture drop, F-S-popover).
     func overlayPaint(_ targets: [NSWindow], final image: CGImage, union: CGRect, scale: CGFloat) -> [[String: Any]] {
@@ -136,7 +164,7 @@ final class AuditRun {
         // A popover or tooltip plate sits above its window in the window server's own order, but a joint capture draws the window over
         // it and loses the overlap. Image each window on its own and stack them in the order given.
         let overlays = Self.overlayClassNames
-        if windows.count > 1, windows.contains(where: { window in overlays.contains { String(describing: type(of: window)).contains($0) } }), let stacked = stackedImage(windows) {
+        if windows.count > 1, windows.contains(where: { window in overlays.contains { String(describing: type(of: window)).contains($0) } || Self.isSheetWithParent(window, in: windows) }), let stacked = stackedImage(windows) {
             return (stacked, "CGWindowListCreateImage per window, stacked in order (\(windows.count) own windows; popover or tooltip above its window)")
         }
         var image: CGImage?
@@ -206,10 +234,9 @@ final class AuditRun {
         let scale = CGFloat(first.image.width) / first.frame.width
         guard let context = CGContext(data: nil, width: Int((union.width * scale).rounded()), height: Int((union.height * scale).rounded()), bitsPerComponent: 8, bytesPerRow: 0,
                                       space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
-        // Overlays (popover, tooltip plate, glass panel) are drawn last, whatever order the caller listed the windows in: a glass panel
-        // listed before its editor window would otherwise be painted over and vanish from the composite.
-        let kinds = windows.map(Self.isOverlay)
-        let drawOrder = parts.indices.filter { !kinds[$0] } + parts.indices.filter { kinds[$0] }
+        // Overlays (popover, tooltip plate, glass panel) are drawn last and a sheet directly above its parent, whatever order the caller
+        // listed the windows in: a panel or sheet listed before its window would otherwise be painted over and vanish from the composite.
+        let drawOrder = Self.compositeOrder(windows)
         for part in drawOrder.map({ parts[$0] }) {
             context.draw(part.image, in: CGRect(x: (part.frame.minX - union.minX) * scale, y: (part.frame.minY - union.minY) * scale,
                                                 width: part.frame.width * scale, height: part.frame.height * scale))
@@ -332,7 +359,8 @@ final class AuditRun {
             "scale": Double(scale), "method": method, "sourceRefs": refs,
             "windows": targets.map { ["title": $0.title, "class": String(describing: type(of: $0)), "frame": rectJSON($0.frame), "isKey": $0.isKeyWindow] },
             "sourceSha": sourceSha, "iconMode": iconMode, "displayOptions": displayOptionsJSON, "windowSize": [Double(window.frame.width.rounded()), Double(window.frame.height.rounded())],
-            "windowAlpha": Double(targets.first?.alphaValue ?? 1), "appActive": NSApp.isActive, "opaqueFraction": opaqueFraction(image)
+            "windowAlpha": Double(targets.first?.alphaValue ?? 1), "appActive": NSApp.isActive, "opaqueFraction": opaqueFraction(image),
+            "compositeOrder": compositeOrderJSON(targets)
         ]
         if includeMenus { meta["menuWindowsComposited"] = menuCount }
         if crop == nil {

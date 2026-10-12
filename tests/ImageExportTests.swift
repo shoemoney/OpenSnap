@@ -46,6 +46,29 @@ enum ImageExportTests {
         document.elements = [shape, path]
         return document
     }
+    /// Rows (top-down) holding ink that differs from the white page.
+    static func inkRows(_ image: CGImage) throws -> ClosedRange<Int>? {
+        let rep = NSBitmapImageRep(cgImage: image)
+        var first: Int?, last: Int?
+        for y in 0..<rep.pixelsHigh {
+            for x in 0..<rep.pixelsWide {
+                guard let c = rep.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB) else { continue }
+                if c.redComponent < 0.85 || c.greenComponent < 0.85 || c.blueComponent < 0.85 { first = first ?? y; last = y; break }
+            }
+        }
+        if let first, let last { return first...last }
+        return nil
+    }
+    static func textDocument(rectHeight: CGFloat) -> SketchDocument {
+        var document = SketchDocument(size: CGSize(width: 420, height: 180))
+        document.backgroundColor = SketchColor(.white)
+        var text = SketchElement(kind: .text)
+        text.text = "Ship it today!"; text.fontName = "Helvetica-Bold"; text.fontSize = 44
+        text.outlined = true; text.shadowed = true; text.color = SketchColor(NSColor(deviceRed: 1, green: 0, blue: 0, alpha: 1))
+        text.rect = CGRect(x: 10, y: 40, width: 400, height: rectHeight)
+        document.elements = [text]
+        return document
+    }
     static func assertScaledInk(_ image: CGImage) throws {
         // The asymmetric landmarks distinguish scaling from clipping or changing the canvas.
         let red = try color(image, image.width / 4, image.height / 4)
@@ -103,6 +126,20 @@ enum ImageExportTests {
                     let image = try decoded(bytes(document, size, format))
                     try expect(image.width == 160 && image.height == 90, "\(format) actual dimensions")
                     try assertScaledInk(image)
+                }
+            }),
+            ("Text is never clipped to an undersized stored rect: descenders survive on screen and in every export", {
+                var natural = textDocument(rectHeight: 10)
+                natural.elements[0].rect.size = OriginalTextGeometry.size(for: natural.elements[0])
+                let reference = try required(inkRows(required(SketchRenderer.bitmap(document: natural)?.cgImage, "reference render")), "reference has ink")
+                let small = textDocument(rectHeight: 46)
+                try expect(natural.elements[0].rect.height > 46, "fixture: the natural box (\(natural.elements[0].rect.height)) is taller than the 46 pt stored one")
+                let screen = try required(inkRows(required(SketchRenderer.bitmap(document: small)?.cgImage, "screen render")), "screen has ink")
+                try expect(screen.upperBound >= reference.upperBound - 1, "screen render lost its descenders: ink ends at row \(screen.upperBound), a full box reaches \(reference.upperBound)")
+                try expect(screen.lowerBound <= reference.lowerBound, "screen render clipped the top: starts at \(screen.lowerBound), full box at \(reference.lowerBound)")
+                for format in ["png", "jpeg"] {
+                    let rows = try required(inkRows(decoded(bytes(small, small.size, format))), "\(format) has ink")
+                    try expect(rows.upperBound >= reference.upperBound - 2, "\(format) export lost its descenders: ink ends at row \(rows.upperBound), a full box reaches \(reference.upperBound)")
                 }
             }),
             ("Fractional output dimensions round upward within pixel limits", {

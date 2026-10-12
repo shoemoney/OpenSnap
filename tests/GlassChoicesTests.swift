@@ -10,6 +10,12 @@
 #if GLASS_CHOICES_TESTS
 import AppKit
 
+/// The selected fill's alpha for the appearance a view is drawn under: 0.20 in light, 0.34 in dark (0.32 / 0.40 under Increase Contrast).
+@MainActor
+private func selectedAlpha(of view: NSView, hc: Bool = false) -> CGFloat {
+    DesignTokens.Palette.resolve(DesignTokens.Palette.State.selectedFill, arm: StateStyles.arm(for: view.effectiveAppearance, highContrast: hc)).alphaComponent
+}
+
 // MARK: - Fixtures
 
 /// Any attempt to order a window front or to attach a child window fails: the presenter seam must replace it.
@@ -757,7 +763,7 @@ private enum GlassChoicesTests {
         let expected = StateStyles.command(.selected, primary: false, focused: false, highContrast: false, differentiate: false, selected: true, appearance: appearance)
         expect(button.plate.stateStyle == expected, "A chosen button draws StateStyles.command selected")
         expect(button.plate.style.fill != nil && button.plate.style.borderWidth == 1 && button.plate.style.border != nil, "...as a fill and a 1 pt border")
-        expect(abs((button.plate.style.fill?.usingColorSpace(.sRGB)?.alphaComponent ?? 0) - 0.20) < 0.005, "...at the 0.20 accent fill")
+        expect(abs((button.plate.style.fill?.usingColorSpace(.sRGB)?.alphaComponent ?? 0) - selectedAlpha(of: button)) < 0.005, "...at the accent fill (0.20 light, 0.34 dark)")
         expect(button.plate.stateStyle.strongText, "...with strong text")
         expect(!button.showsIndicator, "The capsule is only for Differentiate Without Color")
         button.accessibility = differentiate

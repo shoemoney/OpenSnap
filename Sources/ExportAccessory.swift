@@ -182,7 +182,7 @@ final class ExportAccessory: NSObject {
         popup.action = #selector(selectFormat(_:))
         popup.setAccessibilityLabel("Export format")
         formatPopup = popup
-        let formatLabel = NSTextField(labelWithString: "Format")
+        let formatLabel = NSTextField(labelWithString: "Format:")
         formatLabel.font = DesignTokens.Typography.font(.body)
         formatLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
         let formatRow = NSStackView(views: [formatLabel, popup])
@@ -244,7 +244,9 @@ final class ExportAccessory: NSObject {
         if let index = ExportAccessoryFormat.allCases.firstIndex(of: options.selectedFormat) {
             formatPopup?.selectItem(at: index)
         }
+        // A statement about JPG has nothing to say while PNG is chosen, and a control-less line at full strength reads as a setting that does not apply.
         qualityLabel?.isEnabled = options.jpegControlsEnabled
+        qualityLabel?.isHidden = !options.jpegControlsEnabled
         qualityLabel?.stringValue = Self.qualityText(effectiveJPEGQuality)
         originalSizeCheckbox?.state = options.originalSize ? .on : .off
         originalSizeCheckbox?.isHidden = !offersOriginalSize

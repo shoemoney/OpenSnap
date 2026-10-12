@@ -450,13 +450,14 @@ private enum SettingsWindowTests {
         // Keyboard: the strip is one key-view stop and the arrows move between tabs.
         expect(strip.acceptsFirstResponder && strip.canBecomeKeyView && strip.buttons.allSatisfy(\.refusesFirstResponder), "the strip is the one key-view stop; its buttons do not take focus")
         expect(window.makeFirstResponder(strip) && window.firstResponder === strip, "the strip can hold focus")
-        expect(!strip.showsKeyboardFocus && strip.focusRingType == .none, "focus that arrives without a key press (the window opening) draws no ring")
+        expect(!strip.showsKeyboardFocus && strip.focusRingType == .none && strip.tokenRing.layer.isHidden, "focus that arrives without a key press (the window opening) draws no ring")
         func arrow(_ code: UInt16, _ flags: NSEvent.ModifierFlags = []) {
             strip.keyDown(with: keyEvent(code == 123 ? "\u{F702}" : "\u{F703}", code: code, flags: flags.union(realArrowFlags), window: window))
         }
         arrow(124); expect(controller.selectedIndex == 1, "Right moves to Drawing")
-        expect(strip.showsKeyboardFocus && strip.focusRingType == .exterior && strip.focusRingMaskBounds == strip.convert(strip.buttons[1].bounds, from: strip.buttons[1]),
-               "an arrow key shows the focus ring, around the selected tab")
+        let ringTarget = strip.convert(strip.buttons[1].bounds, from: strip.buttons[1])
+        expect(strip.showsKeyboardFocus && strip.focusRingType == .none && !strip.tokenRing.layer.isHidden && strip.tokenRing.target() == ringTarget,
+               "an arrow key shows the token focus ring (not AppKit's), around the selected tab")
         arrow(124); arrow(124); expect(controller.selectedIndex == 3, "Right walks on to Upload")
         arrow(124); expect(controller.selectedIndex == 3, "Right stops at the last tab")
         arrow(123); expect(controller.selectedIndex == 2 && window.title == "Capture", "Left moves back to Capture")
@@ -994,6 +995,15 @@ private enum SettingsWindowTests {
         expect(general.snapPlate.arrangedViews.count == 1 && general.snapPlate.arrangedViews[0] === snap && general.snapPlate !== general.hintsPlate && plates(in: general.view).count == 3,
                "the snap option has its own plate, and the General tab has three: Show in, Snapping, Hints")
         expect(general.hintsPlate.accessibilityRole() == .group && general.hintsPlate.accessibilityLabel() == "Hints", "the plate is a named group")
+        // OSN-071 r3: a toggle row is as wide as its plate, so its focus ring (outset + stroke = 4 pt) must stand clear of the plate's border (S56-settings-toggles-focus).
+        let ringReach = StateStyles.focusRingOutset + StateStyles.focusRingWidth
+        for (plateName, plate) in [("Snapping", general.snapPlate!), ("Hints", general.hintsPlate!)] {
+            for toggle in plate.arrangedViews {
+                let row = plate.convert(toggle.bounds, from: toggle)
+                let clearance = min(row.minX - plate.bounds.minX, plate.bounds.maxX - row.maxX, row.minY - plate.bounds.minY, plate.bounds.maxY - row.maxY)
+                expect(clearance >= ringReach + 1, "\(plateName): the focus ring (\(ringReach) pt) stands at least 1 pt clear of the plate border; the row has \(clearance) pt")
+            }
+        }
         expect([hover, keys, snap].allSatisfy { labelIsWhole($0) }, "no check box label is cut short, and the wrapped one keeps every line: \([hover, keys, snap].map { "\($0.title.prefix(12)) \($0.titleLabel.frame.size) needs \($0.titleLabel.fittingSize)" })")
         // The sentence wraps: two readable lines, wholly inside its row, the plate no wider than the control column.
         window.contentView?.layoutSubtreeIfNeeded()

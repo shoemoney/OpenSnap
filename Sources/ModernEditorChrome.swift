@@ -628,8 +628,9 @@ final class ModernEditorChrome: NSView {
         let widestZoom: CGFloat
         if let face = controls.zoomControl as? GlassPopUpButton {
             // The face draws its title between its padding and its chevron column, so the cell is what the widest face needs of both: every
-            // percentage, and the computed Fit / Frame row at its widest ("200%"), but not Actual Size, which is never the face.
-            let computed = ceil(("200%" as NSString).size(withAttributes: [.font: DesignTokens.Typography.font(.body)]).width)
+            // percentage, the computed Fit / Frame row at its widest ("200%"), and "Actual", which the face reads while Actual Size is on.
+            let font = DesignTokens.Typography.font(.body)
+            let computed = ["200%", "Actual"].map { ceil(($0 as NSString).size(withAttributes: [.font: font]).width) }.max() ?? 0
             let text = faceTitles.map { index -> CGFloat in face.selectItem(at: index); return face.faceTextMetrics.needed.width }.max() ?? 0
             widestZoom = max(text, computed) + 2 * face.facePadding + face.chevronColumn
         } else {

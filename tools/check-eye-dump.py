@@ -795,8 +795,8 @@ def check_glass_record(label, record):
     if slug == "capture-key-dismissed" and glass.get("firstResponderIsOpener") is not True:
         problems.append(f"glass: {label} the first responder after Escape is {glass.get('firstResponderIdentifier')!r}, not the key face")
     if slug.endswith("zoom-actual-size"):
-        if glass.get("actualSizeOn") is not True or glass.get("faceShowsPercentage") is not True:
-            problems.append(f"glass: {label} must show Actual Size on with the face still a percentage (on {glass.get('actualSizeOn')!r}, face {glass.get('faceTitleNow')!r})")
+        if glass.get("actualSizeOn") is not True or glass.get("faceTitleNow") != "Actual":
+            problems.append(f"glass: {label} must show Actual Size on with the face reading Actual (on {glass.get('actualSizeOn')!r}, face {glass.get('faceTitleNow')!r})")
         if glass.get("zoomEnabledByApp") is None or (glass.get("zoomEnabledByApp") is False and glass.get("openedDirectly") is not True):
             problems.append(f"glass: {label} must state whether the app left the zoom pop-up enabled in Actual Size, and if not that the panel was presented directly")
         actual_row = next((i for i, title in enumerate(rows) if "actual size" in str(title).lower()), None)
@@ -927,10 +927,37 @@ def overlay_problems(record):
     return problems
 
 
+def sheet_order_problems(record):
+    """A capture whose slug names a sheet or the destination sheet must record its composite order (bottom to top) and every sheet in it must
+    sit above its parent, with overlays above all plain windows. A sheet painted behind Settings shows as a sliver (F-R3-sheet-behind-parent)."""
+    slug, windows = record.get("slug", ""), record.get("windows")
+    if not slug or not isinstance(windows, list) or not ("sheet" in slug or "destination" in slug):
+        return []
+    label = f"{record.get('id', '?')}/{slug} ({record.get('appearance', '?')})"
+    order = record.get("compositeOrder")
+    if len(windows) < 2 and order is None:
+        return []
+    if not isinstance(order, list) or not order:
+        return [f"{label}: names a sheet but records no compositeOrder, so its sheet-above-parent order is unproven"]
+    position = {entry.get("window"): index for index, entry in enumerate(order) if isinstance(entry, dict)}
+    problems = []
+    for index, entry in enumerate(order):
+        if not isinstance(entry, dict):
+            continue
+        parent = entry.get("sheetParent")
+        if entry.get("isSheet") and parent in position and index < position[parent]:
+            problems.append(f"{label}: sheet window {entry.get('window')} ({entry.get('class')}) is ordered below its parent {parent} in the composite {[e.get('class') for e in order]}")
+    first_overlay = next((i for i, e in enumerate(order) if isinstance(e, dict) and e.get("isOverlay")), None)
+    if first_overlay is not None and any(isinstance(e, dict) and not e.get("isOverlay") for e in order[first_overlay:]):
+        problems.append(f"{label}: a plain window is painted over an overlay in the composite {[e.get('class') for e in order]}")
+    return problems
+
+
 def check_overlays(folder):
     problems = []
     for record in load_captures(folder):
         problems += overlay_problems(record)
+        problems += sheet_order_problems(record)
     # S24: the status-item states are rendered, so each state and each appearance must be a different picture.
     seen = {}
     for path in sorted(folder.glob("raw-*/S24-*.png")) + sorted(folder.glob("S24-*.png")):
@@ -1186,7 +1213,7 @@ def self_test():
             if slug == "capture-key-dismissed":
                 panel.update(firstResponderIsOpener=True, firstResponderIdentifier="GlobalHotkeyKey.screen")
             if slug.endswith("zoom-actual-size"):
-                panel.update(actualSizeOn=True, faceShowsPercentage=True, faceTitleNow="100%", zoomEnabledByApp=False, openedDirectly=True,
+                panel.update(actualSizeOn=True, faceShowsPercentage=False, faceTitleNow="Actual", zoomEnabledByApp=False, openedDirectly=True,
                              rowTitles=["100%", "Actual Size"], chosenIndexes=[1])
             if slug.endswith(("-width-640", "-width-560")):
                 panel.update(protocol="S3", sheetWidth=560 if slug.endswith("-560") else 640, formWidth=560 if slug.endswith("-560") else 640, sourceTitle="Access key stored in Keychain", faceTitles=["S3-compatible", "Keychain"])
@@ -1318,7 +1345,7 @@ def self_test():
             ("scroll capture that never reached the last key", tweak("S60", "capture-key-scroll", scrolledToEnd=False), {"surfaces": ("S60",)}, 1),
             ("focus not back on the key face", tweak("S60", "capture-key-dismissed", firstResponderIsOpener=False), {"surfaces": ("S60",)}, 1),
             ("sound Capture tab surface", lambda r, g: None, {"surfaces": ("S60",)}, 0),
-            ("Actual Size capture with the face not a percentage", tweak("S51", "zoom-actual-size", faceShowsPercentage=False), {"surfaces": ("S51",)}, 1),
+            ("Actual Size capture with the face not reading Actual", tweak("S51", "zoom-actual-size", faceTitleNow="100%"), {"surfaces": ("S51",)}, 1),
             ("Actual Size capture with Actual Size off", tweak("S51", "zoom-actual-size", actualSizeOn=False), {"surfaces": ("S51",)}, 1),
             ("Actual Size capture without saying whether the zoom was enabled", drop_field("S51", "zoom-actual-size", "zoomEnabledByApp"), {"surfaces": ("S51",)}, 1),
             ("Actual Size capture opened without saying it was presented directly", tweak("S51", "zoom-actual-size", openedDirectly=False), {"surfaces": ("S51",)}, 1),
@@ -1347,6 +1374,31 @@ def self_test():
         got = subprocess.run([sys.executable, script, str(folder), "--jobs", "1"], capture_output=True).returncode
         print(f"  self-test glass: no request file, hole: exit {got} (expected 1)")
         failed |= got != 1
+        # sheet order: a sheet painted below its parent, or a plain window over an overlay, fails; the right order and an unrelated slug pass
+        def entry(number, kind, **more):
+            return {"window": number, "class": kind, "title": "", "isOverlay": kind == "GlassChoiceWindow", "isSheet": "parent" in more and kind == "Sheet",
+                    **({"sheetParent": more["parent"]} if "parent" in more else {})}
+        sheet_cases = [
+            ("sheet above its parent", "destination-protocol-rest", [entry(1, "Window"), entry(2, "Sheet", parent=1)], 0),
+            ("sheet below its parent", "destination-protocol-rest", [entry(2, "Sheet", parent=1), entry(1, "Window")], 1),
+            ("destination sheet below Settings, panel on top", "destination-source-focus", [entry(2, "Sheet", parent=1), entry(1, "Window"), entry(3, "GlassChoiceWindow")], 1),
+            ("sheet, parent, then panel", "destination-source-focus", [entry(1, "Window"), entry(2, "Sheet", parent=1), entry(3, "GlassChoiceWindow")], 0),
+            ("plain window over the panel", "destination-source-focus", [entry(3, "GlassChoiceWindow"), entry(1, "Window"), entry(2, "Sheet", parent=1)], 1),
+            ("sheet slug with no composite order", "destination-width-640", None, 1),
+            ("below-parent order on a non-sheet slug is out of scope", "toolbox-rest", [entry(2, "Sheet", parent=1), entry(1, "Window")], 0),
+        ]
+        for label, slug, order, expected in sheet_cases:
+            folder = Path(workdir) / re.sub(r"\W+", "-", "sheet-" + label)
+            (folder / "raw-sf" / "meta").mkdir(parents=True)
+            (folder / "case.png").write_bytes(good)
+            record = {"id": "S99", "slug": slug, "appearance": "light", "windows": [{"class": "Window"}, {"class": "Sheet"}]}
+            if order is not None:
+                record["compositeOrder"] = order
+            (folder / "raw-sf" / "meta" / "case.json").write_text(json.dumps(record))
+            run = subprocess.run([sys.executable, script, str(folder), "--jobs", "1"], capture_output=True, text=True)
+            named = expected == 0 or "sheet" in run.stdout.lower() or "overlay" in run.stdout.lower()
+            print(f"  self-test sheet order: {label}: exit {run.returncode} (expected {expected}){'' if named else ' -- but not for a sheet-order reason'}")
+            failed |= run.returncode != expected or not named
         # contrast: advisory by default, fatal under --strict
         low = png_bytes(64, 48, lambda x, y: (128, 128, 128) if (x + y) % 7 else (140, 140, 140))
         weak = sample_layout(windowSize=[64, 48])

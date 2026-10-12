@@ -321,14 +321,13 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         let today = calendar.startOfDay(for:reference), yesterday = calendar.date(byAdding:.day,value:-1,to:today)
         lastRefreshDay = today
         let formatter = DateFormatter(); formatter.calendar = calendar; formatter.timeZone = calendar.timeZone; formatter.dateStyle = .full
-        sections = []
-        for value in filtered {
-            let day = calendar.startOfDay(for:value.date)
-            if sections.last?.day != day {
-                let title = day == today ? "Today" : (day == yesterday ? "Yesterday" : formatter.string(from:day))
-                sections.append(Section(day:day,title:title,items:[]))
-            }
-            sections[sections.count-1].items.append(value)
+        // Days run newest first whatever order the items arrive in; within a day the recovered History order is kept, so edited or imported
+        // dates move a snap to its day without reordering the day itself.
+        var days: [Date: [Item]] = [:]
+        for value in filtered { days[calendar.startOfDay(for:value.date),default:[]].append(value) }
+        sections = days.keys.sorted(by:>).map { day in
+            let title = day == today ? "Today" : (day == yesterday ? "Yesterday" : formatter.string(from:day))
+            return Section(day:day,title:title,items:days[day] ?? [])
         }
         selectionChanging = true
         let sameStructure = previous.count == sections.count && zip(previous,sections).allSatisfy {
@@ -1056,8 +1055,20 @@ final class HistorySearchFieldCell: NSSearchFieldCell {
     override func titleRect(forBounds rect: NSRect) -> NSRect { centred(super.titleRect(forBounds: rect), in: rect) }
     override func drawingRect(forBounds rect: NSRect) -> NSRect { centred(super.drawingRect(forBounds: rect), in: rect) }
 }
-final class HistorySearchField: NSSearchField {
+@MainActor
+final class HistorySearchField: NSSearchField, TokenFocusRinged {
     override class var cellClass: AnyClass? { get { HistorySearchFieldCell.self } set {} }
+    private(set) lazy var tokenRing = TokenFocusRing(view: self)
+    override var focusRingType: NSFocusRingType { get { .none } set {} }
+    override func becomeFirstResponder() -> Bool {
+        let accepted = super.becomeFirstResponder()
+        tokenRing.setFocused(accepted && currentEditor() != nil)
+        return accepted
+    }
+    override func textDidEndEditing(_ notification: Notification) { super.textDidEndEditing(notification); tokenRing.setFocused(currentEditor() != nil) }
+    override func layout() { super.layout(); tokenRing.refresh() }
+    override func viewDidChangeEffectiveAppearance() { super.viewDidChangeEffectiveAppearance(); tokenRing.refresh() }
+    override func viewDidMoveToWindow() { super.viewDidMoveToWindow(); _ = tokenRing }
 }
 
 /// The search field on a glass plate as tall as the filter plates beside it. The field draws no bezel of its own and its magnifier and clear
