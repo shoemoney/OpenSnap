@@ -2039,9 +2039,9 @@ Status at `284f028`, `fa4715f`, `33743c5` and `3b453b3`: 29 done, 2 verified, 1 
 
 ## OSN-071 · Visual acceptance run: full gallery, light and dark, widths, states, icon modes, and independent visual sign-off
 
-`OSN-071 · P0 · M7 · Status: in-progress`
+`OSN-071 · P0 · M7 · Status: done`
 
-**Release 0.4.0 state (2026-10-12, round 4 at `8188b73`, commit `66ff7312`):** Round 4 visual evidence at source 8188b73 (commit 66ff7312, on impl/osn-062). 2,260 rendered captures in five packs (base 760; reduce-transparency 486 and its -surfaces pack 264; increase-contrast 486 and its -surfaces pack 264). tools/check-eye-dump.py --strict exits 0 on every pack with 0 failures and 0 contrast advisories. The text walker reports 0 violations over 2,248 captures. Harness renders, not real-click or Screen Recording. Independent visual sign-off: pending final confirmation. Gaps in gaps.md stay open.
+**Release 0.4.0 state (2026-10-12, round 4 at `8188b73`, commit `66ff7312`):** Round 4 visual evidence at source 8188b73 (commit 66ff7312, on impl/osn-062). 2,260 rendered captures in five packs (base 760; reduce-transparency 486 and its -surfaces pack 264; increase-contrast 486 and its -surfaces pack 264). tools/check-eye-dump.py --strict exits 0 on every pack with 0 failures and 0 contrast advisories. The text walker reports 0 violations over 2,248 captures. Harness renders, not real-click or Screen Recording. Independent visual sign-off: SIGN-OFF WITH CONDITIONS (round 4); the condition (checker backdrop rule) was fixed at d70b845d. Gaps in gaps.md stay open.
 
 **Implementation (main 658a16f):** no merge. Evidence: none. Open: none.
 

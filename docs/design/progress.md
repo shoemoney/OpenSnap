@@ -81,7 +81,7 @@ Todos in progress, partly landed, or landed since `658a16f`:
 | OSN-061 | done | part 1 `accfedd` (`de21b6e`, `d0f8013`, `2dc613e`, `eaab72f`, `f975dfa`); part 2 `3ee9503` | DisplayOptionsTests: 92 checks (part 1) | J3 rendered positive controls for all four options (`e2e-2026-10-10/j3`, rendered only) |
 | OSN-070 | done (release 0.4.0 state; `9011e305` and later on `impl/osn-062`, not on main) | G2 to G12 wired in `tools/test.py`; G1 by hand; G3 and G12 not on main | can-fail self-test for every gate except G1 and G2 (recorded exception); gate table below | `docs/design/evidence/osn-071-2026-10-11/` (G7 runs over the committed sets) |
 | OSN-072 | done | evidence `c906d7bb` (on main); migration and dry run on copies | migration 58/58, 2 destinations, re-run no-op; clean clone 275/275 app safety; release dry run at 0.3.0 | `docs/design/evidence/osn-072-2026-10-11/` |
-| OSN-071 | in-progress (round 4 captured; sign-off pending final confirmation) | evidence only, `66ff7312` (round 4 at `8188b73`) | `check-eye-dump --strict` 0 failures on 5 packs; text walker 0 violations | 2,260 captures, `docs/design/evidence/osn-071-2026-10-11/` |
+| OSN-071 | done (independent sign-off with conditions; conditions met at `d70b845d`) | evidence only, `66ff7312` (round 4 at `8188b73`) | `check-eye-dump --strict` 0 failures on 5 packs; text walker 0 violations | 2,260 captures, `docs/design/evidence/osn-071-2026-10-11/` |
 
 ## Release 0.4.0 status (2026-10-12)
 
@@ -92,7 +92,7 @@ State at `66ff7312` on `impl/osn-062`. `main` is at `c906d7bb`. The gate and Voi
 | OSN-070 | in-progress | **done** | gates from `9011e305` and later; gate table below |
 | OSN-072 | in-progress | **done** | `docs/design/evidence/osn-072-2026-10-11/`; evidence commit `c906d7bb` (on main) |
 | OSN-062 | in-progress | in-progress | automated layer done (`docs/design/evidence/osn-062-2026-10-11/spoken/`); manual listening pass open |
-| OSN-071 | in-progress | in-progress | round 4 at `8188b73` (commit `66ff7312`, `docs/design/evidence/osn-071-2026-10-11/`); sign-off pending final confirmation |
+| OSN-071 | done | done | round 4 at `8188b73` (commit `66ff7312`, `docs/design/evidence/osn-071-2026-10-11/`); independent sign-off with conditions, conditions met at `d70b845d` |
 
 Totals: 31 done, 2 verified, 1 not-a-bug, 2 in-progress, 0 pending (was 29, 2, 1, 4, 0). Milestone counts: roadmap section 2b.
 

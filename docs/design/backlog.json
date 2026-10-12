@@ -3,7 +3,7 @@
     "project": "OpenSnap",
     "round": 2,
     "generated": "2026-10-09",
-    "statusNote": "Release 0.4.0 update, 2026-10-12, on impl/osn-062 at 66ff7312: 31 done, 2 verified, 1 not-a-bug, 2 in-progress of 36 todos. OSN-070 and OSN-072 are done. OSN-062 (manual VoiceOver listening pass) and OSN-071 (independent visual sign-off, pending final confirmation) are in progress. The status in the earlier note is historical. Release 0.4.0 detail: progress.md, section Release 0.4.0 status.",
+    "statusNote": "Release 0.4.0 update, 2026-10-12, on impl/osn-062: 32 done, 2 verified, 1 not-a-bug, 1 in-progress of 36 todos. OSN-070, OSN-071 and OSN-072 are done. OSN-062 (manual VoiceOver listening pass) is in progress. The status in the earlier note is historical. Release 0.4.0 detail: progress.md, section Release 0.4.0 status.",
     "auditedShas": {
       "briefed": "b9319c4",
       "drift": [
@@ -2788,11 +2788,11 @@
       "title": "Visual acceptance run: full gallery, light and dark, widths, states, icon modes, and independent visual sign-off",
       "priority": "P0",
       "milestone": "M7",
-      "status": "in-progress",
-      "mainState": "Round 4 visual evidence at source 8188b73 (commit 66ff7312, on impl/osn-062). 2,260 rendered captures in five packs: base 760; reduce-transparency 486 and its -surfaces pack 264; increase-contrast 486 and its -surfaces pack 264. tools/check-eye-dump.py --strict exits 0 on every pack with 0 failures and 0 contrast advisories. The text walker reports 0 violations over 2,248 captures with view-tree metrics. Captures are harness renders, not real-click or Screen Recording captures. Independent visual sign-off: pending final confirmation.",
-      "remainingWork": "Independent visual sign-off, pending final confirmation. The per-mode gaps in docs/design/evidence/osn-071-2026-10-11/gaps.md stay open.",
+      "status": "done",
+      "mainState": "Round 4 visual evidence at source 8188b73 (commit 66ff7312, on impl/osn-062). 2,260 rendered captures in five packs: base 760; reduce-transparency 486 and its -surfaces pack 264; increase-contrast 486 and its -surfaces pack 264. tools/check-eye-dump.py --strict exits 0 on every pack with 0 failures and 0 contrast advisories. The text walker reports 0 violations over 2,248 captures with view-tree metrics. Captures are harness renders, not real-click or Screen Recording captures. Independent visual sign-off: SIGN-OFF WITH CONDITIONS; the condition (checker backdrop rule) was fixed at d70b845d and --strict stays at 0 failures/0 advisories.",
+      "remainingWork": "None for sign-off. The per-mode gaps in docs/design/evidence/osn-071-2026-10-11/gaps.md stay recorded.",
       "openItems": [
-        "Independent visual sign-off: pending final confirmation. The orchestrator updates the verdict after the final review.",
+        "Independent visual sign-off recorded: SIGN-OFF WITH CONDITIONS (round 4); the condition was fixed at d70b845d.",
         "REVIEW.md lists non-contrast advisories: 14,642 text-bearing controls at exactly 18 pt (the 20 pt floor is waived only for registered captions), and status text truncated in 6 captures (one is a deliberate stress string).",
         "Contrast is not machine-proven for 570 skipped samples (translucent region or aspect mismatch); the reviewer checks them.",
         "Not run: Font Awesome Pro icon mode (no Pro subset in this build), live Screen Recording capture, multi-display, 1x display, spoken VoiceOver (OSN-062), OS-owned panels."
