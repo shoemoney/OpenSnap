@@ -26,7 +26,7 @@ private enum StatusItemSupportTests {
         guard let image = StatusIcon.image() else { return expect(false, "The status icon resolved on this host") }
         expect(image.isTemplate, "The status icon is a template image, so the system tints it for light, dark and highlighted bars")
         expect(image.size.width > 0 && image.size.height > 0 && !image.representations.isEmpty, "The status icon has drawable content")
-        expect(image.accessibilityDescription == DesignTokens.Brand.name, "The image carries the product name for accessibility")
+        expect(image.accessibilityDescription == StatusIcon.accessibilityLabel, "The image carries the same spoken label as the button, so an external client reads one name")
 
         let button = NSButton(title: "", target: nil, action: nil)
         StatusIcon.configure(button)

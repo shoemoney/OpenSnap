@@ -547,7 +547,14 @@ final class ResizeAnchorCellElement: NSAccessibilityElement {
         setAccessibilityLabel(anchor.title)
         setAccessibilityParent(grid)
     }
-    override func accessibilityFrameInParentSpace() -> NSRect { MainActor.assumeIsolated { grid?.frame(of: anchor) ?? .zero } }
+    /// The grid draws top-down (flipped); the accessibility frame in parent space is bottom-up, so the rows must not be mirrored.
+    override func accessibilityFrameInParentSpace() -> NSRect {
+        MainActor.assumeIsolated {
+            guard let grid else { return .zero }
+            let cell = grid.frame(of: anchor)
+            return NSRect(x: cell.minX, y: grid.bounds.height - cell.maxY, width: cell.width, height: cell.height)
+        }
+    }
     override func accessibilityValue() -> Any? { MainActor.assumeIsolated { grid?.anchor == anchor ? 1 : 0 } }
     override func isAccessibilitySelected() -> Bool { MainActor.assumeIsolated { grid?.anchor == anchor } }
     override func accessibilityPerformPress() -> Bool { MainActor.assumeIsolated { grid?.select(anchor); return grid != nil } }

@@ -401,10 +401,11 @@ final class PhotoBrowserCoordinator: NSObject, NSTableViewDataSource, NSTableVie
         let scroll = NSScrollView(); scroll.documentView = table; scroll.hasVerticalScroller = true
         scroll.borderType = .bezelBorder
         buildEmptyState()
-        for view in [title, sources, scroll, status, bottom] {
+        // Subview order is the reading order and the key-view order: the empty grid sits on the table, so it comes before the status line
+        // and the Close / Open row below it (it is still drawn above the table, which was added before it).
+        for view in [title, sources, scroll, emptyState, status, bottom] {
             view.translatesAutoresizingMaskIntoConstraints = false; content.addSubview(view)
         }
-        emptyState.translatesAutoresizingMaskIntoConstraints = false; content.addSubview(emptyState)
         // The sources row only takes room once there are photos to browse; until then its buttons live in the empty grid, so the grid
         // starts right under the title and nothing above it is blank.
         NSLayoutConstraint.activate([
@@ -437,6 +438,8 @@ final class PhotoBrowserCoordinator: NSObject, NSTableViewDataSource, NSTableVie
         column.setCustomSpacing(20, after: body)
         column.translatesAutoresizingMaskIntoConstraints = false
         emptyState.addSubview(column)
+        // The empty grid sits on top of the (empty) table, so by frame alone it would be read amid the table's row; as one group it comes right after.
+        emptyState.setAccessibilityElement(true); emptyState.setAccessibilityRole(.group); emptyState.setAccessibilityLabel("Photo sources")
         NSLayoutConstraint.activate([
             column.leadingAnchor.constraint(equalTo: emptyState.leadingAnchor), column.trailingAnchor.constraint(equalTo: emptyState.trailingAnchor),
             column.topAnchor.constraint(equalTo: emptyState.topAnchor), column.bottomAnchor.constraint(equalTo: emptyState.bottomAnchor)

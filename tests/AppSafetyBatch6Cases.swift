@@ -356,8 +356,8 @@ extension AppSafetyTests {
             return nil
         }
         let toolbox = try find(content).b6Unwrap("the Toolbox")
-        try expect(toolbox.accessibilityRole() == .menuButton && toolbox.accessibilityLabel() == "Toolbox" && toolbox.accessibilityValue() == nil,
-                   "A menu button named Toolbox with no value (\(String(describing: toolbox.accessibilityRole())), \(String(describing: toolbox.accessibilityValue())))")
+        try expect(toolbox.accessibilityRole() == .menuButton && toolbox.accessibilityLabel() == "Toolbox" && toolbox.accessibilityValue() as? String == "Menu",
+                   "A menu button named Toolbox whose value is the constant Menu (\(String(describing: toolbox.accessibilityRole())), \(String(describing: toolbox.accessibilityValue())))")
         let rows = try toolbox.menu.b6Unwrap("the rows").items.filter { !$0.isSeparatorItem }
         let bare = rows.filter { $0.image == nil }.map(\.title)
         try expect(bare.isEmpty && rows.contains { $0.title == "Filled Shapes" } && rows.contains { $0.title == "Shadow" }, "Every row, the two check-mark toggles included, has an icon (without: \(bare))")

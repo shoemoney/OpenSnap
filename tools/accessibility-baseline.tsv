@@ -1,72 +1,23 @@
 # surface	kind	element	label	reason
-Alert (confirm discard)	readingOrderMismatch	the window		pending WP3
-Alert (save, cancel, don't save)	readingOrderMismatch	the window		pending WP3
-Capture picker overlay	ignoredButFocusable	window>OriginalCaptureSelectionView		pending WP3
-Capture picker overlay	missingLabel	window>OriginalCaptureSelectionView		pending WP3
-Capture picker overlay	missingRole	window>OriginalCaptureSelectionView		pending WP3
-Destinations (edit form)	readingOrderMismatch	AXScrollArea ""		pending WP3
-Destinations (edit form, error)	readingOrderMismatch	AXScrollArea ""		pending WP3
-Destinations (form, FTP)	readingOrderMismatch	AXScrollArea ""		pending WP3
-Destinations (form, FTPS)	readingOrderMismatch	AXScrollArea ""		pending WP3
-Destinations (form, S3-compatible)	readingOrderMismatch	AXScrollArea ""		pending WP3
-Destinations (form, SFTP)	readingOrderMismatch	AXScrollArea ""		pending WP3
-Destinations (form, WebDAV)	readingOrderMismatch	AXScrollArea ""		pending WP3
-Destinations (form, test result)	readingOrderMismatch	AXScrollArea ""		pending WP3
 Editor (frame keeps annotations)	ignoredButFocusable	window>FrameChromeView>ModernEditorChrome>NSScrollView>CenteringClipView>CanvasView	Drawing canvas	pending WP3
-Editor (frame keeps annotations)	missingValue	AXPopUpButton "Toolbox"	Toolbox	pending WP3
 Editor (frame keeps annotations)	missingValue	window>FrameChromeView>ModernEditorChrome>NSScrollView>CenteringClipView>CanvasView	Drawing canvas	pending WP3
-Editor (frame keeps annotations)	readingOrderMismatch	the window		pending WP3
 Editor (frame mode)	ignoredButFocusable	window>FrameChromeView>ModernEditorChrome>NSScrollView>CenteringClipView>CanvasView	Drawing canvas	pending WP3
-Editor (frame mode)	missingValue	AXPopUpButton "Toolbox"	Toolbox	pending WP3
 Editor (frame mode)	missingValue	window>FrameChromeView>ModernEditorChrome>NSScrollView>CenteringClipView>CanvasView	Drawing canvas	pending WP3
-Editor (frame mode)	readingOrderMismatch	the window		pending WP3
-Editor (fullscreen prompt)	ignoredButFocusable	window>FrameChromeView>ModernEditorChrome>CanvasBorderView	Image borders. Drag an edge to crop or expand; hold Option for symmetry. Drag a corner to resize.	pending WP3
 Editor (fullscreen prompt)	ignoredButFocusable	window>FrameChromeView>ModernEditorChrome>NSScrollView>CenteringClipView>CanvasView	Drawing canvas	pending WP3
-Editor (fullscreen prompt)	missingValue	AXPopUpButton "Toolbox"	Toolbox	pending WP3
 Editor (fullscreen prompt)	missingValue	window>FrameChromeView>ModernEditorChrome>NSScrollView>CenteringClipView>CanvasView	Drawing canvas	pending WP3
-Editor (fullscreen prompt)	readingOrderMismatch	the window		pending WP3
-Editor (populated)	ignoredButFocusable	window>FrameChromeView>ModernEditorChrome>CanvasBorderView	Image borders. Drag an edge to crop or expand; hold Option for symmetry. Drag a corner to resize.	pending WP3
 Editor (populated)	ignoredButFocusable	window>FrameChromeView>ModernEditorChrome>NSScrollView>CenteringClipView>CanvasView	Drawing canvas	pending WP3
-Editor (populated)	missingValue	AXPopUpButton "Toolbox"	Toolbox	pending WP3
 Editor (populated)	missingValue	window>FrameChromeView>ModernEditorChrome>NSScrollView>CenteringClipView>CanvasView	Drawing canvas	pending WP3
-Editor (populated)	readingOrderMismatch	the window		pending WP3
-Editor (selection)	ignoredButFocusable	window>FrameChromeView>ModernEditorChrome>CanvasBorderView	Image borders. Drag an edge to crop or expand; hold Option for symmetry. Drag a corner to resize.	pending WP3
 Editor (selection)	ignoredButFocusable	window>FrameChromeView>ModernEditorChrome>NSScrollView>CenteringClipView>CanvasView	Drawing canvas	pending WP3
-Editor (selection)	missingValue	AXPopUpButton "Toolbox"	Toolbox	pending WP3
 Editor (selection)	missingValue	window>FrameChromeView>ModernEditorChrome>NSScrollView>CenteringClipView>CanvasView	Drawing canvas	pending WP3
-Editor (selection)	readingOrderMismatch	the window		pending WP3
-Editor (text editing)	ignoredButFocusable	window>FrameChromeView>ModernEditorChrome>CanvasBorderView	Image borders. Drag an edge to crop or expand; hold Option for symmetry. Drag a corner to resize.	pending WP3
-Editor (text editing)	missingValue	AXPopUpButton "Toolbox"	Toolbox	pending WP3
 Editor (text editing)	missingValue	window>FrameChromeView>ModernEditorChrome>NSScrollView>CenteringClipView>CanvasView	Drawing canvas	pending WP3
-Editor (text editing)	readingOrderMismatch	the window		pending WP3
-Main (failure)	ignoredButFocusable	window>FrameChromeView>ModernEditorChrome>CanvasBorderView	Image borders. Drag an edge to crop or expand; hold Option for symmetry. Drag a corner to resize.	pending WP3
 Main (failure)	ignoredButFocusable	window>FrameChromeView>ModernEditorChrome>NSScrollView>CenteringClipView>CanvasView	Drawing canvas	pending WP3
-Main (failure)	missingValue	AXPopUpButton "Toolbox"	Toolbox	pending WP3
 Main (failure)	missingValue	window>FrameChromeView>ModernEditorChrome>NSScrollView>CenteringClipView>CanvasView	Drawing canvas	pending WP3
-Main (failure)	readingOrderMismatch	the window		pending WP3
-Main (idle)	ignoredButFocusable	window>FrameChromeView>ModernEditorChrome>CanvasBorderView	Image borders. Drag an edge to crop or expand; hold Option for symmetry. Drag a corner to resize.	pending WP3
 Main (idle)	ignoredButFocusable	window>FrameChromeView>ModernEditorChrome>NSScrollView>CenteringClipView>CanvasView	Drawing canvas	pending WP3
-Main (idle)	missingValue	AXPopUpButton "Toolbox"	Toolbox	pending WP3
 Main (idle)	missingValue	window>FrameChromeView>ModernEditorChrome>NSScrollView>CenteringClipView>CanvasView	Drawing canvas	pending WP3
-Main (idle)	readingOrderMismatch	the window		pending WP3
-Main (success)	ignoredButFocusable	window>FrameChromeView>ModernEditorChrome>CanvasBorderView	Image borders. Drag an edge to crop or expand; hold Option for symmetry. Drag a corner to resize.	pending WP3
 Main (success)	ignoredButFocusable	window>FrameChromeView>ModernEditorChrome>NSScrollView>CenteringClipView>CanvasView	Drawing canvas	pending WP3
-Main (success)	missingValue	AXPopUpButton "Toolbox"	Toolbox	pending WP3
 Main (success)	missingValue	window>FrameChromeView>ModernEditorChrome>NSScrollView>CenteringClipView>CanvasView	Drawing canvas	pending WP3
-Main (success)	readingOrderMismatch	the window		pending WP3
-Main (uploading)	ignoredButFocusable	window>FrameChromeView>ModernEditorChrome>CanvasBorderView	Image borders. Drag an edge to crop or expand; hold Option for symmetry. Drag a corner to resize.	pending WP3
 Main (uploading)	ignoredButFocusable	window>FrameChromeView>ModernEditorChrome>NSScrollView>CenteringClipView>CanvasView	Drawing canvas	pending WP3
-Main (uploading)	missingValue	AXPopUpButton "Toolbox"	Toolbox	pending WP3
 Main (uploading)	missingValue	window>FrameChromeView>ModernEditorChrome>NSScrollView>CenteringClipView>CanvasView	Drawing canvas	pending WP3
-Main (uploading)	readingOrderMismatch	the window		pending WP3
 Main menu > Edit	genericLabel	menu>item[10]>submenu>item[3]	Group	pending WP3
-Permission alert	readingOrderMismatch	the window		pending WP3
-Photos (empty)	keyLoopDisagreesWithAXOrder	window	Photos	pending WP3
-Photos (empty)	readingOrderMismatch	the window		pending WP3
-Resize or Crop (Crop)	readingOrderMismatch	AXRadioGroup "Crop anchor"	Crop anchor	pending WP3
 Settings: Upload	readingOrderMismatch	AXScrollArea "">AXScrollArea "">AXRow "Work, WebDAV, Default"	Work, WebDAV, Default	pending WP3
 Settings: Upload (tab view)	readingOrderMismatch	AXScrollArea "">AXRow "Work, WebDAV, Default"	Work, WebDAV, Default	pending WP3
-Size popover	duplicateLabel	window>PanelRootView	size	pending WP3
-Size popover	duplicateLabel	window>PanelRootView>NSGlassEffectContainerView>NSStackView>GlassSurfaceView>ContentHolderView>NSView>NSStackView>NSView>SizeTrackView	size	pending WP3
-Status-item button	nameMismatch	AXButton "OpenSnap"	Show or hide OpenSnap	pending WP3
-Top bar	missingValue	AXPopUpButton "Toolbox"	Toolbox	pending WP3

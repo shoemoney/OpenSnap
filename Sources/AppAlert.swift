@@ -138,7 +138,8 @@ final class AppAlert: NSObject {
         // The trailing plate holds the first two buttons; a third stands apart at the leading edge, as in NSAlert.
         actionPlates[0].frame.origin = NSPoint(x: width - inset - actionPlates[0].frame.width, y: inset)
         if actionPlates.count > 1 { actionPlates[1].frame.origin = NSPoint(x: inset, y: inset) }
-        for plate in actionPlates { content.addSubview(plate) }
+        // Subview order is the reading order: the leading plate (a third button) is read before the trailing one.
+        for plate in actionPlates.reversed() { content.addSubview(plate) }
         panel.isReleasedWhenClosed = false
         panel.backgroundColor = DesignTokens.Palette.Surface.sheet
         panel.title = DesignTokens.Brand.name

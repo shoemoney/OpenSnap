@@ -118,6 +118,7 @@ private enum OriginalCapturePickerTests {
         activeDisplayOnly()
         dragCannotLeaveActiveDisplay()
         pointerOnScreenEdges()
+        accessibility()
         print("PASS OriginalCapturePickerTests (\(checks) checks; nonordering panels, local events, no desktop/permissions)")
     }
     private static func magnifier() {
@@ -241,6 +242,29 @@ private enum OriginalCapturePickerTests {
     }
 
     /// Reviewer repro: AppKit keeps delivering drag events past the overlay edge onto the neighbour screen.
+    /// OSN-062 WP3-B: the overlay is one named, focusable element that says how to leave and what to use instead of a drag, and reads the selection.
+    private static func accessibility() {
+        let defaults = UserDefaults(suiteName: "OpenSnap.PickerAX." + UUID().uuidString)!
+        let frame = NSRect(x: 0, y: 0, width: 800, height: 500)
+        for windowOnly in [false, true] {
+            let view = OriginalCaptureSelectionView(frame: frame, windowOnly: windowOnly, defaults: defaults)
+            expect(view.isAccessibilityElement() && view.accessibilityRole() == .group, "The picker overlay is an accessibility element with a role")
+            expect(view.accessibilityLabel() == "Capture area picker" && view.acceptsFirstResponder, "The focusable overlay is named")
+            let help = view.accessibilityHelp() ?? ""
+            expect(help.contains("Escape") && help.contains("VoiceOver cannot drag") && help.contains("Capture menu"), "The help names Escape and the non-drag alternatives (\(help))")
+            expect(view.accessibilityValue() as? String == "No selection", "Nothing chosen yet")
+        }
+        let view = OriginalCaptureSelectionView(frame: frame, windowOnly: false, defaults: defaults)
+        func event(_ type: NSEvent.EventType, _ point: NSPoint) -> NSEvent {
+            NSEvent.mouseEvent(with: type, location: point, modifierFlags: [], timestamp: 1, windowNumber: 0, context: nil, eventNumber: 1, clickCount: 1, pressure: 1)!
+        }
+        view.mouseDown(with: event(.leftMouseDown, NSPoint(x: 100, y: 100)))
+        view.mouseDragged(with: event(.leftMouseDragged, NSPoint(x: 421, y: 340)))
+        expect(view.accessibilityValue() as? String == "320×240 pixels", "The live value reads the selection size with the multiplication sign (\(String(describing: view.accessibilityValue())))")
+        view.invalidate()
+        expect(!view.isAccessibilityElement(), "A finished overlay is no longer an element")
+    }
+
     private static func dragCannotLeaveActiveDisplay() {
         let primary = NSRect(x: 0, y: 0, width: 1000, height: 800)
         let right = NSRect(x: 1000, y: 0, width: 600, height: 400)

@@ -27,11 +27,19 @@ final class CanvasBorderView: NSView {
     private var startScreenPoint: CGPoint?
     override var isFlipped: Bool { true }
     override var acceptsFirstResponder: Bool { true }
+    static let accessibilityName = "Image borders"
+    static let accessibilityHelpText = "Drag an edge to crop or expand; hold Option for symmetry. Drag a corner to resize. Without dragging, use Resize or Crop Selection in the Image menu."
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
+        // It takes the keyboard only so Escape can cancel a drag, but VoiceOver can still land on it, so it is an element: a name, and the
+        // way to do the same without dragging (VoiceOver cannot drag).
+        setAccessibilityElement(true)
+        // It overlays the whole canvas, so it has no reading position among the bars and the canvas.
+        setAccessibilityIdentifier("order-free-image-borders")
         setAccessibilityRole(.group)
-        setAccessibilityLabel("Image borders. Drag an edge to crop or expand; hold Option for symmetry. Drag a corner to resize.")
+        setAccessibilityLabel(Self.accessibilityName)
+        setAccessibilityHelp(Self.accessibilityHelpText)
     }
     required init?(coder: NSCoder) { super.init(coder: coder) }
 

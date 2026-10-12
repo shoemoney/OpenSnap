@@ -31,6 +31,8 @@
 //   duplicateInGroup    the same label twice under one AX parent, even where the window-wide allow-list permits it
 //   nameMismatch       a control whose own accessibilityLabel() is not what an external client reads as its name (a standard button is
 //                       published as its cell, which can name itself from the icon's description instead; added by WP1b)
+//   helpRepeatsLabel  an element whose help (the hint VoiceOver reads after the name) is the same words as its name ("Select tool, button",
+//                     then "Select tool"); not baselinable, so a repeat fails wherever it appears (WP3-B)
 // Those are the "tracked" kinds (plus missingLabel, missingRole and duplicateLabel since WP1b): findings that existed on today's surfaces when they were introduced are listed, each with its reason,
 // in tools/accessibility-baseline.tsv, so the gate fails on a NEW finding and on a stale entry (tools/check-spoken-scripts.py) while the
 // pending fixes are burned down. Findings the baseline covers are reported in `Report.baselined`, never in `Report.violations`.
@@ -55,6 +57,7 @@ enum AccessibilityAudit {
         case missingLabel, missingRole, unlabelledSegment, duplicateLabel, retiredName, notKeyboardReachable, undescribedImage
         case genericLabel, missingValue, readingOrderMismatch, keyLoopDisagreesWithAXOrder, ignoredButFocusable, duplicateInGroup
         case nameMismatch
+        case helpRepeatsLabel
 
         /// The kinds the baseline file can cover: the six OSN-062 WP1a introduced, `nameMismatch`, and (WP1b) the three older ones a surface
         /// the app never built for a screen reader (the capture picker overlay, the Size panel) fails today.
@@ -230,6 +233,9 @@ enum AccessibilityAudit {
             if let control = node.hostView as? NSControl, let own = text(control.accessibilityLabel()), let spoken = node.label, spoken != own {
                 add(.nameMismatch, index, own, detail: "an external client reads \"\(spoken)\"")
             }
+            if let help = node.help, let spoken = node.label, repeats(help: help, label: spoken) {
+                add(.helpRepeatsLabel, index, spoken, detail: "the hint \"\(help)\" repeats the name")
+            }
             if valuedRoles.contains(role), node.value == nil, !(role == .progressIndicator && node.identifier.hasPrefix("indeterminate")) { add(.missingValue, index, label) }
         }
         // The same label twice under one AX parent. The window-wide pass (duplicateLabel) already names the ones the allow-list does not
@@ -253,6 +259,12 @@ enum AccessibilityAudit {
             found.append(Finding(kind: .keyLoopDisagreesWithAXOrder, surface: surface, path: "window", label: window.title, hidden: false, detail: problem))
         }
         return found
+    }
+
+    /// True when `help` says nothing `label` did not: the same words, ignoring case and trailing punctuation.
+    static func repeats(help: String, label: String) -> Bool {
+        func normal(_ text: String) -> String { text.trimmingCharacters(in: .whitespacesAndNewlines.union(CharacterSet(charactersIn: ".:;,"))).lowercased() }
+        return !label.isEmpty && normal(help) == normal(label)
     }
 
     private static func isRepeating(_ index: Int, in tree: AXTree.Tree) -> Bool {

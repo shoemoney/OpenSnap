@@ -4041,7 +4041,7 @@ enum AppSafetyTests {
                 }
                 func reads(_ stage: WipeStage) -> Bool {
                     button.title == stage.actionName && button.isEnabled == stage.isEnabled && button.isAccessibilityEnabled() == stage.isEnabled && button.accessibilityLabel() == stage.actionName
-                        && MainActor.assumeIsolated({ AppToolTip.text(for: button) }) == stage.toolTip && button.accessibilityHelp() == stage.toolTip && menuReads(stage)
+                        && MainActor.assumeIsolated({ AppToolTip.text(for: button) }) == stage.toolTip && button.accessibilityHelp() == SpokenHelp.distinct(stage.toolTip, from: stage.actionName) && menuReads(stage)
                 }
                 try expect(["Clear Image", "Remove Annotations", "Clear Image"] == [WipeStage.clear.menuTitle, WipeStage.wipe.menuTitle, WipeStage.blank.menuTitle]
                            && wipeItem.title != "Wipe", "The Edit menu says Remove Annotations / Clear Image in title case, never the static Wipe")

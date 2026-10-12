@@ -1365,7 +1365,7 @@ extension AppSafetyTests {
         func reads(_ stage: WipeStage) -> Bool {
             let title = stage.actionName, enabled = stage.isEnabled
             return button.title == title && button.isEnabled == enabled && button.accessibilityLabel() == title
-                && AppToolTip.text(for: button) == stage.toolTip && button.accessibilityHelp() == stage.toolTip
+                && AppToolTip.text(for: button) == stage.toolTip && button.accessibilityHelp() == SpokenHelp.distinct(stage.toolTip, from: stage.actionName)
                 && button.isAccessibilityEnabled() == enabled
                 && button.plate.isDisabled == !enabled && button.alphaValue == (enabled ? 1 : 0.38) && button.plate.style.fill == nil
         }
@@ -1821,10 +1821,12 @@ extension AppSafetyTests {
         for view in withText where view !== app.status {
             let text = AppToolTip.text(for: view) ?? ""
             let help = view.accessibilityHelp() ?? ""
-            try expect(help == text, "\(type(of: view)) '\(view.accessibilityLabel() ?? "")' keeps spoken help for its tooltip '\(text)'")
+            // A tool button's state is spoken as its radio value, so its hint keeps only what follows the name (the modifier hints).
+            let tail = (view as? ToolButton).map { _ in text.replacingOccurrences(of: " (selected)", with: "").dropFirst((view.accessibilityLabel() ?? "").count).trimmingCharacters(in: CharacterSet(charactersIn: ";: ")) }
+            try expect(help == text || (help.isEmpty && SpokenHelp.distinct(text, from: view.accessibilityLabel()) == nil) || (tail != nil && help == tail!), "\(type(of: view)) '\(view.accessibilityLabel() ?? "")' keeps spoken help for its tooltip '\(text)'")
         }
         for view in [app.snapButton!, chrome.undoButton, chrome.hideButton, chrome.wipeButton, app.widthControl] as [NSView] {
-            try expect(view.accessibilityHelp() == AppToolTip.text(for: view), "\(view.accessibilityLabel() ?? "") has accessibilityHelp equal to its former tooltip")
+            try expect(view.accessibilityHelp() == SpokenHelp.distinct(AppToolTip.text(for: view), from: view.accessibilityLabel()), "\(view.accessibilityLabel() ?? "") has accessibilityHelp equal to its former tooltip, unless that only repeats its name")
         }
         try expect(app.status.accessibilityHelp() == nil && (app.status.accessibilityValue() as? String) == AppToolTip.text(for: app.status),
                    "The status line speaks its full text as its value, so it is not repeated as help")
