@@ -1,4 +1,1 @@
 # surface	kind	element	label	reason
-Main menu > Edit	genericLabel	menu>item[10]>submenu>item[3]	Group	pending WP3
-Settings: Upload	readingOrderMismatch	AXScrollArea "">AXScrollArea "">AXRow "Work, WebDAV, Default"	Work, WebDAV, Default	pending WP3
-Settings: Upload (tab view)	readingOrderMismatch	AXScrollArea "">AXRow "Work, WebDAV, Default"	Work, WebDAV, Default	pending WP3

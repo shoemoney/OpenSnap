@@ -565,6 +565,10 @@ final class SettingsDestinationRow: NSView {
         displayObservation = DisplayOptions.observe { [weak self] _ in self?.refreshMark(); self?.needsDisplay = true }
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+
+    /// The row reads as one element, "Work, WebDAV, Default", in the order the eye reads it. The name, transport and Default pill are
+    /// not exposed separately: the pill is taller than the name, so as a sibling it was read first.
+    override func accessibilityChildren() -> [Any]? { [] }
 }
 
 /// What the Upload tab's buttons do, supplied by the owner. The defaults do nothing, so a bare Settings window is inert.

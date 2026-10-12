@@ -207,11 +207,13 @@ enum AccessibilityAudit {
     private static let controlRoles: Set<NSAccessibility.Role> = [.button, .menuButton, .checkBox, .radioButton, .popUpButton, .comboBox, .slider, .textField, .textArea, .incrementor, .link]
 
     /// A label that names the kind of thing, or a symbol, file or identifier, instead of the thing.
-    static func isGeneric(_ label: String, className: String = "") -> Bool {
+    /// `isCommand`: a menu item that runs something (an action or a shortcut). Its title is the command's name, so a title that is also a
+    /// role word ("Group") is a real name there; symbol-, file- and identifier-shaped titles are still generic.
+    static func isGeneric(_ label: String, className: String = "", isCommand: Bool = false) -> Bool {
         let text = label.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return false }
         let lower = text.lowercased()
-        if ["button", "image", "view", "control", "item", "group", "icon", "untitled"].contains(lower) { return true }
+        if !isCommand, ["button", "image", "view", "control", "item", "group", "icon", "untitled"].contains(lower) { return true }
         if !className.isEmpty, lower == className.lowercased() { return true }
         let patterns = [#"^[A-Za-z][A-Za-z0-9_-]*(\.[A-Za-z0-9_-]+)+$"#,       // camera.viewfinder, shot.png
                         #"^[a-z][a-z0-9]*(-[a-z0-9]+)+$"#,                       // cloud-arrow-up
@@ -536,7 +538,7 @@ enum AccessibilityAudit {
                 let text = AccessibilityAudit.text(item.title) ?? AccessibilityAudit.text(item.accessibilityLabel()) ?? ""
                 if text.isEmpty { flag(.missingLabel, path, "", hidden: item.isHidden) } else { report.labelled += 1 }
                 checkRetired([item.title, item.accessibilityLabel(), item.toolTip], path: path, hidden: item.isHidden)
-                if !item.isHidden, AccessibilityAudit.isGeneric(text, className: "NSMenuItem") { flag(.genericLabel, path, text, hidden: false) }
+                if !item.isHidden, AccessibilityAudit.isGeneric(text, className: "NSMenuItem", isCommand: item.action != nil || !item.keyEquivalent.isEmpty) { flag(.genericLabel, path, text, hidden: false) }
                 if !item.isHidden, !text.isEmpty { titles.append((text, path)) }
                 if let submenu = item.submenu { walkMenu(submenu, path: path + ">submenu") }
             }

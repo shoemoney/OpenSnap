@@ -277,6 +277,13 @@ private enum AccessibilityAuditTests {
         let genericMenuItem = NSMenu(title: "Root"); genericMenuItem.addItem(withTitle: "camera.viewfinder", action: nil, keyEquivalent: "")
         expect(kinds(Audit.audit(genericMenuItem, surface: "menu")) == [.genericLabel], "a menu item titled by a symbol name is a genericLabel")
 
+        let commandMenu = NSMenu(title: "Root"); commandMenu.addItem(withTitle: "Group", action: #selector(NSText.selectAll(_:)), keyEquivalent: "g")
+        expect(Audit.audit(commandMenu, surface: "menu").violations.isEmpty, "a menu item titled Group that runs a command is a real name, not a genericLabel")
+        let inertGroup = NSMenu(title: "Root"); inertGroup.addItem(withTitle: "Group", action: nil, keyEquivalent: "")
+        expect(kinds(Audit.audit(inertGroup, surface: "menu")) == [.genericLabel], "a role-word menu item with no command is still a genericLabel")
+        expect(kinds(found(host(iconButton(label: "Group")))) == [.genericLabel], "a button labelled Group is still a genericLabel")
+        expect(kinds(found(host(NSImageView(image: described("image"))))) == [.genericLabel], "an image labelled image is still a genericLabel")
+
         // missingValue: a slider-shaped control that never says where it stands; the real slider, checkbox and pop-up do.
         let valueless = found(host(ValuelessSlider().with { $0.setAccessibilityLabel("Volume") }))
         expect(kinds(valueless) == [.missingValue], "a slider with no value is a missingValue: \(valueless.description)")
@@ -901,6 +908,7 @@ private enum AccessibilityAuditTests {
         expect(pill.accessibilityLabel() == "Default destination" && pill.accessibilityRole() == .staticText, "Destinations: the Default pill is a labelled static text")
         let row = SettingsDestinationRow(name: "Work", transport: "WebDAV", isDefault: true)
         expect(row.accessibilityLabel() == "Work, WebDAV, Default" && row.accessibilityRole() == .row, "Settings: a destination row reads name, protocol and Default together: \(String(describing: row.accessibilityLabel()))")
+        expect(row.accessibilityChildren()?.isEmpty == true, "Settings: the destination row hides its parts, so the Default pill is not read before the name")
         view.showStatus("The server refused it")
         expect(view.formResult.text.stringValue == "Error: The server refused it", "Destinations: an error is prefixed Error:")
         expect(view.formResult.accessibilityRole() == .staticText && view.formResult.accessibilityLabel()?.hasPrefix("Error:") == true, "Destinations: the status row is a static text that reads the error")
