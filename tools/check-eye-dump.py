@@ -424,6 +424,24 @@ BACKDROP_SHADE_DISTANCE = 24    # L1 distance between neighbouring gradient band
 SELECTED_MAX_LINE = 56           # px: a text line band is shorter than this (a preview image is not)
 
 
+RAMP_NEAR_SHARE = 0.10           # a block holding this share of near-but-not-equal shades of its fill is a gradient, not a flat selection
+
+
+def continues_ramp(image, box, fill):
+    """True when the block is a slice of a quantised backdrop gradient (wallpaper), not a selection. Decided per region, never per colour: the
+    wallpaper's diagonal bands leave a block with many pixels one or two quantisation steps (L1 <= BACKDROP_SHADE_DISTANCE) from its fill, where a
+    selected row, tile or segment is flat, so it is checked however many sibling accent plates share the capture."""
+    x0, y0, x1, y1 = box
+    near = total = 0
+    for y in range(y0, y1):
+        row = image.rows[y]
+        for x in range(x0, x1):
+            distance = abs(row[4 * x] - fill[0]) + abs(row[4 * x + 1] - fill[1]) + abs(row[4 * x + 2] - fill[2])
+            total += 1
+            near += 0 < distance <= BACKDROP_SHADE_DISTANCE
+    return total > 0 and near >= RAMP_NEAR_SHARE * total
+
+
 def selected_fill_regions(image):
     """[(x0, y0, x1, y1, fill rgb)] for each block of one saturated colour that is large enough to be a selected row, tile or segment."""
     counts = {}
@@ -435,11 +453,6 @@ def selected_fill_regions(image):
     for fill, count in sorted(counts.items(), key=lambda item: -item[1])[:6]:
         if count < SELECTED_MIN_BOX[0] * SELECTED_MIN_BOX[1] // 2:
             break
-        # A palette-quantised packed capture turns the smooth backdrop gradient into flat bands of near-identical colours; a selected
-        # fill is one colour with no equally common neighbour shades, so a colour with two or more is the backdrop, not a selection.
-        shades = sum(1 for other, n in counts.items() if other != fill and sum(abs(a - b) for a, b in zip(other, fill)) <= BACKDROP_SHADE_DISTANCE and n * 4 >= count)
-        if shades >= 2:
-            continue
         rows = []
         for y, row in enumerate(image.rows):
             run, best, start, bx = 0, 0, 0, 0
@@ -465,7 +478,8 @@ def selected_fill_regions(image):
             x0 = min(bx for _, bx in span if _ >= SELECTED_MIN_BOX[0])
             x1 = max(bx + width for width, bx in span if width >= SELECTED_MIN_BOX[0])
             if y - top >= SELECTED_MIN_BOX[1] and not any(a[0] <= x0 and x1 <= a[2] and a[1] <= top and y <= a[3] for a in (r[:4] for r in regions)):
-                regions.append((x0, top, x1, y, fill))
+                if not continues_ramp(image, (x0, top, x1, y), fill):
+                    regions.append((x0, top, x1, y, fill))
     return regions
 
 
@@ -1161,18 +1175,34 @@ def self_test():
         return png_bytes(240, 80, pixel)
 
     def banded_backdrop():
-        """A quantised purple gradient (flat bands 4 apart) with a grey document window over it: backdrop, not a selected fill."""
+        """A quantised purple gradient (diagonal bands 70 px wide, 4 apart) with a grey document window over it: backdrop, not a selected fill."""
         def pixel(x, y):
             if 90 <= x < 200 and 20 <= y < 70 and (x // 2 + y // 2) % 2:
                 return (150, 150, 150)
-            band = x // 60
+            band = (x + y) // 70
             return (70 + 4 * band, 50 + 2 * band, 78 + 3 * band)
         return png_bytes(240, 80, pixel)
 
+    def sibling_plates():
+        """Case A (the S08 layout): a selected row with weak secondary text beside two sibling accent plates 8 shades apart. The plates must not hide the row."""
+        def pixel(x, y):
+            if 20 <= x < 220 and 10 <= y < 70:
+                for top, colour in ((16, (235, 232, 224)), (42, (160, 152, 135))):
+                    if top <= y < top + 12 and 30 <= x < 130 and (x // 2 + y // 2) % 2:
+                        return colour
+                return (106, 87, 34)
+            if 240 <= x < 440 and 10 <= y < 70:
+                return (114, 93, 38)
+            if 20 <= x < 220 and 90 <= y < 150:
+                return (98, 81, 30)
+            return (30, 30, 30)
+        return png_bytes(460, 160, pixel)
+
     cases = [
         ("quantised gradient backdrop is not a selected fill", banded_backdrop(), None, 0),
+        ("selected row with weak secondary text beside two sibling accent plates (S08 layout)", sibling_plates(), None, 1),
         ("selected row, secondary text at 4.5:1 or better", selected_row((235, 232, 224), (235, 232, 224)), None, 0),
-        ("selected row, secondary text at about 3.5:1 (the 0.34 dark fill regression)", selected_row((235, 232, 224), (160, 152, 135)), None, 1),
+        ("selected row, secondary text at about 2.5:1 (the 0.34 dark fill regression)", selected_row((235, 232, 224), (160, 152, 135)), None, 1),
         ("selected row, primary text weak", selected_row((140, 132, 115), (235, 232, 224)), None, 1),
         ("sound capture", good, sample_layout(), 0),
         ("flat colour image", png_bytes(24, 20, lambda x, y: (200, 10, 10)), sample_layout(), 1),

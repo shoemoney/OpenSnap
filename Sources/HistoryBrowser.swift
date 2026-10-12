@@ -109,7 +109,7 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
     var onExport: ((UUID, String) throws -> Data)?
     var onError: ((Error) -> Void)?
 
-    private(set) var sections: [Section] = []
+    private(set) var sections: [Section] = [] { didSet { collection.invalidateAccessibilityElements() } }
     private(set) var category: Category = .all
     private(set) var dateFilter: DateFilter = .all
     private(set) var query = ""
@@ -596,7 +596,9 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         body.addSubview(emptyState)
         NSLayoutConstraint.activate([emptyState.centerXAnchor.constraint(equalTo:scroll.centerXAnchor),emptyState.centerYAnchor.constraint(equalTo:scroll.centerYAnchor),
                                      emptyState.widthAnchor.constraint(lessThanOrEqualTo:scroll.widthAnchor,constant:-2*Space.s5)])
-        emptyState.setAccessibilityElement(true); emptyState.setAccessibilityRole(.staticText)
+        emptyState.setAccessibilityElement(true); emptyState.setAccessibilityRole(.group)
+        // The group speaks title and hint once as its label; the two drawn labels stay out of the tree so they are not read again.
+        emptyTitle.hideFromAccessibility("history-empty-title"); emptyHint.hideFromAccessibility("history-empty-hint")
     }
 
     /// Moves the details panel beside the grid, or under it when the content is narrower than `detailsCollapseWidth`.
@@ -643,7 +645,7 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         emptyHint.stringValue = nothingSaved ? Self.emptyHint(shortcut:saveShortcut()) : "Try a different search, tab or date."
         emptyHint.isHidden = false
         clearFiltersButton.isHidden = nothingSaved || !filtersAreActive
-        emptyState.setAccessibilityLabel([emptyTitle.stringValue,emptyHint.stringValue].filter { !$0.isEmpty }.joined(separator:" "))
+        emptyState.setAccessibilityLabel([emptyTitle.stringValue,emptyHint.stringValue].filter { !$0.isEmpty }.joined(separator:". "))
     }
     var filtersAreActive: Bool { category != .all || dateFilter != .all || !query.isEmpty }
     @objc func clearFilters() { setFilters(category:.all,date:.all,query:"") }
@@ -789,7 +791,7 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
     /// What a snap is called to an assistive client: its name, what was done with it and when ("Shot 0, Saved, Mar 9, 2026 at 12:00 PM").
     fileprivate func spokenName(_ value: Item) -> String {
         let formatter = DateFormatter(); formatter.calendar = calendar; formatter.timeZone = calendar.timeZone; formatter.dateStyle = .medium; formatter.timeStyle = .short
-        return [value.name,value.missing ? "Missing file · \(value.action)" : value.action,formatter.string(from:value.date)].filter { !$0.isEmpty }.joined(separator:", ")
+        return [value.name,value.missing ? "Missing file, \(value.action)" : value.action,formatter.string(from:value.date)].filter { !$0.isEmpty }.joined(separator:", ")
     }
     fileprivate func accessibilityContent(forSection section: Int) -> (title: String,items: [(IndexPath,Item,String)]) {
         let group = sections[section]
@@ -865,18 +867,23 @@ final class HistoryActionButton: CommandButton {
 @MainActor
 private final class HistoryGrid: NSCollectionView {
     weak var browser: HistoryBrowser?
-    private var accessibilitySections: [HistoryDaySectionElement] = []
+    private var accessibilitySections: [HistoryDaySectionElement]?
+    /// Called when the days or their snaps change: the next walk builds fresh elements, and until then every call hands out the same ones so a client keeps its place.
+    func invalidateAccessibilityElements() { accessibilitySections = nil }
+    override func reloadData() { accessibilitySections = nil; super.reloadData() }
     /// An assistive client is handed the collection's ITEMS (the controllers), which are not accessibility elements, so each day is a list of
     /// real elements here: its heading, then one button per snap, in the order the eye reads them.
     override func accessibilityChildren() -> [Any]? {
         guard let browser else { return super.accessibilityChildren() }
-        accessibilitySections = (0..<browser.accessibilitySectionCount).map { index in
+        if let cached = accessibilitySections { return cached }
+        let built = (0..<browser.accessibilitySectionCount).map { index in
             let content = browser.accessibilityContent(forSection:index)
             let section = HistoryDaySectionElement(grid:self,index:index,title:content.title)
             section.setAccessibilityChildren(section.makeChildren(content.items))
             return section
         }
-        return accessibilitySections
+        accessibilitySections = built
+        return built
     }
     override func mouseDown(with event: NSEvent) {
         super.mouseDown(with:event)
@@ -1005,6 +1012,7 @@ private final class HistoryThumbnail: NSCollectionViewItem {
     func configure(_ value: HistoryBrowser.Item,image: NSImage?) {
         _ = view
         name.stringValue = value.name; action.stringValue = value.missing ? "Missing file · \(value.action)" : value.action
+        action.setAccessibilityLabel(value.missing ? "Missing file, \(value.action)" : value.action)
         preview.image = image; placeholder.isHidden = image != nil; preview.isHidden = image == nil
         preview.setAccessibilityLabel(value.name)
         refreshSelection()

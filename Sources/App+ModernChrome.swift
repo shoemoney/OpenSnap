@@ -87,6 +87,7 @@ extension AppDelegate {
         paletteButton.font = DesignTokens.Typography.font(.body); paletteButton.target = self; paletteButton.action = #selector(showDrawingColors(_:))
         paletteButton.imagePosition = .imageLeading; paletteButton.setAccessibilityLabel("Drawing colors")
         AppToolTip.setText("Hover for original preset colors; hold Shift to change the canvas background", for: paletteButton)
+        paletteButton.setAccessibilityHelp("Opens the preset colors. Hold Shift to change the canvas background instead.")
         paletteButton.onHover = { [weak self] inside in self?.drawingColorHover(inside, palette: false) }
         sizeLabel.font = DesignTokens.Typography.font(.body)
         widthControl.target = self; widthControl.action = #selector(changeWidth(_:))

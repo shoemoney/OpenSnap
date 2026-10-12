@@ -1254,7 +1254,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         AppToolTip.setText(uploadState.detailText ?? variants[0], for: status, mirrorsToAccessibility: false)
         // A failed upload speaks "Error: <first line>" as the value; the hint is what that leaves out (the rest of the error), never the same words again.
         if case .failure = uploadState { status.spokenLead = "Error: " } else { status.spokenLead = "" }
-        status.setAccessibilityHelp(uploadState.detailText.flatMap { SpokenHelp.distinct($0, from: status.spokenLead + variants[0]) })
+        // A copied link is already in the spoken value in full (it is the longest variant), so its hint would only say it again.
+        status.setAccessibilityHelp(uploadState.link != nil ? nil : uploadState.detailText.flatMap { SpokenHelp.distinct($0, from: status.spokenLead + variants[0]) })
     }
     var dragFormat: String {
         FormatToggle.payload(forSegment: dragFormatToggle.selectedSegment).format
@@ -1781,12 +1782,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     }
     @objc func printImage() { let view = NSImageView(frame: NSRect(origin: .zero,size: canvas.outputSize)); view.image = canvas.renderedImage(); view.imageScaling = .scaleProportionallyUpOrDown; let p = NSPrintInfo.shared.copy() as! NSPrintInfo; p.horizontalPagination = .fit; p.verticalPagination = .fit; NSPrintOperation(view: view, printInfo: p).run() }
     static let webpostHelp = "Upload image and copy link · Right-click for destinations"
+    /// The same help as VoiceOver speaks it: no middle dot, and the keyboard route to the destinations rather than a right-click.
+    static let webpostSpokenHelp = "Uploads the image and copies the link. Show Menu chooses a destination."
     struct UploadDestination: Equatable { let id: String; let title: String }
     /// Left-click uploads to the default destination; right-click or Control-click (or the accessibility Show Menu action) opens the
     /// destination choices as a glass panel above the button. The menu stays the source of truth and is rebuilt on every open.
     func configureWebpostButton(_ button: NSButton) {
         webpostButton = button
         AppToolTip.setText(Self.webpostHelp, for: button)
+        button.setAccessibilityHelp(Self.webpostSpokenHelp)
         let menu = NSMenu(); menu.autoenablesItems = false; menu.delegate = self; MenuTypography.apply(to: menu)
         button.menu = menu
         if let original = button as? OriginalActionButton {

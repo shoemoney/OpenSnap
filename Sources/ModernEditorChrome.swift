@@ -44,7 +44,9 @@ final class StatusTextField: NSTextField {
 
     override func accessibilityValue() -> String? {
         let value = spokenValue ?? super.accessibilityValue()
-        return spokenLead.isEmpty ? value : spokenLead + (value ?? "")
+        // A middle dot between parts of the line is read aloud ("Arrow dot Unsaved changes"); a comma is a pause.
+        let spoken = value?.replacingOccurrences(of: " · ", with: ", ")
+        return spokenLead.isEmpty ? spoken : spokenLead + (spoken ?? "")
     }
 
     /// The width the longest variant wants, whichever one is showing, so the label grows back when room returns.

@@ -675,7 +675,7 @@ private enum AccessibilityAuditTests {
         let accessoryLabels = everyView(accessory.view).compactMap { ($0 as? NSTextField)?.stringValue }.filter { !$0.isEmpty }
         expect(accessoryLabels.contains("Format:") && !accessoryLabels.contains("Format") && accessoryLabels.contains { $0.hasPrefix("Dimensions:") } && accessoryLabels.contains { $0.hasPrefix("Encoded size:") },
                "Export accessory: Format has the colon the other labels have: \(accessoryLabels)")
-        let field = NSTextField(string: "6"); field.frame = NSRect(x: 0, y: 0, width: 400, height: 40); field.setAccessibilityLabel("Number of copies")
+        let field = NSTextField(string: "Quarterly mockup"); field.frame = NSRect(x: 0, y: 0, width: 400, height: 40); field.setAccessibilityLabel("Name")
         let alerts: [(String, AppAlert)] = [
             ("one button", AppAlert(title: "Saved", message: "The drawing was saved.")),
             ("save, cancel, don't save", AppAlert(title: "Save your drawing?", message: "Changes are lost otherwise.",

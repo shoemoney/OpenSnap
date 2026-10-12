@@ -844,7 +844,7 @@ extension AppSafetyTests {
             try expect(app.status.accessibilityValue() == fullHint && app.status.accessibilityHelp() == fullHint,
                        "The full sentence is the Frame status accessibility value and help: \(String(describing: app.status.accessibilityValue())) / \(String(describing: app.status.accessibilityHelp())) / \(fullHint)")
         }
-        try expect(app.status.accessibilityValue() == app.status.stringValue && app.status.accessibilityHelp() == nil,
+        try expect((app.status.accessibilityValue() as? String) == app.status.stringValue.replacingOccurrences(of: " · ", with: ", ") && app.status.accessibilityHelp() == nil,
                    "Leaving Frame hands the status its own accessibility value back")
         _ = chrome
     }
@@ -912,7 +912,7 @@ extension AppSafetyTests {
                 try expect(need(shown) <= room + 0.5 || shown == state, "\(label): '\(shown)' fits whole in \(room) pt")
                 let index = expected.firstIndex(of: shown) ?? 0
                 try expect(expected[..<index].allSatisfy { need($0) > room + 0.5 }, "\(label): every longer variant really is too wide for \(room) pt")
-                try expect(AppToolTip.text(for: app.status) == full && (app.status.accessibilityValue() as? String) == full, "\(label): the tooltip and spoken value are the full text: tip=\(AppToolTip.text(for: app.status) ?? "nil") ax=\(String(describing: app.status.accessibilityValue())) spoken=\(app.status.spokenValue ?? "nil") shown=\(shown) full=\(full)")
+                try expect(AppToolTip.text(for: app.status) == full && (app.status.accessibilityValue() as? String) == full.replacingOccurrences(of: " · ", with: ", "), "\(label): the tooltip and spoken value are the full text: tip=\(AppToolTip.text(for: app.status) ?? "nil") ax=\(String(describing: app.status.accessibilityValue())) spoken=\(app.status.spokenValue ?? "nil") shown=\(shown) full=\(full)")
                 try expect(!shown.contains("…"), "\(label): no ellipsis was typed into the text")
                 if index > 0 { sawShortened = true } else { sawWhole = true }
             }
@@ -1621,7 +1621,7 @@ extension AppSafetyTests {
         app.updateDragPreview()
         let text = app.status.stringValue
         try expect(text.hasPrefix("Arrow · ") && text.contains("×") && text.components(separatedBy: " · ").count == 5 && text.contains(" · PNG · ") && text.hasSuffix("KB"), "The status reads tool, state, export size and format in one line: \(text)")
-        try expect(app.dragSizeLabel.superview == nil && AppToolTip.text(for: app.status) == text && (app.status.accessibilityValue() as? String) == text, "The full text is the tooltip and the spoken value; no separate size label exists on screen")
+        try expect(app.dragSizeLabel.superview == nil && AppToolTip.text(for: app.status) == text && (app.status.accessibilityValue() as? String) == text.replacingOccurrences(of: " · ", with: ", "), "The full text is the tooltip and the spoken value; no separate size label exists on screen")
         try expect(app.status.lineBreakMode == .byTruncatingTail, "A narrow status truncates its tail")
         try expect(app.dragPreviewTimer == nil, "Writing the size into the status does not re-arm the one-second drag-preview timer")
         app.updateStatus()
@@ -1824,12 +1824,15 @@ extension AppSafetyTests {
             // A tool button's state is spoken as its radio value, so its hint keeps only what follows the name (the modifier hints).
             let tail = (view as? ToolButton).map { _ in text.replacingOccurrences(of: " (selected)", with: "").dropFirst((view.accessibilityLabel() ?? "").count).trimmingCharacters(in: CharacterSet(charactersIn: ";: ")) }
             let spoken = SpokenHelp.distinct(text, from: view.accessibilityLabel(), value: view.accessibilityValue())
+            // The Color well speaks its own keyboard-friendly hint, not the hover wording of its tooltip.
+            if view === app.paletteButton { try expect(help == "Opens the preset colors. Hold Shift to change the canvas background instead." && !help.lowercased().contains("hover"),"The Color well's spoken hint does not talk about hovering: \(help)"); continue }
+            if view.accessibilityLabel() == "Upload image" { try expect(help == AppDelegate.webpostSpokenHelp && !help.contains("·"),"The Upload hint is spoken without a middle dot: \(help)"); continue }
             try expect(help == text || help == (spoken ?? "") || (tail != nil && help == tail!), "\(type(of: view)) '\(view.accessibilityLabel() ?? "")' keeps spoken help for its tooltip '\(text)'")
         }
         for view in [app.snapButton!, chrome.undoButton, chrome.hideButton, chrome.wipeButton, app.widthControl] as [NSView] {
             try expect(view.accessibilityHelp() == SpokenHelp.distinct(AppToolTip.text(for: view), from: view.accessibilityLabel(), value: view.accessibilityValue()), "\(view.accessibilityLabel() ?? "") has accessibilityHelp equal to its former tooltip, unless that only repeats its name")
         }
-        try expect(app.status.accessibilityHelp() == nil && (app.status.accessibilityValue() as? String) == AppToolTip.text(for: app.status),
+        try expect(app.status.accessibilityHelp() == nil && (app.status.accessibilityValue() as? String) == AppToolTip.text(for: app.status)?.replacingOccurrences(of: " · ", with: ", "),
                    "The status line speaks its full text as its value, so it is not repeated as help")
         for view in [app.snapButton!, chrome.undoButton, app.widthControl] as [NSView] {
             let anchor = AppToolTip.anchorRect(of: view, in: app.window)

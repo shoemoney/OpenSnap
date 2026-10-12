@@ -545,6 +545,8 @@ final class SettingsDestinationRow: NSView {
     }
     override func mouseDown(with event: NSEvent) { onClick?(event.clickCount) }
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+    /// Which row the buttons below act on, said in words as well as by the selected trait.
+    override func accessibilityValue() -> Any? { isSelected ? "Selected" : nil }
 
     init(name: String, transport: String, isDefault: Bool) {
         nameField = NSTextField(labelWithString: name); transportField = NSTextField(labelWithString: transport)
@@ -568,7 +570,7 @@ final class SettingsDestinationRow: NSView {
             row.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -DesignTokens.Space.s3),
             row.centerYAnchor.constraint(equalTo: centerYAnchor)])
         setAccessibilityElement(true); setAccessibilityRole(.row); setAccessibilitySelected(false)
-        setAccessibilityLabel([name, transport, isDefault ? "Default" : nil].compactMap { $0 }.joined(separator: ", "))
+        setAccessibilityLabel([name, transport.replacingOccurrences(of: " · ", with: ", "), isDefault ? "Default" : nil].compactMap { $0 }.joined(separator: ", "))
         refreshMark()
         displayObservation = DisplayOptions.observe { [weak self] _ in self?.refreshMark(); self?.needsDisplay = true }
     }

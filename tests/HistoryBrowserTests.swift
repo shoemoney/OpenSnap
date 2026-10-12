@@ -572,6 +572,23 @@ struct HistoryBrowserTests {
                     try expect(browser.detailsPlacement == .beside,"760 is wide enough for the side panel")
                 }
             }),
+            ("The grid hands VoiceOver the same day lists, headings and tiles on every call, and fresh ones after a reload (a client keeps its place while it walks)", {
+                try browser { browser,_ in
+                    browser.update(items:[item("A"),item("B")]); laidOut(browser,width:1000,height:720)
+                    let grid = try grid(browser)
+                    func elements() -> [AnyObject] {
+                        let days = (grid.accessibilityChildren() ?? []).compactMap { $0 as? NSAccessibilityElement }
+                        return days.flatMap { day in [day] + ((day.accessibilityChildren() ?? []).compactMap { $0 as? NSAccessibilityElement }) }
+                    }
+                    let first = elements(), second = elements()
+                    try expect(first.count >= 3 && first.count == second.count && zip(first,second).allSatisfy { $0 === $1 },"Two walks of the grid reach the very same elements: \(first.count) vs \(second.count)")
+                    browser.update(items:[item("A"),item("B"),item("C")])
+                    let third = elements()
+                    try expect(third.count == first.count + 1 && !third.contains { element in first.contains { $0 === element } },"A reload builds new elements that list the new snap: \(first.count) -> \(third.count)")
+                    let fourth = elements()
+                    try expect(zip(third,fourth).allSatisfy { $0 === $1 } && third.count == fourth.count,"…and those hold steady again until the next reload")
+                }
+            }),
             ("Selected tile shows an accent border and a check badge, not colour alone", {
                 try browser { browser,_ in
                     let a = item("Picked"); browser.update(items:[a]); laidOut(browser,width:1000,height:720)

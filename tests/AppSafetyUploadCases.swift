@@ -123,7 +123,7 @@ extension AppSafetyTests {
             try expect(visibleCommands(chrome) == ["open", "copy"], "Success shows Open and Copy (\(visibleCommands(chrome)))")
             try expect(app.dragOriginalControl.isHidden, "At 980 the checkbox stays out of the way while Link copied and its commands are showing")
             try expect(log.texts.contains("Upload complete. Link copied."), "Success is announced: \(log.texts)")
-            try expect(AppToolTip.text(for: app.status) == "Link copied: " + url.absoluteString && app.status.accessibilityHelp() == "Link copied: " + url.absoluteString, "The link itself rides on the tooltip and the VoiceOver help")
+            try expect(AppToolTip.text(for: app.status) == "Link copied: " + url.absoluteString && app.status.accessibilityHelp() == nil, "The link itself rides on the tooltip; VoiceOver hears it once, in the spoken value, with no hint saying Link copied again")
             chrome.uploadControls.openButton.performClick(nil)
             try expect(opened == [url], "Open hands the link to the browser seam")
             chrome.uploadControls.copyButton.performClick(nil)
@@ -325,12 +325,12 @@ extension AppSafetyTests {
                    "The status carries the link after Link copied, then the host, then the word alone (\(status.variants))")
         try expect((status.stringValue == "Link copied · " + address || status.stringValue == "Link copied · cdn.example.com" || status.stringValue == "Link copied") && !status.stringValue.contains("…") && status.frame.width > 100,
                    "At 980 the \(Int(status.frame.width)) pt slot shows the link whole or the word alone, never cut mid-word (\(status.stringValue))")
-        try expect(AppToolTip.text(for: status) == "Link copied: " + url.absoluteString && status.accessibilityHelp() == "Link copied: " + url.absoluteString,
-                   "The full URL stays on the tooltip and in the VoiceOver help, whatever the status shows")
+        try expect(AppToolTip.text(for: status) == "Link copied: " + url.absoluteString && status.accessibilityHelp() == nil,
+                   "The full URL stays on the tooltip, whatever the status shows, and the spoken value carries it for VoiceOver")
         // However much of the sentence a narrow slot shows, VoiceOver is told all of it.
         let wide = status.frame.size
         status.setFrameSize(NSSize(width: 340, height: wide.height))
-        try expect(status.stringValue != status.variants.first && status.stringValue.hasPrefix("Link copied") && !status.stringValue.contains("…") && (status.accessibilityValue() as? String) == status.variants.first,
+        try expect(status.stringValue != status.variants.first && status.stringValue.hasPrefix("Link copied") && !status.stringValue.contains("…") && (status.accessibilityValue() as? String) == status.variants.first?.replacingOccurrences(of: " · ", with: ", "),
                    "A narrow slot shortens what is drawn, never mid-word (\(status.stringValue)) but VoiceOver is told the whole sentence (\(String(describing: status.accessibilityValue())))")
         status.setFrameSize(wide)
         // Four seconds in production: the countdown is untouched by the longer text.
