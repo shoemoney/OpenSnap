@@ -2,8 +2,8 @@
 
 - Surface: History (populated)
 - Suite: accessibility-audit-tests
-- Build: 723e65bb
-- Nodes: 39
+- Build: dda6b216
+- Nodes: 53
 
 ```
 [0] History, window
@@ -24,22 +24,37 @@
 [1]   Hide from History, button, dimmed
 [1]   Move to Trash, button, dimmed
 [1]   Delete from Web, button, dimmed
+[1]     hint: Delete from Web is unavailable: this was never uploaded.
 [0] scroll area
 [1]   History thumbnail grid, list
+[1]     hint: Press a snap to select it. Return opens the selection, and each snap has an Open action. Snaps can be dragged out to export a copy.
 [2]     Today, list
 [3]       Today
+[3]       Shot 0, Saved, Mar 9, 2026 at 12:00 PM, Selected, button
 [2]     Yesterday, list
 [3]       Yesterday
+[3]       Shot 1, Shared, Mar 8, 2026 at 11:00 AM, button
+[2]     Saturday, March 7, 2026, list
+[3]       Saturday, March 7, 2026
+[3]       Shot 2, Saved, Mar 7, 2026 at 9:00 AM, button
+[2]     Friday, March 6, 2026, list
+[3]       Friday, March 6, 2026
+[3]       Shot 3, Missing file · Shared, Mar 6, 2026 at 8:00 AM, button
 [1]   0, scroll bar
 [2]     button, dimmed
 [2]     button, dimmed
 [2]     button, dimmed
 [2]     button, dimmed
-[0] 4 snaps in this view
-[0] Shared: 2
-Saved: 2
-[0] Select a snap to see its details.
-[0] 4 items · 0 selected
+[0] Selected history preview, image
+[0] Name:
+[0] Shot 0
+[0] Date:
+[0] Mar 9, 2026 at 12:00 PM
+[0] Size:
+[0] 640 × 480
+[0] Action:
+[0] Saved
+[0] 4 items · 1 selected
 [0] Drag as
 [0] PNG, History drag export format, pop up button
 [0] close, button

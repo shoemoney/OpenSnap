@@ -198,7 +198,7 @@ private enum ResizePanelLayoutTests {
                        "the mode group shows its three radio buttons, Resize chosen: \(tree.children(of: modeGroup).map { "\($0.label ?? "") \(String(describing: $0.value))" })")
         let lock = try need(.checkBox, "Lock proportions")
         try expectTree(lock.number != nil, "the Lock proportions toggle on its own unlabelled plate is reachable, with a value")
-        _ = try need(.checkBox, "Manage presets")
+        _ = try need(.disclosureTriangle, "Manage presets")
         _ = try need(.popUpButton, "Size preset")
         // Choosing a mode from outside moves the tree: Crop adds its anchor grid.
         let crop = try need(.radioButton, "Crop")

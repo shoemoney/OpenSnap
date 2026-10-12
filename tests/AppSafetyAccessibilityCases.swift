@@ -13,7 +13,7 @@ extension AppSafetyTests {
             ("Focus Toolbar (Window menu) puts the keyboard on the first top-bar control; on the canvas Tab leaves it and Control-Tab swaps the pencil", mainWindowFocusToolbar),
             ("The Size and Color popovers close their own key-view loops", mainWindowPopoverLoops),
             ("Capture success, Frame on and off, Undo and Redo are announced; an Undo with nothing to undo is silent", mainWindowAnnouncements),
-            ("Announcement inventory: every state change a blind user must hear, driven through Announcer.poster; announced rows post exactly the expected text, pending rows post nothing yet", announcementInventory)
+            ("Announcement inventory: every state change a blind user must hear, driven through Announcer.poster; announced rows post exactly the expected text, rows spoken by VoiceOver itself or silent by design post nothing, and none may be pending", announcementInventory)
         ] + accessibilitySurfaceCases
     }
 
@@ -289,10 +289,12 @@ extension AppSafetyTests {
 // compared with what was posted. A row is in exactly one state:
 //   announced      the app posts it today: the posted [text, priority] sequence must equal `expected`, exactly
 //   pendingWP3     it should be announced and is not yet: NOTHING may be posted. The row fails the moment something is, so a site that
-//                  WP3 adds forces this row to be promoted to `announced` (a stale entry fails), and `fired` proves the event really ran
+//                  WP3 adds forces this row to be promoted to `announced` (a stale entry fails), and `fired` proves the event really ran.
+//                  The table has none left (R3 P1-4); the state stays so a new row cannot be added without a proof
+//   voiceOverNative VoiceOver itself speaks it (a sheet that takes the keys); nothing is posted, and the row names why
 //   silentByDesign nothing is posted on purpose (an Undo with nothing to undo)
 // Rows driven by another suite (the countdown and AppAlert have no Fixture) name it; rows that cannot be driven here say why.
-// Breadth is a decision for the owner: delete a row to narrow what is announced; the integrity check only needs ids 1...23 to stay present.
+// Breadth is a decision for the owner: delete a row to narrow what is announced; the integrity check only needs ids 1...24 to stay present.
 
 extension AppSafetyTests {
     typealias Heard = (String, NSAccessibilityPriorityLevel)
@@ -303,6 +305,7 @@ extension AppSafetyTests {
         var fixture: Fixture?
         var file: URL?
         var cleanups: [() -> Void] = []
+        var entryID: UUID?
         func app() throws -> AppDelegate {
             if fixture == nil { fixture = try Fixture() }
             return try fixture.unwrapped("the fixture").app
@@ -310,7 +313,7 @@ extension AppSafetyTests {
     }
 
     struct AnnouncementRow {
-        enum Status { case announced, pendingWP3, silentByDesign }
+        enum Status { case announced, pendingWP3, silentByDesign, voiceOverNative }
         enum Driver {
             case app(setup: (AnnouncementRun) throws -> Void, act: (AnnouncementRun) throws -> Void, fired: (AnnouncementRun) throws -> Bool)
             case suite(String)
@@ -350,6 +353,21 @@ extension AppSafetyTests {
     private static func withUndoable(_ run: AnnouncementRun) throws {
         try run.app().canvas.setBackgroundColor(.yellow)
     }
+    private static func webDeletionSetup(_ run: AnnouncementRun, outcome: Result<Void, Error>) throws {
+        let app = try run.app(), store = try isolatedHistory(app)
+        let url = URL(string: "https://cdn.example.com/pics/a.png")!
+        run.entryID = try store.archive(try historyDrawing("Shared"), name: "Shared", action: .shared, destination: url.absoluteString, remoteURL: url,
+                                        remoteBinding: try b3cRealBinding(app, url: url))
+        _ = try b3cShowHistory(app)
+        app.remoteDeleter = { _, _, _, done in done(outcome) }
+        var answers: [AppSafetyAlert.Answer] = [.init(title: "Delete this web post?", response: .alertSecondButtonReturn)]
+        if case .failure(let error) = outcome { answers.append(.init(title: error.localizedDescription, response: .alertFirstButtonReturn)) }
+        AppSafetyAlert.answers = answers
+    }
+    private static func webDeletionAct(_ run: AnnouncementRun, expecting count: Int) throws {
+        try run.app().deleteHistoryRemote([try run.entryID.unwrapped("the entry")])
+        try waitForMain("the web deletion is answered and announced") { run.posted.count >= count }
+    }
     private static func uploadURL() -> URL { URL(string: "https://example.com/pics/a.png")! }
     private static let failedCapture = NSError(domain: "OpenSnap", code: 9, userInfo: [NSLocalizedDescriptionKey: "The screen could not be captured."])
     private static let migrationNotice = "Your old settings were moved to OpenSnap."
@@ -372,13 +390,13 @@ extension AppSafetyTests {
                 fired: { _ in AppSafetyAlert.seen == [failedCapture.localizedDescription] }) { run in
                 try run.app().receiveCapture(.failure(failedCapture)) },
             row("4", "Picker opened (crosshair)", "startCapture(\"crosshair\")",
-                [("Choose an area to capture. Drag to select, Space for the window under the pointer, Escape to cancel", .medium)], .announced,
+                [("Choose an area to capture. Drag to select, or click for the window under the pointer. Escape to cancel", .medium)], .announced,
                 setup: { run in AppSafetyCaptureCoordinator.holdCapture = true
                     run.cleanups.append { AppSafetyCaptureCoordinator.holdCapture = false; AppSafetyCaptureCoordinator.captureCallbacks.removeAll() } },
                 fired: { _ in AppSafetyCaptureCoordinator.requests.last == "crosshair" }) { run in
                 try run.app().startCapture("crosshair") },
             elsewhere("5", "Countdown 3, 2, 1", "OriginalCaptureCountdown tick", [("3", .high), ("2", .high), ("1", .high)], .announced, suite: "OriginalCaptureCountdownTests"),
-            elsewhere("6", "Countdown cancelled", "OriginalCaptureCountdown.cancel()", [("Capture cancelled", .medium)], .pendingWP3, suite: "OriginalCaptureCountdownTests"),
+            elsewhere("6", "Countdown cancelled", "OriginalCaptureCountdown.cancel()", [("Capture cancelled", .medium)], .announced, suite: "OriginalCaptureCountdownTests"),
             row("7a", "Upload started", "uploadState = .uploading", [("Uploading Shot 1", .medium)], .announced) { run in
                 try run.app().uploadState = .uploading(name: "Shot 1") },
             row("7b", "Upload retrying", "uploadState = .uploading (retry)", [("Retrying Shot 1", .medium)], .announced,
@@ -416,7 +434,11 @@ extension AppSafetyTests {
             row("12c", "Nothing to save to History", "saveHistory() on a blank canvas", [(AppDelegate.nothingToSaveNotice, .medium)], .announced,
                 setup: { try $0.app().canvas.newBlank(size: NSSize(width: 200, height: 150)) }, fired: { run in try run.app().statusNotice == AppDelegate.nothingToSaveNotice }) { run in
                 try run.app().saveHistory() },
-            undriven("12d", "Exported", "exportAs", [("Exported {file}", .medium)], .pendingWP3, why: "Export runs a modal NSSavePanel that the fixture cannot answer"),
+            row("12d", "Exported", "finishExport(_:to:) after the save panel's Export", [("Exported {file}", .medium)], .announced,
+                setup: { run in let app = try run.app(); try withContent(run); run.file = run.fixture?.file("Row12d.png") },
+                fired: { run in try run.app().statusNotice?.hasPrefix("Exported ") == true }) { run in
+                let app = try run.app()
+                try app.finishExport(app.exportPanelAccessory(), to: try run.file.unwrapped("the export file")) },
             row("13a", "Undo", "undo()", [("Undid Background Color", .medium)], .announced, setup: { try withUndoable($0) }) { run in try run.app().undo() },
             row("13b", "Redo", "redo()", [("Redid Background Color", .medium)], .announced,
                 setup: { run in try withUndoable(run); try run.app().undo() }) { run in try run.app().redo() },
@@ -444,8 +466,16 @@ extension AppSafetyTests {
                     try expect(!app.canvasIsFullyVisible, "the zoomed drawing does not fit the fixture window (visible \(app.canvas.visibleRect), bounds \(app.canvas.bounds))") },
                 fired: { run in try run.app().statusNotice?.hasPrefix("Re-Snap needs") == true }) { run in
                 try run.app().performFrameSnap() },
-            undriven("17c", "Re-Snap: the drawing view changed during the capture", "performFrameSnap() completion", [("Error: The drawing view changed during Re-Snap. Position the frame and try again.", .high)], .pendingWP3,
-                     why: "needs a held capture completion that also moves the view; WP3 drives it with the fake coordinator's held callbacks"),
+            row("17c", "Re-Snap: the drawing view changed during the capture", "performFrameSnap() completion after a zoom", [("Error: The drawing view changed during Re-Snap. Position the frame and try again.", .high)], .announced,
+                setup: { run in let app = try run.app(); try app.canvas.newBlank(size: NSSize(width: 200, height: 150)); app.enterFrame(keepingAnnotations: true, manualFlags: [])
+                    AppSafetyCaptureCoordinator.holdCapture = true
+                    run.cleanups.append { AppSafetyCaptureCoordinator.holdCapture = false; AppSafetyCaptureCoordinator.captureCallbacks.removeAll() }
+                    app.performFrameSnap()
+                    try expect(AppSafetyCaptureCoordinator.captureCallbacks.count == 1, "the Re-Snap capture is held (\(AppSafetyCaptureCoordinator.captureCallbacks.count))") },
+                fired: { run in try run.app().statusNotice?.hasPrefix("The drawing view changed") == true }) { run in
+                let app = try run.app()
+                app.setCanvasDisplayZoom(2, label: "Zoom")
+                AppSafetyCaptureCoordinator.captureCallbacks.removeFirst()(.failure(AppSafetyCaptureCoordinator.cancellation)) },
             row("18a", "Actual Size on", "toggleActualSize()", [("Actual size on", .medium)], .announced,
                 setup: { run in try b6Large(run.app()) }, fired: { run in try run.app().isActualSize }) { run in
                 try run.app().toggleActualSize() },
@@ -463,17 +493,30 @@ extension AppSafetyTests {
                 session.state.edit(.width, text: "200")
                 try expect(try session.commit(), "Apply 200 wide")
                 session.cancel() },
-            undriven("20a", "Deleting a web post", "Delete from Web confirmed", [("Deleting web post…", .medium)], .pendingWP3,
-                     why: "needs a History entry bound to a web post and the Delete from Web sheet"),
-            undriven("20b", "Web post deleted / refused", "historyRemoteDeletion result", [("Deleted from example.com. Cached copies of the link can persist for a while.", .medium), ("Error: …", .high)], .pendingWP3,
-                     why: "same History flow as 20a; the success line already goes to the History footer"),
+            row("20a", "Delete from Web confirmed, then it succeeds", "deleteHistoryRemote(_:) answered Delete from Web",
+                [("Deleting web post…", .medium), ("Deleted from cdn.example.com. Cached copies of the link can persist for a while.", .medium)], .announced,
+                setup: { run in try webDeletionSetup(run, outcome: .success(())) },
+                fired: { run in try run.app().historyStore?.entry(try run.entryID.unwrapped("the entry"))?.remoteURL == nil }) { run in
+                try webDeletionAct(run, expecting: 2) },
+            row("20b", "Delete from Web confirmed, then the server refuses", "deleteHistoryRemote(_:) answered Delete from Web",
+                [("Deleting web post…", .medium), ("Error: The server refused it", .high)], .announced,
+                setup: { run in try webDeletionSetup(run, outcome: .failure(NSError(domain: "OpenSnap", code: 7, userInfo: [NSLocalizedDescriptionKey: "The server refused it"]))) },
+                fired: { run in AppSafetyAlert.seen.contains("The server refused it") }) { run in
+                try webDeletionAct(run, expecting: 2) },
             row("21", "Migration notice at launch", "applicationDidFinishLaunching with OpenSnapMigration.launchNotice", [(migrationNotice, .high)], .announced,
                 setup: { run in let saved = OpenSnapMigration.launchNotice; OpenSnapMigration.launchNotice = migrationNotice
                     run.cleanups.append { OpenSnapMigration.launchNotice = saved } },
                 fired: { run in try run.app().status.stringValue == migrationNotice }) { run in
                 _ = try run.app() },
-            elsewhere("22a", "Alert sheet presented (title and message)", "AppAlert.present", [("Error: …", .high)], .pendingWP3, suite: "AppAlertTests"),
+            elsewhere("22a", "Alert sheet presented (title and message)", "AppAlert.present", [], .voiceOverNative, suite: "AppAlertTests"),
             elsewhere("22b", "Alert inline validation error", "AppAlert OK with a wrong entry", [("Error: Enter a number of seconds from 0 to 120.", .high)], .announced, suite: "AppAlertTests"),
+            row("24a", "Annotations removed (Remove annotations)", "wipe() with annotations", [("Annotations removed", .medium)], .announced,
+                setup: { run in let app = try run.app(); app.canvas.newBlank(size: NSSize(width: 200, height: 150)); app.canvas.document.elements = [SketchElement(kind: .rectangle)] },
+                fired: { run in try run.app().canvas.document.elements.isEmpty }) { run in try run.app().wipe() },
+            row("24b", "Image cleared (Clear image)", "wipe() with only a picture", [("Image cleared", .medium)], .announced,
+                setup: { try withContent($0) }, fired: { run in try run.app().canvas.wipeStage == .blank }) { run in try run.app().wipe() },
+            row("24c", "Clear image on a blank canvas", "wipe() with nothing to clear", [], .silentByDesign,
+                setup: { try $0.app().canvas.newBlank(size: NSSize(width: 200, height: 150)) }) { run in try run.app().wipe() },
             row("23", "Any status notice (generic path)", "postStatusNotice(text)", [("Row twenty-three probe notice", .medium)], .announced,
                 fired: { run in try run.app().statusNotice == "Row twenty-three probe notice" }) { run in
                 try run.app().postStatusNotice("Row twenty-three probe notice") }
@@ -486,11 +529,11 @@ extension AppSafetyTests {
         // Integrity: the table is the single source, so it must be well formed before any row is driven.
         try expect(Set(rows.map(\.id)).count == rows.count, "Inventory ids are unique")
         let numbers = Set(rows.compactMap { Int($0.id.prefix { $0.isNumber }) })
-        try expect(numbers == Set(1...23), "Inventory covers state changes 1 through 23 (\(numbers.sorted()))")
+        try expect(numbers == Set(1...24), "Inventory covers state changes 1 through 24 (\(numbers.sorted()))")
         for row in rows {
             switch row.status {
             case .announced, .pendingWP3: try expect(!row.expected.isEmpty, "Row \(row.id) names the text it announces or must announce")
-            case .silentByDesign: try expect(row.expected.isEmpty, "Row \(row.id) is silent by design, so it expects no text")
+            case .silentByDesign, .voiceOverNative: try expect(row.expected.isEmpty, "Row \(row.id) is silent by design or spoken by VoiceOver itself, so it expects no text")
             }
             for (text, _) in row.expected { try expect(!text.lowercased().contains("ski" + "tch"), "Row \(row.id) text does not name the retired product") }
         }
@@ -518,7 +561,7 @@ extension AppSafetyTests {
             case .announced:
                 try expect(got == want, "Row \(row.id) (\(row.event)) must post exactly \(want) but posted \(got)")
                 announced += 1
-            case .silentByDesign:
+            case .silentByDesign, .voiceOverNative:
                 try expect(got.isEmpty, "Row \(row.id) (\(row.event)) is silent by design but posted \(got)")
             case .pendingWP3:
                 try expect(got.isEmpty, "Row \(row.id) (\(row.event)) is listed pending WP3 but now posts \(got): promote it to .announced with that text")
@@ -528,7 +571,10 @@ extension AppSafetyTests {
         }
         let elsewhere = rows.filter { if case .suite = $0.driver { return true } else { return false } }.count
         let undrivenCount = rows.filter { if case .notDriven = $0.driver { return true } else { return false } }.count
-        print("announcement inventory: \(rows.count) rows, \(driven) driven here (\(announced) announced, \(pending) pending WP3), \(elsewhere) in other suites, \(undrivenCount) not drivable")
+        func count(_ status: AnnouncementRow.Status) -> Int { rows.filter { $0.status == status }.count }
+        try expect(count(.pendingWP3) == 0, "No inventory row is still pending (\(rows.filter { $0.status == .pendingWP3 }.map(\.id)))")
+        print("announcement inventory: \(rows.count) rows: \(count(.announced)) announced, \(count(.voiceOverNative)) spoken by VoiceOver itself, \(count(.silentByDesign)) silent by design, \(count(.pendingWP3)) pending; "
+              + "\(driven) driven here (\(announced) announced, \(pending) pending), \(elsewhere) in other suites, \(undrivenCount) not drivable")
     }
 }
 

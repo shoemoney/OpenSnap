@@ -486,7 +486,8 @@ final class GlassChoiceButton: CommandButton {
         }
     }
 
-    override func accessibilityRole() -> NSAccessibility.Role? { Self.role(for: kind) }
+    /// A toggle that shows a chevron discloses something ("Manage presets"): it is a disclosure triangle with an expanded value, not a check box.
+    override func accessibilityRole() -> NSAccessibility.Role? { kind == .toggle && indicator == .chevron ? .disclosureTriangle : Self.role(for: kind) }
 
     override func accessibilityValue() -> Any? {
         switch kind {
@@ -730,6 +731,7 @@ final class GlassChoiceGroup: NSView, ChromeFillable {
 
     override func accessibilityChildren() -> [Any]? { buttons }
     override func accessibilityValue() -> Any? { selectedTitle }
+    override func accessibilityHelp() -> String? { SpokenHelp.distinct(super.accessibilityHelp(), from: accessibilityLabel(), value: accessibilityValue()) }
     override func accessibilitySelectedChildren() -> [Any]? { chosenButton.map { [$0] } ?? [] }
     override func isAccessibilityEnabled() -> Bool { isEnabled }
 }
@@ -938,6 +940,9 @@ final class GlassPanelHost: NSObject {
     /// What the panel's group is called when its window's name would be the same as one of the controls inside it (the Size panel's
     /// group and its slider are both "Size"); the window keeps `accessibilityLabel`.
     var rootAccessibilityLabel: String? { didSet { root.setAccessibilityLabel(rootAccessibilityLabel ?? accessibilityLabel) } }
+
+    /// One hint for the whole panel, spoken once with its group instead of on every control inside it (the swatches' "Shift changes the background").
+    var rootAccessibilityHelp: String? { didSet { root.setAccessibilityHelp(rootAccessibilityHelp) } }
 
     private let stack = NSStackView()
     private let root = PanelRootView()
@@ -1769,6 +1774,7 @@ class GlassPopUpButton: NSPopUpButton, TokenFocusRinged, FocusRingSuppressible {
     override var acceptsFirstResponder: Bool { isEnabled }
     override func accessibilityRole() -> NSAccessibility.Role? { .popUpButton }
     override func accessibilityValue() -> Any? { titleOfSelectedItem }
+    override func accessibilityHelp() -> String? { SpokenHelp.distinct(super.accessibilityHelp(), from: accessibilityLabel(), value: accessibilityValue()) }
     override func accessibilityLabel() -> String? { super.accessibilityLabel() ?? panelLabel }
 
     override var alignmentRectInsets: NSEdgeInsets { NSEdgeInsets() }

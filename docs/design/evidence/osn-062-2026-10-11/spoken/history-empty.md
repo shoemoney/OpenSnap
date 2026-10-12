@@ -2,7 +2,7 @@
 
 - Surface: History (empty)
 - Suite: accessibility-audit-tests
-- Build: 723e65bb
+- Build: dda6b216
 - Nodes: 29
 
 ```
@@ -26,6 +26,7 @@
 [1]   Delete from Web, button, dimmed
 [0] scroll area
 [1]   History thumbnail grid, list
+[1]     hint: Press a snap to select it. Return opens the selection, and each snap has an Open action. Snaps can be dragged out to export a copy.
 [0] No history yet Use Save to History to keep a snap
 [1]   No history yet
 [1]   Use Save to History to keep a snap

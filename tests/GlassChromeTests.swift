@@ -1416,7 +1416,7 @@ private enum GlassChromeTests {
         guard let sizeWindow = slider.panelWindow else { return expect(false, "The Size panel is up") }
         tree = AXTree.walk(sizeWindow)
         if let group = reach(tree, .group, "Size options", "Size panel") {
-            expect(tree.children(of: group).count == 4, "Size panel: the panel group holds the title, the value, the track and the presets (\(tree.children(of: group).count))")
+            expect(tree.children(of: group).count == 2, "Size panel: the panel group holds the track and the presets, whose heading and number are only drawn (\(tree.children(of: group).count))")
         }
         if let track = reach(tree, .slider, "Size", "Size panel") { expect(track.value != nil && track.enabled, "Size panel: the track has a value and is enabled") }
         if let presets = reach(tree, .radioGroup, "Size presets", "Size panel") {
@@ -1934,7 +1934,7 @@ private enum GlassChromeTests {
         expect(!panel.rows[3].isEnabled && panel.rows[2].isEnabled && !panel.rows[3].acceptsFirstResponder, "toolbox: the row validation disables (Paste) is dimmed and never takes focus")
         let anchor = anchorOnScreen(toolbox)
         expect(panel.host.placement.map { $0.edge == .minY && $0.frame.maxY <= anchor.minY } == true, "toolbox: the panel opens below the button, not over it")
-        expect(toolbox.accessibilityRole() == .menuButton && toolbox.accessibilityLabel() == "Toolbox" && toolbox.accessibilityValue() as? String == "Menu", "toolbox: still a menu button named Toolbox with no value")
+        expect(toolbox.accessibilityRole() == .menuButton && toolbox.accessibilityLabel() == "Toolbox" && toolbox.accessibilityValue() as? String == "Commands", "toolbox: still a menu button named Toolbox with no value")
         // A second request closes; the click on the anchor the host consumes cannot reopen it.
         toolbox.performClick(nil)
         expect(!toolbox.isOpen, "toolbox: a second press closes the panel")

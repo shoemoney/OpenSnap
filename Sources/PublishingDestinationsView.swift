@@ -251,6 +251,7 @@ final class PublishingDestinationsView: NSView {
     static func captionText(_ title: String) -> String { title.isEmpty ? "" : title + ":" }
     private func addRow(_ id: String, _ title: String, _ control: NSView, stretches: Bool = true, visible: @escaping (PublishingProtocol, Bool) -> Bool) {
         let caption = label(Self.captionText(title), style: .bodyStrong)
+        caption.hideFromAccessibility("caption")   // the control below carries the name
         let stack = NSStackView(views: [caption, control]); stack.orientation = .horizontal; stack.alignment = .centerY; stack.spacing = Space.s4
         caption.widthAnchor.constraint(equalToConstant: Self.captionWidth).isActive = true
         caption.preferredMaxLayoutWidth = Self.captionWidth
@@ -589,6 +590,8 @@ final class DestinationStatusRow: NSStackView {
         detail.textColor = Palette.Text.secondary
         let column = NSStackView(views: [text, detail]); column.orientation = .vertical; column.alignment = .leading; column.spacing = 2
         addArrangedSubview(glyph); addArrangedSubview(column)
+        // The row speaks the whole message as one element; its glyph and its two lines are only drawn.
+        for part in [glyph, text, detail] { part.hideFromAccessibility("status-part") }
         show(.idle, "")
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }

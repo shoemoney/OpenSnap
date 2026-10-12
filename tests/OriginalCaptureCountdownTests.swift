@@ -239,8 +239,7 @@ enum OriginalCaptureCountdownTests {
     }
 
     /// OSN-062 inventory rows 5 and 6: the production announcer is Announcer.announce, so the numerals reach Announcer.poster at high priority.
-    /// Row 6 (a cancelled countdown says "Capture cancelled") is pending WP3: until the site exists, cancelling posts nothing, and this fails the
-    /// day it starts so the inventory entry cannot go stale.
+    /// Row 6: a cancelled countdown says "Capture cancelled" (medium), once, and stopping a countdown that is not running says nothing.
     private static func throughTheSeam() {
         let saved = (Announcer.poster, Announcer.clock, Announcer.target)
         defer { (Announcer.poster, Announcer.clock, Announcer.target) = saved; Announcer.reset() }
@@ -262,7 +261,10 @@ enum OriginalCaptureCountdownTests {
         for _ in 0..<3 { cancelled.clock.fire() }
         heard = []
         second.cancel()
-        expect(heard.isEmpty, "Inventory row 6 is pending WP3: a cancelled countdown posts nothing today, but it posted \(heard); promote the row to announced")
+        expect(heard.map(\.0) == ["Capture cancelled"] && heard.allSatisfy { $0.1 == .medium }, "Inventory row 6: cancelling a running countdown posts Capture cancelled at medium priority (\(heard))")
+        heard = []; now += 5
+        second.cancel()
+        expect(heard.isEmpty, "Cancelling a countdown that is not running says nothing (\(heard))")
     }
 
     private static func cancellationAndAttachment() {

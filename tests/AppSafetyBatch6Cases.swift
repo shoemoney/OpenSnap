@@ -268,7 +268,8 @@ extension AppSafetyTests {
             app.clearStatusNotice()
             app.uploadState = .failure(message: "The server returned HTTP 403 for this request and refused it.")
             b6Window(app, width: width); try whole("\(Int(width)) error")
-            try expect(!app.status.stringValue.hasPrefix("Error:") && app.status.accessibilityHelp()?.hasPrefix("Error: ") == true, "\(Int(width)): the footer drops the Error: lead, the spoken help keeps it")
+            try expect(!app.status.stringValue.hasPrefix("Error:") && (app.status.accessibilityValue() as? String)?.hasPrefix("Error: ") == true && app.status.accessibilityHelp()?.hasPrefix("Error: ") != true,
+                       "\(Int(width)): the footer drops the Error: lead, the spoken value keeps it and the hint does not say it twice")
             app.uploadState = .idle
         }
         app.dirty = true; app.updateStatus()
@@ -356,8 +357,8 @@ extension AppSafetyTests {
             return nil
         }
         let toolbox = try find(content).b6Unwrap("the Toolbox")
-        try expect(toolbox.accessibilityRole() == .menuButton && toolbox.accessibilityLabel() == "Toolbox" && toolbox.accessibilityValue() as? String == "Menu",
-                   "A menu button named Toolbox whose value is the constant Menu (\(String(describing: toolbox.accessibilityRole())), \(String(describing: toolbox.accessibilityValue())))")
+        try expect(toolbox.accessibilityRole() == .menuButton && toolbox.accessibilityLabel() == "Toolbox" && toolbox.accessibilityValue() as? String == "Commands",
+                   "A menu button named Toolbox whose value is the constant Commands (\(String(describing: toolbox.accessibilityRole())), \(String(describing: toolbox.accessibilityValue())))")
         let rows = try toolbox.menu.b6Unwrap("the rows").items.filter { !$0.isSeparatorItem }
         let bare = rows.filter { $0.image == nil }.map(\.title)
         try expect(bare.isEmpty && rows.contains { $0.title == "Filled Shapes" } && rows.contains { $0.title == "Shadow" }, "Every row, the two check-mark toggles included, has an icon (without: \(bare))")

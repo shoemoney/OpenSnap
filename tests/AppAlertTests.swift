@@ -55,7 +55,7 @@ private enum AppAlertTests {
     /// F-J5-001: a prompt whose entry is wrong stays open and says why, instead of closing without a word.
     private static func inlineValidation() {
         // OSN-062 inventory rows 22a/22b: the inline line is announced through Announcer.poster at high priority (22b). Presenting a sheet
-        // announces nothing today (22a, pending WP3): this fails the day it starts, so the inventory entry cannot go stale.
+        // posts nothing on purpose (22a, spoken by VoiceOver itself): the sheet takes the keys, is a sheet or dialog named by its title and carries the message as its hint.
         let savedAnnouncer = (Announcer.poster, Announcer.clock, Announcer.target)
         defer { (Announcer.poster, Announcer.clock, Announcer.target) = savedAnnouncer; Announcer.reset() }
         var heard: [(String, NSAccessibilityPriorityLevel)] = [], now = 0.0
@@ -65,7 +65,10 @@ private enum AppAlertTests {
         AppAlert.hostIsPresentable = { _ in true }
         let sheetHost = host(), plain = AppAlert(title: "Upload failed", message: "The server refused it", buttons: [.init(title: "OK")])
         plain.present(on: sheetHost) { _ in }
-        expect(heard.isEmpty, "Inventory row 22a is pending WP3: presenting an alert posts nothing today, but it posted \(heard); promote the row to announced")
+        expect(heard.isEmpty, "Inventory row 22a: presenting an alert posts nothing through the Announcer (VoiceOver reads the sheet it moves focus to), but it posted \(heard)")
+        expect(plain.panel.accessibilityRole() == .sheet && plain.panel.accessibilityLabel() == "Upload failed" && plain.panel.accessibilityHelp() == "The server refused it",
+               "Row 22a: the presented sheet is named by its title and carries the message, so VoiceOver reads both (\(String(describing: plain.panel.accessibilityRole())), \(plain.panel.accessibilityLabel() ?? "nil"))")
+        expect(plain.panel.initialFirstResponder === plain.buttonViews[0], "Row 22a: focus lands on the first button of the sheet")
         plain.buttonViews[0].performClick(nil)
         AppAlert.hostIsPresentable = savedPresentable
         let field = NSTextField(string: "abc"); field.frame = NSRect(x: 0, y: 0, width: 300, height: 40)

@@ -203,6 +203,8 @@ enum AXTree {
             for case let child as any NSAccessibilityProtocol in NSAccessibility.unignoredChildren(from: raw ?? []) {
                 guard tree.nodes.count < limit else { return }
                 let object = child as AnyObject
+                // A caption the app hid because its control already carries the name (NSView.hideFromAccessibility).
+                if let host = (child as? NSView) ?? (child as? NSCell)?.controlView, host.accessibilityIdentifier().hasPrefix("ax-hidden") { continue }
                 guard seen.insert(ObjectIdentifier(object)).inserted else {
                     tree.duplicates.append("\(child.accessibilityRole()?.rawValue ?? "?") \"\(child.accessibilityLabel() ?? "")\" is listed more than once")
                     continue

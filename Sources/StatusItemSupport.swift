@@ -22,6 +22,7 @@ enum StatusIcon {
         button.image = image()
         button.toolTip = name
         button.setAccessibilityLabel(accessibilityLabel)
+        button.setAccessibilityHelp("")   // the tooltip is only the app name, which the spoken label already contains
     }
 }
 

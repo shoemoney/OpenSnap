@@ -2,14 +2,12 @@
 
 - Surface: Size popover
 - Suite: app-safety
-- Build: 723e65bb
-- Nodes: 10
+- Build: dda6b216
+- Nodes: 8
 
 ```
 [0] Size, window
 [0] Size options, group
-[1]   Size
-[1]   7
 [1]   Size, 7, slider
 [1]   Size presets, radio group
 [2]     Size 2, not selected, radio button, 1 of 5

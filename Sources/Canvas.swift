@@ -36,6 +36,8 @@ private final class SketchTextLayoutManager: NSLayoutManager {
 }
 
 private final class SketchTextEditor: NSTextView {
+    /// An NSTextView answers "disabled" through the accessibility protocol; the annotation being typed is not.
+    override func isAccessibilityEnabled() -> Bool { true }
     // Native typing history stays separate from document transactions. Committing
     // an annotation registers one canvas undo step, regardless of keystroke count.
     private let typingHistory = UndoManager()
@@ -505,11 +507,20 @@ final class CanvasView: NSView, NSTextViewDelegate {
         super.init(coder: coder)
         configure()
     }
+    /// What an annotation is called aloud: the person's word, not the document model's ("raster" is a picture, "path" a drawn shape).
+    static func spokenKind(_ kind: SketchElement.Kind) -> String {
+        switch kind {
+        case .raster: return "picture"
+        case .path: return "drawing"
+        case .brush: return "brush stroke"
+        default: return kind.rawValue
+        }
+    }
     /// What VoiceOver reads for the canvas: how many annotations it holds and what they are, a text by its words (cut at 40 characters).
     static func annotationSummary(_ elements: [SketchElement]) -> String {
         guard !elements.isEmpty else { return "No annotations" }
         let parts = elements.map { element -> String in
-            guard element.kind == .text else { return element.kind.rawValue }
+            guard element.kind == .text else { return Self.spokenKind(element.kind) }
             let words = element.text.trimmingCharacters(in: .whitespacesAndNewlines)
             return "text \"" + (words.count > 40 ? String(words.prefix(40)) + "…" : words) + "\""
         }

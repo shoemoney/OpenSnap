@@ -2,7 +2,7 @@
 
 - Surface: Status-item menu
 - Suite: app-safety
-- Build: 723e65bb
+- Build: dda6b216
 - Nodes: 4
 
 ```

@@ -157,6 +157,20 @@ enum KeyboardNavigation {
 /// menu handling stay OriginalActionButton's.
 @MainActor
 class CommandButton: OriginalActionButton, ChromeFillable, FocusRingSuppressible {
+    /// What the button is currently set to, when that is not its state (the Font button: the font name and size). Read when asked, never stale.
+    var spokenValue: (() -> String?)?
+    override func accessibilityValue() -> Any? { spokenValue?() ?? super.accessibilityValue() }
+    /// A button that speaks a value (the Font button) is an element of its own, because a standard button is published as its cell and the cell
+    /// knows nothing of the value.
+    override func isAccessibilityElement() -> Bool { spokenValue != nil || super.isAccessibilityElement() }
+    override func accessibilityRole() -> NSAccessibility.Role? { spokenValue != nil ? .button : super.accessibilityRole() }
+    override func accessibilityChildren() -> [Any]? { spokenValue != nil ? [] : super.accessibilityChildren() }
+    override func accessibilityPerformPress() -> Bool {
+        guard spokenValue != nil else { return super.accessibilityPerformPress() }
+        guard isEnabled else { return false }
+        performClick(nil)
+        return true
+    }
     var icon: FAIcon? { didSet { refreshIcon() } }
     /// Glyph shown while `state == .on` (Actual Size swaps maximize for minimize); falls back to `icon`.
     var selectedIcon: FAIcon? { didSet { refreshIcon() } }
@@ -1029,6 +1043,7 @@ final class SegmentedToggle: NSControl, ChromeFillable, TokenFocusRinged {
     }
 
     override func accessibilityValue() -> Any? { titles[selectedSegment] }
+    override func accessibilityHelp() -> String? { SpokenHelp.distinct(super.accessibilityHelp(), from: accessibilityLabel(), value: accessibilityValue()) }
     override func isAccessibilitySelected() -> Bool { false }
 }
 

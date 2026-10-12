@@ -92,6 +92,7 @@ final class BezelColorButton: NSButton {
     }
     override func accessibilityRole() -> NSAccessibility.Role? { .radioButton }
     override func accessibilityValue() -> Any? { NSNumber(value: state == .on ? 1 : 0) }
+    override func accessibilityHelp() -> String? { SpokenHelp.distinct(super.accessibilityHelp(), from: accessibilityLabel(), value: accessibilityValue()) }
     override func isAccessibilitySelected() -> Bool { state == .on }
     override func isAccessibilityEnabled() -> Bool { isEnabled }
     override func accessibilityChildren() -> [Any]? { [] }
@@ -358,6 +359,7 @@ final class BezelSizeSlider: NSControl, TokenFocusRinged {
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     /// The whole-number size, as the tooltip and the old Size text read it; the stored value keeps its fraction.
     override func accessibilityValue() -> Any? { NSNumber(value: value.rounded()) }
+    override func accessibilityHelp() -> String? { SpokenHelp.distinct(super.accessibilityHelp(), from: accessibilityLabel(), value: accessibilityValue()) }
     override func accessibilityMinValue() -> Any? { NSNumber(value: OriginalDrawingControls.minimum) }
     override func accessibilityMaxValue() -> Any? { NSNumber(value: OriginalDrawingControls.maximum) }
     override func setAccessibilityValue(_ value: Any?) {
@@ -526,6 +528,8 @@ final class SizePopoverContent {
         readout.textColor = DesignTokens.Palette.Text.primary
         readout.alignment = .right
         readout.setAccessibilityLabel("Size value")
+        // The slider is "Size" and says its value; the heading and the number beside it are only drawn.
+        titleLabel.hideFromAccessibility("panel-title"); readout.hideFromAccessibility("readout")
 
         let pad = Self.horizontalPadding
         for view in [titleLabel, readout] { view.translatesAutoresizingMaskIntoConstraints = false; headerRow.addSubview(view) }
@@ -622,6 +626,7 @@ final class SizeTrackView: NSControl, TokenFocusRinged {
     func x(forFraction fraction: CGFloat) -> CGFloat { Self.knobDiameter / 2 + fraction * travel }
 
     override func accessibilityValue() -> Any? { slider.map { NSNumber(value: $0.doubleValue.rounded()) } }
+    override func accessibilityHelp() -> String? { SpokenHelp.distinct(super.accessibilityHelp(), from: accessibilityLabel(), value: accessibilityValue()) }
     override func accessibilityMinValue() -> Any? { NSNumber(value: OriginalDrawingControls.minimum) }
     override func accessibilityMaxValue() -> Any? { NSNumber(value: OriginalDrawingControls.maximum) }
     override func accessibilityPerformIncrement() -> Bool { slider?.accessibilityPerformIncrement() ?? false }
@@ -806,7 +811,7 @@ final class SizePresetButton: NSButton {
         }
     }
     override func isAccessibilitySelected() -> Bool { isSelectedPreset }
-    override func accessibilityHelp() -> String? { SpokenHelp.distinct(super.accessibilityHelp(), from: accessibilityLabel()) }
+    override func accessibilityHelp() -> String? { SpokenHelp.distinct(super.accessibilityHelp(), from: accessibilityLabel(), value: accessibilityValue()) }
     override func accessibilityRole() -> NSAccessibility.Role? { .radioButton }
     override func accessibilityValue() -> Any? { NSNumber(value: isSelectedPreset ? 1 : 0) }
 
@@ -848,6 +853,7 @@ final class BezelHoverButton: NSButton {
     /// Opening Color refreshes this button's image and accessibility value. Complete the assistive reply before those changes
     /// replace AppKit's button-cell representation, so an external AXPress does not report AXAttributeUnsupported after opening.
     override func accessibilityRole() -> NSAccessibility.Role? { .button }
+    override func accessibilityHelp() -> String? { SpokenHelp.distinct(super.accessibilityHelp(), from: accessibilityLabel(), value: accessibilityValue()) }
     override func accessibilityChildren() -> [Any]? { [] }
     override func accessibilityPerformPress() -> Bool {
         guard isEnabled, action != nil else { return false }
@@ -925,6 +931,7 @@ final class ColorPaletteContent {
         titleLabel = title; self.swatches = swatches; customButton = custom
         title.font = DesignTokens.Typography.font(.bodyStrong)
         title.textColor = DesignTokens.Palette.Text.primary
+        title.hideFromAccessibility("panel-title")   // the panel's group is already "Drawing colors"
         title.translatesAutoresizingMaskIntoConstraints = false
         titleRow.addSubview(title)
         var constraints = [title.leadingAnchor.constraint(equalTo: titleRow.leadingAnchor, constant: Self.horizontalPadding),

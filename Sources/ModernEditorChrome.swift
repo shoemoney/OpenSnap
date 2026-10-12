@@ -9,6 +9,8 @@ import AppKit
 /// fixed text and clears the variants.
 final class StatusTextField: NSTextField {
     var spokenValue: String?
+    /// Words spoken before the value that the eye gets from colour and a glyph ("Error: " on a failed upload), so a one-line error still says it is one.
+    var spokenLead = ""
     private(set) var variants: [String] = []
     private var settingVariant = false
 
@@ -40,7 +42,10 @@ final class StatusTextField: NSTextField {
         needsLayout = true
     }
 
-    override func accessibilityValue() -> String? { spokenValue ?? super.accessibilityValue() }
+    override func accessibilityValue() -> String? {
+        let value = spokenValue ?? super.accessibilityValue()
+        return spokenLead.isEmpty ? value : spokenLead + (value ?? "")
+    }
 
     /// The width the longest variant wants, whichever one is showing, so the label grows back when room returns.
     override var intrinsicContentSize: NSSize {
@@ -189,8 +194,9 @@ final class ToolboxPopUpButton: NSPopUpButton, NSMenuDelegate {
     override var canBecomeKeyView: Bool { KeyboardNavigation.reaches(self) }
     /// The Toolbox is a launcher, not a setting, so there is no choice to report; it reads "Menu" so a client that publishes it as a pop-up
     /// (which owes a value) says what the control is, not nothing. Its cell answers the same, because a pop-up is published as its cell.
-    static let accessibilityMenuValue = "Menu"
+    static let accessibilityMenuValue = "Commands"
     override func accessibilityValue() -> Any? { Self.accessibilityMenuValue }
+    override func accessibilityHelp() -> String? { SpokenHelp.distinct(super.accessibilityHelp(), from: accessibilityLabel(), value: accessibilityValue()) }
     override func accessibilityRole() -> NSAccessibility.Role? { .menuButton }
     override class var cellClass: AnyClass? { get { ToolboxPopUpCell.self } set { } }
 

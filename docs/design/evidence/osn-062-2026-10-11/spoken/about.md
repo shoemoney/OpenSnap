@@ -2,12 +2,12 @@
 
 - Surface: About
 - Suite: accessibility-audit-tests
-- Build: 723e65bb
+- Build: dda6b216
 - Nodes: 7
 
 ```
 [0] About OpenSnap, window
-[0] image
+[0] OpenSnap icon, image
 [0] OpenSnap
 [0] Version 1.2.3 (build 45)
 [0] Capture, annotate, share.

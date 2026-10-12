@@ -161,7 +161,7 @@ def with_choices(sources):
 suites = [
     ("original-action-button-tests", ["OriginalActionButton.swift"], "OriginalActionButtonTests.swift", "ORIGINAL_ACTION_BUTTON_TESTS", ()),
     ("original-capture-timing-tests", ["OriginalCaptureTiming.swift"], "OriginalCaptureTimingTests.swift", "ORIGINAL_CAPTURE_TIMING_TESTS", ()),
-    ("original-capture-picker-tests", ["OriginalCaptureMagnifier.swift", "OriginalCapturePicker.swift", "TestDefaults.swift"], "OriginalCapturePickerTests.swift", "ORIGINAL_CAPTURE_PICKER_TESTS", ()),
+    ("original-capture-picker-tests", ["OriginalCaptureMagnifier.swift", "OriginalCapturePicker.swift", "TestDefaults.swift", "Announcer.swift"], "OriginalCapturePickerTests.swift", "ORIGINAL_CAPTURE_PICKER_TESTS", ()),
     ("original-capture-countdown-tests", ["DisplayOptions.swift", "OriginalCaptureTiming.swift", "Announcer.swift", "OriginalCaptureCountdown.swift"], "OriginalCaptureCountdownTests.swift", "ORIGINAL_CAPTURE_COUNTDOWN_TESTS", ()),
     ("original-hint-messages-tests", ["SVGPath.swift", "DocumentModel.swift", "OriginalHintMessages.swift"], "OriginalHintMessagesTests.swift", "ORIGINAL_HINT_MESSAGES_TESTS", ()),
     ("original-help-bevel-tests", ["DisplayOptions.swift", "OriginalHelpBevel.swift"], "OriginalHelpBevelTests.swift", "ORIGINAL_HELP_BEVEL_TESTS", ()),

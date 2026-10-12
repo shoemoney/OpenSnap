@@ -306,7 +306,8 @@ final class PhotoBrowserCoordinator: NSObject, NSTableViewDataSource, NSTableVie
     private let status = NSTextField(labelWithString: "")
     /// Zero while the status line has nothing to say, so no blank line sits between the grid and the buttons.
     private lazy var statusCollapsed = status.heightAnchor.constraint(equalToConstant: 0)
-    private func setStatus(_ text: String) { status.stringValue = text; statusCollapsed.isActive = text.isEmpty }
+    /// An empty status line has no height, and no place in the accessibility tree either: hidden, so VoiceOver does not land on a blank.
+    private func setStatus(_ text: String) { status.stringValue = text; statusCollapsed.isActive = text.isEmpty; status.isHidden = text.isEmpty }
     /// The sheet's buttons are the alert's own: 36 pt glass capsules, each pair on one action plate (`AppAlert`).
     let openButton = GlassChoiceButton(title: "", kind: .command, layout: .segment)
     let folderButton = GlassChoiceButton(title: "", kind: .command, layout: .segment)
