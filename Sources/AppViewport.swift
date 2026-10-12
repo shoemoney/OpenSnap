@@ -49,10 +49,12 @@ extension AppDelegate {
         // picture. Otherwise it is the shown size, and the picture's own pixels are left for the box to bring back.
         let titleIsPicture: (AppDelegate) -> Bool = { $0.canvas.document.backgroundPNG != nil && ($0.dragAtOriginalSize || !$0.isLargeShot) }
         var atPictureSize = titleIsPicture(self)
+        var lastWasCrop = false
         let session = ResizePanelSession(size: displayed, onPreview: { [weak self] request in
             guard let self, !self.terminationStarted, self.documentGeneration == generation else {
                 throw NSError(domain: "OpenSnap", code: 5, userInfo: [NSLocalizedDescriptionKey: "This image has changed. Close Resize and try again."])
             }
+            lastWasCrop = request.isCrop
             let current = (output: self.canvas.outputSize, source: self.canvas.canvasSize)
             let basis = baseline.map { (output: $0.output, source: $0.source) } ?? current
             // One rule (F-J7-005): a Resize or Limit on a snap rewrites the picture itself, with the box ticked or not, so the picture ends at the
@@ -138,7 +140,11 @@ extension AppDelegate {
             self.updateStatus()
         }, onCommit: { [weak self] in
             guard let self, self.documentGeneration == generation else { return displayed }
-            if baseline != nil { self.canvas.endViewportEdit(cancelled: false); baseline = nil }
+            if baseline != nil {
+                self.canvas.endViewportEdit(cancelled: false); baseline = nil
+                let pixels = SketchDocument.wholePixels(self.canvas.outputSize)
+                Announcer.announce(lastWasCrop ? Announcer.Message.cropped(pixels) : Announcer.Message.resized(pixels))
+            }
             self.updateDragPreview()
             displayed = self.titlePixelSize
             atPictureSize = titleIsPicture(self)
@@ -186,7 +192,7 @@ extension AppDelegate {
 
     @objc func toggleActualSize() {
         guard canToggleActualSize, window?.attachedSheet == nil else { return }
-        if isActualSize { leaveActualSize(); return }
+        if isActualSize { leaveActualSize(); Announcer.announce(Announcer.Message.actualSizeOff); return }
         canvas.commitPendingTextEditing()
         guard let window else { return }
         let state = ActualViewState(generation: documentGeneration, outputSize: canvas.outputSize,
@@ -199,6 +205,7 @@ extension AppDelegate {
         canvas.enclosingScrollView?.contentView.scroll(to: .zero)
         showActualNavigator()
         refreshNavigatorImage(); updateStatus()
+        Announcer.announce(Announcer.Message.actualSizeOn)
     }
 
     func leaveActualSize() {

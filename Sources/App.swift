@@ -379,6 +379,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     var applyingFontChange = false
     var activeResizeSession: ResizePanelSession?
     var toolButtons: [SketchTool: NSButton] = [:]
+    /// Where the tool change now being made came from: a click on a tool button is read by VoiceOver itself, so only the others speak.
+    enum ToolChangeSource { case button, launch, keyboardOrMenu }
+    var toolChangeSource: ToolChangeSource = .keyboardOrMenu
     var modernChrome: NSView?
     /// The file the document saves to. The title bar's proxy icon follows it.
     var currentURL: URL? { didSet { window?.representedURL = currentURL } }
@@ -493,24 +496,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             guard let self else { return }
             self.updateToolButtons(tool)
             self.clearStatusNotice(); self.updateStatus()
+            if self.toolChangeSource == .keyboardOrMenu { Announcer.announce(Announcer.Message.toolChanged(tool), priority: .low) }
+        }
+        canvas.onReframed = { name, size in
+            let pixels = SketchDocument.wholePixels(size)
+            switch name {
+            case "Crop": Announcer.announce(Announcer.Message.cropped(pixels))
+            case "Resize Canvas": Announcer.announce(Announcer.Message.resized(pixels))
+            default: break
+            }
         }
         canvas.onColorChange = { [weak self] color in self?.colorWell.color = color; self?.rememberDrawingDefaults(); self?.syncDrawingControls() }
         try? FileManager.default.createDirectory(at: support.appendingPathComponent("History"), withIntermediateDirectories: true)
         let recoveryData = try? Data(contentsOf: support.appendingPathComponent(Self.recoveryName))
         if let data = recoveryData {
             do { let restored = try OpenSnapFile.decode(data); restoring = true; try canvas.loadDocument(data: restored.canvasData); drawingDefaults = restored.drawingDefaults; restoreDrawingDefaults(); restoring = false; dirty = true; window.isDocumentEdited = true; nameField.stringValue = "Recovered drawing" }
-            catch { restoring = false; status.stringValue = "Previous session could not be restored." }
+            catch { restoring = false; status.stringValue = "Previous session could not be restored."; Announcer.announce(status.stringValue) }
         }
         let fixturePath = ProcessInfo.processInfo.environment["OPENSNAP_FIXTURE"]
         if let fixture = fixturePath { openURL(URL(fileURLWithPath: fixture)) }
         updateStatus(); updateWipeButton()
-        if let notice = OpenSnapMigration.launchNotice { status.stringValue = notice }
+        if let notice = OpenSnapMigration.launchNotice { status.stringValue = notice; Announcer.announce(notice, priority: .high) }
         timer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in Task { @MainActor in self?.saveRecovery() } }
         restoreWindowFrame(); window.makeKeyAndOrderFront(nil); window.makeFirstResponder(canvas); NSApp.activate(ignoringOtherApps: true)
         window.contentView?.layoutSubtreeIfNeeded(); updateViewportChrome()
         do {
             try hotkeys.install(globalScreen: { [weak self] in self?.captureCrosshair(manualOption: false) }, globalWindow: { [weak self] in self?.windowSnap() }, globalFullscreen: { [weak self] in self?.captureFullscreen(manualOption: false) }, globalFrame: { [weak self] in self?.enterFrame(keepingAnnotations: false, manualFlags: []) }, globalUpload: { [weak self] in self?.snapAndUpload() }, globalShow: { [weak self] in self?.makeVisible() })
-        } catch { status.stringValue = "Global shortcuts unavailable: " + error.localizedDescription }
+        } catch { status.stringValue = "Global shortcuts unavailable: " + error.localizedDescription; Announcer.announce(status.stringValue) }
         writeLayoutEvidence()
         if CommandLine.arguments.contains("--smoke-test") {
             DispatchQueue.main.asyncAfter(deadline: .now()+1) { self.runSmokeTest() }
@@ -1090,8 +1102,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             button.needsDisplay = true
         }
     }
-    func setTool(_ tool: SketchTool) { canvas.tool = tool; updateToolButtons(tool); window?.makeFirstResponder(canvas); updateStatus() }
-    @objc func chooseTool(_ sender: NSButton) { if let s = sender.identifier?.rawValue, let t = SketchTool(rawValue: s) { setTool(t) } }
+    func setTool(_ tool: SketchTool, source: ToolChangeSource = .keyboardOrMenu) {
+        let previous = toolChangeSource
+        toolChangeSource = source; defer { toolChangeSource = previous }
+        canvas.tool = tool; updateToolButtons(tool); window?.makeFirstResponder(canvas); updateStatus()
+    }
+    @objc func chooseTool(_ sender: NSButton) { if let s = sender.identifier?.rawValue, let t = SketchTool(rawValue: s) { setTool(t, source: .button) } }
     @objc func changeColor(_ sender: Any) {
         // NSColorPanel can route its standard changeColor: before a custom
         // target is installed. It uses calibrated components, unlike pen state.
@@ -1628,14 +1644,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             }
             refreshHistory()
             return true
-        } catch { status.stringValue = "History could not be updated: " + error.localizedDescription; return false }
+        } catch { status.stringValue = "History could not be updated: " + error.localizedDescription; Announcer.announce(Announcer.Message.uploadFailed(status.stringValue), priority: .high); return false }
     }
     func followHistory() {
         guard activeResizeSession?.lastPreview == nil else { return }
         historyFollowTimer?.invalidate(); historyFollowTimer = nil
         guard let id = currentArchiveID else { return }
         do { try archiveStore().follow(id, snapshot: historySnapshot(), name: safeName()); refreshHistory() }
-        catch { status.stringValue = "History update failed; the previous archive was preserved: " + error.localizedDescription }
+        catch { status.stringValue = "History update failed; the previous archive was preserved: " + error.localizedDescription; Announcer.announce(Announcer.Message.uploadFailed(status.stringValue), priority: .high) }
     }
     @objc func saveHistory() {
         do {
@@ -2125,7 +2141,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             uploadState = .success(url: url, copied: publishing.lastTransferCopiedLink)
         case .failure(let error):
             if (error as NSError).domain == NSCocoaErrorDomain && (error as NSError).code == NSUserCancelledError {
-                retryablePayload = nil; UploadNotice.post("Upload cancelled"); updateStatus()
+                retryablePayload = nil; UploadNotice.post("Upload cancelled"); updateStatus(); Announcer.announce("Upload cancelled")
             } else { uploadState = .failure(message: error.localizedDescription) }
         }
     }
@@ -2150,6 +2166,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         leaveFrame()
         let generation = documentGeneration
         let includeApp = generalPreferences.includeApp(mode: mode, manualOption: manualOption)
+        if mode == "crosshair" { Announcer.announce(Announcer.Message.pickerOpened) }
         capture.capture(mode: mode, delay: delay, includeApp: includeApp) { [weak self] result in
             guard let self, self.documentGeneration == generation else { return }
             self.receiveCapture(result, expectedGeneration: generation, afterInstalling: afterInstalling)
@@ -2170,7 +2187,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
                 self.installCapture(image, pixels: pixels, afterInstalling: afterInstalling)
             }
             if discardAlreadyApproved { install() } else { confirmDiscard { allowed in if allowed { install() } } }
-        case .failure(let error): if (error as NSError).code != NSUserCancelledError { self.error(error) } }
+        case .failure(let error):
+            if (error as NSError).code != NSUserCancelledError {
+                Announcer.announce(Announcer.Message.uploadFailed(error.localizedDescription), priority: .high)
+                self.error(error)
+            } else { Announcer.announce(Announcer.Message.captureCancelled) }
+        }
     }
     private func installCapture(_ image: NSImage, pixels: CGImage, afterInstalling: (() -> Void)?) {
         // Hiding Settings by any route tells it, so the paused shortcuts go live again (R3-008).
@@ -2214,7 +2236,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     func enterFrame(keepingAnnotations: Bool, manualFlags: NSEvent.ModifierFlags? = nil) {
         guard !terminationStarted, !frameCaptureInProgress else { return }
         // Frame is a see-through window floating over the desktop; a full-screen window owns a Space of its own, so the two exclude each other.
-        guard !isFullScreen else { postStatusNotice(MainWindowFrame.exitFullScreenForFrame); return }
+        guard !isFullScreen else { postStatusNotice(MainWindowFrame.exitFullScreenForFrame, voice: .urgent); return }
         activeResizeSession?.cancel(); endWindowGesture(cancelled: true); leaveActualSize()
         canvas.commitPendingTextEditing()
         if !frameMode {
@@ -2308,7 +2330,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     func performFrameSnap(delay: Double = 0) {
         guard !terminationStarted, frameMode, !frameCaptureInProgress else { return }
         if frameKeepsAnnotations, !canvasIsFullyVisible {
-            postStatusNotice("Re-Snap needs the whole drawing visible. Reduce zoom or enlarge the window, then try again.", duration: 12)
+            postStatusNotice("Re-Snap needs the whole drawing visible. Reduce zoom or enlarge the window, then try again.", duration: 12, voice: .error)
             return
         }
         let global = frameViewportScreenRect
@@ -2323,7 +2345,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             self.frameCaptureInProgress = false
             guard self.documentGeneration == generation else { return }
             if keepingAnnotations, (self.canvas.canvasSize != size || self.canvas.visibleRect != visibleRect || self.canvas.zoom != zoom) {
-                self.postStatusNotice("The drawing view changed during Re-Snap. Position the frame and try again.", duration: 12)
+                self.postStatusNotice("The drawing view changed during Re-Snap. Position the frame and try again.", duration: 12, voice: .error)
                 return
             }
             self.receiveFrameCapture(result, keepingAnnotations: keepingAnnotations, expectedGeneration: generation)

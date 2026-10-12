@@ -3,7 +3,16 @@ import AppKit
 /// Transient messages in the bottom bar's status slot (F-J1-010). A notice outranks the normal status, then gives the slot back: after
 /// `statusNoticeDuration`, or at once when the state it described changes (an edit, another tool, full screen toggling).
 extension AppDelegate {
-    func postStatusNotice(_ text: String, duration: TimeInterval? = nil) {
+    /// How a notice is spoken: as it reads (medium, or high when it begins "Error:"), as an error (the spoken line gains "Error:"), or
+    /// urgently (high, wording unchanged).
+    enum NoticeVoice { case plain, error, urgent }
+
+    func postStatusNotice(_ text: String, duration: TimeInterval? = nil, voice: NoticeVoice = .plain) {
+        switch voice {
+        case .plain: Announcer.announce(text, priority: Announcer.priority(for: text))
+        case .error: Announcer.announce(Announcer.Message.uploadFailed(text), priority: .high)
+        case .urgent: Announcer.announce(text, priority: .high)
+        }
         statusNoticeTimer?.invalidate()
         statusNotice = text
         let timer = Timer(timeInterval: duration ?? statusNoticeDuration, repeats: false) { [weak self] _ in

@@ -306,6 +306,7 @@ final class CanvasView: NSView, NSTextViewDelegate {
             if !settingPanBackground && oldValue.backgroundPNG != document.backgroundPNG { panBackground = nil }
             updateCanvasSize(); needsDisplay = true
             onTextStyleContextChange?()
+            if oldValue.elements != document.elements { postAnnotationSummaryChanged() }
             if replacement, viewportEdit != nil {
                 // The incoming document is authoritative; cancel the shell gesture
                 // without restoring the old document over its replacement.
@@ -316,6 +317,8 @@ final class CanvasView: NSView, NSTextViewDelegate {
         }
     }
     var onChange: (() -> Void)?
+    /// A Crop or Resize Canvas edit just landed: its undo name and the output size now. The shell announces it.
+    var onReframed: ((_ name: String, _ outputSize: CGSize) -> Void)?
     var onTextStyleRequested: (() -> Void)?
     var onTextStyleContextChange: (() -> Void)?
     /// Called after an in-flight viewport edit has been cancelled and cleared.
@@ -502,8 +505,22 @@ final class CanvasView: NSView, NSTextViewDelegate {
         super.init(coder: coder)
         configure()
     }
+    /// What VoiceOver reads for the canvas: how many annotations it holds and what they are, a text by its words (cut at 40 characters).
+    static func annotationSummary(_ elements: [SketchElement]) -> String {
+        guard !elements.isEmpty else { return "No annotations" }
+        let parts = elements.map { element -> String in
+            guard element.kind == .text else { return element.kind.rawValue }
+            let words = element.text.trimmingCharacters(in: .whitespacesAndNewlines)
+            return "text \"" + (words.count > 40 ? String(words.prefix(40)) + "…" : words) + "\""
+        }
+        return "\(elements.count) annotation\(elements.count == 1 ? "" : "s"): " + parts.joined(separator: ", ")
+    }
+    override func accessibilityValue() -> Any? { Self.annotationSummary(document.elements) }
+    private func postAnnotationSummaryChanged() { NSAccessibility.post(element: self, notification: .valueChanged) }
+
     private func configure() {
         editingUndoManager.groupsByEvent = false
+        setAccessibilityElement(true)
         setAccessibilityRole(.image)
         setAccessibilityLabel("Drawing canvas")
         registerForDraggedTypes([.fileURL, .png, .tiff, Self.pasteboardType])
@@ -1219,6 +1236,7 @@ final class CanvasView: NSView, NSTextViewDelegate {
     func reframe(to rect: CGRect, outputSize requestedOutput: CGSize? = nil, name: String = "Crop") -> Bool {
         guard viewportEdit == nil, let reframed = reframedState(from: undoState(state), to: rect, outputSize: requestedOutput) else { return false }
         if rect == document.canvasRect && (requestedOutput == nil || requestedOutput == outputSize) { cropRect = nil; return true }
+        defer { onReframed?(name, outputSize) }
         edit(name) {
             var committed = reframed
             // edit commits typing first; translate the resulting text as well.

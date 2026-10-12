@@ -30,6 +30,7 @@ final class CanvasBorderView: NSView {
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
+        setAccessibilityElement(true)
         setAccessibilityRole(.group)
         setAccessibilityLabel("Image borders. Drag an edge to crop or expand; hold Option for symmetry. Drag a corner to resize.")
     }

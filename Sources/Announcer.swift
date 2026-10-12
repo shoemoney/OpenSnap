@@ -66,6 +66,13 @@ enum Announcer {
         static let captureSucceeded = "Screenshot captured"
         static let frameEntered = "Frame mode on. Drag to choose the area to capture."
         static let frameLeft = "Frame mode off"
+        static let captureCancelled = "Capture cancelled"
+        static let pickerOpened = "Choose an area to capture. Drag to select, Space for the window under the pointer, Escape to cancel"
+        static func toolChanged(_ tool: SketchTool) -> String { tool.rawValue.capitalized + " tool" }
+        static func cropped(_ size: CGSize) -> String { "Cropped to \(Int(size.width)) by \(Int(size.height))" }
+        static func resized(_ size: CGSize) -> String { "Resized to \(Int(size.width)) by \(Int(size.height))" }
+        static let actualSizeOn = "Actual size on"
+        static let actualSizeOff = "Actual size off"
         static func undone(_ action: String) -> String { action.isEmpty ? "Undone" : "Undid \(action)" }
         static func redone(_ action: String) -> String { action.isEmpty ? "Redone" : "Redid \(action)" }
     }

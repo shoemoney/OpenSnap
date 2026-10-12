@@ -363,16 +363,18 @@ extension AppSafetyTests {
                 setup: { try $0.app().enterFrame(keepingAnnotations: false, manualFlags: []) }) { run in
                 let app = try run.app()
                 app.receiveFrameCapture(.success(try tinyImage()), keepingAnnotations: false, expectedGeneration: app.documentGeneration) },
-            row("2", "Capture cancelled (picker Escape)", "receiveCapture(.failure(NSUserCancelledError))", [("Capture cancelled", .medium)], .pendingWP3,
+            row("2", "Capture cancelled (picker Escape)", "receiveCapture(.failure(NSUserCancelledError))", [("Capture cancelled", .medium)], .announced,
                 fired: { _ in AppSafetyAlert.seen.isEmpty }) { run in
                 try run.app().receiveCapture(.failure(AppSafetyCaptureCoordinator.cancellation)) },
-            row("3", "Capture failed (error alert)", "receiveCapture(.failure(error))", [("Error: The screen could not be captured.", .high)], .pendingWP3,
+            row("3", "Capture failed (error alert)", "receiveCapture(.failure(error))", [("Error: The screen could not be captured.", .high)], .announced,
                 setup: { run in AppSafetyAlert.answers = [.init(title: failedCapture.localizedDescription, response: .alertFirstButtonReturn)]; _ = try run.app()
                     run.cleanups.append { AppSafetyAlert.reset() } },
                 fired: { _ in AppSafetyAlert.seen == [failedCapture.localizedDescription] }) { run in
                 try run.app().receiveCapture(.failure(failedCapture)) },
             row("4", "Picker opened (crosshair)", "startCapture(\"crosshair\")",
-                [("Choose an area to capture. Drag to select, Space for the window under the pointer, Escape to cancel", .medium)], .pendingWP3,
+                [("Choose an area to capture. Drag to select, Space for the window under the pointer, Escape to cancel", .medium)], .announced,
+                setup: { run in AppSafetyCaptureCoordinator.holdCapture = true
+                    run.cleanups.append { AppSafetyCaptureCoordinator.holdCapture = false; AppSafetyCaptureCoordinator.captureCallbacks.removeAll() } },
                 fired: { _ in AppSafetyCaptureCoordinator.requests.last == "crosshair" }) { run in
                 try run.app().startCapture("crosshair") },
             elsewhere("5", "Countdown 3, 2, 1", "OriginalCaptureCountdown tick", [("3", .high), ("2", .high), ("1", .high)], .announced, suite: "OriginalCaptureCountdownTests"),
@@ -388,7 +390,7 @@ extension AppSafetyTests {
                 try run.app().uploadState = .success(url: uploadURL(), copied: false) },
             row("9", "Upload failed", "uploadState = .failure", [("Error: The server refused it", .high)], .announced) { run in
                 try run.app().uploadState = .failure(message: "The server refused it\nSecond line is not read") },
-            row("10", "Upload cancelled", "receivePublishing(.failure(NSUserCancelledError))", [("Upload cancelled", .medium)], .pendingWP3,
+            row("10", "Upload cancelled", "receivePublishing(.failure(NSUserCancelledError))", [("Upload cancelled", .medium)], .announced,
                 setup: { run in run.cleanups.append { UploadNotice.clear() } }, fired: { _ in UploadNotice.text == "Upload cancelled" }) { run in
                 try run.app().receivePublishing(.failure(NSError(domain: NSCocoaErrorDomain, code: NSUserCancelledError))) },
             row("11a", "Upload refused: one is already running", "publishImage() while busy", [("An upload is already running", .medium)], .announced,
@@ -400,18 +402,18 @@ extension AppSafetyTests {
                     try waitForMain("the first upload is running") { app.publishing.isBusy } },
                 fired: { run in try run.app().publishing.isBusy }) { run in
                 try run.app().publishImage() },
-            row("11b", "Upload refused: no destination", "publishImage() with no destination", [(AppDelegate.noDestinationNotice, .medium)], .pendingWP3,
+            row("11b", "Upload refused: no destination", "publishImage() with no destination", [(AppDelegate.noDestinationNotice, .medium)], .announced,
                 setup: { run in let app = try run.app(); try configureDestinations(app, []); app.sharingSettingsPresenter = {} },
                 fired: { run in try run.app().statusNotice == AppDelegate.noDestinationNotice }) { run in
                 try run.app().publishImage() },
-            row("12a", "Saved to file", "save()", [("Saved {file}", .medium)], .pendingWP3,
+            row("12a", "Saved to file", "save()", [("Saved {file}", .medium)], .announced,
                 setup: { run in let app = try run.app(); app.canvas.newBlank(size: NSSize(width: 200, height: 150)); run.file = run.fixture?.file("Row12a"); app.currentURL = run.file },
                 fired: { run in try run.app().statusNotice?.hasPrefix("Saved ") == true }) { run in
                 _ = try run.app().save() },
-            row("12b", "Saved to History", "saveHistory()", [("Saved to History", .medium)], .pendingWP3,
+            row("12b", "Saved to History", "saveHistory()", [("Saved to History", .medium)], .announced,
                 setup: { try withContent($0) }, fired: { run in try run.app().statusNotice == "Saved to History" }) { run in
                 try run.app().saveHistory() },
-            row("12c", "Nothing to save to History", "saveHistory() on a blank canvas", [(AppDelegate.nothingToSaveNotice, .medium)], .pendingWP3,
+            row("12c", "Nothing to save to History", "saveHistory() on a blank canvas", [(AppDelegate.nothingToSaveNotice, .medium)], .announced,
                 setup: { try $0.app().canvas.newBlank(size: NSSize(width: 200, height: 150)) }, fired: { run in try run.app().statusNotice == AppDelegate.nothingToSaveNotice }) { run in
                 try run.app().saveHistory() },
             undriven("12d", "Exported", "exportAs", [("Exported {file}", .medium)], .pendingWP3, why: "Export runs a modal NSSavePanel that the fixture cannot answer"),
@@ -419,7 +421,7 @@ extension AppSafetyTests {
             row("13b", "Redo", "redo()", [("Redid Background Color", .medium)], .announced,
                 setup: { run in try withUndoable(run); try run.app().undo() }) { run in try run.app().redo() },
             row("13c", "Undo with nothing to undo", "undo() on a fresh canvas", [], .silentByDesign) { run in try run.app().undo() },
-            row("14", "Tool changed from the keyboard or a menu", "setTool(.brush)", [("Brush tool", .low)], .pendingWP3,
+            row("14", "Tool changed from the keyboard or a menu", "setTool(.brush)", [("Brush tool", .low)], .announced,
                 fired: { run in try run.app().canvas.tool == .brush }) { run in
                 try run.app().setTool(.brush) },
             undriven("15", "Image format toggled (PNG or JPG)", "the format radio", [], .silentByDesign,
@@ -429,14 +431,14 @@ extension AppSafetyTests {
             row("16b", "Frame mode off", "cancelFrame()", [("Frame mode off", .medium)], .announced,
                 setup: { try $0.app().enterFrame(keepingAnnotations: false, manualFlags: []) }) { run in
                 try run.app().cancelFrame() },
-            row("17a", "Frame cannot start in full screen", "enterFrame() while full screen", [(MainWindowFrame.exitFullScreenForFrame, .high)], .pendingWP3,
+            row("17a", "Frame cannot start in full screen", "enterFrame() while full screen", [(MainWindowFrame.exitFullScreenForFrame, .high)], .announced,
                 setup: { run in let app = try run.app(); let window = try (app.window as? AppSafetyWindow).unwrapped("the fixture window")
                     window.simulatesFullScreen = true
                     try expect(app.isFullScreen, "the fixture window reports full screen")
                     run.cleanups.append { window.simulatesFullScreen = false } },
                 fired: { run in try run.app().statusNotice == MainWindowFrame.exitFullScreenForFrame }) { run in
                 try run.app().enterFrame(keepingAnnotations: false, manualFlags: []) },
-            row("17b", "Re-Snap needs the whole drawing visible", "performFrameSnap() with annotations kept", [("Error: Re-Snap needs the whole drawing visible. Reduce zoom or enlarge the window, then try again.", .high)], .pendingWP3,
+            row("17b", "Re-Snap needs the whole drawing visible", "performFrameSnap() with annotations kept", [("Error: Re-Snap needs the whole drawing visible. Reduce zoom or enlarge the window, then try again.", .high)], .announced,
                 setup: { run in let app = try run.app(); try b6Large(app); app.enterFrame(keepingAnnotations: true, manualFlags: [])
                     app.setCanvasDisplayZoom(4, label: "Zoom")
                     try expect(!app.canvasIsFullyVisible, "the zoomed drawing does not fit the fixture window (visible \(app.canvas.visibleRect), bounds \(app.canvas.bounds))") },
@@ -444,17 +446,17 @@ extension AppSafetyTests {
                 try run.app().performFrameSnap() },
             undriven("17c", "Re-Snap: the drawing view changed during the capture", "performFrameSnap() completion", [("Error: The drawing view changed during Re-Snap. Position the frame and try again.", .high)], .pendingWP3,
                      why: "needs a held capture completion that also moves the view; WP3 drives it with the fake coordinator's held callbacks"),
-            row("18a", "Actual Size on", "toggleActualSize()", [("Actual size on", .medium)], .pendingWP3,
+            row("18a", "Actual Size on", "toggleActualSize()", [("Actual size on", .medium)], .announced,
                 setup: { run in try b6Large(run.app()) }, fired: { run in try run.app().isActualSize }) { run in
                 try run.app().toggleActualSize() },
-            row("18b", "Actual Size off", "toggleActualSize() again", [("Actual size off", .medium)], .pendingWP3,
+            row("18b", "Actual Size off", "toggleActualSize() again", [("Actual size off", .medium)], .announced,
                 setup: { run in let app = try run.app(); try b6Large(app); app.toggleActualSize() }, fired: { run in try !run.app().isActualSize }) { run in
                 try run.app().toggleActualSize() },
-            row("19a", "Crop applied", "canvas.crop(to:)", [("Cropped to {w} by {h}", .medium)], .pendingWP3,
+            row("19a", "Crop applied", "canvas.crop(to:)", [("Cropped to {w} by {h}", .medium)], .announced,
                 setup: { try $0.app().canvas.newBlank(size: NSSize(width: 400, height: 300)) },
                 fired: { run in let size = try run.app().canvas.outputSize; return size.width == 200 && size.height == 100 }) { run in
                 try run.app().canvas.crop(to: CGRect(x: 10, y: 10, width: 200, height: 100)) },
-            row("19b", "Resize applied", "the Size sheet's Apply", [("Resized to {w} by {h}", .medium)], .pendingWP3,
+            row("19b", "Resize applied", "the Size sheet's Apply", [("Resized to {w} by {h}", .medium)], .announced,
                 setup: { try $0.app().canvas.newBlank(size: NSSize(width: 400, height: 300)) },
                 fired: { run in try run.app().canvas.outputSize.width == 200 }) { run in
                 let session = try run.app().makeResizeSession().unwrapped("the resize session")
@@ -465,14 +467,14 @@ extension AppSafetyTests {
                      why: "needs a History entry bound to a web post and the Delete from Web sheet"),
             undriven("20b", "Web post deleted / refused", "historyRemoteDeletion result", [("Deleted from example.com. Cached copies of the link can persist for a while.", .medium), ("Error: …", .high)], .pendingWP3,
                      why: "same History flow as 20a; the success line already goes to the History footer"),
-            row("21", "Migration notice at launch", "applicationDidFinishLaunching with OpenSnapMigration.launchNotice", [(migrationNotice, .high)], .pendingWP3,
+            row("21", "Migration notice at launch", "applicationDidFinishLaunching with OpenSnapMigration.launchNotice", [(migrationNotice, .high)], .announced,
                 setup: { run in let saved = OpenSnapMigration.launchNotice; OpenSnapMigration.launchNotice = migrationNotice
                     run.cleanups.append { OpenSnapMigration.launchNotice = saved } },
                 fired: { run in try run.app().status.stringValue == migrationNotice }) { run in
                 _ = try run.app() },
             elsewhere("22a", "Alert sheet presented (title and message)", "AppAlert.present", [("Error: …", .high)], .pendingWP3, suite: "AppAlertTests"),
             elsewhere("22b", "Alert inline validation error", "AppAlert OK with a wrong entry", [("Error: Enter a number of seconds from 0 to 120.", .high)], .announced, suite: "AppAlertTests"),
-            row("23", "Any status notice (generic path)", "postStatusNotice(text)", [("Row twenty-three probe notice", .medium)], .pendingWP3,
+            row("23", "Any status notice (generic path)", "postStatusNotice(text)", [("Row twenty-three probe notice", .medium)], .announced,
                 fired: { run in try run.app().statusNotice == "Row twenty-three probe notice" }) { run in
                 try run.app().postStatusNotice("Row twenty-three probe notice") }
         ]

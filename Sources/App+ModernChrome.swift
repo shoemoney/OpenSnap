@@ -167,7 +167,7 @@ extension AppDelegate {
         trackHint(widthControl, owner: "drawing-size") { OriginalHintMessages.hover(actionTag: 20) }
 
         wireEditorChrome(scroll: chrome.scrollView)
-        setTool(.arrow)
+        setTool(.arrow, source: .launch)
         AppToolTip.install(on: content)
     }
 }
