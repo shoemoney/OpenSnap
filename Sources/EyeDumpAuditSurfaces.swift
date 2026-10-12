@@ -1169,15 +1169,15 @@ extension AuditRun {
 
         if let drag = app.dragExportView {
             let cell = drag.superview as? ChromeFillCell
-            footer("drag-rest", "Drag well at rest: the open-hand glyph, no plate", ["App.swift|final class DragExportView"])
+            footer("drag-rest", "Drag well at rest: the open-hand glyph, no plate", ["DragExportView.swift|final class DragExportView"])
             cell?.setHovered(true); drag.setHovered(true)
-            footer("drag-hover", "Drag well hovered: the cell takes the label 0.08 fill; the pointer is an open hand", ["App.swift|override func resetCursorRects"])
+            footer("drag-hover", "Drag well hovered: the cell takes the label 0.08 fill; the pointer is an open hand", ["DragExportView.swift|override func resetCursorRects"])
             cell?.setHovered(false); drag.setHovered(false)
             drag.setPressed(true)
-            footer("drag-pressed", "Drag well held: the cell takes the 0.16 fill; the pointer is a closed hand", ["App.swift|var wellCursor: NSCursor"])
+            footer("drag-pressed", "Drag well held: the cell takes the 0.16 fill; the pointer is a closed hand", ["DragExportView.swift|var wellCursor: NSCursor"])
             drag.setPressed(false)
             focus(drag)
-            footer("drag-focus", "Drag well keyboard-focused (Space or Return opens the Export panel)", ["App.swift|override func drawFocusRingMask", "App.swift|override func accessibilityPerformPress"])
+            footer("drag-focus", "Drag well keyboard-focused (Space or Return opens the Export panel)", ["DragExportView.swift|override func drawFocusRingMask", "App.swift|override func accessibilityPerformPress"])
             focus(canvas)
         } else { gap("S40", "Drag well states", "the drag well was not found") }
 

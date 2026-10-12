@@ -38,7 +38,7 @@ private enum TokenFocusRingTests {
         _ = NSApplication.shared
         KeyboardNavigation.fullKeyboardAccess = { true }
         do {
-            try resizeSheet(); try destinationForm(); try choicesPanel()
+            try resizeSheet(); try destinationForm(); try choicesPanel(); try dragWellAndPrompt()
             print("TokenFocusRingTests: \(checks) checks passed")
         } catch { print("FAIL \(error)"); exit(1) }
     }
@@ -115,6 +115,19 @@ private enum TokenFocusRingTests {
         let fields = controls.compactMap { $0 as? NSTextField }
         try expect(fields.count >= 5, "Destination form: its text fields are focusable controls (found \(fields.count))")
         try audit(controls, in: window, root: view, surface: "Destination form")
+    }
+
+    /// The editor's drag well and the one-line prompt's field (Snap from Link) ring with the token too.
+    private static func dragWellAndPrompt() throws {
+        let well = DragExportView(frame: NSRect(x: 20, y: 20, width: 115, height: 50))
+        let field = TokenTextField(string: "https://"); field.frame = NSRect(x: 20, y: 100, width: 300, height: 28)
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 200), styleMask: [.titled], backing: .buffered, defer: true)
+        window.isReleasedWhenClosed = false
+        let content = NSView(frame: window.contentRect(forFrameRect: window.frame))
+        window.contentView = content
+        content.addSubview(well); content.addSubview(field)
+        content.layoutSubtreeIfNeeded()
+        try audit([well, field], in: window, root: content, surface: "Drag well and prompt")
     }
 
     private static func choicesPanel() throws {

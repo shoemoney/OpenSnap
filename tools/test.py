@@ -176,7 +176,7 @@ suites = [
     ("resize-panel-tests", with_choices(["ResizePresets.swift", "ResizePanel.swift"]), "ResizePanelTests.swift", "RESIZE_PANEL_TESTS", ()),
     # OSN-071 r3: no focusable control draws AppKit's system focus ring; each draws the token ring (>= 3:1) in light and dark.
     ("token-focus-ring-tests", with_choices(["ResizePresets.swift", "ResizePanel.swift", "TestDefaults.swift", "Publishing.swift", "PublishingS3.swift", "PublishingDestinations.swift",
-                                              "PublishingDestinationsView.swift", "AppAlert.swift", *ICONS]), "TokenFocusRingTests.swift", "TOKEN_FOCUS_RING_TESTS", ()),
+                                              "PublishingDestinationsView.swift", "AppAlert.swift", "Announcer.swift", "DragExportView.swift", *ICONS]), "TokenFocusRingTests.swift", "TOKEN_FOCUS_RING_TESTS", ()),
     ("resize-panel-layout-tests", with_choices(["ResizePresets.swift", "ResizePanel.swift", "TestDefaults.swift", "AccessibilityTreeWalk.swift"]), "ResizePanelLayoutTests.swift", "RESIZE_PANEL_LAYOUT_TESTS", ()),
     ("export-accessory-tests", ["ExportAccessory.swift"], "ExportAccessoryTests.swift", "EXPORT_ACCESSORY_TESTS", ()),
     ("image-export-tests", ["SVGPath.swift", "DocumentModel.swift", "VectorGeometry.swift", "ImageExport.swift"], "ImageExportTests.swift", "IMAGE_EXPORT_TESTS", ()),

@@ -13425,7 +13425,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "case .dragHand; Free codepoint 0xF256; SF fallback hand.raised; used in App.swift",
+   "note": "case .dragHand; Free codepoint 0xF256; SF fallback hand.raised; used in DragExportView.swift",
    "shortcut": null,
    "proof": [],
    "rendered": [
@@ -13521,7 +13521,7 @@
    "owner": "app",
    "exercise": "e2e",
    "gap": null,
-   "note": "case .copy; Free codepoint 0xF0C5; SF fallback doc.on.doc; used in App.swift, Canvas.swift, EyeDumpAuditSurfaces.swift, GlassChoices.swift, HistoryBrowser.swift, OriginalHelpBevel.swift, UploadStatus.swift",
+   "note": "case .copy; Free codepoint 0xF0C5; SF fallback doc.on.doc; used in Canvas.swift, DragExportView.swift, EyeDumpAuditSurfaces.swift, GlassChoices.swift, HistoryBrowser.swift, OriginalHelpBevel.swift, UploadStatus.swift",
    "shortcut": null,
    "proof": [],
    "rendered": [

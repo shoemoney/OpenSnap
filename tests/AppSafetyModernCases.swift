@@ -71,7 +71,7 @@ extension AppSafetyTests {
         try expect(drag.acceptsFirstResponder && drag.isAccessibilityElement() && drag.accessibilityRole() == .button && drag.accessibilityLabel() == DragExportView.accessibilityName
                    && DragExportView.accessibilityName == "Drag image to another app", "The drag well is a button named for what it does")
         try expect(app.window.makeFirstResponder(drag) && app.window.firstResponder === drag, "The drag well takes keyboard focus")
-        try expect(drag.focusRingType == .exterior && !drag.focusRingMaskBounds.isEmpty, "It draws a focus ring through its mask")
+        try expect(drag.focusRingType == .none && drag.tokenRing.isVisible, "It draws the token focus ring, not the system one")
         drag.updateTrackingAreas()
         try expect(drag.trackingAreas.contains { $0.options.contains(.mouseEnteredAndExited) && $0.options.contains(.inVisibleRect) }, "It tracks the pointer over its visible rect")
 
