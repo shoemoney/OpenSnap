@@ -139,7 +139,7 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
     /// The search field's glass plate: one control high like the plates beside it, with the same icon family as the rest of the chrome.
     private(set) var searchPlate: GlassSurfaceView!
     var searchField: NSSearchField { search }
-    private let status = NSTextField(labelWithString: "")
+    private let status = HistoryStatusField(labelWithString: "")
     private let warning = NSTextField(wrappingLabelWithString: "")
     private let detailsImage = NSImageView()
     private var detailValues: [String: NSTextField] = [:]
@@ -689,7 +689,6 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
             if help != Action.deleteRemote.title || AppToolTip.text(for:delete) != nil { AppToolTip.setText(help,for:delete) }
         }
         status.stringValue = transientStatus ?? Self.statusText(shown:visibleItems.count,total:items.count,selected:selected.count)
-        status.setAccessibilityValue(status.stringValue.replacingOccurrences(of:" · ",with:", "))
         updateEmptyState()
         if detailsCollapsed != visibleItems.isEmpty { detailsCollapsed = visibleItems.isEmpty; applyDetailsConstraints() }
         let missingCount = selected.filter(\.missing).count
@@ -863,6 +862,12 @@ final class HistoryActionButton: CommandButton {
     override var intrinsicContentSize: NSSize {
         NSSize(width:Self.width(title:visibleTitle,glyph:image),height:GlassChrome.Metrics.commandHeight)
     }
+}
+
+/// The footer count ("4 items · 1 selected"): read with a pause where the line draws a middle dot.
+@MainActor
+private final class HistoryStatusField: NSTextField {
+    override func accessibilityValue() -> String? { super.accessibilityValue()?.replacingOccurrences(of: " · ", with: ", ") }
 }
 
 @MainActor
