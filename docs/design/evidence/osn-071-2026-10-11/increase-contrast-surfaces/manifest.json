@@ -1,9 +1,9 @@
 {
- "sourceSha": "4254505",
- "bundleId": "com.shoemoney.opensnap.eyedump-40821",
+ "sourceSha": "cbd0186",
+ "bundleId": "com.shoemoney.opensnap.eyedump-19970",
  "iconMode": "sf",
  "faMode": "FA unavailable: no FontAwesome7Pro subset fonts are bundled in this build, so every capture uses SF Symbols (nothing was faked)",
- "captureCount": 168,
+ "captureCount": 264,
  "unavailable": [],
  "gaps": [
   {
@@ -14,11 +14,39 @@
    "surface": "Wipe confirmation"
   },
   {
+   "appearance": "dark",
+   "iconMode": "sf",
+   "id": "S29",
+   "reason": "AppKit tooltips are drawn by the window server on real mouse hover and cannot be forced or captured without a real pointer",
+   "surface": "Native tooltips / help tags"
+  },
+  {
+   "appearance": "dark",
+   "iconMode": "sf",
+   "id": "S29",
+   "reason": "NSSharingServicePicker runs out of process and lists the user's real services/accounts",
+   "surface": "Share with macOS picker"
+  },
+  {
    "appearance": "light",
    "iconMode": "sf",
    "id": "S26",
    "reason": "No Wipe confirmation exists: Wipe/Undo (Canvas.wipe) acts immediately, so there is nothing to capture; recorded as a finding",
    "surface": "Wipe confirmation"
+  },
+  {
+   "appearance": "light",
+   "iconMode": "sf",
+   "id": "S29",
+   "reason": "AppKit tooltips are drawn by the window server on real mouse hover and cannot be forced or captured without a real pointer",
+   "surface": "Native tooltips / help tags"
+  },
+  {
+   "appearance": "light",
+   "iconMode": "sf",
+   "id": "S29",
+   "reason": "NSSharingServicePicker runs out of process and lists the user's real services/accounts",
+   "surface": "Share with macOS picker"
   }
  ],
  "captures": [
@@ -42,15 +70,15 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S12-frame-mode-dark-ic@4254505.png",
+   "file": "S12-frame-mode-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     951
    ],
    "downscaled": true,
-   "layout": "layout/S12-frame-mode-dark-ic@4254505.json",
+   "layout": "layout/S12-frame-mode-dark-ic@cbd0186.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -87,15 +115,15 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S12-frame-mode-light-ic@4254505.png",
+   "file": "S12-frame-mode-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     951
    ],
    "downscaled": true,
-   "layout": "layout/S12-frame-mode-light-ic@4254505.json",
+   "layout": "layout/S12-frame-mode-light-ic@cbd0186.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -132,15 +160,15 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S12-frame-resnap-dark-ic@4254505.png",
+   "file": "S12-frame-resnap-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     951
    ],
    "downscaled": true,
-   "layout": "layout/S12-frame-resnap-dark-ic@4254505.json",
+   "layout": "layout/S12-frame-resnap-dark-ic@cbd0186.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -176,15 +204,15 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S12-frame-resnap-light-ic@4254505.png",
+   "file": "S12-frame-resnap-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     951
    ],
    "downscaled": true,
-   "layout": "layout/S12-frame-resnap-light-ic@4254505.json",
+   "layout": "layout/S12-frame-resnap-light-ic@cbd0186.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -220,15 +248,15 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S12-frame-w1024-dark-ic@4254505.png",
+   "file": "S12-frame-w1024-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     1382
    ],
    "downscaled": true,
-   "layout": "layout/S12-frame-w1024-dark-ic@4254505.json",
+   "layout": "layout/S12-frame-w1024-dark-ic@cbd0186.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -265,15 +293,15 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S12-frame-w1024-light-ic@4254505.png",
+   "file": "S12-frame-w1024-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     1382
    ],
    "downscaled": true,
-   "layout": "layout/S12-frame-w1024-light-ic@4254505.json",
+   "layout": "layout/S12-frame-w1024-light-ic@cbd0186.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -310,15 +338,15 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S12-frame-w1280-dark-ic@4254505.png",
+   "file": "S12-frame-w1280-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     1105
    ],
    "downscaled": true,
-   "layout": "layout/S12-frame-w1280-dark-ic@4254505.json",
+   "layout": "layout/S12-frame-w1280-dark-ic@cbd0186.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -355,15 +383,15 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S12-frame-w1280-light-ic@4254505.png",
+   "file": "S12-frame-w1280-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     1105
    ],
    "downscaled": true,
-   "layout": "layout/S12-frame-w1280-light-ic@4254505.json",
+   "layout": "layout/S12-frame-w1280-light-ic@cbd0186.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -400,15 +428,15 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S12-frame-w980-dark-ic@4254505.png",
+   "file": "S12-frame-w980-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     1444
    ],
    "downscaled": true,
-   "layout": "layout/S12-frame-w980-dark-ic@4254505.json",
+   "layout": "layout/S12-frame-w980-dark-ic@cbd0186.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -445,15 +473,15 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S12-frame-w980-light-ic@4254505.png",
+   "file": "S12-frame-w980-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     1444
    ],
    "downscaled": true,
-   "layout": "layout/S12-frame-w980-light-ic@4254505.json",
+   "layout": "layout/S12-frame-w980-light-ic@cbd0186.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -468,6 +496,1078 @@
    "sourceRefs": [
     "App.swift|func enterFrame",
     "ModernEditorChrome.swift|private func applyFrameMode"
+   ]
+  },
+  {
+   "id": "S13",
+   "slug": "picker-no-recording-grant",
+   "surface": "capture picker / crosshair + magnifier",
+   "state": "crosshair overlay with magnifier (lens hatched placeholder reading Screen Recording off, as without a grant), no drag yet",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    4112,
+    2658
+   ],
+   "pointSize": [
+    2056,
+    1329
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S13-picker-no-recording-grant-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    776
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "OriginalCapturePicker.swift|func begin(windowOnly",
+    "OriginalCapturePicker.swift|func mountMagnifierIfEnabled"
+   ]
+  },
+  {
+   "id": "S13",
+   "slug": "picker-no-recording-grant",
+   "surface": "capture picker / crosshair + magnifier",
+   "state": "crosshair overlay with magnifier (lens hatched placeholder reading Screen Recording off, as without a grant), no drag yet",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    4112,
+    2658
+   ],
+   "pointSize": [
+    2056,
+    1329
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S13-picker-no-recording-grant-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    776
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "OriginalCapturePicker.swift|func begin(windowOnly",
+    "OriginalCapturePicker.swift|func mountMagnifierIfEnabled"
+   ]
+  },
+  {
+   "id": "S13",
+   "slug": "picker-no-recording-grant-dragging",
+   "surface": "capture picker / crosshair + magnifier",
+   "state": "mid-drag selection rectangle with dimmed surround and the size read-out (lens placeholder)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    4112,
+    2658
+   ],
+   "pointSize": [
+    2056,
+    1329
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S13-picker-no-recording-grant-dragging-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    776
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "OriginalCapturePicker.swift|override func draw(_ dirtyRect"
+   ]
+  },
+  {
+   "id": "S13",
+   "slug": "picker-no-recording-grant-dragging",
+   "surface": "capture picker / crosshair + magnifier",
+   "state": "mid-drag selection rectangle with dimmed surround and the size read-out (lens placeholder)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    4112,
+    2658
+   ],
+   "pointSize": [
+    2056,
+    1329
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S13-picker-no-recording-grant-dragging-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    776
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "OriginalCapturePicker.swift|override func draw(_ dirtyRect"
+   ]
+  },
+  {
+   "id": "S13",
+   "slug": "picker-no-recording-grant-edge-bottom-right",
+   "surface": "capture picker / crosshair + magnifier",
+   "state": "magnifier with the pointer at the bottom-right corner of the display (placeholder lens): lens and size label both stay on screen, the label 4 pt below the lens border",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    4112,
+    2658
+   ],
+   "pointSize": [
+    2056,
+    1329
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "cacheDisplay (CGWindowList image was blank)",
+   "file": "S13-picker-no-recording-grant-edge-bottom-right-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    776
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "OriginalCaptureMagnifier.swift|static func labelRect",
+    "OriginalCaptureMagnifier.swift|static func placementFrame"
+   ]
+  },
+  {
+   "id": "S13",
+   "slug": "picker-no-recording-grant-edge-bottom-right",
+   "surface": "capture picker / crosshair + magnifier",
+   "state": "magnifier with the pointer at the bottom-right corner of the display (placeholder lens): lens and size label both stay on screen, the label 4 pt below the lens border",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    4112,
+    2658
+   ],
+   "pointSize": [
+    2056,
+    1329
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "cacheDisplay (CGWindowList image was blank)",
+   "file": "S13-picker-no-recording-grant-edge-bottom-right-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    776
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "OriginalCaptureMagnifier.swift|static func labelRect",
+    "OriginalCaptureMagnifier.swift|static func placementFrame"
+   ]
+  },
+  {
+   "id": "S13",
+   "slug": "picker-no-recording-grant-edge-top-left",
+   "surface": "capture picker / crosshair + magnifier",
+   "state": "magnifier with the pointer at the top-left corner of the display (placeholder lens): lens and size label both stay on screen, the label 4 pt below the lens border",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    4112,
+    2658
+   ],
+   "pointSize": [
+    2056,
+    1329
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S13-picker-no-recording-grant-edge-top-left-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    776
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "OriginalCaptureMagnifier.swift|static func labelRect",
+    "OriginalCaptureMagnifier.swift|static func placementFrame"
+   ]
+  },
+  {
+   "id": "S13",
+   "slug": "picker-no-recording-grant-edge-top-left",
+   "surface": "capture picker / crosshair + magnifier",
+   "state": "magnifier with the pointer at the top-left corner of the display (placeholder lens): lens and size label both stay on screen, the label 4 pt below the lens border",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    4112,
+    2658
+   ],
+   "pointSize": [
+    2056,
+    1329
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S13-picker-no-recording-grant-edge-top-left-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    776
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "OriginalCaptureMagnifier.swift|static func labelRect",
+    "OriginalCaptureMagnifier.swift|static func placementFrame"
+   ]
+  },
+  {
+   "id": "S13",
+   "slug": "picker-synthetic-lens",
+   "surface": "capture picker / crosshair + magnifier",
+   "state": "crosshair overlay with magnifier (lens fed synthetic pixels), no drag yet",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    4112,
+    2658
+   ],
+   "pointSize": [
+    2056,
+    1329
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S13-picker-synthetic-lens-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    776
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "OriginalCapturePicker.swift|func begin(windowOnly",
+    "OriginalCapturePicker.swift|func mountMagnifierIfEnabled"
+   ]
+  },
+  {
+   "id": "S13",
+   "slug": "picker-synthetic-lens",
+   "surface": "capture picker / crosshair + magnifier",
+   "state": "crosshair overlay with magnifier (lens fed synthetic pixels), no drag yet",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    4112,
+    2658
+   ],
+   "pointSize": [
+    2056,
+    1329
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S13-picker-synthetic-lens-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    776
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "OriginalCapturePicker.swift|func begin(windowOnly",
+    "OriginalCapturePicker.swift|func mountMagnifierIfEnabled"
+   ]
+  },
+  {
+   "id": "S13",
+   "slug": "picker-synthetic-lens-dragging",
+   "surface": "capture picker / crosshair + magnifier",
+   "state": "mid-drag selection rectangle with dimmed surround and the size read-out (lens synthetic)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    4112,
+    2658
+   ],
+   "pointSize": [
+    2056,
+    1329
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S13-picker-synthetic-lens-dragging-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    776
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "OriginalCapturePicker.swift|override func draw(_ dirtyRect"
+   ]
+  },
+  {
+   "id": "S13",
+   "slug": "picker-synthetic-lens-dragging",
+   "surface": "capture picker / crosshair + magnifier",
+   "state": "mid-drag selection rectangle with dimmed surround and the size read-out (lens synthetic)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    4112,
+    2658
+   ],
+   "pointSize": [
+    2056,
+    1329
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S13-picker-synthetic-lens-dragging-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    776
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "OriginalCapturePicker.swift|override func draw(_ dirtyRect"
+   ]
+  },
+  {
+   "id": "S14",
+   "slug": "countdown-1",
+   "surface": "countdown overlay",
+   "state": "countdown digit 1 (tick 42)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    280,
+    280
+   ],
+   "pointSize": [
+    140,
+    140
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S14-countdown-1-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    280,
+    280
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "OriginalCaptureCountdown.swift|func start(rect",
+    "OriginalCaptureCountdown.swift|private func advance"
+   ]
+  },
+  {
+   "id": "S14",
+   "slug": "countdown-1",
+   "surface": "countdown overlay",
+   "state": "countdown digit 1 (tick 42)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    280,
+    280
+   ],
+   "pointSize": [
+    140,
+    140
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S14-countdown-1-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    280,
+    280
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "OriginalCaptureCountdown.swift|func start(rect",
+    "OriginalCaptureCountdown.swift|private func advance"
+   ]
+  },
+  {
+   "id": "S14",
+   "slug": "countdown-2",
+   "surface": "countdown overlay",
+   "state": "countdown digit 2 (tick 22)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    280,
+    280
+   ],
+   "pointSize": [
+    140,
+    140
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S14-countdown-2-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    280,
+    280
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "OriginalCaptureCountdown.swift|func start(rect",
+    "OriginalCaptureCountdown.swift|private func advance"
+   ]
+  },
+  {
+   "id": "S14",
+   "slug": "countdown-2",
+   "surface": "countdown overlay",
+   "state": "countdown digit 2 (tick 22)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    280,
+    280
+   ],
+   "pointSize": [
+    140,
+    140
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S14-countdown-2-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    280,
+    280
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "OriginalCaptureCountdown.swift|func start(rect",
+    "OriginalCaptureCountdown.swift|private func advance"
+   ]
+  },
+  {
+   "id": "S14",
+   "slug": "countdown-3",
+   "surface": "countdown overlay",
+   "state": "countdown digit 3 (tick 2)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    280,
+    280
+   ],
+   "pointSize": [
+    140,
+    140
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S14-countdown-3-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    280,
+    280
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "OriginalCaptureCountdown.swift|func start(rect",
+    "OriginalCaptureCountdown.swift|private func advance"
+   ]
+  },
+  {
+   "id": "S14",
+   "slug": "countdown-3",
+   "surface": "countdown overlay",
+   "state": "countdown digit 3 (tick 2)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    280,
+    280
+   ],
+   "pointSize": [
+    140,
+    140
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S14-countdown-3-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    280,
+    280
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "OriginalCaptureCountdown.swift|func start(rect",
+    "OriginalCaptureCountdown.swift|private func advance"
+   ]
+  },
+  {
+   "id": "S14",
+   "slug": "countdown-3-contrast-reduce-motion",
+   "surface": "countdown overlay",
+   "state": "digit 3 with Increase Contrast (plate 0.8) and Reduce Motion (alpha 1 on the first frame)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    280,
+    280
+   ],
+   "pointSize": [
+    140,
+    140
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S14-countdown-3-contrast-reduce-motion-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    280,
+    280
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "OriginalCaptureCountdown.swift|static func plateAlpha"
+   ]
+  },
+  {
+   "id": "S14",
+   "slug": "countdown-3-contrast-reduce-motion",
+   "surface": "countdown overlay",
+   "state": "digit 3 with Increase Contrast (plate 0.8) and Reduce Motion (alpha 1 on the first frame)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    280,
+    280
+   ],
+   "pointSize": [
+    140,
+    140
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S14-countdown-3-contrast-reduce-motion-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    280,
+    280
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "OriginalCaptureCountdown.swift|static func plateAlpha"
+   ]
+  },
+  {
+   "id": "S15",
+   "slug": "flash-half",
+   "surface": "capture flash",
+   "state": "flash halfway up the ramp (0.35) in front of the editor",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S15-flash-half-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "OriginalCaptureFlash.swift|static func alpha(elapsed"
+   ]
+  },
+  {
+   "id": "S15",
+   "slug": "flash-half",
+   "surface": "capture flash",
+   "state": "flash halfway up the ramp (0.35) in front of the editor",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S15-flash-half-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "OriginalCaptureFlash.swift|static func alpha(elapsed"
+   ]
+  },
+  {
+   "id": "S15",
+   "slug": "flash-peak",
+   "surface": "capture flash",
+   "state": "flash panel at its peak alpha (0.7) in front of the editor, editor behind it",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S15-flash-peak-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "OriginalCaptureFlash.swift|final class OriginalCaptureFlashWindow",
+    "OriginalCaptureFlash.swift|final class OriginalCaptureFlashView"
+   ]
+  },
+  {
+   "id": "S15",
+   "slug": "flash-peak",
+   "surface": "capture flash",
+   "state": "flash panel at its peak alpha (0.7) in front of the editor, editor behind it",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S15-flash-peak-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "OriginalCaptureFlash.swift|final class OriginalCaptureFlashWindow",
+    "OriginalCaptureFlash.swift|final class OriginalCaptureFlashView"
    ]
   },
   {
@@ -490,9 +1590,9 @@
     194
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S16-permission-sheet-dark-ic@4254505.png",
+   "file": "S16-permission-sheet-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1120,
     388
@@ -535,9 +1635,9 @@
     194
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S16-permission-sheet-light-ic@4254505.png",
+   "file": "S16-permission-sheet-light-ic@cbd0186.png",
    "storedPixelSize": [
     1120,
     388
@@ -580,9 +1680,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S16-permission-sheet-in-context-dark-ic@4254505.png",
+   "file": "S16-permission-sheet-in-context-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     951
@@ -625,9 +1725,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S16-permission-sheet-in-context-light-ic@4254505.png",
+   "file": "S16-permission-sheet-in-context-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     951
@@ -670,9 +1770,9 @@
     633
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-capture-dark-ic@4254505.png",
+   "file": "S17-settings-capture-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     1187
@@ -715,9 +1815,9 @@
     633
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-capture-light-ic@4254505.png",
+   "file": "S17-settings-capture-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     1187
@@ -760,9 +1860,9 @@
     633
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-capture-1280x800-dark-ic@4254505.png",
+   "file": "S17-settings-capture-1280x800-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     1187
@@ -805,9 +1905,9 @@
     633
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-capture-1280x800-light-ic@4254505.png",
+   "file": "S17-settings-capture-1280x800-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     1187
@@ -850,9 +1950,9 @@
     657
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-capture-error-dark-ic@4254505.png",
+   "file": "S17-settings-capture-error-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     1232
@@ -895,9 +1995,9 @@
     657
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-capture-error-light-ic@4254505.png",
+   "file": "S17-settings-capture-error-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     1232
@@ -940,9 +2040,9 @@
     657
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-capture-error-1280x800-dark-ic@4254505.png",
+   "file": "S17-settings-capture-error-1280x800-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     1232
@@ -985,9 +2085,9 @@
     657
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-capture-error-1280x800-light-ic@4254505.png",
+   "file": "S17-settings-capture-error-1280x800-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     1232
@@ -1030,9 +2130,9 @@
     633
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-capture-modifiers-dark-ic@4254505.png",
+   "file": "S17-settings-capture-modifiers-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     1187
@@ -1075,9 +2175,9 @@
     633
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-capture-modifiers-light-ic@4254505.png",
+   "file": "S17-settings-capture-modifiers-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     1187
@@ -1120,9 +2220,9 @@
     633
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-capture-modifiers-1280x800-dark-ic@4254505.png",
+   "file": "S17-settings-capture-modifiers-1280x800-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     1187
@@ -1165,9 +2265,9 @@
     633
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-capture-modifiers-1280x800-light-ic@4254505.png",
+   "file": "S17-settings-capture-modifiers-1280x800-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     1187
@@ -1210,9 +2310,9 @@
     282
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-drawing-dark-ic@4254505.png",
+   "file": "S17-settings-drawing-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     529
@@ -1255,9 +2355,9 @@
     282
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-drawing-light-ic@4254505.png",
+   "file": "S17-settings-drawing-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     529
@@ -1300,9 +2400,9 @@
     282
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-drawing-1280x800-dark-ic@4254505.png",
+   "file": "S17-settings-drawing-1280x800-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     529
@@ -1345,9 +2445,9 @@
     282
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-drawing-1280x800-light-ic@4254505.png",
+   "file": "S17-settings-drawing-1280x800-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     529
@@ -1390,9 +2490,9 @@
     282
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-drawing-alt-dark-ic@4254505.png",
+   "file": "S17-settings-drawing-alt-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     529
@@ -1435,9 +2535,9 @@
     282
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-drawing-alt-light-ic@4254505.png",
+   "file": "S17-settings-drawing-alt-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     529
@@ -1480,9 +2580,9 @@
     282
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-drawing-alt-1280x800-dark-ic@4254505.png",
+   "file": "S17-settings-drawing-alt-1280x800-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     529
@@ -1525,9 +2625,9 @@
     282
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-drawing-alt-1280x800-light-ic@4254505.png",
+   "file": "S17-settings-drawing-alt-1280x800-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     529
@@ -1570,9 +2670,9 @@
     371
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-general-dark-ic@4254505.png",
+   "file": "S17-settings-general-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     696
@@ -1615,9 +2715,9 @@
     371
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-general-light-ic@4254505.png",
+   "file": "S17-settings-general-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     696
@@ -1660,9 +2760,9 @@
     371
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-general-1280x800-dark-ic@4254505.png",
+   "file": "S17-settings-general-1280x800-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     696
@@ -1705,9 +2805,9 @@
     371
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-general-1280x800-light-ic@4254505.png",
+   "file": "S17-settings-general-1280x800-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     696
@@ -1750,9 +2850,9 @@
     371
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-general-alt-dark-ic@4254505.png",
+   "file": "S17-settings-general-alt-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     696
@@ -1795,9 +2895,9 @@
     371
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-general-alt-light-ic@4254505.png",
+   "file": "S17-settings-general-alt-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     696
@@ -1840,9 +2940,9 @@
     371
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-general-alt-1280x800-dark-ic@4254505.png",
+   "file": "S17-settings-general-alt-1280x800-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     696
@@ -1885,9 +2985,9 @@
     371
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-general-alt-1280x800-light-ic@4254505.png",
+   "file": "S17-settings-general-alt-1280x800-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     696
@@ -1930,9 +3030,9 @@
     448
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-upload-dark-ic@4254505.png",
+   "file": "S17-settings-upload-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     840
@@ -1975,9 +3075,9 @@
     448
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-upload-light-ic@4254505.png",
+   "file": "S17-settings-upload-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     840
@@ -2020,9 +3120,9 @@
     448
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-upload-1280x800-dark-ic@4254505.png",
+   "file": "S17-settings-upload-1280x800-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     840
@@ -2065,9 +3165,9 @@
     448
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-upload-1280x800-light-ic@4254505.png",
+   "file": "S17-settings-upload-1280x800-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     840
@@ -2110,9 +3210,9 @@
     285
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-upload-empty-dark-ic@4254505.png",
+   "file": "S17-settings-upload-empty-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     534
@@ -2155,9 +3255,9 @@
     285
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-upload-empty-light-ic@4254505.png",
+   "file": "S17-settings-upload-empty-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     534
@@ -2200,9 +3300,9 @@
     285
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-upload-empty-1280x800-dark-ic@4254505.png",
+   "file": "S17-settings-upload-empty-1280x800-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     534
@@ -2245,9 +3345,9 @@
     285
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-upload-empty-1280x800-light-ic@4254505.png",
+   "file": "S17-settings-upload-empty-1280x800-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     534
@@ -2290,9 +3390,9 @@
     733
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-upload-many-dark-ic@4254505.png",
+   "file": "S17-settings-upload-many-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     1374
@@ -2335,9 +3435,9 @@
     733
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-upload-many-light-ic@4254505.png",
+   "file": "S17-settings-upload-many-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     1374
@@ -2380,9 +3480,9 @@
     706
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-upload-many-1280x800-dark-ic@4254505.png",
+   "file": "S17-settings-upload-many-1280x800-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     1324
@@ -2425,9 +3525,9 @@
     706
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-upload-many-1280x800-light-ic@4254505.png",
+   "file": "S17-settings-upload-many-1280x800-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     1324
@@ -2470,9 +3570,9 @@
     440
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-upload-many-440-dark-ic@4254505.png",
+   "file": "S17-settings-upload-many-440-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     825
@@ -2515,9 +3615,9 @@
     440
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-upload-many-440-light-ic@4254505.png",
+   "file": "S17-settings-upload-many-440-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     825
@@ -2560,9 +3660,9 @@
     616
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-upload-many-640-dark-ic@4254505.png",
+   "file": "S17-settings-upload-many-640-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     1155
@@ -2605,9 +3705,9 @@
     616
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-upload-many-640-light-ic@4254505.png",
+   "file": "S17-settings-upload-many-640-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     1155
@@ -2650,9 +3750,9 @@
     633
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S18-hotkeys-via-app-menu-dark-ic@4254505.png",
+   "file": "S18-hotkeys-via-app-menu-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     1187
@@ -2696,9 +3796,9 @@
     633
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S18-hotkeys-via-app-menu-light-ic@4254505.png",
+   "file": "S18-hotkeys-via-app-menu-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     1187
@@ -2734,20 +3834,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     1520
    ],
    "pointSize": [
-    737,
+    657,
     760
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-edit-form-dark-ic@4254505.png",
+   "file": "S19-destinations-edit-form-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1237
+    1388
    ],
    "downscaled": true,
    "layout": null,
@@ -2778,20 +3878,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     1520
    ],
    "pointSize": [
-    737,
+    657,
     760
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-edit-form-light-ic@4254505.png",
+   "file": "S19-destinations-edit-form-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1237
+    1388
    ],
    "downscaled": true,
    "layout": null,
@@ -2822,20 +3922,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     1584
    ],
    "pointSize": [
-    737,
+    657,
     792
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S19-destinations-edit-form-in-context-dark-ic@4254505.png",
+   "file": "S19-destinations-edit-form-in-context-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1290
+    1447
    ],
    "downscaled": true,
    "layout": null,
@@ -2866,20 +3966,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     1584
    ],
    "pointSize": [
-    737,
+    657,
     792
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S19-destinations-edit-form-in-context-light-ic@4254505.png",
+   "file": "S19-destinations-edit-form-in-context-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1290
+    1447
    ],
    "downscaled": true,
    "layout": null,
@@ -2910,20 +4010,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     1520
    ],
    "pointSize": [
-    737,
+    657,
     760
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-form-focus-dark-ic@4254505.png",
+   "file": "S19-destinations-form-focus-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1237
+    1388
    ],
    "downscaled": true,
    "layout": null,
@@ -2954,20 +4054,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     1520
    ],
    "pointSize": [
-    737,
+    657,
     760
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-form-focus-light-ic@4254505.png",
+   "file": "S19-destinations-form-focus-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1237
+    1388
    ],
    "downscaled": true,
    "layout": null,
@@ -2998,20 +4098,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     1584
    ],
    "pointSize": [
-    737,
+    657,
     792
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S19-destinations-form-focus-in-context-dark-ic@4254505.png",
+   "file": "S19-destinations-form-focus-in-context-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1290
+    1447
    ],
    "downscaled": true,
    "layout": null,
@@ -3042,20 +4142,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     1584
    ],
    "pointSize": [
-    737,
+    657,
     792
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S19-destinations-form-focus-in-context-light-ic@4254505.png",
+   "file": "S19-destinations-form-focus-in-context-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1290
+    1447
    ],
    "downscaled": true,
    "layout": null,
@@ -3086,20 +4186,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
-    1218
+    1314,
+    1260
    ],
    "pointSize": [
-    737,
-    609
+    657,
+    630
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-form-ftp-dark-ic@4254505.png",
+   "file": "S19-destinations-form-ftp-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    992
+    1151
    ],
    "downscaled": true,
    "layout": null,
@@ -3131,20 +4231,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
-    1218
+    1314,
+    1260
    ],
    "pointSize": [
-    737,
-    609
+    657,
+    630
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-form-ftp-light-ic@4254505.png",
+   "file": "S19-destinations-form-ftp-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    992
+    1151
    ],
    "downscaled": true,
    "layout": null,
@@ -3176,20 +4276,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
-    1282
+    1314,
+    1324
    ],
    "pointSize": [
-    737,
-    641
+    657,
+    662
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S19-destinations-form-ftp-in-context-dark-ic@4254505.png",
+   "file": "S19-destinations-form-ftp-in-context-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1044
+    1209
    ],
    "downscaled": true,
    "layout": null,
@@ -3221,20 +4321,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
-    1282
+    1314,
+    1324
    ],
    "pointSize": [
-    737,
-    641
+    657,
+    662
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S19-destinations-form-ftp-in-context-light-ic@4254505.png",
+   "file": "S19-destinations-form-ftp-in-context-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1044
+    1209
    ],
    "downscaled": true,
    "layout": null,
@@ -3266,20 +4366,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     1218
    ],
    "pointSize": [
-    737,
+    657,
     609
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-form-ftps-dark-ic@4254505.png",
+   "file": "S19-destinations-form-ftps-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    992
+    1112
    ],
    "downscaled": true,
    "layout": null,
@@ -3311,20 +4411,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     1218
    ],
    "pointSize": [
-    737,
+    657,
     609
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-form-ftps-light-ic@4254505.png",
+   "file": "S19-destinations-form-ftps-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    992
+    1112
    ],
    "downscaled": true,
    "layout": null,
@@ -3356,20 +4456,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     1282
    ],
    "pointSize": [
-    737,
+    657,
     641
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S19-destinations-form-ftps-in-context-dark-ic@4254505.png",
+   "file": "S19-destinations-form-ftps-in-context-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1044
+    1171
    ],
    "downscaled": true,
    "layout": null,
@@ -3401,20 +4501,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     1282
    ],
    "pointSize": [
-    737,
+    657,
     641
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S19-destinations-form-ftps-in-context-light-ic@4254505.png",
+   "file": "S19-destinations-form-ftps-in-context-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1044
+    1171
    ],
    "downscaled": true,
    "layout": null,
@@ -3446,20 +4546,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     1520
    ],
    "pointSize": [
-    737,
+    657,
     760
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-form-s3-dark-ic@4254505.png",
+   "file": "S19-destinations-form-s3-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1237
+    1388
    ],
    "downscaled": true,
    "layout": null,
@@ -3491,20 +4591,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     1520
    ],
    "pointSize": [
-    737,
+    657,
     760
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-form-s3-light-ic@4254505.png",
+   "file": "S19-destinations-form-s3-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1237
+    1388
    ],
    "downscaled": true,
    "layout": null,
@@ -3536,20 +4636,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     1584
    ],
    "pointSize": [
-    737,
+    657,
     792
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S19-destinations-form-s3-in-context-dark-ic@4254505.png",
+   "file": "S19-destinations-form-s3-in-context-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1290
+    1447
    ],
    "downscaled": true,
    "layout": null,
@@ -3581,20 +4681,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     1584
    ],
    "pointSize": [
-    737,
+    657,
     792
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S19-destinations-form-s3-in-context-light-ic@4254505.png",
+   "file": "S19-destinations-form-s3-in-context-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1290
+    1447
    ],
    "downscaled": true,
    "layout": null,
@@ -3626,20 +4726,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     1356
    ],
    "pointSize": [
-    737,
+    657,
     678
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-form-sftp-dark-ic@4254505.png",
+   "file": "S19-destinations-form-sftp-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1104
+    1238
    ],
    "downscaled": true,
    "layout": null,
@@ -3671,20 +4771,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     1356
    ],
    "pointSize": [
-    737,
+    657,
     678
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-form-sftp-light-ic@4254505.png",
+   "file": "S19-destinations-form-sftp-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1104
+    1238
    ],
    "downscaled": true,
    "layout": null,
@@ -3716,20 +4816,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     1420
    ],
    "pointSize": [
-    737,
+    657,
     710
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S19-destinations-form-sftp-in-context-dark-ic@4254505.png",
+   "file": "S19-destinations-form-sftp-in-context-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1156
+    1297
    ],
    "downscaled": true,
    "layout": null,
@@ -3761,20 +4861,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     1420
    ],
    "pointSize": [
-    737,
+    657,
     710
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S19-destinations-form-sftp-in-context-light-ic@4254505.png",
+   "file": "S19-destinations-form-sftp-in-context-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1156
+    1297
    ],
    "downscaled": true,
    "layout": null,
@@ -3806,20 +4906,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     1260
    ],
    "pointSize": [
-    737,
+    657,
     630
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-form-webdav-dark-ic@4254505.png",
+   "file": "S19-destinations-form-webdav-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1026
+    1151
    ],
    "downscaled": true,
    "layout": null,
@@ -3851,20 +4951,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     1260
    ],
    "pointSize": [
-    737,
+    657,
     630
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-form-webdav-light-ic@4254505.png",
+   "file": "S19-destinations-form-webdav-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1026
+    1151
    ],
    "downscaled": true,
    "layout": null,
@@ -3896,20 +4996,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     1324
    ],
    "pointSize": [
-    737,
+    657,
     662
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S19-destinations-form-webdav-in-context-dark-ic@4254505.png",
+   "file": "S19-destinations-form-webdav-in-context-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1078
+    1209
    ],
    "downscaled": true,
    "layout": null,
@@ -3941,20 +5041,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     1324
    ],
    "pointSize": [
-    737,
+    657,
     662
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S19-destinations-form-webdav-in-context-light-ic@4254505.png",
+   "file": "S19-destinations-form-webdav-in-context-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1078
+    1209
    ],
    "downscaled": true,
    "layout": null,
@@ -3994,9 +5094,9 @@
     760
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-from-settings-640-dark-ic@4254505.png",
+   "file": "S19-destinations-from-settings-640-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     1388
@@ -4039,9 +5139,9 @@
     760
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-from-settings-640-light-ic@4254505.png",
+   "file": "S19-destinations-from-settings-640-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     1388
@@ -4084,9 +5184,9 @@
     792
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S19-destinations-from-settings-640-in-context-dark-ic@4254505.png",
+   "file": "S19-destinations-from-settings-640-in-context-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     1447
@@ -4129,9 +5229,9 @@
     792
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S19-destinations-from-settings-640-in-context-light-ic@4254505.png",
+   "file": "S19-destinations-from-settings-640-in-context-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     1447
@@ -4166,20 +5266,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     760
    ],
    "pointSize": [
-    737,
+    657,
     380
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-short-screen-dark-ic@4254505.png",
+   "file": "S19-destinations-short-screen-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    619
+    694
    ],
    "downscaled": true,
    "layout": null,
@@ -4211,20 +5311,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     760
    ],
    "pointSize": [
-    737,
+    657,
     380
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-short-screen-light-ic@4254505.png",
+   "file": "S19-destinations-short-screen-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    619
+    694
    ],
    "downscaled": true,
    "layout": null,
@@ -4256,20 +5356,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     896
    ],
    "pointSize": [
-    737,
+    657,
     448
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S19-destinations-short-screen-in-context-dark-ic@4254505.png",
+   "file": "S19-destinations-short-screen-in-context-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    729
+    818
    ],
    "downscaled": true,
    "layout": null,
@@ -4301,20 +5401,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     896
    ],
    "pointSize": [
-    737,
+    657,
     448
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S19-destinations-short-screen-in-context-light-ic@4254505.png",
+   "file": "S19-destinations-short-screen-in-context-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    729
+    818
    ],
    "downscaled": true,
    "layout": null,
@@ -4346,20 +5446,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     1520
    ],
    "pointSize": [
-    737,
+    657,
     760
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-test-connected-dark-ic@4254505.png",
+   "file": "S19-destinations-test-connected-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1237
+    1388
    ],
    "downscaled": true,
    "layout": null,
@@ -4391,20 +5491,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     1520
    ],
    "pointSize": [
-    737,
+    657,
     760
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-test-connected-light-ic@4254505.png",
+   "file": "S19-destinations-test-connected-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1237
+    1388
    ],
    "downscaled": true,
    "layout": null,
@@ -4436,20 +5536,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     1584
    ],
    "pointSize": [
-    737,
+    657,
     792
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S19-destinations-test-connected-in-context-dark-ic@4254505.png",
+   "file": "S19-destinations-test-connected-in-context-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1290
+    1447
    ],
    "downscaled": true,
    "layout": null,
@@ -4481,20 +5581,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     1584
    ],
    "pointSize": [
-    737,
+    657,
     792
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S19-destinations-test-connected-in-context-light-ic@4254505.png",
+   "file": "S19-destinations-test-connected-in-context-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1290
+    1447
    ],
    "downscaled": true,
    "layout": null,
@@ -4526,20 +5626,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     1520
    ],
    "pointSize": [
-    737,
+    657,
     760
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-test-error-dark-ic@4254505.png",
+   "file": "S19-destinations-test-error-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1237
+    1388
    ],
    "downscaled": true,
    "layout": null,
@@ -4571,20 +5671,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     1520
    ],
    "pointSize": [
-    737,
+    657,
     760
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-test-error-light-ic@4254505.png",
+   "file": "S19-destinations-test-error-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1237
+    1388
    ],
    "downscaled": true,
    "layout": null,
@@ -4616,20 +5716,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     1584
    ],
    "pointSize": [
-    737,
+    657,
     792
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S19-destinations-test-error-in-context-dark-ic@4254505.png",
+   "file": "S19-destinations-test-error-in-context-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1290
+    1447
    ],
    "downscaled": true,
    "layout": null,
@@ -4661,20 +5761,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
+    1314,
     1584
    ],
    "pointSize": [
-    737,
+    657,
     792
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S19-destinations-test-error-in-context-light-ic@4254505.png",
+   "file": "S19-destinations-test-error-in-context-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1290
+    1447
    ],
    "downscaled": true,
    "layout": null,
@@ -4706,20 +5806,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
-    1224
+    1314,
+    1272
    ],
    "pointSize": [
-    737,
-    612
+    657,
+    636
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-test-error-webdav-dark-ic@4254505.png",
+   "file": "S19-destinations-test-error-webdav-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    996
+    1162
    ],
    "downscaled": true,
    "layout": null,
@@ -4751,20 +5851,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
-    1224
+    1314,
+    1272
    ],
    "pointSize": [
-    737,
-    612
+    657,
+    636
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-test-error-webdav-light-ic@4254505.png",
+   "file": "S19-destinations-test-error-webdav-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    996
+    1162
    ],
    "downscaled": true,
    "layout": null,
@@ -4796,20 +5896,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
-    1288
+    1314,
+    1336
    ],
    "pointSize": [
-    737,
-    644
+    657,
+    668
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S19-destinations-test-error-webdav-in-context-dark-ic@4254505.png",
+   "file": "S19-destinations-test-error-webdav-in-context-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1049
+    1220
    ],
    "downscaled": true,
    "layout": null,
@@ -4841,20 +5941,20 @@
     1179
    ],
    "pixelSize": [
-    1474,
-    1288
+    1314,
+    1336
    ],
    "pointSize": [
-    737,
-    644
+    657,
+    668
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S19-destinations-test-error-webdav-in-context-light-ic@4254505.png",
+   "file": "S19-destinations-test-error-webdav-in-context-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
-    1049
+    1220
    ],
    "downscaled": true,
    "layout": null,
@@ -4894,9 +5994,9 @@
     285
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-settings-upload-empty-dark-ic@4254505.png",
+   "file": "S19-settings-upload-empty-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     534
@@ -4939,9 +6039,9 @@
     285
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-settings-upload-empty-light-ic@4254505.png",
+   "file": "S19-settings-upload-empty-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     534
@@ -4984,9 +6084,9 @@
     448
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-settings-upload-list-dark-ic@4254505.png",
+   "file": "S19-settings-upload-list-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     840
@@ -5028,9 +6128,9 @@
     448
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-settings-upload-list-light-ic@4254505.png",
+   "file": "S19-settings-upload-list-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     840
@@ -5072,9 +6172,9 @@
     850
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-1120x850-selected-dark-ic@4254505.png",
+   "file": "S20-history-1120x850-selected-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     911
@@ -5117,9 +6217,9 @@
     850
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-1120x850-selected-light-ic@4254505.png",
+   "file": "S20-history-1120x850-selected-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     911
@@ -5162,9 +6262,9 @@
     800
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-1280x800-selected-dark-ic@4254505.png",
+   "file": "S20-history-1280x800-selected-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     750
@@ -5207,9 +6307,9 @@
     800
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-1280x800-selected-light-ic@4254505.png",
+   "file": "S20-history-1280x800-selected-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     750
@@ -5252,9 +6352,9 @@
     600
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-880x600-none-dark-ic@4254505.png",
+   "file": "S20-history-880x600-none-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     818
@@ -5297,9 +6397,9 @@
     600
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-880x600-none-light-ic@4254505.png",
+   "file": "S20-history-880x600-none-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     818
@@ -5342,9 +6442,9 @@
     635
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-880x600-selected-dark-ic@4254505.png",
+   "file": "S20-history-880x600-selected-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     866
@@ -5387,9 +6487,9 @@
     635
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-880x600-selected-light-ic@4254505.png",
+   "file": "S20-history-880x600-selected-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     866
@@ -5432,9 +6532,9 @@
     720
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-action-focus-dark-ic@4254505.png",
+   "file": "S20-history-action-focus-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     864
@@ -5477,9 +6577,9 @@
     720
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-action-focus-light-ic@4254505.png",
+   "file": "S20-history-action-focus-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     864
@@ -5522,9 +6622,9 @@
     720
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-action-hover-dark-ic@4254505.png",
+   "file": "S20-history-action-hover-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     864
@@ -5567,9 +6667,9 @@
     720
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-action-hover-light-ic@4254505.png",
+   "file": "S20-history-action-hover-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     864
@@ -5612,9 +6712,9 @@
     720
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-action-pressed-dark-ic@4254505.png",
+   "file": "S20-history-action-pressed-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     864
@@ -5657,9 +6757,9 @@
     720
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-action-pressed-light-ic@4254505.png",
+   "file": "S20-history-action-pressed-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     864
@@ -5702,9 +6802,9 @@
     720
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-empty-dark-ic@4254505.png",
+   "file": "S20-history-empty-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     864
@@ -5747,9 +6847,9 @@
     720
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-empty-light-ic@4254505.png",
+   "file": "S20-history-empty-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     864
@@ -5792,9 +6892,9 @@
     697
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-link-copied-dark-ic@4254505.png",
+   "file": "S20-history-link-copied-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     950
@@ -5837,9 +6937,9 @@
     697
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-link-copied-light-ic@4254505.png",
+   "file": "S20-history-link-copied-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     950
@@ -5882,9 +6982,9 @@
     600
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-no-match-dark-ic@4254505.png",
+   "file": "S20-history-no-match-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     818
@@ -5926,9 +7026,9 @@
     600
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-no-match-light-ic@4254505.png",
+   "file": "S20-history-no-match-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     818
@@ -5970,9 +7070,9 @@
     697
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-no-match-footer-dark-ic@4254505.png",
+   "file": "S20-history-no-match-footer-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     950
@@ -6015,9 +7115,9 @@
     697
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-no-match-footer-light-ic@4254505.png",
+   "file": "S20-history-no-match-footer-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     950
@@ -6060,9 +7160,9 @@
     720
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-populated-dark-ic@4254505.png",
+   "file": "S20-history-populated-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     864
@@ -6105,9 +7205,9 @@
     720
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-populated-light-ic@4254505.png",
+   "file": "S20-history-populated-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     864
@@ -6150,9 +7250,9 @@
     720
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-selected-dark-ic@4254505.png",
+   "file": "S20-history-selected-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     864
@@ -6194,9 +7294,9 @@
     720
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-selected-light-ic@4254505.png",
+   "file": "S20-history-selected-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     864
@@ -6238,9 +7338,9 @@
     720
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-tile-hover-dark-ic@4254505.png",
+   "file": "S20-history-tile-hover-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     864
@@ -6282,9 +7382,9 @@
     720
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-tile-hover-light-ic@4254505.png",
+   "file": "S20-history-tile-hover-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     864
@@ -6307,10 +7407,3332 @@
    ]
   },
   {
+   "id": "S21",
+   "slug": "publish-cancelled-w1280",
+   "surface": "publish cancelled",
+   "state": "Upload cancelled in the status line after Cancel, kept for ten seconds, at w1280",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-cancelled-w1280-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-cancelled-w1280-dark-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls",
+    "UploadStatus.swift|enum UploadNotice"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-cancelled-w1280",
+   "surface": "publish cancelled",
+   "state": "Upload cancelled in the status line after Cancel, kept for ten seconds, at w1280",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-cancelled-w1280-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-cancelled-w1280-light-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls",
+    "UploadStatus.swift|enum UploadNotice"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-cancelled-w1440",
+   "surface": "publish cancelled",
+   "state": "Upload cancelled in the status line after Cancel, kept for ten seconds, at w1440",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-cancelled-w1440-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-cancelled-w1440-dark-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls",
+    "UploadStatus.swift|enum UploadNotice"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-cancelled-w1440",
+   "surface": "publish cancelled",
+   "state": "Upload cancelled in the status line after Cancel, kept for ten seconds, at w1440",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-cancelled-w1440-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-cancelled-w1440-light-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls",
+    "UploadStatus.swift|enum UploadNotice"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-cancelled-w980",
+   "surface": "publish cancelled",
+   "state": "Upload cancelled in the status line after Cancel, kept for ten seconds, at w980",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-cancelled-w980-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-cancelled-w980-dark-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls",
+    "UploadStatus.swift|enum UploadNotice"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-cancelled-w980",
+   "surface": "publish cancelled",
+   "state": "Upload cancelled in the status line after Cancel, kept for ten seconds, at w980",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-cancelled-w980-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-cancelled-w980-light-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls",
+    "UploadStatus.swift|enum UploadNotice"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-details-w1280",
+   "surface": "publish error",
+   "state": "the Details… sheet with the whole error (no second Error: under the title), at w1280",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S21-publish-error-details-w1280-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App+Upload.swift|func showUploadErrorDetails"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-details-w1280",
+   "surface": "publish error",
+   "state": "the Details… sheet with the whole error (no second Error: under the title), at w1280",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S21-publish-error-details-w1280-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App+Upload.swift|func showUploadErrorDetails"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-details-w1440",
+   "surface": "publish error",
+   "state": "the Details… sheet with the whole error (no second Error: under the title), at w1440",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S21-publish-error-details-w1440-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App+Upload.swift|func showUploadErrorDetails"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-details-w1440",
+   "surface": "publish error",
+   "state": "the Details… sheet with the whole error (no second Error: under the title), at w1440",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S21-publish-error-details-w1440-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App+Upload.swift|func showUploadErrorDetails"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-details-w980",
+   "surface": "publish error",
+   "state": "the Details… sheet with the whole error (no second Error: under the title), at w980",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S21-publish-error-details-w980-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App+Upload.swift|func showUploadErrorDetails"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-details-w980",
+   "surface": "publish error",
+   "state": "the Details… sheet with the whole error (no second Error: under the title), at w980",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S21-publish-error-details-w980-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App+Upload.swift|func showUploadErrorDetails"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-footer-w1280",
+   "surface": "publish error",
+   "state": "footer crop with the inline error, Retry and Details, at w1280",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    120
+   ],
+   "pointSize": [
+    1280,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-error-footer-w1280-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    56
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-error-footer-w1280-dark-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-footer-w1280",
+   "surface": "publish error",
+   "state": "footer crop with the inline error, Retry and Details, at w1280",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    120
+   ],
+   "pointSize": [
+    1280,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-error-footer-w1280-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    56
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-error-footer-w1280-light-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-footer-w1440",
+   "surface": "publish error",
+   "state": "footer crop with the inline error, Retry and Details, at w1440",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    120
+   ],
+   "pointSize": [
+    1440,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-error-footer-w1440-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    50
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-error-footer-w1440-dark-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-footer-w1440",
+   "surface": "publish error",
+   "state": "footer crop with the inline error, Retry and Details, at w1440",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    120
+   ],
+   "pointSize": [
+    1440,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-error-footer-w1440-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    50
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-error-footer-w1440-light-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-footer-w980",
+   "surface": "publish error",
+   "state": "footer crop with the inline error, Retry and Details, at w980",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-error-footer-w980-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-error-footer-w980-dark-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-footer-w980",
+   "surface": "publish error",
+   "state": "footer crop with the inline error, Retry and Details, at w980",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-error-footer-w980-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-error-footer-w980-light-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-w1280",
+   "surface": "publish error",
+   "state": "inline Error: with the Retry and Details icon buttons on their plate after a stubbed failed upload, at w1280",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-error-w1280-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-error-w1280-dark-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-w1280",
+   "surface": "publish error",
+   "state": "inline Error: with the Retry and Details icon buttons on their plate after a stubbed failed upload, at w1280",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-error-w1280-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-error-w1280-light-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-w1440",
+   "surface": "publish error",
+   "state": "inline Error: with the Retry and Details icon buttons on their plate after a stubbed failed upload, at w1440",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-error-w1440-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-error-w1440-dark-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-w1440",
+   "surface": "publish error",
+   "state": "inline Error: with the Retry and Details icon buttons on their plate after a stubbed failed upload, at w1440",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-error-w1440-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-error-w1440-light-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-w980",
+   "surface": "publish error",
+   "state": "inline Error: with the Retry and Details icon buttons on their plate after a stubbed failed upload, at w980",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-error-w980-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-error-w980-dark-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-error-w980",
+   "surface": "publish error",
+   "state": "inline Error: with the Retry and Details icon buttons on their plate after a stubbed failed upload, at w980",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-error-w980-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-error-w980-light-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-progress-footer-w1280",
+   "surface": "publish progress",
+   "state": "footer crop during the upload, at w1280",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    120
+   ],
+   "pointSize": [
+    1280,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-progress-footer-w1280-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    56
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-progress-footer-w1280-dark-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-progress-footer-w1280",
+   "surface": "publish progress",
+   "state": "footer crop during the upload, at w1280",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    120
+   ],
+   "pointSize": [
+    1280,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-progress-footer-w1280-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    56
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-progress-footer-w1280-light-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-progress-footer-w1440",
+   "surface": "publish progress",
+   "state": "footer crop during the upload, at w1440",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    120
+   ],
+   "pointSize": [
+    1440,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-progress-footer-w1440-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    50
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-progress-footer-w1440-dark-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-progress-footer-w1440",
+   "surface": "publish progress",
+   "state": "footer crop during the upload, at w1440",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    120
+   ],
+   "pointSize": [
+    1440,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-progress-footer-w1440-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    50
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-progress-footer-w1440-light-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-progress-footer-w980",
+   "surface": "publish progress",
+   "state": "footer crop during the upload, at w980",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-progress-footer-w980-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-progress-footer-w980-dark-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-progress-footer-w980",
+   "surface": "publish progress",
+   "state": "footer crop during the upload, at w980",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-progress-footer-w980-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-progress-footer-w980-light-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-progress-w1280",
+   "surface": "publish progress",
+   "state": "Uploading <name>…: 20 pt spinner, truncating status, Cancel on its plate; the Original size checkbox only where the slot holds it, at w1280",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-progress-w1280-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-progress-w1280-dark-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-progress-w1280",
+   "surface": "publish progress",
+   "state": "Uploading <name>…: 20 pt spinner, truncating status, Cancel on its plate; the Original size checkbox only where the slot holds it, at w1280",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-progress-w1280-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-progress-w1280-light-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-progress-w1440",
+   "surface": "publish progress",
+   "state": "Uploading <name>…: 20 pt spinner, truncating status, Cancel on its plate; the Original size checkbox only where the slot holds it, at w1440",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-progress-w1440-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-progress-w1440-dark-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-progress-w1440",
+   "surface": "publish progress",
+   "state": "Uploading <name>…: 20 pt spinner, truncating status, Cancel on its plate; the Original size checkbox only where the slot holds it, at w1440",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-progress-w1440-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-progress-w1440-light-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-progress-w980",
+   "surface": "publish progress",
+   "state": "Uploading <name>…: 20 pt spinner, truncating status, Cancel on its plate; the Original size checkbox only where the slot holds it, at w980",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-progress-w980-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-progress-w980-dark-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-progress-w980",
+   "surface": "publish progress",
+   "state": "Uploading <name>…: 20 pt spinner, truncating status, Cancel on its plate; the Original size checkbox only where the slot holds it, at w980",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-progress-w980-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-progress-w980-light-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-retrying-w1280",
+   "surface": "publish retry",
+   "state": "Retrying <name>… with the spinner and Cancel, after Retry from a failed upload, at w1280",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-retrying-w1280-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-retrying-w1280-dark-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-retrying-w1280",
+   "surface": "publish retry",
+   "state": "Retrying <name>… with the spinner and Cancel, after Retry from a failed upload, at w1280",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-retrying-w1280-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-retrying-w1280-light-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-retrying-w1440",
+   "surface": "publish retry",
+   "state": "Retrying <name>… with the spinner and Cancel, after Retry from a failed upload, at w1440",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-retrying-w1440-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-retrying-w1440-dark-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-retrying-w1440",
+   "surface": "publish retry",
+   "state": "Retrying <name>… with the spinner and Cancel, after Retry from a failed upload, at w1440",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-retrying-w1440-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-retrying-w1440-light-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-retrying-w980",
+   "surface": "publish retry",
+   "state": "Retrying <name>… with the spinner and Cancel, after Retry from a failed upload, at w980",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-retrying-w980-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-retrying-w980-dark-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-retrying-w980",
+   "surface": "publish retry",
+   "state": "Retrying <name>… with the spinner and Cancel, after Retry from a failed upload, at w980",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-retrying-w980-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-retrying-w980-light-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-success-footer-w1280",
+   "surface": "publish success",
+   "state": "footer crop with Link copied · the link, Open and Copy, at w1280",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    120
+   ],
+   "pointSize": [
+    1280,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-success-footer-w1280-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    56
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-success-footer-w1280-dark-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-success-footer-w1280",
+   "surface": "publish success",
+   "state": "footer crop with Link copied · the link, Open and Copy, at w1280",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    120
+   ],
+   "pointSize": [
+    1280,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-success-footer-w1280-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    56
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-success-footer-w1280-light-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-success-footer-w1440",
+   "surface": "publish success",
+   "state": "footer crop with Link copied · the link, Open and Copy, at w1440",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    120
+   ],
+   "pointSize": [
+    1440,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-success-footer-w1440-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    50
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-success-footer-w1440-dark-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-success-footer-w1440",
+   "surface": "publish success",
+   "state": "footer crop with Link copied · the link, Open and Copy, at w1440",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    120
+   ],
+   "pointSize": [
+    1440,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-success-footer-w1440-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    50
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-success-footer-w1440-light-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-success-footer-w980",
+   "surface": "publish success",
+   "state": "footer crop with Link copied · the link, Open and Copy, at w980",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-success-footer-w980-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-success-footer-w980-dark-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-success-footer-w980",
+   "surface": "publish success",
+   "state": "footer crop with Link copied · the link, Open and Copy, at w980",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    120
+   ],
+   "pointSize": [
+    980,
+    60
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution) + crop",
+   "file": "S21-publish-success-footer-w980-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    73
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-success-footer-w980-light-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-success-w1280",
+   "surface": "publish success",
+   "state": "Link copied · the link itself, then Open and Copy on their plate, after a stubbed upload, at w1280",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-success-w1280-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-success-w1280-dark-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-success-w1280",
+   "surface": "publish success",
+   "state": "Link copied · the link itself, then Open and Copy on their plate, after a stubbed upload, at w1280",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1280,
+    800
+   ],
+   "pixelSize": [
+    2560,
+    1600
+   ],
+   "pointSize": [
+    1280,
+    800
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-success-w1280-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-success-w1280-light-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-success-w1440",
+   "surface": "publish success",
+   "state": "Link copied · the link itself, then Open and Copy on their plate, after a stubbed upload, at w1440",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-success-w1440-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-success-w1440-dark-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-success-w1440",
+   "surface": "publish success",
+   "state": "Link copied · the link itself, then Open and Copy on their plate, after a stubbed upload, at w1440",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1440,
+    900
+   ],
+   "pixelSize": [
+    2880,
+    1800
+   ],
+   "pointSize": [
+    1440,
+    900
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-success-w1440-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    750
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-success-w1440-light-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-success-w980",
+   "surface": "publish success",
+   "state": "Link copied · the link itself, then Open and Copy on their plate, after a stubbed upload, at w980",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-success-w980-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-success-w980-dark-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "publish-success-w980",
+   "surface": "publish success",
+   "state": "Link copied · the link itself, then Open and Copy on their plate, after a stubbed upload, at w980",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-publish-success-w980-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-publish-success-w980-light-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "UploadStatus.swift|enum UploadState",
+    "App+Upload.swift|func uploadStateChanged",
+    "App.swift|func beginUpload",
+    "ModernEditorChrome.swift|let uploadControls"
+   ]
+  },
+  {
+   "id": "S21",
+   "slug": "upload-menu-busy",
+   "surface": "publish progress",
+   "state": "destination choices while an upload runs (Cancel Upload offered) (glass panel)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S21-upload-menu-busy-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|Cancel Upload"
+   ],
+   "glassPanel": {
+    "chosenIndexes": [
+     1
+    ],
+    "containmentDerived": "parent",
+    "containmentDerivedFrom": "the frames: panel width <= visible parent width",
+    "containmentReported": "parent",
+    "disabledRows": [],
+    "faceTitles": [],
+    "firstResponder": "GlassChoiceButton",
+    "focusedRow": 1,
+    "glassContainerCount": 1,
+    "hostScrolls": false,
+    "identifier": "Upload",
+    "isKey": true,
+    "kind": "panel",
+    "labelMetrics": [
+     {
+      "fits": true,
+      "fittingSize": [
+       132.5,
+       24
+      ],
+      "frameSize": [
+       207,
+       24
+      ],
+      "kind": "choice title",
+      "textWidth": 128.32134246826172,
+      "title": "Cancel Upload"
+     },
+     {
+      "fits": true,
+      "fittingSize": [
+       112,
+       24
+      ],
+      "frameSize": [
+       207,
+       24
+      ],
+      "kind": "choice title",
+      "textWidth": 107.76878830976784,
+      "title": "Example S3"
+     },
+     {
+      "fits": true,
+      "fittingSize": [
+       130.5,
+       24
+      ],
+      "frameSize": [
+       207,
+       24
+      ],
+      "kind": "choice title",
+      "textWidth": 126.16950988769531,
+      "title": "Example SFTP"
+     },
+     {
+      "fits": true,
+      "fittingSize": [
+       161,
+       24
+      ],
+      "frameSize": [
+       207,
+       24
+      ],
+      "kind": "choice title",
+      "textWidth": 156.85335159301758,
+      "title": "Example WebDAV"
+     },
+     {
+      "fits": true,
+      "fittingSize": [
+       195,
+       24
+      ],
+      "frameSize": [
+       207,
+       24
+      ],
+      "kind": "choice title",
+      "textWidth": 190.94003677368164,
+      "title": "Destination Settings…"
+     },
+     {
+      "fits": true,
+      "fittingSize": [
+       180,
+       24
+      ],
+      "frameSize": [
+       207,
+       24
+      ],
+      "kind": "choice title",
+      "textWidth": 175.97291946411133,
+      "title": "Share with macOS…"
+     }
+    ],
+    "minFontSize": 20,
+    "minFontSource": "GlassChoiceButton 'Cancel Upload' id=choice.0",
+    "nestedGlassCount": 0,
+    "openerFrame": [
+     916,
+     662,
+     48,
+     36
+    ],
+    "panelFrame": [
+     692,
+     704,
+     272,
+     262
+    ],
+    "parentClass": "NSWindow",
+    "parentContentFrame": [
+     0,
+     650,
+     980,
+     608
+    ],
+    "parentFrame": [
+     0,
+     650,
+     980,
+     640
+    ],
+    "parentVisibleFrame": [
+     0,
+     650,
+     980,
+     640
+    ],
+    "placementEdge": "NSRectEdge(rawValue: 3)",
+    "plateCount": 3,
+    "rowClasses": [
+     "GlassChoiceButton",
+     "GlassChoiceButton",
+     "GlassChoiceButton",
+     "GlassChoiceButton",
+     "GlassChoiceButton",
+     "GlassChoiceButton"
+    ],
+    "rowTitles": [
+     "Cancel Upload",
+     "Example S3",
+     "Example SFTP",
+     "Example WebDAV",
+     "Destination Settings…",
+     "Share with macOS…"
+    ],
+    "screenVisibleFrame": [
+     0,
+     93,
+     2056,
+     1197
+    ],
+    "totalRows": 6,
+    "truncatedRows": [],
+    "unmeasuredText": [
+     "SegmentedToggle segments (the footer PNG | JPG toggle)",
+     "the Size panel readout and header",
+     "colour swatch glyphs and the Custom colour chip image",
+     "ResizeAnchorGrid cell dots and ring (no text)",
+     "plain NSTextField labels, captions, status and the Resize dimension fields",
+     "Size preset stroke glyphs (no text)",
+     "the Toolbox face (icon and chevron, no title)",
+     "menu-row header labels (GlassChoiceLabel)",
+     "tooltips and VoiceOver text"
+    ],
+    "variant": "rest",
+    "visibleRows": 6,
+    "windowIdentifier": "GlassChoicePanel.Upload"
+   }
+  },
+  {
+   "id": "S21",
+   "slug": "upload-menu-busy",
+   "surface": "publish progress",
+   "state": "destination choices while an upload runs (Cancel Upload offered) (glass panel)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
+   "file": "S21-upload-menu-busy-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|Cancel Upload"
+   ],
+   "glassPanel": {
+    "chosenIndexes": [
+     1
+    ],
+    "containmentDerived": "parent",
+    "containmentDerivedFrom": "the frames: panel width <= visible parent width",
+    "containmentReported": "parent",
+    "disabledRows": [],
+    "faceTitles": [],
+    "firstResponder": "GlassChoiceButton",
+    "focusedRow": 1,
+    "glassContainerCount": 1,
+    "hostScrolls": false,
+    "identifier": "Upload",
+    "isKey": true,
+    "kind": "panel",
+    "labelMetrics": [
+     {
+      "fits": true,
+      "fittingSize": [
+       132.5,
+       24
+      ],
+      "frameSize": [
+       207,
+       24
+      ],
+      "kind": "choice title",
+      "textWidth": 128.32134246826172,
+      "title": "Cancel Upload"
+     },
+     {
+      "fits": true,
+      "fittingSize": [
+       112,
+       24
+      ],
+      "frameSize": [
+       207,
+       24
+      ],
+      "kind": "choice title",
+      "textWidth": 107.76878830976784,
+      "title": "Example S3"
+     },
+     {
+      "fits": true,
+      "fittingSize": [
+       130.5,
+       24
+      ],
+      "frameSize": [
+       207,
+       24
+      ],
+      "kind": "choice title",
+      "textWidth": 126.16950988769531,
+      "title": "Example SFTP"
+     },
+     {
+      "fits": true,
+      "fittingSize": [
+       161,
+       24
+      ],
+      "frameSize": [
+       207,
+       24
+      ],
+      "kind": "choice title",
+      "textWidth": 156.85335159301758,
+      "title": "Example WebDAV"
+     },
+     {
+      "fits": true,
+      "fittingSize": [
+       195,
+       24
+      ],
+      "frameSize": [
+       207,
+       24
+      ],
+      "kind": "choice title",
+      "textWidth": 190.94003677368164,
+      "title": "Destination Settings…"
+     },
+     {
+      "fits": true,
+      "fittingSize": [
+       180,
+       24
+      ],
+      "frameSize": [
+       207,
+       24
+      ],
+      "kind": "choice title",
+      "textWidth": 175.97291946411133,
+      "title": "Share with macOS…"
+     }
+    ],
+    "minFontSize": 20,
+    "minFontSource": "GlassChoiceButton 'Cancel Upload' id=choice.0",
+    "nestedGlassCount": 0,
+    "openerFrame": [
+     916,
+     662,
+     48,
+     36
+    ],
+    "panelFrame": [
+     692,
+     704,
+     272,
+     262
+    ],
+    "parentClass": "NSWindow",
+    "parentContentFrame": [
+     0,
+     650,
+     980,
+     608
+    ],
+    "parentFrame": [
+     0,
+     650,
+     980,
+     640
+    ],
+    "parentVisibleFrame": [
+     0,
+     650,
+     980,
+     640
+    ],
+    "placementEdge": "NSRectEdge(rawValue: 3)",
+    "plateCount": 3,
+    "rowClasses": [
+     "GlassChoiceButton",
+     "GlassChoiceButton",
+     "GlassChoiceButton",
+     "GlassChoiceButton",
+     "GlassChoiceButton",
+     "GlassChoiceButton"
+    ],
+    "rowTitles": [
+     "Cancel Upload",
+     "Example S3",
+     "Example SFTP",
+     "Example WebDAV",
+     "Destination Settings…",
+     "Share with macOS…"
+    ],
+    "screenVisibleFrame": [
+     0,
+     93,
+     2056,
+     1197
+    ],
+    "totalRows": 6,
+    "truncatedRows": [],
+    "unmeasuredText": [
+     "SegmentedToggle segments (the footer PNG | JPG toggle)",
+     "the Size panel readout and header",
+     "colour swatch glyphs and the Custom colour chip image",
+     "ResizeAnchorGrid cell dots and ring (no text)",
+     "plain NSTextField labels, captions, status and the Resize dimension fields",
+     "Size preset stroke glyphs (no text)",
+     "the Toolbox face (icon and chevron, no title)",
+     "menu-row header labels (GlassChoiceLabel)",
+     "tooltips and VoiceOver text"
+    ],
+    "variant": "rest",
+    "visibleRows": 6,
+    "windowIdentifier": "GlassChoicePanel.Upload"
+   }
+  },
+  {
+   "id": "S21",
+   "slug": "upload-menu-busy-dismissed",
+   "surface": "publish progress",
+   "state": "Upload panel dismissed with Escape",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-upload-menu-busy-dismissed-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-upload-menu-busy-dismissed-dark-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|Cancel Upload"
+   ],
+   "glassPanel": {
+    "chosenIndexes": [],
+    "disabledRows": [],
+    "dismissedBy": "synthesized Escape key event through NSWindow.sendEvent",
+    "faceTitles": [],
+    "firstResponder": "CommandButton",
+    "firstResponderIdentifier": "Optional(main.CommandButton)",
+    "firstResponderIsOpener": true,
+    "focusReturned": true,
+    "glassContainerCount": 0,
+    "hostRegistryClear": true,
+    "identifier": "Upload",
+    "isKey": true,
+    "kind": "panel",
+    "labelMetrics": [],
+    "nestedGlassCount": 0,
+    "openerClass": "CommandButton",
+    "openerHadFocus": true,
+    "panelFrame": [
+     0,
+     650,
+     980,
+     640
+    ],
+    "panelGone": true,
+    "plateCount": 0,
+    "rowClasses": [],
+    "rowTitles": [],
+    "truncatedRows": [],
+    "unmeasuredText": [
+     "SegmentedToggle segments (the footer PNG | JPG toggle)",
+     "the Size panel readout and header",
+     "colour swatch glyphs and the Custom colour chip image",
+     "ResizeAnchorGrid cell dots and ring (no text)",
+     "plain NSTextField labels, captions, status and the Resize dimension fields",
+     "Size preset stroke glyphs (no text)",
+     "the Toolbox face (icon and chevron, no title)",
+     "menu-row header labels (GlassChoiceLabel)",
+     "tooltips and VoiceOver text"
+    ],
+    "variant": "dismissed",
+    "windowIdentifier": ""
+   }
+  },
+  {
+   "id": "S21",
+   "slug": "upload-menu-busy-dismissed",
+   "surface": "publish progress",
+   "state": "Upload panel dismissed with Escape",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    980,
+    640
+   ],
+   "pixelSize": [
+    1960,
+    1280
+   ],
+   "pointSize": [
+    980,
+    640
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S21-upload-menu-busy-dismissed-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    784
+   ],
+   "downscaled": true,
+   "layout": "layout/S21-upload-menu-busy-dismissed-light-ic@cbd0186.json",
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|Cancel Upload"
+   ],
+   "glassPanel": {
+    "chosenIndexes": [],
+    "disabledRows": [],
+    "dismissedBy": "synthesized Escape key event through NSWindow.sendEvent",
+    "faceTitles": [],
+    "firstResponder": "CommandButton",
+    "firstResponderIdentifier": "Optional(main.CommandButton)",
+    "firstResponderIsOpener": true,
+    "focusReturned": true,
+    "glassContainerCount": 0,
+    "hostRegistryClear": true,
+    "identifier": "Upload",
+    "isKey": true,
+    "kind": "panel",
+    "labelMetrics": [],
+    "nestedGlassCount": 0,
+    "openerClass": "CommandButton",
+    "openerHadFocus": true,
+    "panelFrame": [
+     0,
+     650,
+     980,
+     640
+    ],
+    "panelGone": true,
+    "plateCount": 0,
+    "rowClasses": [],
+    "rowTitles": [],
+    "truncatedRows": [],
+    "unmeasuredText": [
+     "SegmentedToggle segments (the footer PNG | JPG toggle)",
+     "the Size panel readout and header",
+     "colour swatch glyphs and the Custom colour chip image",
+     "ResizeAnchorGrid cell dots and ring (no text)",
+     "plain NSTextField labels, captions, status and the Resize dimension fields",
+     "Size preset stroke glyphs (no text)",
+     "the Toolbox face (icon and chevron, no title)",
+     "menu-row header labels (GlassChoiceLabel)",
+     "tooltips and VoiceOver text"
+    ],
+    "variant": "dismissed",
+    "windowIdentifier": ""
+   }
+  },
+  {
+   "id": "S22",
+   "slug": "photos-populated",
+   "surface": "Photos sheet",
+   "state": "Photos sheet over five synthetic fixture images in a throwaway folder (the real Photos library and Pictures folder are never read)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1800,
+    1400
+   ],
+   "pointSize": [
+    900,
+    700
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S22-photos-populated-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    933
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PhotoBrowser.swift|func loadFolder",
+    "PhotoBrowser.swift|private func buildContent"
+   ]
+  },
+  {
+   "id": "S22",
+   "slug": "photos-populated",
+   "surface": "Photos sheet",
+   "state": "Photos sheet over five synthetic fixture images in a throwaway folder (the real Photos library and Pictures folder are never read)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    1800,
+    1400
+   ],
+   "pointSize": [
+    900,
+    700
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S22-photos-populated-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    933
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PhotoBrowser.swift|func loadFolder",
+    "PhotoBrowser.swift|private func buildContent"
+   ]
+  },
+  {
+   "id": "S22",
+   "slug": "photos-populated-in-context",
+   "surface": "Photos sheet",
+   "state": "Photos sheet over five synthetic fixture images in a throwaway folder (the real Photos library and Pictures folder are never read) (parent window + sheet composite)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S22-photos-populated-in-context-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PhotoBrowser.swift|func loadFolder",
+    "PhotoBrowser.swift|private func buildContent"
+   ]
+  },
+  {
+   "id": "S22",
+   "slug": "photos-populated-in-context",
+   "surface": "Photos sheet",
+   "state": "Photos sheet over five synthetic fixture images in a throwaway folder (the real Photos library and Pictures folder are never read) (parent window + sheet composite)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S22-photos-populated-in-context-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "PhotoBrowser.swift|func loadFolder",
+    "PhotoBrowser.swift|private func buildContent"
+   ]
+  },
+  {
    "id": "S24",
    "slug": "statusitem-highlighted",
    "surface": "status-bar item",
-   "state": "menu-bar icon, highlighted",
+   "state": "menu-bar icon, highlighted (menu open) (the real template icon on a stand-in menu-bar strip painted for this state and appearance; the real bar is not captured)",
    "appearance": "dark",
    "iconMode": "sf",
    "windowSize": [
@@ -6326,9 +10748,9 @@
     28
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "NSView.cacheDisplay (view only, not a window capture)",
-   "file": "S24-statusitem-highlighted-dark-ic@4254505.png",
+   "file": "S24-statusitem-highlighted-dark-ic@cbd0186.png",
    "storedPixelSize": [
     64,
     56
@@ -6347,14 +10769,15 @@
     "reduceTransparency": false
    },
    "sourceRefs": [
-    "App.swift|button.alternateImage"
+    "App.swift|func installMenuPresence()",
+    "StatusItemSupport.swift|enum StatusIcon"
    ]
   },
   {
    "id": "S24",
    "slug": "statusitem-highlighted",
    "surface": "status-bar item",
-   "state": "menu-bar icon, highlighted",
+   "state": "menu-bar icon, highlighted (menu open) (the real template icon on a stand-in menu-bar strip painted for this state and appearance; the real bar is not captured)",
    "appearance": "light",
    "iconMode": "sf",
    "windowSize": [
@@ -6370,9 +10793,9 @@
     28
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "NSView.cacheDisplay (view only, not a window capture)",
-   "file": "S24-statusitem-highlighted-light-ic@4254505.png",
+   "file": "S24-statusitem-highlighted-light-ic@cbd0186.png",
    "storedPixelSize": [
     64,
     56
@@ -6391,14 +10814,15 @@
     "reduceTransparency": false
    },
    "sourceRefs": [
-    "App.swift|button.alternateImage"
+    "App.swift|func installMenuPresence()",
+    "StatusItemSupport.swift|enum StatusIcon"
    ]
   },
   {
    "id": "S24",
    "slug": "statusitem-normal",
    "surface": "status-bar item",
-   "state": "menu-bar icon, normal (the button view only; the real bar is not captured)",
+   "state": "menu-bar icon, normal (the real template icon on a stand-in menu-bar strip painted for this state and appearance; the real bar is not captured)",
    "appearance": "dark",
    "iconMode": "sf",
    "windowSize": [
@@ -6414,9 +10838,9 @@
     28
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "NSView.cacheDisplay (view only, not a window capture)",
-   "file": "S24-statusitem-normal-dark-ic@4254505.png",
+   "file": "S24-statusitem-normal-dark-ic@cbd0186.png",
    "storedPixelSize": [
     64,
     56
@@ -6435,14 +10859,15 @@
     "reduceTransparency": false
    },
    "sourceRefs": [
-    "App.swift|func installMenuPresence()"
+    "App.swift|func installMenuPresence()",
+    "StatusItemSupport.swift|enum StatusIcon"
    ]
   },
   {
    "id": "S24",
    "slug": "statusitem-normal",
    "surface": "status-bar item",
-   "state": "menu-bar icon, normal (the button view only; the real bar is not captured)",
+   "state": "menu-bar icon, normal (the real template icon on a stand-in menu-bar strip painted for this state and appearance; the real bar is not captured)",
    "appearance": "light",
    "iconMode": "sf",
    "windowSize": [
@@ -6458,9 +10883,9 @@
     28
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "NSView.cacheDisplay (view only, not a window capture)",
-   "file": "S24-statusitem-normal-light-ic@4254505.png",
+   "file": "S24-statusitem-normal-light-ic@cbd0186.png",
    "storedPixelSize": [
     64,
     56
@@ -6479,7 +10904,8 @@
     "reduceTransparency": false
    },
    "sourceRefs": [
-    "App.swift|func installMenuPresence()"
+    "App.swift|func installMenuPresence()",
+    "StatusItemSupport.swift|enum StatusIcon"
    ]
   },
   {
@@ -6502,9 +10928,9 @@
     372
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S25-about-panel-dark-ic@4254505.png",
+   "file": "S25-about-panel-dark-ic@cbd0186.png",
    "storedPixelSize": [
     720,
     744
@@ -6547,9 +10973,9 @@
     372
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S25-about-panel-light-ic@4254505.png",
+   "file": "S25-about-panel-light-ic@cbd0186.png",
    "storedPixelSize": [
     720,
     744
@@ -6592,9 +11018,9 @@
     592
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S25-license-window-dark-ic@4254505.png",
+   "file": "S25-license-window-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     1146
@@ -6636,9 +11062,9 @@
     592
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S25-license-window-light-ic@4254505.png",
+   "file": "S25-license-window-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     1146
@@ -6680,9 +11106,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S26-close-unsaved-dark-ic@4254505.png",
+   "file": "S26-close-unsaved-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     951
@@ -6725,9 +11151,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S26-close-unsaved-light-ic@4254505.png",
+   "file": "S26-close-unsaved-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     951
@@ -6770,9 +11196,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S26-error-generic-dark-ic@4254505.png",
+   "file": "S26-error-generic-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     951
@@ -6815,9 +11241,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S26-error-generic-light-ic@4254505.png",
+   "file": "S26-error-generic-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     951
@@ -6860,9 +11286,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S26-history-hide-dark-ic@4254505.png",
+   "file": "S26-history-hide-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     951
@@ -6904,9 +11330,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S26-history-hide-light-ic@4254505.png",
+   "file": "S26-history-hide-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     951
@@ -6948,9 +11374,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S26-history-trash-dark-ic@4254505.png",
+   "file": "S26-history-trash-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     951
@@ -6992,9 +11418,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S26-history-trash-light-ic@4254505.png",
+   "file": "S26-history-trash-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     951
@@ -7036,9 +11462,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S26-rename-dark-ic@4254505.png",
+   "file": "S26-rename-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     951
@@ -7082,9 +11508,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S26-rename-light-ic@4254505.png",
+   "file": "S26-rename-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     951
@@ -7128,15 +11554,15 @@
     60
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S28-focus-footer-upload-dark-ic@4254505.png",
+   "file": "S28-focus-footer-upload-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     48
    ],
    "downscaled": true,
-   "layout": "layout/S28-focus-footer-upload-dark-ic@4254505.json",
+   "layout": "layout/S28-focus-footer-upload-dark-ic@cbd0186.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -7172,15 +11598,15 @@
     60
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S28-focus-footer-upload-light-ic@4254505.png",
+   "file": "S28-focus-footer-upload-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     48
    ],
    "downscaled": true,
-   "layout": "layout/S28-focus-footer-upload-light-ic@4254505.json",
+   "layout": "layout/S28-focus-footer-upload-light-ic@cbd0186.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -7216,15 +11642,15 @@
     60
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S28-focus-footer-zoom-dark-ic@4254505.png",
+   "file": "S28-focus-footer-zoom-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     48
    ],
    "downscaled": true,
-   "layout": "layout/S28-focus-footer-zoom-dark-ic@4254505.json",
+   "layout": "layout/S28-focus-footer-zoom-dark-ic@cbd0186.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -7260,15 +11686,15 @@
     60
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S28-focus-footer-zoom-light-ic@4254505.png",
+   "file": "S28-focus-footer-zoom-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     48
    ],
    "downscaled": true,
-   "layout": "layout/S28-focus-footer-zoom-light-ic@4254505.json",
+   "layout": "layout/S28-focus-footer-zoom-light-ic@cbd0186.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -7304,15 +11730,15 @@
     86
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S28-focus-topbar-hide-dark-ic@4254505.png",
+   "file": "S28-focus-topbar-hide-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     69
    ],
    "downscaled": true,
-   "layout": "layout/S28-focus-topbar-hide-dark-ic@4254505.json",
+   "layout": "layout/S28-focus-topbar-hide-dark-ic@cbd0186.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -7348,15 +11774,15 @@
     86
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S28-focus-topbar-hide-light-ic@4254505.png",
+   "file": "S28-focus-topbar-hide-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     69
    ],
    "downscaled": true,
-   "layout": "layout/S28-focus-topbar-hide-light-ic@4254505.json",
+   "layout": "layout/S28-focus-topbar-hide-light-ic@cbd0186.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -7392,15 +11818,15 @@
     86
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S28-focus-topbar-snap-dark-ic@4254505.png",
+   "file": "S28-focus-topbar-snap-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     69
    ],
    "downscaled": true,
-   "layout": "layout/S28-focus-topbar-snap-dark-ic@4254505.json",
+   "layout": "layout/S28-focus-topbar-snap-dark-ic@cbd0186.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -7436,15 +11862,15 @@
     86
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S28-focus-topbar-snap-light-ic@4254505.png",
+   "file": "S28-focus-topbar-snap-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     69
    ],
    "downscaled": true,
-   "layout": "layout/S28-focus-topbar-snap-light-ic@4254505.json",
+   "layout": "layout/S28-focus-topbar-snap-light-ic@cbd0186.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -7480,15 +11906,15 @@
     86
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S28-focus-topbar-tool-dark-ic@4254505.png",
+   "file": "S28-focus-topbar-tool-dark-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     69
    ],
    "downscaled": true,
-   "layout": "layout/S28-focus-topbar-tool-dark-ic@4254505.json",
+   "layout": "layout/S28-focus-topbar-tool-dark-ic@cbd0186.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -7524,15 +11950,15 @@
     86
    ],
    "scale": 2,
-   "sourceSha": "4254505",
+   "sourceSha": "cbd0186",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S28-focus-topbar-tool-light-ic@4254505.png",
+   "file": "S28-focus-topbar-tool-light-ic@cbd0186.png",
    "storedPixelSize": [
     1200,
     69
    ],
    "downscaled": true,
-   "layout": "layout/S28-focus-topbar-tool-light-ic@4254505.json",
+   "layout": "layout/S28-focus-topbar-tool-light-ic@cbd0186.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -7546,6 +11972,452 @@
    },
    "sourceRefs": [
     "GlassChrome.swift|override func drawFocusRingMask"
+   ]
+  },
+  {
+   "id": "S29",
+   "slug": "drag-thumbnail",
+   "surface": "drag-out thumbnail",
+   "state": "Drag Me thumbnail panel after the editor shrinks (not hovering)",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    256,
+    204
+   ],
+   "pointSize": [
+    128,
+    102
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S29-drag-thumbnail-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    256,
+    204
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|final class DragThumbnailView",
+    "App.swift|func iconifyDrag"
+   ]
+  },
+  {
+   "id": "S29",
+   "slug": "drag-thumbnail",
+   "surface": "drag-out thumbnail",
+   "state": "Drag Me thumbnail panel after the editor shrinks (not hovering)",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    256,
+    204
+   ],
+   "pointSize": [
+    128,
+    102
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S29-drag-thumbnail-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    256,
+    204
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|final class DragThumbnailView",
+    "App.swift|func iconifyDrag"
+   ]
+  },
+  {
+   "id": "S29",
+   "slug": "drag-thumbnail-expand",
+   "surface": "drag-out thumbnail",
+   "state": "clickToExpand overlay",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    256,
+    204
+   ],
+   "pointSize": [
+    128,
+    102
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S29-drag-thumbnail-expand-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    256,
+    204
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|final class DragThumbnailView"
+   ]
+  },
+  {
+   "id": "S29",
+   "slug": "drag-thumbnail-expand",
+   "surface": "drag-out thumbnail",
+   "state": "clickToExpand overlay",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    256,
+    204
+   ],
+   "pointSize": [
+    128,
+    102
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImage(bestResolution)",
+   "file": "S29-drag-thumbnail-expand-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    256,
+    204
+   ],
+   "downscaled": false,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "App.swift|final class DragThumbnailView"
+   ]
+  },
+  {
+   "id": "S29",
+   "slug": "help-bevel",
+   "surface": "help bevel (tool-tip overlay)",
+   "state": "OriginalHelpBevel HUD with a hover hint for a top-bar control (Rectangle tool) (feature is off by default); editor at the top of the screen, so the plate sits inside the window, clear of the title bar and both bars",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S29-help-bevel-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "OriginalHelpBevel.swift|final class OriginalHelpBevelView",
+    "OriginalHelpBevel.swift|private func insideFrame"
+   ]
+  },
+  {
+   "id": "S29",
+   "slug": "help-bevel",
+   "surface": "help bevel (tool-tip overlay)",
+   "state": "OriginalHelpBevel HUD with a hover hint for a top-bar control (Rectangle tool) (feature is off by default); editor at the top of the screen, so the plate sits inside the window, clear of the title bar and both bars",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S29-help-bevel-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "OriginalHelpBevel.swift|final class OriginalHelpBevelView",
+    "OriginalHelpBevel.swift|private func insideFrame"
+   ]
+  },
+  {
+   "id": "S29",
+   "slug": "help-bevel-bottom",
+   "surface": "help bevel (tool-tip overlay)",
+   "state": "OriginalHelpBevel HUD with a hover hint for a bottom-bar control (Wipe) (feature is off by default); editor at the top of the screen, so the plate sits inside the window, clear of the title bar and both bars",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S29-help-bevel-bottom-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "OriginalHelpBevel.swift|final class OriginalHelpBevelView",
+    "OriginalHelpBevel.swift|private func insideFrame"
+   ]
+  },
+  {
+   "id": "S29",
+   "slug": "help-bevel-bottom",
+   "surface": "help bevel (tool-tip overlay)",
+   "state": "OriginalHelpBevel HUD with a hover hint for a bottom-bar control (Wipe) (feature is off by default); editor at the top of the screen, so the plate sits inside the window, clear of the title bar and both bars",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2358
+   ],
+   "pointSize": [
+    1488,
+    1179
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S29-help-bevel-bottom-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    951
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "OriginalHelpBevel.swift|final class OriginalHelpBevelView",
+    "OriginalHelpBevel.swift|private func insideFrame"
+   ]
+  },
+  {
+   "id": "S29",
+   "slug": "help-bevel-hanging",
+   "surface": "help bevel (tool-tip overlay)",
+   "state": "the same hint with 140 pt free above the editor: the plate hangs from its top edge, behind it",
+   "appearance": "dark",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2466
+   ],
+   "pointSize": [
+    1488,
+    1233
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S29-help-bevel-hanging-dark-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    994
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "OriginalHelpBevel.swift|private func layout"
+   ]
+  },
+  {
+   "id": "S29",
+   "slug": "help-bevel-hanging",
+   "surface": "help bevel (tool-tip overlay)",
+   "state": "the same hint with 140 pt free above the editor: the plate hangs from its top edge, behind it",
+   "appearance": "light",
+   "iconMode": "sf",
+   "windowSize": [
+    1488,
+    1179
+   ],
+   "pixelSize": [
+    2976,
+    2466
+   ],
+   "pointSize": [
+    1488,
+    1233
+   ],
+   "scale": 2,
+   "sourceSha": "cbd0186",
+   "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
+   "file": "S29-help-bevel-hanging-light-ic@cbd0186.png",
+   "storedPixelSize": [
+    1200,
+    994
+   ],
+   "downscaled": true,
+   "layout": null,
+   "before": null,
+   "displayOptions": {
+    "active": [
+     "increaseContrast"
+    ],
+    "differentiateWithoutColor": false,
+    "increaseContrast": true,
+    "injected": true,
+    "reduceMotion": false,
+    "reduceTransparency": false
+   },
+   "sourceRefs": [
+    "OriginalHelpBevel.swift|private func layout"
    ]
   }
  ],
@@ -7559,13 +12431,13 @@
    "mode": "sf",
    "appearance": "light",
    "group": "custom",
-   "surfaces": "S12,S16,S17,S18,S19,S20,S24,S25,S26,S28"
+   "surfaces": "S12,S13,S14,S15,S16,S17,S18,S19,S20,S21,S22,S24,S25,S26,S28,S29"
   },
   {
    "mode": "sf",
    "appearance": "dark",
    "group": "custom",
-   "surfaces": "S12,S16,S17,S18,S19,S20,S24,S25,S26,S28"
+   "surfaces": "S12,S13,S14,S15,S16,S17,S18,S19,S20,S21,S22,S24,S25,S26,S28,S29"
   }
  ]
 }

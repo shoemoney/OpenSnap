@@ -1,79 +1,152 @@
 {
  "floorPt": 18.0,
  "stats": {
-  "captures": 2028,
-  "textNodes": 53070,
+  "captures": 2248,
+  "textNodes": 55792,
   "smallestPt": 18.0,
-  "glassRows": 5926
+  "glassRows": 5950
  },
- "violationCount": 0,
- "violations": [],
- "controlsBetween18And20": 13140,
+ "violationCount": 12,
+ "violations": [
+  {
+   "capture": "base/S51-zoom-actual-size-dark",
+   "class": "glass truncatedRows",
+   "rows": [
+    "Actual"
+   ]
+  },
+  {
+   "capture": "base/S51-zoom-actual-size-dark",
+   "class": "glass label",
+   "title": "Actual",
+   "fits": false,
+   "pt": 20
+  },
+  {
+   "capture": "base/S51-zoom-actual-size-light",
+   "class": "glass truncatedRows",
+   "rows": [
+    "Actual"
+   ]
+  },
+  {
+   "capture": "base/S51-zoom-actual-size-light",
+   "class": "glass label",
+   "title": "Actual",
+   "fits": false,
+   "pt": 20
+  },
+  {
+   "capture": "reduce-transparency/S51-zoom-actual-size-dark-rt",
+   "class": "glass truncatedRows",
+   "rows": [
+    "Actual"
+   ]
+  },
+  {
+   "capture": "reduce-transparency/S51-zoom-actual-size-dark-rt",
+   "class": "glass label",
+   "title": "Actual",
+   "fits": false,
+   "pt": 20
+  },
+  {
+   "capture": "reduce-transparency/S51-zoom-actual-size-light-rt",
+   "class": "glass truncatedRows",
+   "rows": [
+    "Actual"
+   ]
+  },
+  {
+   "capture": "reduce-transparency/S51-zoom-actual-size-light-rt",
+   "class": "glass label",
+   "title": "Actual",
+   "fits": false,
+   "pt": 20
+  },
+  {
+   "capture": "increase-contrast/S51-zoom-actual-size-dark-ic",
+   "class": "glass truncatedRows",
+   "rows": [
+    "Actual"
+   ]
+  },
+  {
+   "capture": "increase-contrast/S51-zoom-actual-size-dark-ic",
+   "class": "glass label",
+   "title": "Actual",
+   "fits": false,
+   "pt": 20
+  },
+  {
+   "capture": "increase-contrast/S51-zoom-actual-size-light-ic",
+   "class": "glass truncatedRows",
+   "rows": [
+    "Actual"
+   ]
+  },
+  {
+   "capture": "increase-contrast/S51-zoom-actual-size-light-ic",
+   "class": "glass label",
+   "title": "Actual",
+   "fits": false,
+   "pt": 20
+  }
+ ],
+ "controlsBetween18And20": 14798,
  "controlsBetween18And20ByClassAndText": {
-  "CommandButton 18.0pt Hide": 1180,
-  "CommandButton 18.0pt Photos": 1180,
-  "CommandButton 18.0pt Font": 1180,
-  "CommandButton 18.0pt Undo": 1180,
-  "CommandButton 18.0pt Save": 1180,
-  "CommandButton 18.0pt History": 1180,
-  "CommandButton 18.0pt Snap": 1138,
-  "CommandButton 18.0pt Clear image": 952,
-  "StatusTextField 18.0pt Arrow · Unsaved changes": 470,
-  "StatusTextField 18.0pt Unsaved changes": 306,
+  "CommandButton 18.0pt Hide": 1346,
+  "CommandButton 18.0pt Photos": 1346,
+  "CommandButton 18.0pt Font": 1346,
+  "CommandButton 18.0pt Undo": 1346,
+  "CommandButton 18.0pt Save": 1346,
+  "CommandButton 18.0pt History": 1346,
+  "CommandButton 18.0pt Snap": 1304,
+  "CommandButton 18.0pt Clear image": 1126,
+  "StatusTextField 18.0pt Arrow · Unsaved changes": 484,
+  "StatusTextField 18.0pt Unsaved changes": 312,
   "NSTextField 18.0pt Exported": 270,
   "NSTextField 18.0pt Shared": 270,
   "NSTextField 18.0pt Saved": 270,
   "NSTextField 18.0pt WebDAV": 260,
   "NSTextField 18.0pt SFTP": 260,
   "NSTextField 18.0pt S3-compatible": 236,
-  "CommandButton 18.0pt Remove annotations": 228,
+  "CommandButton 18.0pt Remove annotations": 220,
   "NSTextField 18.0pt Uploads go to the default dest": 212,
   "NSTextField 18.0pt Path-style S3 over system curl": 156,
   "NSTextField 18.0pt Test lists the bucket with the": 132,
-  "StatusTextField 18.0pt Arrow · Saved": 80,
+  "StatusTextField 18.0pt Arrow · Saved": 90,
+  "CommandButton 18.0pt Cancel upload": 78,
   "NSTextField 18.0pt 7 items · 0 selected": 78,
   "StatusTextField 18.0pt Brush · Unsaved changes": 72,
+  "StatusTextField 18.0pt Upload failed": 60,
+  "CommandButton 18.0pt Retry upload": 60,
+  "CommandButton 18.0pt Show error details": 60,
+  "StatusTextField 18.0pt Uploading…": 54,
   "NSTextField 18.0pt 6 items · 1 selected": 48,
   "CommandButton 18.0pt Snap Frame": 42,
   "CommandButton 18.0pt Cancel": 42,
   "StatusTextField 18.0pt Frame: position, then Snap": 36,
-  "CommandButton 18.0pt Cancel upload": 34,
-  "StatusTextField 18.0pt Saved Quarterly mockup.opensna": 30,
+  "CommandButton 18.0pt Open link in browser": 36,
+  "CommandButton 18.0pt Copy link": 36,
+  "StatusTextField 18.0pt Rectangle · Unsaved changes": 30,
   "StatusTextField 18.0pt Select · Unsaved changes": 24,
   "NSTextField 18.0pt Holding Option reverses the se": 24,
   "NSTextField 18.0pt WebDAV, or any server that acc": 24,
-  "CommandButton 18.0pt Retry upload": 24,
-  "CommandButton 18.0pt Show error details": 24,
-  "StatusTextField 18.0pt Uploading…": 22,
   "StatusTextField 18.0pt Text · Unsaved changes": 18,
-  "StatusTextField 18.0pt Upload failed": 18,
-  "StatusTextField 18.0pt Crop · Unsaved changes": 12,
-  "StatusTextField 18.0pt Rectangle · Unsaved changes": 12,
-  "NSTextField 18.0pt Plain FTP: the endpoint starts": 12
+  "StatusTextField 18.0pt Upload cancelled": 18
  },
  "skippedSystemOwnedNodes": {
-  "titleBarWidgetOrSystemPanel": 7746,
+  "titleBarWidgetOrSystemPanel": 8410,
   "systemPanel": 0,
-  "privateButtonField": 5174
+  "privateButtonField": 5250
  },
  "statusTruncatedCaptures": [
-  "osn071-raw-base/S09-footer-long-status-dark",
-  "osn071-raw-base/S09-footer-long-status-light",
-  "osn071-raw-base/S39-titlebar-crop-w980-dark",
-  "osn071-raw-base/S39-titlebar-crop-w980-light",
-  "osn071-raw-base/S39-titled-window-w980-dark",
-  "osn071-raw-base/S39-titled-window-w980-light",
-  "osn071-raw-rt/S09-footer-long-status-dark-rt",
-  "osn071-raw-rt/S09-footer-long-status-light-rt",
-  "osn071-raw-rt/S39-titlebar-crop-w980-dark-rt",
-  "osn071-raw-rt/S39-titlebar-crop-w980-light-rt",
-  "osn071-raw-rt/S39-titled-window-w980-dark-rt",
-  "osn071-raw-rt/S39-titled-window-w980-light-rt",
-  "osn071-raw-ic/S09-footer-long-status-dark-ic",
-  "osn071-raw-ic/S09-footer-long-status-light-ic",
-  "osn071-raw-ic/S39-titlebar-crop-w980-dark-ic",
-  "osn071-raw-ic/S39-titlebar-crop-w980-light-ic",
-  "osn071-raw-ic/S39-titled-window-w980-dark-ic",
-  "osn071-raw-ic/S39-titled-window-w980-light-ic"
+  "base/S09-footer-long-status-dark",
+  "base/S09-footer-long-status-light",
+  "reduce-transparency/S09-footer-long-status-dark-rt",
+  "reduce-transparency/S09-footer-long-status-light-rt",
+  "increase-contrast/S09-footer-long-status-dark-ic",
+  "increase-contrast/S09-footer-long-status-light-ic"
  ]
 }
