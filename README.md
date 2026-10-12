@@ -2,7 +2,7 @@
 
 A fast, minimal screen-capture and annotation app for macOS 26.
 
-![version](https://img.shields.io/badge/version-0.3.0-blue) ![platform](https://img.shields.io/badge/macOS-26%2B%20arm64-lightgrey) ![signing](https://img.shields.io/badge/signing-ad--hoc%2C%20not%20notarized-orange) ![license](https://img.shields.io/badge/license-MIT-green)
+![version](https://img.shields.io/badge/version-0.4.0-blue) ![platform](https://img.shields.io/badge/macOS-26%2B%20arm64-lightgrey) ![signing](https://img.shields.io/badge/signing-ad--hoc%2C%20not%20notarized-orange) ![license](https://img.shields.io/badge/license-MIT-green)
 
 ## ✨ Features
 
