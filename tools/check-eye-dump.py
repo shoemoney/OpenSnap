@@ -26,6 +26,9 @@ Hard checks (a failure exits 1):
              text size >= 18 pt, and the variant's own proof -- hover names a hovered row, focus a focused row, chosen a chosen row,
              disabled a disabled row that never took focus, dismissed a panel that is gone with focus back on its opener. A glass gap
              (a panel that never appeared) always fails.
+  selected   text on a selected fill (a saturated block of one colour: the Settings destination row, a History tile, a segment) reads at
+             >= 4.5:1 in every line, so the secondary label ("S3-compatible", "Exported") cannot fall short unnoticed; the PNG is sampled
+             (no layout needed) and the self-test seeds a 3.5:1 secondary line that must fail.
 Advisory check (printed as ADVISORY; exits 1 only under --strict or --strict-contrast):
   contrast   the layout JSON does not record text or background colours, so for the text-bearing controls whose frames it does
              record (status text, zoom popup, Original size checkbox) the checker samples the PNG inside the frame: the
@@ -413,6 +416,80 @@ def check_contrast(layout, image):
     return advisories, notes
 
 
+# ---------------------------------------------------------------- text on a selected fill
+
+SELECTED_MIN_BOX = (60, 30)      # px: a selected row, tile or segment is at least this big
+SELECTED_MIN_CHROMA = 24         # an accent tint is saturated; the window, plates and greys are not
+SELECTED_MAX_LINE = 56           # px: a text line band is shorter than this (a preview image is not)
+
+
+def selected_fill_regions(image):
+    """[(x0, y0, x1, y1, fill rgb)] for each block of one saturated colour that is large enough to be a selected row, tile or segment."""
+    counts = {}
+    for row in image.rows:
+        for pixel in zip(row[0::4], row[1::4], row[2::4]):
+            if max(pixel) - min(pixel) >= SELECTED_MIN_CHROMA:
+                counts[pixel] = counts.get(pixel, 0) + 1
+    regions = []
+    for fill, count in sorted(counts.items(), key=lambda item: -item[1])[:6]:
+        if count < SELECTED_MIN_BOX[0] * SELECTED_MIN_BOX[1] // 2:
+            break
+        rows = []
+        for y, row in enumerate(image.rows):
+            run, best, start, bx = 0, 0, 0, 0
+            for x in range(image.width):
+                if tuple(row[4 * x:4 * x + 3]) == fill:
+                    if run == 0:
+                        start = x
+                    run += 1
+                    if run > best:
+                        best, bx = run, start
+                else:
+                    run = 0
+            rows.append((best, bx))
+        y = 0
+        while y < len(rows):
+            if rows[y][0] < SELECTED_MIN_BOX[0]:
+                y += 1
+                continue
+            top = y
+            while y < len(rows) and rows[y][0] >= SELECTED_MIN_BOX[0] // 2:
+                y += 1
+            span = rows[top:y]
+            x0 = min(bx for _, bx in span if _ >= SELECTED_MIN_BOX[0])
+            x1 = max(bx + width for width, bx in span if width >= SELECTED_MIN_BOX[0])
+            if y - top >= SELECTED_MIN_BOX[1] and not any(a[0] <= x0 and x1 <= a[2] and a[1] <= top and y <= a[3] for a in (r[:4] for r in regions)):
+                regions.append((x0, top, x1, y, fill))
+    return regions
+
+
+def check_selected_text(image):
+    """[problem] for every line of text on a selected fill below 4.5:1: the secondary label (S3-compatible, Exported) is the one that falls short.
+    A band is a run of rows holding pixels that are not the fill; one taller than a text line (a preview image) is skipped."""
+    problems = []
+    for x0, y0, x1, y1, fill in selected_fill_regions(image):
+        # A wide row keeps its trailing pill (Default) on the right, taller than a text line and beside both lines: read the label column only.
+        inner = (x0 + 6, y0 + 3, x0 + 6 + min(x1 - x0 - 12, 400), y1 - 3)
+        bands, start = [], None
+        for y in range(inner[1], inner[3]):
+            row = image.rows[y]
+            ink = any(abs(row[4 * x] - fill[0]) + abs(row[4 * x + 1] - fill[1]) + abs(row[4 * x + 2] - fill[2]) > 24 for x in range(inner[0], inner[2]))
+            if ink and start is None:
+                start = y
+            elif not ink and start is not None:
+                bands.append((start, y))
+                start = None
+        if start is not None:
+            bands.append((start, inner[3]))
+        for top, bottom in bands:
+            if not 8 <= bottom - top <= SELECTED_MAX_LINE:
+                continue
+            outcome = sample_contrast(image, (inner[0], top, inner[2], bottom))
+            if outcome[0] is not None and outcome[0] < CONTRAST_FLOOR:
+                problems.append(f"selected: text at y {top}-{bottom} on the selected fill rgb{fill} (block {x0},{y0}-{x1},{y1}) samples {outcome[0]:.2f}:1 (text {outcome[1]}), below {CONTRAST_FLOOR}:1")
+    return problems
+
+
 # ---------------------------------------------------------------- folder
 
 def analyse(task):
@@ -431,6 +508,7 @@ def analyse(task):
         share = foreign_fraction(image)
         if share < 0.001:
             result["notes"].append(f"near-blank: only {share:.4%} of pixels differ from the dominant colour")
+    result["problems"] += check_selected_text(image)
     if layout_path:
         try:
             layout = json.loads(Path(layout_path).read_text())
@@ -1064,7 +1142,22 @@ def self_test():
         return layout
 
     good = png_bytes(24, 20, picture)
+
+    def selected_row(primary, secondary):
+        """A selected row on a dark window: fill rgb(106,87,34), a primary line (y 16-28) and a secondary line (y 42-54) of stroke-like pixels."""
+        def pixel(x, y):
+            if 20 <= x < 220 and 10 <= y < 70:
+                for top, colour in ((16, primary), (42, secondary)):
+                    if top <= y < top + 12 and 30 <= x < 130 and (x // 2 + y // 2) % 2:
+                        return colour
+                return (106, 87, 34)
+            return (30, 30, 30)
+        return png_bytes(240, 80, pixel)
+
     cases = [
+        ("selected row, secondary text at 4.5:1 or better", selected_row((235, 232, 224), (235, 232, 224)), None, 0),
+        ("selected row, secondary text at about 3.5:1 (the 0.34 dark fill regression)", selected_row((235, 232, 224), (160, 152, 135)), None, 1),
+        ("selected row, primary text weak", selected_row((140, 132, 115), (235, 232, 224)), None, 1),
         ("sound capture", good, sample_layout(), 0),
         ("flat colour image", png_bytes(24, 20, lambda x, y: (200, 10, 10)), sample_layout(), 1),
         ("flat colour image, no layout", png_bytes(24, 20, lambda x, y: (200, 10, 10)), None, 1),

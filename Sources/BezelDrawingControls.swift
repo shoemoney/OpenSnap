@@ -275,7 +275,7 @@ enum BezelCustomColorButton {
 /// grouping and the "Size N" tooltip all live here, and the panel drives them through the same gesture API.
 /// Five ordinary steps from the recovered control; Shift gives continuous values throughout.
 @MainActor
-final class BezelSizeSlider: NSControl, TokenFocusRinged {
+final class BezelSizeSlider: NSControl, TokenFocusRinged, FocusRingSuppressible {
     static let pillSize = NSSize(width: 48, height: 36)
     static let glyphLength: CGFloat = 24
     /// One preset step, the distance between neighbouring sizes.
@@ -392,6 +392,8 @@ final class BezelSizeSlider: NSControl, TokenFocusRinged {
     /// The keyboard focus ring: the app's own token ring around the capsule, never AppKit's pale system one.
     private(set) lazy var tokenRing = TokenFocusRing(view: self, target: { [unowned self] in isEnabled ? focusBounds : .zero })
     override var focusRingType: NSFocusRingType { get { .none } set {} }
+    /// Held back while a row of the Size panel it opened carries the focus: one ring at a time.
+    var suppressesFocusRing: Bool { get { tokenRing.isSuppressed } set { tokenRing.isSuppressed = newValue } }
     override func becomeFirstResponder() -> Bool {
         let accepted = super.becomeFirstResponder()
         if accepted { tokenRing.setFocused(true) }

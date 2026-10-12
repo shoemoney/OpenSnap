@@ -388,7 +388,7 @@ final class ScreenRecordingPermissionSheet: NSObject {
         }
         let buttonHeight = actionPlate.frame.height
         let total = inset + height(titleLabel) + gap + height(messageLabel) + gap + buttonHeight + inset
-        let content = NSView(frame: NSRect(x: 0, y: 0, width: width, height: total))
+        let content = SurfacePlateView(frame: NSRect(x: 0, y: 0, width: width, height: total), surface: DesignTokens.Palette.Surface.sheet)
         // Top-down layout in AppKit's bottom-up coordinates.
         var y = total - inset - height(titleLabel)
         titleLabel.frame = NSRect(x: inset, y: y, width: inner, height: height(titleLabel))

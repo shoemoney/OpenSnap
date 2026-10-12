@@ -918,6 +918,7 @@ private final class HistoryThumbnail: NSCollectionViewItem {
     private func refreshSelection() {
         guard isViewLoaded, let tile = view as? HistoryTileView else { return }
         tile.isTileSelected = isSelected
+        action.textColor = isSelected ? DesignTokens.Palette.Text.secondaryOnSelected : DesignTokens.Palette.Text.secondary
     }
 }
 

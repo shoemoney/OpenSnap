@@ -854,6 +854,16 @@ private enum CaptureTests {
         try expect(!frame(sheet.cancelButton).intersects(frame(sheet.settingsButton)), "the two buttons do not overlap")
         try expect(frame(sheet.cancelButton).maxX < frame(sheet.settingsButton).minX, "Cancel sits left of the default button")
         try expect(sheet.panel.backgroundColor == DesignTokens.Palette.Surface.sheet, "the plate is the app's neutral sheet grey, not the wallpaper-tinted system window colour")
+        // OSN-071 r4: the window server ignores `panel.backgroundColor`, so the plate is what the content view paints (dark was rgb 41,31,30).
+        for (name, appearance) in ContrastProbe.appearances {
+            let drawn = ContrastProbe.drawnPlate(of: content, appearance: appearance, at: NSPoint(x: 3, y: 3))
+            let token = DesignTokens.Palette.rgb(DesignTokens.Palette.resolve(DesignTokens.Palette.Surface.sheet, for: appearance)).rgb
+            let spread = max(drawn.rgb.red, drawn.rgb.green, drawn.rgb.blue) - min(drawn.rgb.red, drawn.rgb.green, drawn.rgb.blue)
+            try expect(drawn.alpha > 0.999, "the permission sheet paints an opaque plate in \(name), alpha \(drawn.alpha)")
+            try expect(spread * 255 <= 4, "the drawn permission plate has no colour cast in \(name): channel spread \(spread * 255)/255")
+            try expect(abs(drawn.rgb.red - token.red) < 1.5 / 255 && abs(drawn.rgb.green - token.green) < 1.5 / 255 && abs(drawn.rgb.blue - token.blue) < 1.5 / 255,
+                       "the drawn permission plate is the sheet token in \(name): got \(drawn.rgb), want \(token)")
+        }
         try expect(!sheet.panel.isVisible, "building the sheet shows nothing")
     }
 

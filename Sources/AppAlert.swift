@@ -121,7 +121,7 @@ final class AppAlert: NSObject {
         if height(messageLabel) > 0 { stack.append(height(messageLabel)) }
         if accessoryHeight > 0 { stack.append(accessoryHeight) }
         let total = inset + stack.reduce(0, +) + CGFloat(stack.count) * gap + buttonHeight + inset
-        let content = NSView(frame: NSRect(x: 0, y: 0, width: width, height: total))
+        let content = SurfacePlateView(frame: NSRect(x: 0, y: 0, width: width, height: total), surface: DesignTokens.Palette.Surface.sheet)
         // Top-down layout in AppKit's bottom-up coordinates.
         var y = total - inset
         y -= height(titleLabel); titleLabel.frame = NSRect(x: inset, y: y, width: inner, height: height(titleLabel)); y -= gap

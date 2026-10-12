@@ -522,6 +522,14 @@ enum PublishingDestinationsTests {
         defer { tall.orderOut(nil) }
         tall.contentView?.layoutSubtreeIfNeeded()
         try expect(!tallView.fadesAtBottom && !tallView.fadesAtTop, "a form that fits fades nothing")
+        // OSN-071 r4 (S19/S58): on a screen that has the room, the S3 form's help paragraph is read whole, not cut at the footer separator.
+        let (roomy, roomyView) = publisher.buildEditor(editing: nil, visibleFrame: NSRect(x: 0, y: 0, width: 1920, height: 1200), hostWidth: 720)
+        defer { roomy.orderOut(nil) }
+        roomyView.protocolPopup.selectItem(withTitle: PublishingProtocol.s3.title); roomyView.sourcePopup.selectItem(at: 0); roomyView.formChanged()
+        roomy.contentView?.layoutSubtreeIfNeeded()
+        let roomyDocument = try unwrap(roomyView.scrollView.documentView)
+        try expect(roomyDocument.frame.height <= roomyView.scrollView.contentView.bounds.height + 0.5 && !roomyView.fadesAtBottom,
+                   "the S3 form with its help paragraph fits a 1200 pt screen without scrolling (document \(roomyDocument.frame.height), visible \(roomyView.scrollView.contentView.bounds.height))")
     }
 
     /// F-J2-013 and 018: the sheet never overhangs its parent, and a result has a band of its own that nothing grows into.
@@ -1177,7 +1185,7 @@ enum PublishingDestinationsTests {
                         try expect(view.fittingSize.width == asked + thickness && view.frame.width == asked + thickness,
                                    "\(tag): laid out \(view.frame.width) pt (wants \(view.fittingSize.width)), expected \(asked) + a \(thickness) pt scroller")
                         try expect(panel.contentRect(forFrameRect: panel.frame).width == asked, "\(tag): the panel is \(asked) wide")
-                        // It scrolls exactly when its rows need more than the sheet's height (760 at most, less on a short screen).
+                        // It scrolls exactly when its rows need more than the sheet's height (860 at most, less on a short screen).
                         try expect(scrolls == (view.formPageHeight > view.maxSheetHeight + 0.5), "\(tag): scrolls=\(scrolls) with a \(view.formPageHeight) pt form in \(view.maxSheetHeight) pt")
                         if scrolls { scrolled += 1 } else {
                             unscrolled += 1
@@ -1263,7 +1271,7 @@ enum PublishingDestinationsTests {
         // Size: 720 wide, min(720, visible height - 120), never taller than the screen.
         let size = PublishingDestinationsView.sheetSize(visibleFrame: fake)
         try expect(size.width == 720 && size.height == 680, "1280 x 800 gives a 720 x 680 sheet, got \(size)")
-        try expect(PublishingDestinationsView.sheetSize(visibleFrame: NSRect(x: 0, y: 0, width: 1920, height: 1200)).height == 760, "a tall screen caps the sheet at 760")
+        try expect(PublishingDestinationsView.sheetSize(visibleFrame: NSRect(x: 0, y: 0, width: 1920, height: 1200)).height == 860, "a tall screen caps the sheet at 860")
         let short = NSRect(x: 0, y: 0, width: 1280, height: 500)
         try expect(PublishingDestinationsView.sheetSize(visibleFrame: short).height == 380 && PublishingDestinationsView.sheetSize(visibleFrame: short).height <= 500, "a short screen shrinks the sheet")
         try expect(PublishingDestinationsView.sheetSize(visibleFrame: NSRect(x: 0, y: 0, width: 800, height: 300)).height <= 300, "the sheet never exceeds a tiny screen")

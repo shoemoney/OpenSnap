@@ -602,8 +602,10 @@ final class GlassChoiceGroup: NSView, ChromeFillable {
     /// - Parameters:
     ///   - layout: `.segment` for a horizontal set with equal centred segments, `.row` for full-width rows.
     ///   - indicator: the glyph on each button (`.radio` for a radio set); `.none` leaves the fill, border and weight to say it.
+    ///   - plateInset: the space between the plate's edge and its buttons; a group whose segment fills the plate's end takes a bigger one so the focus ring stands off the edge.
     init(choices: [Choice], selectedIndex: Int = 0, layout: GlassChoiceButton.Layout = .segment, axis: NSUserInterfaceLayoutOrientation = .horizontal,
-         indicator: GlassChoiceButton.Indicator = .none, accessibilityLabel: String, identifier: String, accessibility: ChromeAccessibility? = nil) {
+         indicator: GlassChoiceButton.Indicator = .none, accessibilityLabel: String, identifier: String, accessibility: ChromeAccessibility? = nil,
+         plateInset: CGFloat = GlassChrome.Metrics.groupInset) {
         let accessibility = accessibility ?? .live
         let made = choices.enumerated().map { index, choice -> GlassChoiceButton in
             let button = GlassChoiceButton(title: choice.title, kind: .option, indicator: indicator, layout: layout)
@@ -616,7 +618,7 @@ final class GlassChoiceGroup: NSView, ChromeFillable {
         self.axis = axis
         self.enabledFlags = Array(repeating: true, count: made.count)
         self.selectedIndex = min(max(-1, selectedIndex), made.count - 1)
-        self.plate = GlassChrome.plate(made, identifier: identifier, accessibility: accessibility, axis: axis)
+        self.plate = GlassChrome.plate(made, identifier: identifier, accessibility: accessibility, axis: axis, inset: plateInset)
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
         addSubview(plate)
@@ -640,9 +642,10 @@ final class GlassChoiceGroup: NSView, ChromeFillable {
     }
 
     convenience init(titles: [String], selectedIndex: Int = 0, layout: GlassChoiceButton.Layout = .segment, axis: NSUserInterfaceLayoutOrientation = .horizontal,
-                     indicator: GlassChoiceButton.Indicator = .none, accessibilityLabel: String, identifier: String, accessibility: ChromeAccessibility? = nil) {
+                     indicator: GlassChoiceButton.Indicator = .none, accessibilityLabel: String, identifier: String, accessibility: ChromeAccessibility? = nil,
+                     plateInset: CGFloat = GlassChrome.Metrics.groupInset) {
         self.init(choices: titles.map { Choice($0) }, selectedIndex: selectedIndex, layout: layout, axis: axis, indicator: indicator,
-                  accessibilityLabel: accessibilityLabel, identifier: identifier, accessibility: accessibility)
+                  accessibilityLabel: accessibilityLabel, identifier: identifier, accessibility: accessibility, plateInset: plateInset)
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -763,6 +766,14 @@ final class GlassChoiceWindow: NSPanel {
     override var canBecomeMain: Bool { false }
 
     override func cancelOperation(_ sender: Any?) { escapeHandler?() }
+
+    /// Told where the keyboard went inside the panel, so the control that opened it can give up its ring while a row has the focus.
+    var firstResponderChanged: ((NSResponder?) -> Void)?
+    override func makeFirstResponder(_ responder: NSResponder?) -> Bool {
+        let accepted = super.makeFirstResponder(responder)
+        if accepted { firstResponderChanged?(responder) }
+        return accepted
+    }
 
     override func sendEvent(_ event: NSEvent) {
         if event.type == .keyDown {
@@ -971,6 +982,13 @@ final class GlassPanelHost: NSObject {
         root.setAccessibilityRole(.group)
         root.setAccessibilityLabel(accessibilityLabel)
         window.escapeHandler = { [weak self] in self?.close() }
+        window.firstResponderChanged = { [weak self] responder in self?.panelFocusChanged(to: responder) }
+        // The window is clear; the content is what shows. Clip it to the plates' own corner so nothing the glass or its tint paints can show as a
+        // square corner outside the rounded plate (S58 in Light), and so the window's shadow follows the same rounded shape.
+        root.wantsLayer = true
+        root.layer?.cornerRadius = DesignTokens.Radius.xl
+        root.layer?.cornerCurve = .continuous
+        root.layer?.masksToBounds = true
         root.addSubview(container)
         layoutConstraints = pin(container, to: root)
         NSLayoutConstraint.activate(layoutConstraints)
@@ -1147,6 +1165,22 @@ final class GlassPanelHost: NSObject {
         return onAnchor
     }
 
+    /// One ring at a time, for every panel (Size and Color open outside the `MenuChoicePanel` presenter): while a row of the panel holds the
+    /// keyboard the anchor that opened it keeps no ring of its own, and gets it back when the focus leaves the rows or the panel closes.
+    private var ringHeldAnchor: FocusRingSuppressible?
+    private func panelFocusChanged(to responder: NSResponder?) {
+        let inRows = isShown && (responder as? NSView).map { $0 !== window.contentView && $0.isDescendant(of: window.contentView ?? $0) } == true
+        releaseAnchorRing()
+        if inRows, let anchor = anchor as? FocusRingSuppressible, !anchor.suppressesFocusRing {
+            anchor.suppressesFocusRing = true
+            ringHeldAnchor = anchor
+        }
+    }
+    private func releaseAnchorRing() {
+        ringHeldAnchor?.suppressesFocusRing = false
+        ringHeldAnchor = nil
+    }
+
     private func installObservers(on parent: NSWindow) {
         removeObservers()
         let center = NotificationCenter.default
@@ -1188,6 +1222,7 @@ final class GlassPanelHost: NSObject {
         guard isShown else { return }
         willClose?()
         isShown = false
+        releaseAnchorRing()
         removeObservers()
         let hadKey = keyStateProbe?() ?? window.isKeyWindow
         if Self.current === self { Self.current = nil }

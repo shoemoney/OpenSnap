@@ -135,6 +135,24 @@ private enum PaletteTests {
             try expect(against >= 2.4, "dark selected fill: yellow tint is \(against):1 against the window in \(arm); the old 0.20 was 1.64:1")
         }
 
+        // OSN-071 r4: secondary text on the selected fill (Settings "S3-compatible", History tile "Exported") reaches 4.5:1 in all four arms, over the
+        // window and over the plates the bars and sheets paint under it, whatever the accent. Plain `text.secondary` was 3.85:1 / 4.05:1 / 3.94:1.
+        let selectedSecondary: NSColor = P.Text.secondaryOnSelected
+        for arm in P.Arm.allCases {
+            let shownAlpha = alpha(P.State.selectedFill, arm)
+            let window = P.resolve(P.Surface.window, arm: arm)
+            var underlays: [(String, NSColor)] = [("window", window), ("content", P.resolve(P.Surface.content, arm: arm)), ("sheet", P.resolve(P.Surface.sheet, arm: arm))]
+            let menuPlate = P.blend(P.resolve(P.menuBase, arm: arm), alpha: 1, over: window)
+            underlays.append(("bar plate", NSColor(srgbRed: menuPlate.red, green: menuPlate.green, blue: menuPlate.blue, alpha: 1)))
+            for (underName, under) in underlays {
+                for (accentName, accent) in accents {
+                    let tint = P.blend(accent, alpha: shownAlpha, over: under)
+                    let got = P.contrastRatio(P.resolve(selectedSecondary, arm: arm), tint)
+                    try expect(got >= 4.5, "secondary text on the selected fill over the \(underName) with the \(accentName) accent is \(got):1 in \(arm), needs 4.5")
+                }
+            }
+        }
+
         // The alert and permission plate is its own neutral grey: no channel cast (the dark plate had come out rgb 41,30,30 under an orange wallpaper).
         for arm in P.Arm.allCases {
             let sheet = rgb(P.Surface.sheet, arm)

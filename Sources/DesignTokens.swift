@@ -151,6 +151,12 @@ enum DesignTokens {
                                     darkAqua: NSColor(srgbRed: 38 / 255, green: 38 / 255, blue: 40 / 255, alpha: 1),
                                     highContrastAqua: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 1),
                                     highContrastDarkAqua: NSColor(srgbRed: 28 / 255, green: 28 / 255, blue: 30 / 255, alpha: 1))
+            /// The wash a floating glass card paints over its glass. `NSGlassEffectView.tintColor` has no effect on the card, and regular glass over a
+            /// busy backdrop read as a flat mid-grey (rgb 118) in Light, so the light card paints this window-colour wash itself (0.88: it stays
+            /// a light card over a black canvas, 208+) and the dark card, which needs none, paints nothing.
+            static let cardWash = role("surface.cardWash",
+                                       aqua: NSColor(srgbRed: 236 / 255, green: 236 / 255, blue: 236 / 255, alpha: 0.88), darkAqua: .clear,
+                                       highContrastAqua: NSColor(srgbRed: 236 / 255, green: 236 / 255, blue: 236 / 255, alpha: 1), highContrastDarkAqua: .clear)
             static let all = [window, content, canvasWell]
         }
 
@@ -160,6 +166,11 @@ enum DesignTokens {
             static let secondary = role("text.secondary",
                                         aqua: NSColor.black.withAlphaComponent(0.60), darkAqua: .secondaryLabelColor,
                                         highContrastAqua: NSColor.black.withAlphaComponent(0.70), highContrastDarkAqua: NSColor.white.withAlphaComponent(0.75))
+            /// Secondary text on the selected fill (`state.selected.fill`): the plain secondary grey was 3.85:1 on the dark selected row, so text there
+            /// takes this stronger arm (4.5:1 over the window and the plates in every arm, whatever the accent).
+            static let secondaryOnSelected = role("text.secondaryOnSelected",
+                                                  aqua: NSColor.black.withAlphaComponent(0.75), darkAqua: NSColor.white.withAlphaComponent(0.85),
+                                                  highContrastAqua: NSColor.black.withAlphaComponent(0.90), highContrastDarkAqua: NSColor.white.withAlphaComponent(1))
             /// Disabled text is exempt from the contrast floor (WCAG 1.4.3 inactive components); the test only keeps it visible.
             static let disabled = system("text.disabled", .disabledControlTextColor)
         }
@@ -291,6 +302,26 @@ enum DesignTokens {
             return contrastRatio(blend(text, alpha: 1, over: backdrop), background)
         }
     }
+}
+
+/// A layer-backed view painted with a palette surface. A window's `backgroundColor` is ignored by the window server for the plate of a
+/// sheet or panel (the dark alert plate still came out rgb 41,31,30 under a warm wallpaper), so a plate that must be a neutral
+/// token paints it here, inside the content view, where the app owns every pixel. The layer follows the effective appearance.
+@MainActor
+final class SurfacePlateView: NSView {
+    let surface: NSColor
+    init(frame: NSRect, surface: NSColor) {
+        self.surface = surface
+        super.init(frame: frame)
+        wantsLayer = true
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+    override var wantsUpdateLayer: Bool { true }
+    override var isOpaque: Bool { true }
+    override func updateLayer() {
+        effectiveAppearance.performAsCurrentDrawingAppearance { layer?.backgroundColor = surface.cgColor }
+    }
+    override func viewDidChangeEffectiveAppearance() { super.viewDidChangeEffectiveAppearance(); needsDisplay = true }
 }
 
 extension DesignTokens {

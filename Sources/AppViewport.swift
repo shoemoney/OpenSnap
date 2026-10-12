@@ -249,12 +249,6 @@ extension AppDelegate {
         updateStatus()
     }
 
-    /// Regular glass over a busy backdrop reads as a flat mid-grey in Light; a window-colour wash keeps the light card as clean as the dark one,
-    /// which needs none.
-    static let navigatorCardTint = NSColor(name: nil) { appearance in
-        appearance.bestMatch(from: [.darkAqua, .aqua]) == .aqua ? DesignTokens.Palette.Surface.window.withAlphaComponent(0.62) : .clear
-    }
-
     func showActualNavigator() {
         guard let window else { return }
         if navigatorWindow == nil {
@@ -264,7 +258,6 @@ extension AppDelegate {
             let glass = NSGlassEffectView()
             glass.style = .regular
             glass.cornerRadius = DesignTokens.Radius.xl
-            glass.tintColor = Self.navigatorCardTint
             glass.contentView = navigator
             // The glass pins the overview with constraints; its 220 x 190 intrinsic size must not pull the panel wider than the 180 pt card.
             for axis in [NSLayoutConstraint.Orientation.horizontal, .vertical] {

@@ -175,11 +175,10 @@ public final class CanvasNavigator: NSView {
     public override func accessibilityPerformPress() -> Bool { centerViewport() }
 
     public override func draw(_ dirtyRect: NSRect) {
-        // The card behind this view is glass; only Reduce Transparency asks for a solid plate.
-        if drawsSolidBackground {
-            NSColor.windowBackgroundColor.setFill()
-            NSBezierPath(roundedRect: bounds, xRadius: DesignTokens.Radius.xl, yRadius: DesignTokens.Radius.xl).fill()
-        }
+        // The card behind this view is glass; Reduce Transparency asks for a solid plate. Otherwise the card paints its own wash over the
+        // glass (the light one; the dark card paints nothing), because the glass's tintColor has no effect.
+        (drawsSolidBackground ? NSColor.windowBackgroundColor : DesignTokens.Palette.Surface.cardWash).setFill()
+        NSBezierPath(roundedRect: bounds, xRadius: DesignTokens.Radius.xl, yRadius: DesignTokens.Radius.xl).fill()
         let header = CGRect(x: bounds.minX + NavigatorGeometry.padding,
                             y: bounds.minY + NavigatorGeometry.padding,
                             width: max(0, bounds.width - 2 * NavigatorGeometry.padding),

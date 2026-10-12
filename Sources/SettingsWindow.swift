@@ -89,11 +89,13 @@ enum SettingsLayout {
         return plate
     }
 
-    /// A radio set: exclusive choices on ONE plate with a radio glyph each, one tab stop, arrows move the choice. Each button keeps its own
+    /// A radio set: exclusive choices on ONE plate with a radio glyph each, one tab stop, arrows move the choice. The plate is inset like a toggle
+    /// plate, so the ring of the segment at either end stands off the plate's edge instead of sitting on it. Each button keeps its own
     /// `tag` (the stored value it stands for) and identifier; `action` goes to `target` once per user change, with the group as sender.
     static func radioGroup(_ choices: [(title: String, tag: Int, identifier: String)], label: String, identifier: String, target: AnyObject, action: Selector) -> GlassChoiceGroup {
         let group = GlassChoiceGroup(choices: choices.map { GlassChoiceGroup.Choice($0.title, identifier: $0.identifier) }, selectedIndex: -1, layout: .segment,
-                                     axis: .horizontal, indicator: .radio, accessibilityLabel: label, identifier: identifier)
+                                     axis: .horizontal, indicator: .radio, accessibilityLabel: label, identifier: identifier,
+                                     plateInset: togglePlateInset)
         for (button, choice) in zip(group.buttons, choices) { button.tag = choice.tag }
         group.target = target; group.action = action
         return group
@@ -142,7 +144,7 @@ final class SettingsPlateCell: NSView {
 
     init(_ content: NSView, firstChoice: GlassChoiceButton?) {
         self.content = content
-        baseline = SettingsLayout.firstChoiceBaseline(of: firstChoice, inset: (content as? GlassSurfaceView)?.inset ?? GlassChrome.Metrics.groupInset)
+        baseline = SettingsLayout.firstChoiceBaseline(of: firstChoice, inset: (content as? GlassSurfaceView)?.inset ?? (content as? GlassChoiceGroup)?.plate.inset ?? GlassChrome.Metrics.groupInset)
         super.init(frame: .zero)
         content.translatesAutoresizingMaskIntoConstraints = false
         addSubview(content)
@@ -524,6 +526,7 @@ final class SettingsDestinationRow: NSView {
     private func refreshMark() {
         selectionMark.isHidden = !differentiates
         selectionMark.alphaValue = isSelected ? 1 : 0
+        transportField.textColor = isSelected ? DesignTokens.Palette.Text.secondaryOnSelected : DesignTokens.Palette.Text.secondary
     }
 
     override var wantsUpdateLayer: Bool { true }

@@ -12,9 +12,10 @@ final class PublishingDestinationsView: NSView {
     var onTest: ((PublishingDestination, String) -> Void)?
     var passwordFor: (PublishingDestination) -> String
 
-    /// The sheet is 720 wide and at most 760 tall; on a short screen it shrinks and the form scrolls instead of clipping. Under a narrower
+    /// The sheet is 720 wide and at most 860 tall (the S3 form with its Keychain fields asks for 850, so its help paragraph is read whole instead of being
+    /// cut at the footer separator); on a short screen it shrinks and the form scrolls instead of clipping. Under a narrower
     /// window (Settings is 640) it is as wide as that window, never narrower than `sheetMinWidth`, so it never overhangs its parent.
-    static let sheetWidth: CGFloat = 720, sheetMinWidth: CGFloat = 560, sheetMaxHeight: CGFloat = 760, sheetScreenMargin: CGFloat = 120, sheetMinHeight: CGFloat = 360
+    static let sheetWidth: CGFloat = 720, sheetMinWidth: CGFloat = 560, sheetMaxHeight: CGFloat = 860, sheetScreenMargin: CGFloat = 120, sheetMinHeight: CGFloat = 360
     static var contentWidth: CGFloat { sheetWidth - 2 * Space.s5 }
     /// The width of the sheet that hangs from a window `hostWidth` wide.
     static func sheetWidth(forHostWidth hostWidth: CGFloat) -> CGFloat { min(sheetWidth, max(sheetMinWidth, hostWidth)) }

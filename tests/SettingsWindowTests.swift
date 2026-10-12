@@ -919,6 +919,16 @@ private enum SettingsWindowTests {
             expect(chosenButton.markImage !== others[0].markImage && chosenButton.plate.stateStyle.strongText && chosenButton.plate.stateStyle.fill != nil && chosenButton.plate.stateStyle.borderWidth == 1
                    && chosenButton.titleLabel.font == DesignTokens.Typography.font(.bodyStrong), "\(name): the choice has its own glyph, fill, border and semibold face")
             expect(others.allSatisfy { $0.titleLabel.font == DesignTokens.Typography.font(.body) && $0.plate.stateStyle.fill == nil && $0.plate.stateStyle.borderWidth == 0 }, "\(name): the others rest bare in the regular face")
+            // OSN-071 r4 (S56): the ring of the segment at either end stood on the plate's edge (the plate's 4 pt inset is exactly the ring's 4 pt reach).
+            // Like a toggle row, the ring must stand off the plate: more than its reach between each end button and the plate's edge.
+            let reach = StateStyles.focusRingOutset + StateStyles.focusRingWidth
+            if let first = group.buttons.first, let last = group.buttons.last {
+                let plateFrame = group.plate.bounds
+                let leading = first.convert(first.bounds, to: group.plate).minX - plateFrame.minX
+                let trailing = plateFrame.maxX - last.convert(last.bounds, to: group.plate).maxX
+                let top = abs(plateFrame.maxY - first.convert(first.bounds, to: group.plate).maxY), bottom = abs(first.convert(first.bounds, to: group.plate).minY - plateFrame.minY)
+                expect(min(leading, trailing, top, bottom) > reach, "\(name): the focus ring (\(reach) pt out) stands off the plate's edge: gaps \(leading), \(trailing), \(top), \(bottom)")
+            }
             // One tab stop per set: the chosen button, and only it.
             let stops = group.buttons.filter(\.canBecomeKeyView)
             expect(stops.count == 1 && stops[0] === chosenButton, "\(name): the set is one tab stop, on the chosen choice (\(stops.map(\.title)))")

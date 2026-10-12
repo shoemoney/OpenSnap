@@ -156,6 +156,27 @@ private enum TokenFocusRingTests {
             _ = window.makeFirstResponder(nil)
             try expect(preset.plate.ringLayer.isHidden, "the preset ring leaves with the focus")
         }
+        // OSN-071 r4 (S54): the Size panel opens outside the choices presenter, so its pill kept its ring beside the focused row: two rings.
+        // The pill keeps its ring while it holds the keyboard alone, gives it up while a row of the panel holds it, and has it back on close.
+        let opener = BezelSizeSlider(frame: NSRect(x: 20, y: 140, width: 48, height: 36))
+        content.addSubview(opener)
+        opener.panelSetup = { host in
+            host.presenter = { _, _ in }
+            host.visibleFrameOverride = NSRect(x: 0, y: 0, width: 1440, height: 1000)
+            host.keyStateProbe = { false }
+        }
+        try expect(window.makeFirstResponder(opener) && opener.tokenRing.isVisible, "the Size pill rings while focused")
+        opener.showPopover()
+        guard let host = opener.panel, let sizePanel = opener.popoverContent, host.isShown else { throw Failure(description: "the Size panel opens") }
+        try expect(opener.tokenRing.isVisible, "the pill keeps its ring while it alone holds the keyboard")
+        try expect(host.window.makeFirstResponder(sizePanel.presetButtons[0]) && !sizePanel.presetButtons[0].plate.ringLayer.isHidden, "a Size row takes focus and rings")
+        try expect(!opener.tokenRing.isVisible, "one ring at a time: the pill gives up its ring while a Size row has the focus")
+        _ = host.window.makeFirstResponder(nil)
+        try expect(opener.tokenRing.isVisible, "the pill's ring is back when the focus leaves the rows")
+        _ = host.window.makeFirstResponder(sizePanel.presetButtons[1])
+        try expect(!opener.tokenRing.isVisible, "a row focused again hides the pill's ring again")
+        host.close()
+        try expect(opener.tokenRing.isVisible, "the pill takes its ring back when the Size panel closes")
         #endif
     }
 

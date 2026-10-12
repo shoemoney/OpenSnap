@@ -357,7 +357,42 @@ private enum CanvasNavigatorTests {
                    "Header is set in the 20 pt body-strong token: ink \(width) x \(height) px against an advance of \(advance)")
     }
 
+    /// OSN-071 r4: the light overview card was a flat mid-grey (rgb 118) because the glass tint has no effect. The card paints its own wash:
+    /// over that grey backdrop (and over black) the light card resolves to a light colour that keeps the "Overview" label at 4.5:1; dark paints none.
+    static func cardWashResolves() throws {
+        func cardPixel(_ name: NSAppearance.Name, backdrop: CGFloat) throws -> (luma: CGFloat, ink: CGFloat) {
+            let view = CanvasNavigator(frame: CGRect(x: 0, y: 0, width: 220, height: 190))
+            guard let bitmap = CGContext(data: nil, width: 220, height: 190, bitsPerComponent: 8, bytesPerRow: 220 * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                         bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue), let appearance = NSAppearance(named: name) else {
+                throw Failure(description: "Cannot create local drawing context")
+            }
+            bitmap.setFillColor(CGColor(red: backdrop, green: backdrop, blue: backdrop, alpha: 1)); bitmap.fill(CGRect(x: 0, y: 0, width: 220, height: 190))
+            let previous = NSGraphicsContext.current
+            NSGraphicsContext.current = NSGraphicsContext(cgContext: bitmap, flipped: true)
+            defer { NSGraphicsContext.current = previous }
+            appearance.performAsCurrentDrawingAppearance { view.draw(view.bounds) }
+            guard let data = bitmap.data else { throw Failure(description: "No bitmap data") }
+            let pixels = data.bindMemory(to: UInt8.self, capacity: 220 * 190 * 4)
+            let card = CGFloat(pixels[((190 / 2) * 220 + 214) * 4]) / 255
+            // The header ink: the extreme pixel in the header band (the label is black in light, white in dark).
+            let band = (190 - Int(NavigatorGeometry.padding) - Int(NavigatorGeometry.headerHeight))..<(190 - Int(NavigatorGeometry.padding))
+            var ink = card
+            for y in band { for x in 12..<120 { let value = CGFloat(pixels[(y * 220 + x) * 4]) / 255; ink = name == .aqua ? min(ink, value) : max(ink, value) } }
+            return (card, ink)
+        }
+        func lum(_ v: CGFloat) -> CGFloat { v <= 0.03928 ? v / 12.92 : pow((v + 0.055) / 1.055, 2.4) }
+        func ratio(_ a: CGFloat, _ b: CGFloat) -> CGFloat { (max(lum(a), lum(b)) + 0.05) / (min(lum(a), lum(b)) + 0.05) }
+        for backdrop in [CGFloat(118) / 255, 0] {
+            let light = try cardPixel(.aqua, backdrop: backdrop)
+            try expect(light.luma >= 200.0 / 255, "The light card over a \(backdrop * 255) backdrop resolves to a light fill, got \(light.luma * 255)/255 (was a flat mid-grey)")
+            try expect(ratio(light.ink, light.luma) >= 4.5, "The Overview label reads at 4.5:1 on the light card over a \(backdrop * 255) backdrop: \(ratio(light.ink, light.luma)):1")
+        }
+        let dark = try cardPixel(.darkAqua, backdrop: 40.0 / 255)
+        try expect(abs(dark.luma - 40.0 / 255) < 0.1, "The dark card paints no light wash over its glass, got \(dark.luma * 255)/255")
+    }
+
     static func main() throws {
+        try cardWashResolves()
         try geometry()
         try renderResolution()
         try interaction()

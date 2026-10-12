@@ -359,8 +359,17 @@ private enum AppAlertTests {
             }
             for (name, appearance) in ContrastProbe.appearances {
                 let reading = ContrastProbe.measure(content, appearance: appearance, plateAt: NSPoint(x: 3, y: 3),
-                                                    textFrames: [alert.titleLabel.frame, alert.messageLabel.frame], plate: alert.panel.backgroundColor)
+                                                    textFrames: [alert.titleLabel.frame, alert.messageLabel.frame], plate: DesignTokens.Palette.Surface.sheet)
                 expect(reading.plateOpaque, "The sheet sits on an opaque window colour (\(alert.title), \(name))")
+                // OSN-071 r4: the plate is read back from what the content view paints. The window server ignores `panel.backgroundColor`, so a
+                // dark plate that only set it was really rgb 41,31,30 on screen; the content view has to paint the token itself.
+                let drawn = ContrastProbe.drawnPlate(of: content, appearance: appearance, at: NSPoint(x: 3, y: 3))
+                let token = DesignTokens.Palette.rgb(DesignTokens.Palette.resolve(DesignTokens.Palette.Surface.sheet, for: appearance)).rgb
+                let spread = max(drawn.rgb.red, drawn.rgb.green, drawn.rgb.blue) - min(drawn.rgb.red, drawn.rgb.green, drawn.rgb.blue)
+                expect(drawn.alpha > 0.999, "The content view paints an opaque plate in \(name), alpha \(drawn.alpha) (\(alert.title))")
+                expect(spread * 255 <= 4, "The drawn plate has no colour cast in \(name): channel spread \(spread * 255)/255 (\(alert.title))")
+                expect(abs(drawn.rgb.red - token.red) < 1.5 / 255 && abs(drawn.rgb.green - token.green) < 1.5 / 255 && abs(drawn.rgb.blue - token.blue) < 1.5 / 255,
+                       "The drawn plate is the sheet token in \(name): got \(drawn.rgb), want \(token) (\(alert.title))")
                 expect(reading.textRatios[0] >= 4.5 && reading.textRatios[1] >= 4.5,
                        "The title and message read at 4.5:1 on the sheet (\(alert.title), \(name): \(reading.textRatios))")
             }

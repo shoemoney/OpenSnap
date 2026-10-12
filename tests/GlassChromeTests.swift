@@ -574,6 +574,9 @@ private enum GlassChromeTests {
         expect(host.contentSize == NSSize(width: 320, height: 134), "The panel is 320 x 134 (\(host.contentSize))")
         let structure = glassStructure(host.container)
         expect(structure.containers == 1 && structure.plates == 2 && structure.nested == 0, "One glass container holding two plates, and no glass inside glass (\(structure))")
+        // OSN-071 r4 (S58): the clear window is clipped to the plates' corner, so nothing painted under or around a rounded plate shows as a square corner.
+        let rootLayer = host.window.contentView?.layer
+        expect(rootLayer?.masksToBounds == true && rootLayer?.cornerRadius == DesignTokens.Radius.xl, "The panel's content is clipped to the rounded plate corner (radius \(String(describing: rootLayer?.cornerRadius)), masks \(String(describing: rootLayer?.masksToBounds)))")
         // G5 can fail: glass seeded inside glass is counted, and the same walk still reports clean glass as clean.
         let outer = NSGlassEffectView(), inner = NSGlassEffectView(), seeded = NSView()
         outer.contentView = seeded; seeded.addSubview(inner)

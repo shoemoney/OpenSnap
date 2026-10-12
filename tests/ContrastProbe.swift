@@ -56,4 +56,24 @@ enum ContrastProbe {
         }
         return Reading(plate: plate, plateOpaque: opaque, textRatios: ratios)
     }
+
+    /// The plate as the layer tree paints it: one pixel of `view`'s layer, rendered into an sRGB context under `appearance`, at a point (view
+    /// coordinates) that holds nothing but the plate. A window's `backgroundColor` never reaches this (the window server ignores it for a
+    /// sheet), so a plate that only sets that reads back transparent here. `cacheDisplay` first, because that is what runs `updateLayer`.
+    static func drawnPlate(of view: NSView, appearance: NSAppearance, at point: NSPoint) -> (rgb: DesignTokens.Palette.RGB, alpha: CGFloat) {
+        view.appearance = appearance
+        view.layoutSubtreeIfNeeded()
+        if let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) { view.cacheDisplay(in: view.bounds, to: rep) }
+        let width = max(1, Int(view.bounds.width.rounded(.up))), height = max(1, Int(view.bounds.height.rounded(.up)))
+        guard let layer = view.layer, let space = CGColorSpace(name: CGColorSpace.sRGB),
+              let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4, space: space,
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue), let data = context.data
+        else { return (.init(red: 0, green: 0, blue: 0), 0) }
+        layer.render(in: context)
+        let bytes = data.assumingMemoryBound(to: UInt8.self)
+        let offset = (height - 1 - min(height - 1, Int(point.y))) * width * 4 + min(width - 1, Int(point.x)) * 4
+        let alpha = CGFloat(bytes[offset + 3]) / 255
+        guard alpha > 0 else { return (.init(red: 0, green: 0, blue: 0), 0) }
+        return (.init(red: CGFloat(bytes[offset]) / 255 / alpha, green: CGFloat(bytes[offset + 1]) / 255 / alpha, blue: CGFloat(bytes[offset + 2]) / 255 / alpha), alpha)
+    }
 }
