@@ -11,7 +11,7 @@ Issues and specs for this repo live as GitHub issues. Use the `gh` CLI for all o
 - **Apply / remove labels**: `gh issue edit <number> --add-label "..."` / `--remove-label "..."`
 - **Close**: `gh issue close <number> --comment "..."`
 
-Infer the repo from `git remote -v`; `gh` does this automatically when run inside a clone. `origin` is GitHub (`shoemoney/OpenSkitch`); the `forgejo` remote is a push-only mirror (`git push` to `origin` updates both). Never file issues on Forgejo.
+Infer the repo from `git remote -v`; `gh` does this automatically when run inside a clone. `origin` is GitHub (`shoemoney/OpenSnap`); the `forgejo` remote (`shoemoney/OpenSnap` on git.shoemoney.ai) is a push-only mirror (`git push` to `origin` updates both). Never file issues on Forgejo.
 
 ## Pull requests as a triage surface
 

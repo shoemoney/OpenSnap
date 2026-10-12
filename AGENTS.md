@@ -4,7 +4,7 @@
 
 ### Issue tracker
 
-Issues live in GitHub Issues on `shoemoney/OpenSkitch` (`gh` CLI); Forgejo is a push-only mirror with no issues. See `docs/agents/issue-tracker.md`.
+Issues live in GitHub Issues on `shoemoney/OpenSnap` (`gh` CLI); Forgejo is a push-only mirror with no issues. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
