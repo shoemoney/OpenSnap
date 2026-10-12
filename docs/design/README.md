@@ -1,3 +1,5 @@
+> Release 0.4.0 state (2026-10-12, `66ff7312`): 31 done, 2 verified, 1 not-a-bug, 2 in-progress of 36 todos. See [progress.md](progress.md), section Release 0.4.0 status.
+>
 > Current candidate and audit result: [Follow-up root verification](e2e/followup-root-verification.md), with [implementation details](followup-implementation.md). The [earlier verification](e2e/final-verification.md) remains a historical snapshot. Use the [interactive gallery](audit-overview.html) to review representative final renders and drill into coverage. All remaining gaps are explicit.
 
 # docs/design: index
@@ -140,6 +142,7 @@ Full list in `evidence/2026-10-09/gaps.md` and section 5 of the audit. Summary:
 | Owner decisions | 10: Q1 to Q5, D-TEXT, D-HINT, D-T15-1 to D-T15-3. Each has a recommended default. All ten are resolved; Q3 is option B (custom bars), Q4 is implemented in OSN-043. |
 | Estimate | 18.0 d numeric across 18 todos, plus 17.5 d of unsplit spec figures, total 35.5 d (`roadmap.md` section 8) |
 | Status at `3b453b3` | 29 done, 2 verified, 1 not-a-bug, 3 in-progress, 1 pending (`progress.md`; roadmap section 2b). Unchanged since `284f028`. |
+| Status at `66ff7312` (release 0.4.0) | 31 done, 2 verified, 1 not-a-bug, 2 in-progress, 0 pending (`backlog.json`; roadmap section 2b; `progress.md`, Release 0.4.0 status). |
 
 ## Validating the files
 

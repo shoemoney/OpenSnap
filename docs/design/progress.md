@@ -4,7 +4,7 @@
 
 **Baseline:** `bad6617`, when implementation began (the rename and migration were already merged in `f7ff86b` and `d2dc3c9`).
 **Main now:** `3b453b3`. The eighteen implementation merges below are followed by the E2E audit merges since `284f028`, listed in the E2E audit section.
-**Status of 36 todos:** 29 done, 2 verified, 1 not-a-bug, 3 in-progress, 1 pending.
+**Status of 36 todos:** 31 done, 2 verified, 1 not-a-bug, 2 in-progress, 0 pending, at `66ff7312` (release 0.4.0, 2026-10-12; see Release 0.4.0 status). At `3b453b3` it was 29 done, 2 verified, 1 not-a-bug, 3 in-progress, 1 pending.
 
 Per-todo state is in `backlog.json` (`status`, `mainState`, `implementation`). The roadmap has the milestone table (section 2b). Findings statuses in the roadmap (section 4) are still as at `dc1eb26`.
 
@@ -77,10 +77,33 @@ Todos in progress, partly landed, or landed since `658a16f`:
 | OSN-051 | done | `e124f77` (integrated at `a79a1d8`) | SettingsWindowTests 1405; G4 0 violations; app-safety 166/166 | `m5-settings`, 36 at `a48d0df` |
 | OSN-054 | done | `7c8bdb1` (`fc61ac7`, `fbe4d67`) | merge changes 12 files; real-click S3 upload in J2 and J4 | `m5-upload`, 30 at `fc61ac7`; `audit-fix-1`, 74 at `8e7a37d` |
 | OSN-060 | done | `7c8bdb1`; sheet Return and Escape in `4fca729` | `AccessibilityAuditTests` key-loop and Escape and Return cases (T7 tests 3 and 4) | J1 real-click Tab walk (F-J1-007 PASS) |
-| OSN-062 | in-progress | `7c8bdb1` (labels, announcements); `4fca729` (G10 walker, 32 surfaces, 0 violations) | walker: 0 violations; manual VoiceOver pass not recorded | none for the manual pass |
+| OSN-062 | in-progress (automated layer done; manual listening pass open) | `7c8bdb1` (labels, announcements); `4fca729` (G10 walker, 32 surfaces, 0 violations); `aeb37912`, `be4d72cb` (round 3 and burn-down) | G10 walker 0 violations; announcement inventory 42 rows (38 announced, 1 VoiceOver-native, 3 silent, 0 pending) | 75 spoken scripts in `docs/design/evidence/osn-062-2026-10-11/spoken/`; manual pass none |
 | OSN-061 | done | part 1 `accfedd` (`de21b6e`, `d0f8013`, `2dc613e`, `eaab72f`, `f975dfa`); part 2 `3ee9503` | DisplayOptionsTests: 92 checks (part 1) | J3 rendered positive controls for all four options (`e2e-2026-10-10/j3`, rendered only) |
-| OSN-070 | done on `impl/osn-070-gates` (not merged to main) | gates G1 to G12 audited, G3 (`tools/check-user-strings.py`, `tests/UserStringWalk.swift`) and the layout-fit gate (`tools/check-layout-fit.py`, `tests/AppSafetyLayoutFitCases.swift`) added, G9 strict; earlier work in `0996da5` (`90f70bc`, `2cbf59c`, `bb0659a`), wired by `efe2f68` (`b6658d2`) | can-fail self-tests for G3 (python and Swift), layout fit (python and live), G6, G9, G11; seeded can-fail cases for G4 | none; see the gate table under the OSN-070 note below |
-| OSN-072 | in-progress (partial) | `0996da5` (`56393f8`, `8cdebcb`); release dry run in a temp clone | synthetic dry run: 58 documents, 2 destinations; a re-run is a no-op | none |
+| OSN-070 | done (release 0.4.0 state; `9011e305` and later on `impl/osn-062`, not on main) | G2 to G12 wired in `tools/test.py`; G1 by hand; G3 and G12 not on main | can-fail self-test for every gate except G1 and G2 (recorded exception); gate table below | `docs/design/evidence/osn-071-2026-10-11/` (G7 runs over the committed sets) |
+| OSN-072 | done | evidence `c906d7bb` (on main); migration and dry run on copies | migration 58/58, 2 destinations, re-run no-op; clean clone 275/275 app safety; release dry run at 0.3.0 | `docs/design/evidence/osn-072-2026-10-11/` |
+| OSN-071 | in-progress (round 4 captured; sign-off pending final confirmation) | evidence only, `66ff7312` (round 4 at `8188b73`) | `check-eye-dump --strict` 0 failures on 5 packs; text walker 0 violations | 2,260 captures, `docs/design/evidence/osn-071-2026-10-11/` |
+
+## Release 0.4.0 status (2026-10-12)
+
+State at `66ff7312` on `impl/osn-062`. `main` is at `c906d7bb`. The gate and VoiceOver work is on `impl/osn-062` and is not merged. SHAs for this update resolve in the local clone; the older SHAs carried in the todo rows and notes are historical (see the last note).
+
+| Todo | At `41700b3` | Now | Evidence |
+|---|---|---|---|
+| OSN-070 | in-progress | **done** | gates from `9011e305` and later; gate table below |
+| OSN-072 | in-progress | **done** | `docs/design/evidence/osn-072-2026-10-11/`; evidence commit `c906d7bb` (on main) |
+| OSN-062 | in-progress | in-progress | automated layer done (`docs/design/evidence/osn-062-2026-10-11/spoken/`); manual listening pass open |
+| OSN-071 | in-progress | in-progress | round 4 at `8188b73` (commit `66ff7312`, `docs/design/evidence/osn-071-2026-10-11/`); sign-off pending final confirmation |
+
+Totals: 31 done, 2 verified, 1 not-a-bug, 2 in-progress, 0 pending (was 29, 2, 1, 4, 0). Milestone counts: roadmap section 2b.
+
+Notes:
+
+- **G1** is run by hand (`tools/check-clean-clone.sh`). It is not in `tools/test.py`.
+- **G3 and G12** (`check-user-strings.py`, `check-layout-fit.py`) are not on main. Main has neither file.
+- **OSN-071 advisories:** `REVIEW.md` reports 0 contrast advisories on every pack. The non-contrast advisories (18 pt controls, truncated status text) are listed in the todo.
+- **OSN-062 provenance:** `spoken/INDEX.md` records build `dda6b216` on every row. `aeb37912` changed the script text after that commit.
+- **OSN-072 dry run used 0.3.0.** `Info.plist` is still `0.3.0`, build `3`. The bump to 0.4.0 and a `tools/release.sh 0.4.0` dry run are still to do. Release work, not changed here.
+- **Historical SHAs:** 108 of the 123 SHAs cited in `backlog.json` do not resolve in this clone (for example `658a16f`, `284f028`, `7c8bdb1`, `3ee9503`, `0996da5`). Older notes are kept as written. The R1-001 history cleanup (Open items and gaps) may explain the gap.
 
 ## Decisions in this period
 
@@ -676,7 +699,7 @@ App-specific alerts are no longer NSAlert: they are app-owned sheets at 20 pt (O
 - **Settings (OSN-051):** merged in `e124f77`; the full integration suite passed (app-safety 166/166). The window title follows the selected tab (no "Preferences").
 - **OSN-044:** merged in `3ee9503`, with OSN-061 part 2.
 - **OSN-061:** parts 1 and 2 are on main (`accfedd`, `3ee9503`); done.
-- **OSN-062:** labels, announcements and the audit walker are on main; the recorded manual VoiceOver pass is not done, so the todo is in-progress.
+- **OSN-062:** labels, announcements and the audit walker are on main; the recorded manual VoiceOver pass is not done, so the todo is in-progress. Updated 2026-10-12: the automated layer is complete; see Release 0.4.0 status.
 - **OSN-070 (branch `impl/osn-070-gates`, not merged):** the gates the earlier pass left open are in. Gate table (strict means the run fails on a hit):
 
   | Gate | Check | Wired in `tools/test.py` | Mode | Can-fail self-test |
@@ -695,7 +718,7 @@ App-specific alerts are no longer NSAlert: they are app-owned sheets at 20 pt (O
   | G12 layout fit at 980 | `tools/check-layout-fit.py` over every committed `layout.json`; live window in `AppSafetyLayoutFitCases` | yes | strict | yes (python seeds; live squeeze case) |
 
   Exceptions, with reasons. G1 and G2 have no seeded self-test. G9 scans font, colour and radius literals only: the spec's roughly 100 constraint constants are not scanned, and the harness fixture literals in `EyeDumpAuditSurfaces.swift` carry a `token-exempt:` reason. The layout-fit gate treats the status line and the bar row as elastic (they truncate), so their fitting size is not a minimum. G7's contrast check runs on committed evidence, not on a fresh capture. The Swift string walk covers the windows, menus, alerts and tooltips that the app-safety and accessibility-audit suites build; text drawn by custom `draw(_:)` and system-owned panels are outside it, as for G4.
-- **OSN-072:** migration on a copy of the owner's real store is not authorized in this run. Synthetic temp stores only. The release work is a dry run only: no tag, push, upload or release.
+- **OSN-072:** migration on a copy of the owner's real store is not authorized in this run. Synthetic temp stores only. The release work is a dry run only: no tag, push, upload or release. Superseded 2026-10-12: the copy migration ran (see Release 0.4.0 status).
 - **OSN-054:** the upload UX is merged (`7c8bdb1`). The AWS run on 2026-10-09 is validation evidence; the E2E audit added a live upload (J2) and a live delete through the app (J4).
 - **Not run:** live screen capture; real popover translucency; VoiceOver speech (OSN-062 manual pass); Reduce Transparency alone and Increase Contrast alone captures (both together are in `m4-glass`); FA Pro icon mode; the OSN-071 visual gallery and independent visual sign-off.
 - **OSN-023:** manual 1x and 2x menu-bar check not done.

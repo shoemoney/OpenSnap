@@ -4,7 +4,7 @@
 
 # OpenSnap todo checklist (visual audit, 2026-10-09, final)
 
-Current candidate `41700b3` (implementation baseline `bad6617`): **29 done, 2 verified, 1 not-a-bug, 4 in-progress.** See [final local verification](e2e/final-verification.md) for completed gates and explicit remaining gaps. Historical SHA labels below retain capture provenance after the privacy rewrite. Each todo has an Implementation note (merge, evidence, open items). Counts and the commit map are in `progress.md`. IDs, priorities, milestones, dependencies and Lane A match `visual-audit.md` section 9 exactly. Each section records the main state at the SHA in its own note; sections with a **Since 284f028** line add the E2E audit merges. The audit's section 9 state at `dc1eb26` is in `visual-audit.md`. This file is generated from the same data as `backlog.json`. Edit the source, not the output.
+Release 0.4.0 state at `66ff7312` (2026-10-12): **31 done, 2 verified, 1 not-a-bug, 2 in-progress.** Earlier candidate `41700b3` (implementation baseline `bad6617`): **29 done, 2 verified, 1 not-a-bug, 4 in-progress.** See [final local verification](e2e/final-verification.md) for completed gates and explicit remaining gaps. Historical SHA labels below retain capture provenance after the privacy rewrite. Each todo has an Implementation note (merge, evidence, open items). Counts and the commit map are in `progress.md`. IDs, priorities, milestones, dependencies and Lane A match `visual-audit.md` section 9 exactly. Each section records the main state at the SHA in its own note; sections with a **Since 284f028** line add the E2E audit merges. The audit's section 9 state at `dc1eb26` is in `visual-audit.md`. This file is generated from the same data as `backlog.json`. Edit the source, not the output.
 
 Snapshot: briefed at `b9319c4`; drift to `4b2ae0f` and then `dc1eb26` (checked 11:01 CDT). WP4 (rename) merged before the implementation baseline (`f7ff86b`, `d2dc3c9`). Reconcile each todo against main before starting it (roadmap section 2a). Line numbers, counts and words such as 'today' in substeps and acceptance describe the `4b2ae0f` source unless a todo says otherwise. Estimates are in d, following the round-1 method (one implementer-day). Lane A means the todo edits `Sources/App.swift`, which is serial.
 
@@ -1915,6 +1915,8 @@ Status at `284f028`, `fa4715f`, `33743c5` and `3b453b3`: 29 done, 2 verified, 1 
 
 `OSN-062 · P1 · M6 · Status: in-progress`
 
+**Release 0.4.0 state (2026-10-12, `66ff7312`):** Automated layer done. Labels and announcements are on impl/osn-062 (aeb37912, be4d72cb, fe0f34b6). The G10 accessibility walker passes over 32 surfaces with 0 violations. 75 surfaces have spoken scripts in docs/design/evidence/osn-062-2026-10-11/spoken/ (INDEX and FINDINGS: 0 findings; tools/accessibility-baseline.tsv is empty). The announcement inventory in tests/AppSafetyAccessibilityCases.swift has 42 rows: 38 announced, 1 spoken by VoiceOver itself, 3 silent by design, 0 pending. The manual VoiceOver listening pass is not recorded; it is owner-scheduled and needs captions and audio. Status stays in-progress.
+
 **Implementation (main 284f028):** merge `7c8bdb1` (labels, announcements, History keyboard) and merge `4fca729` (G10 accessibility audit walker: 32 surfaces, 0 violations). Tests: `AccessibilityAuditTests`. Evidence: none for the manual pass. Open: the recorded manual VoiceOver pass is not done. VoiceOver speech is outside what the harness can prove (see progress.md, E2E audit gaps).
 
 **Main state (284f028):** In progress. Labels, Announcer announcements and the audit walker are on main; the manual VoiceOver pass that the todo requires is not recorded.
@@ -1972,7 +1974,9 @@ Status at `284f028`, `fa4715f`, `33743c5` and `3b453b3`: 29 done, 2 verified, 1 
 
 ## OSN-070 · Regression gates in tools/test.py: font-floor walker, glass depth and budget, glyphs, original bytes, Skitch strings, layout fit at 980
 
-`OSN-070 · P0 · M7 · Status: in-progress`
+`OSN-070 · P0 · M7 · Status: done`
+
+**Release 0.4.0 state (2026-10-12, `9011e305` and later on `impl/osn-062`):** Done on impl/osn-062 (commit 9011e305 and later; not yet merged to main). Gates G2 to G12 are strict and run from tools/test.py. G1 (tools/check-clean-clone.sh) runs by hand, not from tools/test.py. The G3 and G12 tools (check-user-strings.py, check-layout-fit.py) are not on main. Every gate except G1 and G2 has a can-fail self-test; G1 and G2 have none (recorded exception). Gate table: progress.md, OSN-070 note.
 
 **Implementation (main 658a16f):** merge `0996da5`; branch commits `90f70bc`, `2cbf59c`, `bb0659a`, `56393f8`, `8cdebcb`, `7852769`, `8c75d9e`, `b6658d2`; Evidence: none. Open: Not recorded as landed: G3 check-user-strings.py, the dynamic Skitch-string check, and a layout-fit-at-980 gate beyond the measured-width test. G5 and G9 status beyond what is listed above is not recorded in this pass.
 
@@ -2037,6 +2041,8 @@ Status at `284f028`, `fa4715f`, `33743c5` and `3b453b3`: 29 done, 2 verified, 1 
 
 `OSN-071 · P0 · M7 · Status: in-progress`
 
+**Release 0.4.0 state (2026-10-12, round 4 at `8188b73`, commit `66ff7312`):** Round 4 visual evidence at source 8188b73 (commit 66ff7312, on impl/osn-062). 2,260 rendered captures in five packs (base 760; reduce-transparency 486 and its -surfaces pack 264; increase-contrast 486 and its -surfaces pack 264). tools/check-eye-dump.py --strict exits 0 on every pack with 0 failures and 0 contrast advisories. The text walker reports 0 violations over 2,248 captures. Harness renders, not real-click or Screen Recording. Independent visual sign-off: pending final confirmation. Gaps in gaps.md stay open.
+
 **Implementation (main 658a16f):** no merge. Evidence: none. Open: none.
 
 **Main state (658a16f):** Open: the full visual acceptance gallery and the independent visual sign-off have not been run on the implemented surfaces.
@@ -2087,7 +2093,9 @@ Status at `284f028`, `fa4715f`, `33743c5` and `3b453b3`: 29 done, 2 verified, 1 
 
 ## OSN-072 · WP7: migration verified on a copy of the owner's real store; clean-clone build, test and release dry run
 
-`OSN-072 · P0 · M7 · Status: in-progress`
+`OSN-072 · P0 · M7 · Status: done`
+
+**Release 0.4.0 state (2026-10-12):** Done. Migration on a copy of the owner's SkitchRedux store (the live folder was only read): 58 of 58 History documents converted, 2 destinations (default AWS cdn), 24 of 25 preference keys, source manifest (121 files) identical before and after, re-run a no-op, 0 mismatches on the independent canvas check. Clean clone with original/ absent: build, check-no-original and test.py exit 0 (275 of 275 app safety tests). Release dry run with the network denied: tools/release.sh 0.3.0, no tag, push or upload. Owner-only steps not run: the AWS cdn upload dry run and installing over the owner's copy. Evidence: docs/design/evidence/osn-072-2026-10-11/. Release 0.4.0 still needs the Info.plist bump (still 0.3.0) and a dry run of tools/release.sh 0.4.0.
 
 **Implementation (main 658a16f):** merge `0996da5`; branch commits `56393f8`, `8cdebcb`; Evidence: none. Open: Not done: migration on a copy of the owner's real store (not authorized in this run). Not done: no tag, push, upload or release. Release work is a dry run only. AWS live validation 2026-10-09 (partial evidence for the cdn upload dry run): OpenSnap's own S3 path, one synthetic object uploaded and deleted through the app; see progress.md.
 

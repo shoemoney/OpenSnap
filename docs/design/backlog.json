@@ -3,7 +3,7 @@
     "project": "OpenSnap",
     "round": 2,
     "generated": "2026-10-09",
-    "statusNote": "Follow-up integrated locally at b6b6b2e. Application source matches tested 1ac6674: full suite and cold build passed, including 263 app-safety checks and unchanged real stores. History glass controls and full-screen restoration fixes are implemented. 29 done, 2 verified, 1 not-a-bug, 4 in-progress of 36 todos; remaining manual/hardware/migration/release acceptance is explicit. See e2e/followup-root-verification.md. Historical capture labels retain provenance.",
+    "statusNote": "Release 0.4.0 update, 2026-10-12, on impl/osn-062 at 66ff7312: 31 done, 2 verified, 1 not-a-bug, 2 in-progress of 36 todos. OSN-070 and OSN-072 are done. OSN-062 (manual VoiceOver listening pass) and OSN-071 (independent visual sign-off, pending final confirmation) are in progress. The status in the earlier note is historical. Release 0.4.0 detail: progress.md, section Release 0.4.0 status.",
     "auditedShas": {
       "briefed": "b9319c4",
       "drift": [
@@ -161,7 +161,8 @@
     "candidateAfterPrivacyRewrite": "41700b3cba3453e928a065fa013fb6b93d833e70",
     "verificationReport": "docs/design/e2e/followup-root-verification.md",
     "followupTestedSource": "1ac66740bb976a9c00e2540839fbbdea63eec6b7",
-    "followupIntegration": "b6b6b2e4ac1537207e5916e0dfefe82f5105ff0c"
+    "followupIntegration": "b6b6b2e4ac1537207e5916e0dfefe82f5105ff0c",
+    "statusUpdated": "2026-10-12"
   },
   "decisions": [
     {
@@ -2610,10 +2611,11 @@
       "priority": "P1",
       "milestone": "M6",
       "status": "in-progress",
-      "mainState": "In progress: labels, Announcer announcements and the G10 accessibility audit walker (32 surfaces, 0 violations) are on main at 7c8bdb1 and 4fca729. The recorded manual VoiceOver pass is not done: VoiceOver speech was not run in any lane and stays on the gap list. The E2E audit's keyboard walk (J1, F-J1-007) passed with real Tab presses. That is keyboard evidence, not the manual VoiceOver pass.",
+      "mainState": "Automated layer done. Labels and announcements are on impl/osn-062 (aeb37912, be4d72cb, fe0f34b6). The G10 accessibility walker passes over 32 surfaces with 0 violations. 75 surfaces have spoken scripts in docs/design/evidence/osn-062-2026-10-11/spoken/ (INDEX and FINDINGS: 0 findings; tools/accessibility-baseline.tsv is empty). The announcement inventory in tests/AppSafetyAccessibilityCases.swift has 42 rows: 38 announced, 1 spoken by VoiceOver itself, 3 silent by design, 0 pending. The manual VoiceOver listening pass is not recorded; it is owner-scheduled and needs captions and audio. Status stays in-progress.",
       "remainingWork": null,
       "openItems": [
-        "Manual VoiceOver pass not recorded (the todo requires it). VoiceOver speech is outside what the harness can prove."
+        "Manual VoiceOver listening pass not recorded. Owner-scheduled; keep the captions and audio with the captures.",
+        "Spoken scripts are generated from the accessibility tree, not real speech (docs/design/evidence/osn-071-2026-10-11/gaps.md, E2E-A11Y-006). INDEX.md records build dda6b216 on every row; aeb37912 changed script text after that."
       ],
       "findings": [
         "VF-14"
@@ -2673,10 +2675,15 @@
       "title": "Regression gates in tools/test.py: font-floor walker, glass depth and budget, glyphs, original bytes, Skitch strings, layout fit at 980",
       "priority": "P0",
       "milestone": "M7",
-      "status": "in-progress",
-      "mainState": "Partial. On main from 0996da5: G6 tools/check-glyphs.py (decorative glyph scan, strict, 0 hits); G7 tools/check-eye-dump.py (harness output checker: PNG decode, clipping, rail absent, 12 pt margin, minimum sizes; contrast advisory); G11 tools/check-skip-budget.py; G4 font-floor walker tests/ViewTreeAudit.swift with ViewTreeAuditTests. The gates are wired into tools/test.py in efe2f68. Earlier on main: check-no-original.py, check-clean-clone.sh, check-brand.py and check-tokens.py (report mode). Not recorded as landed: G3 check-user-strings.py, the dynamic Skitch-string check, and a layout-fit-at-980 gate beyond the measured-width test in 658a16f.",
+      "status": "done",
+      "mainState": "Done on impl/osn-062 (commit 9011e305 and later; not yet merged to main). Gates G2 to G12 are strict and run from tools/test.py: G2 check-no-original.py; G3 check-user-strings.py (static, and dynamic through tests/UserStringWalk.swift); G4 view-tree-audit-tests (font floor); G5 glass-chrome-tests; G6 check-glyphs.py --strict; G7 check-eye-dump.py over each committed evidence set; G8 migration-tests and migration-dry-run.py; G9 check-tokens.py --strict; G10 accessibility-audit-tests; G11 check-skip-budget.py; G12 check-layout-fit.py. G1 (tools/check-clean-clone.sh) runs by hand, not from tools/test.py. The G3 and G12 tools are not on main (main has neither file). Every gate except G1 and G2 has a can-fail self-test; G1 and G2 have none (recorded exception). Gate table: progress.md, OSN-070 note.",
       "remainingWork": null,
-      "openItems": [],
+      "openItems": [
+        "G1 runs by hand (tools/check-clean-clone.sh), not from tools/test.py. No seeded self-test (recorded exception).",
+        "G2 has no seeded self-test (recorded exception: static name and hash lists).",
+        "G9 scans font, colour and radius literals only; the roughly 100 spec constraint constants are not scanned.",
+        "G7 contrast runs on committed evidence, not on a fresh capture."
+      ],
       "findings": [
         "VF-01",
         "VF-02",
@@ -2772,8 +2779,7 @@
         "tests": "each new gate has a can-fail self-test (90f70bc, 2cbf59c, bb0659a); the gates run from tools/test.py (wired in efe2f68, b6658d2)",
         "evidence": null,
         "openItems": [
-          "Not recorded as landed: G3 check-user-strings.py, the dynamic Skitch-string check, and a layout-fit-at-980 gate beyond the measured-width test.",
-          "G5 and G9 status beyond what is listed above is not recorded in this pass."
+          "Superseded 2026-10-12: see mainState and openItems."
         ]
       }
     },
@@ -2783,11 +2789,13 @@
       "priority": "P0",
       "milestone": "M7",
       "status": "in-progress",
-      "mainState": "Partial: phased rendered evidence and independent reviews through round 6, fixes through batch 13, final integration gates passed, and root representative gallery refreshed. Full per-mode matrix and manual/hardware-dependent coverage are not complete; no unqualified visual sign-off.",
-      "remainingWork": "Complete the remaining manual and per-mode acceptance checks before unqualified sign-off.",
+      "mainState": "Round 4 visual evidence at source 8188b73 (commit 66ff7312, on impl/osn-062). 2,260 rendered captures in five packs: base 760; reduce-transparency 486 and its -surfaces pack 264; increase-contrast 486 and its -surfaces pack 264. tools/check-eye-dump.py --strict exits 0 on every pack with 0 failures and 0 contrast advisories. The text walker reports 0 violations over 2,248 captures with view-tree metrics. Captures are harness renders, not real-click or Screen Recording captures. Independent visual sign-off: pending final confirmation.",
+      "remainingWork": "Independent visual sign-off, pending final confirmation. The per-mode gaps in docs/design/evidence/osn-071-2026-10-11/gaps.md stay open.",
       "openItems": [
-        "Spoken VoiceOver and hardware/permission-dependent paths remain unverified.",
-        "Full acceptance matrix is partial; see coverage-matrix.md and final-verification.md."
+        "Independent visual sign-off: pending final confirmation. The orchestrator updates the verdict after the final review.",
+        "REVIEW.md lists non-contrast advisories: 14,642 text-bearing controls at exactly 18 pt (the 20 pt floor is waived only for registered captions), and status text truncated in 6 captures (one is a deliberate stress string).",
+        "Contrast is not machine-proven for 570 skipped samples (translucent region or aspect mismatch); the reviewer checks them.",
+        "Not run: Font Awesome Pro icon mode (no Pro subset in this build), live Screen Recording capture, multi-display, 1x display, spoken VoiceOver (OSN-062), OS-owned panels."
       ],
       "findings": [
         "VF-01",
@@ -2872,10 +2880,14 @@
       "title": "WP7: migration verified on a copy of the owner's real store; clean-clone build, test and release dry run",
       "priority": "P0",
       "milestone": "M7",
-      "status": "in-progress",
-      "mainState": "Partial. The synthetic migration dry run is on main from 0996da5: 58 documents, 2 destinations; the source manifest is unchanged and a re-run is a no-op. Release dry run in a temp clone: zip SHA-256 2b0e2268c7bdda3778ae8bcd1bac1571e6c492308c1604d6ef27dbc723582725; codesign verify OK; nothing tagged, pushed or uploaded. The AWS cdn upload dry run is partly satisfied by the 2026-10-09 live validation (see progress.md). Not done: migration on a copy of the owner's real store (not authorized in this run).",
-      "remainingWork": null,
-      "openItems": [],
+      "status": "done",
+      "mainState": "Done. Migration run on a copy of the owner's SkitchRedux store (the live folder was only read): 58 of 58 History documents converted to .opensnap and 58 previews copied; 2 destinations (default AWS cdn); 24 of 25 preference keys copied (disableSounds dropped as obsolete); 2 Keychain items copied (in-memory Keychain, placeholder secrets). The source manifest (121 files) is identical before and after. A re-run is a no-op. An independent check found 0 mismatches across the 58 canvas documents. Clean clone with original/ absent: tools/build.sh, check-no-original.py and tools/test.py exit 0 (275 of 275 app safety tests). Release dry run in a temp clone with the network denied: tools/release.sh 0.3.0 exit 0; no tag, push, upload or network call. Evidence: docs/design/evidence/osn-072-2026-10-11/ (README.md is the index). The evidence commit c906d7bb is on main.",
+      "remainingWork": "Owner-only, not run: the AWS cdn upload dry run and installing the build over the owner's copy. Release 0.4.0 still needs Info.plist bumped to 0.4.0 and a dry run of tools/release.sh 0.4.0 (the dry run above used 0.3.0).",
+      "openItems": [
+        "Info.plist is still CFBundleShortVersionString 0.3.0, build 3. The dry run used 0.3.0, not 0.4.0.",
+        "tools/test-native-startup.py and GUI-session steps were not run (no desktop session in the evidence run).",
+        "The AWS cdn upload dry run and installing over the owner's copy are owner-only and were not run. The 2026-10-09 live validation is partial evidence for the upload (progress.md)."
+      ],
       "findings": [
         "VF-01",
         "VF-03"
@@ -2927,10 +2939,7 @@
         "tests": "tools/migration-dry-run.py synthetic store: 58 documents, 2 destinations; re-run is a no-op",
         "evidence": null,
         "openItems": [
-          "Not done: migration on a copy of the owner's real store (not authorized in this run).",
-          "Not done: no tag, push, upload or release. Release work is a dry run only.",
-          "AWS live validation 2026-10-09 (partial evidence for the cdn upload dry run): OpenSnap's own S3 path, one synthetic object uploaded and deleted through the app; see progress.md.",
-          "Final clean-clone build and test passed at the byte-identical final candidate; installation, real-store-copy migration and release remain outside this completed check."
+          "Superseded 2026-10-12: see mainState and openItems."
         ]
       }
     }
