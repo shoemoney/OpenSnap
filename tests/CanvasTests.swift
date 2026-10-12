@@ -2027,7 +2027,7 @@ struct CanvasTests {
         editor.undoManager!.groupsByEvent = false
         try expect(editor.isHorizontallyResizable && editor.isVerticallyResizable && editor.textContainer?.widthTracksTextView == false && editor.textContainer?.heightTracksTextView == false,
                    "Recovered unbounded container resizes in both dimensions")
-        try expect(editor.textContainerInset == NSSize(width: 4, height: 2) && editor.textContainer?.lineFragmentPadding == 2,
+        try expect(editor.textContainerInset == NSSize(width: 4, height: 4) && editor.textContainer?.lineFragmentPadding == 2,
                    "Recovered inset and line padding")
         try expect((try SketchDocument.decode(c.snapshotDocumentData())) == before, "Opening an imported fixed box never rewrites its stored model")
         let long = "A long annotation grows without automatic word wrapping"
@@ -2106,6 +2106,13 @@ struct CanvasTests {
         let fit = OriginalTextGeometry.size(text: editor.string, font: editor.font!)
         try expect(abs(editor.frame.width - fit.width) < 0.001 && abs(editor.frame.height - fit.height) < 0.001 && editor.frame.height < baseFrame.height,
                    "Zoom recomputes the fitted editor using its readable displayed font, allowing shrinkage")
+        if let manager = editor.layoutManager, let container = editor.textContainer {
+            let used = manager.usedRect(for: container), pad: CGFloat = 4
+            let above = editor.textContainerOrigin.y + used.minY, below = editor.frame.height - (editor.textContainerOrigin.y + used.maxY)
+            // The room under the text beyond the padding is what outline and shadow need; the padding itself is the same above and below.
+            try expect(abs(above - pad) < 0.01 && abs((below - above) - (fit.height - used.height - 2 * pad)) < 1.01,
+                       "The editing text is centred in its box: \(above) pt above, \(below) below (padding \(pad) each side plus the outline and shadow room)")
+        } else { throw Failure(description: "The editor has a layout manager") }
         let expectedGrip = CGRect(x: frame.minX - 11, y: frame.minY - 3, width: fit.width + 15, height: fit.height + 6)
             .integral.insetBy(dx: -5, dy: -5)
         try expect(grip.frame == expectedGrip, "Fractional editor frames round grip outwards after zoom; editor \(editor.frame), expected editor \(frame), grip \(grip.frame), expected grip \(expectedGrip)")
@@ -2644,7 +2651,7 @@ struct CanvasTests {
         try expect(bg.pixelsWide == 100 && bg.pixelsHigh == 80 && replaced.size == original.size &&
                    replaced.elements == original.elements && c.selection == selected && c.cropRect == crop && c.framePreview,
                    "Re-Snap resamples only backdrop, preserving dimensions/all annotations/preview/crop/selection")
-        try expect(try pixel(c, 10, 10).greenComponent > 0.9 && pixel(c, 70, 60).blueComponent > 0.9,
+        try expect(try pixel(c, 10, 10).greenComponent > 0.9 && pixel(c, 90, 75).blueComponent > 0.9,
                    "Retina image is fitted to existing document coordinates")
         try expect(dirty == 1, "Re-Snap sends one dirty notification")
         c.undo(); try expect(c.document == original && !c.editingUndoManager.canUndo, "Re-Snap is one exact undo")

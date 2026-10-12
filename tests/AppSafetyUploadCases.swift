@@ -19,7 +19,7 @@ extension AppSafetyTests {
             ("The Original size checkbox steps aside during an upload or a link only where the measured slot cannot hold it, the same for every state so the bar never jumps (an error at 980 hides it like a transfer does)", uploadCheckboxFollowsWidth),
             ("On the 980 floor the real footer in the idle, uploading, link and error states draws every label and face whole: nothing is truncated or overlaps, and the error keeps its narrowest form beside Original size", uploadFooterFitsAtFloor),
             ("Upload with no destination says so in the status line and opens Settings › Upload, whose empty list offers Add… (F-J5-004)", uploadWithoutDestinationExplains),
-            ("The upload result keeps the end of the file name at 980, 1024 and 1440, narrowing to Copied · …name (R1-014)", uploadStatusAtWidths),
+            ("The upload result reads whole or as the status word at 980, 1024 and 1440, never cut mid-word (R1-014)", uploadStatusAtWidths),
             ("Upload sends the picture at its own pixel size when Original size is ticked and as shown when it is not, and History records the size that went out (R1-002)", uploadHonoursOriginalSize)
         ]
     }
@@ -119,7 +119,7 @@ extension AppSafetyTests {
             stub.gate.signal()
             try waitForMain("The upload succeeds") { if case .success = app.uploadState { return true } else { return false } }
             guard case .success(let url, let copied) = app.uploadState else { throw Failure(description: "Not a success") }
-            try expect(copied && stub.copied == [url] && (app.status.stringValue.hasPrefix("Link copied") || app.status.stringValue.hasPrefix("Copied")), "Success: Link copied (narrowed to Copied · …name at 980), and the clipboard behaviour is unchanged (\(app.status.stringValue))")
+            try expect(copied && stub.copied == [url] && (app.status.stringValue.hasPrefix("Link copied") || app.status.stringValue.hasPrefix("Copied")), "Success: Link copied (narrowed to the word alone at 980), and the clipboard behaviour is unchanged (\(app.status.stringValue))")
             try expect(visibleCommands(chrome) == ["open", "copy"], "Success shows Open and Copy (\(visibleCommands(chrome)))")
             try expect(app.dragOriginalControl.isHidden, "At 980 the checkbox stays out of the way while Link copied and its commands are showing")
             try expect(log.texts.contains("Upload complete. Link copied."), "Success is announced: \(log.texts)")
@@ -321,17 +321,17 @@ extension AppSafetyTests {
         try waitForMain("The upload succeeds") { if case .success = app.uploadState { return true } else { return false } }
         guard case .success(let url, true) = app.uploadState, let status = app.status as? StatusTextField else { throw Failure(description: "Not a copied success") }
         let address = UploadState.displayAddress(of: url)
-        try expect(status.variants.first == "Link copied · " + address && status.variants.last?.hasPrefix("Link copied · ") == true && status.variants.count > 3,
-                   "The status carries the link after Link copied, and shorter middle-cut steps (\(status.variants.first ?? ""))")
-        try expect((status.stringValue.hasPrefix("Link copied · ") || status.stringValue.hasPrefix("Copied · …")) && status.frame.width > 100 && status.stringValue.hasSuffix("png"),
-                   "At 980 the \(Int(status.frame.width)) pt slot is used for the link, not left empty (\(status.stringValue))")
+        try expect(status.variants.first == "Link copied · " + address && status.variants == ["Link copied · " + address, "Link copied · cdn.example.com", "Link copied"],
+                   "The status carries the link after Link copied, then the host, then the word alone (\(status.variants))")
+        try expect((status.stringValue == "Link copied · " + address || status.stringValue == "Link copied · cdn.example.com" || status.stringValue == "Link copied") && !status.stringValue.contains("…") && status.frame.width > 100,
+                   "At 980 the \(Int(status.frame.width)) pt slot shows the link whole or the word alone, never cut mid-word (\(status.stringValue))")
         try expect(AppToolTip.text(for: status) == "Link copied: " + url.absoluteString && status.accessibilityHelp() == "Link copied: " + url.absoluteString,
                    "The full URL stays on the tooltip and in the VoiceOver help, whatever the status shows")
         // However much of the sentence a narrow slot shows, VoiceOver is told all of it.
         let wide = status.frame.size
         status.setFrameSize(NSSize(width: 340, height: wide.height))
-        try expect(status.stringValue != status.variants.first && status.stringValue.hasPrefix("Link copied · ") && (status.accessibilityValue() as? String) == status.variants.first,
-                   "A narrow slot cuts what is drawn (\(status.stringValue)) but VoiceOver is told the whole sentence (\(String(describing: status.accessibilityValue())))")
+        try expect(status.stringValue != status.variants.first && status.stringValue.hasPrefix("Link copied") && !status.stringValue.contains("…") && (status.accessibilityValue() as? String) == status.variants.first,
+                   "A narrow slot shortens what is drawn, never mid-word (\(status.stringValue)) but VoiceOver is told the whole sentence (\(String(describing: status.accessibilityValue())))")
         status.setFrameSize(wide)
         // Four seconds in production: the countdown is untouched by the longer text.
         try expect(productionDuration == UploadState.successDuration && productionDuration >= 10 && app.uploadSuccessTimer != nil, "The expiry timer is running, and the production expiry is the long one, at least ten seconds (\(productionDuration))")
@@ -450,7 +450,7 @@ extension AppSafetyTests {
         try expect(on.published == own && off.published == shown, "History records the size that went out: \(String(describing: on.published)) / \(String(describing: off.published))")
     }
 
-    /// R1-014: the upload result keeps its useful part at every window width: the file name's end, which tells one upload from the next.
+    /// R1-014 (round 3): the upload result is the whole link or the word alone at every window width; the link itself stays on the tooltip.
     static func uploadStatusAtWidths() throws {
         for width in [ModernEditorChrome.minimumWindowWidth, 1024, 1440] as [CGFloat] {
             let fixture = try Fixture(), app = fixture.app
@@ -461,13 +461,9 @@ extension AppSafetyTests {
             try uploadButton(app).performClick(nil)
             try waitForMain("The upload succeeds at \(Int(width))") { if case .success = app.uploadState { return true } else { return false } }
             guard case .success(let url, true) = app.uploadState, let status = app.status as? StatusTextField else { throw Failure(description: "Not a copied success at \(Int(width))") }
-            let tail = String(url.lastPathComponent.suffix(6))
             let text = status.stringValue
-            // At the minimum width the slot is small: the narrowest steps keep the end of the name. Wider, a middle-cut name is enough.
-            let keepsName = width == ModernEditorChrome.minimumWindowWidth ? (text.contains(tail) || (text.hasPrefix("Link copied · ") && text.hasSuffix("png"))) : (text.contains(tail) || (text.hasPrefix("Link copied · ") && text.contains("…") && text.hasSuffix("png")))
-            try expect(keepsName && (text.hasPrefix("Link copied") || text.hasPrefix("Copied")), "\(Int(width)): the status keeps the file name's end (…\(tail)) and leads with Copied (\(text))")
-            if width >= 1440 { try expect(text.hasPrefix("Link copied · cdn.example.com") && text.hasSuffix("png"), "1440: a wide slot keeps the host and the end of the name (\(text))") }
-            else { try expect(!text.hasSuffix("cdn.exa…") && !text.hasSuffix(String(UploadState.displayAddress(of: url).prefix(6)) + "…"), "\(Int(width)): the line is not the sentence cut off after the host (\(text))") }
+            try expect(text == "Link copied" || text == "Link copied · cdn.example.com" || text == "Link copied · " + UploadState.displayAddress(of: url), "\(Int(width)): the status is the word alone or the whole link, never cut mid-word (\(text))")
+            if width >= 1440 { try expect(text.hasPrefix("Link copied · cdn.example.com"), "1440: a wide slot keeps the host at least (\(text))") }
             try expect(status.frame.width > 100, "\(Int(width)): the slot is used (\(Int(status.frame.width)) pt)")
             app.expireUploadSuccess()
         }

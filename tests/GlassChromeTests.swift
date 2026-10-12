@@ -2101,24 +2101,11 @@ private enum GlassChromeTests {
     private static func uploadVariantChecks() {
         let url = URL(string: "https://cdn.shoemoney.com/pics/Shot-20261010-153012.png")!
         let variants = UploadState.success(url: url, copied: true).statusVariants
-        expect(variants.first == "Link copied · cdn.shoemoney.com/pics/Shot-20261010-153012.png", "The longest variant is Link copied · the address without its scheme (\(variants.first ?? ""))")
-        expect(variants.count > 5 && variants.last == variants.first, "There are middle-cut steps, and the whole sentence comes last so the cell cuts it at its tail when nothing fits (\(variants.count))")
-        expect(zip(variants.dropLast(), variants.dropLast().dropFirst()).allSatisfy { $0.count > $1.count }, "The steps only get shorter")
-        let middle = Array(variants.dropFirst().dropLast())
-        expect(middle.allSatisfy { ($0.hasPrefix("Link copied · ") || $0.hasPrefix("Copied · …")) && $0.contains("…") }, "Every step after the first keeps the lead and cuts the address (or, narrowest, shortens the lead and keeps the file name's end)")
-        let longSteps = middle.filter { $0.hasPrefix("Link copied · ") }
-        expect(longSteps.allSatisfy { ($0.hasPrefix("Link copied · cdn") || $0.hasPrefix("Link copied · Sh")) && $0.hasSuffix("png") }, "The host's start (or, narrower, the file name's start) and the file name's end survive the cuts (\(variants[3]))")
-        let nameSteps = middle.filter { $0.hasPrefix("Link copied · Sh") }
-        expect(nameSteps.count >= 3 && nameSteps.allSatisfy { !$0.contains("cdn") }, "At 980 the later steps keep the file name, middle-cut, rather than a host stump (\(nameSteps))")
-        // R1-014: narrower still, "Copied · …" and the end of the file name, which is what tells one upload from the next.
-        let tailSteps = middle.filter { $0.hasPrefix("Copied · …") }
-        expect(tailSteps.count >= 2 && tailSteps.allSatisfy { $0.hasSuffix("12.png") } && variants.dropLast().last == tailSteps.last && tailSteps.last!.count <= "Copied · …".count + UploadState.minimumNameCharacters,
-               "The last steps are Copied · …<end of the name>, down to \(UploadState.minimumNameCharacters) characters (\(tailSteps))")
-        expect(UploadState.minimumNameCharacters == 6 && tailSteps.last == "Copied · …12.png", "the shortest step is 'Copied · …12.png' (\(tailSteps.last ?? "nil"))")
+        expect(variants == ["Link copied · cdn.shoemoney.com/pics/Shot-20261010-153012.png", "Link copied · cdn.shoemoney.com", "Link copied"], "The link whole where it fits, else the host, else the status word; never a mid-word cut like Link copied · Sh…png (\(variants))")
+        expect(variants.allSatisfy { !$0.contains("…") }, "No success step has an ellipsis")
         expect(UploadState.success(url: url, copied: true).detailText == "Link copied: " + url.absoluteString, "The full URL stays in the tooltip and the VoiceOver help")
         expect(UploadState.success(url: url, copied: false).statusVariants == ["Published image"] && UploadState.idle.statusVariants.isEmpty, "An uncopied link and idle have no link text")
         expect(UploadState.uploading(name: "Shot").statusVariants == ["Uploading Shot…", "Uploading…"] && UploadState.failure(message: "No.\nMore").statusVariants == ["No."], "Uploading gives up the file name before the verb; an error is its first line")
-        expect(UploadState.middleTruncated("abcdefghij", to: 6) == "ab…hij" && UploadState.middleTruncated("abc", to: 6) == "abc", "middleTruncated keeps the end a little longer than the start")
         // A save notice names its file; where the slot cannot hold the whole line it shows "Saved" whole, never "Saved Quarterly mo…".
         let saved = StatusTextField(labelWithString: "")
         saved.font = DesignTokens.Typography.font(.body); saved.lineBreakMode = .byTruncatingTail
@@ -2140,9 +2127,8 @@ private enum GlassChromeTests {
         func shown(_ width: CGFloat) -> String { field.setFrameSize(NSSize(width: width, height: 24)); return field.stringValue }
         expect(shown(2000) == variants.first, "A wide slot shows the whole sentence")
         let mid = shown(340)
-        expect(mid != variants.first && mid != "Link copied" && mid.hasPrefix("Link copied · ") && mid.contains("…"), "A narrower slot cuts the middle of the link (\(mid))")
-        expect(shown(150) == variants.first && !shown(150).dropFirst(11).contains("……") && field.spokenValue == nil, "A slot too narrow for any step shows the whole sentence and lets the cell cut its tail, so Link copied leads and no second ellipsis appears")
-        expect(field.cell?.cellSize.width ?? 0 > 150 && field.lineBreakMode == .byTruncatingTail, "...that cut is the status line's own tail truncation")
+        expect(mid == "Link copied · cdn.shoemoney.com" && !mid.contains("…") && field.spokenValue == variants.first, "A slot too narrow for the whole link shows the host, a whole word, never a cut link (\(mid)); VoiceOver still hears the sentence")
+        expect(shown(2000) == variants.first && shown(150) == "Link copied", "The word alone still fits where the host cannot")
     }
 
     /// Audit batch 3b (F-J2-021, F-J2-022): a long error is the sentence whole, its code, or "Upload failed" and never a cut sentence, the Details text has no second "Error:", a retry is named, the success line

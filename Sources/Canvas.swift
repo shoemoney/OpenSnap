@@ -1743,7 +1743,7 @@ final class CanvasView: NSView, NSTextViewDelegate {
                 if element.filled { return path.contains(local, using: .winding, transform: .identity) }
                 return path.copy(strokingWithWidth: tolerance * 2, lineCap: .round, lineJoin: .round,
                                  miterLimit: 10).contains(local)
-            case .text: return element.rect.contains(local)
+            case .text: return OriginalTextGeometry.drawRect(for: element).contains(local)
             case .raster:
                 guard element.rect.contains(local), let png = element.imagePNG,
                       let bitmap = NSBitmapImageRep(data: png) else { return false }
@@ -2067,7 +2067,7 @@ final class CanvasView: NSView, NSTextViewDelegate {
         editor.font = NSFont(name: element.fontName, size: max(18, element.fontSize * displayScale.height)) ??
             NSFont.boldSystemFont(ofSize: max(18, element.fontSize * displayScale.height))
         editor.textColor = element.color.nsColor
-        editor.textContainerInset = NSSize(width: 4, height: 2)
+        editor.textContainerInset = NSSize(width: 4, height: OriginalTextGeometry.verticalPadding)
         editor.textContainer?.lineFragmentPadding = 2
         editor.textContainer?.containerSize = NSSize(width: CGFloat(Float.greatestFiniteMagnitude), height: CGFloat(Float.greatestFiniteMagnitude))
         editor.textContainer?.widthTracksTextView = false
