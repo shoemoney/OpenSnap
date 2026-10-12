@@ -2,7 +2,7 @@
 
 - Surface: History (populated)
 - Suite: accessibility-audit-tests
-- Build: dda6b216
+- Build: a31490d2
 - Nodes: 53
 
 ```
@@ -39,7 +39,7 @@
 [3]       Shot 2, Saved, Mar 7, 2026 at 9:00 AM, button
 [2]     Friday, March 6, 2026, list
 [3]       Friday, March 6, 2026
-[3]       Shot 3, Missing file · Shared, Mar 6, 2026 at 8:00 AM, button
+[3]       Shot 3, Missing file, Shared, Mar 6, 2026 at 8:00 AM, button
 [1]   0, scroll bar
 [2]     button, dimmed
 [2]     button, dimmed

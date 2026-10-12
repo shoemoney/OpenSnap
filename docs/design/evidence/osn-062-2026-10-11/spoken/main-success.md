@@ -2,7 +2,7 @@
 
 - Surface: Main (success)
 - Suite: app-safety
-- Build: dda6b216
+- Build: a31490d2
 - Nodes: 39
 
 ```
@@ -27,7 +27,7 @@
 [1]     hint: Option reverses direction, Shift constrains the angle
 [1]   Crop tool, not selected, radio button, 10 of 10
 [0] Drawing colors, Red, button
-[0]   hint: Color: hover for original preset colors; hold Shift to change the canvas background
+[0]   hint: Opens the preset colors. Hold Shift to change the canvas background instead.
 [0] Drawing size, 7, slider
 [0] Font, Helvetica Bold, 18 points, button
 [0] scroll area
@@ -41,7 +41,6 @@
 [0] Resize…, button
 [0]   hint: Resize or crop the picture
 [0] Link copied · example.com/a.png
-[0]   hint: Link copied: https://example.com/a.png
 [0] Open link in browser, button
 [0] Copy link, button
 [0] Save, button
@@ -54,7 +53,7 @@
 [0] Drag image to another app, button, dimmed
 [0]   hint: Drag the drawing into Finder or another app
 [0] Upload image, button
-[0]   hint: Upload image and copy link · Right-click for destinations
+[0]   hint: Uploads the image and copies the link. Show Menu chooses a destination.
 [0] Image borders, group
 [0]   hint: Drag an edge to crop or expand; hold Option for symmetry. Drag a corner to resize. Without dragging, use Resize or Crop Selection in the Image menu.
 [0] close, button

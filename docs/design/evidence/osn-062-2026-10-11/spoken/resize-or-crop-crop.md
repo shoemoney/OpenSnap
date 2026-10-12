@@ -2,7 +2,7 @@
 
 - Surface: Resize or Crop (Crop)
 - Suite: accessibility-audit-tests
-- Build: dda6b216
+- Build: a31490d2
 - Nodes: 25
 
 ```

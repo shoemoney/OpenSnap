@@ -2,7 +2,7 @@
 
 - Surface: Top bar
 - Suite: app-safety
-- Build: dda6b216
+- Build: a31490d2
 - Nodes: 18
 
 ```
@@ -26,7 +26,7 @@
 [1]     hint: Option reverses direction, Shift constrains the angle
 [1]   Crop tool, not selected, radio button, 10 of 10
 [0] Drawing colors, Red, button
-[0]   hint: Color: hover for original preset colors; hold Shift to change the canvas background
+[0]   hint: Opens the preset colors. Hold Shift to change the canvas background instead.
 [0] Drawing size, 7, slider
 [0] Font, Helvetica Bold, 18 points, button
 ```

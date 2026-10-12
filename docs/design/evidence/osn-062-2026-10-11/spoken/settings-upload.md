@@ -2,7 +2,7 @@
 
 - Surface: Settings: Upload
 - Suite: accessibility-audit-tests
-- Build: dda6b216
+- Build: a31490d2
 - Nodes: 20
 
 ```
@@ -15,7 +15,7 @@
 [0] scroll area
 [1]   Destinations
 [1]   scroll area
-[2]     Work, WebDAV, Default, row
+[2]     Work, WebDAV, Default, Selected, row
 [2]     Backup, S3-compatible, row
 [1]   Destination actions, group
 [2]     Add…, button

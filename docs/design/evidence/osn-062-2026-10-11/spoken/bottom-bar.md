@@ -2,7 +2,7 @@
 
 - Surface: Bottom bar
 - Suite: app-safety
-- Build: dda6b216
+- Build: a31490d2
 - Nodes: 12
 
 ```
@@ -24,5 +24,5 @@
 [0] Drag image to another app, button, dimmed
 [0]   hint: Drag the drawing into Finder or another app
 [0] Upload image, button
-[0]   hint: Upload image and copy link · Right-click for destinations
+[0]   hint: Uploads the image and copies the link. Show Menu chooses a destination.
 ```
