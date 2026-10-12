@@ -1,0 +1,229 @@
+{
+  "suite" : "app-safety",
+  "surfaces" : [
+    {
+      "findings" : [
+
+      ],
+      "slug" : "main-idle",
+      "surface" : "Main (idle)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "main-uploading",
+      "surface" : "Main (uploading)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "main-success",
+      "surface" : "Main (success)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "main-failure",
+      "surface" : "Main (failure)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "main-menu-opensnap",
+      "surface" : "Main menu > OpenSnap"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "main-menu-file",
+      "surface" : "Main menu > File"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "main-menu-edit",
+      "surface" : "Main menu > Edit"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "main-menu-image",
+      "surface" : "Main menu > Image"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "main-menu-drawing",
+      "surface" : "Main menu > Drawing"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "main-menu-text",
+      "surface" : "Main menu > Text"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "main-menu-capture",
+      "surface" : "Main menu > Capture"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "main-menu-window",
+      "surface" : "Main menu > Window"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "status-item-menu",
+      "surface" : "Status-item menu"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "toolbox",
+      "surface" : "Toolbox"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "editor-populated",
+      "surface" : "Editor (populated)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "editor-selection",
+      "surface" : "Editor (selection)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "editor-text-editing",
+      "surface" : "Editor (text editing)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "editor-frame-mode",
+      "surface" : "Editor (frame mode)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "editor-frame-keeps-annotations",
+      "surface" : "Editor (frame keeps annotations)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "top-bar",
+      "surface" : "Top bar"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "bottom-bar",
+      "surface" : "Bottom bar"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "editor-actual-size",
+      "surface" : "Editor (actual size)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "editor-fullscreen-prompt",
+      "surface" : "Editor (fullscreen prompt)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "size-popover",
+      "surface" : "Size popover"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "color-popover",
+      "surface" : "Color popover"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "zoom-panel",
+      "surface" : "Zoom panel"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "upload-destinations-panel",
+      "surface" : "Upload destinations panel"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "permission-alert",
+      "surface" : "Permission alert"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "status-item-button",
+      "surface" : "Status-item button"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "upload-context-menu",
+      "surface" : "Upload context menu"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "countdown",
+      "surface" : "Countdown"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "capture-picker-overlay",
+      "surface" : "Capture picker overlay"
+    }
+  ]
+}

@@ -2,13 +2,13 @@
  "floorPt": 18.0,
  "stats": {
   "captures": 2248,
-  "textNodes": 55792,
+  "textNodes": 55546,
   "smallestPt": 18.0,
   "glassRows": 5950
  },
  "violationCount": 0,
  "violations": [],
- "controlsBetween18And20": 14798,
+ "controlsBetween18And20": 14642,
  "controlsBetween18And20ByClassAndText": {
   "CommandButton 18.0pt Hide": 1346,
   "CommandButton 18.0pt Photos": 1346,
@@ -20,14 +20,14 @@
   "CommandButton 18.0pt Clear image": 1126,
   "StatusTextField 18.0pt Arrow · Unsaved changes": 484,
   "StatusTextField 18.0pt Unsaved changes": 312,
-  "NSTextField 18.0pt Exported": 270,
   "NSTextField 18.0pt Shared": 270,
-  "NSTextField 18.0pt Saved": 270,
   "NSTextField 18.0pt WebDAV": 260,
   "NSTextField 18.0pt SFTP": 260,
   "NSTextField 18.0pt S3-compatible": 236,
   "CommandButton 18.0pt Remove annotations": 220,
   "NSTextField 18.0pt Uploads go to the default dest": 212,
+  "NSTextField 18.0pt Exported": 192,
+  "NSTextField 18.0pt Saved": 192,
   "NSTextField 18.0pt Path-style S3 over system curl": 156,
   "NSTextField 18.0pt Test lists the bucket with the": 132,
   "StatusTextField 18.0pt Arrow · Saved": 90,
@@ -48,8 +48,8 @@
   "StatusTextField 18.0pt Select · Unsaved changes": 24,
   "NSTextField 18.0pt Holding Option reverses the se": 24,
   "NSTextField 18.0pt WebDAV, or any server that acc": 24,
-  "StatusTextField 18.0pt Text · Unsaved changes": 18,
-  "StatusTextField 18.0pt Upload cancelled": 18
+  "StatusTextField 18.0pt Link copied · cdn.example.com": 24,
+  "StatusTextField 18.0pt Text · Unsaved changes": 18
  },
  "skippedSystemOwnedNodes": {
   "titleBarWidgetOrSystemPanel": 8410,
@@ -59,9 +59,9 @@
  "statusTruncatedCaptures": [
   "base/S09-footer-long-status-dark",
   "base/S09-footer-long-status-light",
-  "reduce-transparency/S09-footer-long-status-dark-rt",
-  "reduce-transparency/S09-footer-long-status-light-rt",
-  "increase-contrast/S09-footer-long-status-dark-ic",
-  "increase-contrast/S09-footer-long-status-light-ic"
+  "rt/S09-footer-long-status-dark-rt",
+  "rt/S09-footer-long-status-light-rt",
+  "ic/S09-footer-long-status-dark-ic",
+  "ic/S09-footer-long-status-light-ic"
  ]
 }

@@ -1,6 +1,6 @@
 # OSN-071 gaps: coverage-matrix surfaces and modes NOT captured
 
-Round 2 @ `cbd0186`, S51 fixed and recaptured at `a399d8a7` (round 1 was `4254505`; git keeps it). Everything here is a surface or mode with no capture in `REVIEW.md`, each with the concrete reason. A row of `docs/design/e2e/coverage-matrix.md` that is not listed here has at least one harness capture (its `rendered` surface ids or the S50 to S60 glass surfaces) in both light and dark. Gap categories follow the matrix (`permission`, `hardware`, `OS-owned`, `harness`, `unsafe`) plus `behaviour` for rows that are not visual states.
+Round 3 @ `723e65b` (rounds 1 `4254505` and 2 `cbd0186` / `a399d8a7` are in git history; the surface and mode gaps below are unchanged from round 2, the same set was re-run). Everything here is a surface or mode with no capture in `REVIEW.md`, each with the concrete reason. A row of `docs/design/e2e/coverage-matrix.md` that is not listed here has at least one harness capture (its `rendered` surface ids or the S50 to S60 glass surfaces) in both light and dark. Gap categories follow the matrix (`permission`, `hardware`, `OS-owned`, `harness`, `unsafe`) plus `behaviour` for rows that are not visual states.
 
 ## Surface gaps from the harness (manifest `gaps`, every pack)
 
@@ -20,7 +20,7 @@ Round 2 @ `cbd0186`, S51 fixed and recaptured at `a399d8a7` (round 1 was `425450
 | E2E-HOT-035 to 040 hotkeys firing while backgrounded | Needs the global hotkey to fire from another app, i.e. physical HID input; the Capture tab and key panel are captured (S17, S60) | hardware |
 | E2E-SHEET-048 Open panel, 049 Save panel, 050 Page Setup, E2E-SHEET-022 Choose image folder, E2E-MENU-077 Spelling panel | OS-owned panels (NSOpenPanel and friends); the app-owned accessory is captured (S10: alone and inside the save panel in every mode). In `S10-export-panel` the system panel's body (name field, folder list, buttons) is hosted out of process and comes back empty, so the capture shows the panel's title and the real accessory window over a blank body | OS-owned |
 | E2E-SHEET-051 Print panel | Needs a real printer destination | hardware |
-| E2E-A11Y-006 VoiceOver speech | Needs spoken VoiceOver; AX trees are in the raw runs but are not committed | hardware |
+| E2E-A11Y-006 VoiceOver speech | Needs spoken VoiceOver; the spoken scripts a screen reader would be told (generated from the AX tree, not real speech) are in `docs/design/evidence/osn-062-2026-10-11/spoken/` | hardware |
 | E2E-MENU-066 to 076, 078, 079 (Hide Others, Show All, Bring All to Front, Pencil Smoothing, Arrow Head, Spelling items) | Menu bar items with no visual state of their own: menu windows are not captured (see S23); their effect on drawing is covered by the populated editor captures | harness |
 | E2E-ICON-102 OpenSnap.icon (Dock/Finder rendering) | The harness captures only the app's own windows; the app icon is built and previewed with `ictool` (see the icon-composer notes), not by this run | harness |
 | E2E-SET-024 persisted settings across relaunch, E2E-CAP-009 Snap from Link, E2E-DEST-031 to 037 upload journeys (success, failure, retry, cancel, Delete from Web, Test connection) as flows | Behaviours across time or network; the harness stubs the uploader and runs offline (sandbox denies network). The publish progress, success and error states and the busy and empty upload panels are captured (S21, S52, S58) | behaviour / unsafe |
@@ -47,3 +47,13 @@ Panels formerly listed without a render are now covered by the glass surfaces: T
 | Surface | Finding |
 |---|---|
 | S51 `zoom-actual-size`, all 6 modes | Fixed in `a399d8a7`: the zoom pop-up face "Actual" needed 56 x 24 pt and was drawn in 54 x 25 pt, so `check-eye-dump.py --strict` and the text walker reported it cut off. S51 (every capture, base, Reduce Transparency and Increase Contrast) and S11M at 980 and 1280 (base) were recaptured at `a399d8a7`; `check-eye-dump.py --strict` exits 0 on all five packs and the walker reports 0 violations |
+
+## Defects found (round 3, product, not fixed here)
+
+| Surface | Finding | Evidence |
+|---|---|---|
+| Bottom bar "Original size" checkbox, Increase Contrast, dark appearance (42 captures: 31 in `increase-contrast`, 11 in `increase-contrast-surfaces`, e.g. S04 `controls-disabled`, S05 `selection-multi`, S07 `zoom-200`, S11M every width, S30, S31, S33, S35, S36, S38, S39, S40 size states, S51/S52/S53 `dismissed`, S21 `publish-success-w1280` and `w1440`) | The checked box's label reads white (255,255,255) on the accent fill rgb about (140,117,55), 4.30 to 4.50:1, under the 4.5:1 floor, so `check-eye-dump.py --strict` exits 1 on both Increase Contrast packs (0 failures, 42 contrast advisories, all this one control). Light, default and Reduce Transparency are clean, and round 2 had 0 advisories, so this arrived with the selected-fill change in `4d17d945` (dark selected fill 0.40 under Increase Contrast over the host's yellow accent). Candidate fix: darken the checked fill or keep the label on a higher-contrast plate under Increase Contrast dark | `increase-contrast/S36-text-editing-w980-dark-ic@723e65b.png` (box lower left) and `check-eye-dump.py increase-contrast --strict` lines `ADVISORY ...: contrast: Original size checkbox samples 4.45:1 (text (255, 255, 255) on (140, 117, 55)), below 4.5:1` |
+
+Observation for the reviewer (not a check failure): in the S19 `*-in-context` captures the destination sheet is drawn 15 px wider than the Settings window it hangs from (sheet edges at the capture edges, parent title bar narrower), which a real AppKit sheet would not do; the sheet content itself is correct.
+
+The round 2 defect (S51 `zoom-actual-size`) stays fixed: S51 passes `--strict` in all modes.

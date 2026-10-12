@@ -1,0 +1,13 @@
+# Status-item menu
+
+- Surface: Status-item menu
+- Suite: app-safety
+- Build: 723e65bb
+- Nodes: 4
+
+```
+[0] Show OpenSnap
+[0] Snap…
+[0] Settings…
+[0] Quit OpenSnap
+```

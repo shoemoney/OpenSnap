@@ -1,0 +1,271 @@
+{
+  "suite" : "accessibility-audit-tests",
+  "surfaces" : [
+    {
+      "findings" : [
+
+      ],
+      "slug" : "about",
+      "surface" : "About"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "license",
+      "surface" : "License"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "notices",
+      "surface" : "Notices"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "history-empty",
+      "surface" : "History (empty)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "history-populated",
+      "surface" : "History (populated)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "destinations-edit-form",
+      "surface" : "Destinations (edit form)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "destinations-edit-form-error",
+      "surface" : "Destinations (edit form, error)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "destinations-form-webdav",
+      "surface" : "Destinations (form, WebDAV)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "destinations-form-ftp",
+      "surface" : "Destinations (form, FTP)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "destinations-form-ftps",
+      "surface" : "Destinations (form, FTPS)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "destinations-form-sftp",
+      "surface" : "Destinations (form, SFTP)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "destinations-form-s3-compatible",
+      "surface" : "Destinations (form, S3-compatible)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "destinations-form-test-result",
+      "surface" : "Destinations (form, test result)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "resize-or-crop-resize",
+      "surface" : "Resize or Crop (Resize)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "resize-or-crop-crop",
+      "surface" : "Resize or Crop (Crop)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "resize-or-crop-limit",
+      "surface" : "Resize or Crop (Limit)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "resize-preset-panel",
+      "surface" : "Resize preset panel"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "photos-empty",
+      "surface" : "Photos (empty)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "settings-general",
+      "surface" : "Settings: General"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "settings-general-tab-view",
+      "surface" : "Settings: General (tab view)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "settings-drawing",
+      "surface" : "Settings: Drawing"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "settings-drawing-tab-view",
+      "surface" : "Settings: Drawing (tab view)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "settings-capture",
+      "surface" : "Settings: Capture"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "settings-capture-tab-view",
+      "surface" : "Settings: Capture (tab view)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "settings-upload",
+      "surface" : "Settings: Upload"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "settings-upload-tab-view",
+      "surface" : "Settings: Upload (tab view)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "text-style",
+      "surface" : "Text style"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "export-accessory",
+      "surface" : "Export accessory"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "alert-one-button",
+      "surface" : "Alert (one button)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "alert-save-cancel-don-t-save",
+      "surface" : "Alert (save, cancel, don't save)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "alert-with-a-text-field",
+      "surface" : "Alert (with a text field)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "alert-error",
+      "surface" : "Alert (error)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "alert-confirm-discard",
+      "surface" : "Alert (confirm discard)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "alert-prompt",
+      "surface" : "Alert (prompt)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "alert-remove-history",
+      "surface" : "Alert (remove history)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "alert-delete-remote",
+      "surface" : "Alert (delete remote)"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "history-filter-panel",
+      "surface" : "History filter panel"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "history-context-menu",
+      "surface" : "History context menu"
+    }
+  ]
+}

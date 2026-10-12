@@ -1,0 +1,40 @@
+{
+  "suite" : "glass-choices-tests",
+  "surfaces" : [
+    {
+      "findings" : [
+
+      ],
+      "slug" : "glass-choices-group",
+      "surface" : "Glass choices: group"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "glass-choices-vertical-group",
+      "surface" : "Glass choices: vertical group"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "glass-choices-toggle",
+      "surface" : "Glass choices: toggle"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "glass-choices-pop-up",
+      "surface" : "Glass choices: pop-up"
+    },
+    {
+      "findings" : [
+
+      ],
+      "slug" : "glass-choices-panel",
+      "surface" : "Glass choices: panel"
+    }
+  ]
+}

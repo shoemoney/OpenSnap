@@ -1,13 +1,13 @@
-sourceSha        cbd0186
+sourceSha        723e65bb
 real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
 guard home       /Users/shoemoney
-bundle id        com.shoemoney.opensnap.eyedump-19970 (real id com.shoemoney.opensnap is never launched)
-app copy         /private/var/folders/_5/kk_5dshn1zx_mn3ftl5dl7g40000gp/T/eye-dump-audit.R7J0HD/OpenSnap.app (copied from /Users/shoemoney/Projects/OpenSkitch/.todo-worktrees/signoff/build/OpenSnap.app; the source bundle is never executed)
+bundle id        com.shoemoney.opensnap.eyedump-77875 (real id com.shoemoney.opensnap is never launched)
+app copy         /private/var/folders/_5/kk_5dshn1zx_mn3ftl5dl7g40000gp/T/eye-dump-audit.d3CUXm/OpenSnap.app (copied from /Users/shoemoney/Projects/OpenSkitch/.todo-worktrees/vo/build/OpenSnap.app; the source bundle is never executed)
 display options  increaseContrast (simulated inside the throwaway copy only; no system setting is written)
-isolation        env -i; HOME and CFFIXED_USER_HOME, TMPDIR, OPENSNAP_APP_SUPPORT, OPENSNAP_EVIDENCE_DIR all under /private/var/folders/_5/kk_5dshn1zx_mn3ftl5dl7g40000gp/T/eye-dump-audit.R7J0HD; OPENSNAP_FIXTURE unset
+isolation        env -i; HOME and CFFIXED_USER_HOME, TMPDIR, OPENSNAP_APP_SUPPORT, OPENSNAP_EVIDENCE_DIR all under /private/var/folders/_5/kk_5dshn1zx_mn3ftl5dl7g40000gp/T/eye-dump-audit.d3CUXm; OPENSNAP_FIXTURE unset
 destinations     none exist in the throwaway support folder; with OPENSNAP_APP_SUPPORT set the app keeps secrets in memory (no Keychain item is read or written) and the S19/S21 flows stub the uploader
 sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
 input fence      keyboard 0, buttons 0, pointer 0 real input events swallowed across 2 runs; clean: no real input
-cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-19970) dropped BEFORE the final compare; the compare below would show any damage cleanup did
+cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-77875) dropped BEFORE the final compare; the compare below would show any damage cleanup did
 real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
 RESULT stores unchanged

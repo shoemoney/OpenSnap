@@ -1,13 +1,13 @@
-sourceSha        cbd0186
+sourceSha        723e65bb
 real stores      before: watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
 guard home       /Users/shoemoney
-bundle id        com.shoemoney.opensnap.eyedump-4397 (real id com.shoemoney.opensnap is never launched)
-app copy         /private/var/folders/_5/kk_5dshn1zx_mn3ftl5dl7g40000gp/T/eye-dump-audit.SPIYSM/OpenSnap.app (copied from /Users/shoemoney/Projects/OpenSkitch/.todo-worktrees/signoff/build/OpenSnap.app; the source bundle is never executed)
+bundle id        com.shoemoney.opensnap.eyedump-36995 (real id com.shoemoney.opensnap is never launched)
+app copy         /private/var/folders/_5/kk_5dshn1zx_mn3ftl5dl7g40000gp/T/eye-dump-audit.2lPKm3/OpenSnap.app (copied from /Users/shoemoney/Projects/OpenSkitch/.todo-worktrees/vo/build/OpenSnap.app; the source bundle is never executed)
 display options  reduceTransparency (simulated inside the throwaway copy only; no system setting is written)
-isolation        env -i; HOME and CFFIXED_USER_HOME, TMPDIR, OPENSNAP_APP_SUPPORT, OPENSNAP_EVIDENCE_DIR all under /private/var/folders/_5/kk_5dshn1zx_mn3ftl5dl7g40000gp/T/eye-dump-audit.SPIYSM; OPENSNAP_FIXTURE unset
+isolation        env -i; HOME and CFFIXED_USER_HOME, TMPDIR, OPENSNAP_APP_SUPPORT, OPENSNAP_EVIDENCE_DIR all under /private/var/folders/_5/kk_5dshn1zx_mn3ftl5dl7g40000gp/T/eye-dump-audit.2lPKm3; OPENSNAP_FIXTURE unset
 destinations     none exist in the throwaway support folder; with OPENSNAP_APP_SUPPORT set the app keeps secrets in memory (no Keychain item is read or written) and the S19/S21 flows stub the uploader
 sandbox          sandbox-exec: network denied; real stores, ~/.aws, ~/.ssh, Keychains and the original-art folder unreadable
-input fence      keyboard 0, buttons 0, pointer 18 real input events swallowed across 8 runs; clean: pointer events only (a parked cursor during menu tracking or the Save panel)
-cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-4397) dropped BEFORE the final compare; the compare below would show any damage cleanup did
+input fence      keyboard 0, buttons 0, pointer 10 real input events swallowed across 8 runs; clean: pointer events only (a parked cursor during menu tracking or the Save panel)
+cleanup          throwaway defaults (com.shoemoney.opensnap.eyedump-36995) dropped BEFORE the final compare; the compare below would show any damage cleanup did
 real stores      after:  watched 122 files in 2 folders + 2 defaults plists; digest dbde037ac2085108; OpenSnap folder absent
 RESULT stores unchanged
