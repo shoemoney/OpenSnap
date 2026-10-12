@@ -263,6 +263,26 @@ private enum OriginalCapturePickerTests {
         expect(view.accessibilityValue() as? String == "320×240 pixels", "The live value reads the selection size with the multiplication sign (\(String(describing: view.accessibilityValue())))")
         view.invalidate()
         expect(!view.isAccessibilityElement(), "A finished overlay is no longer an element")
+        everyMentionedKeyIsHandled(defaults: defaults, frame: frame)
+    }
+
+    /// R3 P1-2: the announcement and the overlay help are the only places that tell a blind user which keys work. Every key they name must do
+    /// something in the overlay's keyDown; a key the text promises and the view ignores ("Space for the window under the pointer") fails here.
+    private static func everyMentionedKeyIsHandled(defaults: UserDefaults, frame: NSRect) {
+        let keyCodes: [String: UInt16] = ["Escape": 53, "Space": 49, "Return": 36, "Enter": 76, "Tab": 48, "Delete": 51, "Arrow": 123]
+        var texts = [Announcer.Message.pickerOpened]
+        for windowOnly in [false, true] { texts.append(OriginalCaptureSelectionView.accessibilityHelp(windowOnly: windowOnly)) }
+        let mentioned = Set(keyCodes.keys.filter { key in texts.contains { $0.localizedCaseInsensitiveContains(key) } })
+        expect(mentioned.contains("Escape"), "The texts name at least Escape (\(texts))")
+        for key in mentioned.sorted() {
+            let view = OriginalCaptureSelectionView(frame: frame, windowOnly: false, defaults: defaults)
+            var reacted = false
+            view.onCancel = { reacted = true }
+            view.onSelection = { _, _ in reacted = true }
+            view.keyDown(with: NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 1, windowNumber: 0, context: nil,
+                                                characters: key == "Escape" ? "\u{1b}" : " ", charactersIgnoringModifiers: "", isARepeat: false, keyCode: keyCodes[key]!)!)
+            expect(reacted, "The picker announcement or help mentions the \(key) key, but the overlay ignores it")
+        }
     }
 
     private static func dragCannotLeaveActiveDisplay() {

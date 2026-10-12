@@ -197,9 +197,11 @@ final class OriginalCaptureCountdown: CaptureCountdownPresenting {
         Announcer.announce(text, priority: .high)
     }
 
+    /// Stopping a running countdown is a state change nobody sees or hears otherwise: say so (shares the wording of every cancelled capture).
     func cancel() {
         guard let request = session else { return }
         finish(request, complete: false)
+        Announcer.announce(Announcer.Message.captureCancelled, priority: .medium)
     }
 
     private func advance(_ request: Session) {

@@ -32,7 +32,8 @@
 //   nameMismatch       a control whose own accessibilityLabel() is not what an external client reads as its name (a standard button is
 //                       published as its cell, which can name itself from the icon's description instead; added by WP1b)
 //   helpRepeatsLabel  an element whose help (the hint VoiceOver reads after the name) is the same words as its name ("Select tool, button",
-//                     then "Select tool"); not baselinable, so a repeat fails wherever it appears (WP3-B)
+//                     then "Select tool"), as its VALUE ("Drawing size, 7" then "Size 7"), or opens with its name ("Red" then "Red; Shift changes
+//                     the background"); not baselinable, so a repeat fails wherever it appears (WP3-B, R3)
 // Those are the "tracked" kinds (plus missingLabel, missingRole and duplicateLabel since WP1b): findings that existed on today's surfaces when they were introduced are listed, each with its reason,
 // in tools/accessibility-baseline.tsv, so the gate fails on a NEW finding and on a stale entry (tools/check-spoken-scripts.py) while the
 // pending fixes are burned down. Findings the baseline covers are reported in `Report.baselined`, never in `Report.violations`.
@@ -201,7 +202,7 @@ enum AccessibilityAudit {
 
     private static let judgedRoles: Set<NSAccessibility.Role> = [.button, .menuButton, .checkBox, .radioButton, .radioGroup, .popUpButton, .comboBox, .slider,
                                                                   .textField, .textArea, .image, .group, .tabGroup, .incrementor, .link]
-    private static let valuedRoles: Set<NSAccessibility.Role> = [.slider, .checkBox, .radioButton, .popUpButton, .comboBox, .incrementor, .progressIndicator]
+    private static let valuedRoles: Set<NSAccessibility.Role> = [.disclosureTriangle, .slider, .checkBox, .radioButton, .popUpButton, .comboBox, .incrementor, .progressIndicator]
     private static let windowFurniture: Set<NSAccessibility.Subrole> = [.closeButton, .minimizeButton, .zoomButton, .fullScreenButton, .toolbarButton]
     private static let repeatingRoles: Set<NSAccessibility.Role> = [.table, .outline, .list, .row, .cell, .column, .browser]
     private static let controlRoles: Set<NSAccessibility.Role> = [.button, .menuButton, .checkBox, .radioButton, .popUpButton, .comboBox, .slider, .textField, .textArea, .incrementor, .link]
@@ -235,8 +236,8 @@ enum AccessibilityAudit {
             if let control = node.hostView as? NSControl, let own = text(control.accessibilityLabel()), let spoken = node.label, spoken != own {
                 add(.nameMismatch, index, own, detail: "an external client reads \"\(spoken)\"")
             }
-            if let help = node.help, let spoken = node.label, repeats(help: help, label: spoken) {
-                add(.helpRepeatsLabel, index, spoken, detail: "the hint \"\(help)\" repeats the name")
+            if let help = node.help, let spoken = node.label ?? (role == .staticText ? node.text : nil), repeats(help: help, label: spoken, value: node.value) {
+                add(.helpRepeatsLabel, index, spoken, detail: "the hint \"\(help)\" repeats the name or the value")
             }
             if valuedRoles.contains(role), node.value == nil, !(role == .progressIndicator && node.identifier.hasPrefix("indeterminate")) { add(.missingValue, index, label) }
         }
@@ -263,10 +264,10 @@ enum AccessibilityAudit {
         return found
     }
 
-    /// True when `help` says nothing `label` did not: the same words, ignoring case and trailing punctuation.
-    static func repeats(help: String, label: String) -> Bool {
-        func normal(_ text: String) -> String { text.trimmingCharacters(in: .whitespacesAndNewlines.union(CharacterSet(charactersIn: ".:;,"))).lowercased() }
-        return !label.isEmpty && normal(help) == normal(label)
+    /// True when `help` says nothing `label` and `value` did not, or opens with the name: the same words, ignoring case and punctuation
+    /// ("Select tool"; "Size 7" under "Drawing size, 7"; "Error: Server said no." under "Server said no."; "Red; Shift changes the background" under "Red").
+    static func repeats(help: String, label: String, value: Any? = nil) -> Bool {
+        !label.isEmpty && SpokenHelp.distinct(help, from: label, value: value) != help
     }
 
     private static func isRepeating(_ index: Int, in tree: AXTree.Tree) -> Bool {

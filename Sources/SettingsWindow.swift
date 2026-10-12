@@ -39,11 +39,16 @@ enum SettingsLayout {
     /// The widest a control column can be inside the content width once the label column is taken.
     static func availableControlWidth(labelWidth: CGFloat) -> CGFloat { gridWidth - labelWidth - columnSpacing }
 
-    /// A row label: right-aligned in the label column, 20 pt semibold.
-    static func rowLabel(_ text: String) -> NSTextField {
+    /// A row label: right-aligned in the label column, 20 pt semibold. When it names a control (`naming`), that control carries the name for
+    /// assistive clients and this text is only drawn, so VoiceOver reads "Show in, radio group" once, not "Show in:" and then the group.
+    static func rowLabel(_ text: String, naming target: NSView? = nil) -> NSTextField {
         let field = NSTextField(labelWithString: text)
         field.font = Typography.font(.bodyStrong); field.alignment = .right
         field.textColor = DesignTokens.Palette.Text.primary
+        if let target {
+            if target.accessibilityLabel()?.isEmpty != false { target.setAccessibilityLabel(text.trimmingCharacters(in: CharacterSet(charactersIn: ": "))) }
+            field.hideFromAccessibility("row-label")
+        }
         return field
     }
 
@@ -296,9 +301,9 @@ final class GeneralSettingsTab: SettingsTabViewController {
         snapPlate = SettingsLayout.togglePlate([snapCheckbox], identifier: "SettingsSnapping", label: "Snapping")
         adopt(plates: [snapPlate, hintsPlate], controls: [presenceGroup, snapCheckbox, hoverHintsCheckbox, keyboardTipsCheckbox])
         let rows: [[NSView]] = [
-            [SettingsLayout.rowLabel("Show in:"), SettingsPlateCell(presenceGroup, firstChoice: presenceGroup.buttons.first)],
-            [SettingsLayout.rowLabel("Snapping:"), SettingsPlateCell(snapPlate, firstChoice: snapCheckbox)],
-            [SettingsLayout.rowLabel("Hints:"), SettingsPlateCell(hintsPlate, firstChoice: hoverHintsCheckbox)]]
+            [SettingsLayout.rowLabel("Show in:", naming: presenceGroup), SettingsPlateCell(presenceGroup, firstChoice: presenceGroup.buttons.first)],
+            [SettingsLayout.rowLabel("Snapping:", naming: snapPlate), SettingsPlateCell(snapPlate, firstChoice: snapCheckbox)],
+            [SettingsLayout.rowLabel("Hints:", naming: hintsPlate), SettingsPlateCell(hintsPlate, firstChoice: hoverHintsCheckbox)]]
         defer { refresh() }
         return rows
     }
@@ -356,8 +361,8 @@ final class DrawingSettingsTab: SettingsTabViewController {
         controlWidth = min(SettingsLayout.availableControlWidth(labelWidth: labelWidth),
                            ceil(max(precisionGroup.fittingSize.width, arrowGroup.fittingSize.width, SettingsLayout.captionWidth(Self.note))))
         let rows: [[NSView]] = [
-            [SettingsLayout.rowLabel("Drawing precision:"), SettingsPlateCell(precisionGroup, firstChoice: precisionGroup.buttons.first)],
-            [SettingsLayout.rowLabel("Arrow head:"), SettingsPlateCell(arrowGroup, firstChoice: arrowGroup.buttons.first)],
+            [SettingsLayout.rowLabel("Drawing precision:", naming: precisionGroup), SettingsPlateCell(precisionGroup, firstChoice: precisionGroup.buttons.first)],
+            [SettingsLayout.rowLabel("Arrow head:", naming: arrowGroup), SettingsPlateCell(arrowGroup, firstChoice: arrowGroup.buttons.first)],
             [NSGridCell.emptyContentView, SettingsLayout.caption(Self.note, width: controlWidth)]]
         defer { refresh() }
         return rows
@@ -411,7 +416,7 @@ final class CaptureSettingsTab: SettingsTabViewController {
         }
         hotkeyForm.setShortcutsPaused(shortcutsPaused)
         defer { refresh() }
-        return [[SettingsLayout.rowLabel("Flash:"), SettingsPlateCell(flashPlate, firstChoice: flashCheckbox)], [hotkeyForm, NSGridCell.emptyContentView]]
+        return [[SettingsLayout.rowLabel("Flash:", naming: flashPlate), SettingsPlateCell(flashPlate, firstChoice: flashCheckbox)], [hotkeyForm, NSGridCell.emptyContentView]]
     }
 
     override func loadView() {

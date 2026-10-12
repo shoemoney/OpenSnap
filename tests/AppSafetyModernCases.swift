@@ -1823,10 +1823,11 @@ extension AppSafetyTests {
             let help = view.accessibilityHelp() ?? ""
             // A tool button's state is spoken as its radio value, so its hint keeps only what follows the name (the modifier hints).
             let tail = (view as? ToolButton).map { _ in text.replacingOccurrences(of: " (selected)", with: "").dropFirst((view.accessibilityLabel() ?? "").count).trimmingCharacters(in: CharacterSet(charactersIn: ";: ")) }
-            try expect(help == text || (help.isEmpty && SpokenHelp.distinct(text, from: view.accessibilityLabel()) == nil) || (tail != nil && help == tail!), "\(type(of: view)) '\(view.accessibilityLabel() ?? "")' keeps spoken help for its tooltip '\(text)'")
+            let spoken = SpokenHelp.distinct(text, from: view.accessibilityLabel(), value: view.accessibilityValue())
+            try expect(help == text || help == (spoken ?? "") || (tail != nil && help == tail!), "\(type(of: view)) '\(view.accessibilityLabel() ?? "")' keeps spoken help for its tooltip '\(text)'")
         }
         for view in [app.snapButton!, chrome.undoButton, chrome.hideButton, chrome.wipeButton, app.widthControl] as [NSView] {
-            try expect(view.accessibilityHelp() == SpokenHelp.distinct(AppToolTip.text(for: view), from: view.accessibilityLabel()), "\(view.accessibilityLabel() ?? "") has accessibilityHelp equal to its former tooltip, unless that only repeats its name")
+            try expect(view.accessibilityHelp() == SpokenHelp.distinct(AppToolTip.text(for: view), from: view.accessibilityLabel(), value: view.accessibilityValue()), "\(view.accessibilityLabel() ?? "") has accessibilityHelp equal to its former tooltip, unless that only repeats its name")
         }
         try expect(app.status.accessibilityHelp() == nil && (app.status.accessibilityValue() as? String) == AppToolTip.text(for: app.status),
                    "The status line speaks its full text as its value, so it is not repeated as help")

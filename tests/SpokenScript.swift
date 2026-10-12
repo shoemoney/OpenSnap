@@ -6,7 +6,7 @@
 // mismatch is a renderer fix and a missing or wrong WORD is an app fix.
 //
 //   window                 {title}, window
-//   button / menu button   {label}, button | {label}, menu button        (+ ", dimmed" when disabled)
+//   button / menu button   {label}, {text value}, button | {label}, menu button        (+ ", dimmed" when disabled)
 //   checkbox               {label}, checked|unchecked|mixed, checkbox
 //   radio group            {label}, radio group      then {label}, selected|not selected, radio button, {i} of {n}
 //   slider                 {label}, {value}, slider
@@ -14,8 +14,8 @@
 //   text field             {label}, {value or "empty"}, edit text        (secure: "secure edit text", the value is never printed)
 //   tab group              {label}, tab group        then {label}, selected tab|tab, {i} of {n}
 //   static text            {text}
-//   image                  {label}, image
-//   group                  {label}, group
+//   image                  {label}, {value}, image
+//   group                  {label}, {value}, group
 //   menu item              {title}{, shortcut}
 //   any element with help  a second line "hint: {help}"
 //
@@ -69,14 +69,15 @@ enum SpokenScript {
             let position = (siblings.firstIndex { $0.object === node.object } ?? 0) + 1
             let parentRole = node.reachedFrom.flatMap { tree.nodes[$0].role }
             var dimmed: String? = node.enabled ? nil : "dimmed"
-            let interactive: Set<NSAccessibility.Role> = [.button, .menuButton, .checkBox, .radioButton, .slider, .popUpButton, .comboBox, .textField, .textArea, .incrementor]
+            let interactive: Set<NSAccessibility.Role> = [.disclosureTriangle, .button, .menuButton, .checkBox, .radioButton, .slider, .popUpButton, .comboBox, .textField, .textArea, .incrementor]
             if let role = node.role, !interactive.contains(role) { dimmed = nil }
             var text: String
             if let furniture = node.subrole.flatMap({ windowButtons[$0] }) { out.append(line(node.depth, join([furniture, "button", dimmed]))); continue }
             switch node.role {
-            case .button?: text = join([label, "button", dimmed])
+            case .button?: text = join([label, (node.value as? String).flatMap(spokenValue), "button", dimmed])
             case .menuButton?: text = join([label, "menu button", dimmed])
             case .checkBox?: text = join([label, stateWord(node.value), "checkbox", dimmed])
+            case .disclosureTriangle?: text = join([label, (node.number ?? 0) == 0 ? "collapsed" : "expanded", "disclosure triangle", dimmed])
             case .radioGroup?: text = join([label, "radio group", dimmed])
             case .radioButton? where parentRole == .tabGroup:
                 text = join([label, node.selected || node.number == 1 ? "selected tab" : "tab", "\(position) of \(siblings.count)", dimmed])
@@ -91,8 +92,8 @@ enum SpokenScript {
                 text = join([label, secure ? nil : (spokenValue(node.value) ?? "empty"), kind, dimmed])
             case .tabGroup?: text = join([label, "tab group"])
             case .staticText?: text = spokenValue(node.value) ?? label
-            case .image?: text = join([label, "image"])
-            case .group?: text = join([label, "group"])
+            case .image?: text = join([label, spokenValue(node.value), "image"])
+            case .group?: text = join([label, spokenValue(node.value), "group"])
             case .menuItem?: text = join([label, dimmed])
             case .progressIndicator?: text = join([label, spokenValue(node.value), "progress indicator"])
             case .incrementor?: text = join([label, spokenValue(node.value), "stepper", dimmed])
@@ -116,7 +117,8 @@ enum SpokenScript {
                 var words: [String] = []
                 if flags.contains(.control) { words.append("Control") }
                 if flags.contains(.option) { words.append("Option") }
-                if flags.contains(.shift) { words.append("Shift") }
+                // An upper-case key equivalent ("S") is Shift-S to AppKit even when the mask does not say so.
+                if flags.contains(.shift) || item.keyEquivalent != item.keyEquivalent.lowercased() { words.append("Shift") }
                 if flags.contains(.command) { words.append("Command") }
                 words.append(item.keyEquivalent.uppercased())
                 shortcut = words.joined(separator: " ")

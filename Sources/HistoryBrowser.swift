@@ -425,6 +425,7 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         collection.collectionViewLayout = layout; collection.dataSource = self; collection.delegate = self
         collection.isSelectable = true; collection.allowsMultipleSelection = true; collection.allowsEmptySelection = true
         collection.backgroundColors = [Palette.Surface.content]; collection.setAccessibilityLabel("History thumbnail grid")
+        collection.setAccessibilityHelp("Press a snap to select it. Return opens the selection, and each snap has an Open action. Snaps can be dragged out to export a copy.")
         collection.register(HistoryThumbnail.self,forItemWithIdentifier:HistoryThumbnail.identifier)
         collection.register(HistoryDayHeader.self,forSupplementaryViewOfKind:NSCollectionView.elementKindSectionHeader,withIdentifier:HistoryDayHeader.identifier)
         collection.setDraggingSourceOperationMask(.copy,forLocal:false); collection.setDraggingSourceOperationMask(.copy,forLocal:true)
@@ -785,6 +786,16 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
         if let value = item(indexPath) { cell.configure(value,image:thumbnail(value)) }
         return cell
     }
+    /// What a snap is called to an assistive client: its name, what was done with it and when ("Shot 0, Saved, Mar 9, 2026 at 12:00 PM").
+    fileprivate func spokenName(_ value: Item) -> String {
+        let formatter = DateFormatter(); formatter.calendar = calendar; formatter.timeZone = calendar.timeZone; formatter.dateStyle = .medium; formatter.timeStyle = .short
+        return [value.name,value.missing ? "Missing file · \(value.action)" : value.action,formatter.string(from:value.date)].filter { !$0.isEmpty }.joined(separator:", ")
+    }
+    fileprivate func accessibilityContent(forSection section: Int) -> (title: String,items: [(IndexPath,Item,String)]) {
+        let group = sections[section]
+        return (group.title,group.items.enumerated().map { (IndexPath(item:$0.offset,section:section),$0.element,spokenName($0.element)) })
+    }
+    fileprivate var accessibilitySectionCount: Int { sections.count }
     func collectionView(_ collectionView: NSCollectionView,viewForSupplementaryElementOfKind kind: NSCollectionView.SupplementaryElementKind,at indexPath: IndexPath) -> NSView {
         let header = collectionView.makeSupplementaryView(ofKind:kind,withIdentifier:HistoryDayHeader.identifier,for:indexPath) as! HistoryDayHeader
         header.label.stringValue = sections[indexPath.section].title; return header
@@ -854,6 +865,19 @@ final class HistoryActionButton: CommandButton {
 @MainActor
 private final class HistoryGrid: NSCollectionView {
     weak var browser: HistoryBrowser?
+    private var accessibilitySections: [HistoryDaySectionElement] = []
+    /// An assistive client is handed the collection's ITEMS (the controllers), which are not accessibility elements, so each day is a list of
+    /// real elements here: its heading, then one button per snap, in the order the eye reads them.
+    override func accessibilityChildren() -> [Any]? {
+        guard let browser else { return super.accessibilityChildren() }
+        accessibilitySections = (0..<browser.accessibilitySectionCount).map { index in
+            let content = browser.accessibilityContent(forSection:index)
+            let section = HistoryDaySectionElement(grid:self,index:index,title:content.title)
+            section.setAccessibilityChildren(section.makeChildren(content.items))
+            return section
+        }
+        return accessibilitySections
+    }
     override func mouseDown(with event: NSEvent) {
         super.mouseDown(with:event)
         if event.clickCount == 2, indexPathForItem(at:convert(event.locationInWindow,from:nil)) != nil { browser?.perform(.open) }
@@ -874,6 +898,77 @@ private final class HistoryGrid: NSCollectionView {
             browser?.perform(event.modifierFlags.contains(.shift) ? .copyLink : .copy); return
         }
         super.keyDown(with:event) // Native arrow/Shift/Command selection behavior.
+    }
+}
+
+/// One day in the grid, as an assistive client sees it: a list holding the day's heading and its snaps.
+@MainActor
+private final class HistoryDaySectionElement: NSAccessibilityElement {
+    private weak var grid: HistoryGrid?
+    let index: Int
+    init(grid: HistoryGrid,index: Int,title: String) {
+        self.grid = grid; self.index = index
+        super.init()
+        setAccessibilityRole(.list); setAccessibilityLabel(title); setAccessibilityParent(grid)
+    }
+    func makeChildren(_ items: [(IndexPath,HistoryBrowser.Item,String)]) -> [Any] {
+        guard let grid else { return [] }
+        let heading = HistoryHeadingElement(text:accessibilityLabel() ?? "",section:self,grid:grid)
+        return [heading] + items.map { HistoryTileElement(path:$0.0,name:$0.2,section:self,grid:grid) }
+    }
+    override func accessibilityFrame() -> NSRect {
+        guard let grid, let window = grid.window else { return .zero }
+        let count = grid.numberOfItems(inSection:index)
+        let rects = (0..<count).compactMap { grid.collectionViewLayout?.layoutAttributesForItem(at:IndexPath(item:$0,section:index))?.frame }
+        guard let first = rects.first else { return .zero }
+        return window.convertToScreen(grid.convert(rects.reduce(first) { $0.union($1) },to:nil))
+    }
+}
+
+@MainActor
+private final class HistoryHeadingElement: NSAccessibilityElement {
+    private weak var grid: HistoryGrid?
+    private let section: Int
+    init(text: String,section parent: HistoryDaySectionElement,grid: HistoryGrid) {
+        self.grid = grid; section = parent.index
+        super.init()
+        setAccessibilityRole(.staticText); setAccessibilityLabel(text); setAccessibilityValue(text); setAccessibilityParent(parent)
+    }
+    override func accessibilityFrame() -> NSRect {
+        guard let grid, let window = grid.window,
+              let attributes = grid.collectionViewLayout?.layoutAttributesForSupplementaryView(ofKind:NSCollectionView.elementKindSectionHeader,at:IndexPath(item:0,section:section)) else { return .zero }
+        return window.convertToScreen(grid.convert(attributes.frame,to:nil))
+    }
+}
+
+/// One snap in the grid: a button named with what was done and when, valued "Selected" while it is, that selects on press and opens on the Open action.
+@MainActor
+private final class HistoryTileElement: NSAccessibilityElement {
+    private weak var grid: HistoryGrid?
+    private let path: IndexPath
+    init(path: IndexPath,name: String,section: HistoryDaySectionElement,grid: HistoryGrid) {
+        self.grid = grid; self.path = path
+        super.init()
+        setAccessibilityRole(.button); setAccessibilityLabel(name); setAccessibilityParent(section)
+    }
+    override func isAccessibilityEnabled() -> Bool { true }
+    override func accessibilityValue() -> Any? { grid?.selectionIndexPaths.contains(path) == true ? "Selected" : nil }
+    override func isAccessibilitySelected() -> Bool { grid?.selectionIndexPaths.contains(path) == true }
+    override func accessibilityFrame() -> NSRect {
+        guard let grid, let window = grid.window, let attributes = grid.collectionViewLayout?.layoutAttributesForItem(at:path) else { return .zero }
+        return window.convertToScreen(grid.convert(attributes.frame,to:nil))
+    }
+    override func accessibilityPerformPress() -> Bool { choose(open:false) }
+    override func accessibilityCustomActions() -> [NSAccessibilityCustomAction]? {
+        [NSAccessibilityCustomAction(name:"Open") { [weak self] in self?.choose(open:true) ?? false }]
+    }
+    private func choose(open: Bool) -> Bool {
+        guard let grid, grid.numberOfItems(inSection:path.section) > path.item else { return false }
+        grid.selectionIndexPaths = [path]
+        grid.scrollToItems(at:[path],scrollPosition:.nearestVerticalEdge)
+        grid.browser?.collectionView(grid,didSelectItemsAt:[path])
+        if open { grid.browser?.perform(.open) }
+        return true
     }
 }
 
@@ -911,7 +1006,7 @@ private final class HistoryThumbnail: NSCollectionViewItem {
         _ = view
         name.stringValue = value.name; action.stringValue = value.missing ? "Missing file · \(value.action)" : value.action
         preview.image = image; placeholder.isHidden = image != nil; preview.isHidden = image == nil
-        preview.setAccessibilityLabel(value.name); view.setAccessibilityLabel(value.name+", "+action.stringValue)
+        preview.setAccessibilityLabel(value.name)
         refreshSelection()
     }
     override var isSelected: Bool { didSet { refreshSelection() } }
@@ -944,6 +1039,7 @@ private final class HistoryFlowLayout: NSCollectionViewFlowLayout {
 final class HistoryTileView: NSView {
     private(set) var checkBadge: NSImageView?
     var isTileSelected = false { didSet { checkBadge?.isHidden = !isTileSelected; setAccessibilityValue(isTileSelected ? "Selected" : nil); needsDisplay = true } }
+
     /// A hover fill (`state.hover`) on a tile that is not selected; a selected tile keeps its stronger fill and check badge.
     private(set) var isHovered = false
     private var hoverArea: NSTrackingArea?

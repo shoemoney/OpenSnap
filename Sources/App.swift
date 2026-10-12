@@ -112,6 +112,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     /// Test seam: the window the keyboard is in.
     var keyWindowProvider: () -> NSWindow? = { NSApp.keyWindow }
     /// Test seams: the deletion binding captured for a file name before an upload, and for the published URL after it.
+    lazy var remoteDeleter: RemoteDeleter = { [unowned self] url, binding, window, done in
+        self.historyRemoteDeletion.deleteRemote(url: url, binding: binding, presenting: window, completion: done)
+    }
     lazy var plannedBindingCapture: (String) -> [String: String]? = { [unowned self] in try? self.historyRemoteDeletion.captureBinding(fileName: $0) }
     lazy var publishedBindingCapture: (URL) -> [String: String]? = { [unowned self] in try? self.historyRemoteDeletion.captureBinding(for: $0) }
     let hotkeys = GlobalHotkeyManager()
@@ -982,7 +985,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         }
         // A colour that is none of the presets is marked on the Custom color… row instead.
         if let customColorButton { BezelCustomColorButton.apply(presetColorButtons.contains { $0.state == .on } ? nil : canvas.strokeColor, to: customColorButton) }
-        paletteButton.setAccessibilityValue(String(format: "Red %.3g, green %.3g, blue %.3g, alpha %.3g", chosen.red, chosen.green, chosen.blue, chosen.alpha))
+        // The colour by name when it is one of the presets, else by its parts (percent of each channel).
+        let preset = OriginalDrawingControls.presets.first { SketchColor($0.color) == chosen }
+        paletteButton.setAccessibilityValue(preset?.name ?? String(format: "Custom color, red %.0f percent, green %.0f percent, blue %.0f percent", chosen.red * 100, chosen.green * 100, chosen.blue * 100)
+                                            + (chosen.alpha < 1 ? String(format: ", %.0f percent opaque", chosen.alpha * 100) : ""))
     }
     @objc func showDrawingColors(_ sender: NSButton) {
         guard !terminationStarted, !frameCaptureInProgress, window.attachedSheet == nil else { return }
@@ -1039,6 +1045,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             button.drawingColor = preset.color; button.tag = preset.tag
             button.target = self; button.action = #selector(choosePresetColor(_:))
             button.setAccessibilityLabel(preset.name); AppToolTip.setText(preset.name + "; Shift changes the background", for: button)
+            button.setAccessibilityHelp(nil)   // the panel says "Shift changes the background" once, for all ten
             trackHint(button, owner: "color-" + String(preset.tag)) { OriginalHintMessages.hover(actionTag: preset.tag) }
             presetColorButtons.append(button)
         }
@@ -1046,6 +1053,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         customColorButton = custom
         let content = ColorPaletteContent(title: label("Drawing colors"), swatches: presetColorButtons, custom: custom)
         let host = GlassPanelHost(plates: content.plates, identifier: "DrawingColors", accessibilityLabel: "Drawing colors")
+        host.rootAccessibilityHelp = "Hold Shift to change the canvas background instead of the drawing color."
         host.alignment = .center
         host.didClose = { [weak self, weak host] in
             guard let self, self.colorPanel === host else { return }
@@ -1244,7 +1252,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         }
         status.setVariants(variants)
         AppToolTip.setText(uploadState.detailText ?? variants[0], for: status, mirrorsToAccessibility: false)
-        status.setAccessibilityHelp(uploadState.detailText)
+        // A failed upload speaks "Error: <first line>" as the value; the hint is what that leaves out (the rest of the error), never the same words again.
+        if case .failure = uploadState { status.spokenLead = "Error: " } else { status.spokenLead = "" }
+        status.setAccessibilityHelp(uploadState.detailText.flatMap { SpokenHelp.distinct($0, from: status.spokenLead + variants[0]) })
     }
     var dragFormat: String {
         FormatToggle.payload(forSegment: dragFormatToggle.selectedSegment).format
@@ -1656,17 +1666,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             self.openHistoryQuestions.remove("web")
             guard result == .alertSecondButtonReturn, !self.terminationStarted else { return }
             self.postStatusNotice("Deleting web post…")
-            self.historyRemoteDeletion.deleteRemote(url: url, binding: binding, presenting: self.historyHost) { [weak self] result in
-                Task { @MainActor in
-                    guard let self else { return }
-                    switch result {
-                    case .success:
-                        do { try self.archiveStore().clearRemote(id); self.refreshHistory(); self.historyBrowser?.confirm(Self.deletedFromWebNotice(host: url.host), duration: 12) }
-                        catch { self.presentFromHistory(AppAlert(error: error)) }
-                    case .failure(let error): if !self.terminationStarted { self.presentFromHistory(AppAlert(error: error)) }
-                    }
-                }
+            self.remoteDeleter(url, binding, self.historyHost) { [weak self] result in
+                Task { @MainActor in self?.finishWebDeletion(id: id, host: url.host, result: result) }
             }
+        }
+    }
+    /// The seam to the remote deletion, so a test can answer without a network.
+    typealias RemoteDeleter = @MainActor (URL, [String: String], NSWindow, @escaping (Result<Void, Error>) -> Void) -> Void
+    /// What happens when the server has answered Delete from Web: the History footer line and, for the ear, the same words (or the error) announced.
+    func finishWebDeletion(id: UUID, host: String?, result: Result<Void, Error>) {
+        switch result {
+        case .success:
+            do {
+                try archiveStore().clearRemote(id); refreshHistory()
+                let notice = Self.deletedFromWebNotice(host: host)
+                historyBrowser?.confirm(notice, duration: 12)
+                Announcer.announce(notice, priority: .medium)
+            } catch {
+                Announcer.announce(Announcer.Message.error(error.localizedDescription), priority: .high)
+                presentFromHistory(AppAlert(error: error))
+            }
+        case .failure(let error):
+            guard !terminationStarted else { return }
+            Announcer.announce(Announcer.Message.error(error.localizedDescription), priority: .high)
+            presentFromHistory(AppAlert(error: error))
         }
     }
     /// The History footer line after a successful Delete from Web: the origin object is gone, but a cache in front of it may still answer.
@@ -1738,14 +1761,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             let data = try exportPanelData(options)
             try data.write(to: url, options: .atomic)
             UserDefaults.standard.set(options.format, forKey: "ExportFormat")
-            if isLargeShot, (dragOriginalControl.state == .on) != options.originalSize {
-                dragOriginalControl.state = options.originalSize ? .on : .off
-                changeDragOptions(nil)
-            }
             UserDefaults.standard.set(options.jpegQuality, forKey: "ExportQuality")
-            postStatusNotice("Exported " + url.lastPathComponent)
-            archive(try historySnapshot(), name: safeName(), action: .exported, destination: url.path, generation: documentGeneration)
+            try finishExport(options, to: url)
         } catch { self.error(error) }
+    }
+    /// What follows a written export: the drag option the panel chose, the spoken notice, and the History entry.
+    func finishExport(_ options: ExportAccessory, to url: URL) throws {
+        if isLargeShot, (dragOriginalControl.state == .on) != options.originalSize {
+            dragOriginalControl.state = options.originalSize ? .on : .off
+            changeDragOptions(nil)
+        }
+        postStatusNotice("Exported " + url.lastPathComponent)
+        archive(try historySnapshot(), name: safeName(), action: .exported, destination: url.path, generation: documentGeneration)
     }
     @objc func pageSetup() {
         let settings = NSPrintInfo.shared.copy() as! NSPrintInfo
@@ -2271,6 +2298,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         if let validate { alert.validator = { $0 == 0 ? validate(field.stringValue) : nil } }
         present(alert) { result in completion(result == .alertFirstButtonReturn ? field.stringValue : nil) }
     }
+    /// The text style new annotations get, as the Font button says it: the font's name and size.
+    var spokenTextStyle: String {
+        let name = NSFont(name: canvas.fontName, size: canvas.fontSize)?.displayName ?? canvas.fontName
+        return "\(name), \(Int(canvas.fontSize.rounded())) points"
+    }
     @objc func chooseFont() {
         guard !terminationStarted else { return }
         if let panel = fontPanel, panel.isVisible { panel.orderOut(nil); fontPanelRefreshTimer?.invalidate(); return }
@@ -2413,7 +2445,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     @objc func selectAll() { if let editor = activeTextEditor { editor.selectAll(nil) } else { canvas.selectAll() } }
     @objc func deleteSelection() { if let editor = activeTextEditor { editor.delete(nil) } else { canvas.deleteSelection() } }
     @objc func duplicate() { canvas.duplicateSelection() }; @objc func clear() { canvas.clearAnnotations() }; @objc func crop() { canvas.cropSelection() }
-    @objc func wipe() { leaveFrame(); canvas.wipe() }
+    @objc func wipe() {
+        leaveFrame()
+        let stage = canvas.wipeStage
+        canvas.wipe()
+        // The button dims or retitles itself and nothing else moves, so say what it just did.
+        switch stage {
+        case .wipe: Announcer.announce(Announcer.Message.annotationsRemoved)
+        case .clear: Announcer.announce(Announcer.Message.imageCleared)
+        case .blank: break
+        }
+    }
     @objc func wipeSnap() { leaveFrame(); canvas.wipeSnap() }
     @objc func rotateCW() { canvas.rotate(clockwise: true) }; @objc func rotateCCW() { canvas.rotate(clockwise: false) }
     @objc func flipH() { canvas.flip(horizontal: true) }; @objc func flipV() { canvas.flip(horizontal: false) }

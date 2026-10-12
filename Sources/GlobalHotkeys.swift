@@ -733,6 +733,7 @@ final class GlobalHotkeyForm: NSView {
         func label(_ text: String) -> NSTextField {
             let field = NSTextField(labelWithString: text)
             field.font = Self.labelFont(); field.alignment = .right; field.textColor = DesignTokens.Palette.Text.primary
+            field.hideFromAccessibility("row-label")   // the plate beside it is named "<action> shortcut"
             return field
         }
         func plate(_ views: [NSView], identifier: String, name: String, axis: NSUserInterfaceLayoutOrientation = .horizontal) -> GlassSurfaceView {
@@ -759,6 +760,7 @@ final class GlobalHotkeyForm: NSView {
                 toggle.setAccessibilityLabel("\(action.title) \(entry.2)")
                 toggle.target = self; toggle.action = #selector(modifiersChanged(_:))
                 AppToolTip.setText(Self.modifierToolTip, for: toggle)
+                toggle.setAccessibilityHelp(nil)   // the four share one hint, spoken once by their group
                 Self.centre(symbol: entry.1, in: toggle)
                 // The four toggles are ONE tab stop, like the segmented control they replace: only the stop takes Tab, and the arrows move within the row.
                 toggle.participatesInKeyLoop = index == 0
@@ -770,7 +772,7 @@ final class GlobalHotkeyForm: NSView {
             }
             let group = NSStackView(views: toggles)
             group.orientation = .horizontal; group.alignment = .centerY; group.spacing = GlassChrome.Metrics.groupSpacing
-            group.setAccessibilityElement(true); group.setAccessibilityRole(.group); group.setAccessibilityLabel("\(action.title) modifiers")
+            group.setAccessibilityElement(true); group.setAccessibilityRole(.group); group.setAccessibilityLabel("\(action.title) modifiers"); group.setAccessibilityHelp(Self.modifierToolTip)
             group.setAccessibilityChildren(toggles)
             let rowPlate = plate([keyCell, group], identifier: "GlobalHotkeyRow." + action.rawValue, name: "\(action.title) shortcut")
             rows[action] = Row(key: key, keyCell: keyCell, modifiers: toggles, group: group, plate: rowPlate)

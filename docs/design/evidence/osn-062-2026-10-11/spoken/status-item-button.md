@@ -2,11 +2,10 @@
 
 - Surface: Status-item button
 - Suite: app-safety
-- Build: 723e65bb
+- Build: dda6b216
 - Nodes: 1
 
 ```
 [0] window
 [0] Show or hide OpenSnap, button
-[0]   hint: OpenSnap
 ```

@@ -1,6 +1,6 @@
 # Spoken-script findings
 
-0 findings of the tracked kinds across 75 audited surfaces; every one is a baseline entry (pending WP3) in `tools/accessibility-baseline.tsv`.
+No findings of the tracked kinds across 75 audited surfaces; `tools/accessibility-baseline.tsv` is empty.
 New (not in the baseline): 0. Stale (in the baseline, not produced): 0.
 
 ## By kind

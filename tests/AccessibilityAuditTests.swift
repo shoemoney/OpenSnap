@@ -48,6 +48,18 @@ private final class FocusablePicture: NSView {
     override func accessibilityValue() -> Any? { summary }
 }
 
+/// A button that names itself, optionally has a spoken value, and carries a hint.
+@MainActor
+private final class HintedButton: NSView {
+    var name = "", hint: String?, spokenValue: String?
+    override var acceptsFirstResponder: Bool { true }
+    override func isAccessibilityElement() -> Bool { true }
+    override func accessibilityRole() -> NSAccessibility.Role? { .button }
+    override func accessibilityLabel() -> String? { name }
+    override func accessibilityHelp() -> String? { hint }
+    override func accessibilityValue() -> Any? { spokenValue }
+}
+
 /// A slider-shaped control that names itself and takes focus but never says where it stands.
 @MainActor
 private final class ValuelessSlider: NSControl {
@@ -349,6 +361,20 @@ private enum AccessibilityAuditTests {
         canvasLike.summary = "No annotations"
         expect(found(hosted(host(canvasLike))).violations.isEmpty, "...and with a value it is clean")
 
+        // helpRepeatsLabel: a hint that is the name, the value, "Error:" plus the name, or opens with the name is noise; one that adds words is not.
+        func hinted(_ name: String, _ hint: String, value: String? = nil) -> Audit.Report {
+            let view = HintedButton(); view.name = name; view.hint = hint; view.spokenValue = value
+            return found(hosted(host(view)))
+        }
+        expect(kinds(hinted("Select tool", "Select tool")) == [.helpRepeatsLabel], "a hint that is the name is a helpRepeatsLabel")
+        expect(kinds(hinted("Red", "Red; Shift changes the background")) == [.helpRepeatsLabel], "a hint that opens with the name is a helpRepeatsLabel")
+        expect(kinds(hinted("Drawing size", "Size 7", value: "7")) == [.helpRepeatsLabel], "a hint that restates the name and the value is a helpRepeatsLabel")
+        expect(kinds(hinted("Server said no.", "Error: Server said no.")) == [.helpRepeatsLabel], "an Error: hint that restates the name is a helpRepeatsLabel")
+        expect(kinds(hinted("Source", "Screen", value: "Screen")) == [.helpRepeatsLabel], "a hint equal to the value is a helpRepeatsLabel")
+        expect(hinted("Red", "Shift changes the background").violations.isEmpty && hinted("Hide", "Hide (\u{2318}M)").violations.isEmpty,
+               "a hint that only adds words is clean")
+        expect(SpokenHelp.distinct("Red; Shift changes the background", from: "Red") == "Shift changes the background", "the opening name is taken out of a hint")
+
         // The baseline: a covered finding moves to `baselined`, a stale or different one does not.
         let covered = Audit.Finding(kind: .genericLabel, surface: "s", path: "p", label: "l", hidden: false)
         expect(covered.kind.isTracked && Audit.Kind.nameMismatch.isTracked && Audit.Kind.missingLabel.isTracked && !Audit.Kind.retiredName.isTracked && !Audit.Kind.undescribedImage.isTracked,
@@ -518,6 +544,20 @@ private enum AccessibilityAuditTests {
         history.update(items: items)
         history.window!.setFrame(NSRect(x: 0, y: 0, width: 1000, height: 700), display: false)
         history.window!.contentView?.layoutSubtreeIfNeeded()
+        // R3 P1-3: lay the grid out, then read the snaps the way an assistive client does (the tiles are real elements, not just views).
+        if let grid: NSCollectionView = private_(history, "collection") { grid.layoutSubtreeIfNeeded(); grid.displayIfNeeded() }
+        history.select(ids: [items[1].id])
+        let historyTree = AXTree.walk(history.window!)
+        let tiles = historyTree.nodes.filter { $0.role == .button && ($0.label ?? "").hasPrefix("Shot ") }
+        expect(tiles.count == 4, "every History snap is reachable in the accessibility tree as a named element (found \(tiles.map { $0.label ?? "" }))")
+        expect(tiles.allSatisfy { ($0.label ?? "").contains("Mar") && $0.enabled }, "each tile names the snap, what was done with it and when (\(tiles.map { $0.label ?? "" }))")
+        expect(historyTree.find(.list, "History thumbnail grid")?.help?.contains("Open") == true, "the grid says once how to select, open and drag its snaps")
+        let selectedTiles = tiles.filter { ($0.value as? String) == "Selected" }
+        expect(selectedTiles.count == 1 && selectedTiles[0].label?.hasPrefix("Shot 1") == true && selectedTiles[0].selected, "the selected tile reports the value Selected (\(selectedTiles.map { $0.label ?? "" }))")
+        if let tile = tiles.first(where: { ($0.value as? String) != "Selected" }) {
+            expect(AXTree.press(tile), "AXPress on a tile selects it")
+            expect(tile.customActions == ["Open"], "a tile offers the Open action (\(tile.customActions))")
+        }
         record("History (populated)", Audit.audit(history.window!, surface: "History (populated)"))
 
         // Destination editor: the form for every protocol (the Protocol popup swaps rows).

@@ -2,12 +2,12 @@
 
 - Surface: Main menu > Edit
 - Suite: app-safety
-- Build: 723e65bb
+- Build: dda6b216
 - Nodes: 16
 
 ```
 [0] Undo, Command Z, dimmed
-[0] Redo, Command Z, dimmed
+[0] Redo, Shift Command Z, dimmed
 [0] Cut, Command X
 [0] Copy, Command C
 [0] Copy Image

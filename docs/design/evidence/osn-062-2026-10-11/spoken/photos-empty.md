@@ -2,8 +2,8 @@
 
 - Surface: Photos (empty)
 - Suite: accessibility-audit-tests
-- Build: 723e65bb
-- Nodes: 13
+- Build: dda6b216
+- Nodes: 12
 
 ```
 [0] Photos, window
@@ -17,7 +17,6 @@
 [1]   Pick your Pictures folder or any folder of images, or choose a photo from your Photos library. Only what you choose is browsed. Double-click a thumbnail to open the original image.
 [1]   Choose Pictures Folder…, button
 [1]   Choose from Photos Library…, button
-[0] 
 [0] Close, button
 [0] Open Selected Photo, button, dimmed
 ```

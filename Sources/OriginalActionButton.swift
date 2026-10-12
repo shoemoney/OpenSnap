@@ -1,18 +1,54 @@
 import AppKit
 
-/// What VoiceOver is told after a control's name. A hint that only repeats the name ("Select tool, button" then "Select tool") is noise,
-/// so it is dropped from what assistive clients read; the visible tooltip keeps its words for the pointer. Applied once, here, to every
-/// chrome control (`OriginalActionButton`, the glass choices and pop-ups, the Size presets), not button by button.
+/// What VoiceOver is told after a control's name and value. A hint that only repeats them ("Select tool, button" then "Select tool"; "Drawing
+/// size, 7" then "Size 7"; "Server said no." then "Error: Server said no.") is noise, so it is dropped from what assistive clients read, and a
+/// hint that opens with the name ("Red; Shift changes the background") keeps only what follows it; the visible tooltip keeps its words for the
+/// pointer. Applied once, here, to every chrome control (`OriginalActionButton`, the glass choices and pop-ups, the Size presets), not button
+/// by button.
 enum SpokenHelp {
     static func normalized(_ text: String) -> String {
         text.trimmingCharacters(in: .whitespacesAndNewlines.union(CharacterSet(charactersIn: ".:;,"))).lowercased()
     }
 
-    /// `help`, unless it says nothing the name `label` did not.
-    static func distinct(_ help: String?, from label: String?) -> String? {
+    /// The words of a text: lower case letters and digits, nothing else.
+    static func words(_ text: String?) -> [String] {
+        (text ?? "").lowercased().components(separatedBy: CharacterSet.alphanumerics.inverted).filter { !$0.isEmpty }
+    }
+
+    /// The value as it is spoken, when it is one a hint could repeat (a string, or a number).
+    static func spoken(_ value: Any?) -> String? {
+        switch value {
+        case let text as String: return text.isEmpty ? nil : text
+        case let number as NSNumber: return number.stringValue
+        default: return nil
+        }
+    }
+
+    /// `help`, unless it says nothing the name `label` and the value did not (what is left when it merely opens with the name).
+    static func distinct(_ help: String?, from label: String?, value: Any? = nil) -> String? {
         guard let help, !help.isEmpty else { return nil }
-        guard let label, !label.isEmpty, normalized(help) == normalized(label) else { return help }
-        return nil
+        guard let label, !label.isEmpty else { return help }
+        let known = Set(words(label) + words(spoken(value)) + ["error"])
+        let spokenWords = words(help)
+        if spokenWords.isEmpty || Set(spokenWords).isSubset(of: known) { return nil }
+        let name = label.trimmingCharacters(in: .whitespacesAndNewlines.union(CharacterSet(charactersIn: ".:;,")))
+        guard !name.isEmpty, help.lowercased().hasPrefix(name.lowercased()) else { return help }
+        // Only a clause break after the name ("Red; Shift changes…", "Snap: drag…") makes the name a restated prefix; "Hide (⌘M)" adds the shortcut.
+        let breaks = CharacterSet(charactersIn: ";:,\u{2013}\u{2014}\u{00B7}-")
+        let rest = help.dropFirst(name.count).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let first = rest.unicodeScalars.first, breaks.contains(first) else { return help }
+        let kept = rest.trimmingCharacters(in: breaks.union(.whitespacesAndNewlines))
+        return kept.isEmpty ? help : kept.prefix(1).uppercased() + kept.dropFirst()
+    }
+}
+
+extension NSView {
+    /// A drawn label whose words an assistive client already gets from the control it captions ("Width" beside "Width in pixels"): not an
+    /// element, so VoiceOver says the name once. The identifier prefix lets the accessibility walker, which cannot read that an AppKit
+    /// control opted out (its cell is still published), leave it out too.
+    func hideFromAccessibility(_ reason: String) {
+        setAccessibilityElement(false)
+        setAccessibilityIdentifier("ax-hidden." + reason)
     }
 }
 
@@ -57,7 +93,7 @@ class OriginalActionButton: NSButton {
     /// The help as set (the mirrored tooltip), before the name is taken out of it; a subclass may reword it first.
     func spokenHelpSource() -> String? { super.accessibilityHelp() }
     override func accessibilityHelp() -> String? {
-        SpokenHelp.distinct(spokenHelpSource(), from: accessibilityLabel() ?? (title.isEmpty ? nil : title))
+        SpokenHelp.distinct(spokenHelpSource(), from: accessibilityLabel() ?? (title.isEmpty ? nil : title), value: accessibilityValue())
     }
 
     override func accessibilityPerformShowMenu() -> Bool {

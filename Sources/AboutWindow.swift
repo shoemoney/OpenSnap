@@ -17,10 +17,16 @@ class DismissibleWindow: NSWindow {
     }
 }
 
+/// A text view that reads as enabled to assistive clients (an NSTextView answers "disabled" through the protocol, so VoiceOver would say "dimmed"
+/// for read-only text it can read and select).
+final class ReadableTextView: NSTextView {
+    override func isAccessibilityEnabled() -> Bool { true }
+}
+
 /// The license (or third-party notice) text in a window of its own, so reading it never leaves the app or touches the network.
 @MainActor
 final class LicenseWindow: DismissibleWindow {
-    let textView = NSTextView()
+    let textView = ReadableTextView()
 
     /// The file wraps its paragraphs at about 80 columns; the window wraps them at its own width. Lines of one paragraph are joined with
     /// a space. Blank lines, indented lines (a block that is laid out on purpose), underlines of a title and the title above one all stay.
@@ -120,7 +126,8 @@ final class AboutWindow: DismissibleWindow {
         for button in [.miniaturizeButton, .zoomButton] as [NSWindow.ButtonType] { standardWindowButton(button)?.isHidden = true }
 
         iconView.imageScaling = .scaleProportionallyUpOrDown
-        iconView.setAccessibilityElement(false); iconView.setAccessibilityIdentifier("decorative.about-icon")  // the name beside it says it all
+        // An image view's cell is still published when the view says it is not an element, so the icon is named rather than hidden.
+        iconView.setAccessibilityLabel(DesignTokens.Brand.name + " icon"); iconView.image?.accessibilityDescription = DesignTokens.Brand.name + " icon"
         nameLabel.font = Typography.font(.title)
         for label in [versionLabel, creditLabel] { label.font = Typography.font(.body); label.textColor = .secondaryLabelColor }
         nameLabel.setAccessibilityIdentifier("about.name"); versionLabel.setAccessibilityIdentifier("about.version")

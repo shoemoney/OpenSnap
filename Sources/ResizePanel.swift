@@ -556,6 +556,8 @@ final class ResizeAnchorCellElement: NSAccessibilityElement {
         }
     }
     override func accessibilityValue() -> Any? { MainActor.assumeIsolated { grid?.anchor == anchor ? 1 : 0 } }
+    /// Every cell can be chosen while its grid exists; an element answers "disabled" unless it says otherwise, which read as "dimmed" nine times.
+    override func isAccessibilityEnabled() -> Bool { grid != nil }
     override func isAccessibilitySelected() -> Bool { MainActor.assumeIsolated { grid?.anchor == anchor } }
     override func accessibilityPerformPress() -> Bool { MainActor.assumeIsolated { grid?.select(anchor); return grid != nil } }
 }
@@ -660,7 +662,7 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate, NSMenu
         let width = dimensionField(value: session.state.displayWidthText, name: "Width in pixels")
         let height = dimensionField(value: session.state.displayHeightText, name: "Height in pixels")
         widthField = width; heightField = height
-        let dimensions = NSStackView(views: [label("Width"), width, label("Height"), height, label("pixels")])
+        let dimensions = NSStackView(views: [caption("Width"), width, caption("Height"), height, caption("pixels")])
         dimensions.orientation = .horizontal; dimensions.alignment = .firstBaseline
         dimensions.spacing = DesignTokens.Space.s3
         dimensions.setCustomSpacing(DesignTokens.Space.s5, after: width)
@@ -679,9 +681,9 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate, NSMenu
         limitChoice.target = self; limitChoice.action = #selector(changeLimit(_:))
         fillables.append(limitChoice)
         limitControl = limitChoice
-        let limitBy = NSStackView(views: [label("Limit by"), limitChoice])
+        let limitBy = NSStackView(views: [caption("Limit by"), limitChoice])
         limitBy.orientation = .horizontal; limitBy.alignment = .centerY; limitBy.spacing = DesignTokens.Space.s3
-        let limitSize = NSStackView(views: [label("Limit"), limit, label("pixels")])
+        let limitSize = NSStackView(views: [caption("Limit"), limit, caption("pixels")])
         limitSize.orientation = .horizontal; limitSize.alignment = .firstBaseline; limitSize.spacing = DesignTokens.Space.s3
         let limitControls = NSStackView(views: [limitBy, limitSize])
         limitControls.orientation = .vertical; limitControls.alignment = .leading; limitControls.spacing = DesignTokens.Space.s3
@@ -720,7 +722,7 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate, NSMenu
         disclosure.setAccessibilityExpanded(false)
         presetDisclosure = disclosure
         let disclosurePlate = plate([disclosure], identifier: "ResizeManagePlate", label: "Manage presets")
-        let presetLine = NSStackView(views: [label("Preset"), facePlate, disclosurePlate])
+        let presetLine = NSStackView(views: [caption("Preset"), facePlate, disclosurePlate])
         presetLine.orientation = .horizontal; presetLine.alignment = .centerY; presetLine.spacing = DesignTokens.Space.s3
         presetLine.setCustomSpacing(DesignTokens.Space.s5, after: facePlate)
         let presetTitle = dimensionField(value: "New Size", name: "Preset name")
@@ -813,6 +815,12 @@ final class ResizePanel: NSObject, NSTextFieldDelegate, NSWindowDelegate, NSMenu
         let label = NSTextField(labelWithString: text)
         label.font = DesignTokens.Typography.font(style)
         return label
+    }
+    /// A caption beside a control that is already named for it (the field says "Width in pixels"): drawn, not spoken a second time.
+    private func caption(_ text: String) -> NSTextField {
+        let caption = label(text)
+        caption.hideFromAccessibility("caption")
+        return caption
     }
 
     private func dimensionField(value: String, name: String) -> NSTextField {

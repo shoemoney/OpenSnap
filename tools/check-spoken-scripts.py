@@ -134,7 +134,8 @@ def write_findings(directory, surfaces, baseline, new, stale):
             by_kind[kind] += n
     total = sum(by_kind.values())
     out = ["# Spoken-script findings", "",
-           f"{total} findings of the tracked kinds across {len(surfaces)} audited surfaces; every one is a baseline entry ({DEFAULT_REASON}) in `tools/accessibility-baseline.tsv`.",
+           (f"{total} findings of the tracked kinds across {len(surfaces)} audited surfaces; every one is a baseline entry ({DEFAULT_REASON}) in `tools/accessibility-baseline.tsv`."
+            if total else f"No findings of the tracked kinds across {len(surfaces)} audited surfaces; `tools/accessibility-baseline.tsv` is empty."),
            f"New (not in the baseline): {sum(new.values())}. Stale (in the baseline, not produced): {sum(stale.values())}.", "",
            "## By kind", "", "| Kind | Findings |", "|---|---|"]
     out += [f"| {kind} | {by_kind.get(kind, 0)} |" for kind in TRACKED]

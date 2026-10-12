@@ -143,6 +143,7 @@ extension AppDelegate {
         ])
         content.canvasScrollView = chrome.scrollView
         modernChrome = chrome
+        chrome.fontButton.spokenValue = { [weak self] in self?.spokenTextStyle }
         window.minSize = NSSize(width: chrome.requiredWindowWidth(), height: MainWindowFrame.minimumHeight)
         nameField.onChange = { [weak self] name in self?.showDocumentName(name) }
         showDocumentName(nameField.stringValue)

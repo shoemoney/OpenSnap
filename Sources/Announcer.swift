@@ -63,14 +63,18 @@ enum Announcer {
         static func uploadStarted(_ name: String) -> String { name.isEmpty ? "Uploading" : "Uploading \(name)" }
         static let uploadSucceeded = "Upload complete. Link copied."
         static func uploadFailed(_ reason: String) -> String { reason.hasPrefix("Error:") ? reason : "Error: " + (reason.isEmpty ? "the upload failed" : reason) }
+        /// "Error: …" for any failure the ear must hear (the same shape the upload failure uses).
+        static func error(_ reason: String) -> String { uploadFailed(reason) }
         static let captureSucceeded = "Screenshot captured"
         static let frameEntered = "Frame mode on. Drag to choose the area to capture."
         static let frameLeft = "Frame mode off"
         static let captureCancelled = "Capture cancelled"
-        static let pickerOpened = "Choose an area to capture. Drag to select, Space for the window under the pointer, Escape to cancel"
+        static let pickerOpened = "Choose an area to capture. Drag to select, or click for the window under the pointer. Escape to cancel"
         static func toolChanged(_ name: String) -> String { name.capitalized + " tool" }
         static func cropped(_ size: CGSize) -> String { "Cropped to \(Int(size.width)) by \(Int(size.height))" }
         static func resized(_ size: CGSize) -> String { "Resized to \(Int(size.width)) by \(Int(size.height))" }
+        static let annotationsRemoved = "Annotations removed"
+        static let imageCleared = "Image cleared"
         static let actualSizeOn = "Actual size on"
         static let actualSizeOff = "Actual size off"
         static func undone(_ action: String) -> String { action.isEmpty ? "Undone" : "Undid \(action)" }

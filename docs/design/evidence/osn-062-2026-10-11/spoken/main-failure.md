@@ -2,18 +2,18 @@
 
 - Surface: Main (failure)
 - Suite: app-safety
-- Build: 723e65bb
+- Build: dda6b216
 - Nodes: 39
 
 ```
 [0] Untitled, window
 [0] Hide, button
 [0]   hint: Hide (⌘M)
-[0] Menu, Toolbox, pop up button
+[0] Commands, Toolbox, pop up button
 [0]   hint: Drawing, edit and capture commands; everything else is in the menu bar
 [0] Photos, button
 [0] Snap, button
-[0]   hint: Snap: drag an area or click a window; right-click or Control-click for Fullscreen
+[0]   hint: Drag an area or click a window; right-click or Control-click for Fullscreen
 [0] Tools, radio group
 [1]   Select tool, not selected, radio button, 1 of 10
 [1]   Brush tool, not selected, radio button, 2 of 10
@@ -26,13 +26,12 @@
 [1]   Arrow tool, selected, radio button, 9 of 10
 [1]     hint: Option reverses direction, Shift constrains the angle
 [1]   Crop tool, not selected, radio button, 10 of 10
-[0] Drawing colors, button
+[0] Drawing colors, Red, button
 [0]   hint: Color: hover for original preset colors; hold Shift to change the canvas background
 [0] Drawing size, 7, slider
-[0]   hint: Size 7
-[0] Font, button
+[0] Font, Helvetica Bold, 18 points, button
 [0] scroll area
-[1]   Drawing canvas, image
+[1]   Drawing canvas, No annotations, image
 [0] Undo, button, dimmed
 [0]   hint: Undo (⌘Z)
 [0] Clear image, button, dimmed
@@ -42,7 +41,6 @@
 [0] Resize…, button
 [0]   hint: Resize or crop the picture
 [0] Server said no.
-[0]   hint: Error: Server said no.
 [0] Retry upload, button
 [0] Show error details, button
 [0] Save, button
