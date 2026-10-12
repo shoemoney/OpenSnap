@@ -183,6 +183,7 @@ private enum GlassChromeTests {
         controlStateTests()
         toggleTests()
         differentiateTests()
+        toolSemanticsTests()
         glyphContrastTests()
         DisplayOptions.override = nil
         do {
@@ -1037,7 +1038,7 @@ private enum GlassChromeTests {
 
         // Keyboard: one tab stop; Left and Right move, Space switches.
         expect(toggle.acceptsFirstResponder && window.makeFirstResponder(toggle) && window.firstResponder === toggle, "The toggle takes keyboard focus")
-        expect(toggle.style(ofSegment: 0).focusRing && !toggle.focusRingMaskBounds.isEmpty && toggle.focusRingType == .exterior, "Focus rings the control")
+        expect(toggle.style(ofSegment: 0).focusRing && toggle.focusRingType == .none && toggle.tokenRing.isVisible && toggle.tokenRing.target() == toggle.bounds.insetBy(dx: 1, dy: 1), "Focus rings the control with the token ring, not AppKit's")
         target.hits.removeAll()
         toggle.keyDown(with: keyEvent(124, in: window))
         expect(toggle.selectedSegment == 1 && target.hits == ["format:1"], "Right selects JPG")
@@ -1168,6 +1169,37 @@ private enum GlassChromeTests {
                 expect(offHigh >= offBase + 1, "Increase Contrast lifts a disabled \(kind) glyph (\(name): \(offBase) -> \(offHigh))")
             }
         }
+    }
+
+    /// OSN-062 WP3-B: the ten tools are a radio set VoiceOver speaks as "Arrow tool, selected"; a hint never repeats a name.
+    private static func toolSemanticsTests() {
+        expect(SpokenHelp.distinct("Select tool", from: "Select tool") == nil && SpokenHelp.distinct("select tool.", from: "Select tool") == nil, "A hint that repeats the name is dropped")
+        expect(SpokenHelp.distinct("Hide (⌘M)", from: "Hide") == "Hide (⌘M)" && SpokenHelp.distinct("Save to History", from: nil) == "Save to History" && SpokenHelp.distinct(nil, from: "Hide") == nil, "A hint that adds words stays")
+        let rig = makeRig(NSSize(width: 980, height: 640))
+        let tools = rig.chrome.toolButtons
+        expect(tools.count == 10 && tools.values.allSatisfy { $0 is ToolButton }, "The ten tools are tool buttons")
+        for (id, button) in tools {
+            expect(button.isAccessibilityElement() && button.accessibilityRole() == .radioButton, "\(id): a radio button")
+            let name = button.accessibilityLabel() ?? ""
+            expect(name == id.capitalized + " tool" && (button.accessibilityHelp() ?? "") != name, "\(id): the hint does not repeat the name \"\(name)\" (\(button.accessibilityHelp() ?? "no hint"))")
+        }
+        let arrow = tools["arrow"]!, brush = tools["brush"]!
+        arrow.state = .on; brush.state = .off
+        AppToolTip.setText("Arrow tool (selected); Option reverses direction, Shift constrains the angle", for: arrow)
+        AppToolTip.setText("Brush tool", for: brush)
+        expect((arrow.accessibilityValue() as? NSNumber)?.intValue == 1 && arrow.isAccessibilitySelected() && (brush.accessibilityValue() as? NSNumber)?.intValue == 0 && !brush.isAccessibilitySelected(),
+               "The chosen tool is value 1 and selected, the others 0")
+        expect(arrow.accessibilityHelp() == "Option reverses direction, Shift constrains the angle" && brush.accessibilityHelp() == nil,
+               "The selected tool's hint keeps only the modifiers (\(arrow.accessibilityHelp() ?? "nil"))")
+        arrow.state = .off; brush.state = .on
+        expect((arrow.accessibilityValue() as? NSNumber)?.intValue == 0 && (brush.accessibilityValue() as? NSNumber)?.intValue == 1, "The value follows the selection")
+        rig.chrome.layoutSubtreeIfNeeded()
+        let tree = AXTree.walk(rig.chrome.header)
+        if let group = tree.find(.radioGroup, "Tools") {
+            let kids = tree.children(of: group)
+            expect(kids.count == 10 && kids.allSatisfy { $0.role == .radioButton }, "The Tools group holds the ten radio buttons (\(kids.map { $0.label ?? "" }))")
+        } else { expect(false, "The top bar has a radio group named Tools:\n\(tree.outline)") }
+        expect(tree.nodes.allSatisfy { node in node.help.map { SpokenHelp.distinct($0, from: node.label) != nil } ?? true }, "No element in the top bar has a hint that repeats its name")
     }
 
     private static func differentiateTests() {
@@ -1363,7 +1395,7 @@ private enum GlassChromeTests {
         var tree = AXTree.walk(rig.window)
         let buttons = ["Hide", "Photos", "Snap", "Select tool", "Brush tool", "Line tool", "Ellipse tool", "Rectangle tool", "Fill tool", "Eraser tool", "Text tool", "Arrow tool",
                        "Crop tool", "Drawing colors", "Font", "Undo", "Clear image", "Resize…", "Save", "History", "Upload image"]
-        for name in buttons { _ = reach(tree, .button, name, "bar") }
+        for name in buttons { _ = reach(tree, name.hasSuffix(" tool") ? .radioButton : .button, name, "bar") }
         _ = reach(tree, .menuButton, "Toolbox", "bar"); _ = reach(tree, .slider, "Drawing size", "bar")
         _ = reach(tree, .popUpButton, "Canvas zoom", "bar"); _ = reach(tree, .checkBox, "Export at original size", "bar")
         if let format = reach(tree, .radioGroup, "Image format", "bar") {
@@ -1383,7 +1415,7 @@ private enum GlassChromeTests {
         slider.showPopover()
         guard let sizeWindow = slider.panelWindow else { return expect(false, "The Size panel is up") }
         tree = AXTree.walk(sizeWindow)
-        if let group = reach(tree, .group, "Size", "Size panel") {
+        if let group = reach(tree, .group, "Size options", "Size panel") {
             expect(tree.children(of: group).count == 4, "Size panel: the panel group holds the title, the value, the track and the presets (\(tree.children(of: group).count))")
         }
         if let track = reach(tree, .slider, "Size", "Size panel") { expect(track.value != nil && track.enabled, "Size panel: the track has a value and is enabled") }
@@ -1902,7 +1934,7 @@ private enum GlassChromeTests {
         expect(!panel.rows[3].isEnabled && panel.rows[2].isEnabled && !panel.rows[3].acceptsFirstResponder, "toolbox: the row validation disables (Paste) is dimmed and never takes focus")
         let anchor = anchorOnScreen(toolbox)
         expect(panel.host.placement.map { $0.edge == .minY && $0.frame.maxY <= anchor.minY } == true, "toolbox: the panel opens below the button, not over it")
-        expect(toolbox.accessibilityRole() == .menuButton && toolbox.accessibilityLabel() == "Toolbox" && toolbox.accessibilityValue() == nil, "toolbox: still a menu button named Toolbox with no value")
+        expect(toolbox.accessibilityRole() == .menuButton && toolbox.accessibilityLabel() == "Toolbox" && toolbox.accessibilityValue() as? String == "Menu", "toolbox: still a menu button named Toolbox with no value")
         // A second request closes; the click on the anchor the host consumes cannot reopen it.
         toolbox.performClick(nil)
         expect(!toolbox.isOpen, "toolbox: a second press closes the panel")
@@ -2594,7 +2626,9 @@ private enum GlassChromeTests {
         let order = chrome.subviews
         func position(_ view: NSView?) -> Int { view.flatMap { order.firstIndex(of: $0) } ?? -1 }
         expect(!order.contains { $0 is NSVisualEffectView || $0 is NSBackgroundExtensionView }, "\(label): no material backdrop and no canvas bleed")
-        expect(position(chrome.scrollView) == 0 && containers(rig).count == 2 && position(containers(rig)[0]) == 1, "\(label): canvas, then glass")
+        // Subview order is the reading order (top bar, canvas, bottom bar), which costs no stacking only while the bars and the canvas never overlap.
+        expect(containers(rig).count == 2 && position(containers(rig)[0]) == 0 && position(chrome.scrollView) == 1 && position(containers(rig)[1]) == 2, "\(label): top bar, canvas, bottom bar (the reading order)")
+        expect(containers(rig).allSatisfy { !$0.frame.intersects(chrome.scrollView.frame) }, "\(label): neither bar overlaps the canvas, so the order stacks nothing")
         expect(!surfaces(rig).contains { $0.contentView === rig.controls.canvas || $0.contentView === chrome.scrollView }, "\(label): glass never wraps the scroll view")
         expect(surfaces(rig).allSatisfy { $0.style == .regular }, "\(label): one glass variant")
 

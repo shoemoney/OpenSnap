@@ -279,6 +279,8 @@ extension AppDelegate {
             panel.isOpaque = false; panel.backgroundColor = .clear
             panel.isReleasedWhenClosed = false; panel.hidesOnDeactivate = true
             panel.setAccessibilityLabel("Actual Size overview")
+            // A window read without a title is just "window"; the card has no title bar, so the title is for assistive clients only.
+            panel.title = "Actual Size overview"; panel.isExcludedFromWindowsMenu = true
             navigatorWindow = panel
         }
         if let screen = window.screen ?? NSScreen.main {

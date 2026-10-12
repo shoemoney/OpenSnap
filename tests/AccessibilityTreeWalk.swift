@@ -83,11 +83,12 @@ enum AXTree {
         /// Within one AX parent, the order `accessibilityChildren()` lists its children in against the order the eye reads them: rows from the top,
         /// each row left to right. A parent opts out with an identifier that starts with "order-free" (the canvas, a free-form board), and so do
         /// the elements below it. Elements without a frame (zero-sized) are left out, they cannot be read in any order, and so are the window's
-        /// own title-bar buttons, which AppKit lists wherever it likes.
+        /// own title-bar buttons, which AppKit lists wherever it likes, and a scroll area's scroll bars (AppKit lists them after the content, and a bar spans the
+        /// whole edge, so by frame alone it would always be read first).
         func readingOrderProblems() -> [OrderProblem] {
             let furniture: Set<NSAccessibility.Subrole> = [.closeButton, .minimizeButton, .zoomButton, .fullScreenButton, .toolbarButton]
             var groups: [Int?: [Int]] = [:]
-            for (index, node) in nodes.enumerated() where node.frame.width > 0 && node.frame.height > 0 && !(node.subrole.map { furniture.contains($0) } ?? false) {
+            for (index, node) in nodes.enumerated() where node.frame.width > 0 && node.frame.height > 0 && node.role != .scrollBar && !node.identifier.hasPrefix("order-free") && !(node.subrole.map { furniture.contains($0) } ?? false) {
                 groups[node.reachedFrom, default: []].append(index)
             }
             func orderFree(_ parent: Int?) -> Bool {

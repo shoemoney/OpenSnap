@@ -1,5 +1,21 @@
 import AppKit
 
+/// What VoiceOver is told after a control's name. A hint that only repeats the name ("Select tool, button" then "Select tool") is noise,
+/// so it is dropped from what assistive clients read; the visible tooltip keeps its words for the pointer. Applied once, here, to every
+/// chrome control (`OriginalActionButton`, the glass choices and pop-ups, the Size presets), not button by button.
+enum SpokenHelp {
+    static func normalized(_ text: String) -> String {
+        text.trimmingCharacters(in: .whitespacesAndNewlines.union(CharacterSet(charactersIn: ".:;,"))).lowercased()
+    }
+
+    /// `help`, unless it says nothing the name `label` did not.
+    static func distinct(_ help: String?, from label: String?) -> String? {
+        guard let help, !help.isEmpty else { return nil }
+        guard let label, !label.isEmpty, normalized(help) == normalized(label) else { return help }
+        return nil
+    }
+}
+
 /// OriginalButton secondary routing (decompiled.c:33924–34162), with the
 /// SKBezelButton left-menu policy (80667–80735, 81166–81416).
 @MainActor
@@ -37,6 +53,12 @@ class OriginalActionButton: NSButton {
 
     // The original deliberately bypasses AppKit's automatic contextual menu.
     override func menu(for event: NSEvent) -> NSMenu? { nil }
+
+    /// The help as set (the mirrored tooltip), before the name is taken out of it; a subclass may reword it first.
+    func spokenHelpSource() -> String? { super.accessibilityHelp() }
+    override func accessibilityHelp() -> String? {
+        SpokenHelp.distinct(spokenHelpSource(), from: accessibilityLabel() ?? (title.isEmpty ? nil : title))
+    }
 
     override func accessibilityPerformShowMenu() -> Bool {
         guard isEnabled, !handlingSecondaryCallback, let menu, menu.numberOfItems > 0 else { return false }

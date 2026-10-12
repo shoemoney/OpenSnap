@@ -128,10 +128,43 @@ final class ZoomPopUpButton: GlassPopUpButton {
     }
 }
 
+/// One of the ten drawing tools in the top bar. The tools are a set of which exactly one is chosen, so VoiceOver gets radio-button
+/// semantics (role, value 1 for the chosen tool, selected) inside the "Tools" group, and says "Arrow tool, selected" instead of
+/// leaving the choice to the tooltip. The look is unchanged: `state` is what `updateToolButtons` already sets.
+@MainActor
+final class ToolButton: CommandButton {
+    static let groupLabel = "Tools"
+    var isChosen: Bool { state == .on }
+
+    override init(frame: NSRect) { super.init(frame: frame); setAccessibilityElement(true) }
+    required init?(coder: NSCoder) { super.init(coder: coder); setAccessibilityElement(true) }
+
+    override func accessibilityRole() -> NSAccessibility.Role? { .radioButton }
+    override func accessibilityValue() -> Any? { NSNumber(value: isChosen ? 1 : 0) }
+    override func isAccessibilitySelected() -> Bool { isChosen }
+
+    /// The tooltip says which tool is chosen ("Arrow tool (selected); Option reverses direction"); the radio value says that now, so the
+    /// help keeps only what the name and the value do not: the modifier hints.
+    override func spokenHelpSource() -> String? {
+        guard var help = super.spokenHelpSource() else { return nil }
+        help = help.replacingOccurrences(of: " (selected)", with: "")
+        if let name = accessibilityLabel(), help.hasPrefix(name) {
+            help = String(help.dropFirst(name.count)).trimmingCharacters(in: CharacterSet(charactersIn: ";: ").union(.whitespaces))
+        }
+        return help.isEmpty ? nil : help
+    }
+}
+
+/// The Toolbox's cell: a pop-up is published as its cell, so the cell answers the control's value.
+@MainActor
+final class ToolboxPopUpCell: NSPopUpButtonCell {
+    override func accessibilityValue() -> Any? { (controlView as? ToolboxPopUpButton)?.accessibilityValue() ?? ToolboxPopUpButton.accessibilityMenuValue }
+}
+
 /// The Toolbox: a menu button. It keeps NSPopUpButton as its base so the chrome's sizing and the key-view loop stay as they were, but it
 /// never uses the selection-style pop-up behaviour: that style laid the chosen row over its own button, so the open menu covered the
 /// Toolbox, Photos and the first tools, and exposed a "value" (it read "Select All"). The rows now open below the button as a glass panel
-/// of group plates, the button has no value and reads as a menu button named "Toolbox" (R2-004, F-J6-009). The menu is a copy of the
+/// of group plates, the button has no selection (its value is the constant "Menu") and reads as a menu button named "Toolbox" (R2-004, F-J6-009). The menu is a copy of the
 /// menu-bar rows, icons and all, and stays the source of truth for titles, shortcuts and validation; the panel only draws it.
 ///
 /// Like `GlassPopUpButton` it takes every way of showing the menu natively and opens the panel instead: a click or Control-click, a right
@@ -154,8 +187,12 @@ final class ToolboxPopUpButton: NSPopUpButton, NSMenuDelegate {
         setAccessibilityRole(.menuButton)
     }
     override var canBecomeKeyView: Bool { KeyboardNavigation.reaches(self) }
-    override func accessibilityValue() -> Any? { nil }
+    /// The Toolbox is a launcher, not a setting, so there is no choice to report; it reads "Menu" so a client that publishes it as a pop-up
+    /// (which owes a value) says what the control is, not nothing. Its cell answers the same, because a pop-up is published as its cell.
+    static let accessibilityMenuValue = "Menu"
+    override func accessibilityValue() -> Any? { Self.accessibilityMenuValue }
     override func accessibilityRole() -> NSAccessibility.Role? { .menuButton }
+    override class var cellClass: AnyClass? { get { ToolboxPopUpCell.self } set { } }
 
     /// Rows go in `menu`; the closed button shows `image`.
     func setFace(_ image: NSImage?) { faceItem.image = image; needsDisplay = true }
@@ -584,7 +621,7 @@ final class ModernEditorChrome: NSView {
         var toolViews: [NSView] = []
         for id in toolOrder {
             guard let icon = Self.toolIcons[id] else { continue }
-            let button = CommandButton(title: "", target: actions.target, action: actions.chooseTool)
+            let button = ToolButton(title: "", target: actions.target, action: actions.chooseTool)
             button.identifier = NSUserInterfaceItemIdentifier(id)
             button.setButtonType(.toggle)
             button.iconPointSize = Metrics.iconPointSize
@@ -595,6 +632,7 @@ final class ModernEditorChrome: NSView {
             toolViews.append(fixed(button, Metrics.toolButton))
         }
         let toolGroup = plate(toolViews, "GlassToolBar")
+        toolGroup.setAccessibilityElement(true); toolGroup.setAccessibilityRole(.radioGroup); toolGroup.setAccessibilityLabel(ToolButton.groupLabel)
 
         // Annotation: Color, Size (a pill that opens its popover) and Font sit beside the tools they modify.
         let annotationGroup = plate([cell(controls.paletteButton), cell(controls.widthControl), fixed(fontButton)], "GlassAnnotationGroup")
@@ -685,7 +723,9 @@ final class ModernEditorChrome: NSView {
         }
         let headerGlass = GlassChrome.container(around: header, identifier: "GlassTopBar")
         let footerGlass = GlassChrome.container(around: footer, identifier: "GlassBottomBar")
-        let all: [NSView] = [scrollView, headerGlass, footerGlass]
+        // Subview order is the reading order: the top bar, the canvas between the bars, the bottom bar. The three never overlap (the canvas
+        // stops a gap short of each bar), so the order costs no stacking.
+        let all: [NSView] = [headerGlass, scrollView, footerGlass]
         for view in all { view.translatesAutoresizingMaskIntoConstraints = false }
         for view in all { addSubview(view) }
         addSubview(controls.canvasBorder)

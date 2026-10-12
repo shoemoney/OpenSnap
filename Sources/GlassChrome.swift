@@ -801,7 +801,7 @@ final class SegmentedToggleElement: NSAccessibilityElement {
 /// Left and Right move the selection, Space switches to the other segment. It sends its action on every change, like the control
 /// it replaces, and exposes two radio-button children ("PNG", "JPG") under the group "Image format".
 @MainActor
-final class SegmentedToggle: NSControl, ChromeFillable {
+final class SegmentedToggle: NSControl, ChromeFillable, TokenFocusRinged {
     static let segmentGap: CGFloat = 2, segmentPadding: CGFloat = 12
 
     let titles: [String]
@@ -828,7 +828,7 @@ final class SegmentedToggle: NSControl, ChromeFillable {
         super.init(frame: .zero)
         cell = NSActionCell()
         isEnabled = true
-        focusRingType = .exterior
+        _ = tokenRing
         setAccessibilityElement(true)
         setAccessibilityRole(.radioGroup)
         setAccessibilityLabel("Image format")
@@ -839,7 +839,12 @@ final class SegmentedToggle: NSControl, ChromeFillable {
     override var acceptsFirstResponder: Bool { isEnabled }
     override var canBecomeKeyView: Bool { KeyboardNavigation.reaches(self) }
     override var isFlipped: Bool { false }
-    override var isEnabled: Bool { didSet { needsDisplay = true; noteFocusRingMaskChanged() } }
+    override var isEnabled: Bool { didSet { needsDisplay = true; tokenRing.refresh() } }
+
+    /// The keyboard focus ring: the app's own token ring around the whole toggle, never AppKit's pale system one.
+    private(set) lazy var tokenRing = TokenFocusRing(view: self, target: { [unowned self] in isEnabled ? bounds.insetBy(dx: 1, dy: 1) : .zero })
+    override var focusRingType: NSFocusRingType { get { .none } set {} }
+    override func layout() { super.layout(); tokenRing.refresh() }
 
     // MARK: geometry
 
@@ -942,7 +947,7 @@ final class SegmentedToggle: NSControl, ChromeFillable {
 
     override func viewDidChangeEffectiveAppearance() {
         super.viewDidChangeEffectiveAppearance()
-        needsDisplay = true
+        needsDisplay = true; tokenRing.refresh()
     }
 
     // MARK: mouse
@@ -1006,22 +1011,14 @@ final class SegmentedToggle: NSControl, ChromeFillable {
 
     override func becomeFirstResponder() -> Bool {
         let accepted = super.becomeFirstResponder()
-        if accepted { hasKeyboardFocus = true; needsDisplay = true }
+        if accepted { hasKeyboardFocus = true; needsDisplay = true; tokenRing.setFocused(true) }
         return accepted
     }
 
     override func resignFirstResponder() -> Bool {
         let resigned = super.resignFirstResponder()
-        if resigned { hasKeyboardFocus = false; needsDisplay = true }
+        if resigned { hasKeyboardFocus = false; needsDisplay = true; tokenRing.setFocused(false) }
         return resigned
-    }
-
-    override var focusRingMaskBounds: NSRect { isEnabled && !bounds.isEmpty ? bounds.insetBy(dx: 1, dy: 1) : .zero }
-
-    override func drawFocusRingMask() {
-        guard isEnabled, !bounds.isEmpty else { return }
-        NSColor.black.setFill()
-        NSBezierPath(roundedRect: bounds.insetBy(dx: 1, dy: 1), xRadius: StatePlate.radius, yRadius: StatePlate.radius).fill()
     }
 
     // MARK: accessibility
@@ -1033,4 +1030,67 @@ final class SegmentedToggle: NSControl, ChromeFillable {
 
     override func accessibilityValue() -> Any? { titles[selectedSegment] }
     override func isAccessibilitySelected() -> Bool { false }
+}
+
+/// A control whose keyboard focus ring is the app's own (`StateStyles.focusRingColor`, 3 pt, standing off the control) and not AppKit's
+/// `.exterior` ring, which is a pale 1.4:1 on a light window and an olive in a dark one.
+@MainActor
+protocol TokenFocusRinged: AnyObject {
+    var tokenRing: TokenFocusRing { get }
+}
+
+/// The ring itself: a shape layer on the control, shown while the control holds keyboard focus. The control sets `focusRingType = .none`
+/// and tells the ring when focus arrives or leaves.
+@MainActor
+final class TokenFocusRing {
+    private weak var view: NSView?
+    let layer = CAShapeLayer()
+    /// The outline the ring follows, in the control's own coordinates; the whole bounds unless the control rings a part (the selected cell).
+    var target: () -> NSRect
+    var cornerRadius: CGFloat { didSet { refresh() } }
+    private(set) var isFocused = false
+    /// Held back while something the control opened (its choices panel) carries the focus instead.
+    var isSuppressed = false { didSet { refresh() } }
+    var isVisible: Bool { isFocused && !isSuppressed && !layer.isHidden }
+
+    init(view: NSView, cornerRadius: CGFloat? = nil, target: (() -> NSRect)? = nil) {
+        self.view = view
+        self.cornerRadius = cornerRadius ?? StatePlate.radius
+        self.target = target ?? { [weak view] in view?.bounds ?? .zero }
+        view.focusRingType = .none
+        view.wantsLayer = true
+        layer.fillColor = nil
+        layer.isHidden = true
+        layer.zPosition = 10
+        view.layer?.addSublayer(layer)
+    }
+
+    func setFocused(_ on: Bool) {
+        isFocused = on
+        refresh()
+    }
+
+    /// The ring's colour for the control's appearance and the live Increase Contrast setting.
+    var color: NSColor {
+        StateStyles.focusRingColor(highContrast: ChromeAccessibility.live.increaseContrast, appearance: view?.effectiveAppearance ?? .currentDrawing())
+    }
+
+    /// Redraws the ring around the control's current target; the control calls it from `layout()` and on an appearance change.
+    func refresh() {
+        guard let view else { return }
+        let rect = target()
+        let shown = isFocused && !isSuppressed && !rect.isEmpty
+        CATransaction.begin(); CATransaction.setDisableActions(true)
+        layer.isHidden = !shown
+        if shown {
+            let grow = StateStyles.focusRingOutset + StateStyles.focusRingWidth / 2
+            let outline = rect.insetBy(dx: -grow, dy: -grow)
+            let radius = min(cornerRadius + grow, outline.width / 2, outline.height / 2)
+            layer.frame = view.bounds
+            layer.path = CGPath(roundedRect: outline, cornerWidth: radius, cornerHeight: radius, transform: nil)
+            layer.lineWidth = StateStyles.focusRingWidth
+            layer.strokeColor = color.cgColor
+        }
+        CATransaction.commit()
+    }
 }

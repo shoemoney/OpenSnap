@@ -12,7 +12,7 @@ enum StatusIcon {
     static let accessibilityLabel = "Show or hide " + name
 
     static func image() -> NSImage? {
-        let symbol = NSImage(systemSymbolName: symbolName, accessibilityDescription: name)
+        let symbol = NSImage(systemSymbolName: symbolName, accessibilityDescription: accessibilityLabel)
         symbol?.isTemplate = true
         return symbol
     }

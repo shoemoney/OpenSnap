@@ -287,6 +287,11 @@ final class OriginalCapturePicker: CaptureSelectionPicking {
 /// Local event routing works without global monitors or app activation.
 /// Unlike original canBecomeKey=false + PTHotKey, this panel can receive Escape.
 class OriginalCaptureOverlayPanel: NSPanel {
+    override init(contentRect: NSRect, styleMask style: NSWindow.StyleMask, backing backingStoreType: NSWindow.BackingStoreType, defer flag: Bool) {
+        super.init(contentRect: contentRect, styleMask: style, backing: backingStoreType, defer: flag)
+        // A window read without a title is just "window"; the overlay has no title bar, so this is for assistive clients only.
+        title = "Capture area"; isExcludedFromWindowsMenu = true
+    }
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
     override func sendEvent(_ event: NSEvent) {
@@ -391,6 +396,7 @@ final class OriginalCaptureSelectionView: NSView {
         selectionRect = NSRect(x: min(a.x, p.x), y: min(a.y, p.y),
                                width: abs(a.x - p.x), height: abs(a.y - p.y))
         needsDisplay = true
+        NSAccessibility.post(element: self, notification: .valueChanged)
     }
     override func mouseUp(with event: NSEvent) {
         guard live, anchor != nil, var rect = selectionRect else { return }
@@ -409,6 +415,25 @@ final class OriginalCaptureSelectionView: NSView {
         guard live else { return }
         if event.keyCode == 53 { live = false; onCancel?() }
     }
+
+    // MARK: Accessibility
+    // The overlay is one focusable element: VoiceOver cannot drag, so it names the picker, says what ends it and which commands capture
+    // without a drag, and reads the selection as it grows.
+    static let accessibilityName = "Capture area picker"
+    static func accessibilityHelp(windowOnly: Bool) -> String {
+        let how = windowOnly ? "Click a window to capture it." : "Drag to choose the area to capture, or click to capture the window or display under the pointer."
+        return how + " Press Escape to cancel. VoiceOver cannot drag: press Escape, then choose Fullscreen Snapshot or Window Snapshot from the Capture menu."
+    }
+    /// The live selection size ("640×480 pixels"), else what the picker is waiting for.
+    static func accessibilityValue(for rect: NSRect?, windowOnly: Bool) -> String {
+        if let rect, !windowOnly, rect.width > 3 || rect.height > 3 { return "\(Int(rect.width))×\(Int(rect.height)) pixels" }
+        return "No selection"
+    }
+    override func isAccessibilityElement() -> Bool { live }
+    override func accessibilityRole() -> NSAccessibility.Role? { .group }
+    override func accessibilityLabel() -> String? { Self.accessibilityName }
+    override func accessibilityHelp() -> String? { Self.accessibilityHelp(windowOnly: windowOnly) }
+    override func accessibilityValue() -> Any? { Self.accessibilityValue(for: selectionRect, windowOnly: windowOnly) }
 
     override func draw(_ dirtyRect: NSRect) {
         guard live else { return }

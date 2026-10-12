@@ -11,7 +11,7 @@ extension AppSafetyTests {
             ("WP1b: the Actual Size overview panel, the Frame full-screen prompt and the top and bottom bars are walked and scripted", surfaceEditorParts),
             ("WP1b: the real Size, Color, Upload destinations and Zoom panels are walked and scripted", surfacePanels),
             ("WP1b: the permission alert, the status-item button and the Upload menu are walked and scripted", surfaceSmall),
-            ("WP1b: the countdown numeral and the capture picker overlay are walked and scripted; the picker's findings are baselined pending WP3", surfaceCapture),
+            ("WP1b: the countdown numeral and the capture picker overlay are walked and scripted", surfaceCapture),
             ("WP1b: the canvas value summarises its annotations (No annotations, 3 annotations: arrow, rectangle, text \"hello\"); pending WP3", surfaceCanvasValue),
         ]
     }
@@ -110,6 +110,7 @@ extension AppSafetyTests {
         large.toggleActualSize()
         try expect(large.isActualSize, "Actual Size is on")
         let overview = try large.navigatorWindow.unwrapped("the Actual Size overview panel")
+        try expect(overview.title == "Actual Size overview" && overview.isExcludedFromWindowsMenu, "The overview window reads as a titled window, not a bare \"window\", and stays out of the Window menu (\(overview.title))")
         try walkedWindow(overview, "Editor (actual size)")
         large.toggleActualSize()
         // Frame cannot start in full screen: the editor says so in its status line.
@@ -217,9 +218,9 @@ extension AppSafetyTests {
         defer { countdown.cancel() }
         let panel = try panels.first.unwrapped("the countdown panel")
         try expect(spoken == ["3"], "The countdown speaks its first numeral (\(spoken))")
+        try expect(panel.title == "Capture countdown" && panel.isExcludedFromWindowsMenu, "The countdown panel is a titled window for assistive clients (\(panel.title))")
         try walkedWindow(panel, "Countdown")
-        // Capture picker overlay: no accessibility code at all (OriginalCapturePicker.swift), so today it reports a focusable view with no
-        // label, no role and that is not an element. Those are baselined "pending WP3" and go STALE the moment WP3 gives it all three.
+        // Capture picker overlay: one named, focusable group with its help (Escape, and the non-drag alternatives) and a live selection value.
         let suite = "OpenSnapAccessibilitySurfaces." + UUID().uuidString
         let defaults = TestDefaults(name: suite)
         defer { TestDefaults.dispose(defaults, name: suite) }
@@ -228,7 +229,10 @@ extension AppSafetyTests {
         overlay.isReleasedWhenClosed = false
         overlay.contentView = OriginalCaptureSelectionView(frame: frame, windowOnly: false, defaults: defaults)
         defer { overlay.close() }
+        try expect(overlay.title == "Capture area" && overlay.isExcludedFromWindowsMenu, "The overlay panel is a titled window for assistive clients (\(overlay.title))")
         try walkedWindow(overlay, "Capture picker overlay")
+        let picker = try AXTree.walk(overlay).find(.group, "Capture area picker").unwrapped("the picker group in the overlay's tree")
+        try expect(picker.value as? String == "No selection" && (picker.help ?? "").contains("Escape") && (picker.help ?? "").contains("Capture menu"), "The picker reads its value and how to leave or capture without dragging (\(String(describing: picker.value)), \(picker.help ?? "no hint"))")
     }
 
     // MARK: The canvas says what it holds

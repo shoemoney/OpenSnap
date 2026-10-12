@@ -102,6 +102,8 @@ final class OriginalCaptureCountdown: CaptureCountdownPresenting {
             panel.alphaValue = request.reduceMotion ? 1 : 0
             panel.backgroundColor = .clear
             panel.isOpaque = false
+            // A window read without a title is just "window"; the numeral panel has no title bar, so this is for assistive clients only.
+            panel.title = "Capture countdown"; panel.isExcludedFromWindowsMenu = true
             panel.isMovable = false
             panel.isMovableByWindowBackground = false
             panel.ignoresMouseEvents = true

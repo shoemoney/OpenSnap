@@ -935,6 +935,10 @@ final class GlassPanelHost: NSObject {
 
     var accessibility: ChromeAccessibility = .live { didSet { pushAccessibility() } }
 
+    /// What the panel's group is called when its window's name would be the same as one of the controls inside it (the Size panel's
+    /// group and its slider are both "Size"); the window keeps `accessibilityLabel`.
+    var rootAccessibilityLabel: String? { didSet { root.setAccessibilityLabel(rootAccessibilityLabel ?? accessibilityLabel) } }
+
     private let stack = NSStackView()
     private let root = PanelRootView()
     private(set) var scrollView: NSScrollView?
@@ -1867,69 +1871,6 @@ class GlassPopUpButton: NSPopUpButton, TokenFocusRinged, FocusRingSuppressible {
 }
 
 // MARK: - the token focus ring
-
-/// A control whose keyboard focus ring is the app's own (`StateStyles.focusRingColor`, 3 pt, standing off the control) and not AppKit's
-/// `.exterior` ring, which is a pale 1.4:1 on a light window and an olive in a dark one.
-@MainActor
-protocol TokenFocusRinged: AnyObject {
-    var tokenRing: TokenFocusRing { get }
-}
-
-/// The ring itself: a shape layer on the control, shown while the control holds keyboard focus. The control sets `focusRingType = .none`
-/// and tells the ring when focus arrives or leaves.
-@MainActor
-final class TokenFocusRing {
-    private weak var view: NSView?
-    let layer = CAShapeLayer()
-    /// The outline the ring follows, in the control's own coordinates; the whole bounds unless the control rings a part (the selected cell).
-    var target: () -> NSRect
-    var cornerRadius: CGFloat { didSet { refresh() } }
-    private(set) var isFocused = false
-    /// Held back while something the control opened (its choices panel) carries the focus instead.
-    var isSuppressed = false { didSet { refresh() } }
-    var isVisible: Bool { isFocused && !isSuppressed && !layer.isHidden }
-
-    init(view: NSView, cornerRadius: CGFloat? = nil, target: (() -> NSRect)? = nil) {
-        self.view = view
-        self.cornerRadius = cornerRadius ?? StatePlate.radius
-        self.target = target ?? { [weak view] in view?.bounds ?? .zero }
-        view.focusRingType = .none
-        view.wantsLayer = true
-        layer.fillColor = nil
-        layer.isHidden = true
-        layer.zPosition = 10
-        view.layer?.addSublayer(layer)
-    }
-
-    func setFocused(_ on: Bool) {
-        isFocused = on
-        refresh()
-    }
-
-    /// The ring's colour for the control's appearance and the live Increase Contrast setting.
-    var color: NSColor {
-        StateStyles.focusRingColor(highContrast: ChromeAccessibility.live.increaseContrast, appearance: view?.effectiveAppearance ?? .currentDrawing())
-    }
-
-    /// Redraws the ring around the control's current target; the control calls it from `layout()` and on an appearance change.
-    func refresh() {
-        guard let view else { return }
-        let rect = target()
-        let shown = isFocused && !isSuppressed && !rect.isEmpty
-        CATransaction.begin(); CATransaction.setDisableActions(true)
-        layer.isHidden = !shown
-        if shown {
-            let grow = StateStyles.focusRingOutset + StateStyles.focusRingWidth / 2
-            let outline = rect.insetBy(dx: -grow, dy: -grow)
-            let radius = min(cornerRadius + grow, outline.width / 2, outline.height / 2)
-            layer.frame = view.bounds
-            layer.path = CGPath(roundedRect: outline, cornerWidth: radius, cornerHeight: radius, transform: nil)
-            layer.lineWidth = StateStyles.focusRingWidth
-            layer.strokeColor = color.cgColor
-        }
-        CATransaction.commit()
-    }
-}
 
 /// A text field that rings itself with the token ring. The field editor takes first responder as soon as the field does, so focus is the
 /// editor being the window's first responder, read when the field becomes first responder and when editing ends.

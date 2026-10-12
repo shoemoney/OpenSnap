@@ -275,7 +275,7 @@ enum BezelCustomColorButton {
 /// grouping and the "Size N" tooltip all live here, and the panel drives them through the same gesture API.
 /// Five ordinary steps from the recovered control; Shift gives continuous values throughout.
 @MainActor
-final class BezelSizeSlider: NSControl {
+final class BezelSizeSlider: NSControl, TokenFocusRinged {
     static let pillSize = NSSize(width: 48, height: 36)
     static let glyphLength: CGFloat = 24
     /// One preset step, the distance between neighbouring sizes.
@@ -345,7 +345,7 @@ final class BezelSizeSlider: NSControl {
         super.init(frame: frame)
         cell = NSActionCell(); isEnabled = true
         font = DesignTokens.Typography.font(.body)
-        focusRingType = .exterior
+        _ = tokenRing
         setAccessibilityElement(true); setAccessibilityRole(.slider)
         setAccessibilityLabel("Drawing size")
         setAccessibilityCustomActions([NSAccessibilityCustomAction(name: Self.showOptionsActionName) { [weak self] in
@@ -389,12 +389,20 @@ final class BezelSizeSlider: NSControl {
     }
 
     private var focusBounds: NSRect { bounds.insetBy(dx: 1, dy: 1) }
-    override var focusRingMaskBounds: NSRect { isEnabled && !focusBounds.isEmpty ? focusBounds : .zero }
-    override func drawFocusRingMask() {
-        guard isEnabled, !focusBounds.isEmpty else { return }
-        NSColor.black.setFill()
-        NSBezierPath(roundedRect: focusBounds, xRadius: focusBounds.height / 2, yRadius: focusBounds.height / 2).fill()
+    /// The keyboard focus ring: the app's own token ring around the capsule, never AppKit's pale system one.
+    private(set) lazy var tokenRing = TokenFocusRing(view: self, target: { [unowned self] in isEnabled ? focusBounds : .zero })
+    override var focusRingType: NSFocusRingType { get { .none } set {} }
+    override func becomeFirstResponder() -> Bool {
+        let accepted = super.becomeFirstResponder()
+        if accepted { tokenRing.setFocused(true) }
+        return accepted
     }
+    override func resignFirstResponder() -> Bool {
+        let resigned = super.resignFirstResponder()
+        if resigned { tokenRing.setFocused(false) }
+        return resigned
+    }
+    override func layout() { super.layout(); tokenRing.cornerRadius = focusBounds.height / 2; tokenRing.refresh() }
 
     // MARK: gesture API shared by the pill and the panel
 
@@ -438,6 +446,7 @@ final class BezelSizeSlider: NSControl {
         guard isEnabled, let window, window.attachedSheet == nil, !isPopoverShown else { return }
         let content = SizePopoverContent(slider: self)
         let host = GlassPanelHost(plates: content.plates, identifier: "Size", accessibilityLabel: "Size")
+        host.rootAccessibilityLabel = "Size options"
         host.alignment = .center
         host.willClose = { [weak self] in self?.panelWillClose() }
         host.didClose = { [weak self] in self?.panelDidClose() }
@@ -562,7 +571,7 @@ final class SizePopoverContent {
 /// The knob grows to 1.15 on hover and 1.25 while held, the track takes an accent wash while held, and a disabled pill
 /// dims the whole track to 0.38 and ignores the pointer (`StateStyles.track`).
 @MainActor
-final class SizeTrackView: NSControl {
+final class SizeTrackView: NSControl, TokenFocusRinged {
     static let size = NSSize(width: 288, height: 36)
     static let knobDiameter: CGFloat = 20
     private weak var slider: BezelSizeSlider?
@@ -602,7 +611,7 @@ final class SizeTrackView: NSControl {
         self.slider = slider
         super.init(frame: NSRect(origin: .zero, size: Self.size))
         font = DesignTokens.Typography.font(.body)
-        focusRingType = .exterior
+        _ = tokenRing
         setAccessibilityElement(true); setAccessibilityRole(.slider)
         setAccessibilityLabel("Size")
     }
@@ -645,11 +654,20 @@ final class SizeTrackView: NSControl {
         style.knob.setFill(); knob.fill()
         if let border = style.knobBorder { border.setStroke(); knob.lineWidth = 1.5; knob.stroke() }
     }
-    override var focusRingMaskBounds: NSRect { bounds.insetBy(dx: 1, dy: 1) }
-    override func drawFocusRingMask() {
-        NSColor.black.setFill()
-        NSBezierPath(roundedRect: bounds.insetBy(dx: 1, dy: 1), xRadius: 8, yRadius: 8).fill()
+    /// The keyboard focus ring: the app's own token ring around the track, never AppKit's pale system one.
+    private(set) lazy var tokenRing = TokenFocusRing(view: self, cornerRadius: 8, target: { [unowned self] in isEnabled ? bounds.insetBy(dx: 1, dy: 1) : .zero })
+    override var focusRingType: NSFocusRingType { get { .none } set {} }
+    override func becomeFirstResponder() -> Bool {
+        let accepted = super.becomeFirstResponder()
+        if accepted { tokenRing.setFocused(true) }
+        return accepted
     }
+    override func resignFirstResponder() -> Bool {
+        let resigned = super.resignFirstResponder()
+        if resigned { tokenRing.setFocused(false) }
+        return resigned
+    }
+    override func layout() { super.layout(); tokenRing.refresh() }
 
     private func track(_ event: NSEvent) {
         slider?.trackValue(fraction: fraction(forX: convert(event.locationInWindow, from: nil).x), modifiers: event.modifierFlags)
@@ -764,7 +782,6 @@ final class SizePresetButton: NSButton {
         isBordered = false
         title = ""
         font = DesignTokens.Typography.font(.body)
-        focusRingType = .exterior
         target = self; action = #selector(choose)
         let name = "Size " + String(format: "%.0f", size.rounded())
         setAccessibilityLabel(name); AppToolTip.setText(name, for: self)
@@ -789,6 +806,7 @@ final class SizePresetButton: NSButton {
         }
     }
     override func isAccessibilitySelected() -> Bool { isSelectedPreset }
+    override func accessibilityHelp() -> String? { SpokenHelp.distinct(super.accessibilityHelp(), from: accessibilityLabel()) }
     override func accessibilityRole() -> NSAccessibility.Role? { .radioButton }
     override func accessibilityValue() -> Any? { NSNumber(value: isSelectedPreset ? 1 : 0) }
 
@@ -808,12 +826,8 @@ final class SizePresetButton: NSButton {
                          xRadius: mark.height / 2, yRadius: mark.height / 2).fill()
         }
     }
-    override var focusRingMaskBounds: NSRect { bounds.insetBy(dx: 1, dy: 1) }
-    override func drawFocusRingMask() {
-        NSColor.black.setFill()
-        let frame = bounds.insetBy(dx: 1, dy: 1)
-        NSBezierPath(roundedRect: frame, xRadius: StatePlate.radius, yRadius: StatePlate.radius).fill()
-    }
+    /// The ring is the state plate's own layer in the focus token (`StatePlate.ringLayer`), never AppKit's system ring.
+    override var focusRingType: NSFocusRingType { get { .none } set {} }
 }
 
 /// Original color-container/palette tracking is active without taking text focus.

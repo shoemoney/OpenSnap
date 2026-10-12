@@ -38,7 +38,7 @@ private enum TokenFocusRingTests {
         _ = NSApplication.shared
         KeyboardNavigation.fullKeyboardAccess = { true }
         do {
-            try resizeSheet(); try destinationForm(); try choicesPanel(); try dragWellAndPrompt()
+            try resizeSheet(); try destinationForm(); try choicesPanel(); try dragWellAndPrompt(); try sizeControls()
             print("TokenFocusRingTests: \(checks) checks passed")
         } catch { print("FAIL \(error)"); exit(1) }
     }
@@ -66,7 +66,7 @@ private enum TokenFocusRingTests {
             for control in controls {
                 guard let ringed = control as? TokenFocusRinged else {
                     // The only other kind of control here rings through its own state plate, which is the same token.
-                    try expect(control is CommandButton, "\(surface): \(type(of: control)) is neither a token-ringed control nor a chrome command")
+                    try expect(control is CommandButton || control is SizePresetButton, "\(surface): \(type(of: control)) is neither a token-ringed control nor a chrome command")
                     continue
                 }
                 try expect(window.makeFirstResponder(control), "\(surface): \(type(of: control)) takes focus")
@@ -128,6 +128,35 @@ private enum TokenFocusRingTests {
         content.addSubview(well); content.addSubview(field)
         content.layoutSubtreeIfNeeded()
         try audit([well, field], in: window, root: content, surface: "Drag well and prompt")
+    }
+
+    /// The Size pill, the Size panel's track and its five presets, and the PNG | JPG toggle: all of them drew AppKit's `.exterior` ring before.
+    private static func sizeControls() throws {
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 700, height: 500), styleMask: [.titled], backing: .buffered, defer: true)
+        window.isReleasedWhenClosed = false
+        let content = NSView(frame: window.contentRect(forFrameRect: window.frame))
+        window.contentView = content
+        let slider = BezelSizeSlider(frame: NSRect(x: 20, y: 440, width: 48, height: 36))
+        let panel = SizePopoverContent(slider: slider)
+        let toggle = SegmentedToggle(titles: ["PNG", "JPG"])
+        toggle.frame = NSRect(x: 20, y: 380, width: 130, height: 36)
+        content.addSubview(slider); content.addSubview(toggle)
+        panel.trackView.removeFromSuperview(); panel.trackView.frame = NSRect(x: 20, y: 300, width: 288, height: 36); content.addSubview(panel.trackView)
+        for (index, preset) in panel.presetButtons.enumerated() {
+            preset.removeFromSuperview(); preset.translatesAutoresizingMaskIntoConstraints = true
+            preset.frame = NSRect(x: 20 + CGFloat(index) * 56, y: 240, width: 48, height: 36); content.addSubview(preset)
+        }
+        content.layoutSubtreeIfNeeded()
+        let ringed: [NSView] = [slider, panel.trackView, toggle]
+        try audit(ringed + panel.presetButtons, in: window, root: content, surface: "Size controls")
+        #if !BASELINE_PROOF
+        for preset in panel.presetButtons {
+            try expect(window.makeFirstResponder(preset), "a Size preset takes focus")
+            try expect(!preset.plate.ringLayer.isHidden, "a focused Size preset shows the state plate's token ring")
+            _ = window.makeFirstResponder(nil)
+            try expect(preset.plate.ringLayer.isHidden, "the preset ring leaves with the focus")
+        }
+        #endif
     }
 
     private static func choicesPanel() throws {
