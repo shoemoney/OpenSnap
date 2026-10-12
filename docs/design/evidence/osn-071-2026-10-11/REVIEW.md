@@ -1,4 +1,6 @@
-# OSN-071 visual acceptance run: review sheet (round 3 @ 723e65b)
+# OSN-071 visual acceptance run: review sheet (round 3 @ 723e65b; Increase Contrast packs recaptured @ 5d5221c)
+
+Round 3 recapture note: the two Increase Contrast packs (`increase-contrast`, `increase-contrast-surfaces`, 750 captures) were recaptured at `5d5221c` (Increase Contrast dark selected fill 0.40 to 0.35, see `gaps.md`), replaced in place, same commands and pack pipeline, files named `@5d5221c`. `base`, `reduce-transparency` and `reduce-transparency-surfaces` stay at `723e65b` (the changed token only applies under Increase Contrast, so they are unaffected).
 
 Round 3, source `723e65b` (HEAD of `impl/osn-062`: all round-3 visual fixes plus the OSN-062 VoiceOver work). Rounds 1 (`4254505`) and 2 (`cbd0186`, S51 and S11M recaptured at `a399d8a7`) are in git history; every file in this folder was replaced in place by the round 3 render. Rendered harness captures only: every PNG is a throwaway-bundle in-process render from `tools/eye-dump-audit.sh`, not real-click E2E and not a Screen Recording capture. Icon mode is the default build: bundled Font Awesome Free vectors (the harness label `sf` only means Pro subsets are stripped). Font Awesome Pro mode was not run (see `gaps.md`). Visual sign-off is a separate reviewer step; this sheet is the index plus the machine checks.
 
@@ -19,16 +21,16 @@ Round 3 re-runs the whole round 2 set unchanged (same surfaces S01 to S60, light
 | `check-eye-dump.py base --strict` | exit 0: `check-eye-dump: 760 PNG(s), 345 with a layout JSON, 0 failure(s), 0 contrast advisor(y/ies), 190 contrast sample(s) skipped` |
 | `check-eye-dump.py reduce-transparency --strict` | exit 0: `check-eye-dump: 486 PNG(s), 266 with a layout JSON, 0 failure(s), 0 contrast advisor(y/ies), 142 contrast sample(s) skipped` |
 | `check-eye-dump.py reduce-transparency-surfaces --strict` | exit 0: `check-eye-dump: 264 PNG(s), 70 with a layout JSON, 0 failure(s), 0 contrast advisor(y/ies), 48 contrast sample(s) skipped` |
-| `check-eye-dump.py increase-contrast --strict` | **exit 1**: `check-eye-dump: 486 PNG(s), 266 with a layout JSON, 0 failure(s), 31 contrast advisor(y/ies), 142 contrast sample(s) skipped` (product defect, see `gaps.md` "Defects found") |
-| `check-eye-dump.py increase-contrast-surfaces --strict` | **exit 1**: `check-eye-dump: 264 PNG(s), 70 with a layout JSON, 0 failure(s), 11 contrast advisor(y/ies), 48 contrast sample(s) skipped` (same defect) |
+| `check-eye-dump.py increase-contrast --strict` | exit 0 (recaptured at `5d5221c`): `check-eye-dump: 486 PNG(s), 266 with a layout JSON, 0 failure(s), 0 contrast advisor(y/ies), 142 contrast sample(s) skipped` |
+| `check-eye-dump.py increase-contrast-surfaces --strict` | exit 0 (recaptured at `5d5221c`): `check-eye-dump: 264 PNG(s), 70 with a layout JSON, 0 failure(s), 0 contrast advisor(y/ies), 48 contrast sample(s) skipped` |
 | New checks (composite sheet order, popover painted into the image) | pass in all 5 packs: 0 failures, including S16, S19, S22, S26, S39, S57, S58 sheets and the S06, S30, S31 popovers |
 | Walker (`text-walker.py`, results in `text-walker-results.json`) | 0 violations over 2,248 captures with view-tree metrics (of 2,260) / 55,546 visible text nodes (smallest 18 pt; floor 18 pt), 5,950 glass rows. Title bar, system colour/font panels and AppKit private button fields are skipped as OS-owned, as `tests/ViewTreeAudit.swift` does |
 
-Strict mode exits 1 on any contrast advisory. The 42 advisories are one defect: the checked "Original size" checkbox in the bottom bar under Increase Contrast in the dark appearance samples 4.30 to 4.50:1 (white text on the accent fill, rgb about 140,117,55), just under the 4.5:1 floor. Light mode, default and Reduce Transparency are clean. It is a product defect and is recorded, not fixed here; the checks stop at that finding.
+Round 3 at `723e65b` had 42 advisories, all one defect: the checked "Original size" checkbox under Increase Contrast dark sampled 4.30 to 4.50:1 (white on about rgb 140,117,55). Fixed in `5d5221c` (dark selected fill 0.35): the recaptured packs sample 4.82 to 5.03:1 (white on rgb 132,112,58 to 129,109,55) over the 44 captures where the box is checked, and strict mode exits 0 on all five packs. Text walker re-run over the recaptured Increase Contrast raw runs (746 captures with view-tree metrics, 18,436 text nodes): 0 violations; the committed `text-walker-results.json` is the round 3 aggregate for all five packs and is unchanged, since the other three packs were not recaptured.
 
 Advisories (not failures):
 
-- Contrast: 0 advisories in `base`, Reduce Transparency and its surfaces pack; the 42 above in Increase Contrast. 570 contrast samples were skipped by the checker (translucent region or aspect mismatch), so contrast is not machine-proven for those; the reviewer should look at them.
+- Contrast: 0 advisories in `base`, Reduce Transparency and its surfaces pack; none in Increase Contrast after the `5d5221c` recapture (42 before). 570 contrast samples were skipped by the checker (translucent region or aspect mismatch), so contrast is not machine-proven for those; the reviewer should look at them.
 - 14,642 text-bearing controls sit at exactly 18 pt (top-bar `CommandButton` labels Hide/Photos/Font/Undo/Save/History/Snap/Clear image, status text, History/destination captions). The 20 pt control floor is waived only for registered captions, and capture data does not record registration; the in-process G4 test (`view-tree-audit-tests` in `tools/test.py`) is what proves registration.
 - Status text is truncated in 6 captures (2 per pack): `S09-footer-long-status` is a deliberate stress string.
 

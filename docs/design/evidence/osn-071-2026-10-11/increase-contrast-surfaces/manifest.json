@@ -1,6 +1,6 @@
 {
- "sourceSha": "723e65b",
- "bundleId": "com.shoemoney.opensnap.eyedump-77875",
+ "sourceSha": "5d5221c",
+ "bundleId": "com.shoemoney.opensnap.eyedump-29021",
  "iconMode": "sf",
  "faMode": "FA unavailable: no FontAwesome7Pro subset fonts are bundled in this build, so every capture uses SF Symbols (nothing was faked)",
  "captureCount": 264,
@@ -70,15 +70,15 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S12-frame-mode-dark-ic@723e65b.png",
+   "file": "S12-frame-mode-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     951
    ],
    "downscaled": true,
-   "layout": "layout/S12-frame-mode-dark-ic@723e65b.json",
+   "layout": "layout/S12-frame-mode-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -115,15 +115,15 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S12-frame-mode-light-ic@723e65b.png",
+   "file": "S12-frame-mode-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     951
    ],
    "downscaled": true,
-   "layout": "layout/S12-frame-mode-light-ic@723e65b.json",
+   "layout": "layout/S12-frame-mode-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -160,15 +160,15 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S12-frame-resnap-dark-ic@723e65b.png",
+   "file": "S12-frame-resnap-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     951
    ],
    "downscaled": true,
-   "layout": "layout/S12-frame-resnap-dark-ic@723e65b.json",
+   "layout": "layout/S12-frame-resnap-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -204,15 +204,15 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S12-frame-resnap-light-ic@723e65b.png",
+   "file": "S12-frame-resnap-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     951
    ],
    "downscaled": true,
-   "layout": "layout/S12-frame-resnap-light-ic@723e65b.json",
+   "layout": "layout/S12-frame-resnap-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -248,15 +248,15 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S12-frame-w1024-dark-ic@723e65b.png",
+   "file": "S12-frame-w1024-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1382
    ],
    "downscaled": true,
-   "layout": "layout/S12-frame-w1024-dark-ic@723e65b.json",
+   "layout": "layout/S12-frame-w1024-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -293,15 +293,15 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S12-frame-w1024-light-ic@723e65b.png",
+   "file": "S12-frame-w1024-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1382
    ],
    "downscaled": true,
-   "layout": "layout/S12-frame-w1024-light-ic@723e65b.json",
+   "layout": "layout/S12-frame-w1024-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -338,15 +338,15 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S12-frame-w1280-dark-ic@723e65b.png",
+   "file": "S12-frame-w1280-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1105
    ],
    "downscaled": true,
-   "layout": "layout/S12-frame-w1280-dark-ic@723e65b.json",
+   "layout": "layout/S12-frame-w1280-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -383,15 +383,15 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S12-frame-w1280-light-ic@723e65b.png",
+   "file": "S12-frame-w1280-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1105
    ],
    "downscaled": true,
-   "layout": "layout/S12-frame-w1280-light-ic@723e65b.json",
+   "layout": "layout/S12-frame-w1280-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -428,15 +428,15 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S12-frame-w980-dark-ic@723e65b.png",
+   "file": "S12-frame-w980-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1444
    ],
    "downscaled": true,
-   "layout": "layout/S12-frame-w980-dark-ic@723e65b.json",
+   "layout": "layout/S12-frame-w980-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -473,15 +473,15 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S12-frame-w980-light-ic@723e65b.png",
+   "file": "S12-frame-w980-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1444
    ],
    "downscaled": true,
-   "layout": "layout/S12-frame-w980-light-ic@723e65b.json",
+   "layout": "layout/S12-frame-w980-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -518,9 +518,9 @@
     1329
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S13-picker-no-recording-grant-dark-ic@723e65b.png",
+   "file": "S13-picker-no-recording-grant-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     776
@@ -563,9 +563,9 @@
     1329
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S13-picker-no-recording-grant-light-ic@723e65b.png",
+   "file": "S13-picker-no-recording-grant-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     776
@@ -608,9 +608,9 @@
     1329
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S13-picker-no-recording-grant-dragging-dark-ic@723e65b.png",
+   "file": "S13-picker-no-recording-grant-dragging-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     776
@@ -652,9 +652,9 @@
     1329
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S13-picker-no-recording-grant-dragging-light-ic@723e65b.png",
+   "file": "S13-picker-no-recording-grant-dragging-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     776
@@ -696,9 +696,9 @@
     1329
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "cacheDisplay (CGWindowList image was blank)",
-   "file": "S13-picker-no-recording-grant-edge-bottom-right-dark-ic@723e65b.png",
+   "file": "S13-picker-no-recording-grant-edge-bottom-right-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     776
@@ -741,9 +741,9 @@
     1329
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "cacheDisplay (CGWindowList image was blank)",
-   "file": "S13-picker-no-recording-grant-edge-bottom-right-light-ic@723e65b.png",
+   "file": "S13-picker-no-recording-grant-edge-bottom-right-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     776
@@ -786,9 +786,9 @@
     1329
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S13-picker-no-recording-grant-edge-top-left-dark-ic@723e65b.png",
+   "file": "S13-picker-no-recording-grant-edge-top-left-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     776
@@ -831,9 +831,9 @@
     1329
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S13-picker-no-recording-grant-edge-top-left-light-ic@723e65b.png",
+   "file": "S13-picker-no-recording-grant-edge-top-left-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     776
@@ -876,9 +876,9 @@
     1329
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S13-picker-synthetic-lens-dark-ic@723e65b.png",
+   "file": "S13-picker-synthetic-lens-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     776
@@ -921,9 +921,9 @@
     1329
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S13-picker-synthetic-lens-light-ic@723e65b.png",
+   "file": "S13-picker-synthetic-lens-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     776
@@ -966,9 +966,9 @@
     1329
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S13-picker-synthetic-lens-dragging-dark-ic@723e65b.png",
+   "file": "S13-picker-synthetic-lens-dragging-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     776
@@ -1010,9 +1010,9 @@
     1329
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S13-picker-synthetic-lens-dragging-light-ic@723e65b.png",
+   "file": "S13-picker-synthetic-lens-dragging-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     776
@@ -1054,9 +1054,9 @@
     140
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S14-countdown-1-dark-ic@723e65b.png",
+   "file": "S14-countdown-1-dark-ic@5d5221c.png",
    "storedPixelSize": [
     280,
     280
@@ -1099,9 +1099,9 @@
     140
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S14-countdown-1-light-ic@723e65b.png",
+   "file": "S14-countdown-1-light-ic@5d5221c.png",
    "storedPixelSize": [
     280,
     280
@@ -1144,9 +1144,9 @@
     140
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S14-countdown-2-dark-ic@723e65b.png",
+   "file": "S14-countdown-2-dark-ic@5d5221c.png",
    "storedPixelSize": [
     280,
     280
@@ -1189,9 +1189,9 @@
     140
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S14-countdown-2-light-ic@723e65b.png",
+   "file": "S14-countdown-2-light-ic@5d5221c.png",
    "storedPixelSize": [
     280,
     280
@@ -1234,9 +1234,9 @@
     140
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S14-countdown-3-dark-ic@723e65b.png",
+   "file": "S14-countdown-3-dark-ic@5d5221c.png",
    "storedPixelSize": [
     280,
     280
@@ -1279,9 +1279,9 @@
     140
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S14-countdown-3-light-ic@723e65b.png",
+   "file": "S14-countdown-3-light-ic@5d5221c.png",
    "storedPixelSize": [
     280,
     280
@@ -1324,9 +1324,9 @@
     140
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S14-countdown-3-contrast-reduce-motion-dark-ic@723e65b.png",
+   "file": "S14-countdown-3-contrast-reduce-motion-dark-ic@5d5221c.png",
    "storedPixelSize": [
     280,
     280
@@ -1368,9 +1368,9 @@
     140
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S14-countdown-3-contrast-reduce-motion-light-ic@723e65b.png",
+   "file": "S14-countdown-3-contrast-reduce-motion-light-ic@5d5221c.png",
    "storedPixelSize": [
     280,
     280
@@ -1412,9 +1412,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S15-flash-half-dark-ic@723e65b.png",
+   "file": "S15-flash-half-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     951
@@ -1456,9 +1456,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S15-flash-half-light-ic@723e65b.png",
+   "file": "S15-flash-half-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     951
@@ -1500,9 +1500,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S15-flash-peak-dark-ic@723e65b.png",
+   "file": "S15-flash-peak-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     951
@@ -1545,9 +1545,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S15-flash-peak-light-ic@723e65b.png",
+   "file": "S15-flash-peak-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     951
@@ -1590,9 +1590,9 @@
     202
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S16-permission-sheet-dark-ic@723e65b.png",
+   "file": "S16-permission-sheet-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1120,
     404
@@ -1635,9 +1635,9 @@
     202
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S16-permission-sheet-light-ic@723e65b.png",
+   "file": "S16-permission-sheet-light-ic@5d5221c.png",
    "storedPixelSize": [
     1120,
     404
@@ -1680,9 +1680,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S16-permission-sheet-in-context-dark-ic@723e65b.png",
+   "file": "S16-permission-sheet-in-context-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     951
@@ -1725,9 +1725,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S16-permission-sheet-in-context-light-ic@723e65b.png",
+   "file": "S16-permission-sheet-in-context-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     951
@@ -1770,9 +1770,9 @@
     641
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-capture-dark-ic@723e65b.png",
+   "file": "S17-settings-capture-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1202
@@ -1815,9 +1815,9 @@
     641
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-capture-light-ic@723e65b.png",
+   "file": "S17-settings-capture-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1202
@@ -1860,9 +1860,9 @@
     641
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-capture-1280x800-dark-ic@723e65b.png",
+   "file": "S17-settings-capture-1280x800-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1202
@@ -1905,9 +1905,9 @@
     641
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-capture-1280x800-light-ic@723e65b.png",
+   "file": "S17-settings-capture-1280x800-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1202
@@ -1950,9 +1950,9 @@
     665
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-capture-error-dark-ic@723e65b.png",
+   "file": "S17-settings-capture-error-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1247
@@ -1995,9 +1995,9 @@
     665
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-capture-error-light-ic@723e65b.png",
+   "file": "S17-settings-capture-error-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1247
@@ -2040,9 +2040,9 @@
     665
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-capture-error-1280x800-dark-ic@723e65b.png",
+   "file": "S17-settings-capture-error-1280x800-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1247
@@ -2085,9 +2085,9 @@
     665
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-capture-error-1280x800-light-ic@723e65b.png",
+   "file": "S17-settings-capture-error-1280x800-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1247
@@ -2130,9 +2130,9 @@
     641
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-capture-modifiers-dark-ic@723e65b.png",
+   "file": "S17-settings-capture-modifiers-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1202
@@ -2175,9 +2175,9 @@
     641
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-capture-modifiers-light-ic@723e65b.png",
+   "file": "S17-settings-capture-modifiers-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1202
@@ -2220,9 +2220,9 @@
     641
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-capture-modifiers-1280x800-dark-ic@723e65b.png",
+   "file": "S17-settings-capture-modifiers-1280x800-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1202
@@ -2265,9 +2265,9 @@
     641
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-capture-modifiers-1280x800-light-ic@723e65b.png",
+   "file": "S17-settings-capture-modifiers-1280x800-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1202
@@ -2310,9 +2310,9 @@
     282
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-drawing-dark-ic@723e65b.png",
+   "file": "S17-settings-drawing-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     529
@@ -2355,9 +2355,9 @@
     282
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-drawing-light-ic@723e65b.png",
+   "file": "S17-settings-drawing-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     529
@@ -2400,9 +2400,9 @@
     282
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-drawing-1280x800-dark-ic@723e65b.png",
+   "file": "S17-settings-drawing-1280x800-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     529
@@ -2445,9 +2445,9 @@
     282
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-drawing-1280x800-light-ic@723e65b.png",
+   "file": "S17-settings-drawing-1280x800-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     529
@@ -2490,9 +2490,9 @@
     282
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-drawing-alt-dark-ic@723e65b.png",
+   "file": "S17-settings-drawing-alt-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     529
@@ -2535,9 +2535,9 @@
     282
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-drawing-alt-light-ic@723e65b.png",
+   "file": "S17-settings-drawing-alt-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     529
@@ -2580,9 +2580,9 @@
     282
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-drawing-alt-1280x800-dark-ic@723e65b.png",
+   "file": "S17-settings-drawing-alt-1280x800-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     529
@@ -2625,9 +2625,9 @@
     282
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-drawing-alt-1280x800-light-ic@723e65b.png",
+   "file": "S17-settings-drawing-alt-1280x800-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     529
@@ -2670,9 +2670,9 @@
     387
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-general-dark-ic@723e65b.png",
+   "file": "S17-settings-general-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     726
@@ -2715,9 +2715,9 @@
     387
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-general-light-ic@723e65b.png",
+   "file": "S17-settings-general-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     726
@@ -2760,9 +2760,9 @@
     387
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-general-1280x800-dark-ic@723e65b.png",
+   "file": "S17-settings-general-1280x800-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     726
@@ -2805,9 +2805,9 @@
     387
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-general-1280x800-light-ic@723e65b.png",
+   "file": "S17-settings-general-1280x800-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     726
@@ -2850,9 +2850,9 @@
     387
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-general-alt-dark-ic@723e65b.png",
+   "file": "S17-settings-general-alt-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     726
@@ -2895,9 +2895,9 @@
     387
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-general-alt-light-ic@723e65b.png",
+   "file": "S17-settings-general-alt-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     726
@@ -2940,9 +2940,9 @@
     387
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-general-alt-1280x800-dark-ic@723e65b.png",
+   "file": "S17-settings-general-alt-1280x800-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     726
@@ -2985,9 +2985,9 @@
     387
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-general-alt-1280x800-light-ic@723e65b.png",
+   "file": "S17-settings-general-alt-1280x800-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     726
@@ -3030,9 +3030,9 @@
     448
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-upload-dark-ic@723e65b.png",
+   "file": "S17-settings-upload-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     840
@@ -3075,9 +3075,9 @@
     448
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-upload-light-ic@723e65b.png",
+   "file": "S17-settings-upload-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     840
@@ -3120,9 +3120,9 @@
     448
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-upload-1280x800-dark-ic@723e65b.png",
+   "file": "S17-settings-upload-1280x800-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     840
@@ -3165,9 +3165,9 @@
     448
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-upload-1280x800-light-ic@723e65b.png",
+   "file": "S17-settings-upload-1280x800-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     840
@@ -3210,9 +3210,9 @@
     285
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-upload-empty-dark-ic@723e65b.png",
+   "file": "S17-settings-upload-empty-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     534
@@ -3255,9 +3255,9 @@
     285
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-upload-empty-light-ic@723e65b.png",
+   "file": "S17-settings-upload-empty-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     534
@@ -3300,9 +3300,9 @@
     285
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-upload-empty-1280x800-dark-ic@723e65b.png",
+   "file": "S17-settings-upload-empty-1280x800-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     534
@@ -3345,9 +3345,9 @@
     285
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-upload-empty-1280x800-light-ic@723e65b.png",
+   "file": "S17-settings-upload-empty-1280x800-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     534
@@ -3390,9 +3390,9 @@
     733
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-upload-many-dark-ic@723e65b.png",
+   "file": "S17-settings-upload-many-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1374
@@ -3435,9 +3435,9 @@
     733
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-upload-many-light-ic@723e65b.png",
+   "file": "S17-settings-upload-many-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1374
@@ -3480,9 +3480,9 @@
     706
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-upload-many-1280x800-dark-ic@723e65b.png",
+   "file": "S17-settings-upload-many-1280x800-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1324
@@ -3525,9 +3525,9 @@
     706
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-upload-many-1280x800-light-ic@723e65b.png",
+   "file": "S17-settings-upload-many-1280x800-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1324
@@ -3570,9 +3570,9 @@
     440
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-upload-many-440-dark-ic@723e65b.png",
+   "file": "S17-settings-upload-many-440-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     825
@@ -3615,9 +3615,9 @@
     440
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-upload-many-440-light-ic@723e65b.png",
+   "file": "S17-settings-upload-many-440-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     825
@@ -3660,9 +3660,9 @@
     616
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-upload-many-640-dark-ic@723e65b.png",
+   "file": "S17-settings-upload-many-640-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1155
@@ -3705,9 +3705,9 @@
     616
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S17-settings-upload-many-640-light-ic@723e65b.png",
+   "file": "S17-settings-upload-many-640-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1155
@@ -3750,9 +3750,9 @@
     641
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S18-hotkeys-via-app-menu-dark-ic@723e65b.png",
+   "file": "S18-hotkeys-via-app-menu-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1202
@@ -3796,9 +3796,9 @@
     641
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S18-hotkeys-via-app-menu-light-ic@723e65b.png",
+   "file": "S18-hotkeys-via-app-menu-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1202
@@ -3842,9 +3842,9 @@
     760
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-edit-form-dark-ic@723e65b.png",
+   "file": "S19-destinations-edit-form-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1388
@@ -3886,9 +3886,9 @@
     760
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-edit-form-light-ic@723e65b.png",
+   "file": "S19-destinations-edit-form-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1388
@@ -3930,9 +3930,9 @@
     792
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S19-destinations-edit-form-in-context-dark-ic@723e65b.png",
+   "file": "S19-destinations-edit-form-in-context-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1447
@@ -3974,9 +3974,9 @@
     792
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S19-destinations-edit-form-in-context-light-ic@723e65b.png",
+   "file": "S19-destinations-edit-form-in-context-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1447
@@ -4018,9 +4018,9 @@
     760
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-form-focus-dark-ic@723e65b.png",
+   "file": "S19-destinations-form-focus-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1388
@@ -4062,9 +4062,9 @@
     760
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-form-focus-light-ic@723e65b.png",
+   "file": "S19-destinations-form-focus-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1388
@@ -4106,9 +4106,9 @@
     792
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S19-destinations-form-focus-in-context-dark-ic@723e65b.png",
+   "file": "S19-destinations-form-focus-in-context-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1447
@@ -4150,9 +4150,9 @@
     792
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S19-destinations-form-focus-in-context-light-ic@723e65b.png",
+   "file": "S19-destinations-form-focus-in-context-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1447
@@ -4194,9 +4194,9 @@
     630
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-form-ftp-dark-ic@723e65b.png",
+   "file": "S19-destinations-form-ftp-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1151
@@ -4239,9 +4239,9 @@
     630
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-form-ftp-light-ic@723e65b.png",
+   "file": "S19-destinations-form-ftp-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1151
@@ -4284,9 +4284,9 @@
     662
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S19-destinations-form-ftp-in-context-dark-ic@723e65b.png",
+   "file": "S19-destinations-form-ftp-in-context-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1209
@@ -4329,9 +4329,9 @@
     662
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S19-destinations-form-ftp-in-context-light-ic@723e65b.png",
+   "file": "S19-destinations-form-ftp-in-context-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1209
@@ -4374,9 +4374,9 @@
     609
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-form-ftps-dark-ic@723e65b.png",
+   "file": "S19-destinations-form-ftps-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1112
@@ -4419,9 +4419,9 @@
     609
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-form-ftps-light-ic@723e65b.png",
+   "file": "S19-destinations-form-ftps-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1112
@@ -4464,9 +4464,9 @@
     641
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S19-destinations-form-ftps-in-context-dark-ic@723e65b.png",
+   "file": "S19-destinations-form-ftps-in-context-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1171
@@ -4509,9 +4509,9 @@
     641
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S19-destinations-form-ftps-in-context-light-ic@723e65b.png",
+   "file": "S19-destinations-form-ftps-in-context-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1171
@@ -4554,9 +4554,9 @@
     760
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-form-s3-dark-ic@723e65b.png",
+   "file": "S19-destinations-form-s3-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1388
@@ -4599,9 +4599,9 @@
     760
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-form-s3-light-ic@723e65b.png",
+   "file": "S19-destinations-form-s3-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1388
@@ -4644,9 +4644,9 @@
     792
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S19-destinations-form-s3-in-context-dark-ic@723e65b.png",
+   "file": "S19-destinations-form-s3-in-context-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1447
@@ -4689,9 +4689,9 @@
     792
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S19-destinations-form-s3-in-context-light-ic@723e65b.png",
+   "file": "S19-destinations-form-s3-in-context-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1447
@@ -4734,9 +4734,9 @@
     678
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-form-sftp-dark-ic@723e65b.png",
+   "file": "S19-destinations-form-sftp-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1238
@@ -4779,9 +4779,9 @@
     678
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-form-sftp-light-ic@723e65b.png",
+   "file": "S19-destinations-form-sftp-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1238
@@ -4824,9 +4824,9 @@
     710
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S19-destinations-form-sftp-in-context-dark-ic@723e65b.png",
+   "file": "S19-destinations-form-sftp-in-context-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1297
@@ -4869,9 +4869,9 @@
     710
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S19-destinations-form-sftp-in-context-light-ic@723e65b.png",
+   "file": "S19-destinations-form-sftp-in-context-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1297
@@ -4914,9 +4914,9 @@
     630
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-form-webdav-dark-ic@723e65b.png",
+   "file": "S19-destinations-form-webdav-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1151
@@ -4959,9 +4959,9 @@
     630
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-form-webdav-light-ic@723e65b.png",
+   "file": "S19-destinations-form-webdav-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1151
@@ -5004,9 +5004,9 @@
     662
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S19-destinations-form-webdav-in-context-dark-ic@723e65b.png",
+   "file": "S19-destinations-form-webdav-in-context-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1209
@@ -5049,9 +5049,9 @@
     662
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S19-destinations-form-webdav-in-context-light-ic@723e65b.png",
+   "file": "S19-destinations-form-webdav-in-context-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1209
@@ -5094,9 +5094,9 @@
     760
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-from-settings-640-dark-ic@723e65b.png",
+   "file": "S19-destinations-from-settings-640-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1388
@@ -5139,9 +5139,9 @@
     760
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-from-settings-640-light-ic@723e65b.png",
+   "file": "S19-destinations-from-settings-640-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1388
@@ -5184,9 +5184,9 @@
     792
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S19-destinations-from-settings-640-in-context-dark-ic@723e65b.png",
+   "file": "S19-destinations-from-settings-640-in-context-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1447
@@ -5229,9 +5229,9 @@
     792
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S19-destinations-from-settings-640-in-context-light-ic@723e65b.png",
+   "file": "S19-destinations-from-settings-640-in-context-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1447
@@ -5274,9 +5274,9 @@
     380
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-short-screen-dark-ic@723e65b.png",
+   "file": "S19-destinations-short-screen-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     694
@@ -5319,9 +5319,9 @@
     380
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-short-screen-light-ic@723e65b.png",
+   "file": "S19-destinations-short-screen-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     694
@@ -5364,9 +5364,9 @@
     448
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S19-destinations-short-screen-in-context-dark-ic@723e65b.png",
+   "file": "S19-destinations-short-screen-in-context-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     818
@@ -5409,9 +5409,9 @@
     448
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S19-destinations-short-screen-in-context-light-ic@723e65b.png",
+   "file": "S19-destinations-short-screen-in-context-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     818
@@ -5454,9 +5454,9 @@
     760
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-test-connected-dark-ic@723e65b.png",
+   "file": "S19-destinations-test-connected-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1388
@@ -5499,9 +5499,9 @@
     760
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-test-connected-light-ic@723e65b.png",
+   "file": "S19-destinations-test-connected-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1388
@@ -5544,9 +5544,9 @@
     792
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S19-destinations-test-connected-in-context-dark-ic@723e65b.png",
+   "file": "S19-destinations-test-connected-in-context-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1447
@@ -5589,9 +5589,9 @@
     792
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S19-destinations-test-connected-in-context-light-ic@723e65b.png",
+   "file": "S19-destinations-test-connected-in-context-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1447
@@ -5634,9 +5634,9 @@
     760
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-test-error-dark-ic@723e65b.png",
+   "file": "S19-destinations-test-error-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1388
@@ -5679,9 +5679,9 @@
     760
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-test-error-light-ic@723e65b.png",
+   "file": "S19-destinations-test-error-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1388
@@ -5724,9 +5724,9 @@
     792
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S19-destinations-test-error-in-context-dark-ic@723e65b.png",
+   "file": "S19-destinations-test-error-in-context-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1447
@@ -5769,9 +5769,9 @@
     792
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S19-destinations-test-error-in-context-light-ic@723e65b.png",
+   "file": "S19-destinations-test-error-in-context-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1447
@@ -5814,9 +5814,9 @@
     636
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-test-error-webdav-dark-ic@723e65b.png",
+   "file": "S19-destinations-test-error-webdav-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1162
@@ -5859,9 +5859,9 @@
     636
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-destinations-test-error-webdav-light-ic@723e65b.png",
+   "file": "S19-destinations-test-error-webdav-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1162
@@ -5904,9 +5904,9 @@
     668
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S19-destinations-test-error-webdav-in-context-dark-ic@723e65b.png",
+   "file": "S19-destinations-test-error-webdav-in-context-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1220
@@ -5949,9 +5949,9 @@
     668
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S19-destinations-test-error-webdav-in-context-light-ic@723e65b.png",
+   "file": "S19-destinations-test-error-webdav-in-context-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1220
@@ -5994,9 +5994,9 @@
     285
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-settings-upload-empty-dark-ic@723e65b.png",
+   "file": "S19-settings-upload-empty-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     534
@@ -6039,9 +6039,9 @@
     285
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-settings-upload-empty-light-ic@723e65b.png",
+   "file": "S19-settings-upload-empty-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     534
@@ -6084,9 +6084,9 @@
     448
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-settings-upload-list-dark-ic@723e65b.png",
+   "file": "S19-settings-upload-list-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     840
@@ -6128,9 +6128,9 @@
     448
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S19-settings-upload-list-light-ic@723e65b.png",
+   "file": "S19-settings-upload-list-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     840
@@ -6172,9 +6172,9 @@
     850
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-1120x850-selected-dark-ic@723e65b.png",
+   "file": "S20-history-1120x850-selected-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     911
@@ -6217,9 +6217,9 @@
     850
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-1120x850-selected-light-ic@723e65b.png",
+   "file": "S20-history-1120x850-selected-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     911
@@ -6262,9 +6262,9 @@
     800
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-1280x800-selected-dark-ic@723e65b.png",
+   "file": "S20-history-1280x800-selected-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     750
@@ -6307,9 +6307,9 @@
     800
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-1280x800-selected-light-ic@723e65b.png",
+   "file": "S20-history-1280x800-selected-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     750
@@ -6352,9 +6352,9 @@
     600
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-880x600-none-dark-ic@723e65b.png",
+   "file": "S20-history-880x600-none-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     818
@@ -6397,9 +6397,9 @@
     600
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-880x600-none-light-ic@723e65b.png",
+   "file": "S20-history-880x600-none-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     818
@@ -6442,9 +6442,9 @@
     635
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-880x600-selected-dark-ic@723e65b.png",
+   "file": "S20-history-880x600-selected-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     866
@@ -6487,9 +6487,9 @@
     635
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-880x600-selected-light-ic@723e65b.png",
+   "file": "S20-history-880x600-selected-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     866
@@ -6532,9 +6532,9 @@
     720
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-action-focus-dark-ic@723e65b.png",
+   "file": "S20-history-action-focus-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     864
@@ -6577,9 +6577,9 @@
     720
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-action-focus-light-ic@723e65b.png",
+   "file": "S20-history-action-focus-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     864
@@ -6622,9 +6622,9 @@
     720
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-action-hover-dark-ic@723e65b.png",
+   "file": "S20-history-action-hover-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     864
@@ -6667,9 +6667,9 @@
     720
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-action-hover-light-ic@723e65b.png",
+   "file": "S20-history-action-hover-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     864
@@ -6712,9 +6712,9 @@
     720
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-action-pressed-dark-ic@723e65b.png",
+   "file": "S20-history-action-pressed-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     864
@@ -6757,9 +6757,9 @@
     720
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-action-pressed-light-ic@723e65b.png",
+   "file": "S20-history-action-pressed-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     864
@@ -6802,9 +6802,9 @@
     720
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-empty-dark-ic@723e65b.png",
+   "file": "S20-history-empty-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     864
@@ -6847,9 +6847,9 @@
     720
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-empty-light-ic@723e65b.png",
+   "file": "S20-history-empty-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     864
@@ -6892,9 +6892,9 @@
     697
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-link-copied-dark-ic@723e65b.png",
+   "file": "S20-history-link-copied-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     950
@@ -6937,9 +6937,9 @@
     697
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-link-copied-light-ic@723e65b.png",
+   "file": "S20-history-link-copied-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     950
@@ -6982,9 +6982,9 @@
     600
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-no-match-dark-ic@723e65b.png",
+   "file": "S20-history-no-match-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     818
@@ -7026,9 +7026,9 @@
     600
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-no-match-light-ic@723e65b.png",
+   "file": "S20-history-no-match-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     818
@@ -7070,9 +7070,9 @@
     697
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-no-match-footer-dark-ic@723e65b.png",
+   "file": "S20-history-no-match-footer-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     950
@@ -7115,9 +7115,9 @@
     697
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-no-match-footer-light-ic@723e65b.png",
+   "file": "S20-history-no-match-footer-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     950
@@ -7160,9 +7160,9 @@
     720
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-populated-dark-ic@723e65b.png",
+   "file": "S20-history-populated-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     864
@@ -7205,9 +7205,9 @@
     720
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-populated-light-ic@723e65b.png",
+   "file": "S20-history-populated-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     864
@@ -7250,9 +7250,9 @@
     720
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-selected-dark-ic@723e65b.png",
+   "file": "S20-history-selected-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     864
@@ -7294,9 +7294,9 @@
     720
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-selected-light-ic@723e65b.png",
+   "file": "S20-history-selected-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     864
@@ -7338,9 +7338,9 @@
     720
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-tile-hover-dark-ic@723e65b.png",
+   "file": "S20-history-tile-hover-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     864
@@ -7382,9 +7382,9 @@
     720
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S20-history-tile-hover-light-ic@723e65b.png",
+   "file": "S20-history-tile-hover-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     864
@@ -7426,15 +7426,15 @@
     800
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S21-publish-cancelled-w1280-dark-ic@723e65b.png",
+   "file": "S21-publish-cancelled-w1280-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     750
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-cancelled-w1280-dark-ic@723e65b.json",
+   "layout": "layout/S21-publish-cancelled-w1280-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -7474,15 +7474,15 @@
     800
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S21-publish-cancelled-w1280-light-ic@723e65b.png",
+   "file": "S21-publish-cancelled-w1280-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     750
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-cancelled-w1280-light-ic@723e65b.json",
+   "layout": "layout/S21-publish-cancelled-w1280-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -7522,15 +7522,15 @@
     900
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S21-publish-cancelled-w1440-dark-ic@723e65b.png",
+   "file": "S21-publish-cancelled-w1440-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     750
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-cancelled-w1440-dark-ic@723e65b.json",
+   "layout": "layout/S21-publish-cancelled-w1440-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -7570,15 +7570,15 @@
     900
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S21-publish-cancelled-w1440-light-ic@723e65b.png",
+   "file": "S21-publish-cancelled-w1440-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     750
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-cancelled-w1440-light-ic@723e65b.json",
+   "layout": "layout/S21-publish-cancelled-w1440-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -7618,15 +7618,15 @@
     640
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S21-publish-cancelled-w980-dark-ic@723e65b.png",
+   "file": "S21-publish-cancelled-w980-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     784
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-cancelled-w980-dark-ic@723e65b.json",
+   "layout": "layout/S21-publish-cancelled-w980-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -7666,15 +7666,15 @@
     640
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S21-publish-cancelled-w980-light-ic@723e65b.png",
+   "file": "S21-publish-cancelled-w980-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     784
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-cancelled-w980-light-ic@723e65b.json",
+   "layout": "layout/S21-publish-cancelled-w980-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -7714,9 +7714,9 @@
     800
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S21-publish-error-details-w1280-dark-ic@723e65b.png",
+   "file": "S21-publish-error-details-w1280-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     750
@@ -7758,9 +7758,9 @@
     800
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S21-publish-error-details-w1280-light-ic@723e65b.png",
+   "file": "S21-publish-error-details-w1280-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     750
@@ -7802,9 +7802,9 @@
     900
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S21-publish-error-details-w1440-dark-ic@723e65b.png",
+   "file": "S21-publish-error-details-w1440-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     750
@@ -7846,9 +7846,9 @@
     900
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S21-publish-error-details-w1440-light-ic@723e65b.png",
+   "file": "S21-publish-error-details-w1440-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     750
@@ -7890,9 +7890,9 @@
     640
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S21-publish-error-details-w980-dark-ic@723e65b.png",
+   "file": "S21-publish-error-details-w980-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     784
@@ -7934,9 +7934,9 @@
     640
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S21-publish-error-details-w980-light-ic@723e65b.png",
+   "file": "S21-publish-error-details-w980-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     784
@@ -7978,15 +7978,15 @@
     60
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S21-publish-error-footer-w1280-dark-ic@723e65b.png",
+   "file": "S21-publish-error-footer-w1280-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     56
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-error-footer-w1280-dark-ic@723e65b.json",
+   "layout": "layout/S21-publish-error-footer-w1280-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -8025,15 +8025,15 @@
     60
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S21-publish-error-footer-w1280-light-ic@723e65b.png",
+   "file": "S21-publish-error-footer-w1280-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     56
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-error-footer-w1280-light-ic@723e65b.json",
+   "layout": "layout/S21-publish-error-footer-w1280-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -8072,15 +8072,15 @@
     60
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S21-publish-error-footer-w1440-dark-ic@723e65b.png",
+   "file": "S21-publish-error-footer-w1440-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     50
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-error-footer-w1440-dark-ic@723e65b.json",
+   "layout": "layout/S21-publish-error-footer-w1440-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -8119,15 +8119,15 @@
     60
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S21-publish-error-footer-w1440-light-ic@723e65b.png",
+   "file": "S21-publish-error-footer-w1440-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     50
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-error-footer-w1440-light-ic@723e65b.json",
+   "layout": "layout/S21-publish-error-footer-w1440-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -8166,15 +8166,15 @@
     60
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S21-publish-error-footer-w980-dark-ic@723e65b.png",
+   "file": "S21-publish-error-footer-w980-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     73
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-error-footer-w980-dark-ic@723e65b.json",
+   "layout": "layout/S21-publish-error-footer-w980-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -8213,15 +8213,15 @@
     60
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S21-publish-error-footer-w980-light-ic@723e65b.png",
+   "file": "S21-publish-error-footer-w980-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     73
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-error-footer-w980-light-ic@723e65b.json",
+   "layout": "layout/S21-publish-error-footer-w980-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -8260,15 +8260,15 @@
     800
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S21-publish-error-w1280-dark-ic@723e65b.png",
+   "file": "S21-publish-error-w1280-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     750
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-error-w1280-dark-ic@723e65b.json",
+   "layout": "layout/S21-publish-error-w1280-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -8307,15 +8307,15 @@
     800
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S21-publish-error-w1280-light-ic@723e65b.png",
+   "file": "S21-publish-error-w1280-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     750
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-error-w1280-light-ic@723e65b.json",
+   "layout": "layout/S21-publish-error-w1280-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -8354,15 +8354,15 @@
     900
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S21-publish-error-w1440-dark-ic@723e65b.png",
+   "file": "S21-publish-error-w1440-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     750
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-error-w1440-dark-ic@723e65b.json",
+   "layout": "layout/S21-publish-error-w1440-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -8401,15 +8401,15 @@
     900
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S21-publish-error-w1440-light-ic@723e65b.png",
+   "file": "S21-publish-error-w1440-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     750
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-error-w1440-light-ic@723e65b.json",
+   "layout": "layout/S21-publish-error-w1440-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -8448,15 +8448,15 @@
     640
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S21-publish-error-w980-dark-ic@723e65b.png",
+   "file": "S21-publish-error-w980-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     784
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-error-w980-dark-ic@723e65b.json",
+   "layout": "layout/S21-publish-error-w980-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -8495,15 +8495,15 @@
     640
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S21-publish-error-w980-light-ic@723e65b.png",
+   "file": "S21-publish-error-w980-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     784
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-error-w980-light-ic@723e65b.json",
+   "layout": "layout/S21-publish-error-w980-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -8542,15 +8542,15 @@
     60
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S21-publish-progress-footer-w1280-dark-ic@723e65b.png",
+   "file": "S21-publish-progress-footer-w1280-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     56
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-progress-footer-w1280-dark-ic@723e65b.json",
+   "layout": "layout/S21-publish-progress-footer-w1280-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -8589,15 +8589,15 @@
     60
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S21-publish-progress-footer-w1280-light-ic@723e65b.png",
+   "file": "S21-publish-progress-footer-w1280-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     56
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-progress-footer-w1280-light-ic@723e65b.json",
+   "layout": "layout/S21-publish-progress-footer-w1280-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -8636,15 +8636,15 @@
     60
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S21-publish-progress-footer-w1440-dark-ic@723e65b.png",
+   "file": "S21-publish-progress-footer-w1440-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     50
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-progress-footer-w1440-dark-ic@723e65b.json",
+   "layout": "layout/S21-publish-progress-footer-w1440-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -8683,15 +8683,15 @@
     60
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S21-publish-progress-footer-w1440-light-ic@723e65b.png",
+   "file": "S21-publish-progress-footer-w1440-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     50
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-progress-footer-w1440-light-ic@723e65b.json",
+   "layout": "layout/S21-publish-progress-footer-w1440-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -8730,15 +8730,15 @@
     60
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S21-publish-progress-footer-w980-dark-ic@723e65b.png",
+   "file": "S21-publish-progress-footer-w980-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     73
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-progress-footer-w980-dark-ic@723e65b.json",
+   "layout": "layout/S21-publish-progress-footer-w980-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -8777,15 +8777,15 @@
     60
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S21-publish-progress-footer-w980-light-ic@723e65b.png",
+   "file": "S21-publish-progress-footer-w980-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     73
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-progress-footer-w980-light-ic@723e65b.json",
+   "layout": "layout/S21-publish-progress-footer-w980-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -8824,15 +8824,15 @@
     800
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S21-publish-progress-w1280-dark-ic@723e65b.png",
+   "file": "S21-publish-progress-w1280-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     750
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-progress-w1280-dark-ic@723e65b.json",
+   "layout": "layout/S21-publish-progress-w1280-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -8871,15 +8871,15 @@
     800
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S21-publish-progress-w1280-light-ic@723e65b.png",
+   "file": "S21-publish-progress-w1280-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     750
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-progress-w1280-light-ic@723e65b.json",
+   "layout": "layout/S21-publish-progress-w1280-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -8918,15 +8918,15 @@
     900
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S21-publish-progress-w1440-dark-ic@723e65b.png",
+   "file": "S21-publish-progress-w1440-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     750
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-progress-w1440-dark-ic@723e65b.json",
+   "layout": "layout/S21-publish-progress-w1440-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -8965,15 +8965,15 @@
     900
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S21-publish-progress-w1440-light-ic@723e65b.png",
+   "file": "S21-publish-progress-w1440-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     750
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-progress-w1440-light-ic@723e65b.json",
+   "layout": "layout/S21-publish-progress-w1440-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -9012,15 +9012,15 @@
     640
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S21-publish-progress-w980-dark-ic@723e65b.png",
+   "file": "S21-publish-progress-w980-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     784
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-progress-w980-dark-ic@723e65b.json",
+   "layout": "layout/S21-publish-progress-w980-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -9059,15 +9059,15 @@
     640
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S21-publish-progress-w980-light-ic@723e65b.png",
+   "file": "S21-publish-progress-w980-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     784
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-progress-w980-light-ic@723e65b.json",
+   "layout": "layout/S21-publish-progress-w980-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -9106,15 +9106,15 @@
     800
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S21-publish-retrying-w1280-dark-ic@723e65b.png",
+   "file": "S21-publish-retrying-w1280-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     750
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-retrying-w1280-dark-ic@723e65b.json",
+   "layout": "layout/S21-publish-retrying-w1280-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -9153,15 +9153,15 @@
     800
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S21-publish-retrying-w1280-light-ic@723e65b.png",
+   "file": "S21-publish-retrying-w1280-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     750
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-retrying-w1280-light-ic@723e65b.json",
+   "layout": "layout/S21-publish-retrying-w1280-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -9200,15 +9200,15 @@
     900
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S21-publish-retrying-w1440-dark-ic@723e65b.png",
+   "file": "S21-publish-retrying-w1440-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     750
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-retrying-w1440-dark-ic@723e65b.json",
+   "layout": "layout/S21-publish-retrying-w1440-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -9247,15 +9247,15 @@
     900
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S21-publish-retrying-w1440-light-ic@723e65b.png",
+   "file": "S21-publish-retrying-w1440-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     750
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-retrying-w1440-light-ic@723e65b.json",
+   "layout": "layout/S21-publish-retrying-w1440-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -9294,15 +9294,15 @@
     640
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S21-publish-retrying-w980-dark-ic@723e65b.png",
+   "file": "S21-publish-retrying-w980-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     784
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-retrying-w980-dark-ic@723e65b.json",
+   "layout": "layout/S21-publish-retrying-w980-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -9341,15 +9341,15 @@
     640
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S21-publish-retrying-w980-light-ic@723e65b.png",
+   "file": "S21-publish-retrying-w980-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     784
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-retrying-w980-light-ic@723e65b.json",
+   "layout": "layout/S21-publish-retrying-w980-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -9388,15 +9388,15 @@
     60
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S21-publish-success-footer-w1280-dark-ic@723e65b.png",
+   "file": "S21-publish-success-footer-w1280-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     56
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-success-footer-w1280-dark-ic@723e65b.json",
+   "layout": "layout/S21-publish-success-footer-w1280-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -9435,15 +9435,15 @@
     60
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S21-publish-success-footer-w1280-light-ic@723e65b.png",
+   "file": "S21-publish-success-footer-w1280-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     56
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-success-footer-w1280-light-ic@723e65b.json",
+   "layout": "layout/S21-publish-success-footer-w1280-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -9482,15 +9482,15 @@
     60
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S21-publish-success-footer-w1440-dark-ic@723e65b.png",
+   "file": "S21-publish-success-footer-w1440-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     50
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-success-footer-w1440-dark-ic@723e65b.json",
+   "layout": "layout/S21-publish-success-footer-w1440-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -9529,15 +9529,15 @@
     60
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S21-publish-success-footer-w1440-light-ic@723e65b.png",
+   "file": "S21-publish-success-footer-w1440-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     50
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-success-footer-w1440-light-ic@723e65b.json",
+   "layout": "layout/S21-publish-success-footer-w1440-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -9576,15 +9576,15 @@
     60
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S21-publish-success-footer-w980-dark-ic@723e65b.png",
+   "file": "S21-publish-success-footer-w980-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     73
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-success-footer-w980-dark-ic@723e65b.json",
+   "layout": "layout/S21-publish-success-footer-w980-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -9623,15 +9623,15 @@
     60
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S21-publish-success-footer-w980-light-ic@723e65b.png",
+   "file": "S21-publish-success-footer-w980-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     73
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-success-footer-w980-light-ic@723e65b.json",
+   "layout": "layout/S21-publish-success-footer-w980-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -9670,15 +9670,15 @@
     800
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S21-publish-success-w1280-dark-ic@723e65b.png",
+   "file": "S21-publish-success-w1280-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     750
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-success-w1280-dark-ic@723e65b.json",
+   "layout": "layout/S21-publish-success-w1280-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -9717,15 +9717,15 @@
     800
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S21-publish-success-w1280-light-ic@723e65b.png",
+   "file": "S21-publish-success-w1280-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     750
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-success-w1280-light-ic@723e65b.json",
+   "layout": "layout/S21-publish-success-w1280-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -9764,15 +9764,15 @@
     900
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S21-publish-success-w1440-dark-ic@723e65b.png",
+   "file": "S21-publish-success-w1440-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     750
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-success-w1440-dark-ic@723e65b.json",
+   "layout": "layout/S21-publish-success-w1440-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -9811,15 +9811,15 @@
     900
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S21-publish-success-w1440-light-ic@723e65b.png",
+   "file": "S21-publish-success-w1440-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     750
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-success-w1440-light-ic@723e65b.json",
+   "layout": "layout/S21-publish-success-w1440-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -9858,15 +9858,15 @@
     640
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S21-publish-success-w980-dark-ic@723e65b.png",
+   "file": "S21-publish-success-w980-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     784
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-success-w980-dark-ic@723e65b.json",
+   "layout": "layout/S21-publish-success-w980-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -9905,15 +9905,15 @@
     640
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S21-publish-success-w980-light-ic@723e65b.png",
+   "file": "S21-publish-success-w980-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     784
    ],
    "downscaled": true,
-   "layout": "layout/S21-publish-success-w980-light-ic@723e65b.json",
+   "layout": "layout/S21-publish-success-w980-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -9952,9 +9952,9 @@
     640
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S21-upload-menu-busy-dark-ic@723e65b.png",
+   "file": "S21-upload-menu-busy-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     784
@@ -10173,9 +10173,9 @@
     640
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S21-upload-menu-busy-light-ic@723e65b.png",
+   "file": "S21-upload-menu-busy-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     784
@@ -10394,15 +10394,15 @@
     640
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S21-upload-menu-busy-dismissed-dark-ic@723e65b.png",
+   "file": "S21-upload-menu-busy-dismissed-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     784
    ],
    "downscaled": true,
-   "layout": "layout/S21-upload-menu-busy-dismissed-dark-ic@723e65b.json",
+   "layout": "layout/S21-upload-menu-busy-dismissed-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -10481,15 +10481,15 @@
     640
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S21-upload-menu-busy-dismissed-light-ic@723e65b.png",
+   "file": "S21-upload-menu-busy-dismissed-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     784
    ],
    "downscaled": true,
-   "layout": "layout/S21-upload-menu-busy-dismissed-light-ic@723e65b.json",
+   "layout": "layout/S21-upload-menu-busy-dismissed-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -10568,9 +10568,9 @@
     700
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S22-photos-populated-dark-ic@723e65b.png",
+   "file": "S22-photos-populated-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     933
@@ -10613,9 +10613,9 @@
     700
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S22-photos-populated-light-ic@723e65b.png",
+   "file": "S22-photos-populated-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     933
@@ -10658,9 +10658,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S22-photos-populated-in-context-dark-ic@723e65b.png",
+   "file": "S22-photos-populated-in-context-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     951
@@ -10703,9 +10703,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S22-photos-populated-in-context-light-ic@723e65b.png",
+   "file": "S22-photos-populated-in-context-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     951
@@ -10748,9 +10748,9 @@
     28
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "NSView.cacheDisplay (view only, not a window capture)",
-   "file": "S24-statusitem-highlighted-dark-ic@723e65b.png",
+   "file": "S24-statusitem-highlighted-dark-ic@5d5221c.png",
    "storedPixelSize": [
     64,
     56
@@ -10793,9 +10793,9 @@
     28
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "NSView.cacheDisplay (view only, not a window capture)",
-   "file": "S24-statusitem-highlighted-light-ic@723e65b.png",
+   "file": "S24-statusitem-highlighted-light-ic@5d5221c.png",
    "storedPixelSize": [
     64,
     56
@@ -10838,9 +10838,9 @@
     28
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "NSView.cacheDisplay (view only, not a window capture)",
-   "file": "S24-statusitem-normal-dark-ic@723e65b.png",
+   "file": "S24-statusitem-normal-dark-ic@5d5221c.png",
    "storedPixelSize": [
     64,
     56
@@ -10883,9 +10883,9 @@
     28
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "NSView.cacheDisplay (view only, not a window capture)",
-   "file": "S24-statusitem-normal-light-ic@723e65b.png",
+   "file": "S24-statusitem-normal-light-ic@5d5221c.png",
    "storedPixelSize": [
     64,
     56
@@ -10928,9 +10928,9 @@
     372
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S25-about-panel-dark-ic@723e65b.png",
+   "file": "S25-about-panel-dark-ic@5d5221c.png",
    "storedPixelSize": [
     720,
     744
@@ -10973,9 +10973,9 @@
     372
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S25-about-panel-light-ic@723e65b.png",
+   "file": "S25-about-panel-light-ic@5d5221c.png",
    "storedPixelSize": [
     720,
     744
@@ -11018,9 +11018,9 @@
     592
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S25-license-window-dark-ic@723e65b.png",
+   "file": "S25-license-window-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1146
@@ -11062,9 +11062,9 @@
     592
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S25-license-window-light-ic@723e65b.png",
+   "file": "S25-license-window-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     1146
@@ -11106,9 +11106,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S26-close-unsaved-dark-ic@723e65b.png",
+   "file": "S26-close-unsaved-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     951
@@ -11151,9 +11151,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S26-close-unsaved-light-ic@723e65b.png",
+   "file": "S26-close-unsaved-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     951
@@ -11196,9 +11196,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S26-error-generic-dark-ic@723e65b.png",
+   "file": "S26-error-generic-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     951
@@ -11241,9 +11241,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S26-error-generic-light-ic@723e65b.png",
+   "file": "S26-error-generic-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     951
@@ -11286,9 +11286,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S26-history-hide-dark-ic@723e65b.png",
+   "file": "S26-history-hide-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     951
@@ -11330,9 +11330,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S26-history-hide-light-ic@723e65b.png",
+   "file": "S26-history-hide-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     951
@@ -11374,9 +11374,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S26-history-trash-dark-ic@723e65b.png",
+   "file": "S26-history-trash-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     951
@@ -11418,9 +11418,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S26-history-trash-light-ic@723e65b.png",
+   "file": "S26-history-trash-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     951
@@ -11462,9 +11462,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S26-rename-dark-ic@723e65b.png",
+   "file": "S26-rename-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     951
@@ -11508,9 +11508,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage per window, stacked in order (2 own windows; popover or tooltip above its window)",
-   "file": "S26-rename-light-ic@723e65b.png",
+   "file": "S26-rename-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     951
@@ -11554,15 +11554,15 @@
     60
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S28-focus-footer-upload-dark-ic@723e65b.png",
+   "file": "S28-focus-footer-upload-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     48
    ],
    "downscaled": true,
-   "layout": "layout/S28-focus-footer-upload-dark-ic@723e65b.json",
+   "layout": "layout/S28-focus-footer-upload-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -11598,15 +11598,15 @@
     60
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S28-focus-footer-upload-light-ic@723e65b.png",
+   "file": "S28-focus-footer-upload-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     48
    ],
    "downscaled": true,
-   "layout": "layout/S28-focus-footer-upload-light-ic@723e65b.json",
+   "layout": "layout/S28-focus-footer-upload-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -11642,15 +11642,15 @@
     60
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S28-focus-footer-zoom-dark-ic@723e65b.png",
+   "file": "S28-focus-footer-zoom-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     48
    ],
    "downscaled": true,
-   "layout": "layout/S28-focus-footer-zoom-dark-ic@723e65b.json",
+   "layout": "layout/S28-focus-footer-zoom-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -11686,15 +11686,15 @@
     60
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S28-focus-footer-zoom-light-ic@723e65b.png",
+   "file": "S28-focus-footer-zoom-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     48
    ],
    "downscaled": true,
-   "layout": "layout/S28-focus-footer-zoom-light-ic@723e65b.json",
+   "layout": "layout/S28-focus-footer-zoom-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -11730,15 +11730,15 @@
     86
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S28-focus-topbar-hide-dark-ic@723e65b.png",
+   "file": "S28-focus-topbar-hide-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     69
    ],
    "downscaled": true,
-   "layout": "layout/S28-focus-topbar-hide-dark-ic@723e65b.json",
+   "layout": "layout/S28-focus-topbar-hide-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -11774,15 +11774,15 @@
     86
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S28-focus-topbar-hide-light-ic@723e65b.png",
+   "file": "S28-focus-topbar-hide-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     69
    ],
    "downscaled": true,
-   "layout": "layout/S28-focus-topbar-hide-light-ic@723e65b.json",
+   "layout": "layout/S28-focus-topbar-hide-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -11818,15 +11818,15 @@
     86
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S28-focus-topbar-snap-dark-ic@723e65b.png",
+   "file": "S28-focus-topbar-snap-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     69
    ],
    "downscaled": true,
-   "layout": "layout/S28-focus-topbar-snap-dark-ic@723e65b.json",
+   "layout": "layout/S28-focus-topbar-snap-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -11862,15 +11862,15 @@
     86
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S28-focus-topbar-snap-light-ic@723e65b.png",
+   "file": "S28-focus-topbar-snap-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     69
    ],
    "downscaled": true,
-   "layout": "layout/S28-focus-topbar-snap-light-ic@723e65b.json",
+   "layout": "layout/S28-focus-topbar-snap-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -11906,15 +11906,15 @@
     86
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S28-focus-topbar-tool-dark-ic@723e65b.png",
+   "file": "S28-focus-topbar-tool-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     69
    ],
    "downscaled": true,
-   "layout": "layout/S28-focus-topbar-tool-dark-ic@723e65b.json",
+   "layout": "layout/S28-focus-topbar-tool-dark-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -11950,15 +11950,15 @@
     86
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution) + crop",
-   "file": "S28-focus-topbar-tool-light-ic@723e65b.png",
+   "file": "S28-focus-topbar-tool-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     69
    ],
    "downscaled": true,
-   "layout": "layout/S28-focus-topbar-tool-light-ic@723e65b.json",
+   "layout": "layout/S28-focus-topbar-tool-light-ic@5d5221c.json",
    "before": null,
    "displayOptions": {
     "active": [
@@ -11994,9 +11994,9 @@
     102
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S29-drag-thumbnail-dark-ic@723e65b.png",
+   "file": "S29-drag-thumbnail-dark-ic@5d5221c.png",
    "storedPixelSize": [
     256,
     204
@@ -12039,9 +12039,9 @@
     102
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S29-drag-thumbnail-light-ic@723e65b.png",
+   "file": "S29-drag-thumbnail-light-ic@5d5221c.png",
    "storedPixelSize": [
     256,
     204
@@ -12084,9 +12084,9 @@
     102
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S29-drag-thumbnail-expand-dark-ic@723e65b.png",
+   "file": "S29-drag-thumbnail-expand-dark-ic@5d5221c.png",
    "storedPixelSize": [
     256,
     204
@@ -12128,9 +12128,9 @@
     102
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImage(bestResolution)",
-   "file": "S29-drag-thumbnail-expand-light-ic@723e65b.png",
+   "file": "S29-drag-thumbnail-expand-light-ic@5d5221c.png",
    "storedPixelSize": [
     256,
     204
@@ -12172,9 +12172,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S29-help-bevel-dark-ic@723e65b.png",
+   "file": "S29-help-bevel-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     951
@@ -12217,9 +12217,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S29-help-bevel-light-ic@723e65b.png",
+   "file": "S29-help-bevel-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     951
@@ -12262,9 +12262,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S29-help-bevel-bottom-dark-ic@723e65b.png",
+   "file": "S29-help-bevel-bottom-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     951
@@ -12307,9 +12307,9 @@
     1179
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S29-help-bevel-bottom-light-ic@723e65b.png",
+   "file": "S29-help-bevel-bottom-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     951
@@ -12352,9 +12352,9 @@
     1233
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S29-help-bevel-hanging-dark-ic@723e65b.png",
+   "file": "S29-help-bevel-hanging-dark-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     994
@@ -12396,9 +12396,9 @@
     1233
    ],
    "scale": 2,
-   "sourceSha": "723e65bb",
+   "sourceSha": "5d5221cd",
    "method": "CGWindowListCreateImageFromArray(bestResolution, 2 own windows)",
-   "file": "S29-help-bevel-hanging-light-ic@723e65b.png",
+   "file": "S29-help-bevel-hanging-light-ic@5d5221c.png",
    "storedPixelSize": [
     1200,
     994
