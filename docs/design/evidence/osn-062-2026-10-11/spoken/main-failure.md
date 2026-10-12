@@ -2,7 +2,7 @@
 
 - Surface: Main (failure)
 - Suite: app-safety
-- Build: a31490d2
+- Build: d70b845d
 - Nodes: 39
 
 ```
@@ -40,7 +40,7 @@
 [0]   hint: Zoom is how large the drawing is shown. Actual Size shows one image pixel per screen pixel.
 [0] Resize…, button
 [0]   hint: Resize or crop the picture
-[0] Server said no.
+[0] Error: Server said no.
 [0] Retry upload, button
 [0] Show error details, button
 [0] Save, button

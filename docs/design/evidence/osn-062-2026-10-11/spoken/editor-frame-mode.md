@@ -2,7 +2,7 @@
 
 - Surface: Editor (frame mode)
 - Suite: app-safety
-- Build: a31490d2
+- Build: d70b845d
 - Nodes: 37
 
 ```
@@ -40,8 +40,7 @@
 [0]   hint: Zoom is how large the drawing is shown. Actual Size shows one image pixel per screen pixel.
 [0] Resize…, button, dimmed
 [0]   hint: Resize or crop the picture
-[0] Frame: position, then Snap
-[0]   hint: Frame: position the window, then Snap
+[0] Frame: position the window, then Snap
 [0] Save, button
 [0]   hint: Save to History
 [0] History, button

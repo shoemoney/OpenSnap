@@ -2,7 +2,7 @@
 
 - Surface: History (populated)
 - Suite: accessibility-audit-tests
-- Build: a31490d2
+- Build: d70b845d
 - Nodes: 53
 
 ```
@@ -54,7 +54,7 @@
 [0] 640 × 480
 [0] Action:
 [0] Saved
-[0] 4 items · 1 selected
+[0] 4 items, 1 selected
 [0] Drag as
 [0] PNG, History drag export format, pop up button
 [0] close, button
