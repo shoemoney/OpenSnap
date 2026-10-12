@@ -420,6 +420,7 @@ def check_contrast(layout, image):
 
 SELECTED_MIN_BOX = (60, 30)      # px: a selected row, tile or segment is at least this big
 SELECTED_MIN_CHROMA = 24         # an accent tint is saturated; the window, plates and greys are not
+BACKDROP_SHADE_DISTANCE = 24    # L1 distance between neighbouring gradient bands after palette quantisation
 SELECTED_MAX_LINE = 56           # px: a text line band is shorter than this (a preview image is not)
 
 
@@ -434,6 +435,11 @@ def selected_fill_regions(image):
     for fill, count in sorted(counts.items(), key=lambda item: -item[1])[:6]:
         if count < SELECTED_MIN_BOX[0] * SELECTED_MIN_BOX[1] // 2:
             break
+        # A palette-quantised packed capture turns the smooth backdrop gradient into flat bands of near-identical colours; a selected
+        # fill is one colour with no equally common neighbour shades, so a colour with two or more is the backdrop, not a selection.
+        shades = sum(1 for other, n in counts.items() if other != fill and sum(abs(a - b) for a, b in zip(other, fill)) <= BACKDROP_SHADE_DISTANCE and n * 4 >= count)
+        if shades >= 2:
+            continue
         rows = []
         for y, row in enumerate(image.rows):
             run, best, start, bx = 0, 0, 0, 0
@@ -1154,7 +1160,17 @@ def self_test():
             return (30, 30, 30)
         return png_bytes(240, 80, pixel)
 
+    def banded_backdrop():
+        """A quantised purple gradient (flat bands 4 apart) with a grey document window over it: backdrop, not a selected fill."""
+        def pixel(x, y):
+            if 90 <= x < 200 and 20 <= y < 70 and (x // 2 + y // 2) % 2:
+                return (150, 150, 150)
+            band = x // 60
+            return (70 + 4 * band, 50 + 2 * band, 78 + 3 * band)
+        return png_bytes(240, 80, pixel)
+
     cases = [
+        ("quantised gradient backdrop is not a selected fill", banded_backdrop(), None, 0),
         ("selected row, secondary text at 4.5:1 or better", selected_row((235, 232, 224), (235, 232, 224)), None, 0),
         ("selected row, secondary text at about 3.5:1 (the 0.34 dark fill regression)", selected_row((235, 232, 224), (160, 152, 135)), None, 1),
         ("selected row, primary text weak", selected_row((140, 132, 115), (235, 232, 224)), None, 1),

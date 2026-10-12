@@ -57,11 +57,11 @@
   "privateButtonField": 5250
  },
  "statusTruncatedCaptures": [
-  "base/S09-footer-long-status-dark",
-  "base/S09-footer-long-status-light",
-  "rt/S09-footer-long-status-dark-rt",
-  "rt/S09-footer-long-status-light-rt",
-  "ic/S09-footer-long-status-dark-ic",
-  "ic/S09-footer-long-status-light-ic"
+  "raw-base/S09-footer-long-status-dark",
+  "raw-base/S09-footer-long-status-light",
+  "raw-reduce-transparency/S09-footer-long-status-dark-rt",
+  "raw-reduce-transparency/S09-footer-long-status-light-rt",
+  "raw-increase-contrast/S09-footer-long-status-dark-ic",
+  "raw-increase-contrast/S09-footer-long-status-light-ic"
  ]
 }
