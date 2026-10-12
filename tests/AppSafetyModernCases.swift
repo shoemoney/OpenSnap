@@ -979,6 +979,12 @@ extension AppSafetyTests {
                    "Choosing the zoom item puts the canvas at Actual Size (zoom \(app.canvas.zoom), output \(app.canvas.outputSize))")
         try expect(app.zoomControl.titleOfSelectedItem == "Actual" && app.zoomControl.selectedItem?.tag != ZoomPopUpButton.actualSizeTag,
                    "The popup face reads Actual after the choice: \(app.zoomControl.titleOfSelectedItem ?? "nil")")
+        if let face = app.zoomControl as? GlassPopUpButton {
+            app.window.contentView?.layoutSubtreeIfNeeded()
+            let metrics = face.faceTextMetrics
+            try expect(metrics.title == "Actual" && face.faceTextFits,
+                       "The Actual face fits its slot: needs \(metrics.needed.width) pt, has \(metrics.available.width) pt")
+        }
         _ = chrome
     }
 
