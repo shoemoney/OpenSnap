@@ -21,14 +21,17 @@
 //   genericLabel        a label that names the kind of thing instead of the thing: a role word ("button", "image"), a symbol, file or
 //                       identifier ("camera.viewfinder", "shot.png", "cloud-arrow-up"), or the class name
 //   missingValue        a slider, checkbox, radio button, pop-up, combo box, stepper or progress indicator that reports no value
-//                       (an indeterminate spinner opts out with an identifier that starts with "indeterminate")
+//                       (an indeterminate spinner opts out with an identifier that starts with "indeterminate"); so does a focusable
+//                       custom view with the image role (the drawing canvas) that answers no accessibilityValue (added by WP1b)
 //   readingOrderMismatch  within one AX parent the children are listed in a different order than the eye reads them (rows from the
 //                       top, left to right); a parent opts out with an identifier that starts with "order-free". Hosted surfaces only
 //   keyLoopDisagreesWithAXOrder  the key-view loop visits focusable elements in an order that is not the accessibility order
 //                       (any rotation of it is fine). Windows only
 //   ignoredButFocusable a focusable, enabled, visible view that is not an accessibility element and holds none: VoiceOver cannot land on it
 //   duplicateInGroup    the same label twice under one AX parent, even where the window-wide allow-list permits it
-// Those six are the "tracked" kinds: findings that existed on today's surfaces when they were introduced are listed, each with its reason,
+//   nameMismatch       a control whose own accessibilityLabel() is not what an external client reads as its name (a standard button is
+//                       published as its cell, which can name itself from the icon's description instead; added by WP1b)
+// Those are the "tracked" kinds (plus missingLabel, missingRole and duplicateLabel since WP1b): findings that existed on today's surfaces when they were introduced are listed, each with its reason,
 // in tools/accessibility-baseline.tsv, so the gate fails on a NEW finding and on a stale entry (tools/check-spoken-scripts.py) while the
 // pending fixes are burned down. Findings the baseline covers are reported in `Report.baselined`, never in `Report.violations`.
 //
@@ -51,11 +54,14 @@ enum AccessibilityAudit {
     enum Kind: String {
         case missingLabel, missingRole, unlabelledSegment, duplicateLabel, retiredName, notKeyboardReachable, undescribedImage
         case genericLabel, missingValue, readingOrderMismatch, keyLoopDisagreesWithAXOrder, ignoredButFocusable, duplicateInGroup
+        case nameMismatch
 
-        /// The kinds introduced by OSN-062 WP1a, the only ones the baseline file can cover.
+        /// The kinds the baseline file can cover: the six OSN-062 WP1a introduced, `nameMismatch`, and (WP1b) the three older ones a surface
+        /// the app never built for a screen reader (the capture picker overlay, the Size panel) fails today.
         var isTracked: Bool {
             switch self {
-            case .genericLabel, .missingValue, .readingOrderMismatch, .keyLoopDisagreesWithAXOrder, .ignoredButFocusable, .duplicateInGroup: return true
+            case .genericLabel, .missingValue, .readingOrderMismatch, .keyLoopDisagreesWithAXOrder, .ignoredButFocusable, .duplicateInGroup,
+                 .nameMismatch, .missingLabel, .missingRole, .duplicateLabel: return true
             default: return false
             }
         }
@@ -102,7 +108,8 @@ enum AccessibilityAudit {
         UserStrings.observe(window, surface: surface)
         var run = Run(surface: surface, allowed: allowedDuplicates.merging(deliberateDuplicates) { first, _ in first })
         if let content = window.contentView { run.walk(content, path: "window", hidden: false, repeating: false) }
-        for (index, accessory) in window.titlebarAccessoryViewControllers.enumerated() {
+        // A borderless panel (the Actual Size overview, a glass panel, the countdown) has no title bar and AppKit raises if it is asked for accessories.
+        for (index, accessory) in (window.styleMask.contains(.titled) ? window.titlebarAccessoryViewControllers : []).enumerated() {
             run.walk(accessory.view, path: "titlebarAccessory[\(index)]", hidden: false, repeating: false)
         }
         var report = run.finish()
@@ -165,7 +172,7 @@ enum AccessibilityAudit {
         for finding in report.violations {
             guard finding.kind.isTracked else { fresh.append(finding); continue }
             let k = key(surface: finding.surface, kind: finding.kind.rawValue, path: finding.path, label: finding.label)
-            if discovering { report.baselined.append(finding) }
+            if discovering && recording { report.baselined.append(finding) }
             else if let left = remaining[k], left > 0 { remaining[k] = left - 1; report.baselined.append(finding) }
             else { fresh.append(finding) }
         }
@@ -220,6 +227,9 @@ enum AccessibilityAudit {
             let label = node.label ?? ""
             if let subrole = node.subrole, windowFurniture.contains(subrole) { continue }
             if judgedRoles.contains(role), isGeneric(label, className: String(describing: type(of: node.object))) { add(.genericLabel, index, label) }
+            if let control = node.hostView as? NSControl, let own = text(control.accessibilityLabel()), let spoken = node.label, spoken != own {
+                add(.nameMismatch, index, own, detail: "an external client reads \"\(spoken)\"")
+            }
             if valuedRoles.contains(role), node.value == nil, !(role == .progressIndicator && node.identifier.hasPrefix("indeterminate")) { add(.missingValue, index, label) }
         }
         // The same label twice under one AX parent. The window-wide pass (duplicateLabel) already names the ones the allow-list does not
@@ -409,6 +419,11 @@ enum AccessibilityAudit {
             if !hidden, view.window != nil, view.acceptsFirstResponder, (view as? NSControl)?.isEnabled ?? true,
                !(view is NSScrollView), !(view is NSClipView), !(view is NSTextView), !Self.isElement(view), !Self.hasElement(below: view) {
                 flag(.ignoredButFocusable, path, AccessibilityAudit.label(of: view), hidden: false)
+            }
+            // A focusable picture of something (the drawing canvas) that never says what it holds: a name alone tells a screen reader nothing.
+            if !hidden, view.window != nil, view.acceptsFirstResponder, !(view is NSControl), !(view is NSImageView), view.accessibilityRole() == .image {
+                let value = view.accessibilityValue()
+                if value == nil || (value as? String)?.isEmpty == true { flag(.missingValue, path, AccessibilityAudit.label(of: view), hidden: false) }
             }
 
             switch view {

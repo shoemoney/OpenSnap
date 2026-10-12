@@ -14,7 +14,7 @@ extension AppSafetyTests {
             ("The Size and Color popovers close their own key-view loops", mainWindowPopoverLoops),
             ("Capture success, Frame on and off, Undo and Redo are announced; an Undo with nothing to undo is silent", mainWindowAnnouncements),
             ("Announcement inventory: every state change a blind user must hear, driven through Announcer.poster; announced rows post exactly the expected text, pending rows post nothing yet", announcementInventory)
-        ]
+        ] + accessibilitySurfaceCases
     }
 
     private static func chromeFor(_ app: AppDelegate) throws -> ModernEditorChrome {

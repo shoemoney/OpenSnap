@@ -8,7 +8,7 @@ This gate, run after the suites:
   * every surface listed in tools/spoken-surfaces.txt has a non-empty script (a header and at least one node), every surface the suites
     audited is on that list, and the owner-facing <dir>/INDEX.md (written here) lists them all;
   * the tracked findings (genericLabel, missingValue, readingOrderMismatch, keyLoopDisagreesWithAXOrder, ignoredButFocusable,
-    duplicateInGroup) match tools/accessibility-baseline.tsv exactly: a finding the baseline does not cover is NEW and fails; a baseline
+    duplicateInGroup, and since WP1b nameMismatch, missingLabel, missingRole, duplicateLabel) match tools/accessibility-baseline.tsv exactly: a finding the baseline does not cover is NEW and fails; a baseline
     line no run produced is STALE and fails. Every baseline line carries a reason (today: "pending WP3", the burn-down);
   * <dir>/FINDINGS.md is written: the counts per surface and kind, then every finding.
 
@@ -20,7 +20,8 @@ from pathlib import Path
 import argparse, collections, json, re, sys, tempfile
 
 ROOT = Path(__file__).resolve().parent.parent
-TRACKED = ["genericLabel", "missingValue", "readingOrderMismatch", "keyLoopDisagreesWithAXOrder", "ignoredButFocusable", "duplicateInGroup"]
+TRACKED = ["genericLabel", "missingValue", "readingOrderMismatch", "keyLoopDisagreesWithAXOrder", "ignoredButFocusable", "duplicateInGroup",
+           "nameMismatch", "missingLabel", "missingRole", "duplicateLabel"]
 DEFAULT_REASON = "pending WP3"
 BASELINE_HEADER = "# surface\tkind\telement\tlabel\treason\n"
 
@@ -65,8 +66,13 @@ def load_surfaces(path):
     return [line.strip() for line in path.read_text().splitlines() if line.strip() and not line.startswith("#")]
 
 
-def script_problems(directory, expected, audited):
-    """Every expected surface has a script with a header and nodes; every audited one is expected."""
+NOTHING_TO_READ = "(no accessibility elements: a screen reader finds nothing here)"
+
+
+def script_problems(directory, expected, audited, explained=frozenset()):
+    """Every expected surface has a script with a header and nodes; every audited one is expected.
+    A script with no node is accepted only when it says so (NOTHING_TO_READ) and the surface carries a tracked finding that explains it
+    (the capture picker overlay today): an empty tree with no finding is the walker seeing nothing, which proves nothing."""
     problems = []
     for slug in expected:
         script = directory / f"{slug}.md"
@@ -75,7 +81,9 @@ def script_problems(directory, expected, audited):
             continue
         text = script.read_text()
         nodes = re.search(r"^- Nodes: (\d+)$", text, re.M)
-        if not text.startswith("# ") or not nodes or int(nodes.group(1)) == 0 or not re.search(r"^\[\d+\] ", text, re.M):
+        if not text.startswith("# ") or not nodes or not re.search(r"^\[\d+\] ", text, re.M):
+            problems.append(f"the spoken script {slug}.md is empty: the walker saw no element, so it proves nothing")
+        elif int(nodes.group(1)) == 0 and not (NOTHING_TO_READ in text and slug in explained):
             problems.append(f"the spoken script {slug}.md is empty: the walker saw no element, so it proves nothing")
     for surface, slug in sorted(audited.items()):
         if slug not in expected:
@@ -126,7 +134,7 @@ def write_findings(directory, surfaces, baseline, new, stale):
             by_kind[kind] += n
     total = sum(by_kind.values())
     out = ["# Spoken-script findings", "",
-           f"{total} findings of the six tracked kinds across {len(surfaces)} audited surfaces; every one is a baseline entry ({DEFAULT_REASON}) in `tools/accessibility-baseline.tsv`.",
+           f"{total} findings of the tracked kinds across {len(surfaces)} audited surfaces; every one is a baseline entry ({DEFAULT_REASON}) in `tools/accessibility-baseline.tsv`.",
            f"New (not in the baseline): {sum(new.values())}. Stale (in the baseline, not produced): {sum(stale.values())}.", "",
            "## By kind", "", "| Kind | Findings |", "|---|---|"]
     out += [f"| {kind} | {by_kind.get(kind, 0)} |" for kind in TRACKED]
@@ -155,7 +163,8 @@ def check(directory, baseline_path, surfaces_path, require=()):
     if expected is None:
         problems.append(f"the expected surface list {surfaces_path} is missing")
         expected = []
-    problems += script_problems(directory, expected, {surface: slug for surface, (slug, _) in surfaces.items()})
+    explained = {slug for slug, counts in surfaces.values() if counts}
+    problems += script_problems(directory, expected, {surface: slug for surface, (slug, _) in surfaces.items()}, explained)
     baseline, baseline_problems = load_baseline(baseline_path)
     problems += baseline_problems
     found = collections.Counter()
@@ -205,14 +214,17 @@ def self_test():
     expectations = [
         ("a clean run passes", lambda: run(), None),
         ("a missing script is caught", lambda: run(lambda r: (r / "alpha.md").unlink()), "no spoken script"),
-        ("an empty script is caught", lambda: run(nodes=0), "is empty"),
+        ("an empty script with no finding to explain it is caught", lambda: run(lambda r: (r / "baseline.tsv").write_text(BASELINE_HEADER), findings=[], nodes=0), "is empty"),
+        ("an empty script that does not say so is caught", lambda: run(nodes=0), "is empty"),
+        ("an empty script that says so and carries a finding passes", lambda: run(lambda r: (r / "alpha.md").write_text(
+            f"# Alpha\n\n- Nodes: 0\n\n```\n[0] window\n[0] {NOTHING_TO_READ}\n```\n")), None),
         ("a script with no lines is caught", lambda: run(lambda r: (r / "alpha.md").write_text("# Alpha\n\n- Nodes: 3\n")), "is empty"),
         ("a surface nobody listed is caught", lambda: run(lambda r: (r / "surfaces.txt").write_text("# none\n")), "not in the expected surface list"),
         ("a NEW finding is caught", lambda: run(findings=[{"kind": "genericLabel", "path": "AXButton \"x\"", "label": "x"}, {"kind": "missingValue", "path": "AXSlider \"s\"", "label": "s"}]), "NEW finding"),
         ("a second copy of a baselined finding is NEW", lambda: run(findings=[{"kind": "genericLabel", "path": "AXButton \"x\"", "label": "x"}] * 2), "NEW finding x1"),
         ("a STALE baseline entry is caught", lambda: run(findings=[]), "STALE baseline entry"),
         ("a baseline line with no reason is caught", lambda: run(lambda r: (r / "baseline.tsv").write_text(BASELINE_HEADER + "Alpha\tgenericLabel\tAXButton \"x\"\tx\t \n")), "has no reason"),
-        ("a baseline line of an untracked kind is caught", lambda: run(lambda r: (r / "baseline.tsv").write_text(BASELINE_HEADER + "Alpha\tmissingLabel\tp\tl\twhy\n")), "not a baselinable kind"),
+        ("a baseline line of an untracked kind is caught", lambda: run(lambda r: (r / "baseline.tsv").write_text(BASELINE_HEADER + "Alpha\tretiredName\tp\tl\twhy\n")), "not a baselinable kind"),
         ("a suite that left no dump is caught", lambda: run(require=("suite-a", "suite-b")), "no findings dump from suite-b"),
     ]
     failed = 0

@@ -38,6 +38,16 @@ private final class MuteControl: NSControl {
     override func isAccessibilityElement() -> Bool { false }
 }
 
+/// A focusable picture (as the drawing canvas is) that names itself; `summary` is what it says it holds, if anything.
+@MainActor
+private final class FocusablePicture: NSView {
+    var summary: String?
+    override var acceptsFirstResponder: Bool { true }
+    override func isAccessibilityElement() -> Bool { true }
+    override func accessibilityRole() -> NSAccessibility.Role? { .image }
+    override func accessibilityValue() -> Any? { summary }
+}
+
 /// A slider-shaped control that names itself and takes focus but never says where it stands.
 @MainActor
 private final class ValuelessSlider: NSControl {
@@ -317,9 +327,25 @@ private enum AccessibilityAuditTests {
         let holder = MuteControl(); holder.setAccessibilityLabel("Holder"); holder.setAccessibilityRole(.group); holder.addSubview(button("Inside"))
         expect(found(hosted(host(holder))).violations.isEmpty, "a focusable container that holds an element is not (VoiceOver can land on what is inside)")
 
+        // nameMismatch: a button named by its icon's description in the tree an external client reads, though the control carries another label.
+        let iconic = described("Icon name")
+        let renamed = NSButton(title: "", target: nil, action: nil); renamed.image = iconic; renamed.imagePosition = .imageOnly; renamed.setAccessibilityLabel("Real name")
+        let mismatch2 = found(hosted(host(renamed)))
+        expect(kinds(mismatch2) == [.nameMismatch], "a button whose own label the tree does not read is a nameMismatch: \(mismatch2.description)")
+        let agreed = NSButton(title: "", target: nil, action: nil); agreed.image = iconic; agreed.imagePosition = .imageOnly; agreed.setAccessibilityLabel("Icon name")
+        expect(found(hosted(host(agreed))).violations.isEmpty, "...and one whose label is the same words is not")
+
+        // missingValue on a picture: a focusable image-role view names itself but must also say what it holds.
+        let canvasLike = FocusablePicture(); canvasLike.setAccessibilityLabel("Drawing canvas")
+        let pictureReport = found(hosted(host(canvasLike)))
+        expect(kinds(pictureReport) == [.missingValue], "a focusable picture with a name and no value is a missingValue: \(pictureReport.description)")
+        canvasLike.summary = "No annotations"
+        expect(found(hosted(host(canvasLike))).violations.isEmpty, "...and with a value it is clean")
+
         // The baseline: a covered finding moves to `baselined`, a stale or different one does not.
         let covered = Audit.Finding(kind: .genericLabel, surface: "s", path: "p", label: "l", hidden: false)
-        expect(covered.kind.isTracked && !Audit.Kind.missingLabel.isTracked, "only the six new kinds are baselinable")
+        expect(covered.kind.isTracked && Audit.Kind.nameMismatch.isTracked && Audit.Kind.missingLabel.isTracked && !Audit.Kind.retiredName.isTracked && !Audit.Kind.undescribedImage.isTracked,
+               "the WP1a kinds, nameMismatch, missingLabel, missingRole and duplicateLabel are baselinable; the retired name and an undescribed image never are")
     }
 
     // MARK: B. Nothing false
@@ -528,6 +554,14 @@ private enum AccessibilityAuditTests {
             }
             expect(modeControl.accessibilityLabel() == "Size operation", "the mode control has a group label")
         } else { expect(false, "the mode control was found") }
+        // WP1b: the size preset choices, the glass panel behind the preset pop-up.
+        if let presetPopup: GlassPopUpButton = private_(resize, "presetPopup") {
+            presetPopup.choicePanel.host.presenter = { _, _ in }
+            presetPopup.performClick(nil)
+            expect(presetPopup.choicePanel.host.isShown, "the Resize preset panel opened")
+            record("Resize preset panel", Audit.audit(presetPopup.choicePanel.host.window, surface: "Resize preset panel"))
+            presetPopup.choicePanel.host.close()
+        } else { expect(false, "the preset pop-up was found") }
         if let sheet = resizeParent.attachedSheet ?? resizePanel { resizeParent.endSheet(sheet) }
 
         // Photos sheet.
@@ -584,6 +618,41 @@ private enum AccessibilityAuditTests {
         ]
         for (name, alert) in alerts { record("Alert (\(name))", Audit.audit(alert.panel, surface: "Alert (\(name))")) }
 
+        // WP1b: the questions the app asks in its own words (App.confirmDiscard, App.prompt, removeHistory, deleteFromWeb).
+        let promptText = "Name for this drawing"
+        let promptField = NSTextField(string: "Untitled"); promptField.frame = NSRect(x: 0, y: 0, width: AppAlert.width - 2 * DesignTokens.Space.s5, height: DesignTokens.Size.field)
+        promptField.setAccessibilityLabel(promptText)
+        let questions: [(String, AppAlert)] = [
+            ("confirm discard", AppAlert(title: "Save your drawing?", message: "This document has changes that have not been saved.",
+                buttons: [.init(title: "Save"), .init(title: "Cancel", role: .cancel), .init(title: "Don\u{2019}t Save", role: .destructive)])),
+            ("prompt", AppAlert(title: "Rename", message: promptText, buttons: [.init(title: "OK"), .init(title: "Cancel", role: .cancel)], accessoryView: promptField)),
+            ("remove history", AppAlert(title: "Move archived drawings to Trash?",
+                message: "The selected History copies and previews will move to Trash. Exported originals and web posts are kept.",
+                buttons: [.init(title: "Cancel", role: .cancel), .init(title: "Move to Trash", role: .destructive)])),
+            ("delete remote", AppAlert(title: "Delete this web post?",
+                message: "This removes the published image at https://example.invalid/pics/shot.png. Its editable History copy will be kept.",
+                buttons: [.init(title: "Cancel", role: .cancel), .init(title: "Delete from Web", role: .destructive)])),
+        ]
+        for (name, alert) in questions { record("Alert (\(name))", Audit.audit(alert.panel, surface: "Alert (\(name))")) }
+
+        // WP1b: the History date filter's glass panel and the thumbnail grid's context menu.
+        let dateFilter = history.dateFilterPopUp
+        dateFilter.choicePanel.host.presenter = { _, _ in }
+        dateFilter.performClick(nil)
+        expect(dateFilter.choicePanel.host.isShown, "the History filter panel opened")
+        record("History filter panel", Audit.audit(dateFilter.choicePanel.host.window, surface: "History filter panel"))
+        dateFilter.choicePanel.host.close()
+        if let grid: NSCollectionView = private_(history, "collection"), let menu = grid.menu {
+            // As a right-click leaves it: the shared entry (Shot 1, a day back) selected, its actions enabled.
+            let handled: ([UUID]) -> Void = { _ in }
+            history.onOpen = handled; history.onCopy = handled; history.onCopyLink = handled; history.onOpenLink = handled
+            history.onRemove = handled; history.onDeleteFiles = handled; history.onDeleteRemote = handled
+            grid.selectionIndexPaths = [IndexPath(item: 0, section: 1)]
+            history.collectionView(grid, didSelectItemsAt: [IndexPath(item: 0, section: 1)])
+            menu.update()
+            record("History context menu", Audit.audit(menu, surface: "History context menu"))
+        } else { expect(false, "the History grid has a context menu") }
+
         var controls = 0, labelled = 0
         var problems: [String] = []
         for (surface, report) in reports {
@@ -599,13 +668,13 @@ private enum AccessibilityAuditTests {
         // The walker must fail when a real surface is made worse: strip one label from each of three, expect exactly that.
         let kept = destinations.nameField.accessibilityLabel()
         destinations.nameField.setAccessibilityLabel(nil)
-        let strippedDestinations = Audit.audit(destinations, surface: "Destinations (seeded)").violations.filter { !$0.kind.isTracked }
+        let strippedDestinations = Audit.audit(destinations, surface: "Destinations (seeded)").violations.filter { $0.kind == .missingLabel }
         expect(strippedDestinations.count == 1 && strippedDestinations[0].kind == .missingLabel, "Destinations: a stripped Name label is caught on the real form: \(strippedDestinations)")
         destinations.nameField.setAccessibilityLabel(kept)
         if let widthField: NSTextField = private_(resize, "widthField"), let modeControl: GlassChoiceGroup = private_(resize, "modeControl") {
             let label = widthField.accessibilityLabel()
             widthField.setAccessibilityLabel(nil)
-            let strippedResize = Audit.audit(resizePanel!, surface: "Resize (seeded)").violations.filter { !$0.kind.isTracked }
+            let strippedResize = Audit.audit(resizePanel!, surface: "Resize (seeded)").violations.filter { $0.kind == .missingLabel }
             expect(strippedResize.count == 1 && strippedResize[0].kind == .missingLabel, "Resize: a stripped Width label is caught on the real panel: \(strippedResize)")
             widthField.setAccessibilityLabel(label)
             // The glass mode group is a custom radio group: the walker does not hold it, so its name and role are asserted here.

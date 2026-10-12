@@ -1,9 +1,17 @@
-# Surfaces the suites audit and script (WP1a); a surface audited but not listed, or listed but not scripted, fails the gate.
+# Surfaces the suites audit and script (WP1a, extended by WP1b); a surface audited but not listed, or listed but not scripted, fails the gate.
 about
+alert-confirm-discard
+alert-delete-remote
 alert-error
 alert-one-button
+alert-prompt
+alert-remove-history
 alert-save-cancel-don-t-save
 alert-with-a-text-field
+bottom-bar
+capture-picker-overlay
+color-popover
+countdown
 destinations-edit-form
 destinations-edit-form-error
 destinations-form-ftp
@@ -12,13 +20,22 @@ destinations-form-s3-compatible
 destinations-form-sftp
 destinations-form-test-result
 destinations-form-webdav
+editor-actual-size
+editor-frame-keeps-annotations
+editor-frame-mode
+editor-fullscreen-prompt
+editor-populated
+editor-selection
+editor-text-editing
 export-accessory
 glass-choices-group
 glass-choices-panel
 glass-choices-pop-up
 glass-choices-toggle
 glass-choices-vertical-group
+history-context-menu
 history-empty
+history-filter-panel
 history-populated
 license
 main-failure
@@ -34,10 +51,12 @@ main-menu-window
 main-success
 main-uploading
 notices
+permission-alert
 photos-empty
 resize-or-crop-crop
 resize-or-crop-limit
 resize-or-crop-resize
+resize-preset-panel
 settings-capture
 settings-capture-tab-view
 settings-drawing
@@ -46,6 +65,12 @@ settings-general
 settings-general-tab-view
 settings-upload
 settings-upload-tab-view
+size-popover
+status-item-button
 status-item-menu
 text-style
 toolbox
+top-bar
+upload-context-menu
+upload-destinations-panel
+zoom-panel

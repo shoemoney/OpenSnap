@@ -24,6 +24,9 @@ import AppKit
 
 @MainActor
 enum SpokenScript {
+    /// The one line of a script whose window exposes no element at all: the finding is that a screen reader has nothing to land on.
+    static let nothingToRead = "(no accessibility elements: a screen reader finds nothing here)"
+
     /// The surface name as a file name: lower case, letters and digits, single hyphens.
     static func slug(_ surface: String) -> String {
         var out = "", pendingHyphen = false
@@ -137,7 +140,9 @@ enum SpokenScript {
     static func render(_ tree: AXTree.Tree, surface: String, suite: String, windowLine: Bool = true) -> String {
         var out = header(surface, suite: suite, count: tree.nodes.count)
         if windowLine { out.append(line(0, tree.window.title.isEmpty ? "window" : "\(tree.window.title), window")) }
-        out += lines(for: tree)
+        let body = lines(for: tree)
+        out += body
+        if body.isEmpty { out.append(line(0, SpokenScript.nothingToRead)) }
         out.append("```")
         return out.joined(separator: "\n") + "\n"
     }
