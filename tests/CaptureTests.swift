@@ -829,21 +829,31 @@ private enum CaptureTests {
         try expect(sheet.titleLabel.font == T.font(.title) && sheet.messageLabel.font == T.font(.body), "title is the title token, body is the 20 pt body token")
         try expect([sheet.settingsButton, sheet.cancelButton].allSatisfy { $0.font == T.font(.body) && ($0.font?.pointSize ?? 0) >= 20 }, "buttons are 20 pt")
         guard let content = sheet.panel.contentView else { throw NSError(domain: "CaptureTests", code: -2) }
-        let views: [NSView] = [sheet.titleLabel, sheet.messageLabel, sheet.settingsButton, sheet.cancelButton]
-        for view in views {
-            try expect(content.bounds.contains(view.frame), "every control sits inside the sheet: \(view.frame) in \(content.bounds)")
+        // OSN-071 r3: the buttons are the alert's own 36 pt glass capsules on one action plate, not flat system push buttons.
+        let buttons = [sheet.settingsButton, sheet.cancelButton]
+        try expect(buttons.allSatisfy { type(of: $0) == GlassChoiceButton.self && $0.isDescendant(of: sheet.actionPlate) },
+                   "both buttons are GlassChoiceButtons on the action plate")
+        try expect(sheet.actionPlate.superview === content && sheet.actionPlate.identifier?.rawValue == "PermissionSheetActionsPlate", "the plate sits on the sheet")
+        try expect(buttons.allSatisfy { $0.frame.height == DesignTokens.Size.control }, "the capsules are \(DesignTokens.Size.control) pt high: \(buttons.map(\.frame.height))")
+        try expect(sheet.settingsButton.isPrimary && !sheet.cancelButton.isPrimary, "Open System Settings is the one tinted (default) button")
+        func frame(_ view: NSView) -> NSRect { content.convert(view.bounds, from: view) }
+        let views: [(String, NSRect)] = [("title", sheet.titleLabel.frame), ("message", sheet.messageLabel.frame), ("plate", sheet.actionPlate.frame),
+                                         ("settings", frame(sheet.settingsButton)), ("cancel", frame(sheet.cancelButton))]
+        for (name, rect) in views {
+            try expect(content.bounds.contains(rect), "every control sits inside the sheet: \(name) \(rect) in \(content.bounds)")
         }
         let inner = sheet.messageLabel.frame.width
         for label in [sheet.titleLabel, sheet.messageLabel] {
             let needed = label.cell?.cellSize(forBounds: NSRect(x: 0, y: 0, width: inner, height: .greatestFiniteMagnitude)).height ?? 0
             try expect(label.frame.height >= needed - 0.5, "label '\(label.stringValue.prefix(14))…' is tall enough for all its lines")
         }
-        for button in [sheet.settingsButton, sheet.cancelButton] {
+        for button in buttons {
             let text = (button.title as NSString).size(withAttributes: [.font: T.font(.body)]).width
             try expect(button.frame.width >= text && button.frame.height >= DesignTokens.Size.control, "button '\(button.title)' fits its title and the 36 pt control height")
         }
-        try expect(!sheet.cancelButton.frame.intersects(sheet.settingsButton.frame), "the two buttons do not overlap")
-        try expect(sheet.cancelButton.frame.maxX < sheet.settingsButton.frame.minX, "Cancel sits left of the default button")
+        try expect(!frame(sheet.cancelButton).intersects(frame(sheet.settingsButton)), "the two buttons do not overlap")
+        try expect(frame(sheet.cancelButton).maxX < frame(sheet.settingsButton).minX, "Cancel sits left of the default button")
+        try expect(sheet.panel.backgroundColor == DesignTokens.Palette.Surface.sheet, "the plate is the app's neutral sheet grey, not the wallpaper-tinted system window colour")
         try expect(!sheet.panel.isVisible, "building the sheet shows nothing")
     }
 

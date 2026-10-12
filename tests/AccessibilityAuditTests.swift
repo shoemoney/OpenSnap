@@ -349,6 +349,17 @@ private enum AccessibilityAuditTests {
                        "Photos: with nothing chosen the grid itself holds the explanation and both source buttons (F-J1-013)")
                 expect(folderButton.title == "Choose Pictures Folder…" && libraryButton.title == "Choose from Photos Library…", "Photos: the buttons say what they do")
             } else { expect(false, "Photos: the empty state and its buttons were found") }
+            // OSN-071 r3: every Photos button is a 36 pt glass capsule on an action plate (the alert's), not a flat system push button.
+            let photoButtons: [(String, GlassChoiceButton)] = [("Choose Pictures Folder…", photos.folderButton), ("Choose from Photos Library…", photos.libraryButton),
+                                                              ("Open Selected Photo", photos.openButton), ("Close", photos.closeButton)]
+            for (title, button) in photoButtons {
+                var plate: NSView? = button.superview
+                while let candidate = plate, !(candidate is GlassSurfaceView) { plate = candidate.superview }
+                expect(type(of: button) == GlassChoiceButton.self && plate != nil && plate === (title.hasPrefix("Choose") ? photos.sourcesPlate : photos.actionsPlate),
+                       "Photos: '\(title)' is a GlassChoiceButton on its action plate")
+                expect(button.title == title && button.frame.height == DesignTokens.Size.control, "Photos: '\(title)' is \(DesignTokens.Size.control) pt high (\(button.frame.height))")
+            }
+            expect(photos.openButton.isPrimary && photoPanel.defaultButtonCell === photos.openButton.cell && photos.closeButton.keyEquivalent == "\u{1b}", "Photos: Open is the tinted default (Return) button, Close answers Escape")
         }
         photos.shutdown()
 
@@ -378,6 +389,16 @@ private enum AccessibilityAuditTests {
         expect(accessoryViews.compactMap { $0 as? NSPopUpButton }.first?.itemTitles == ["PNG", "JPG", "PDF", "TIFF", "SVG"], "Export accessory: the format popup lists PNG, JPG, PDF, TIFF, SVG")
         expect(accessoryViews.compactMap { $0 as? NSSlider }.isEmpty, "Export accessory: there is no quality slider")
         expect(accessoryViews.compactMap { $0 as? NSTextField }.contains { $0.stringValue == "JPG quality 75%" }, "Export accessory: the quality row reads JPG quality 75%")
+        // OSN-071 r3: the JPG quality line belongs to JPG (hidden while PNG is chosen, no control to explain), and "Format:" takes the colon of its neighbours.
+        func qualityLine(_ accessory: ExportAccessory) -> NSTextField? { everyView(accessory.view).compactMap { $0 as? NSTextField }.first { $0.stringValue.hasPrefix("JPG quality") } }
+        expect(qualityLine(accessory)?.isHidden == false, "Export accessory: the quality line shows while JPG is chosen")
+        accessory.format = "png"
+        expect(qualityLine(accessory)?.isHidden == true, "Export accessory: the quality line is hidden while PNG is chosen")
+        accessory.format = "jpeg"
+        expect(qualityLine(accessory)?.isHidden == false, "Export accessory: the quality line is back for JPG")
+        let accessoryLabels = everyView(accessory.view).compactMap { ($0 as? NSTextField)?.stringValue }.filter { !$0.isEmpty }
+        expect(accessoryLabels.contains("Format:") && !accessoryLabels.contains("Format") && accessoryLabels.contains { $0.hasPrefix("Dimensions:") } && accessoryLabels.contains { $0.hasPrefix("Encoded size:") },
+               "Export accessory: Format has the colon the other labels have: \(accessoryLabels)")
         let field = NSTextField(string: "6"); field.frame = NSRect(x: 0, y: 0, width: 400, height: 40); field.setAccessibilityLabel("Number of copies")
         let alerts: [(String, AppAlert)] = [
             ("one button", AppAlert(title: "Saved", message: "The drawing was saved.")),
@@ -594,18 +615,9 @@ private enum AccessibilityAuditTests {
         let arrow = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0, windowNumber: settings.window.windowNumber, context: nil,
                                      characters: "\u{F703}", charactersIgnoringModifiers: "\u{F703}", isARepeat: false, keyCode: 124)!
         strip.keyDown(with: arrow)
-        expect(strip.showsKeyboardFocus && strip.focusRingType == .exterior, "Settings: an arrow key puts keyboard focus on the strip and draws the ring")
-        expect(strip.focusRingMaskBounds.width > 0 && strip.focusRingMaskBounds.height > 0, "Settings: the strip's focus-ring mask has an area")
-        let bitmap = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 400, pixelsHigh: 100, bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
-                                      colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
-        NSGraphicsContext.saveGraphicsState()
-        NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmap)
-        NSColor.black.setFill()
-        strip.drawFocusRingMask()
-        NSGraphicsContext.restoreGraphicsState()
-        var painted = false
-        for x in 0..<bitmap.pixelsWide where !painted { for y in 0..<bitmap.pixelsHigh where bitmap.colorAt(x: x, y: y)?.alphaComponent ?? 0 > 0 { painted = true; break } }
-        expect(painted, "Settings: the strip's focus-ring mask paints a shape")
+        expect(strip.showsKeyboardFocus && strip.focusRingType == .none && !strip.tokenRing.layer.isHidden, "Settings: an arrow key puts keyboard focus on the strip and draws the token ring")
+        expect(strip.tokenRing.target().width > 0 && strip.tokenRing.target().height > 0, "Settings: the strip's focus ring has an area")
+        expect(!(strip.tokenRing.layer.path?.boundingBox.isEmpty ?? true) && strip.tokenRing.layer.lineWidth == StateStyles.focusRingWidth, "Settings: the strip draws a token-ring outline around the tab")
     }
     // MARK: G. Labels, status roles and the "Error:" prefix (OSN-062 steps 1 and 4, in the files outside the editor)
 

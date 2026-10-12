@@ -334,6 +334,13 @@ private enum AppAlertTests {
         for alert in [AppAlert(title: "Save your drawing?", message: "This document has changes that have not been saved.", buttons: discardButtons),
                       AppAlert(title: "Rename", message: "Document name", buttons: [.init(title: "OK"), .init(title: "Cancel", role: .cancel)], accessoryView: field)] {
             let content = alert.panel.contentView!
+            // OSN-071 r3: the plate is the app's own neutral grey. A system window colour takes the wallpaper's tint (rgb 41,30,30, a warm brown, in dark).
+            expect(alert.panel.backgroundColor == DesignTokens.Palette.Surface.sheet, "The alert plate is the sheet grey, not the system window colour (\(alert.title))")
+            for (name, appearance) in ContrastProbe.appearances {
+                let plate = DesignTokens.Palette.rgb(DesignTokens.Palette.resolve(alert.panel.backgroundColor, for: appearance)).rgb
+                let spread = max(plate.red, plate.green, plate.blue) - min(plate.red, plate.green, plate.blue)
+                expect(spread * 255 <= 4, "The alert plate has no colour cast in \(name): channel spread \(spread * 255)/255 (\(alert.title))")
+            }
             for (name, appearance) in ContrastProbe.appearances {
                 let reading = ContrastProbe.measure(content, appearance: appearance, plateAt: NSPoint(x: 3, y: 3),
                                                     textFrames: [alert.titleLabel.frame, alert.messageLabel.frame], plate: alert.panel.backgroundColor)

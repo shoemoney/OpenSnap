@@ -58,10 +58,10 @@ final class PublishingDestinationsView: NSView {
     let formResult: DestinationStatusRow
 
     // Form controls (internal so tests can fill them in like a user would).
-    let nameField = NSTextField(), endpointField = NSTextField(), usernameField = NSTextField()
-    let passwordField = NSSecureTextField(), folderField = NSTextField(), publicField = NSTextField()
-    let aliasField = NSTextField(), remoteRootField = NSTextField(), portField = NSTextField()
-    let regionField = NSTextField(), bucketField = NSTextField(), profileField = NSTextField()
+    let nameField = TokenTextField(), endpointField = TokenTextField(), usernameField = TokenTextField()
+    let passwordField = TokenSecureTextField(), folderField = TokenTextField(), publicField = TokenTextField()
+    let aliasField = TokenTextField(), remoteRootField = TokenTextField(), portField = TokenTextField()
+    let regionField = TokenTextField(), bucketField = TokenTextField(), profileField = TokenTextField()
     /// The Protocol and Source choices: glass pop-ups. Each keeps `NSPopUpButton` as the model (items, selection, the action `formChanged`)
     /// and opens every way, mouse, keys and VoiceOver included, as one glass panel; they sit on plates in a hover-fill cell.
     let protocolPopup = DestinationChoicePopUp(frame: .zero, pullsDown: false)

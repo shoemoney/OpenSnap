@@ -8,6 +8,12 @@
 #if GLASS_CHROME_TESTS
 import AppKit
 
+/// The selected fill's alpha for the appearance a view is drawn under: 0.20 in light, 0.34 in dark (0.32 / 0.40 under Increase Contrast).
+@MainActor
+private func selectedAlpha(of view: NSView, hc: Bool = false) -> CGFloat {
+    DesignTokens.Palette.resolve(DesignTokens.Palette.State.selectedFill, arm: StateStyles.arm(for: view.effectiveAppearance, highContrast: hc)).alphaComponent
+}
+
 @MainActor
 private final class ActionTarget: NSObject {
     var hits: [String] = []
@@ -306,7 +312,7 @@ private enum GlassChromeTests {
         for (name, appearance) in [("aqua", NSAppearance.Name.aqua), ("darkAqua", .darkAqua)] {
             tinted.appearance = NSAppearance(named: appearance)
             let arm = DesignTokens.Palette.arm(for: tinted.effectiveAppearance)
-            let blended = DesignTokens.Palette.blend(DesignTokens.Palette.resolve(DesignTokens.Palette.accent, arm: arm), alpha: 0.20, over: DesignTokens.Palette.resolve(DesignTokens.Palette.Surface.window, arm: arm))
+            let blended = DesignTokens.Palette.blend(DesignTokens.Palette.resolve(DesignTokens.Palette.accent, arm: arm), alpha: DesignTokens.Palette.resolve(DesignTokens.Palette.State.selectedFill, arm: arm).alphaComponent, over: DesignTokens.Palette.resolve(DesignTokens.Palette.Surface.window, arm: arm))
             let ratio = DesignTokens.Palette.contrastRatio(DesignTokens.Palette.resolve(tinted.contentTintColor ?? .clear, for: tinted.effectiveAppearance), blended)
             expect(ratio >= 4.5, "A selected glyph reads at \(ratio):1 on its blended accent fill in \(name)")
         }
@@ -341,16 +347,16 @@ private enum GlassChromeTests {
         fill.setHovered(false)
         expect(fill.plate.style == .none && fill.layer?.backgroundColor == nil, "Back to no fill")
         fill.state = .on
-        expect(abs((fill.plate.style.fill?.alphaComponent ?? 0) - 0.20) < 0.001 && fill.layer?.borderWidth == 1, "Selected is a 0.20 accent fill with a 1 pt border")
+        expect(abs((fill.plate.style.fill?.alphaComponent ?? 0) - selectedAlpha(of: fill)) < 0.001 && fill.layer?.borderWidth == 1, "Selected is a 0.20 accent fill with a 1 pt border")
         expect(sameColor(fill.plate.style.border, accentAqua) && sameColor(fill.plate.style.fill, accentAqua), "Both are the accent")
         fill.setHovered(true)
-        expect(abs((fill.plate.style.fill?.alphaComponent ?? 0) - 0.20) < 0.001, "Hover does not wash out a selected button")
+        expect(abs((fill.plate.style.fill?.alphaComponent ?? 0) - selectedAlpha(of: fill)) < 0.001, "Hover does not wash out a selected button")
         fill.highlight(true)
-        expect(abs((fill.plate.style.fill?.alphaComponent ?? 0) - 0.32) < 0.001, "Pressing a selected button deepens it")
+        expect(abs((fill.plate.style.fill?.alphaComponent ?? 0) - (selectedAlpha(of: fill) + StateStyles.selectedPressedBoost)) < 0.001, "Pressing a selected button deepens it")
         fill.highlight(false)
         fill.setHovered(false)
         fill.accessibility = contrast
-        expect(abs((fill.plate.style.fill?.alphaComponent ?? 0) - 0.32) < 0.001 && fill.layer?.borderWidth == 1, "Increase Contrast strengthens the selected fill")
+        expect(abs((fill.plate.style.fill?.alphaComponent ?? 0) - selectedAlpha(of: fill, hc: true)) < 0.001 && fill.layer?.borderWidth == 1, "Increase Contrast strengthens the selected fill")
         fill.accessibility = plain
         fill.state = .off
         expect(fill.layer?.borderWidth == 0 && fill.layer?.backgroundColor == nil, "Deselecting removes fill and border")
@@ -739,8 +745,9 @@ private enum GlassChromeTests {
             for (optionName, options) in [("plain", plain), ("increaseContrast", contrast), ("differentiate", differentiate)] {
                 let hc = options.increaseContrast, dwc = options.differentiateWithoutColor
                 let tag = "\(name)/\(optionName)"
-                let hover: CGFloat = hc ? 0.16 : 0.08, pressed: CGFloat = hc ? 0.28 : 0.16, selected: CGFloat = hc ? 0.32 : 0.20
+                let hover: CGFloat = hc ? 0.16 : 0.08, pressed: CGFloat = hc ? 0.28 : 0.16
                 let arm = StateStyles.arm(for: appearance, highContrast: hc)
+                let selected = DesignTokens.Palette.resolve(DesignTokens.Palette.State.selectedFill, arm: arm).alphaComponent
 
                 let tool = CommandButton(title: "", target: nil, action: nil)
                 tool.setButtonType(.toggle)
@@ -909,8 +916,8 @@ private enum GlassChromeTests {
         expect(presets[0].controlState == .pressed && abs((presets[0].commandStyle.fill?.alphaComponent ?? 0) - 0.16) < 0.004, "A pressed preset takes the command pressed fill")
         expect(abs((presets[0].plate.style.fill?.alphaComponent ?? 0) - 0.16) < 0.004, "...and its plate layer paints that")
         presets[0].highlight(false); presets[0].setHovered(false)
-        expect(abs((presets[2].commandStyle.fill?.alphaComponent ?? 0) - 0.20) < 0.004 && presets[2].commandStyle.border != nil, "The selected preset takes the command selected fill and border")
-        expect(abs((presets[2].plate.style.fill?.alphaComponent ?? 0) - 0.20) < 0.004 && presets[2].plate.style.borderWidth == 1 && presets[2].layer?.borderWidth == 1,
+        expect(abs((presets[2].commandStyle.fill?.alphaComponent ?? 0) - selectedAlpha(of: presets[2])) < 0.004 && presets[2].commandStyle.border != nil, "The selected preset takes the command selected fill and border")
+        expect(abs((presets[2].plate.style.fill?.alphaComponent ?? 0) - selectedAlpha(of: presets[2])) < 0.004 && presets[2].plate.style.borderWidth == 1 && presets[2].layer?.borderWidth == 1,
                "...painted on its own layer as a fill and a 1 pt border")
         expect(presets[2].glyphLength - presets[0].glyphLength >= 4, "The chosen preset also draws a longer stroke (\(presets[2].glyphLength) vs \(presets[0].glyphLength))")
         DisplayOptions.override = DisplayOptions(differentiateWithoutColor: true)
@@ -1070,7 +1077,7 @@ private enum GlassChromeTests {
         expect(toggle.state(ofSegment: 1) == .hover && toggle.state(ofSegment: 0) == .selected && abs(toggle.style(ofSegment: 1).fill!.alphaComponent - 0.08) < 0.004, "A hovered segment is label@0.08")
         toggle.setHoveredSegment(nil)
         expect(toggle.state(ofSegment: 1) == .rest && abs(toggle.style(ofSegment: 1).fill!.alphaComponent - 0.06) < 0.004, "An unselected segment rests on label@0.06")
-        expect(abs(toggle.style(ofSegment: 0).fill!.alphaComponent - 0.20) < 0.004 && toggle.style(ofSegment: 0).strongText, "The selected segment is accent@0.20")
+        expect(abs(toggle.style(ofSegment: 0).fill!.alphaComponent - selectedAlpha(of: toggle)) < 0.004 && toggle.style(ofSegment: 0).strongText, "The selected segment is accent@0.20")
         expect(toggle.textFont(forSegment: 0).pointSize == 20 && toggle.textFont(forSegment: 1).pointSize == 20, "Both titles are 20 pt")
         let selectedWeight = (toggle.textFont(forSegment: 0).fontDescriptor.object(forKey: .traits) as? [NSFontDescriptor.TraitKey: Any])?[.weight] as? CGFloat ?? 0
         let restWeight = (toggle.textFont(forSegment: 1).fontDescriptor.object(forKey: .traits) as? [NSFontDescriptor.TraitKey: Any])?[.weight] as? CGFloat ?? 0
@@ -1091,7 +1098,7 @@ private enum GlassChromeTests {
 
         // Display options.
         toggle.accessibility = contrast
-        expect(abs(toggle.style(ofSegment: 1).fill!.alphaComponent - 0.06) < 0.004 && toggle.style(ofSegment: 1).borderWidth == 1 && abs(toggle.style(ofSegment: 0).fill!.alphaComponent - 0.32) < 0.004,
+        expect(abs(toggle.style(ofSegment: 1).fill!.alphaComponent - 0.06) < 0.004 && toggle.style(ofSegment: 1).borderWidth == 1 && abs(toggle.style(ofSegment: 0).fill!.alphaComponent - selectedAlpha(of: toggle, hc: true)) < 0.004,
                "Increase Contrast outlines the unselected plate and strengthens the selected one; the unselected fill stays 0.06 so its label keeps its contrast")
         toggle.accessibility = differentiate
         expect(toggle.style(ofSegment: 0).strongText && toggle.style(ofSegment: 0).indicator && toggle.style(ofSegment: 0).borderWidth == 2 && !toggle.style(ofSegment: 1).indicator,
@@ -2609,7 +2616,7 @@ private enum GlassChromeTests {
         let brush = chrome.toolButtons["brush"]!
         brush.appearance = NSAppearance(named: .aqua)
         brush.state = .on
-        expect(brush.plate.isSelected && abs((brush.plate.style.fill?.alphaComponent ?? 0) - 0.20) < 0.001 && brush.layer?.borderWidth == 1, "\(label): the selected tool has a 0.20 accent fill and a 1 pt border")
+        expect(brush.plate.isSelected && abs((brush.plate.style.fill?.alphaComponent ?? 0) - selectedAlpha(of: brush)) < 0.001 && brush.layer?.borderWidth == 1, "\(label): the selected tool has a 0.20 accent fill and a 1 pt border")
         expect(brush.activeFamily == .solid, "\(label): the selected tool uses the solid family (not colour alone)")
         let selectedBlend = DesignTokens.Palette.blend(accentAqua, alpha: 0.20, over: DesignTokens.Palette.resolve(DesignTokens.Palette.Surface.window, arm: .aqua))
         expect(DesignTokens.Palette.contrastRatio(DesignTokens.Palette.resolve(brush.contentTintColor ?? .clear, for: brush.effectiveAppearance), selectedBlend) >= 4.5, "\(label): the selected glyph reads at 4.5:1 on its blended fill")
@@ -2730,7 +2737,7 @@ private enum GlassChromeTests {
         chrome.toolButtons["ellipse"]?.appearance = NSAppearance(named: .aqua)
         chrome.toolButtons["ellipse"]?.state = .on
         let tool = chrome.toolButtons["ellipse"]!
-        expect(abs((tool.plate.style.fill?.alphaComponent ?? 0) - 0.20) < 0.001 && tool.layer?.borderWidth == 1 && sameColor(tool.plate.style.border, accentAqua), "\(label): the selected tool is accent 0.20 with a 1 pt accent border")
+        expect(abs((tool.plate.style.fill?.alphaComponent ?? 0) - selectedAlpha(of: tool)) < 0.001 && tool.layer?.borderWidth == 1 && sameColor(tool.plate.style.border, accentAqua), "\(label): the selected tool is accent 0.20 with a 1 pt accent border")
         expect(saturated().count == 1, "\(label): selecting a tool adds no second saturated element")
         for view in owners { (view as? CommandButton)?.setHovered(true); (view as? ChromeFillCell)?.setHovered(true) }
         expect(saturated().count == 1 && owners.filter { plateOf($0)?.style.fill != nil }.count == owners.count, "\(label): hovering everything fills everything faintly but adds no saturated accent")
@@ -2803,16 +2810,16 @@ private enum GlassChromeTests {
         chrome.toolButtons["line"]?.state = .on
         let selected = chrome.toolButtons["line"]!
         selected.appearance = NSAppearance(named: .aqua)
-        expect(abs((selected.plate.style.fill?.alphaComponent ?? 0) - 0.20) < 0.001, "\(label): selected fill before Increase Contrast")
+        expect(abs((selected.plate.style.fill?.alphaComponent ?? 0) - selectedAlpha(of: selected)) < 0.001, "\(label): selected fill before Increase Contrast")
 
         chrome.accessibility = ChromeAccessibility(reduceTransparency: true, increaseContrast: true, reduceMotion: true)
         expect(abs((hovered.plate.style.fill?.alphaComponent ?? 0) - 0.16) < 0.001, "\(label): Increase Contrast strengthens the hover fill")
-        expect(abs((selected.plate.style.fill?.alphaComponent ?? 0) - 0.32) < 0.001 && selected.layer?.borderWidth == 1, "\(label): Increase Contrast strengthens the selected fill (0.32) and keeps its border")
+        expect(abs((selected.plate.style.fill?.alphaComponent ?? 0) - selectedAlpha(of: selected, hc: true)) < 0.001 && selected.layer?.borderWidth == 1, "\(label): Increase Contrast strengthens the selected fill (0.32) and keeps its border")
         expect(surfaces(rig).allSatisfy { $0.accessibility.increaseContrast && $0.accessibility.reduceMotion && $0.accessibility.reduceTransparency }, "\(label): every plate receives the injected options")
         expect(fillOwners(in: chrome).allSatisfy { plateOf($0)?.accessibility == chrome.accessibility }, "\(label): every button and cell receives them too")
         expect(hovered.plate.lastAnimationDuration == 0, "\(label): Reduce Motion reaches the fills")
         chrome.accessibility = .none
-        expect(abs((hovered.plate.style.fill?.alphaComponent ?? 0) - 0.08) < 0.001 && abs((selected.plate.style.fill?.alphaComponent ?? 0) - 0.20) < 0.001, "\(label): clearing the options restores everything")
+        expect(abs((hovered.plate.style.fill?.alphaComponent ?? 0) - 0.08) < 0.001 && abs((selected.plate.style.fill?.alphaComponent ?? 0) - selectedAlpha(of: selected)) < 0.001, "\(label): clearing the options restores everything")
         hovered.setHovered(false)
         chrome.toolButtons["line"]?.state = .off
 
