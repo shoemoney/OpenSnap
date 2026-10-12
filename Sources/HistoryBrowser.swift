@@ -689,6 +689,7 @@ final class HistoryBrowser: NSWindowController, NSCollectionViewDataSource,
             if help != Action.deleteRemote.title || AppToolTip.text(for:delete) != nil { AppToolTip.setText(help,for:delete) }
         }
         status.stringValue = transientStatus ?? Self.statusText(shown:visibleItems.count,total:items.count,selected:selected.count)
+        status.setAccessibilityValue(status.stringValue.replacingOccurrences(of:" · ",with:", "))
         updateEmptyState()
         if detailsCollapsed != visibleItems.isEmpty { detailsCollapsed = visibleItems.isEmpty; applyDetailsConstraints() }
         let missingCount = selected.filter(\.missing).count

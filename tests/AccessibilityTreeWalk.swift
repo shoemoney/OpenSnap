@@ -211,7 +211,7 @@ enum AXTree {
                 }
                 let index = tree.nodes.count
                 tree.nodes.append(Node(element: child, role: child.accessibilityRole(), label: Self.name(of: child), title: Self.title(of: child), axDescription: Self.description(of: child),
-                                       value: child.accessibilityValue(),
+                                       value: ((child as? NSCell)?.controlView as? NSTextField)?.accessibilityValue() ?? child.accessibilityValue(),   // a text field's cell speaks what its control says
                                        enabled: child.isAccessibilityEnabled(), depth: depth,
                                        help: child.accessibilityHelp().flatMap { $0.isEmpty ? nil : $0 }, subrole: child.accessibilitySubrole(),
                                        identifier: child.accessibilityIdentifier() ?? "", frame: child.accessibilityFrame(), selected: child.isAccessibilitySelected(),

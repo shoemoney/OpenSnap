@@ -2151,7 +2151,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         let fullStatus = keepingAnnotations ? "Frame preview · Snap Frame replaces the picture and keeps your drawing" : "Frame: position the window, then Snap"
         status.stringValue = frameStatusHint
         AppToolTip.setText(fullStatus, for: status, mirrorsToAccessibility: false)
-        status.spokenValue = fullStatus; status.setAccessibilityHelp(fullStatus)
+        status.spokenValue = fullStatus; status.setAccessibilityHelp(nil)   // the spoken value is the whole sentence; a hint would only say it again
     }
     @objc func cancelFrame() {
         guard !frameCaptureInProgress else { return }

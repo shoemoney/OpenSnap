@@ -297,7 +297,8 @@ class CommandButton: OriginalActionButton, ChromeFillable, FocusRingSuppressible
 
     override func accessibilityLabel() -> String? {
         if let explicitAccessibilityLabel { return explicitAccessibilityLabel }
-        return title.isEmpty ? super.accessibilityLabel() : title
+        // A title that separates its parts with a middle dot ("SFTP · host") is read with a pause instead of "dot".
+        return title.isEmpty ? super.accessibilityLabel() : title.replacingOccurrences(of: " · ", with: ", ")
     }
 
     // Symbol artwork carries alignment insets that make the frame outgrow the surface's constraints; the glass is the bezel here.

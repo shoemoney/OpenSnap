@@ -841,8 +841,8 @@ extension AppSafetyTests {
                        "The Frame hint '\(app.status.stringValue)' fits whole at \(Int(width)) wide (\(measured) vs \(app.status.frame.width))")
             try expect(app.status.stringValue == shortHint, "The Frame status shows the short hint: \(app.status.stringValue)")
             try expect(AppToolTip.text(for: app.status) == fullHint, "The full sentence is the Frame status tooltip: \(AppToolTip.text(for: app.status) ?? "nil")")
-            try expect(app.status.accessibilityValue() == fullHint && app.status.accessibilityHelp() == fullHint,
-                       "The full sentence is the Frame status accessibility value and help: \(String(describing: app.status.accessibilityValue())) / \(String(describing: app.status.accessibilityHelp())) / \(fullHint)")
+            try expect((app.status.accessibilityValue() as? String) == fullHint.replacingOccurrences(of: " · ", with: ", ") && app.status.accessibilityHelp() == nil,
+                       "The full sentence is the Frame status accessibility value, with no hint repeating it: \(String(describing: app.status.accessibilityValue())) / \(String(describing: app.status.accessibilityHelp())) / \(fullHint)")
         }
         try expect((app.status.accessibilityValue() as? String) == app.status.stringValue.replacingOccurrences(of: " · ", with: ", ") && app.status.accessibilityHelp() == nil,
                    "Leaving Frame hands the status its own accessibility value back")
