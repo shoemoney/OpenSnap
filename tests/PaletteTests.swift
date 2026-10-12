@@ -100,7 +100,7 @@ private enum PaletteTests {
         }
         for arm in [P.Arm.highContrastAqua, .highContrastDarkAqua] {
             try expect(abs(alpha(P.State.hover, arm) - 0.16) < 0.005 && abs(alpha(P.State.pressed, arm) - 0.28) < 0.005, "hover 0.16, pressed 0.28 in \(arm)")
-            try expect(abs(alpha(P.State.selectedFill, arm) - (arm == .highContrastDarkAqua ? 0.40 : 0.32)) < 0.005, "selected fill 0.32 light, 0.40 dark under Increase Contrast in \(arm)")
+            try expect(abs(alpha(P.State.selectedFill, arm) - (arm == .highContrastDarkAqua ? 0.35 : 0.32)) < 0.005, "selected fill 0.32 light, 0.35 dark under Increase Contrast in \(arm)")
             try expect(abs(alpha(P.Overlay.plateFill, arm) - 0.92) < 0.005, "plate 0.92 in \(arm)")
         }
         try expect(P.resolve(P.Overlay.hudFill, arm: .aqua) == P.resolve(P.Overlay.hudFill, arm: .darkAqua), "overlays are fixed across light and dark")

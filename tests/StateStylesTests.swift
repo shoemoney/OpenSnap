@@ -57,7 +57,7 @@ private enum StateStylesTests {
                             StateStyles.command(state, primary: false, focused: focused, highContrast: hc, differentiate: dwc, selected: selected, appearance: appearance)
                         }
                         let label = "\(name) hc=\(hc) dwc=\(dwc) focus=\(focused)"
-                        let hoverAlpha: CGFloat = hc ? 0.16 : 0.08, pressedAlpha: CGFloat = hc ? 0.28 : 0.16, selectedAlpha: CGFloat = hc ? (name == "darkAqua" ? 0.40 : 0.32) : (name == "darkAqua" ? 0.34 : 0.20)
+                        let hoverAlpha: CGFloat = hc ? 0.16 : 0.08, pressedAlpha: CGFloat = hc ? 0.28 : 0.16, selectedAlpha: CGFloat = hc ? (name == "darkAqua" ? 0.35 : 0.32) : (name == "darkAqua" ? 0.34 : 0.20)
                         let acc = accent(appearance, highContrast: hc)
 
                         let rest = style(.rest)
@@ -258,7 +258,7 @@ private enum StateStylesTests {
                 try expect((style(.rest).border != nil && style(.rest).borderWidth == 1) == hc, "Increase Contrast adds a 1 pt outline to the unselected segment and nothing else changes: \(label)")
                 try expect(abs(alpha(style(.hover).fill) - (hc ? 0.16 : 0.08)) < 0.004 && abs(alpha(style(.pressed).fill) - (hc ? 0.28 : 0.16)) < 0.004, "hover .08 and pressed .16 (HC .16, .28): \(label)")
                 let selected = style(.selected)
-                try expect(abs(alpha(selected.fill) - (hc ? (name == "darkAqua" ? 0.40 : 0.32) : (name == "darkAqua" ? 0.34 : 0.20))) < 0.004 && selected.strongText && selected.border != nil, "the selected segment is the accent tint (0.20 light, 0.34 dark; 0.32 / 0.40 under Increase Contrast) with bodyStrong text: \(label)")
+                try expect(abs(alpha(selected.fill) - (hc ? (name == "darkAqua" ? 0.35 : 0.32) : (name == "darkAqua" ? 0.34 : 0.20))) < 0.004 && selected.strongText && selected.border != nil, "the selected segment is the accent tint (0.20 light, 0.34 dark; 0.32 / 0.35 under Increase Contrast) with bodyStrong text: \(label)")
                 let marked = style(.selected, dwc: true), unmarked = style(.selected)
                 try expect(marked.indicator && marked.strongText && marked.borderWidth == 2 && marked.border != nil, "Differentiate adds the capsule and a 2 pt outline on top of the weight: \(label)")
                 try expect(!unmarked.indicator && unmarked.borderWidth == 1, "without Differentiate the selected segment keeps its 1 pt accent border and no capsule: \(label)")

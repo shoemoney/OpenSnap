@@ -170,11 +170,12 @@ enum DesignTokens {
             static let hover = contrast("state.hover", normal: NSColor.labelColor.withAlphaComponent(0.08), high: NSColor.labelColor.withAlphaComponent(0.16))
             static let pressed = contrast("state.pressed", normal: NSColor.labelColor.withAlphaComponent(0.16), high: NSColor.labelColor.withAlphaComponent(0.28))
             /// High contrast adds a 1 pt accent border at the call site; the fill alone only strengthens. In dark the accent needs more weight to
-            /// read as the accent: at 0.20 a yellow accent over the dark window came out olive (rgb 98,89,64), so the dark arm is 0.34 (0.40 under
-            /// Increase Contrast) and the fill stays a saturated accent tint, still light enough to keep text at 4.5:1.
+            /// read as the accent: at 0.20 a yellow accent over the dark window came out olive (rgb 98,89,64), so the dark arm is 0.34. Under
+            /// Increase Contrast the dark arm is 0.35: at 0.40 the fill on the lighter contrast plates reached rgb 140,117,55 behind white text
+            /// (4.3:1, below the 4.5:1 floor); 0.35 keeps it at least as strong as the plain dark arm and 2.4:1 against the window.
             static let selectedFill = role("state.selected.fill",
                                            aqua: NSColor.controlAccentColor.withAlphaComponent(0.20), darkAqua: NSColor.controlAccentColor.withAlphaComponent(0.34),
-                                           highContrastAqua: NSColor.controlAccentColor.withAlphaComponent(0.32), highContrastDarkAqua: NSColor.controlAccentColor.withAlphaComponent(0.40))
+                                           highContrastAqua: NSColor.controlAccentColor.withAlphaComponent(0.32), highContrastDarkAqua: NSColor.controlAccentColor.withAlphaComponent(0.35))
             static let primaryFill = system("state.primary.fill", NSColor.controlAccentColor.withAlphaComponent(1))
         }
 

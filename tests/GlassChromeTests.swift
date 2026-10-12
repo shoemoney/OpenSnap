@@ -8,7 +8,7 @@
 #if GLASS_CHROME_TESTS
 import AppKit
 
-/// The selected fill's alpha for the appearance a view is drawn under: 0.20 in light, 0.34 in dark (0.32 / 0.40 under Increase Contrast).
+/// The selected fill's alpha for the appearance a view is drawn under: 0.20 in light, 0.34 in dark (0.32 / 0.35 under Increase Contrast).
 @MainActor
 private func selectedAlpha(of view: NSView, hc: Bool = false) -> CGFloat {
     DesignTokens.Palette.resolve(DesignTokens.Palette.State.selectedFill, arm: StateStyles.arm(for: view.effectiveAppearance, highContrast: hc)).alphaComponent
