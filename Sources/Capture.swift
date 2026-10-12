@@ -339,8 +339,10 @@ final class ScreenRecordingPermissionSheet: NSObject {
     let panel: NSPanel
     let titleLabel: NSTextField
     let messageLabel: NSTextField
-    let settingsButton: NSButton
-    let cancelButton: NSButton
+    /// The sheet's buttons are the alert's own: 36 pt glass capsules on an action plate (`AppAlert`).
+    let settingsButton: GlassChoiceButton
+    let cancelButton: GlassChoiceButton
+    private(set) var actionPlate: GlassSurfaceView!
     private let openURL: @MainActor (URL) -> Void
     private let onFinish: @MainActor () -> Void
     private weak var host: NSWindow?
@@ -361,17 +363,19 @@ final class ScreenRecordingPermissionSheet: NSObject {
         }
         titleLabel = label(Self.title, .title)
         messageLabel = label(Self.message, .body)
-        settingsButton = NSButton(title: Self.settingsButtonTitle, target: nil, action: nil)
-        cancelButton = NSButton(title: Self.cancelButtonTitle, target: nil, action: nil)
+        settingsButton = GlassChoiceButton(title: Self.settingsButtonTitle, kind: .command, layout: .segment)
+        cancelButton = GlassChoiceButton(title: Self.cancelButtonTitle, kind: .command, layout: .segment)
         panel = NSPanel(contentRect: .zero, styleMask: [.titled], backing: .buffered, defer: true)
         super.init()
         for button in [settingsButton, cancelButton] {
-            button.bezelStyle = .push
             button.target = self
-            Typography.apply(.body, to: button)
-            button.sizeToFit()
-            button.frame.size.height = max(button.frame.height, DesignTokens.Size.control)
+            button.accessibility = .live
+            button.minimumWidth = 96
+            button.frame.size = button.intrinsicContentSize
         }
+        settingsButton.isPrimary = true
+        actionPlate = GlassChrome.plate([cancelButton, settingsButton], identifier: "PermissionSheetActionsPlate", accessibility: .live)
+        actionPlate.layoutSubtreeIfNeeded(); actionPlate.frame.size = actionPlate.fittingSize
         settingsButton.action = #selector(openSettings)
         settingsButton.keyEquivalent = "\r"
         cancelButton.action = #selector(cancel)
@@ -382,7 +386,7 @@ final class ScreenRecordingPermissionSheet: NSObject {
         func height(_ field: NSTextField) -> CGFloat {
             ceil(field.cell?.cellSize(forBounds: NSRect(x: 0, y: 0, width: inner, height: .greatestFiniteMagnitude)).height ?? 0)
         }
-        let buttonHeight = max(settingsButton.frame.height, cancelButton.frame.height)
+        let buttonHeight = actionPlate.frame.height
         let total = inset + height(titleLabel) + gap + height(messageLabel) + gap + buttonHeight + inset
         let content = NSView(frame: NSRect(x: 0, y: 0, width: width, height: total))
         // Top-down layout in AppKit's bottom-up coordinates.
@@ -390,9 +394,9 @@ final class ScreenRecordingPermissionSheet: NSObject {
         titleLabel.frame = NSRect(x: inset, y: y, width: inner, height: height(titleLabel))
         y -= gap + height(messageLabel)
         messageLabel.frame = NSRect(x: inset, y: y, width: inner, height: height(messageLabel))
-        settingsButton.frame.origin = NSPoint(x: width - inset - settingsButton.frame.width, y: inset)
-        cancelButton.frame.origin = NSPoint(x: settingsButton.frame.minX - DesignTokens.Space.s3 - cancelButton.frame.width, y: inset)
-        for view in [titleLabel, messageLabel, settingsButton, cancelButton] { content.addSubview(view) }
+        actionPlate.frame.origin = NSPoint(x: width - inset - actionPlate.frame.width, y: inset)
+        for view in [titleLabel, messageLabel, actionPlate!] { content.addSubview(view) }
+        panel.backgroundColor = DesignTokens.Palette.Surface.sheet
         panel.title = "Screen Recording"
         panel.isReleasedWhenClosed = false
         let size = content.frame.size // Assigning the content view resizes it to the (still empty) window.

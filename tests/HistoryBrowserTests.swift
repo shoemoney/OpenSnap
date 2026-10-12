@@ -151,9 +151,14 @@ struct HistoryBrowserTests {
                     try expect(browser.sections.map(\.title).prefix(2) == ["Today","Yesterday"],"Original day headers")
                     try expect(browser.sections.count == 3 && browser.sections[2].day == calendar.startOfDay(for:old.date),"Older date group")
                     try expect(browser.visibleItems.map(\.id) == [b.id,a.id,yesterday.id,old.id],"UI timestamp/UUID sorting changes core insertion order")
+                    // OSN-071 r3: dates can be edited or imported, so the supplied order is not always newest first; the days still run newest first
+                    // ("Thursday, October 8" sat above "Today"), and within a day the supplied order is kept.
                     browser.update(items:[a,old,b,yesterday])
-                    try expect(browser.visibleItems.map(\.id) == [a.id,old.id,b.id,yesterday.id],"Display must preserve supplied order even with nonmonotone dates")
-                    try expect(browser.sections.count == 4,"Consecutive calendar groups were globally reordered")
+                    try expect(browser.visibleItems.map(\.id) == [a.id,b.id,yesterday.id,old.id],"Days run newest first, the supplied order kept inside a day: \(browser.visibleItems.map(\.name))")
+                    try expect(browser.sections.count == 3 && browser.sections.map(\.day) == browser.sections.map(\.day).sorted(by:>),"One section per day, newest day first")
+                    try expect(browser.sections.map(\.title).prefix(2) == ["Today","Yesterday"],"Today heads the list however the items arrive")
+                    browser.update(items:[old,yesterday,a])
+                    try expect(browser.sections.map(\.title).first == "Today" && browser.visibleItems.map(\.id) == [a.id,yesterday.id,old.id],"An oldest-first feed still lists Today first")
                 }
             }),
             ("Original action filters use exact supplied core strings", {
@@ -201,7 +206,9 @@ struct HistoryBrowserTests {
                                           (.yesterday,["AfterMidnight","BeforeLastSecond"]),
                                           (.last48,values.filter { !["48Exact","48Before","DistantFuture","BeyondFuture"].contains($0.name) }.map(\.name))] {
                         browser.setFilters(category:.all,date:filter)
-                        try expect(browser.visibleItems.map(\.name) == names,"Calendar range \(filter)")
+                        // Days run newest first, so only the set (and the day order) is compared, not the feed order.
+                        try expect(Set(browser.visibleItems.map(\.name)) == Set(names) && browser.visibleItems.count == names.count,"Calendar range \(filter)")
+                        try expect(browser.sections.map(\.day) == browser.sections.map(\.day).sorted(by:>),"Calendar range \(filter) lists the newest day first")
                     }
                     let calendarDay = [dated("TodayStart",todayStart),dated("JustBeforeToday",todayStart.addingTimeInterval(-0.5)),dated("Midday",now),dated("TomorrowStart",calendar.date(byAdding:.day,value:1,to:todayStart)!)]
                     browser.update(items:calendarDay); browser.setFilters(category:.all,date:.today)
@@ -222,6 +229,10 @@ struct HistoryBrowserTests {
                     try expect(outer is GlassSurfaceView && abs(outer.frame.height - datePlate.frame.height) < 0.5,
                                "The search control is as tall as the date plate: \(outer.frame.height) vs \(datePlate.frame.height)")
                     try expect(field.frame.height >= GlassChoiceButton.height - 0.5, "The field itself is a full control high (\(field.frame.height))")
+                    // OSN-071 r3: the field rings itself with the token ring when it takes keyboard focus (it drew none at all).
+                    let ringed = try (field as? TokenFocusRinged).unwrap("the search field draws the token ring")
+                    try expect(field.focusRingType == .none && ringed.tokenRing.layer.isHidden, "No ring until the field has focus")
+                    try expect(browser.window!.makeFirstResponder(field) && !ringed.tokenRing.layer.isHidden, "Focusing the search field shows the token ring")
                     let cell = try (field.cell as? NSSearchFieldCell).unwrap("search cell")
                     let expected = ChromeIcons.resolve(.magnifyingGlass,family:.regular,pointSize:GlassChrome.Metrics.iconPointSize * 0.8).image
                     try expect(cell.searchButtonCell?.image != nil && cell.searchButtonCell?.image?.size == expected?.size,
@@ -265,7 +276,7 @@ struct HistoryBrowserTests {
                 clock = day(1); browser.update(items:[a])
                 try expect(browser.sections[0].title == "Yesterday","Unchanged timer catalog freezes relative dates")
             }),
-            ("All callbacks receive selected UUIDs in visual order", {
+            ("All callbacks receive selected UUIDs in visual order, newest day first", {
                 try browser { browser,_ in
                     let a = item("A",action:"Shared",link:true), b = item("B",-1,action:"Shared",link:true)
                     browser.update(items:[b,a]); browser.select(ids:[b.id,a.id])
@@ -275,7 +286,7 @@ struct HistoryBrowserTests {
                     browser.onRemove = callback; browser.onDeleteFiles = callback; browser.onDeleteRemote = callback
                     // Delete from Web removes one post at a time: off for two entries (its tooltip says why), yet an attempt still reaches the app, which explains in a sheet.
                     for action in HistoryBrowser.Action.allCases { try expect(browser.canPerform(action) != (action == .deleteRemote),"Action not enabled \(action)"); browser.perform(action) }
-                    try expect(calls.count == 7 && calls.allSatisfy { $0 == [b.id,a.id] },"Callbacks must use UUIDs in supplied visual order, not file locations")
+                    try expect(calls.count == 7 && calls.allSatisfy { $0 == [a.id,b.id] },"Callbacks must use UUIDs in visual order (newest day first), not file locations")
                     browser.select(ids:[]); browser.perform(.remove); try expect(calls.count == 7,"Empty selection callback")
                 }
             }),
@@ -602,7 +613,7 @@ struct HistoryBrowserTests {
                     try expect(tile.layer?.borderWidth == 0 && tile.checkBadge?.isHidden == true,"Hover adds no border and no badge")
                     cell.isSelected = true
                     let accent = DesignTokens.Palette.resolve(DesignTokens.Palette.accent,for:tile.effectiveAppearance)
-                    try expect(abs((fillAlpha() ?? 0) - 0.20) < 0.004 && abs((fillColor()?.blueComponent ?? 0) - accent.blueComponent) < 0.02,"A hovered selected tile keeps the 0.20 accent fill, not the hover wash")
+                    try expect(abs((fillAlpha() ?? 0) - DesignTokens.Palette.resolve(DesignTokens.Palette.State.selectedFill, arm: StateStyles.arm(for: tile.effectiveAppearance, highContrast: false)).alphaComponent) < 0.004 && abs((fillColor()?.blueComponent ?? 0) - accent.blueComponent) < 0.02,"A hovered selected tile keeps the selected accent fill, not the hover wash")
                     try expect(tile.checkBadge?.isHidden == false && tile.layer?.borderWidth == 2,"The check badge and border stay")
                     cell.isSelected = false
                     tile.mouseExited(with:NSEvent.mouseEvent(with:.mouseMoved,location:.zero,modifierFlags:[],timestamp:0,windowNumber:0,context:nil,eventNumber:0,clickCount:0,pressure:0)!)

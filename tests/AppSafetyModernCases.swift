@@ -1,6 +1,12 @@
 // Glass-chrome integration cases: the real AppDelegate launch, with ModernEditorChrome as the window content.
 #if APP_SAFETY_TESTS
 import AppKit
+
+/// The selected fill's alpha for the appearance a view is drawn under: 0.20 in light, 0.34 in dark (0.32 / 0.40 under Increase Contrast).
+@MainActor
+private func selectedAlpha(of view: NSView, hc: Bool = false) -> CGFloat {
+    DesignTokens.Palette.resolve(DesignTokens.Palette.State.selectedFill, arm: StateStyles.arm(for: view.effectiveAppearance, highContrast: hc)).alphaComponent
+}
 import UniformTypeIdentifiers
 
 extension AppSafetyTests {
@@ -175,17 +181,17 @@ extension AppSafetyTests {
         app.dragFormatToggle.appearance = NSAppearance(named: .aqua)
         app.setTool(.brush)
         let brush = try (app.toolButtons[.brush] as? CommandButton).unwrap("brush")
-        try expect(!brush.showsIndicator && abs((app.dragFormatToggle.style(ofSegment: 0).fill?.alphaComponent ?? 0) - 0.20) < 0.004, "Without options: no capsule, a 0.20 toggle fill")
+        try expect(!brush.showsIndicator && abs((app.dragFormatToggle.style(ofSegment: 0).fill?.alphaComponent ?? 0) - selectedAlpha(of: app.dragFormatToggle)) < 0.004, "Without options: no capsule, a 0.20 toggle fill")
         DisplayOptions.override = DisplayOptions(increaseContrast: true, differentiateWithoutColor: true)
         defer { DisplayOptions.override = nil }
         NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
         try expect(brush.showsIndicator && brush.indicatorLayer.frame.size == NSSize(width: 16, height: 3), "The selected tool shows the capsule, 3 pt tall under Increase Contrast")
-        try expect(abs((brush.plate.style.fill?.alphaComponent ?? 0) - 0.32) < 0.004, "Its fill is the strong 0.32")
+        try expect(abs((brush.plate.style.fill?.alphaComponent ?? 0) - selectedAlpha(of: brush, hc: true)) < 0.004, "Its fill is the strong 0.32")
         try expect(chrome.snapButton.layer?.borderWidth == 1 && !chrome.snapButton.showsIndicator, "Snap gains an Increase Contrast outline and no capsule")
-        try expect(abs((app.dragFormatToggle.style(ofSegment: 0).fill?.alphaComponent ?? 0) - 0.32) < 0.004 && app.dragFormatToggle.accessibility.increaseContrast, "The toggle re-resolves for Increase Contrast")
+        try expect(abs((app.dragFormatToggle.style(ofSegment: 0).fill?.alphaComponent ?? 0) - selectedAlpha(of: app.dragFormatToggle, hc: true)) < 0.004 && app.dragFormatToggle.accessibility.increaseContrast, "The toggle re-resolves for Increase Contrast")
         DisplayOptions.override = DisplayOptions.none
         NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
-        try expect(!brush.showsIndicator && chrome.snapButton.layer?.borderWidth == 0 && abs((app.dragFormatToggle.style(ofSegment: 0).fill?.alphaComponent ?? 0) - 0.20) < 0.004, "Clearing the options clears all three")
+        try expect(!brush.showsIndicator && chrome.snapButton.layer?.borderWidth == 0 && abs((app.dragFormatToggle.style(ofSegment: 0).fill?.alphaComponent ?? 0) - selectedAlpha(of: app.dragFormatToggle)) < 0.004, "Clearing the options clears all three")
     }
 
     private static func modernFormatToggle() throws {
@@ -1001,10 +1007,10 @@ extension AppSafetyTests {
                 try expect(button.activeFamily == (isOn ? .solid : .regular), "\(label): \(tool) glyph family")
                 try expect(AppToolTip.text(for: button)?.contains("(selected)") == isOn, "\(label): \(tool) tooltip '\(AppToolTip.text(for: button) ?? "")'")
                 if isOn {
-                    try expect(abs((button.plate.style.fill?.alphaComponent ?? 0) - 0.20) < 0.001 && button.layer?.borderWidth == 1, "\(label): \(tool) carries the 0.20 accent fill and a 1 pt border")
+                    try expect(abs((button.plate.style.fill?.alphaComponent ?? 0) - selectedAlpha(of: button)) < 0.001 && button.layer?.borderWidth == 1, "\(label): \(tool) carries the 0.20 accent fill and a 1 pt border")
                     typealias P = DesignTokens.Palette
                     let arm = P.arm(for: button.effectiveAppearance)
-                    let blended = P.blend(P.resolve(P.accent, arm: arm), alpha: 0.20, over: P.resolve(P.Surface.window, arm: arm))
+                    let blended = P.blend(P.resolve(P.accent, arm: arm), alpha: P.resolve(P.State.selectedFill, arm: arm).alphaComponent, over: P.resolve(P.Surface.window, arm: arm))
                     let glyph = P.contrastRatio(P.resolve(button.contentTintColor ?? .clear, for: button.effectiveAppearance), blended)
                     try expect(glyph >= 4.5, "\(label): \(tool) glyph reads at \(glyph):1 on its blended accent fill")
                     let free = button.icon.flatMap { FontAwesomeFree.glyph(for: $0, family: .solid) }
@@ -1151,7 +1157,7 @@ extension AppSafetyTests {
             try expect(saturated.count == 1 && saturated[0] === chrome.snapButton, "\(label): Snap is the only saturated accent at rest (\(saturated.count))")
             try expect(owners.count > 20, "\(label): the state fills were found (\(owners.count))")
             let selected = app.toolButtons.values.compactMap { $0 as? CommandButton }.filter { $0.plate.isSelected }
-            try expect(selected.count == 1 && abs((selected[0].plate.style.fill?.alphaComponent ?? 0) - 0.20) < 0.001 && selected[0].layer?.borderWidth == 1, "\(label): the one selected tool is the 0.20 fill with a border")
+            try expect(selected.count == 1 && abs((selected[0].plate.style.fill?.alphaComponent ?? 0) - selectedAlpha(of: selected[0])) < 0.001 && selected[0].layer?.borderWidth == 1, "\(label): the one selected tool is the 0.20 fill with a border")
         }
         try check("default size")
         let minimum = app.window.contentRect(forFrameRect: NSRect(origin: .zero, size: app.window.minSize)).size
@@ -1299,17 +1305,17 @@ extension AppSafetyTests {
         undo.setHovered(true)
         try expect(buttons.allSatisfy { $0.plate.accessibility == .none && $0.plate.lastAnimationDuration == StatePlate.animationDuration }, "Buttons start with no display options and animate")
         try expect(abs((undo.plate.style.fill?.alphaComponent ?? 0) - 0.08) < 0.001 && snap.plate.style.fill?.alphaComponent == 1, "Baseline hover fill and primary accent")
-        try expect(arrow.plate.isSelected && abs((arrow.plate.style.fill?.alphaComponent ?? 0) - 0.20) < 0.001, "Arrow is selected at 0.20")
+        try expect(arrow.plate.isSelected && abs((arrow.plate.style.fill?.alphaComponent ?? 0) - selectedAlpha(of: arrow)) < 0.001, "Arrow is selected at 0.20")
         let options = ChromeAccessibility(reduceTransparency: true, increaseContrast: true, reduceMotion: true)
         chrome.accessibility = options
         try expect(surfaces.allSatisfy { $0.accessibility == options && $0.transparencyPlate != nil && $0.layer?.borderWidth == 1 }, "Every plate receives the injected options: solid plate and contrast border")
         try expect(buttons.allSatisfy { $0.plate.accessibility == options && $0.plate.lastAnimationDuration == 0 }, "Every button receives them and stops animating")
         try expect(abs((undo.plate.style.fill?.alphaComponent ?? 0) - 0.16) < 0.001 && snap.plate.style.fill?.alphaComponent == 1, "Increase Contrast strengthens the hover fill; Snap stays the accent")
-        try expect(abs((arrow.plate.style.fill?.alphaComponent ?? 0) - 0.32) < 0.001 && arrow.layer?.borderWidth == 1, "Increase Contrast strengthens the selected tool and keeps its border")
+        try expect(abs((arrow.plate.style.fill?.alphaComponent ?? 0) - selectedAlpha(of: arrow, hc: true)) < 0.001 && arrow.layer?.borderWidth == 1, "Increase Contrast strengthens the selected tool and keeps its border")
         chrome.accessibility = .none
         try expect(surfaces.allSatisfy { $0.accessibility == .none && $0.transparencyPlate == nil && $0.layer?.borderWidth == 0 }, "Clearing the options restores every plate")
         try expect(buttons.allSatisfy { $0.plate.accessibility == .none && $0.plate.lastAnimationDuration == StatePlate.animationDuration }, "And every button")
-        try expect(abs((undo.plate.style.fill?.alphaComponent ?? 0) - 0.08) < 0.001 && abs((arrow.plate.style.fill?.alphaComponent ?? 0) - 0.20) < 0.001, "And the fills")
+        try expect(abs((undo.plate.style.fill?.alphaComponent ?? 0) - 0.08) < 0.001 && abs((arrow.plate.style.fill?.alphaComponent ?? 0) - selectedAlpha(of: arrow)) < 0.001, "And the fills")
         undo.setHovered(false)
     }
 
